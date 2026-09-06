@@ -87,6 +87,40 @@ const SIDEBAR_FOLLOW_MS = 480;
 const EXIT_ZOOM = 14.4;
 
 /**
+ * Hvor lenge flaten toner UT før den bytter form (rutenett ↔ rad).
+ *
+ * Området og et tema er to LAG av samme flate, ikke to stopp i samme rad
+ * (Andreas, 2026-09-05: «en slags transition fade mellom lagene»). Byttet
+ * mellom dem går derfor i to trinn: det gamle innholdet toner ut, så kommer det
+ * nye — transporten først, resten etter (se `story-enter-*` i globals.css).
+ * Tema til tema er samme lag, og bytter rett.
+ *
+ * ## De to retningene er IKKE like lange
+ *
+ * INN i et tema må overgangen forklare noe: rutenettet du trykket i er borte,
+ * og valget ditt ligger nå som en brikke i en rad. Den bruker tid på det.
+ *
+ * TILBAKE forklarer ingenting — du trykket «Beliggenhet» og vet hvor du skal
+ * (Andreas, 2026-09-05: «det går for sakte å gå tilbake fra cat-tabs, da vet en
+ * på et vis at man skal tilbake»). Da er den samme tiden bare venting, og
+ * returen går derfor nesten rett.
+ *
+ * Må matche `.story-leave` / `.story-leave-back` i globals.css.
+ */
+export const STORY_LAYER_LEAVE_MS = 120;
+export const STORY_LAYER_LEAVE_BACK_MS = 80;
+
+/** Bevegelse er på når brukeren ikke har bedt om mindre av den. Spurt POSITIVT
+ *  (`no-preference`), så en testpolyfill som svarer «false» på alt gir et
+ *  øyeblikkelig bytte — samme som en bruker med redusert bevegelse får. */
+function motionOk(): boolean {
+  return (
+    typeof matchMedia === "function" &&
+    matchMedia("(prefers-reduced-motion: no-preference)").matches
+  );
+}
+
+/**
  * Områdets plass i rekkefølgen: FØR første kategori.
  *
  * −1 og ikke 0, fordi `stops` fortsatt ER kategoriene. Området er ikke en
@@ -110,6 +144,11 @@ interface StoryTourApi {
   /** Omvisningen står på området selv (rekkefølgens første brikke). Kartet skal
    *  da se ut som et overblikk: ingen vekting, klikkbare pinner. */
   onArea: boolean;
+  /** Flaten er på vei UT av sitt lag (område ↔ tema), og verdien er laget den
+   *  er på vei TIL: innholdet toner ut før det nye kommer. `null` ellers.
+   *  Returen til området er kortere enn veien inn — se
+   *  {@link STORY_LAYER_LEAVE_BACK_MS}. */
+  leaving: "area" | "theme" | null;
   step: number;
   pane: StoryPane;
   /** Stoppets tre navngitte steder (meglerens utvalg, ellers de nærmeste målte). */
@@ -175,8 +214,13 @@ export function StoryTourProvider({ children }: { children: ReactNode }) {
   /* Raden kartet peker på — se `focusPoiId` i API-en. */
   const [focusPoiId, setFocusPoiId] = useState<string | null>(null);
 
+  const [leaving, setLeaving] = useState<"area" | "theme" | null>(null);
   const on = tour !== null;
   const step = tour?.step ?? 0;
+  /* Gjeldende steg lest fra en ref i `goto`: den skal vite om byttet krysser
+     området uten å bli en ny funksjon for hvert steg. */
+  const stepRef = useRef(step);
+  stepRef.current = step;
   const pane = tour?.pane ?? "about";
   const onArea = on && step === AREA_STEP;
   const stop = on && !onArea ? (stops[step] ?? null) : null;
@@ -195,6 +239,8 @@ export function StoryTourProvider({ children }: { children: ReactNode }) {
   cameraRef.current = mapCamera;
   const flyTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const revealTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  /** Lagbyttets utsatte «kom inn»-trinn — se {@link STORY_LAYER_LEAVE_MS}. */
+  const layerTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   /** Siste handling vinner: en ny gest kansellerer BÅDE kameraets utsatte flytur
    *  og flatens utsatte oppfølging av et kart-trykk. To utsatte bevegelser fra
    *  to ulike trykk skal aldri lande oppå hverandre. */
@@ -203,6 +249,9 @@ export function StoryTourProvider({ children }: { children: ReactNode }) {
     flyTimerRef.current = null;
     if (revealTimerRef.current !== null) clearTimeout(revealTimerRef.current);
     revealTimerRef.current = null;
+    if (layerTimerRef.current !== null) clearTimeout(layerTimerRef.current);
+    layerTimerRef.current = null;
+    setLeaving(null);
   }, []);
   useEffect(() => cancelPending, [cancelPending]);
 
@@ -283,8 +332,25 @@ export function StoryTourProvider({ children }: { children: ReactNode }) {
       // navigasjonen på desktop.
       dispatch({ type: "END_INTRO" });
       dispatch({ type: "BACK_TO_DEFAULT" });
-      setTour({ step: clamped, pane: "about" }); // stoppet begynner med spørsmålet
-      emitStop(stops[clamped]);
+      const apply = () => {
+        setTour({ step: clamped, pane: "about" }); // stoppet begynner med spørsmålet
+        emitStop(stops[clamped]);
+      };
+      // Område ↔ tema er et LAGBYTTE: det gamle toner ut først, så kommer det
+      // nye (se STORY_LAYER_LEAVE_MS). Tema til tema er samme lag, og går rett.
+      const crossesArea =
+        (stepRef.current === AREA_STEP) !== (clamped === AREA_STEP);
+      if (!crossesArea || !motionOk()) return apply();
+      const toArea = clamped === AREA_STEP;
+      setLeaving(toArea ? "area" : "theme");
+      layerTimerRef.current = setTimeout(
+        () => {
+          layerTimerRef.current = null;
+          setLeaving(null);
+          apply();
+        },
+        toArea ? STORY_LAYER_LEAVE_BACK_MS : STORY_LAYER_LEAVE_MS,
+      );
     },
     [cancelPending, clearOpen, dispatch, emitStop, stops],
   );
@@ -402,6 +468,7 @@ export function StoryTourProvider({ children }: { children: ReactNode }) {
       stops,
       stop,
       onArea,
+      leaving,
       step,
       pane,
       picks,

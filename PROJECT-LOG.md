@@ -19,6 +19,54 @@
 **Kontroll:** 3 664 tester i 215 filer bestått; lint 0 feil/53 advarsler. Typekontroll stopper på syv eksisterende feil i den urørte InsightReportView (observations/actions); innsiktsarbeidet ligger i annen sesjon. Lokal HTTP 200 og nye data i levert HTML etter cachefiks. FAQ-kildevisning testet i DOM, ingen browser-screenshot. Ingen build, PR, push eller merge. Lokal commit omgår hookens globale tsc etter manuelle sjekker; innsiktsfeilene må løses ved integrasjon.
 
 **Overlevering og åpne tråder:** `docs/research/2026-09-06-wesselslokka-kunnskap-pilot.md` beskriver backup, apply, cache, begrensninger og full dekningsmatrise. Branch `research/wesselslokka-kunnskap`, lokal server :3001. Claude håndterer merging. Automatisk innhenting, bidragsgrensesnitt og korreksjonshistorikk er ikke bygd. Naturens grøntområdesvar peker fortsatt til hundeparken. De eldre 231 kunnskapsradene er ikke godkjent gjennom piloten.
+---
+
+## 2026-09-06 (natt) — SEKS WORKTREES INN I MAIN, OG TRE TING SOM LÅ OG RÅTNET I DEM
+
+**Kontekst:** *«nå baller det på seg med worktrees igjen. hva kan vi få inn og rydde bort?»* — sju worktrees, ingen av branchene pushet, og flere av dem så langt bak main at de var i ferd med å bli umulige å rebase. Andreas fulgte opp med *«fortsett å få merget ting»*. Målet var ikke bare å slå sammen, men å avgjøre hva som faktisk fortsatt hadde verdi.
+
+### 1. Fem branches merget, to erklært innhentet
+
+Main gikk fra `572a408` til `aaf9f20` (ni commits, pushet). Merget inn:
+
+- **`fix/postgrest-radtak`** — kveldens FAQ-arbeid, 16 commits. Var alt en fast-forward-etterkommer av main.
+- **`feat/portefoljekart-per-kjede`** — ruten `/portefolje/[kjede]`. Merget rent, ingen konflikt.
+- **`feat/kategori-grid-forside`** — tema-rutenettet på områdestoppet. Bare PROJECT-LOG i konflikt.
+- **`feat/rekkevidde-konturer`** — isokron-konturene. Migrasjon 091 lå alt i prod fra worktreen, så koden hang etter databasen, ikke omvendt.
+- **`feat/poi-i-sidebar`** — stedets side i kolonnen.
+
+**`feat/reisemate-enhet-fluid-sheet` og `feat/omvisning-nabolagsflaten` ble IKKE merget.** Begge var innhentet av main. `git cherry` sa at ingen av de 19 commitene lå der, men det er patch-id-en som lyver: arbeidet ble re-implementert via `feat/3d-innramming` og story-kolonnen, ikke cherry-picket. Den avgjørende målingen var å sammenligne fil mot fil — main hadde 59 flere linjer i `NeighbourhoodSurface.tsx` og 84 flere i `board-camera-fit.ts` enn branchene. Også `deriveFocusCamera3D`, som jeg trodde var branchens siste gjenværende verdi, lå alt i main fra 1. september.
+
+Det som faktisk gjensto var dokumentene: tre plandokumenter, en brainstorm og `docs/todos/2026-08-26-reisemate-oppfolging.md` med fem bevisst utsatte funn fra kodegjennomgangen. De er hentet inn som egen commit (`e3a3f6c`) før branchene ble slettet.
+
+**Metodenotat:** `git branch -d` sjekker mot HEAD, ikke mot main. Fra en sesjon som står på en annen branch nekter den å slette selv fullt merget arbeid, og hint-linjene maskerer feilmeldingen. Slettingen må kjøres fra en worktree som faktisk står på main.
+
+### 2. Konfliktløsningen som kompilerte i hodet mitt, men ikke i tsc
+
+`faq_opened` (migrasjon 086) og `isochrones_toggled` (091) ble lagt til på nøyaktig samme sted i event-taksonomien, fra hver sin branch. «Behold begge» er riktig svar — men konfliktblokkene lå MIDT inne i to objektliteraler, ikke rundt dem. Sammenslåingen droppet `.strict()` fra `faq_opened` i skjemaet og `context`-linja fra payload-typen, og `tsc` ga 27 syntaksfeil.
+
+Verdt å merke seg for neste gang: en mekanisk «ta begge sider»-resolusjon er trygg bare når konfliktmarkørene omslutter hele syntaktiske enheter. Her sto de inni to `z.object(...)`-kjeder.
+
+Migrasjon 091 lister forøvrig `faq_opened` i sin egen CHECK — forfatteren så den. Kode og database er enige.
+
+### 3. To ting som lå ukommittert og hadde forsvunnet med worktreen
+
+- **`components/portfolio/PortfolioMap.tsx`** i `../placy-portefolje`: ferdig arbeid som strammer 3D-utsnittet når motoren er oppe. Server-rangen regnes mot en fast referanserute som er trangere enn de fleste ekte ruter, så porteføljen lå midt i et halvtomt hav. Fiksen justerer `range` på den LEVENDE instansen framfor via `defaultRange` — den propen leses bare ved mount, og en remount av `gmp-map-3d` lekker en WebGL-kontekst. Typesjekket, 35 tester passerer, committet.
+
+- **`components/insight/InsightReportView.tsx`**: min egen commit `9962929` fra i kveld hadde sveipet med seg halvferdig innsikts-arbeid fra en parallell sesjon. `observations` og `actions` ble fjernet fra `InsightReport` da `lib/insight/recommendations.ts` kom til, men visningen rendret dem fortsatt — `tsc` feilet på syv linjer i committet tilstand. **Main har altså stått med en typefeil siden i kveld uten at noen målte det.** Signaler-kortet leser nå `deriveRecommendations()`, som bærer beviset sitt i `why`.
+
+### 4. Verifisering av det samlede treet
+
+Fem branches som aldri hadde sett hverandre, verifisert samlet i en egen worktree: **3 817 tester passerer (226 filer)**, `tsc` rent, `npm run lint` 0 errors (54 warnings, alle pre-eksisterende), og `npm run build` går gjennom med `/portefolje/[kjede]` på rutelista.
+
+**Gotcha:** en symlinket `node_modules` i en midlertidig worktree dreper Turbopack (`Symlink [project]/node_modules is invalid, it points out of the filesystem root`). `cp -Rc` (APFS clonefile) tar sekunder og virker.
+
+### 5. Åpent etter denne sesjonen
+
+- **Hovedrepoet står fortsatt på `fix/postgrest-radtak`.** En parallell innsikts-sesjon har ukommitterte endringer i `app/globals.css` og `InsightReportView.tsx` som ville kollidert med et branch-bytte. Byttes til main når den er ferdig — branchen er fullt merget.
+- **Tjueen branches gjenstår** (`feat/*` + `fix/*`), alle uten worktree bortsett fra `fix/postgrest-radtak`. De eldste (`feat/prospekt-skanner`, 166 commits bak main) er trolig i samme kategori som omvisnings-branchene: innhentet, med dokumenter som eneste rest.
+- **To filer heter `086_`.** `086_postal_areas.sql` og `086_event_type_faq_opened.sql` kolliderer i nummerering. Begge er kjørt i prod, så det er ikke en feil i dag — men rekkefølgen er ikke lenger entydig for den som skal spille dem av på nytt.
+- **Aggregering av `isochrones_toggled` mangler fortsatt** i Innsikt-flaten. Hendelsen logges, men har ingen case i `lib/insight/`. Nå som innsikts-koden ER i main, er blokkeren fra 3. september borte.
 
 ---
 
@@ -204,6 +252,120 @@ Grilstad Marina hadde tre håndskrevne navn som ikke var standard: «Sjø, stran
 Wesselsløkka verifisert i browser (skjermbilde, ny rad synlig). Grilstad verifisert i data med lesebekreftelse, ikke som skjermbilde — det er et VO-board der kategori-raden ligger bak flythrough-en. 3 516 tester passerer; ingen testet mot navnene, de bygger sine egne fixtures.
 
 Prod leser samme Supabase, så navnene gjelder der umiddelbart — men prod-boardenes Next-cache kan vi ikke buste utenfra siden admin er avslått i prod (juli). De slår inn når deployen fra `841e1f2` er kald.
+
+---
+
+## 2026-09-05 — BELIGGENHET SOM STARTSIDE: TEMA-RUTENETT I STEDET FOR EN RAD INGEN INTRODUSERTE, OG ET LAGBYTTE MELLOM DEM
+
+**Kontekst:** Andreas med et skjermbilde av områdestoppet på Wesselsløkka: *«da er det ikke så gitt at de kan velge blant kategorier. kategori-bar i topp ligger der, klart, men den blir ikke særlig introdusert her.»* Beliggenhet fungerte alt som startside (2026-08-27), men inngangen til temaene var seks små brikker i en rad, og setningen «Velg et tema» pekte på noe som ikke så ut som et valg. Worktree `../placy-kategorigrid`, branch `feat/kategori-grid-forside`, ikke pushet.
+
+### 1. Rutenettet erstatter raden på områdestoppet
+
+Ny `StoryThemeGrid` (2 kolonner, ikon + navn + «N steder») ligger i `AreaPane` mellom strøkets intro og «Spørsmål og svar». Raden (`StoryRail`) og mobil-dekket (`StoryDeck`) returnerer `null` mens `onArea` er sann, og desktop-hodet i `StoryCard` rendrer ikke `head` da. Et trykk på et kort er `goto(n)`: temaet åpnes, og raden kommer inn med det temaet aktivt. «Beliggenhet» i raden er veien tilbake til rutenettet. Samme form på mobil og desktop, verifisert i Chrome på 1400 og 390 px, 0 konsollfeil.
+
+Desktop-testene gikk inn i temaene via raden fra ankomsten, som nå ikke finnes der; de går via rutenettet (`enterTheme`-hjelper), og fire nye tester dekker vekslingen rutenett/rad.
+
+### 2. Overgangen: morfing forkastet, lagbytte valgt
+
+Første forsøk var View Transitions med delt `view-transition-name` per tema, så kortet gled og krympet inn i brikken sin. Teknisk virket det (ready/finished begge veier), men Andreas så det og sa nei: *«den overgangen der var ikke helt heldig»*. Det han ville ha var et **lagbytte**: forside-innholdet toner ut, og på den nye siden kommer tab-raden først, med en liten glidning fra toppen, så resten av innholdet. Samme tilbake. Og bare til/fra området, aldri tema til tema.
+
+Bygd som to trinn i `story-tour`: `goto` som krysser `AREA_STEP` setter `leaving` (→ `.story-leave`, 160 ms fade, `STORY_LAYER_LEAVE_MS`) og bytter steg først etter det. Det nye laget monteres med `key={onArea ? "area" : "theme"}` på overskrift/faner og på innholdet, så de animeres ved LAGBYTTE men ikke tema til tema. Raden er `story-enter-first` (fra toppen; `-up` fra bunnen på mobil-dekket), resten `story-enter-rest` (fade, 110 ms forsinket). Bevegelsen gates på `prefers-reduced-motion: no-preference` spurt positivt, så testenes matchMedia-polyfill (svarer false) gir øyeblikkelig bytte, og en bruker med redusert bevegelse får det samme. Målt i Chrome: leave-klasse ved 60 ms med gridet fortsatt i DOM, rad + nytt innhold ved 310 ms, alt på opacity 1 ved 810 ms; tema→tema utløser ingen lag-animasjon.
+
+### 3. Tre tweaks samme dag, alle på overgangen
+
+Andreas prøvde den og fant tre ting, som hver traff et eget problem:
+
+**a) Raden og innholdet kom for likt.** *«det er langt i fra enkelt for meg å forstå det at den kategorien jeg trykte på, vises i toppen der … det må være større avstand mellom dem.»* Målt: raden var ferdig på 300 ms, innholdet startet på 340 — 40 ms mellom to bevegelser leses som én. Nå starter innholdet på 460 ms (`--story-enter-rest-delay`), altså 160 ms etter at raden har landet, og raden reiser 14 px i stedet for 8. Luften under raden på desktop økte fra 10 til 16 px, så den leser som sitt eget bånd. Frosset frame i Chrome bekrefter beatet: raden står ferdig og alene med den trykkede brikken hvit, innholdet på opacity 0.
+
+**b) Returen var for treg.** *«det går for sakte å gå tilbake fra cat-tabs, da vet en på et vis at man skal tilbake.»* Retningene er nå ulike, og det er en regel, ikke en finjustering: veien INN forklarer noe (valget ditt har skiftet form), returen forklarer ingenting. Egen `STORY_LAYER_LEAVE_BACK_MS` (80 mot 120) og egne `story-enter-back*`-klasser (190 ms, 50 ms forsinkelse) mot temalagets 300/460. Målt over tre runder: forsiden synlig etter ~218 ms og ferdig etter ~663 ms, mot ~400 ms / ~1 180 ms inn i et tema.
+
+**c) Raden anker-scrollet i det den kom.** *«jeg ser at tab-cat da scroller bortover raskt som en slags anchor effekt … det må skje før den vises.»* `StoryRail` posisjonerte aktivt stopp i en `useEffect`, og sporet har `scroll-behavior: smooth` — som gjelder tilordninger av `scrollLeft` også. Første posisjonering er nå en `useLayoutEffect` med `scroll-behavior: auto` slått på for akkurat den ene (`mountedRef`), så plasseringen er gjort før nettleseren tegner. Senere stoppbytter glir fortsatt mykt. Verifisert med MutationObserver på innsettingsøyeblikket: `scrollLeft` er 349 (desktop) / 267 (mobil) i første frame og står stille i 20 frames etter.
+
+### 4. «Beliggenhet» ble «Tilbake», og festet til venstre i baren
+
+Andreas, med to utsnitt av raden: *«den er ikke like ille på mac med magic mouse, for da kan jeg enkelt slide bortover som på en mobil. men på en desktop mus … så jeg tenker at vi muligens må ha sticky left «beliggenhet» funksjonen som omdøpes til «Tilbake», for det er jo nettopp det hele funksjonen egentlig er.»*
+
+Brikken lå FØRST i sporet, altså inne i det som ruller — og kunne derfor rulle ut av syne. Det gikk så lenge kategoriene også fantes som faner andre steder; etter at rutenettet overtok inngangen samme dag er brikken den eneste veien tilbake, og en eneste vei ut kan ikke ligge bak en horisontal scroll man trenger en Magic Mouse for å betjene.
+
+Baren er derfor delt i to: en fast venstredel (utgangen) og et rullende spor (temaene), begge inne i den samme avrundede flaten, så den fortsatt leser som én ting. `role="tablist"` flyttet ut på baren og sporet fikk `role="presentation"`, slik at brikkene fortsatt eksponeres som faner i tilgjengelighetstreet — testene som spør etter `[aria-label="Stopp"] [role="tab"]` er uendret. En ny test låser strukturen: «Tilbake» skal IKKE ligge inne i sporet, temaene skal.
+
+To følgeendringer fulgte av omdøpingen, begge fordi ordet endret hva brikken ER: ikonet gikk fra kartnål til venstrepil (en nål under ordet «Tilbake» beskriver et sted, ikke en handling), og chevronen mellom utgang og temaer ble en loddrett strek (en høyrepil rett ved siden av en venstrepil er to piler i hver sin retning). Kantklippet i sporet ble en maske i stedet for et gradient-overlegg, fordi overlegget lå i barens koordinater og nå ville dekket den faste brikken — og masken toner bare den kanten det faktisk ligger mer bak (`edges`-state, lest på scroll).
+
+Verifisert i Chrome på 1400 og 390 px med sporet rullet helt til høyre: utgangen står synlig, ligger utenfor sporet, og sporet har ingen synlig rullefelt (`offsetHeight − clientHeight` = 0). Merk: den svarte «N»-sirkelen som ligger over nedre venstre hjørne i dev er Next.js sin egen dev-indikator, ikke noe i produktet.
+
+### 5. Kortene ble én horisontal linje da labelene ble korte (2026-09-06)
+
+Kategorinavnene er kortet ned til ett ord hver i hovedmappa — Hverdag, Oppvekst, Servering, Natur, Transport, Trening — og boardet leser dem allerede fra provisjonert data, så Wesselsløkka viser dem live. Andreas: *«så på gridet, tror jeg vi kan nå samle både ikon og de to linjene med tekst på en og samme horisontale linje.»*
+
+Ikonet lå over teksten fordi et navn som «Transport & Mobilitet» brøt i to på halv kolonnebredde. Med ettordsnavn faller den grunnen bort: ikon til venstre, navn og antall stablet til høyre, alt på én linje. Kortet gikk fra 114 til 60 px høyt, og rutenettet fra ~340 til 226 px — som er forskjellen på at strøkets spørsmål og svar ligger under fold eller ikke. På 390 px får hele FAQ-lista nå plass på samme skjerm som rutenettet.
+
+Navnet står på én linje og klippes heller enn å brytes: ett kort som er én linje høyere enn nabokortet gjør raden skjev, og et rutenett med ujevne rader slutter å lese som et sett med likeverdige valg. Målt: ingen av de seks navnene klippes i dag, verken på 1400 eller 390 px.
+
+Merk om kilden: labelene lever i `lib/themes/default-themes.ts` (+ `report-defaults.ts`, `bransjeprofiler.ts`) og var ved dette tidspunktet UKOMMITERT arbeid i hovedmappa, ikke i main-historikken. Denne branchen har dem derfor ikke i koden — men boardet henter navnet fra `theme.name` i produktkonfigurasjonen (`board-data.ts`), ikke fra tema-filen ved render, så de korte navnene vises uansett. Rutenettets layout er ikke avhengig av hvilken vei det løses.
+
+### 6. To flater som ikke skulle vært der (2026-09-06)
+
+Andreas, med to utsnitt: *«det er to shades her, på grid forside, hvor tittel ligger i en lysere shade. inne på en kategori, er det et grått område i toppen av sidebar. begge disse kan fjernes slik at de har lik bakgrunnsfarge som resten av sidebar.»*
+
+**Det grå området** var radens egen bar (`bg-black/[0.045]`). Den fylte nesten hele panelbredden — 390 av 438 px etter at ettordsnavnene fikk alle seks temaene til å få plass uten rulling — og leste som en plate lagt oppå toppen av kolonnen. Den er borte på DESKTOP. Mobil-dekket beholder sin: der FLYTER raden over innholdet, og uten flate ville brikkene ligget rett på kartet. Den valgte brikken løftes fortsatt av hvitt og skygge, så utvalget leses uten sporet.
+
+**Det lysere båndet** var vanskeligere, og verdt å skrive ned. Det festede hodet hadde `bg-white/85` + `backdrop-blur-xl`, panelet `bg-white/[0.93]`. To halvgjennomsiktige lag oppå hverandre kan ikke bli samme farge som ett: 0,85 over 0,93 komposit­terer til 0,995, og de 6,5 prosentene er nettopp så mye kart som slapp gjennom panelet men ikke gjennom hodet. Å bare fjerne hodets bunn er IKKE et alternativ — det ble testet live, og da scroller brødteksten rett gjennom overskriften.
+
+Derfor er panelet nå TETT i omvisningen (`bg-white`), og hodet har samme verdi. Da er de to fargene den samme verdien, ikke to verdier som er nesten like. Prisen er de 7 % satellittbilde som skinte gjennom sidekolonnen; gevinsten er at båndet ikke kan oppstå. Beige-varianten (uten omvisning) har ikke noe festet hode og beholder gjennomskinnet sitt. Mobil var aldri berørt: der er både `h3` og arket rent hvitt fra før.
+
+### 7. Åpent
+
+- **Mobil-inngangen.** «La nabolaget presentere seg» i mobil-indeksen starter fortsatt på første tema, ikke på Beliggenhet-rutenettet (indeksen har alt sin egen kategoriliste). Andreas må avgjøre om mobil-play skal lande på området slik desktop-kolonnen gjør.
+- Raden ruller aktivt tema til 44 px fra venstre, så «Beliggenhet» (veien tilbake) ligger ofte utenfor synsfeltet etter et kort-trykk. Pre-eksisterende, men mer synlig nå som rutenettet er inngangen.
+- **Temaer langt til høyre er tunge å nå med vanlig mus.** Utgangen er løst, men selve sporet krever fortsatt shift+hjul på en mus uten sidelengs sveip. En mulig neste spak er å oversette vanlig hjul til horisontal scroll i sporet; ikke bygd, fordi det kan kapre sidescrollen.
+- **~300 ms hovedtråd-stall ved lagbytte.** Målt: tema→tema stopper hovedtråden i ~100 ms, mens område↔tema stopper den i ~300 ms (board-render + montering/avmontering av rutenettet eller raden). Det er derfor raden dukker opp ~400 ms etter trykket og ikke ~120 ms. Selve animasjonene går på kompositoren og er glatte; stallet er død luft FØR dem. Ikke rørt — det krever at det tunge arbeidet flyttes inn i utton-fasen.
+
+---
+
+## 2026-09-03 — REKKEVIDDE-KONTURER: NABOLAGET FIKK EN OMKRETS, OG GOOGLE-MOTOREN FIKK EN KANTLINJE
+
+**Kontekst:** Brainstorm 2026-09-02 fra et hjem.no-skjermbilde: *«jeg synes hjem.no tar helt av»*. Fire fargelagte flater som dekker kartet og skjuler stedene. Vi ville ha det romlige svaret på «hvor stort er nabolaget mitt til fots» uten å ofre lesbarheten. Plan skrevet + dok-reviewet samme dag, bygget i worktree `../placy-rekkevidde` (branch `feat/rekkevidde-konturer`).
+
+### 1. Hva som ligger i prod nå
+
+Tre prikkede konturer for 5/10/15 minutter i valgt reisemåte, som et visningsvalg brukeren slår på. Beregnet ved provisjonering (nytt steg 7c, Mapbox Isochrone, tre kall per prosjekt), lagret i `products.config.reportConfig.isochrones`, lest ved render. Migrasjon 091 kjørt og verifisert mot prod (`isochrones_toggled` i `events_event_type_check`, `faq_opened` bevart). Konturer skrevet til Wesselsløkka og Sundsøya via `scripts/backfill-isochrones.ts`.
+
+### 2. To ting research/verifisering rettet i planens premisser
+
+**«Satellitt» er Google-motoren, ikke en Mapbox-stil.** Brainstormen skrev «Mapbox 2D (Kart / Satellitt)». Feil: `showMapbox = !has3dAddon || view === "2d"`, så Mapbox er avmontert i Satellitt og 3D. Prikket strek er derfor bare mulig i «Kart». Og Satellitt er standardvisningen på 3D-boards uten voice-over — så å droppe konturene der ville tatt dem ut av det leseren ser først.
+
+**`Polygon3DElement` har ingen kantlinje.** Planen sa `gmp-polygon-3d`. Målt i nettleseren på API 3.66.3d: elementet finnes, men `outerColor` gjør ikke (`"outerColor" in probe === false`). En 2 px mørk strek uten kantlinje er nesten usynlig over mørk vegetasjon og forsvinner over lyse hustak. Byttet til **lukket `Polyline3DElement`** med lys kantlinje — samme grep rutelinja alt bruker på samme motor, og da er polygonet bare en flate vi ikke fyller. Bekreftet visuelt side ved side før byttet.
+
+### 3. R2-akseptansen: premisset holder, men terskelen min målte feil ting
+
+Påstanden var at konturene og POI-minuttene deler veinett, så et sted med 7 min gangtid ligger innenfor 10-minutt-konturen. Målt på Wesselsløkka med `scripts/check-isochrone-consistency.ts`:
+
+| Profil | Innenfor | Utenfor | Ekte avvik |
+|---|---|---|---|
+| gange | 90/103 (15 min) | 13 | **1** (0,9 %) |
+| sykkel | 622/622 | 0 | 0 |
+| bil | 978/987 (15 min) | 9 | 9 (0,9 %) |
+
+Første kjøring flagget 10,3 % og 12,6 % som «systematisk». Marginmålingen avgjorde det: **4 av 4 avvik på 10 min hadde margin 0** — altså POI-er målt til nøyaktig 10 min som faller rett på streken. Minuttene rundes opp (`Math.ceil`) og konturen er forenklet med `generalize`, så budsjettgrensen er en sone på noen titalls meter, ikke en strek. Planens egen stoppbetingelse sier «UNDER 10 min», og terskelen måler nå det: margin ≥ 2 min.
+
+Restavvik verdt å huske: **9 POI-er målt til 9 min bilkjøring faller utenfor 15-minutt-bilkonturen** (Dragvoll-området, Burmaklippen, Devlebukta) — margin 6 min, altså ikke randsone. Uforklart. Sannsynlig årsak `generalize=100` på bilprofilen eller ulike hastighetsantakelser. 0,9 % og bare på ytterste bilkontur, så det blokkerer ingenting, men det er den ene tråden som ikke er trukket ut.
+
+### 4. Mobil: jeg gjorde en eksisterende overflyt verre, og fikset begge
+
+Ved 320 px var kontroll-popoveren alt 360 px bred — overflyt fra før. Med «Rekkevidde» som tekst-knapp ble den 409 px og rant 105 px ut over venstre skjermkant (målt). To grep: knappen er **ikon-bare på mobil** (betydningen bæres av `aria-label`), og popoveren fikk `flex-wrap` + `max-w-[calc(100vw-2rem)]` så den brekker til to rader. Ved 320 px: 288 px bred, ingen overflyt, radar-ikonet nåbart på andre rad. Nestet vannrett scroller var forkastet — én scroller per flate er prinsippet på mobil.
+
+### 5. Verifisert
+
+`npm run lint` 0 errors · `npx tsc --noEmit` rent · `npm run build` OK · **3 581 tester grønne (214 filer)** serielt. Parallell kjøring ga 2–5 roterende feil i urelaterte filer (poi-discovery, EventMobileSheet, TravelModeSelector, provision) — last-flakiness, ikke våre endringer; alle passerer isolert. Én ekte lekkasje fra egne tester fikset underveis: `process.env = {...env}` i afterEach rev bort nøkler andre testfiler i samme worker satte.
+
+I nystartet Chrome: konturene tegnes i alle tre visninger, etikettene følger kartet, WebGL-kontekster flate (1 → 1) gjennom tre visningsbytter og fire av/på, 0 konsollfeil. På Sundsøya (uten 3D-tillegg) vises knappen, Mapbox-konturene tegnes og **Google lastes aldri** (`window.google` udefinert, 0 `gmp-map-3d`) — AE10 innfridd. Rettet også en utfaset `coordinates`-egenskap på Google-polylinjen til `path`, som fjernet den siste konsoll-advarselen.
+
+### 6. Åpent
+
+- **AE8 i nettleser**: at etikettene forsvinner under zoom-grensen er dekket av enhetstest, men hjul-simuleringen i Chrome hang to ganger og ble aldri fullført manuelt. Etikettene ER verifisert synlige ved åpningszoom.
+- **`denoise=0.5` og `generalize` per profil** er valgt, ikke kalibrert. Wesselsløkka ga bare enkeltflater (ingen MultiPolygon), så flerflate-stien er testdekket men ikke sett i praksis.
+- **Aggregering og demo-data for `isochrones_toggled`** mangler: `lib/insight/` er ukommittert arbeid i hovedrepoet og finnes ikke på denne branchen. Hendelsen logges, men er usynlig i Innsikt-flaten til de to filene får sin case.
+- **Branch ikke merget eller pushet.** `faq_opened` er kjørt i prod men ukommittert i main — migrasjon 091 bevarer den bevisst i typelista.
 
 ---
 

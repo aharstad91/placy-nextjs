@@ -3,7 +3,8 @@
 import { useEffect, useRef } from "react";
 import { Sparkles, X, ExternalLink } from "lucide-react";
 import { useBoard, useActivePOI } from "./board-state";
-import { hasExploreContent } from "./POIExploreModal";
+import { hasAnchorRegister, hasExploreContent } from "./PoiDetail";
+import { useStoryTourOptional } from "./story/story-tour";
 import { useEngagement } from "@/lib/instrumentation/engagement-scope";
 import { getFilledIcon } from "@/lib/utils/map-icons-filled";
 import { markerCircleStyle } from "./marker-style";
@@ -12,6 +13,7 @@ import { projectLatLngToScreen } from "@/components/map/project-latlng-to-screen
 import { PIN_SIZE } from "@/components/map/PoiMarkerContent";
 import { useRealtimeData } from "@/lib/hooks/useRealtimeData";
 import { POIRealtimeSection } from "../blocks/POIRealtimeSection";
+import { cn } from "@/lib/utils";
 // merknad: hide-during-motion ble tidligere brukt for å skjule popup under
 // kamera-bevegelse fordi den gamle approksimasjonen drifted. Med korrekt
 // perspektiv-projeksjon tracker popupen markøren smooth — fjernet.
@@ -53,6 +55,9 @@ const DISC_OVERLAP_PX = 4;
 export function BoardPOI3DMiniPopup({ map3d, pinScale = 1 }: Props) {
   const { dispatch } = useBoard();
   const poi = useActivePOI();
+  /* Kjører omvisningen? Kolonnen eier da stedet på desktop — se `ctaHidden`
+     under. Hooket står her, over den tidlige returen, fordi det er et hook. */
+  const tourOn = useStoryTourOptional()?.on ?? false;
   const engagement = useEngagement();
   const wrapperRef = useRef<HTMLDivElement | null>(null);
   const rafRef = useRef<number | undefined>(undefined);
@@ -120,6 +125,16 @@ export function BoardPOI3DMiniPopup({ map3d, pinScale = 1 }: Props) {
   // Samme kontrakt som 2D-popupen: innhold → modal i Placy, ellers ekstern
   // lenke merket med ekstern-lenke-ikon. Begge kart-flatene MÅ oppføre seg likt.
   const canExplore = hasExploreContent(poi);
+  /**
+   * Omvisningen eier stedet på desktop (2026-08-28): raden i kolonnen viser
+   * teksten, bildene og Google-faktaene, og kart-trykket har allerede åpnet og
+   * scrollet den fram. Da er «Utforsk» en knapp til noe leseren ser.
+   *
+   * Ankeret er unntaket: registeret får ikke plass i en rad og har sin egen side
+   * over kolonnen — der ER knappen veien inn. Uten omvisning (VO-boards, mobil)
+   * står CTA-en som før, for da er popupen alt kartet gir.
+   */
+  const ctaHidden = tourOn && !hasAnchorRegister(poi);
   const ctaClass =
     "inline-flex w-full items-center justify-center gap-1.5 rounded-full bg-amber-50 px-3 py-1.5 text-xs font-medium text-amber-700 transition hover:bg-amber-100";
   const exploreQuery = poi.address
@@ -179,8 +194,8 @@ export function BoardPOI3DMiniPopup({ map3d, pinScale = 1 }: Props) {
           </div>
         )}
 
-        <div className="mt-2.5 px-3 pb-3">
-          {canExplore ? (
+        <div className={cn("px-3 pb-3", !ctaHidden && "mt-2.5")}>
+          {ctaHidden ? null : canExplore ? (
             <button
               type="button"
               onClick={() => dispatch({ type: "OPEN_EXPLORE" })}

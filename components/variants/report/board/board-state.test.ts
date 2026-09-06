@@ -34,6 +34,7 @@ describe("boardReducer", () => {
         introPlaying: false,
         exploreOpen: false,
         travelMode: "walk",
+        showContours: false,
         exploreSuppressed: false,
       });
     });
@@ -46,6 +47,7 @@ describe("boardReducer", () => {
         introPlaying: false,
         exploreOpen: false,
         travelMode: "walk",
+        showContours: false,
         exploreSuppressed: false,
       };
       const next = boardReducer(start, { type: "SELECT_CATEGORY", id: CAT_B });
@@ -56,6 +58,7 @@ describe("boardReducer", () => {
         introPlaying: false,
         exploreOpen: false,
         travelMode: "walk",
+        showContours: false,
         exploreSuppressed: false,
       });
     });
@@ -109,6 +112,7 @@ describe("boardReducer", () => {
         introPlaying: false,
         exploreOpen: false,
         travelMode: "walk",
+        showContours: false,
         exploreSuppressed: false,
       };
       const next = boardReducer(start, { type: "OPEN_POI", id: POI_1 });
@@ -119,6 +123,7 @@ describe("boardReducer", () => {
         introPlaying: false,
         exploreOpen: false,
         travelMode: "walk",
+        showContours: false,
         exploreSuppressed: false,
       });
     });
@@ -131,6 +136,7 @@ describe("boardReducer", () => {
         introPlaying: false,
         exploreOpen: false,
         travelMode: "walk",
+        showContours: false,
         exploreSuppressed: false,
       };
       const next = boardReducer(start, { type: "OPEN_POI", id: POI_2 });
@@ -141,6 +147,7 @@ describe("boardReducer", () => {
         introPlaying: false,
         exploreOpen: false,
         travelMode: "walk",
+        showContours: false,
         exploreSuppressed: false,
       });
     });
@@ -160,6 +167,7 @@ describe("boardReducer", () => {
         introPlaying: false,
         exploreOpen: false,
         travelMode: "walk",
+        showContours: false,
         exploreSuppressed: false,
       });
     });
@@ -180,6 +188,7 @@ describe("boardReducer", () => {
         introPlaying: false,
         exploreOpen: false,
         travelMode: "walk",
+        showContours: false,
         exploreSuppressed: false,
       });
     });
@@ -192,6 +201,7 @@ describe("boardReducer", () => {
         introPlaying: false,
         exploreOpen: false,
         travelMode: "walk",
+        showContours: false,
         exploreSuppressed: false,
       };
       const next = boardReducer(start, { type: "OPEN_POI", id: POI_1 });
@@ -208,6 +218,7 @@ describe("boardReducer", () => {
         introPlaying: false,
         exploreOpen: false,
         travelMode: "walk",
+        showContours: false,
         exploreSuppressed: false,
       };
       const next = boardReducer(start, { type: "OPEN_POI", id: POI_2 });
@@ -230,6 +241,7 @@ describe("boardReducer", () => {
         introPlaying: false,
         exploreOpen: false,
         travelMode: "walk",
+        showContours: false,
         exploreSuppressed: false,
       };
       const next = boardReducer(start, { type: "BACK_TO_ACTIVE" });
@@ -240,6 +252,7 @@ describe("boardReducer", () => {
         introPlaying: false,
         exploreOpen: false,
         travelMode: "walk",
+        showContours: false,
         exploreSuppressed: false,
       });
     });
@@ -262,6 +275,7 @@ describe("boardReducer", () => {
         introPlaying: false,
         exploreOpen: false,
         travelMode: "walk",
+        showContours: false,
         exploreSuppressed: false,
       };
       const next = boardReducer(start, { type: "BACK_TO_DEFAULT" });
@@ -272,6 +286,7 @@ describe("boardReducer", () => {
         introPlaying: false,
         exploreOpen: false,
         travelMode: "walk",
+        showContours: false,
         exploreSuppressed: false,
       });
     });
@@ -284,6 +299,7 @@ describe("boardReducer", () => {
         introPlaying: false,
         exploreOpen: false,
         travelMode: "walk",
+        showContours: false,
         exploreSuppressed: false,
       };
       const next = boardReducer(start, { type: "BACK_TO_DEFAULT" });
@@ -302,6 +318,7 @@ describe("boardReducer", () => {
         introPlaying: true,
         exploreOpen: false,
         travelMode: "walk",
+        showContours: false,
         exploreSuppressed: false,
       };
       const next = boardReducer(start, { type: "RESET_TO_DEFAULT" });
@@ -456,5 +473,63 @@ describe("boardReducer — reisemodus", () => {
       state = boardReducer(state, action);
     }
     expect(state.travelMode).toBe("bike");
+  });
+});
+
+describe("rekkevidde-konturer: av/på overlever navigasjon (AE7)", () => {
+  it("er av ved oppstart — konturene er et valg, ikke et lag", () => {
+    expect(initialBoardState.showContours).toBe(false);
+  });
+
+  it("TOGGLE_CONTOURS veksler", () => {
+    const on = boardReducer(initialBoardState, { type: "TOGGLE_CONTOURS" });
+    expect(on.showContours).toBe(true);
+    expect(boardReducer(on, { type: "TOGGLE_CONTOURS" }).showContours).toBe(false);
+  });
+
+  it("modusbytte rører ikke konturvalget, og omvendt", () => {
+    const on = boardReducer(initialBoardState, { type: "TOGGLE_CONTOURS" });
+    const bike = boardReducer(on, { type: "SET_TRAVEL_MODE", mode: "bike" });
+    expect(bike.showContours).toBe(true);
+    expect(bike.travelMode).toBe("bike");
+    const off = boardReducer(bike, { type: "TOGGLE_CONTOURS" });
+    expect(off.travelMode).toBe("bike");
+  });
+
+  // Én test per handling som går via resetNavigation: det er den ENE
+  // funksjonen som kunne mistet feltet, og en felles løkke ville skjult
+  // hvilken gren som brøt.
+  it.each([
+    ["BACK_TO_ACTIVE uten aktiv kategori", { type: "BACK_TO_ACTIVE" } as BoardAction],
+    ["RESET_TO_DEFAULT", { type: "RESET_TO_DEFAULT" } as BoardAction],
+  ])("%s bevarer konturvalget", (_navn, action) => {
+    const messy: BoardState = {
+      ...initialBoardState,
+      phase: "poi",
+      activePOIId: POI_1,
+      activeCategoryId: null,
+      introPlaying: true,
+      exploreOpen: true,
+      travelMode: "car",
+      showContours: true,
+    };
+    const after = boardReducer(messy, action);
+    expect(after.showContours).toBe(true);
+    expect(after.travelMode).toBe("car");
+  });
+
+  it("konturene på, deretter full navigasjons-runde → valget står", () => {
+    let state = boardReducer(initialBoardState, { type: "TOGGLE_CONTOURS" });
+    for (const action of [
+      { type: "SELECT_CATEGORY", id: CAT_A },
+      { type: "OPEN_POI", id: POI_1 },
+      { type: "BACK_TO_ACTIVE" },
+      { type: "BACK_TO_DEFAULT" },
+      { type: "SELECT_CATEGORY", id: CAT_B },
+      { type: "RESET_TO_DEFAULT" },
+    ] as BoardAction[]) {
+      state = boardReducer(state, action);
+    }
+    expect(state.showContours).toBe(true);
   });
 });

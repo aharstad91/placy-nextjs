@@ -120,6 +120,9 @@ const payloadByType = {
       context: optionalContext,
     })
     .strict(),
+  isochrones_toggled: z
+    .object({ enabled: z.boolean(), context: optionalContext })
+    .strict(),
 } as const;
 
 // Diskriminert union over event_type: hver variant binder riktig payload-skjema.
@@ -194,6 +197,16 @@ export const logEventSchema = z.discriminatedUnion("eventType", [
       projectId,
       productId,
       payload: payloadByType.faq_opened,
+    })
+    .strict(),
+  // Payload er PÅKREVD: uten `enabled` kan et av-slag ikke skilles fra et
+  // på-slag, og hendelsen er da verdiløs som bruks-signal.
+  z
+    .object({
+      eventType: z.literal("isochrones_toggled"),
+      projectId,
+      productId,
+      payload: payloadByType.isochrones_toggled,
     })
     .strict(),
 ]);

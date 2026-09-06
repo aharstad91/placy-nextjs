@@ -215,7 +215,7 @@ describe("BoardPOI3DMiniPopup — source-invarianter (AC3/AC4)", () => {
   // ingen rAF-løkke, men projiserer én gang når kameraet faller til ro.
   // Vakten står fortsatt — den skal fange en FJERDE konsument, for hver ekstra
   // per-frame-projeksjon mot Google 3D koster frames.
-  it("AC3: kun de tre tilsiktede konsumentene av projectLatLngToScreen (scan)", () => {
+  it("AC3: kun de tilsiktede konsumentene av projectLatLngToScreen (scan)", () => {
     const roots = ["components", "lib", "app"];
     const importers: string[] = [];
     const walk = (dir: string) => {
@@ -238,6 +238,10 @@ describe("BoardPOI3DMiniPopup — source-invarianter (AC3/AC4)", () => {
     for (const r of roots) walk(join(process.cwd(), r));
     const names = importers.map((f) => f.split("/").pop()).sort();
     expect(names).toEqual([
+      // Konturenes minutt-etiketter i 3D — fjerde konsument, lagt til
+      // 2026-09-03. Google 3D har ingen linje-plasserte etiketter, så de er
+      // HTML projisert per frame som de tre andre.
+      "BoardContourLabels3D.tsx",
       "BoardPOI3DMiniPopup.tsx",
       "BoardTravelChip3D.tsx",
       "use-3d-marker-declutter.ts",

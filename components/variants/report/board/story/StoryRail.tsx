@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useRef } from "react";
-import { ChevronRight } from "lucide-react";
+import { useCallback, useLayoutEffect, useRef, useState } from "react";
+import { ArrowLeft, type LucideIcon } from "lucide-react";
 import { getIcon } from "@/lib/utils/map-icons";
 import { cn } from "@/lib/utils";
 import { AREA_RAIL_LABEL } from "./story-model";
@@ -14,30 +14,30 @@ import { AREA_STEP, useStoryTour } from "./story-tour";
  * fortelles begge samtidig: du ser hvor du er, hva du har vært gjennom, og —
  * viktigst — hva som kommer, uten at noe annet må si det.
  *
- * Sporet ER baren: én sammenhengende avrundet flate med faste ender, og
- * innholdet ruller inni den. Rullet baren selv, ville endene forsvunnet ut av
- * syne og flaten sluttet å lese som én ting.
+ * ## Raden vises ikke på områdestoppet (2026-09-05)
  *
- * ## Området står først, og er skilt fra temaene
+ * Der er brukeren ikke inne i rekkefølgen ennå, og seks brikker i en rad ingen
+ * har introdusert leste ikke som et valg. Temaene står i stedet som et rutenett
+ * i innholdet (`StoryThemeGrid`); raden kommer inn når et tema er valgt.
  *
- * Første brikke er STEDET (`AREA_STEP`) — «Beliggenhet», ikke et tema — med
- * kartnål og nøytral, mørk sirkel der temaene har sin egen farge. Den bærer et
- * fast ord, ikke strøksnavnet: navnet står som overskrift to centimeter under. Den er
- * inngangen indeksen var: hele nabolaget på kartet, en introduksjon til strøket
- * og strøkets spørsmål og svar. En chevron skiller den fra temaene, fordi de to
- * ikke er samme slags ting: den ene er et sted, de andre er spørsmål om det.
+ * ## «Tilbake» er FESTET, temaene ruller ved siden av
  *
- * Skillet er STERKERE enn det var (2026-08-28). Chevronen sto på 13 px i
- * `stone-300` med ett piksel luft på hver side, og leste som en klippefeil
- * framfor som «kategoriene ligger den veien» — mens stedets kartnål var like
- * liten som temaenes ikoner og derfor ikke sa at brikken var startpunktet
- * (Andreas: «jeg ønsker å få et større visuelt skille på at beliggenhet er
- * startpunktet»). Chevronen er nå 17 px, `stone-400`, med luft rundt seg; nålen
- * står i en sirkel som er 2 px større enn temaenes, med et tykkere strøk.
+ * Baren er én sammenhengende avrundet flate med faste ender, men den er delt i
+ * to: en fast venstredel og et rullende spor. Rullet hele baren, ville endene
+ * forsvunnet ut av syne og flaten sluttet å lese som én ting.
  *
- * Ikon-slotten har derfor FAST høyde for alle brikkene. Uten den ville stedets
- * større sirkel dyttet sin egen etikett to piksler ned, og raden ville hatt to
- * grunnlinjer for teksten.
+ * Venstredelen er utgangen. Den het «Beliggenhet» og lå først i sporet, altså
+ * inne i det som ruller — og da kunne den rulle ut av syne. Det gikk så lenge
+ * kategoriene også lå som faner i toppen, men etter at rutenettet overtok
+ * inngangen er brikken den ENESTE veien tilbake, og en eneste vei ut kan ikke
+ * ligge bak en horisontal scroll (Andreas, 2026-09-05: «på en desktop mus …
+ * så da må den ligge sticky left og alltid være tilgjengelig, så resten av
+ * kategoriene slides horisontalt under den»). En Magic Mouse sveiper sidelengs
+ * like lett som en telefon; en vanlig mus gjør det ikke.
+ *
+ * Den heter derfor det den GJØR. «Beliggenhet» beskrev stedet du kom fra, og
+ * var riktig da brikken var første stopp i en rekkefølge. Som fast utgang er
+ * den en tilbakeknapp, og bærer pil og ord deretter.
  *
  * ## De to variantene
  *
@@ -48,89 +48,124 @@ import { AREA_STEP, useStoryTour } from "./story-tour";
  * `flow` er DESKTOP: der er underkanten det punktet som er lengst unna både
  * blikket og pekeren, mens toppen er der en kolonne begynner. Raden sendes
  * derfor inn i `StoryCard`s festede hode (`head`) og står der sammen med
- * spørsmålet og svarformene — ett feste, og innholdet renner under den frostede
- * flaten. Den svømmer altså ikke selv: slør og skygge hører til hodet, og sporet
- * arver faneradens egen grå bunn. Ingen utgang ved siden av: på desktop ER
- * kolonnen omvisningen, så det finnes ikke noe å gå tilbake TIL.
+ * spørsmålet og svarformene — ett feste, og innholdet renner under hodets egen
+ * bunn. En lys grå, avrundet flate samler brikkene i én kategorivelger.
  */
 export function StoryRail({ variant }: { variant: "deck" | "flow" }) {
   const { stops, step, goto, onArea } = useStoryTour();
   const trackRef = useRef<HTMLDivElement | null>(null);
+  /* Første posisjonering er en PLASSERING, ikke en bevegelse. Se hooken under. */
+  const mountedRef = useRef(false);
+  /* Har sporet mer innhold utenfor hver kant? Styrer toningene — se `edgeMask`. */
+  const [edges, setEdges] = useState({ left: false, right: false });
+
+  const readEdges = useCallback(() => {
+    const track = trackRef.current;
+    if (!track) return;
+    const max = track.scrollWidth - track.clientWidth;
+    setEdges({
+      left: track.scrollLeft > 2,
+      right: track.scrollLeft < max - 2,
+    });
+  }, []);
 
   // Raden forskyver seg i takt med fortellingen: det aktive stoppet legges mot
   // venstre kant, men ikke helt inntil — 44 px igjen til det forrige navnet, så
   // raden viser at den har en bakside. Det er progresjonen, uttrykt som
   // bevegelse i stedet for som et tall.
-  useEffect(() => {
+  //
+  // MEN første gang raden monteres skal den ikke bevege seg i det hele tatt:
+  // der kommer den inn som svaret på et trykk i rutenettet, og en rad som
+  // ruller bortover i det den dukker opp leser som at noe river seg løs
+  // (Andreas, 2026-09-05: «jeg ser at tab-cat da scroller bortover raskt som en
+  // slags anchor effekt … det må skje før den vises»). Sporet har
+  // `scroll-behavior: smooth` i CSS, som gjelder tilordninger av `scrollLeft`
+  // også — den slås derfor av for akkurat den første. `useLayoutEffect` og ikke
+  // `useEffect`: plasseringen må være gjort FØR nettleseren tegner, ellers ser
+  // man ett bilde av raden i utgangsposisjon.
+  useLayoutEffect(() => {
     const track = trackRef.current;
     const btn = track?.querySelector<HTMLElement>('[aria-current="true"]');
-    if (!track || !btn) return;
-    const max = Math.max(0, track.scrollWidth - track.clientWidth);
-    track.scrollLeft = Math.min(Math.max(0, btn.offsetLeft - 44), max);
-  }, [step]);
+    if (!track) return;
+    if (btn) {
+      const max = Math.max(0, track.scrollWidth - track.clientWidth);
+      const left = Math.min(Math.max(0, btn.offsetLeft - 44), max);
+      if (mountedRef.current) {
+        track.scrollLeft = left;
+      } else {
+        mountedRef.current = true;
+        const smooth = track.style.scrollBehavior;
+        track.style.scrollBehavior = "auto";
+        track.scrollLeft = left;
+        track.style.scrollBehavior = smooth;
+      }
+    }
+    readEdges();
+  }, [step, readEdges]);
+
+  if (onArea) return null;
+
+  /**
+   * Toningene i sporets kanter, som en maske på innholdet i stedet for som en
+   * flate oppå det: baren er halvgjennomsiktig på mobil, og en gradient malt i
+   * barens «egen» farge ville ikke truffet den.
+   *
+   * Bare der det FAKTISK ligger mer: en tone i venstre kant mens sporet står
+   * ved starten sier at noe er gjemt der, og det er ikke sant.
+   */
+  const edgeMask = `linear-gradient(to right, ${
+    edges.left ? "transparent 0px" : "#000 0px"
+  }, #000 16px, #000 calc(100% - 18px), ${
+    edges.right ? "transparent 100%" : "#000 100%"
+  })`;
 
   return (
     <div
       className={cn(
         "relative flex items-stretch",
         variant === "deck" ? "px-3.5 pb-2 pt-1.5" : "shrink-0",
+        variant === "deck" ? "story-enter-first-up" : "story-enter-first",
       )}
     >
-      {/* Toninger i barens egne kanter: en brikke klippet midt i et ord leser
-          som en feil i stedet for som «det ligger mer den veien». De ligger på
-          dekket, ikke i sporet — et element som ruller med, toner ingenting. */}
-      {variant === "deck" && (
-        <>
-          <span
-            aria-hidden
-            className="pointer-events-none absolute bottom-2 left-3.5 top-1.5 z-[1] w-5 rounded-l-[22px] bg-gradient-to-r from-[rgba(252,251,250,0.92)] to-transparent"
-          />
-          <span
-            aria-hidden
-            className="pointer-events-none absolute bottom-2 right-3.5 top-1.5 z-[1] w-5 rounded-r-[22px] bg-gradient-to-l from-[rgba(252,251,250,0.92)] to-transparent"
-          />
-        </>
-      )}
-
       <div
-        ref={trackRef}
+        role="tablist"
+        aria-label="Stopp"
         className={cn(
-          "relative min-w-0 flex-1 overflow-x-auto overflow-y-hidden rounded-[22px]",
-          "[scrollbar-width:none] [&::-webkit-scrollbar]:hidden",
-          "[overscroll-behavior-x:contain] [scroll-behavior:smooth]",
+          "flex min-w-0 flex-1 items-stretch gap-0.5 rounded-[22px] p-1",
           variant === "deck"
             ? "bg-[rgba(252,251,250,0.72)] shadow-[inset_0_0_0_1px_rgba(28,25,23,0.07),0_6px_22px_rgba(28,25,23,0.13)] backdrop-blur-md [backdrop-filter:blur(12px)_saturate(1.7)]"
             : "bg-black/[0.045]",
         )}
       >
+        <RailChip
+          /* Ikke stedsnavnet, og ikke lenger stedet: brikken er utgangen, og
+             heter det den gjør. Se doccen over og AREA_RAIL_LABEL. */
+          label={AREA_RAIL_LABEL}
+          Icon={ArrowLeft}
+          /* Mørk og nøytral, ikke en syvende temafarge: brikken er ikke et
+             tema. Samme svarte sirkel «Hele nabolaget» hadde. */
+          color="#1c1917"
+          root
+          active={onArea}
+          onClick={() => goto(AREA_STEP)}
+        />
         <div
-          role="tablist"
-          aria-label="Stopp"
-          className="flex flex-nowrap items-stretch gap-0.5 p-1"
+          ref={trackRef}
+          role="presentation"
+          onScroll={readEdges}
+          style={{ maskImage: edgeMask, WebkitMaskImage: edgeMask }}
+          className={cn(
+            "relative flex min-w-0 flex-1 flex-nowrap items-stretch gap-0.5",
+            "overflow-x-auto overflow-y-hidden",
+            "[scrollbar-width:none] [&::-webkit-scrollbar]:hidden",
+            "[overscroll-behavior-x:contain] [scroll-behavior:smooth]",
+          )}
         >
-          <RailChip
-            /* Ikke stedsnavnet: det står som overskrift rett under. Se
-               AREA_RAIL_LABEL. */
-            label={AREA_RAIL_LABEL}
-            icon="MapPin"
-            /* Mørk og nøytral, ikke en syvende temafarge: brikken er stedet
-               temaene ligger i. Samme svarte sirkel «Hele nabolaget» hadde. */
-            color="#1c1917"
-            root
-            active={onArea}
-            onClick={() => goto(AREA_STEP)}
-          />
-          <span
-            aria-hidden
-            className="flex shrink-0 items-center px-1 text-stone-400"
-          >
-            <ChevronRight size={17} strokeWidth={2.5} />
-          </span>
           {stops.map((c, n) => (
             <RailChip
               key={c.id}
               label={c.label}
-              icon={c.icon}
+              Icon={getIcon(c.icon)}
               color={c.color}
               active={n === step}
               past={n < step}
@@ -143,11 +178,11 @@ export function StoryRail({ variant }: { variant: "deck" | "flow" }) {
   );
 }
 
-/** Én brikke i raden. Samme form for stedet og for temaene — det er FARGEN og
- *  plasseringen som sier at den første er noe annet, ikke et eget format. */
+/** Én brikke i raden. Samme form for utgangen og for temaene — det er FARGEN,
+ *  pilen og plasseringen som sier at den første er noe annet. */
 function RailChip({
   label,
-  icon,
+  Icon,
   color,
   active,
   past = false,
@@ -155,16 +190,15 @@ function RailChip({
   onClick,
 }: {
   label: string;
-  icon: string;
+  Icon: LucideIcon;
   color: string;
   active: boolean;
-  /** Passert i rekkefølgen — teksten mørkner litt. Området har ingen bakside. */
+  /** Passert i rekkefølgen — teksten mørkner litt. Utgangen har ingen bakside. */
   past?: boolean;
-  /** Stedet, ikke et tema: større nål og tykkere strøk. Se doccen over. */
+  /** Utgangen, ikke et tema: større sirkel og tykkere strøk. Se doccen over. */
   root?: boolean;
   onClick: () => void;
 }) {
-  const Icon = getIcon(icon);
   return (
     <button
       type="button"
@@ -189,8 +223,8 @@ function RailChip({
           teksten.
 
           Slotten er 22 px høy for ALLE brikkene, også de på 20: det er den som
-          holder etikettene på samme grunnlinje når stedets sirkel er større enn
-          temaenes. */}
+          holder etikettene på samme grunnlinje når utgangens sirkel er større
+          enn temaenes. */}
       <span
         aria-hidden
         className="flex h-[22px] shrink-0 items-center justify-center"
@@ -222,10 +256,17 @@ function RailChip({
  * så det ikke oppstår en synlig kant der uskarpheten begynner.
  */
 export function StoryDeck() {
+  const { onArea, leaving } = useStoryTour();
+  // Uten rad er dekket bare et slør over bunnen av sheeten — se `StoryRail`.
+  if (onArea) return null;
   return (
     <div
       data-testid="story-deck"
-      className="pointer-events-none fixed inset-x-0 bottom-0 z-40 lg:hidden"
+      className={cn(
+        "pointer-events-none fixed inset-x-0 bottom-0 z-40 lg:hidden",
+        /* På vei tilbake til området toner dekket ut sammen med innholdet. */
+        leaving && (leaving === "area" ? "story-leave-back" : "story-leave"),
+      )}
       style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
     >
       <div

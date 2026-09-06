@@ -3,6 +3,7 @@
 import { useEffect, useRef, type ReactNode } from "react";
 import {
   ArrowRight,
+  ChevronRight,
   MapPin,
   MessageCircleQuestion,
   Star,
@@ -29,9 +30,11 @@ import {
   DisclosurePanel,
 } from "../Disclosure";
 import { SIDEBAR_PROSE, SIDEBAR_SECTION_TITLE } from "../sidebar-style";
+import { PoiDetailBody, hasGoogleFacts, poiNarrativeText } from "../PoiDetail";
 import { findBoardPOI } from "../board-data";
 import { useViewportCategoryList } from "../neighbourhood/use-viewport-category-list";
 import { StoryTravelCell } from "./StoryTravelCell";
+import { StoryThemeGrid } from "./StoryThemeGrid";
 import { useStoryTour, type StoryPane } from "./story-tour";
 import {
   areaLabel,
@@ -39,7 +42,6 @@ import {
   areaSubline,
   storyBeat,
   storyMinutes,
-  storyNarrative,
   storyPickIdentity,
   storyPickTitle,
 } from "./story-model";
@@ -102,7 +104,8 @@ export function StoryCard({
   footer?: ReactNode;
 }) {
   const { data } = useBoard();
-  const { stop, onArea, pane, showPane, end, picks, stops } = useStoryTour();
+  const { stop, onArea, leaving, pane, showPane, end, picks, stops } =
+    useStoryTour();
   // Kategoriens steder slik KARTUTSNITTET avgrenser dem. Hentes her, ikke i
   // fanen: tallet i faneetiketten og lista i fanen må være samme sannhet.
   const list = useViewportCategoryList(stop);
@@ -140,10 +143,18 @@ export function StoryCard({
   return (
     <section
       data-testid="story-card"
-      className={cn("shrink-0", column ? "pb-4" : "pb-[84px]")}
+      /* Mobil: luft til dekket i underkanten — bare når dekket ER der. På
+         områdestoppet er raden borte, og 84 px tom bunn leste som et hull. */
+      className={cn(
+        "shrink-0",
+        column ? "pb-4" : onArea ? "pb-6" : "pb-[84px]",
+        /* Lagbyttet (område ↔ tema): innholdet toner ut FØR det nye kommer.
+           Se STORY_LAYER_LEAVE_MS i story-tour. */
+        leaving && (leaving === "area" ? "story-leave-back" : "story-leave"),
+      )}
     >
       {/* `contents` på mobil — se doccen over. */}
-      <div className="contents lg:sticky lg:top-0 lg:z-[4] lg:-mx-6 lg:block lg:bg-white/85 lg:px-6 lg:pb-2 lg:pt-3 lg:backdrop-blur-xl">
+      <div className="contents lg:sticky lg:top-0 lg:z-[4] lg:-mx-6 lg:block lg:bg-white lg:px-6 lg:pb-2 lg:pt-3">
         {/* Utgangen finnes bare på MOBIL. Der ligger indeksen (nabolagslista,
             boardets FAQ, inngangen) bak omvisningen, og krysset er veien
             tilbake til den — øverst til høyre, der en lukkeknapp alltid har
@@ -154,9 +165,11 @@ export function StoryCard({
             kolonnen ER omvisningen (2026-08-27). Den gamle indeksen med
             temakortene er borte, og stedet den representerte — nabolaget selv —
             ligger nå som første brikke i transporten. */}
-        {head ? (
-          <div className="mb-2.5">{head}</div>
-        ) : (
+        {/* Transporten står IKKE på områdestoppet (2026-09-05): der er du ikke
+            inne i rekkefølgen ennå, og temaene ligger som rutenett i innholdet
+            (`StoryThemeGrid`). Raden kommer inn når et tema er valgt. */}
+        {head && !onArea && <div className="mb-4">{head}</div>}
+        {!head && (
           <div className="sticky top-0 z-[3] flex h-0 justify-end">
             <button
               type="button"
@@ -174,10 +187,10 @@ export function StoryCard({
             teksten LØSER SEG OPP i headeren i stedet for å bli kuttet av en
             kant. `hidden lg:block` — på mobil er wrapperen `display: contents`
             og har ingen boks å ligge absolutt i. */}
-        {head && (
+        {head && !onArea && (
           <span
             aria-hidden
-            className="pointer-events-none absolute inset-x-0 top-full hidden h-6 bg-gradient-to-b from-white/95 to-transparent lg:block"
+            className="pointer-events-none absolute inset-x-0 top-full hidden h-6 bg-gradient-to-b from-white to-transparent lg:block"
           />
         )}
 
@@ -188,37 +201,56 @@ export function StoryCard({
             masken som skjuler innholdet som passerer under spørsmålet på mobil.
             På desktop passerer ingenting, og en hvit stripe i full tekstbredde
             leste som et utfylt skrivefelt i stedet for som en overskrift. */}
-        <h3 className="sticky top-0 z-[2] -mx-4 bg-white px-4 pb-2.5 pr-14 pt-1 text-[20px] font-bold leading-[1.2] tracking-[-0.02em] text-stone-900 lg:static lg:m-0 lg:bg-transparent lg:p-0 lg:pt-1">
-          {onArea ? areaLabel(data.home) : stop!.question || stop!.label}
-        </h3>
+        {/* `key` på laget: overskrift og faner monteres på nytt når området
+            byttes mot et tema (og animeres inn), men IKKE tema til tema — da
+            er det samme lag, og bare teksten skifter. På området er
+            overskriften det første som kommer; i temalaget kommer raden først
+            og overskriften i andre rekke. */}
+        <div
+          key={onArea ? "area" : "theme"}
+          className={cn(
+            "contents",
+            onArea ? "story-enter-back" : "story-enter-rest",
+          )}
+        >
+          <h3 className="sticky top-0 z-[2] -mx-4 bg-white px-4 pb-2.5 pr-14 pt-1 text-[20px] font-bold leading-[1.2] tracking-[-0.02em] text-stone-900 lg:static lg:m-0 lg:bg-transparent lg:p-0 lg:pt-1">
+            {onArea ? areaLabel(data.home) : stop!.question || stop!.label}
+          </h3>
 
-        {onArea ? (
-          <p
-            data-testid="story-area-subline"
-            className="text-[13px] font-medium tabular-nums text-stone-500"
-          >
-            {areaSubline(stops)}
-          </p>
-        ) : (
-          /* Segmentert kontroll: svar på samme spørsmål. Den valgte brikken
+          {onArea ? (
+            <p
+              data-testid="story-area-subline"
+              className="text-[13px] font-medium tabular-nums text-stone-500"
+            >
+              {areaSubline(stops)}
+            </p>
+          ) : (
+            /* Segmentert kontroll: svar på samme spørsmål. Den valgte brikken
              løftes med hvitt og skygge; det er den bevegelsen som viser at et
              trykk på et av snarveis-kortene i «Om området» gjorde noe. */
-          <div
-            role="tablist"
-            aria-label="Svarform"
-            className="flex gap-0.5 rounded-full bg-black/[0.045] p-[3px] lg:mt-4"
-          >
-            {tab("about", "Om området")}
-            {tab("places", `Steder (${visibleRows.length})`)}
-            {faqTab && tab("faq", `Spørsmål (${faqs.length})`)}
-          </div>
-        )}
+            <div
+              role="tablist"
+              aria-label="Svarform"
+              className="flex gap-0.5 rounded-full bg-black/[0.045] p-[3px] lg:mt-4"
+            >
+              {tab("about", "Om området")}
+              {tab("places", `Steder (${visibleRows.length})`)}
+              {faqTab && tab("faq", `Spørsmål (${faqs.length})`)}
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Fanene bytter enkelt: den inaktive tas ut av layouten. Flaten står
           stille gjennom hele omvisningen, så en fane som er høyere enn en annen
           gir bare mer å scrolle — ikke en flate som flytter seg. */}
-      <div className="pt-3">
+      <div
+        key={onArea ? "area" : "theme"}
+        className={cn(
+          "pt-3",
+          onArea ? "story-enter-back-rest" : "story-enter-rest",
+        )}
+      >
         {onArea ? (
           <AreaPane />
         ) : (
@@ -261,6 +293,10 @@ export function StoryCard({
  * spørsmål og svar.
  * Ingen stedsliste her: kartet ER lista på dette stoppet, og temaene under
  * bærer sine egne.
+ *
+ * Temaene står som rutenett MELLOM introen og svarene (2026-09-05): det er
+ * inngangen til omvisningen, og den skal leses som et valg — ikke som seks
+ * brikker i en rad ingen har introdusert. Se `StoryThemeGrid`.
  */
 function AreaPane() {
   const { data } = useBoard();
@@ -273,11 +309,12 @@ function AreaPane() {
           {p}
         </p>
       ))}
+      <StoryThemeGrid className="mt-5" />
       <div data-testid="story-area-faq">
         <StoryFaq
           entries={data.globalFaq ?? []}
           title="Spørsmål og svar"
-          className="mt-5"
+          className="mt-6"
         />
       </div>
     </>
@@ -571,11 +608,15 @@ function PlaceRow({
   category: BoardCategory;
   mark: "chip" | "star" | "dot";
 }) {
-  const { state } = useBoard();
-  const { isPlaceOpen, togglePlace, focusPoiId } = useStoryTour();
+  const { state, dispatch } = useBoard();
+  const { isPlaceOpen, togglePlace, showPlace, focusPoiId } = useStoryTour();
   const minutes = storyMinutes(poi, state.travelMode);
-  const narrative = storyNarrative(poi);
+  const narrative = poiNarrativeText(poi);
   const open = isPlaceOpen(String(poi.id));
+  /* Ankeret folder seg ikke ut her — det åpner sin egen side over kolonnen.
+     Se `StoryPoiPanel` for hvorfor grensen går ved «inneholder andre steder»
+     og ikke ved tekstmengde. */
+  const anchor = poi.isAnchor === true;
   const identity = mark === "chip" ? storyPickIdentity(poi, category) : null;
   const ChipIcon = identity ? getIcon(identity.icon) : null;
   const isTransport = !!(
@@ -587,8 +628,10 @@ function PlaceRow({
   // Hooket er null-trygt: uten POI pollens ingenting.
   const realtimeData = useRealtimeData(live && open ? poi.raw : null);
   // Sanntid er også noe å utfolde: en holdeplass uten redaksjonell tekst skal
-  // ha chevron, ellers finnes det ingen affordans for avgangene.
-  const expandable = !!narrative || live;
+  // ha chevron, ellers finnes det ingen affordans for avgangene. Google-faktaene
+  // teller på samme måte — vurdering, åpningstid, telefon og nettside er
+  // innhold vi HAR, og raden var lenge det ene stedet det ikke fantes.
+  const expandable = !anchor && (!!narrative || live || hasGoogleFacts(poi));
 
   // Raden KARTET peker på. Se `focusPoiId` i story-tour: den settes bare av et
   // pinnetrykk, og bare på én rad.
@@ -632,9 +675,21 @@ function PlaceRow({
         type="button"
         data-testid="story-row"
         data-poi={String(poi.id)}
-        onClick={() => togglePlace(poi)}
+        onClick={() => {
+          if (!anchor) {
+            togglePlace(poi);
+            return;
+          }
+          // To dispatcher i samme handler, i denne rekkefølgen: `showPlace`
+          // åpner punktet med `source: "story"` (som undertrykker utforsk), og
+          // OPEN_EXPLORE slår det på igjen. Rekkefølgen er hele poenget —
+          // motsatt vei ville laget blitt stengt i samme frame det åpnet.
+          showPlace(poi);
+          dispatch({ type: "OPEN_EXPLORE" });
+        }}
         aria-current={open}
         aria-expanded={expandable ? open : undefined}
+        aria-haspopup={anchor ? "dialog" : undefined}
         className={cn(
           DISCLOSURE_ROW,
           "items-center",
@@ -680,8 +735,17 @@ function PlaceRow({
           </span>
         )}
         {/* Chevron-plassen holdes av også når stedet mangler tekst, ellers står
-            «17 min» lenger til høyre enn «4 min» rett over. */}
-        {expandable ? (
+            «17 min» lenger til høyre enn «4 min» rett over. Ankeret får pil mot
+            HØYRE: en nedover-chevron lover en utfolding under raden, og det er
+            ikke det som skjer — du går et sted. */}
+        {anchor ? (
+          <ChevronRight
+            size={DISCLOSURE_CHEVRON_SIZE}
+            strokeWidth={2}
+            aria-hidden
+            className="shrink-0 text-stone-500"
+          />
+        ) : expandable ? (
           <DisclosureChevron open={open} />
         ) : (
           <span
@@ -692,20 +756,24 @@ function PlaceRow({
         )}
       </button>
 
-      {/* Stedets tekst åpner seg der raden står. Ingen modal, ingen ny flate —
-          det er hele poenget med modusen. Innrykket flukter med NAVNET:
-          26 = radens padding (14) + radens gap (12). */}
+      {/* Stedet åpner seg DER RADEN STÅR. Ingen modal, ingen ny flate — det er
+          hele poenget med modusen, og fra 2026-08-28 gjelder det hele stedet:
+          bildene, begge avsnittene, vurderingen, åpningstiden, telefonen og
+          nettsiden. Det lå i modalen bak «Utforsk» i kart-popupen, og kolonnen
+          — som ER lesestoffet — viste første setning og stoppet der.
+
+          Samme blokk som modalen og anker-siden rendrer (`PoiDetailBody`), så
+          en ny faktalinje havner alle tre stedene på én gang. Innrykket flukter
+          med NAVNET: 26 = radens padding (14) + radens gap (12). */}
       {expandable && (
         <DisclosurePanel open={open} testId="story-narrative">
           <div
             className="pb-3 pr-3.5"
             style={{ paddingLeft: MARK_WIDTH[mark] + 26 }}
           >
-            {narrative && (
-              <p className="text-[15px] leading-[1.6] text-stone-600">
-                {narrative}
-              </p>
-            )}
+            {/* Bildestripa blør bare mot HØYRE: venstrekanten er innrykket som
+                flukter med navnet, og den skal stå. */}
+            <PoiDetailBody poi={poi} galleryClassName="-mr-3.5 pr-3.5" />
             {live && (
               <div className={cn(narrative && "mt-2")}>
                 <POIRealtimeSection realtimeData={realtimeData} />

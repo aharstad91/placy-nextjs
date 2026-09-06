@@ -32,15 +32,21 @@ export function areaLabel(home: {
 }
 
 /**
- * Brikkens ord i raden — og bevisst IKKE stedsnavnet.
+ * Utgangsbrikkens ord i raden — og bevisst IKKE stedsnavnet.
  *
  * «Ranheim» sto i brikken og som overskrift rett under, to centimeter fra
- * hverandre. Brikken skal si hva DENNE inngangen er, og overskriften hvor du er:
- * de fem temaene ved siden av heter ikke stedet sitt heller. Ordet er
- * salgsoppgavens eget, det har samme lengde uansett adresse, og det leser som en
- * startside — der et stedsnavn leser som et sjette tema.
+ * hverandre. Brikken skal si hva den GJØR, og overskriften hvor du er: de fem
+ * temaene ved siden av heter ikke stedet sitt heller.
+ *
+ * Ordet var lenge «Beliggenhet», som var riktig så lenge brikken var første
+ * stopp i en rekkefølge: den beskrev stedet temaene ligger i. Etter at
+ * rutenettet (`StoryThemeGrid`) overtok inngangen, er brikken ikke lenger et
+ * stopp du kommer FRA — den er den eneste veien tilbake dit, festet til venstre
+ * i baren (2026-09-05). Da skal den hete det den er. «Tilbake» sier hva et
+ * trykk gjør, det er like sant på enhver adresse, og det leser som en utgang
+ * der et stedsnavn leser som et sjuende tema.
  */
-export const AREA_RAIL_LABEL = "Beliggenhet";
+export const AREA_RAIL_LABEL = "Tilbake";
 
 /**
  * Områdets undertittel: dekningen i tall, der kategori-stoppene har spørsmålet
@@ -173,16 +179,11 @@ export function storyBeat(
   return sentences.slice(0, maxSentences).join("").trim();
 }
 
-/** Stedets egne ord. Ingen tekst = ingen chevron; raden lover ikke noe tom. */
-export function storyNarrative(poi: BoardPOI): string {
-  const g = poi.raw.grounding;
-  return (
-    g?.curated?.narrative ??
-    g?.generated?.narrative ??
-    poi.raw.editorialHook ??
-    ""
-  );
-}
+/* Stedets tekst bor i `poiNarrativeText` (components/.../PoiDetail.tsx) og
+   IKKE her (2026-08-28). Den lokale varianten leste bare `editorialHook`, mens
+   modalen leste `body` (krok + lokal innsikt) — samme sted fortalte derfor to
+   ulike historier alt etter hvilken flate du sto i, og avsnitt to fantes bare i
+   modalen. Én kilde, tre flater. */
 
 /** Ikon og farge til stedets brikke. Kuratoren har gitt hvert utvalgt sted sin
  *  egen identitet (`poiVisualIdentity` i board-data); er stedet plukket av

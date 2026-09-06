@@ -24,6 +24,7 @@ import { SIDEBAR_SECTION_TITLE } from "../board/sidebar-style";
 import { StoryCard } from "../board/story/StoryCard";
 import { StoryRail } from "../board/story/StoryRail";
 import { AREA_STEP, useStoryTour } from "../board/story/story-tour";
+import { StoryPoiPanel } from "../board/story/StoryPoiPanel";
 import { EventFilterPanel } from "../board/event/EventFilterPanel";
 import type { EventBoardFilterResult } from "@/lib/event-board/useEventBoardFilter";
 import type { BoardCollectionApi } from "@/lib/event-board/use-board-collection";
@@ -143,16 +144,23 @@ export function StoryColumn({ noBrokers = false }: { noBrokers?: boolean }) {
   // kolonnens vanlige topp-padding festet hodet seg like langt ned — og i den
   // stripen så man innholdet gli forbi over det.
   return (
-    <div
-      data-testid="story-sidebar"
-      className="flex min-h-0 flex-1 flex-col overflow-y-auto px-6 pb-10 pt-0 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
-    >
-      <StoryCard
-        variant="column"
-        head={<StoryRail variant="flow" />}
-        footer={!noBrokers ? <MeglerFooterCard /> : undefined}
-      />
-    </div>
+    <>
+      <div
+        data-testid="story-sidebar"
+        className="flex min-h-0 flex-1 flex-col overflow-y-auto px-6 pb-10 pt-0 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+      >
+        <StoryCard
+          variant="column"
+          head={<StoryRail variant="flow" />}
+          footer={!noBrokers ? <MeglerFooterCard /> : undefined}
+        />
+      </div>
+      {/* Stedets egen side, som et lag OVER omvisningen. Ligger her og ikke
+          inne i scroll-boksen: den skal dekke hele kolonnen (også logoen) og
+          ikke rulle med innholdet bak seg. `<aside>` under er `relative`, så
+          `inset-0` treffer panelets egen boks. */}
+      <StoryPoiPanel />
+    </>
   );
 }
 
@@ -364,12 +372,21 @@ export function DesktopStorySidebar({
       className={cn(
         // Flytende panel, ikke en vegg: kartet ligger i full bredde under og
         // fortsetter bak panelet og ut i luften rundt det. Derfor radius og ring
-        // i stedet for en kant mot kartet, og derfor en flate som slipper litt
-        // av kartet gjennom — `backdrop-blur` holder teksten lesbar mens
-        // satellittbildet beveger seg bak den.
+        // i stedet for en kant mot kartet.
+        //
+        // I OMVISNINGEN er flaten helt tett (2026-09-06). Den slapp lenge 7 % av
+        // kartet gjennom, og det var pent — men det festede hodet må ha en egen
+        // bunn (ellers scroller teksten rett gjennom overskriften), og to
+        // halvgjennomsiktige lag oppå hverandre kan aldri bli samme farge som
+        // ett. Resultatet var et lysere bånd i toppen av panelet (Andreas: «det
+        // er to shades her … begge disse kan fjernes slik at de har lik
+        // bakgrunnsfarge som resten av sidebar»). Med en tett flate er hodets
+        // farge og panelets farge den SAMME verdien, og båndet finnes ikke.
+        // Beige-varianten (uten omvisning) har ikke noe festet hode, og beholder
+        // gjennomskinnet.
         "relative z-20 flex h-full shrink-0 flex-col overflow-hidden rounded-[26px]",
-        "ring-1 ring-black/5 shadow-[0_18px_50px_-12px_rgba(28,25,23,0.35)] backdrop-blur-xl",
-        showStoryColumn ? "bg-white/[0.93]" : "bg-[#f2e9dc]/[0.94]",
+        "ring-1 ring-black/5 shadow-[0_18px_50px_-12px_rgba(28,25,23,0.35)]",
+        showStoryColumn ? "bg-white" : "bg-[#f2e9dc]/[0.94] backdrop-blur-xl",
       )}
     >
       {/* Header — logo (→ velkomst) + tittel. Ingen divider; ren look som skisse.

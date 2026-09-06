@@ -13,6 +13,21 @@ export const DOT_BREAKPOINT = 13;
 export const LABEL_BREAKPOINT = 16;
 
 /**
+ * Egen terskel for rekkevidde-konturenes etiketter («5 min»).
+ *
+ * `LABEL_BREAKPOINT` (16) kan IKKE gjenbrukes: ved zoom 16 er synsfeltet
+ * smalere enn diameteren på 10- og 15-minutt-gangkonturene, så etikettene
+ * ville vært skjult i nøyaktig den zoomen konturene leses i. Boardet åpner på
+ * 13,5, og terskelen ligger under den så etikettene er synlige fra start og
+ * forsvinner først når leseren zoomer ut forbi der de kolliderer.
+ */
+export const CONTOUR_LABEL_BREAKPOINT = 12.5;
+
+export function contourLabelsVisible(zoom: number): boolean {
+  return zoom >= CONTOUR_LABEL_BREAKPOINT;
+}
+
+/**
  * Mens vi kalibrerer logges hver tier-overgang. Settes false når terskler er
  * låst (jf. plan Unit 4 verification).
  */
@@ -85,4 +100,44 @@ export function useBoardZoomTier(
   }, [mapLoaded, mapRef]);
 
   return tier;
+}
+
+/**
+ * Er konturenes etiketter synlige ved gjeldende zoom? Samme lytter-mønster som
+ * `useBoardZoomTier` — egen hook fordi terskelen er en annen, og fordi et
+ * board uten konturer ikke skal betale for en tier-beregning det ikke bruker.
+ */
+export function useContourLabelsVisible(
+  mapRef: React.RefObject<MapRef | null>,
+  mapLoaded: boolean,
+): boolean {
+  const [visible, setVisible] = useState<boolean>(() => {
+    const z = mapRef.current?.getMap?.().getZoom();
+    return z != null ? contourLabelsVisible(z) : true;
+  });
+
+  const lastRef = useRef(visible);
+  lastRef.current = visible;
+
+  useEffect(() => {
+    if (!mapLoaded) return;
+    const map = mapRef.current?.getMap?.();
+    if (!map) return;
+
+    const update = () => {
+      const next = contourLabelsVisible(map.getZoom());
+      if (next !== lastRef.current) {
+        lastRef.current = next;
+        setVisible(next);
+      }
+    };
+
+    update();
+    map.on("zoom", update);
+    return () => {
+      map.off("zoom", update);
+    };
+  }, [mapLoaded, mapRef]);
+
+  return visible;
 }

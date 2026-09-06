@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from "vitest";
-import { render } from "@testing-library/react";
+import { render, fireEvent } from "@testing-library/react";
 import { BoardMapControls } from "./BoardMapControls";
 
 const baseProps = {
@@ -143,5 +143,132 @@ describe("BoardMapControls — kart-veksleren (Kart | Satelitt | 3D)", () => {
     expect(queryByLabelText("2D-kart")).toBeNull();
     expect(queryByLabelText("Satellitt ovenfra")).toBeNull();
     expect(queryByLabelText("3D-kart")).toBeNull();
+  });
+});
+
+describe("BoardMapControls — rekkevidde-konturer", () => {
+  it("knappen finnes ikke uten konturer i dataene (AE3)", () => {
+    const { queryByLabelText } = render(
+      <BoardMapControls {...baseProps} onContoursToggle={vi.fn()} />,
+    );
+    expect(queryByLabelText("Vis rekkevidde-konturer")).toBeNull();
+  });
+
+  it("knappen finnes når minst én reisemåte har konturer", () => {
+    const { getByLabelText } = render(
+      <BoardMapControls {...baseProps} showContourToggle onContoursToggle={vi.fn()} />,
+    );
+    expect(getByLabelText("Vis rekkevidde-konturer")).toBeTruthy();
+  });
+
+  it("melder av/på-tilstanden som aria-pressed og kaller handlingen ved klikk", () => {
+    const onContoursToggle = vi.fn();
+    const { getByLabelText, rerender } = render(
+      <BoardMapControls {...baseProps} showContourToggle onContoursToggle={onContoursToggle} />,
+    );
+    const button = getByLabelText("Vis rekkevidde-konturer");
+    expect(button.getAttribute("aria-pressed")).toBe("false");
+    fireEvent.click(button);
+    expect(onContoursToggle).toHaveBeenCalledTimes(1);
+
+    rerender(
+      <BoardMapControls
+        {...baseProps}
+        showContourToggle
+        contoursOn
+        onContoursToggle={onContoursToggle}
+      />,
+    );
+    expect(getByLabelText("Vis rekkevidde-konturer").getAttribute("aria-pressed")).toBe("true");
+  });
+
+  it("står SIST i pillen, etter kartvisningen", () => {
+    const { container } = render(
+      <BoardMapControls
+        {...baseProps}
+        showViewToggle
+        showContourToggle
+        onContoursToggle={vi.fn()}
+      />,
+    );
+    const labels = Array.from(container.querySelectorAll("button")).map((b) =>
+      b.getAttribute("aria-label"),
+    );
+    expect(labels.indexOf("Vis rekkevidde-konturer")).toBe(labels.length - 1);
+    expect(labels.indexOf("3D-kart")).toBeLessThan(labels.indexOf("Vis rekkevidde-konturer"));
+  });
+
+  it("AE10: på et board uten 3D-tillegg vises knappen, men ikke motorvalget", () => {
+    const { getByLabelText, queryByLabelText } = render(
+      <BoardMapControls
+        {...baseProps}
+        view="2d"
+        showViewToggle={false}
+        showContourToggle
+        onContoursToggle={vi.fn()}
+      />,
+    );
+    expect(getByLabelText("Vis rekkevidde-konturer")).toBeTruthy();
+    expect(queryByLabelText("Satellitt ovenfra")).toBeNull();
+  });
+
+  it("konturknappen alene gir én pille uten ledende skilletegn", () => {
+    const { container } = render(
+      <BoardMapControls
+        {...baseProps}
+        view="2d"
+        showViewToggle={false}
+        showCameraMode={false}
+        showContourToggle
+        onContoursToggle={vi.fn()}
+      />,
+    );
+    // Ingen divider skal stå foran den når den er den eneste kontrollen.
+    expect(container.querySelectorAll("span.bg-stone-300\\/70")).toHaveLength(0);
+    expect(container.querySelectorAll("button")).toHaveLength(1);
+  });
+
+  it("skilletegn mellom reisemåte og konturknapp når motorvalget er borte", () => {
+    const { container } = render(
+      <BoardMapControls
+        {...baseProps}
+        view="2d"
+        showViewToggle={false}
+        showCameraMode={false}
+        travelModes={["walk", "bike"]}
+        travelMode="walk"
+        onTravelModeChange={vi.fn()}
+        showContourToggle
+        onContoursToggle={vi.fn()}
+      />,
+    );
+    expect(container.querySelectorAll("span.bg-stone-300\\/70")).toHaveLength(1);
+  });
+
+  it("er ikon-bare på mobil — teksten dyttet pillen ut over kanten", () => {
+    const { getByLabelText, rerender } = render(
+      <BoardMapControls {...baseProps} showContourToggle onContoursToggle={vi.fn()} compact />,
+    );
+    expect(getByLabelText("Vis rekkevidde-konturer").textContent).toBe("");
+
+    rerender(
+      <BoardMapControls {...baseProps} showContourToggle onContoursToggle={vi.fn()} />,
+    );
+    expect(getByLabelText("Vis rekkevidde-konturer").textContent).toContain("Rekkevidde");
+  });
+
+  it("kollapset (mobil) bærer knappen i popoveren", () => {
+    const { getByLabelText } = render(
+      <BoardMapControls
+        {...baseProps}
+        collapsed
+        compact
+        showContourToggle
+        onContoursToggle={vi.fn()}
+      />,
+    );
+    // Åpne ⚙-popoveren, så skal konturknappen være nåbar der.
+    fireEvent.click(getByLabelText("Kart-innstillinger"));
+    expect(getByLabelText("Vis rekkevidde-konturer")).toBeTruthy();
   });
 });

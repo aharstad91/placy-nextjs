@@ -89,6 +89,7 @@ const BASE_STATE: BoardState = {
   introPlaying: false,
   exploreOpen: false,
   travelMode: "walk",
+  showContours: false,
   exploreSuppressed: false,
 };
 

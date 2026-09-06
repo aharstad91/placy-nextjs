@@ -35,8 +35,10 @@ const h = vi.hoisted(() => {
       value: null as unknown,
       activeCategory: null as unknown,
       availableTravelModes: ["walk", "bike", "car"] as string[],
+      contourTravelModes: [] as string[],
     },
     tour: { phase: "idle" as string, currentTrack: null as unknown },
+    emit: vi.fn(),
     captured: {
       controls: [] as Record<string, unknown>[],
       board3d: [] as Record<string, unknown>[],
@@ -83,6 +85,7 @@ vi.mock("./board-state", () => ({
   useBoard: () => h.board.value,
   useActiveCategory: () => h.board.activeCategory,
   useAvailableTravelModes: () => h.board.availableTravelModes,
+  useContourTravelModes: () => h.board.contourTravelModes,
 }));
 vi.mock("@/lib/stores/audio-tour-store", () => ({
   useAudioTourPhase: () => h.tour.phase,
@@ -141,8 +144,14 @@ vi.mock("./board-route", () => ({
 }));
 vi.mock("./BoardPOILabel", () => ({ BoardPOILabel: () => null }));
 vi.mock("./BoardPOIMiniPopup", () => ({ BoardPOIMiniPopup: () => null }));
-vi.mock("./use-board-zoom-tier", () => ({ useBoardZoomTier: () => "icon" }));
+vi.mock("./use-board-zoom-tier", () => ({
+  useBoardZoomTier: () => "icon",
+  useContourLabelsVisible: () => true,
+}));
 vi.mock("./use-popup-mode", () => ({ useBoardPopupMode: () => "label" }));
+vi.mock("@/lib/instrumentation/engagement-scope", () => ({
+  useEngagement: () => ({ emit: h.emit }),
+}));
 
 import { BoardMap } from "./BoardMap";
 
@@ -180,7 +189,13 @@ function setBoard(
 ) {
   const data = makeData(dataOverrides);
   h.board.value = {
-    state: { phase: "default", activeCategoryId: null, activePOIId: null, ...stateOverrides },
+    state: {
+      phase: "default",
+      activeCategoryId: null,
+      activePOIId: null,
+      showContours: false,
+      ...stateOverrides,
+    },
     data,
     dispatch: vi.fn(),
     subFilter: { hiddenIds: new Set<string>() },
@@ -206,6 +221,7 @@ beforeEach(() => {
   h.mapbox.instance = makeMapInstance();
   h.tour.phase = "idle";
   h.tour.currentTrack = null;
+  h.emit.mockClear();
   window.history.replaceState({}, "", "/");
   setBoard();
 });
@@ -941,5 +957,33 @@ describe("markørsynlighet — markørklikk kaprer ikke kategorien (2026-08-13)"
       (marker.onClick as () => void)();
     });
     expect(dispatch).toHaveBeenCalledWith({ type: "OPEN_POI", id: "p-natur" });
+  });
+});
+
+describe("BoardMap — rekkevidde-konturer", () => {
+  it("viser knappen bare når en reisemåte har konturer", () => {
+    render(<BoardMap has3dAddon />);
+    expect(lastControls()!.showContourToggle).toBe(false);
+
+    h.board.contourTravelModes = ["walk"];
+    render(<BoardMap has3dAddon />);
+    expect(lastControls()!.showContourToggle).toBe(true);
+    h.board.contourTravelModes = [];
+  });
+
+  it("AE9: av/på sender ÉN hendelse med den NYE tilstanden", () => {
+    h.board.contourTravelModes = ["walk"];
+    render(<BoardMap has3dAddon />);
+    expect(lastControls()!.contoursOn).toBe(false);
+
+    act(() => {
+      (lastControls()!.onContoursToggle as () => void)();
+    });
+
+    expect(h.emit).toHaveBeenCalledTimes(1);
+    expect(h.emit).toHaveBeenCalledWith("isochrones_toggled", {
+      payload: { enabled: true },
+    });
+    h.board.contourTravelModes = [];
   });
 });

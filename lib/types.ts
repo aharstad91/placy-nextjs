@@ -2,6 +2,7 @@
 // Basert på placy-concept-spec.md
 
 import { z } from "zod";
+import { PolygonalGeometrySchema } from "@/lib/geo/geojson-schema";
 import type { LocalActivity } from "@/lib/knowledge/local-activities";
 
 // === Grunnleggende typer ===
@@ -430,6 +431,50 @@ export const ReportBoardFactsSchema = z.object({
 });
 
 export type ReportBoardFacts = z.infer<typeof ReportBoardFactsSchema>;
+
+// === Rekkevidde-konturer (isokroner) ===
+
+/**
+ * Minuttverdiene konturene finnes for. Nøkler i JSON, derfor strenger.
+ *
+ * 15 min er nabolagets grense til fots, og 15-minutters bilkontur dekker mer
+ * enn nok — 20/30 er bevisst ute (se plan-dokumentets Deferred).
+ */
+export const ISOCHRONE_MINUTES = ["5", "10", "15"] as const;
+export type IsochroneMinutes = (typeof ISOCHRONE_MINUTES)[number];
+
+const IsochroneContoursSchema = z.object({
+  "5": PolygonalGeometrySchema,
+  "10": PolygonalGeometrySchema,
+  "15": PolygonalGeometrySchema,
+});
+
+/**
+ * Konturene for ett prosjekt, hentet fra Mapbox Isochrone ved provisjonering
+ * og lest ved render. Ingen runtime-kall.
+ *
+ * `byMode` er bevisst delvis: et 429 på sykkel skal ikke hindre at gange og
+ * bil lagres, og boardet skal fortsatt vise av/på-knappen så lenge minst én
+ * profil finnes. Manglende profil = tomt kart for den reisemåten.
+ */
+export const IsochroneSetSchema = z.object({
+  /** Bumpes for å tvinge regenerering (samme spak som factsVersion). */
+  isochronesVersion: z.literal(1),
+  fetchedAt: z.string().min(1),
+  byMode: z
+    .object({
+      walk: IsochroneContoursSchema.optional(),
+      bike: IsochroneContoursSchema.optional(),
+      car: IsochroneContoursSchema.optional(),
+    })
+    .refine(
+      (byMode) => Object.values(byMode).some((v) => v !== undefined),
+      "Minst én reisemåte må ha konturer — et tomt sett skal ikke lagres"
+    ),
+});
+
+export type IsochroneSet = z.infer<typeof IsochroneSetSchema>;
+export type IsochroneContours = z.infer<typeof IsochroneContoursSchema>;
 export type BoardTripPattern = z.infer<typeof BoardTripPatternSchema>;
 export type BoardTransitStop = z.infer<typeof BoardTransitStopSchema>;
 export type BoardKretsSchool = z.infer<typeof BoardKretsSchoolSchema>;
@@ -762,6 +807,9 @@ export interface ReportConfig {
   /** Deterministiske fakta om adressen (transitt + skolekrets), hentet
    *  build-time. Kilden FAQ-svarene monteres fra ved render. */
   boardFacts?: ReportBoardFacts;
+  /** Rekkevidde-konturer (5/10/15 min per reisemåte), hentet build-time fra
+   *  Mapbox Isochrone. Mangler de, skjules visningsvalget på boardet. */
+  isochrones?: IsochroneSet;
   /** Strøkets kuraterte svar på boardets globale nabolags-FAQ — de som ikke
    *  hører til én kategori («hva kjennetegner området?»). Arvet fra den
    *  reserverte `global`-nøkkelen i `areas.report_editorial`. */

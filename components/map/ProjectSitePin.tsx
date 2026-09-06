@@ -61,6 +61,43 @@ interface ProjectSitePinProps {
    * ved å strekke en tekstur, så den er skarp på alle skalaer.
    */
   scale?: number;
+  /**
+   * Fargespråket chip-en tegnes i. `"board"` er dagens uttrykk (aksent-glød,
+   * aksent-ring): stedet har et levende board bak seg. `"muted"` er samme
+   * familie uten aktiveringen — brukt av porteføljekartet for prosjekter som
+   * ennå ikke har et board, der skillet mellom de to må være synlig (R4).
+   *
+   * Default `"board"`, så boardets egen prosjektmarkør er uendret.
+   */
+  tone?: "board" | "muted";
+  /**
+   * Markeringsring utenpå chip-en. Porteføljekartets tredje tilstand: valgt i
+   * lista eller klikket i kartet. Default false.
+   */
+  selected?: boolean;
+  /**
+   * Når false tegnes bare disc-en, uten navn og undertittel.
+   *
+   * Porteføljekartets oversiktsutsnitt spenner ~165 km, der prosjektene ligger
+   * få piksler fra hverandre. Chip-en har ingen kollisjonshåndtering (boardets
+   * decluttering gjelder bare POI-løkka), så navn på alle ville blitt ett
+   * uleselig tekstteppe. Lista bærer navnene; kartet viser navnet bare på den
+   * chip-en som er valgt eller hovret. Default true.
+   */
+  showName?: boolean;
+  /**
+   * Egen skala for teksten, når disc-en skal være liten men navnet lesbart.
+   * Default: samme som {@link scale}.
+   */
+  labelScale?: number;
+  /**
+   * Hover-melding. Settes på chip-ens EGEN rot, ikke på `DomMarker3D`-wrapperen:
+   * markør-elementet eksponerer bare `gmp-click`, så hover må komme fra
+   * light-DOM-innholdet. Undefined (boardets bruk) legger ingen handlere på.
+   */
+  onHoverChange?: (hovered: boolean) => void;
+  /** Peker-markør. Boardets prosjektpinne er bevisst ikke-interaktiv. */
+  clickable?: boolean;
 }
 
 const FONT = "system-ui,-apple-system,Helvetica Neue,sans-serif";
@@ -159,15 +196,26 @@ export function ProjectSitePin({
   subtitle = PROJECT_PIN_DEFAULT_SUBTITLE,
   imageSrc,
   scale = 1,
+  tone = "board",
+  selected = false,
+  showName = true,
+  labelScale,
+  onHoverChange,
+  clickable = false,
 }: ProjectSitePinProps) {
   const disc = DISC * scale;
   const ring = RING_W * scale;
   const glow = GLOW_W * scale;
+  const textScale = labelScale ?? scale;
+  const muted = tone === "muted";
 
   return (
     <div
       data-project-pin=""
+      onPointerEnter={onHoverChange ? () => onHoverChange(true) : undefined}
+      onPointerLeave={onHoverChange ? () => onHoverChange(false) : undefined}
       style={{
+        cursor: clickable ? "pointer" : undefined,
         position: "relative",
         // Boksen er kvadratisk og teksten ligger utenfor flyten — samme grep som
         // PoiMarkerContent, og av samme grunn: `anchorLeft: -50%` er prosent av
@@ -178,17 +226,35 @@ export function ProjectSitePin({
       }}
     >
       {/* Myk aksent-glød utenfor ringen — signalet om at dette er prosjektet,
-          uten å legge en flate oppå kartet. */}
-      <span
-        style={{
-          position: "absolute",
-          inset: -glow,
-          borderRadius: "50%",
-          border: `${glow}px solid ${ACCENT}`,
-          opacity: 0.22,
-          boxSizing: "border-box",
-        }}
-      />
+          uten å legge en flate oppå kartet. Det er nettopp denne gløden som
+          UTEBLIR i `muted`: et prosjekt uten board skal lese som samme familie,
+          men uten aktiveringen. */}
+      {!muted && (
+        <span
+          style={{
+            position: "absolute",
+            inset: -glow,
+            borderRadius: "50%",
+            border: `${glow}px solid ${ACCENT}`,
+            opacity: 0.22,
+            boxSizing: "border-box",
+          }}
+        />
+      )}
+      {/* Markeringsring — den valgte chip-ens tredje tilstand. Hvit kjerne med
+          mørk kant utenfor, så den leses mot både lys og mørk satellittflate. */}
+      {selected && (
+        <span
+          style={{
+            position: "absolute",
+            inset: -(glow + 3 * scale),
+            borderRadius: "50%",
+            border: `${Math.max(2, 2.5 * scale)}px solid ${HALO}`,
+            boxShadow: `0 0 0 ${Math.max(1, 1.5 * scale)}px ${TITLE}`,
+            boxSizing: "border-box",
+          }}
+        />
+      )}
       {/* Disc: thumbnail eller tintet flate med bygnings-glyph. Bildet legges som
           CSS background-image, ikke som <img> — ingen ekstra node, og ingen
           next/image-regel å bryte. Data-URI, så den er lastet ved paint. */}
@@ -198,7 +264,7 @@ export function ProjectSitePin({
           inset: 0,
           borderRadius: "50%",
           background: imageSrc ? `${ACCENT_TINT} center/cover url(${imageSrc})` : ACCENT_TINT,
-          border: `${ring}px solid ${ACCENT}`,
+          border: `${ring}px solid ${muted ? HALO : ACCENT}`,
           boxShadow: `0 ${1.5 * scale}px ${2 * scale}px rgba(15,29,68,0.35)`,
           boxSizing: "border-box",
           display: "flex",
@@ -206,69 +272,71 @@ export function ProjectSitePin({
           justifyContent: "center",
         }}
       >
-        {!imageSrc && <BuildingGlyph size={27 * scale} />}
+        {!imageSrc && <BuildingGlyph size={27 * scale} opacity={muted ? 0.5 : 1} />}
       </span>
 
       {/* Navn + undertittel. Haloen er fire-veis text-shadow der SVG-en tegnet
           to noder. Prosjektnavnet er den ENESTE teksten som overlever i
           film-capture, og lesbarheten mot satellittfoto kommer fra konturen. */}
-      <span
-        style={{
-          position: "absolute",
-          left: disc + GAP_X * scale,
-          top: "50%",
-          transform: "translateY(-50%)",
-          display: "flex",
-          flexDirection: "column",
-          gap: 1 * scale,
-          maxWidth: MAX_TEXT_W * scale,
-          pointerEvents: "none",
-        }}
-      >
+      {showName && (
         <span
           style={{
-            whiteSpace: "nowrap",
-            overflow: "hidden",
-            textOverflow: "ellipsis",
-            fontFamily: FONT,
-            fontSize: NAME_SIZE * scale,
-            fontWeight: 700,
-            lineHeight: 1.15,
-            color: TITLE,
-            textShadow: haloShadow(HALO_W * scale),
+            position: "absolute",
+            left: disc + GAP_X * scale,
+            top: "50%",
+            transform: "translateY(-50%)",
+            display: "flex",
+            flexDirection: "column",
+            gap: 1 * textScale,
+            maxWidth: MAX_TEXT_W * textScale,
+            pointerEvents: "none",
           }}
         >
-          {name}
-        </span>
-        {subtitle && (
           <span
             style={{
-              display: "flex",
-              alignItems: "center",
-              gap: 4 * scale,
               whiteSpace: "nowrap",
+              overflow: "hidden",
+              textOverflow: "ellipsis",
               fontFamily: FONT,
-              fontSize: SUB_SIZE * scale,
-              fontWeight: 600,
+              fontSize: NAME_SIZE * textScale,
+              fontWeight: 700,
               lineHeight: 1.15,
-              color: ACCENT,
-              textShadow: haloShadow(HALO_W * scale),
+              color: TITLE,
+              textShadow: haloShadow(HALO_W * textScale),
             }}
           >
+            {name}
+          </span>
+          {subtitle && (
             <span
               style={{
-                width: 6 * scale,
-                height: 6 * scale,
-                borderRadius: "50%",
-                background: ACCENT,
-                flex: "0 0 auto",
-                boxShadow: `0 0 0 ${1.5 * scale}px rgba(255,255,255,0.95)`,
+                display: "flex",
+                alignItems: "center",
+                gap: 4 * textScale,
+                whiteSpace: "nowrap",
+                fontFamily: FONT,
+                fontSize: SUB_SIZE * textScale,
+                fontWeight: 600,
+                lineHeight: 1.15,
+                color: ACCENT,
+                textShadow: haloShadow(HALO_W * textScale),
               }}
-            />
-            {subtitle}
-          </span>
-        )}
-      </span>
+            >
+              <span
+                style={{
+                  width: 6 * textScale,
+                  height: 6 * textScale,
+                  borderRadius: "50%",
+                  background: ACCENT,
+                  flex: "0 0 auto",
+                  boxShadow: `0 0 0 ${1.5 * textScale}px rgba(255,255,255,0.95)`,
+                }}
+              />
+              {subtitle}
+            </span>
+          )}
+        </span>
+      )}
     </div>
   );
 }
@@ -286,7 +354,7 @@ function haloShadow(w: number): string {
 
 /** Building2 (Lucide) i aksentfargen. Beholdt som SVG — det er TEKSTEN som
  *  trengte DOM, ikke ikonet. */
-function BuildingGlyph({ size }: { size: number }) {
+function BuildingGlyph({ size, opacity = 1 }: { size: number; opacity?: number }) {
   return (
     <svg
       width={size}
@@ -294,6 +362,7 @@ function BuildingGlyph({ size }: { size: number }) {
       viewBox="0 0 18 18"
       xmlns="http://www.w3.org/2000/svg"
       aria-hidden="true"
+      opacity={opacity === 1 ? undefined : opacity}
     >
       <rect x="3" y="3" width="12" height="15" rx="1" fill="none" stroke={ACCENT} strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
       <rect x="7" y="10" width="4" height="8" rx="0.5" fill={ACCENT} />
