@@ -67,6 +67,9 @@ function enturPoi(id: string): DiscoveredPOI {
   };
 }
 
+/** PostgREST' `db-max-rows` hos Supabase. Mocken håndhever det som serveren. */
+const SERVER_MAX_ROWS = 1_000;
+
 /** Thenable chain-mock: alle filter-metoder returnerer seg selv, await gir {data, error}. */
 function chainResult(
   data: unknown,
@@ -74,14 +77,33 @@ function chainResult(
   filters?: Array<[string, string, unknown]>
 ) {
   const chain: Record<string, unknown> = {};
-  for (const m of ["gte", "lte", "eq", "in", "select"]) {
+  for (const m of ["gte", "lte", "eq", "in", "select", "order"]) {
     chain[m] = (col?: string, val?: unknown) => {
-      if (filters && col !== undefined) filters.push([m, col, val]);
+      if (filters && col !== undefined && m !== "order") filters.push([m, col, val]);
       return chain;
     };
   }
+  // Paginering: vinduet må gi tomt utsnitt forbi siste rad — det er
+  // stoppsignalet `fetchAllRows` venter på.
+  chain.range = (from: number, to: number) => ({
+    then: (resolve: (v: unknown) => unknown) =>
+      Promise.resolve(
+        error
+          ? { data: null, error }
+          : { data: (data as unknown[]).slice(from, to + 1), error: null }
+      ).then(resolve),
+  });
+  // Uten `.range()` kapper PostgREST svaret på `db-max-rows` — 200 OK, færre
+  // rader, ingen feil. Mocken må gjøre det samme, ellers kan ingen test feile
+  // på en manglende paginering.
   chain.then = (resolve: (v: unknown) => unknown) =>
-    Promise.resolve({ data, error }).then(resolve);
+    Promise.resolve({
+      data:
+        !error && Array.isArray(data) && data.length > SERVER_MAX_ROWS
+          ? data.slice(0, SERVER_MAX_ROWS)
+          : data,
+      error,
+    }).then(resolve);
   return chain;
 }
 
@@ -210,6 +232,41 @@ describe("importPOIsToProject", () => {
 
     const payload = vi.mocked(upsertPOIsWithEditorialPreservation).mock
       .calls[0][0] as Array<{ id: string }>;
+    expect(payload.map((p) => p.id)).toEqual(["legacy-uuid-1"]);
+    expect(stats.updated).toBe(1);
+    expect(stats.new).toBe(0);
+  });
+
+  it("finner eksisterende POI-er bak rad 1 000 — dedupen leser hele boksen", async () => {
+    // Wesselsløkkas dedup-boks inneholder 3 202 POI-er (målt 2026-09-06), og
+    // PostgREST kapper svaret på 1 000 uten å si fra. Lå raden vi skulle
+    // gjenkjenne bak taket, ble stedet behandlet som NYTT: insert-veien skriver
+    // `trust_score: null` over en score vi har regnet ut, og lager en dublett
+    // når den eksisterende raden har en id fra en annen kilde. Her ligger
+    // treffet på plass 2 500 nettopp for at en kappet lesing skal bomme.
+    const støy = Array.from({ length: 2_500 }, (_, i) => ({
+      id: `annen-${i}`,
+      google_place_id: `støy-${i}`,
+      entur_stopplace_id: null,
+      bysykkel_station_id: null,
+    }));
+    const treff = {
+      id: "legacy-uuid-1",
+      google_place_id: "g1",
+      entur_stopplace_id: null,
+      bysykkel_station_id: null,
+    };
+
+    vi.mocked(discoverGooglePlaces).mockResolvedValue([googlePoi("g1")]);
+    const { mock } = buildSupabase({ existing: [...støy, treff] });
+    vi.mocked(createServerClient).mockReturnValue(
+      mock as unknown as ReturnType<typeof createServerClient>
+    );
+
+    const stats = await importPOIsToProject(BASE_OPTIONS);
+
+    const payload = vi.mocked(upsertPOIsWithEditorialPreservation).mock
+      .calls[0][0] as Array<{ id: string; trust_score: number | null }>;
     expect(payload.map((p) => p.id)).toEqual(["legacy-uuid-1"]);
     expect(stats.updated).toBe(1);
     expect(stats.new).toBe(0);

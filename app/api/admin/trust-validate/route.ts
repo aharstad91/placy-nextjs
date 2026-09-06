@@ -21,6 +21,7 @@ import {
 import { updatePOITrustScore } from "@/lib/supabase/mutations";
 import type { POI } from "@/lib/types";
 import { requireAdminApi } from "@/lib/admin/require-admin";
+import { fetchAllRows } from "@/lib/supabase/fetch-all-rows";
 
 const MAX_POIS_PER_REQUEST = 100;
 
@@ -114,14 +115,20 @@ export async function POST(request: NextRequest) {
 
   try {
     // 3. Fetch POIs for this project
-    const { data: projectPois, error: fetchError } = await supabase
-      .from("project_pois")
-      .select("poi_id")
-      .eq("project_id", body.projectId);
+    // PAGINERT: POI-er som ikke leses blir aldri validert og beholder
+    // `trust_score: null`, som lesestien tolker som «vis».
+    const { rows: projectPois, error: fetchError } = await fetchAllRows((from, to) =>
+      supabase
+        .from("project_pois")
+        .select("poi_id")
+        .eq("project_id", body.projectId)
+        .order("poi_id")
+        .range(from, to)
+    );
 
     if (fetchError) {
       return NextResponse.json(
-        { error: `Kunne ikke hente POIs: ${fetchError.message}` },
+        { error: `Kunne ikke hente POIs: ${fetchError}` },
         { status: 500 }
       );
     }

@@ -17,6 +17,7 @@
 import "server-only";
 import { createServerClient } from "./client";
 import { chunkIds } from "./chunk-ids";
+import { fetchAllRows } from "./fetch-all-rows";
 import type { TablesV2 } from "./types";
 import type { DbCategory, DbPoi } from "./types";
 import type {
@@ -225,26 +226,46 @@ export async function getProductFromSupabaseV2(
   if (!product) return null;
 
   // 3. Prosjektets POI-pool + precomputede reisetider (071)
-  const { data: projectPois, error: ppError } = await db
-    .from("project_pois")
-    .select("poi_id, travel_times")
-    .eq("project_id", project.id);
+  //
+  // PAGINERT: PostgREST kapper svaret på 1 000 rader uten å si fra. Wesselsløkka
+  // har 1 615, og de 615 som falt utenfor mistet reisetiden sin — boardet svarte
+  // «nærmeste spisested: Burger King, 9 minutter» mens VYDA lå 4 minutter unna, i
+  // en rad som aldri ble lest. Sortert på `poi_id` fordi sideinndeling uten en
+  // total orden både kan hoppe over og duplisere rader. Se `fetch-all-rows.ts`.
+  const { rows: projectPois, error: ppError } = await fetchAllRows((from, to) =>
+    db
+      .from("project_pois")
+      .select("poi_id, travel_times")
+      .eq("project_id", project.id)
+      .order("poi_id")
+      .range(from, to)
+  );
   if (ppError) {
-    console.error("[v2-queries] project_pois-oppslag feilet:", ppError.message);
+    console.error("[v2-queries] project_pois-oppslag feilet:", ppError);
     return null;
   }
   const travelByPoiId = new Map(
-    (projectPois ?? []).map((pp) => [pp.poi_id, parseTravelTimes(pp.travel_times)])
+    projectPois.map((pp) => [pp.poi_id, parseTravelTimes(pp.travel_times)])
   );
 
   // 4. Produktets POI-utvalg + featured (rekkefølge = sort_order)
-  const { data: productPois, error: prodPoisError } = await db
-    .from("product_pois")
-    .select("poi_id, featured, sort_order")
-    .eq("product_id", product.id)
-    .order("sort_order");
+  //
+  // Samme paginering, samme grunn: dette er selve UTVALGET, så et kappet svar
+  // fjerner steder fra boardet i stedet for bare å tømme et felt. Wesselsløkka
+  // ligger på 943 rader — 57 unna taket. `poi_id` som sekundærsortering gir en
+  // total orden når flere rader deler `sort_order`; visningsrekkefølgen er
+  // uendret, men den er nå den samme ved hver lesing.
+  const { rows: productPois, error: prodPoisError } = await fetchAllRows((from, to) =>
+    db
+      .from("product_pois")
+      .select("poi_id, featured, sort_order")
+      .eq("product_id", product.id)
+      .order("sort_order")
+      .order("poi_id")
+      .range(from, to)
+  );
   if (prodPoisError) {
-    console.error("[v2-queries] product_pois-oppslag feilet:", prodPoisError.message);
+    console.error("[v2-queries] product_pois-oppslag feilet:", prodPoisError);
     return null;
   }
   const orderedPoiIds = (productPois ?? []).map((pp) => pp.poi_id);

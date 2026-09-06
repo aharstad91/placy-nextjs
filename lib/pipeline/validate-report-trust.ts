@@ -23,6 +23,7 @@ import {
 } from "@/lib/google-places/trust-enrichment";
 import { batchValidateTrust } from "@/lib/utils/poi-trust";
 import { updatePOITrustScore } from "@/lib/supabase/mutations";
+import { fetchAllRows } from "@/lib/supabase/fetch-all-rows";
 
 const DEFAULT_CONCURRENCY = 10;
 
@@ -71,18 +72,25 @@ export async function validateReportTrust(options: {
 
   // 1. Hent prosjektets POIer (project_pois → pois). Fail-soft: feil her gir
   //    dagens oppførsel (alle null = vis) + warning, ikke abort.
-  const { data: projectPois, error: ppError } = await supabase
-    .from("project_pois")
-    .select("poi_id")
-    .eq("project_id", projectId);
+  // PAGINERT: POI-er som ikke leses blir aldri trust-validert, og står igjen
+  // med `trust_score: null`. Null betyr «vis» i lesestien, så et kappet svar
+  // slipper uvaliderte steder ut på boardet i stedet for å stoppe dem.
+  const { rows: projectPois, error: ppError } = await fetchAllRows((from, to) =>
+    supabase
+      .from("project_pois")
+      .select("poi_id")
+      .eq("project_id", projectId)
+      .order("poi_id")
+      .range(from, to)
+  );
 
   if (ppError) {
     result.warnings.push(
-      `⚠️  Henting av project_pois feilet: ${ppError.message} — trust-scoring hoppet over`
+      `⚠️  Henting av project_pois feilet: ${ppError} — trust-scoring hoppet over`
     );
     return result;
   }
-  if (!projectPois || projectPois.length === 0) {
+  if (projectPois.length === 0) {
     result.warnings.push("⚠️  Ingen POI-er koblet til prosjektet — trust-scoring hoppet over");
     return result;
   }

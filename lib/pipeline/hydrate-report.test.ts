@@ -6,6 +6,7 @@ vi.mock("@/lib/supabase/client", () => ({
 
 import { createServerClient } from "@/lib/supabase/client";
 import { hydrateReport } from "./hydrate-report";
+import { pagedResult } from "@/lib/test-support/supabase-chain";
 
 const CENTER = { lat: 63.41, lng: 10.77 };
 
@@ -36,7 +37,7 @@ function buildMockSupabase(poiList = [NEAR_POI, FAR_POI]) {
       if (table === "project_pois") {
         return {
           select: vi.fn().mockReturnValue({
-            eq: vi.fn().mockResolvedValue({ data: projectPoisData, error: null }),
+            eq: vi.fn(() => pagedResult(projectPoisData)),
           }),
         };
       }
@@ -223,7 +224,7 @@ describe("hydrateReport — Unit 4", () => {
       if (table === "project_pois") {
         return {
           select: vi.fn().mockReturnValue({
-            eq: vi.fn().mockResolvedValue({ data: [], error: null }),
+            eq: vi.fn(() => pagedResult([])),
           }),
         };
       }
@@ -285,10 +286,9 @@ describe("hydrateReport — ankeret er fredet i dedupen", () => {
         if (table === "project_pois") {
           return {
             select: vi.fn().mockReturnValue({
-              eq: vi.fn().mockResolvedValue({
-                data: poiList.map((p) => ({ poi_id: (p as { id: string }).id })),
-                error: null,
-              }),
+              eq: vi.fn(() =>
+                pagedResult(poiList.map((p) => ({ poi_id: (p as { id: string }).id })))
+              ),
             }),
           };
         }

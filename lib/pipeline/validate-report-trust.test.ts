@@ -30,6 +30,7 @@ import { batchValidateTrust, type TrustFlag, type TrustResult } from "@/lib/util
 import { updatePOITrustScore } from "@/lib/supabase/mutations";
 import { validateReportTrust } from "./validate-report-trust";
 import type { POI } from "@/lib/types";
+import { pagedResult } from "@/lib/test-support/supabase-chain";
 
 const fetchPlaceDetailsMock = vi.mocked(fetchPlaceDetails);
 const batchValidateTrustMock = vi.mocked(batchValidateTrust);
@@ -65,10 +66,9 @@ function buildMockSupabase(opts: {
       if (table === "project_pois") {
         return {
           select: vi.fn(() => ({
-            eq: vi.fn().mockResolvedValue({
-              data: opts.projectPoisError ? null : opts.projectPois,
-              error: opts.projectPoisError ?? null,
-            }),
+            eq: vi.fn(() =>
+              pagedResult(opts.projectPois ?? [], opts.projectPoisError ?? null)
+            ),
           })),
         };
       }

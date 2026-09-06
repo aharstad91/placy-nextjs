@@ -41,6 +41,7 @@ import {
   selectSchools,
   type SchoolType,
 } from "@/lib/pipeline/zoned-school-selection";
+import { fetchAllRows } from "@/lib/supabase/fetch-all-rows";
 
 /**
  * Kategori-definisjonene denne modulen skriver POI-er med. MÅ seedes før
@@ -284,12 +285,19 @@ async function unlinkDuplicateSchools(
   selected: PoiInsert[],
   warnings: string[]
 ): Promise<void> {
-  const { data: links } = await supabase
-    .from("project_pois")
-    .select("poi_id, pois!inner(id, name, lat, lng, category_id, source)")
-    .eq("project_id", projectId);
+  // PAGINERT: lista under styrer hvilke skole-dubletter som SLETTES fra
+  // poolen. Et kappet svar planlegger opprydding ut fra en halv pool, så
+  // dubletten kan overleve — eller en beskyttet rad falle utenfor vurderingen.
+  const { rows: links } = await fetchAllRows((from, to) =>
+    supabase
+      .from("project_pois")
+      .select("poi_id, pois!inner(id, name, lat, lng, category_id, source)")
+      .eq("project_id", projectId)
+      .order("poi_id")
+      .range(from, to)
+  );
 
-  const pooled = (links ?? [])
+  const pooled = links
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     .map((r: any) => r.pois)
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -621,12 +629,19 @@ async function linkNaturPois(
   warnings: string[]
 ): Promise<number> {
   // Fjern gamle natur-lenker før re-linking (ren re-link, ingen etterlatte rader)
-  const { data: oldNaturLinks } = await supabase
-    .from("project_pois")
-    .select("poi_id, pois!inner(category_id)")
-    .eq("project_id", projectId);
+  // PAGINERT: dette er lista over lenker som skal FJERNES før re-linking.
+  // Leses bare 1 000 av 1 615, blir resten stående igjen som foreldede rader
+  // etter en operasjon som skulle vært en ren re-link.
+  const { rows: oldNaturLinks } = await fetchAllRows((from, to) =>
+    supabase
+      .from("project_pois")
+      .select("poi_id, pois!inner(category_id)")
+      .eq("project_id", projectId)
+      .order("poi_id")
+      .range(from, to)
+  );
 
-  const oldNaturIds = (oldNaturLinks ?? [])
+  const oldNaturIds = oldNaturLinks
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     .filter((r: any) => ["lekeplass", "badeplass", "park", "outdoor"].includes(r.pois?.category_id))
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -640,13 +655,21 @@ async function linkNaturPois(
       .in("poi_id", oldNaturIds);
   }
 
-  const { data: naturPois, error } = await supabase
-    .from("pois")
-    .select("id, lat, lng")
-    .in("category_id", ["lekeplass", "badeplass", "park", "outdoor"]);
+  // PAGINERT: denne har INGEN prosjektfilter — den leser natur-POI-er på tvers
+  // av hele basen, og tabellen vokser for hvert board vi provisjonerer. 549
+  // rader 2026-09-06, altså under taket i dag, men den passerer det uten at
+  // noe sier fra: resultatet blir bare færre natur-POI-er på nye boards.
+  const { rows: naturPois, error } = await fetchAllRows((from, to) =>
+    supabase
+      .from("pois")
+      .select("id, lat, lng")
+      .in("category_id", ["lekeplass", "badeplass", "park", "outdoor"])
+      .order("id")
+      .range(from, to)
+  );
 
   if (error) {
-    warnings.push(`Natur-POI-er: DB-feil — ${error.message}`);
+    warnings.push(`Natur-POI-er: DB-feil — ${error}`);
     return 0;
   }
 

@@ -3,6 +3,7 @@ import { createServerClient } from "@/lib/supabase/client";
 import { revalidatePath } from "next/cache";
 import { CategoriesAdminClient } from "./categories-admin-client";
 import { requireAdmin } from "@/lib/admin/require-admin";
+import { fetchAllRows } from "@/lib/supabase/fetch-all-rows";
 
 export const metadata = {
   title: "Kategorier | Placy Admin",
@@ -146,13 +147,15 @@ export default async function AdminCategoriesPage() {
   }
 
   // Get POI counts per category
-  const { data: poiCounts, error: countError } = await supabase
-    .schema("v2")
-    .from("pois")
-    .select("category_id");
+  // PAGINERT: teller over HELE pois-tabellen (6 498 rader 2026-09-06). Uten
+  // paginering viste denne siden tellinger basert på 1 000 av dem — tall som
+  // så riktige ut og var systematisk for lave.
+  const { rows: poiCounts, error: countError } = await fetchAllRows((from, to) =>
+    supabase.schema("v2").from("pois").select("category_id").order("id").range(from, to)
+  );
 
   if (countError) {
-    console.error("Kunne ikke hente POI-tellinger:", countError.message);
+    console.error("Kunne ikke hente POI-tellinger:", countError);
   }
 
   const countMap: Record<string, number> = {};

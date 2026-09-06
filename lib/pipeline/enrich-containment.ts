@@ -43,6 +43,7 @@ import {
 } from "@/lib/pipeline/poi-discovery";
 import { createServerClient } from "@/lib/supabase/client";
 import { chunkIds } from "@/lib/supabase/chunk-ids";
+import { fetchAllRows } from "@/lib/supabase/fetch-all-rows";
 
 /** Enkeltlenke-avstanden som binder POI-er til samme klynge. */
 export const CLUSTER_LINK_M = 250;
@@ -195,13 +196,20 @@ export async function enrichContainment(options: {
   }
   const db = baseClient.schema("v2") as unknown as typeof baseClient;
 
-  const { data: projectPois, error: ppError } = await db
-    .from("project_pois")
-    .select("poi_id")
-    .eq("project_id", options.projectId);
-  if (ppError || !projectPois?.length) {
+  // PAGINERT: containment-høstingen skriver `contained_in_ids` per POI, så en
+  // kappet pool gir ufullstendig medlemskap i anker-familiene — og et anker som
+  // mister medlemmer under terskelen forsvinner fra boardet.
+  const { rows: projectPois, error: ppError } = await fetchAllRows((from, to) =>
+    db
+      .from("project_pois")
+      .select("poi_id")
+      .eq("project_id", options.projectId)
+      .order("poi_id")
+      .range(from, to),
+  );
+  if (ppError || !projectPois.length) {
     result.warnings.push(
-      `⚠️  Kunne ikke lese project_pois (${ppError?.message ?? "tom"}) — containment-høsting hoppet over`,
+      `⚠️  Kunne ikke lese project_pois (${ppError ?? "tom"}) — containment-høsting hoppet over`,
     );
     return result;
   }
