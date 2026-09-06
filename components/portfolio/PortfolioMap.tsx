@@ -1,13 +1,15 @@
 "use client";
 
+import { useCallback, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { Marker } from "react-map-gl/mapbox";
-import { MapView3D } from "@/components/map/map-view-3d";
+import { MapView3D, type Map3DInstance } from "@/components/map/map-view-3d";
 import { MapView } from "@/components/map/map-view";
 import { ProjectSitePin } from "@/components/map/ProjectSitePin";
 import { useWebGLCheck } from "@/components/map/use-webgl-check";
 import type { PortfolioCamera } from "@/lib/portfolio/fit-camera";
 import type { ResolvedPortfolioProject } from "@/lib/portfolio/types";
+import { fitPortfolioCamera } from "@/lib/portfolio/fit-camera";
 import { buildPortfolioPins, selectMapEngine } from "./portfolio-pins";
 
 /**
@@ -45,6 +47,7 @@ export function PortfolioMap({
   onHover,
 }: PortfolioMapProps) {
   const router = useRouter();
+  const containerRef = useRef<HTMLDivElement>(null);
   const { isAvailable } = useWebGLCheck();
   const engine = selectMapEngine(isAvailable);
   const pins = buildPortfolioPins(projects, { selectedId, hoveredId });
@@ -57,6 +60,28 @@ export function PortfolioMap({
     const boardUrl = projects.find((p) => p.id === id)?.boardUrl;
     if (boardUrl) router.push(boardUrl);
   };
+
+  // Server-rangen er regnet mot en fast referanserute som er trangere enn de
+  // fleste ekte ruter, så alle pins garantert får plass. Når motoren er oppe vet
+  // vi hvor stor ruta FAKTISK er, og kan stramme utsnittet til nøyaktig den
+  // formen — ellers ligger porteføljen i midten av et halvtomt hav.
+  //
+  // Dette er en kamera-JUSTERING på en levende instans, ikke en ny `defaultRange`:
+  // den propen leses bare ved mount, så å reagere på målingen med en ny prop
+  // ville betydd remount av 3D-motoren. `gmp-map-3d` kan ikke frigi WebGL-
+  // konteksten sin, og en remount lekker derfor en av nettleserens ~16.
+  const handleMapReady = useCallback(
+    (map3d: Map3DInstance | null) => {
+      const box = containerRef.current?.getBoundingClientRect();
+      if (!map3d || !box || box.width < 1 || box.height < 1) return;
+      const fitted = fitPortfolioCamera(projects, {
+        width: box.width,
+        height: box.height,
+      });
+      if (fitted) map3d.range = fitted.range;
+    },
+    [projects],
+  );
 
   if (engine === "2d") {
     return (
@@ -93,15 +118,18 @@ export function PortfolioMap({
   }
 
   return (
-    <MapView3D
-      mapId="portefolje-kart"
-      center={camera.center}
-      cameraLock={{ range: camera.range, tilt: camera.tilt }}
-      freeMode
-      pois={[]}
-      projectSites={pins}
-      onProjectSiteClick={handleClick}
-      onProjectSiteHover={onHover}
-    />
+    <div ref={containerRef} className="h-full w-full">
+      <MapView3D
+        mapId="portefolje-kart"
+        center={camera.center}
+        cameraLock={{ range: camera.range, tilt: camera.tilt }}
+        freeMode
+        pois={[]}
+        projectSites={pins}
+        onProjectSiteClick={handleClick}
+        onProjectSiteHover={onHover}
+        onMapReady={handleMapReady}
+      />
+    </div>
   );
 }
