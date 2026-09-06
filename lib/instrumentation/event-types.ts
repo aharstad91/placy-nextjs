@@ -134,6 +134,9 @@ export interface EventPayloads {
   faq_opened: {
     faq_id: string;
     category_id?: string;
+    context?: EngagementContextEnvelope;
+  };
+  /**
    * Rekkevidde-konturene slått av eller på.
    *
    * `enabled` er den NYE tilstanden, ikke den forrige — et av-slag er også et

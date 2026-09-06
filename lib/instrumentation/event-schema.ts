@@ -119,6 +119,7 @@ const payloadByType = {
       category_id: categoryId.optional(),
       context: optionalContext,
     })
+    .strict(),
   isochrones_toggled: z
     .object({ enabled: z.boolean(), context: optionalContext })
     .strict(),
@@ -196,6 +197,8 @@ export const logEventSchema = z.discriminatedUnion("eventType", [
       projectId,
       productId,
       payload: payloadByType.faq_opened,
+    })
+    .strict(),
   // Payload er PÅKREVD: uten `enabled` kan et av-slag ikke skilles fra et
   // på-slag, og hendelsen er da verdiløs som bruks-signal.
   z
