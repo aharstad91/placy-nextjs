@@ -7,6 +7,14 @@ import { POIMarker } from "./poi-marker";
 import { RouteLayer } from "./route-layer";
 import { MAP_STYLE_DEFAULT } from "@/lib/themes/map-styles";
 
+/** Vestlig/sørlig og østlig/nordlig hjørne, samme form som Google 3D-bounds. */
+export interface MapViewBounds {
+  north: number;
+  south: number;
+  east: number;
+  west: number;
+}
+
 interface MapViewProps {
   center: Coordinates;
   pois: POI[];
@@ -17,6 +25,21 @@ interface MapViewProps {
   routeTravelTime?: number;
   routeTravelMode?: "walk" | "bike" | "car";
   className?: string;
+  /**
+   * Startutsnitt fra en bounding-boks i stedet for fast zoom 14.
+   *
+   * Reserven uten WebGL må åpne på SAMME utsnitt som 3D-motoren, og et
+   * porteføljekart spenner titalls mil — zoom 14 ville vist én bygård.
+   * Usatt (alle eksisterende kall) beholder dagens faste zoom.
+   */
+  bounds?: MapViewBounds;
+  /** Egne markører inne i kartet, f.eks. porteføljens prosjekt-chips. */
+  children?: React.ReactNode;
+  /**
+   * Når false tegnes ikke sentrum-markøren. Den er hardkodet til én adresse og
+   * hører ikke hjemme på et kart over en hel kjedes prosjekter. Default true.
+   */
+  showCenterMarker?: boolean;
 }
 
 export function MapView({
@@ -29,6 +52,9 @@ export function MapView({
   routeTravelTime,
   routeTravelMode,
   className = "",
+  bounds,
+  children,
+  showCenterMarker = true,
 }: MapViewProps) {
   const mapRef = useRef<MapRef>(null);
   const [mapLoaded, setMapLoaded] = useState(false);
@@ -71,11 +97,18 @@ export function MapView({
       <Map
         ref={mapRef}
         mapboxAccessToken={process.env.NEXT_PUBLIC_MAPBOX_TOKEN}
-        initialViewState={{
-          longitude: center.lng,
-          latitude: center.lat,
-          zoom: 14,
-        }}
+        initialViewState={
+          bounds
+            ? {
+                bounds: [bounds.west, bounds.south, bounds.east, bounds.north],
+                fitBoundsOptions: { padding: 48 },
+              }
+            : {
+                longitude: center.lng,
+                latitude: center.lat,
+                zoom: 14,
+              }
+        }
         style={{ width: "100%", height: "100%" }}
         mapStyle={MAP_STYLE_DEFAULT}
         onLoad={onLoad}
@@ -83,20 +116,22 @@ export function MapView({
       <NavigationControl position="top-right" />
 
       {/* Prosjekt-sentrum markør */}
-      <POIMarker
-        poi={{
-          id: "center",
-          name: "Ferjemannsveien 10",
-          coordinates: center,
-          category: {
+      {showCenterMarker && (
+        <POIMarker
+          poi={{
             id: "center",
-            name: "Sentrum",
-            icon: "MapPin",
-            color: "#0ea5e9",
-          },
-        }}
-        isCenter
-      />
+            name: "Ferjemannsveien 10",
+            coordinates: center,
+            category: {
+              id: "center",
+              name: "Sentrum",
+              icon: "MapPin",
+              color: "#0ea5e9",
+            },
+          }}
+          isCenter
+        />
+      )}
 
       {/* POI-markører */}
       {pois.map((poi) => (
@@ -116,6 +151,9 @@ export function MapView({
           travelMode={routeTravelMode}
         />
       )}
+
+      {/* Egne markører fra kallstedet (porteføljens prosjekt-chips). */}
+      {children}
       </Map>
     </div>
   );
