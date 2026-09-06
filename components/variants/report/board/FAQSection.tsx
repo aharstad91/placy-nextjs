@@ -148,6 +148,18 @@ export function FAQSection({
                     onSelectCategory={onSelectCategory}
                   />
                 </p>
+                {entry.knowledgeSources?.length ? (
+                  <div className="px-3.5 pb-3.5 text-xs leading-relaxed text-stone-500">
+                    {entry.knowledgeSources.map((source) => (
+                      <div key={source.id}>
+                        <a href={source.url} target="_blank" rel="noopener noreferrer" className="underline underline-offset-2">
+                          {source.name}
+                        </a>
+                        {" · Sjekket "}{new Date(source.verifiedAt).toLocaleDateString("nb-NO", { timeZone: "Europe/Oslo" })}
+                      </div>
+                    ))}
+                  </div>
+                ) : null}
               </DisclosurePanel>
             </div>
           );

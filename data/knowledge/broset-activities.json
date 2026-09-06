@@ -1,0 +1,39 @@
+{
+  "projectId": "broset-utvikling-as_wesselslokka",
+  "facts": [
+    {
+      "id": "broset-strindheim-allidrett",
+      "area_id": "broset",
+      "topic": "local_knowledge",
+      "fact_text": "Strindheim IL tilbyr allidrett for barn på Brøset. Arrangørens side beskriver sesongen september 2026 til april 2027, men inneholder også eldre sesongtekst. Alder, tid, pris og kapasitet gjengis derfor ikke i FAQ.",
+      "confidence": "verified",
+      "display_ready": true,
+      "source_name": "Strindheim IL – allidrett",
+      "source_url": "https://strindheimil.no/allidrett/",
+      "verified_at": "2026-09-06T00:00:00Z",
+      "structured_data": {
+        "kind": "local_activity", "version": 1,
+        "organizer": "Strindheim IL", "activity": "allidrett",
+        "domain": "sport", "audience": "children", "venue": "på Brøset",
+        "validUntil": "2026-12-01T00:00:00Z"
+      }
+    },
+    {
+      "id": "broset-aasvang-eberg-skolekorps",
+      "area_id": "broset",
+      "topic": "local_knowledge",
+      "fact_text": "Åsvang og Eberg Skolekorps oppgir Åsvang skole som øvingssted. Oppføringen er kuratert som et tilbud relevant for Brøset; area_id er ikke en påstand om at skolen ligger innenfor Brøset-polygonet.",
+      "confidence": "verified",
+      "display_ready": true,
+      "source_name": "Åsvang og Eberg Skolekorps – øvelser",
+      "source_url": "https://www.aasvang-eberg.portalweb.no/ovelser",
+      "verified_at": "2026-09-06T00:00:00Z",
+      "structured_data": {
+        "kind": "local_activity", "version": 1,
+        "organizer": "Åsvang og Eberg Skolekorps", "activity": "korps",
+        "domain": "culture", "audience": "children", "venue": "på Åsvang skole",
+        "validUntil": "2026-12-01T00:00:00Z"
+      }
+    }
+  ]
+}

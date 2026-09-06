@@ -29,6 +29,7 @@
  */
 
 import { isAnchorPOI } from "@/lib/board/anchor-poi";
+import { activityAnswer } from "@/lib/knowledge/local-activities";
 import {
   AREA_BOARD_QUESTIONS,
   faqQuestionsForTheme,
@@ -44,9 +45,10 @@ import { normalizeFullSchoolName } from "@/lib/pipeline/zoned-school-selection";
 import type { Coordinates, POI, ReportBoardFacts, ReportFaqAnswer } from "@/lib/types";
 
 /** Hvor svaret kom fra. Intern sporbarhet — rendres aldri. */
-export type FaqSource = "deterministic" | "curated";
+export type FaqSource = "deterministic" | "curated" | "knowledge";
 
 export interface FaqEntry {
+  knowledgeSources?: import("@/lib/knowledge/local-activities").KnowledgeSource[];
   /** Board-lag-spørsmålets id, eller kurators egen for tillegg. */
   id: string;
   question: string;
@@ -96,6 +98,7 @@ const BIKE_RADIUS_MIN = 15;
 const INNENDORS_RADIUS_MIN = 15;
 
 export interface FaqGeneratorInput {
+  localActivities?: readonly import("@/lib/knowledge/local-activities").LocalActivity[];
   themeId: string;
   /** Temaets `category_id`-liste — broen til malverket. */
   categoryIds: readonly string[];
@@ -1945,6 +1948,11 @@ export function generateCategoryFaq(rawInput: FaqGeneratorInput): FaqEntry[] {
         answer: kuratert.svar,
         source: "curated",
       });
+      continue;
+    }
+    const knowledge = activityAnswer(question.id, input.localActivities ?? []);
+    if (knowledge) {
+      entries.push({ id: question.id, question: question.spørsmål, source: "knowledge", ...knowledge });
       continue;
     }
     const svar = ANSWER_BUILDERS[question.id]?.(input);

@@ -2,6 +2,7 @@
 // Basert på placy-concept-spec.md
 
 import { z } from "zod";
+import type { LocalActivity } from "@/lib/knowledge/local-activities";
 
 // === Grunnleggende typer ===
 
@@ -745,6 +746,8 @@ export interface ProjectAssetFlags {
 }
 
 export interface ReportConfig {
+  /** Selected shared place_knowledge records; prose is assembled at render. */
+  localActivityIds?: string[];
   label?: string;
   heroIntro?: string;
   /** Bydel, eks. "Midtbyen". Subline i Nabolaget-seksjonen + splash. */
@@ -854,6 +857,8 @@ export interface ProjectTheme {
  * lib/supabase/v2-queries.ts (eneste datakilde etter cutover 2026-07-06).
  */
 export interface Project {
+  /** Server-resolved, source-backed activities selected by the board. */
+  localActivities?: LocalActivity[];
   id: string;
   name: string;
   customer: string;

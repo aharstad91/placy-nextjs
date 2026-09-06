@@ -709,6 +709,7 @@ export function transformToReportData(project: Project, locale: Locale = "no"): 
       grounding: parseGroundingOrLog(themeDef.grounding, project, themeDef.id),
       editorial: themeDef.editorial,
       faq: generateCategoryFaq({
+        localActivities: project.localActivities,
         themeId: themeDef.id,
         categoryIds: themeDef.categories,
         pois: filtered,

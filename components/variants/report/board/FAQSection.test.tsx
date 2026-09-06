@@ -33,6 +33,15 @@ function renderFaq(
 }
 
 describe("FAQSection", () => {
+  it("viser kilde og kontrollert dato for kunnskapsbaserte svar", () => {
+    renderFaq([entry({ id: "idrettslag", source: "knowledge", knowledgeSources: [{
+      id: "shared-fact", name: "Arrangøren", url: "https://example.com/aktivitet",
+      verifiedAt: "2026-09-06T00:00:00Z",
+    }] })]);
+    fireEvent.click(screen.getByTestId("faq-question"));
+    expect(screen.getByRole("link", { name: "Arrangøren" }).getAttribute("href")).toBe("https://example.com/aktivitet");
+    expect(screen.getByText(/Sjekket 6\.9\.2026/)).toBeTruthy();
+  });
   it("rendrer spørsmålene, og svarene er skjult til man trykker", () => {
     renderFaq([entry({ id: "krets" }), entry({ id: "linjer" })]);
     expect(screen.getAllByTestId("faq-question")).toHaveLength(2);

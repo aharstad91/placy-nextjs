@@ -15,6 +15,7 @@
  */
 
 import { unstable_cache } from "next/cache";
+import { gzipSync, gunzipSync } from "node:zlib";
 import { getProductAsync } from "@/lib/data-server";
 import {
   getProjectTranslations,
@@ -25,18 +26,24 @@ import type { Project } from "@/lib/types";
 
 const REVALIDATE_SECONDS = 3600;
 
-export function getCachedReportProduct(
+export async function getCachedReportProduct(
   customer: string,
   projectSlug: string,
 ): Promise<Project | null> {
-  return unstable_cache(
-    () => getProductAsync(customer, projectSlug, "report"),
-    ["report-product", customer, projectSlug],
+  // Full paginated boards exceed Next's 2 MB per-entry limit (Wesselsløkka:
+  // ~3 MB). Cache compressed JSON, restore the identical Project at the boundary.
+  const compressed = await unstable_cache(
+    async () => {
+      const project = await getProductAsync(customer, projectSlug, "report");
+      return project === null ? null : gzipSync(JSON.stringify(project)).toString("base64");
+    },
+    ["report-product-gzip-v1", customer, projectSlug],
     {
       tags: [`product:${customer}_${projectSlug}`],
       revalidate: REVALIDATE_SECONDS,
     },
   )();
+  return compressed === null ? null : JSON.parse(gunzipSync(Buffer.from(compressed, "base64")).toString("utf8")) as Project;
 }
 
 export function getCachedProjectTranslations(

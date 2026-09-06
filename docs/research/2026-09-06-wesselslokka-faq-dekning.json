@@ -1,0 +1,574 @@
+{
+  "date": "2026-09-06",
+  "baselineCommit": "c1240e6",
+  "scope": "Structural coverage, not external fact-checking of all answers",
+  "catalogQuestions": [
+    {
+      "id": "til-byen",
+      "question": "Hvordan kommer jeg meg til byen?",
+      "catalogClass": "S",
+      "before": "Vist",
+      "after": "Vist"
+    },
+    {
+      "id": "gangavstand",
+      "question": "Hva finnes innen ti minutters gange?",
+      "catalogClass": "S",
+      "before": "Vist",
+      "after": "Vist"
+    },
+    {
+      "id": "uten-bil",
+      "question": "Hvilke ærender kan jeg gjøre til fots?",
+      "catalogClass": "S",
+      "before": "Vist",
+      "after": "Vist"
+    },
+    {
+      "id": "rolig",
+      "question": "Ligger boligen i støysone fra vei?",
+      "catalogClass": "S+",
+      "before": "Kuratert svar mangler",
+      "after": "Kuratert svar mangler"
+    },
+    {
+      "id": "blir-det-bygget",
+      "question": "Er det nye reguleringsplaner i nærheten?",
+      "catalogClass": "S+",
+      "before": "Ikke registrert; bygger mangler",
+      "after": "Ikke registrert; bygger mangler"
+    },
+    {
+      "id": "tjenester-samme-sted",
+      "question": "Hvor kan jeg samle flere ærender på én tur?",
+      "catalogClass": "S",
+      "before": "Vist",
+      "after": "Vist"
+    },
+    {
+      "id": "hvem-bor-her",
+      "question": "Hvem bor i nabolaget?",
+      "catalogClass": "S+",
+      "before": "Ikke registrert; bygger mangler",
+      "after": "Ikke registrert; bygger mangler"
+    },
+    {
+      "id": "ferdig-ved-innflytting",
+      "question": "Hva er klart ved innflytting?",
+      "catalogClass": "K",
+      "before": "Ikke registrert; bygger mangler",
+      "after": "Ikke registrert; bygger mangler"
+    },
+    {
+      "id": "apent-sent",
+      "question": "Er noe åpent sent på kvelden?",
+      "catalogClass": "S+",
+      "before": "Vist",
+      "after": "Vist"
+    },
+    {
+      "id": "regnvaersdag",
+      "question": "Hva finnes innendørs i nærheten?",
+      "catalogClass": "S",
+      "before": "Vist",
+      "after": "Vist"
+    },
+    {
+      "id": "krets",
+      "question": "Hvilken skolekrets sogner boligen til?",
+      "catalogClass": "S",
+      "before": "Vist",
+      "after": "Vist"
+    },
+    {
+      "id": "skolevei",
+      "question": "Hvor lang er skoleveien til fots?",
+      "catalogClass": "S",
+      "before": "Vist",
+      "after": "Vist"
+    },
+    {
+      "id": "barnehage-dekning",
+      "question": "Hvor mange barnehager ligger i gangavstand?",
+      "catalogClass": "S",
+      "before": "Vist",
+      "after": "Vist"
+    },
+    {
+      "id": "barnehage-alder",
+      "question": "Tar barnehagene i nærheten imot ettåringer?",
+      "catalogClass": "S",
+      "before": "Ikke registrert; bygger mangler",
+      "after": "Ikke registrert; bygger mangler"
+    },
+    {
+      "id": "lekeplass",
+      "question": "Hvor er nærmeste lekeplass?",
+      "catalogClass": "S",
+      "before": "Vist",
+      "after": "Vist"
+    },
+    {
+      "id": "sfo",
+      "question": "Hvilket SFO-tilbud hører til barneskolen?",
+      "catalogClass": "S+",
+      "before": "Ikke registrert; bygger mangler",
+      "after": "Ikke registrert; bygger mangler"
+    },
+    {
+      "id": "oppvekst-fritid",
+      "question": "Hva kan barna gjøre etter skoletid?",
+      "catalogClass": "S",
+      "before": "Bygger finnes; fritidsklubb utelatt fra tema",
+      "after": "Nytt kildebelagt svar"
+    },
+    {
+      "id": "vgs-naerhet",
+      "question": "Hvilke videregående skoler kan jeg nå med buss?",
+      "catalogClass": "S",
+      "before": "Vist",
+      "after": "Vist"
+    },
+    {
+      "id": "skoleskyss",
+      "question": "Har barna rett på gratis skoleskyss?",
+      "catalogClass": "S+",
+      "before": "Vist",
+      "after": "Vist"
+    },
+    {
+      "id": "helsestasjon",
+      "question": "Hvor er nærmeste helsestasjon?",
+      "catalogClass": "S+",
+      "before": "Vist",
+      "after": "Vist"
+    },
+    {
+      "id": "hverdagshandel",
+      "question": "Hvor gjør jeg hverdagshandelen?",
+      "catalogClass": "S",
+      "before": "Vist",
+      "after": "Vist"
+    },
+    {
+      "id": "apotek",
+      "question": "Hvor er nærmeste apotek?",
+      "catalogClass": "S",
+      "before": "Vist",
+      "after": "Vist"
+    },
+    {
+      "id": "kjopesenter",
+      "question": "Hvor er nærmeste kjøpesenter?",
+      "catalogClass": "S",
+      "before": "Vist",
+      "after": "Vist"
+    },
+    {
+      "id": "legesenter",
+      "question": "Hvor er nærmeste legesenter?",
+      "catalogClass": "S",
+      "before": "Vist",
+      "after": "Vist"
+    },
+    {
+      "id": "pakker-post",
+      "question": "Hvor er nærmeste Post i butikk?",
+      "catalogClass": "S+",
+      "before": "Vist",
+      "after": "Vist"
+    },
+    {
+      "id": "dagligvare-lengst-apent",
+      "question": "Hvor sent kan jeg handle mat på hverdager?",
+      "catalogClass": "S+",
+      "before": "Vist",
+      "after": "Vist"
+    },
+    {
+      "id": "dagligvare-sondag",
+      "question": "Hvor kan jeg handle dagligvarer på søndag?",
+      "catalogClass": "S+",
+      "before": "Vist",
+      "after": "Vist"
+    },
+    {
+      "id": "tannlege",
+      "question": "Finnes det tannlege i nærheten?",
+      "catalogClass": "S",
+      "before": "Vist",
+      "after": "Vist"
+    },
+    {
+      "id": "vinmonopol",
+      "question": "Hvor er nærmeste Vinmonopol?",
+      "catalogClass": "S+",
+      "before": "Vist",
+      "after": "Vist"
+    },
+    {
+      "id": "legevakt-sykehus",
+      "question": "Hvor er nærmeste legevakt?",
+      "catalogClass": "S+",
+      "before": "Vist",
+      "after": "Vist"
+    },
+    {
+      "id": "spisesteder",
+      "question": "Kan jeg spise ute uten å dra til byen?",
+      "catalogClass": "S",
+      "before": "Vist",
+      "after": "Vist"
+    },
+    {
+      "id": "takeaway",
+      "question": "Hvor henter jeg takeaway?",
+      "catalogClass": "S+",
+      "before": "Ikke registrert; bygger mangler",
+      "after": "Ikke registrert; bygger mangler"
+    },
+    {
+      "id": "kafe",
+      "question": "Hvor er nærmeste kafé?",
+      "catalogClass": "S",
+      "before": "Vist",
+      "after": "Vist"
+    },
+    {
+      "id": "bakeri",
+      "question": "Finnes det bakeri?",
+      "catalogClass": "S",
+      "before": "Vist",
+      "after": "Vist"
+    },
+    {
+      "id": "sondagsapent",
+      "question": "Hvilke spisesteder er åpne på søndag?",
+      "catalogClass": "S+",
+      "before": "Vist",
+      "after": "Vist"
+    },
+    {
+      "id": "sitte-ute",
+      "question": "Hvor kan jeg sitte ute og spise?",
+      "catalogClass": "S+",
+      "before": "Ikke registrert; bygger mangler",
+      "after": "Ikke registrert; bygger mangler"
+    },
+    {
+      "id": "barnevennlig",
+      "question": "Hvor kan vi spise ute med barna?",
+      "catalogClass": "S+",
+      "before": "Ikke registrert; bygger mangler",
+      "after": "Ikke registrert; bygger mangler"
+    },
+    {
+      "id": "uteliv",
+      "question": "Hvor er nærmeste pub eller bar?",
+      "catalogClass": "S",
+      "before": "Vist",
+      "after": "Vist"
+    },
+    {
+      "id": "pizza",
+      "question": "Hvor er nærmeste pizzasted?",
+      "catalogClass": "S",
+      "before": "Vist",
+      "after": "Vist"
+    },
+    {
+      "id": "spesialbutikk-mat",
+      "question": "Finnes det spesialbutikk for mat i nærheten?",
+      "catalogClass": "S+",
+      "before": "Ikke registrert; bygger mangler",
+      "after": "Ikke registrert; bygger mangler"
+    },
+    {
+      "id": "gronntomrade",
+      "question": "Hvor er nærmeste park eller grøntområde?",
+      "catalogClass": "S",
+      "before": "Vist",
+      "after": "Vist"
+    },
+    {
+      "id": "turstier",
+      "question": "Hvor kommer jeg inn på nærmeste tursti?",
+      "catalogClass": "S+",
+      "before": "Kuratert svar mangler",
+      "after": "Kuratert svar mangler"
+    },
+    {
+      "id": "marka",
+      "question": "Hvor lang tid tar det til marka?",
+      "catalogClass": "S+",
+      "before": "Kuratert svar mangler",
+      "after": "Kuratert svar mangler"
+    },
+    {
+      "id": "hund",
+      "question": "Hvor er nærmeste hundepark?",
+      "catalogClass": "S",
+      "before": "Vist",
+      "after": "Vist"
+    },
+    {
+      "id": "ski",
+      "question": "Hvor er nærmeste skiløype?",
+      "catalogClass": "S+",
+      "before": "Ikke registrert; bygger mangler",
+      "after": "Ikke registrert; bygger mangler"
+    },
+    {
+      "id": "bading",
+      "question": "Kan jeg bade i nærheten?",
+      "catalogClass": "S",
+      "before": "Vist",
+      "after": "Vist"
+    },
+    {
+      "id": "sykkelrute",
+      "question": "Hvor går nærmeste sykkelrute?",
+      "catalogClass": "S+",
+      "before": "Ikke registrert; bygger mangler",
+      "after": "Ikke registrert; bygger mangler"
+    },
+    {
+      "id": "tur-med-vogn",
+      "question": "Hvor er nærmeste turvei for barnevogn?",
+      "catalogClass": "S+",
+      "before": "Ikke registrert; bygger mangler",
+      "after": "Ikke registrert; bygger mangler"
+    },
+    {
+      "id": "lysloype-lopetur",
+      "question": "Hvor er nærmeste lysløype?",
+      "catalogClass": "S+",
+      "before": "Ikke registrert; bygger mangler",
+      "after": "Ikke registrert; bygger mangler"
+    },
+    {
+      "id": "akebakke",
+      "question": "Hvor er nærmeste akebakke?",
+      "catalogClass": "K",
+      "before": "Ikke registrert; bygger mangler",
+      "after": "Ikke registrert; bygger mangler"
+    },
+    {
+      "id": "naermeste-holdeplass",
+      "question": "Hvor er nærmeste holdeplass?",
+      "catalogClass": "S",
+      "before": "Vist",
+      "after": "Vist"
+    },
+    {
+      "id": "til-sentrum",
+      "question": "Hvor lang tid tar det til sentrum?",
+      "catalogClass": "S",
+      "before": "Vist",
+      "after": "Vist"
+    },
+    {
+      "id": "linjer",
+      "question": "Hvor går linjene fra nærmeste holdeplass?",
+      "catalogClass": "S",
+      "before": "Vist",
+      "after": "Vist"
+    },
+    {
+      "id": "frekvens",
+      "question": "Hvor ofte er det avganger på hverdager?",
+      "catalogClass": "S+",
+      "before": "Vist",
+      "after": "Vist"
+    },
+    {
+      "id": "til-arbeidsplassene",
+      "question": "Hvor lang tid tar det til de store arbeidsplassene?",
+      "catalogClass": "S+",
+      "before": "Vist",
+      "after": "Vist"
+    },
+    {
+      "id": "siste-buss",
+      "question": "Når går siste avgang hjem fra sentrum?",
+      "catalogClass": "S+",
+      "before": "Vist",
+      "after": "Vist"
+    },
+    {
+      "id": "sykkel-til-byen",
+      "question": "Hvor lang tid tar det å sykle til sentrum?",
+      "catalogClass": "S+",
+      "before": "Ikke registrert; bygger mangler",
+      "after": "Ikke registrert; bygger mangler"
+    },
+    {
+      "id": "bil-til-byen",
+      "question": "Hvor lang tid tar det med bil til sentrum?",
+      "catalogClass": "S+",
+      "before": "Ikke registrert; bygger mangler",
+      "after": "Ikke registrert; bygger mangler"
+    },
+    {
+      "id": "tog",
+      "question": "Hvor er nærmeste togstasjon?",
+      "catalogClass": "S",
+      "before": "Bygger finnes; ingen train-POI",
+      "after": "Bygger finnes; ingen train-POI"
+    },
+    {
+      "id": "lading",
+      "question": "Hvor finnes offentlig elbillading i nærheten?",
+      "catalogClass": "S+",
+      "before": "Vist",
+      "after": "Vist"
+    },
+    {
+      "id": "treningssenter",
+      "question": "Hvor er nærmeste treningssenter?",
+      "catalogClass": "S",
+      "before": "Vist",
+      "after": "Vist"
+    },
+    {
+      "id": "svommehall",
+      "question": "Finnes det svømmehall i nærheten?",
+      "catalogClass": "S",
+      "before": "Vist",
+      "after": "Vist"
+    },
+    {
+      "id": "idrettsanlegg",
+      "question": "Hvor finnes baner og idrettshaller i nærheten?",
+      "catalogClass": "S",
+      "before": "Vist",
+      "after": "Vist"
+    },
+    {
+      "id": "trene-tidlig-sent",
+      "question": "Kan jeg trene før jobb eller sent på kvelden?",
+      "catalogClass": "S+",
+      "before": "Vist",
+      "after": "Vist"
+    },
+    {
+      "id": "spesialtrening",
+      "question": "Finnes det yoga, kampsport eller klatring her?",
+      "catalogClass": "S+",
+      "before": "Vist",
+      "after": "Vist"
+    },
+    {
+      "id": "treningspark",
+      "question": "Er det utendørs treningspark?",
+      "catalogClass": "S+",
+      "before": "Bygger finnes; ingen fitness_park-POI",
+      "after": "Bygger finnes; ingen fitness_park-POI"
+    },
+    {
+      "id": "gruppetrening",
+      "question": "Hvor kan jeg bli med på gruppetrening?",
+      "catalogClass": "K",
+      "before": "Ikke registrert; bygger mangler",
+      "after": "Ikke registrert; bygger mangler"
+    },
+    {
+      "id": "padel-tennis",
+      "question": "Hvor kan jeg spille padel, tennis eller squash?",
+      "catalogClass": "S+",
+      "before": "Vist",
+      "after": "Vist"
+    },
+    {
+      "id": "is-skoyter",
+      "question": "Hvor er nærmeste ishall eller skøytebane?",
+      "catalogClass": "S+",
+      "before": "Vist",
+      "after": "Vist"
+    },
+    {
+      "id": "idrettslag",
+      "question": "Hvilke idrettslag holder til i nabolaget?",
+      "catalogClass": "K",
+      "before": "Kuratert svar mangler",
+      "after": "Nytt kildebelagt svar"
+    },
+    {
+      "id": "bibliotek",
+      "question": "Hvor er nærmeste bibliotek?",
+      "catalogClass": "S",
+      "before": "Vist",
+      "after": "Vist"
+    },
+    {
+      "id": "kino",
+      "question": "Hvor er nærmeste kino?",
+      "catalogClass": "S",
+      "before": "Vist",
+      "after": "Vist"
+    },
+    {
+      "id": "kulturscene",
+      "question": "Hvor er nærmeste scene eller kulturhus?",
+      "catalogClass": "S+",
+      "before": "Ikke registrert; bygger mangler",
+      "after": "Ikke registrert; bygger mangler"
+    },
+    {
+      "id": "samlingspunkt",
+      "question": "Hvilke møteplasser er åpne for alle?",
+      "catalogClass": "K",
+      "before": "Kuratert svar mangler",
+      "after": "Kuratert svar mangler"
+    },
+    {
+      "id": "voksenaktivitet",
+      "question": "Hvor kan jeg bli med på kor, kurs eller klubb?",
+      "catalogClass": "K",
+      "before": "Kuratert svar mangler",
+      "after": "Kuratert svar mangler"
+    },
+    {
+      "id": "kirke",
+      "question": "Hvor er nærmeste kirke eller menighetshus?",
+      "catalogClass": "S",
+      "before": "Vist",
+      "after": "Vist"
+    },
+    {
+      "id": "frivilligsentral",
+      "question": "Hvor er nærmeste frivilligsentral?",
+      "catalogClass": "S+",
+      "before": "Ikke registrert; bygger mangler",
+      "after": "Ikke registrert; bygger mangler"
+    },
+    {
+      "id": "bowling-aktivitet",
+      "question": "Hvor kan vi spille bowling?",
+      "catalogClass": "S+",
+      "before": "Ikke registrert; bygger mangler",
+      "after": "Ikke registrert; bygger mangler"
+    },
+    {
+      "id": "museum",
+      "question": "Hvor er nærmeste museum?",
+      "catalogClass": "S",
+      "before": "Vist",
+      "after": "Vist"
+    },
+    {
+      "id": "kulturskole",
+      "question": "Hvor går barna på kulturskole?",
+      "catalogClass": "K",
+      "before": "Kuratert svar mangler",
+      "after": "Kuratert svar mangler"
+    }
+  ],
+  "extraIds": [
+    "bysykkel",
+    "mest-av",
+    "naermest"
+  ],
+  "beforeCount": 53,
+  "afterCount": 55
+}

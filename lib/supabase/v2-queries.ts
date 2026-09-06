@@ -15,6 +15,7 @@
  */
 
 import "server-only";
+import { readLocalActivities } from "@/lib/supabase/local-activities";
 import { createServerClient } from "./client";
 import { chunkIds } from "./chunk-ids";
 import { fetchAllRows } from "./fetch-all-rows";
@@ -393,7 +394,14 @@ export async function getProductFromSupabaseV2(
     categories = Array.from(seen.values());
   }
 
+  const reportConfig = (product.config as Record<string, unknown>)?.reportConfig as Project["reportConfig"];
+  const activityIds = reportConfig?.localActivityIds;
+  const localActivities = Array.isArray(activityIds) && activityIds.every((id) => typeof id === "string") && activityIds.length
+    ? await readLocalActivities(activityIds)
+    : undefined;
+
   return {
+    localActivities,
     id: product.id,
     name: project.name,
     customer: customerSlug,

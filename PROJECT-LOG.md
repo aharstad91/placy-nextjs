@@ -6,6 +6,22 @@
 
 ---
 
+## 2026-09-06 (sen kveld) — Wesselsløkka: delt aktivitetskunnskap gir to FAQ-svar
+
+**Resultat:** 55 FAQ-svar i lokal demo, fra 53. Oppvekst svarer nå på hva barna kan gjøre etter skoletid; Trening svarer på lokale idrettslag. Kilder: Strindheim ILs allidrett på Brøset og Åsvang og Eberg Skolekorps' øvingssted på Åsvang skole. To nye `place_knowledge`-rader er skrevet i v2, og Wesselsløkkas config velger dem via `localActivityIds`. Kilde og kontrollert dato vises under svarene. Alle 53 gamle FAQ-objekter er uendret.
+
+**Gjenbruk:** arrangør–aktivitet–sted lagres én gang. Samme faktum brukes i to spørsmål, og to adresser kan velge samme ID. Dette er testet; ingen andre boards er endret. Ukjent, uverifisert eller utløpt kunnskap utelates. Første kontrollfrist er 1. desember 2026. Manuell FAQ-kuratering vinner fortsatt. Produkt-cache oppdateres etter eksisterende timesintervall/tag; allerede åpne faner må lastes på nytt.
+
+**Kartlegging:** 80/80 katalogspørsmål gjennomgått strukturelt. Baseline dekket 50/80 pluss tre ekstraspørsmål. Av 30 hull var 20 spørsmål ikke registrert i aktiv mal, sju manglet kuratert svar og tre manglet innkommende data. Piloten dekker nå 52/80. Ni fritidsklubber finnes i board-data, men kategorien er utelatt fra Oppvekst-temaet; noen er dessuten feilklassifisert. Tidligere «ingen kilde svarer» var for sterkt: kommunens stedsanalyse beskriver turforbindelsen Valentinlyst–Moholt kirkegård–Voll–Lohove. Eksakt påkobling fra boligen gjenstår.
+
+**Nødvendig cachefiks:** full paginering gir et Wesselsløkka-produkt på ca. 3 MB, over Nexts 2 MB per cacheoppføring. Rapportproduktet caches nå som gzip-komprimert JSON, med samme produkt-tag og timesintervall. Null og identisk gjenoppretting testes.
+
+**Kontroll:** 3 664 tester i 215 filer bestått; lint 0 feil/53 advarsler. Typekontroll stopper på syv eksisterende feil i den urørte InsightReportView (observations/actions); innsiktsarbeidet ligger i annen sesjon. Lokal HTTP 200 og nye data i levert HTML etter cachefiks. FAQ-kildevisning testet i DOM, ingen browser-screenshot. Ingen build, PR, push eller merge. Lokal commit omgår hookens globale tsc etter manuelle sjekker; innsiktsfeilene må løses ved integrasjon.
+
+**Overlevering og åpne tråder:** `docs/research/2026-09-06-wesselslokka-kunnskap-pilot.md` beskriver backup, apply, cache, begrensninger og full dekningsmatrise. Branch `research/wesselslokka-kunnskap`, lokal server :3001. Claude håndterer merging. Automatisk innhenting, bidragsgrensesnitt og korreksjonshistorikk er ikke bygd. Naturens grøntområdesvar peker fortsatt til hundeparken. De eldre 231 kunnskapsradene er ikke godkjent gjennom piloten.
+
+---
+
 ## 2026-09-06 (kveld) — FRA 34 TIL 53 SVAR, EN TIDOLLARS TØRRKJØRING, OG TO TALL JEG IKKE MÅLTE
 
 **Kontekst:** Fortsettelsen av FAQ-arbeidet samme dag. Andreas ba først om Entur-firen, så om at Wesselsløkka skulle bli «best mulig», og til slutt — med en berettiget innvending — om det han faktisk bestilte om morgenen: *«og jeg har enda ikke fått flere faq elementer som var det jeg ønsket å starte med i dag»*. Han hadde rett. Jeg hadde brukt formiddagen på byggerne han bestilte, og så gått videre til datakvalitet uten å sjekke hva som lå rett foran meg.
