@@ -37,9 +37,7 @@ import { AREA_STEP, useStoryTour } from "./story-tour";
  *
  * Den heter derfor det den GJØR. «Beliggenhet» beskrev stedet du kom fra, og
  * var riktig da brikken var første stopp i en rekkefølge. Som fast utgang er
- * den en tilbakeknapp, og bærer pil og ord deretter. En loddrett strek skiller
- * den fra sporet — chevronen pekte «temaene ligger den veien», men ved siden av
- * en venstrepil ble det to piler i hver sin retning.
+ * den en tilbakeknapp, og bærer pil og ord deretter.
  *
  * ## De to variantene
  *
@@ -51,8 +49,7 @@ import { AREA_STEP, useStoryTour } from "./story-tour";
  * blikket og pekeren, mens toppen er der en kolonne begynner. Raden sendes
  * derfor inn i `StoryCard`s festede hode (`head`) og står der sammen med
  * spørsmålet og svarformene — ett feste, og innholdet renner under hodets egen
- * bunn. Den svømmer ikke selv, og har derfor ingen flate i det hele tatt:
- * brikkene står rett på panelet (2026-09-06).
+ * bunn. En lys grå, avrundet flate samler brikkene i én kategorivelger.
  */
 export function StoryRail({ variant }: { variant: "deck" | "flow" }) {
   const { stops, step, goto, onArea } = useStoryTour();
@@ -135,14 +132,9 @@ export function StoryRail({ variant }: { variant: "deck" | "flow" }) {
         aria-label="Stopp"
         className={cn(
           "flex min-w-0 flex-1 items-stretch gap-0.5 rounded-[22px] p-1",
-          /* MOBIL har en egen flate fordi dekket FLYTER over innholdet — uten
-             den ville brikkene ligget rett oppå kartet. DESKTOP har ingen:
-             der ligger raden i panelets eget hode, og en grå plate der leste
-             som et fremmedlegeme i toppen av sidekolonnen (Andreas,
-             2026-09-06). Brikkene står nå rett på panelet, og den valgte
-             løftes fortsatt med hvitt og skygge. */
-          variant === "deck" &&
-            "bg-[rgba(252,251,250,0.72)] shadow-[inset_0_0_0_1px_rgba(28,25,23,0.07),0_6px_22px_rgba(28,25,23,0.13)] backdrop-blur-md [backdrop-filter:blur(12px)_saturate(1.7)]",
+          variant === "deck"
+            ? "bg-[rgba(252,251,250,0.72)] shadow-[inset_0_0_0_1px_rgba(28,25,23,0.07),0_6px_22px_rgba(28,25,23,0.13)] backdrop-blur-md [backdrop-filter:blur(12px)_saturate(1.7)]"
+            : "bg-black/[0.045]",
         )}
       >
         <RailChip
@@ -156,11 +148,6 @@ export function StoryRail({ variant }: { variant: "deck" | "flow" }) {
           root
           active={onArea}
           onClick={() => goto(AREA_STEP)}
-        />
-        {/* Skillet mellom det faste og det som ruller. */}
-        <span
-          aria-hidden
-          className="my-1.5 w-px shrink-0 bg-stone-900/[0.11]"
         />
         <div
           ref={trackRef}
