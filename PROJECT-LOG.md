@@ -54,7 +54,17 @@ Navnet står på én linje og klippes heller enn å brytes: ett kort som er én 
 
 Merk om kilden: labelene lever i `lib/themes/default-themes.ts` (+ `report-defaults.ts`, `bransjeprofiler.ts`) og var ved dette tidspunktet UKOMMITERT arbeid i hovedmappa, ikke i main-historikken. Denne branchen har dem derfor ikke i koden — men boardet henter navnet fra `theme.name` i produktkonfigurasjonen (`board-data.ts`), ikke fra tema-filen ved render, så de korte navnene vises uansett. Rutenettets layout er ikke avhengig av hvilken vei det løses.
 
-### 6. Åpent
+### 6. To flater som ikke skulle vært der (2026-09-06)
+
+Andreas, med to utsnitt: *«det er to shades her, på grid forside, hvor tittel ligger i en lysere shade. inne på en kategori, er det et grått område i toppen av sidebar. begge disse kan fjernes slik at de har lik bakgrunnsfarge som resten av sidebar.»*
+
+**Det grå området** var radens egen bar (`bg-black/[0.045]`). Den fylte nesten hele panelbredden — 390 av 438 px etter at ettordsnavnene fikk alle seks temaene til å få plass uten rulling — og leste som en plate lagt oppå toppen av kolonnen. Den er borte på DESKTOP. Mobil-dekket beholder sin: der FLYTER raden over innholdet, og uten flate ville brikkene ligget rett på kartet. Den valgte brikken løftes fortsatt av hvitt og skygge, så utvalget leses uten sporet.
+
+**Det lysere båndet** var vanskeligere, og verdt å skrive ned. Det festede hodet hadde `bg-white/85` + `backdrop-blur-xl`, panelet `bg-white/[0.93]`. To halvgjennomsiktige lag oppå hverandre kan ikke bli samme farge som ett: 0,85 over 0,93 komposit­terer til 0,995, og de 6,5 prosentene er nettopp så mye kart som slapp gjennom panelet men ikke gjennom hodet. Å bare fjerne hodets bunn er IKKE et alternativ — det ble testet live, og da scroller brødteksten rett gjennom overskriften.
+
+Derfor er panelet nå TETT i omvisningen (`bg-white`), og hodet har samme verdi. Da er de to fargene den samme verdien, ikke to verdier som er nesten like. Prisen er de 7 % satellittbilde som skinte gjennom sidekolonnen; gevinsten er at båndet ikke kan oppstå. Beige-varianten (uten omvisning) har ikke noe festet hode og beholder gjennomskinnet sitt. Mobil var aldri berørt: der er både `h3` og arket rent hvitt fra før.
+
+### 7. Åpent
 
 - **Mobil-inngangen.** «La nabolaget presentere seg» i mobil-indeksen starter fortsatt på første tema, ikke på Beliggenhet-rutenettet (indeksen har alt sin egen kategoriliste). Andreas må avgjøre om mobil-play skal lande på området slik desktop-kolonnen gjør.
 - Raden ruller aktivt tema til 44 px fra venstre, så «Beliggenhet» (veien tilbake) ligger ofte utenfor synsfeltet etter et kort-trykk. Pre-eksisterende, men mer synlig nå som rutenettet er inngangen.

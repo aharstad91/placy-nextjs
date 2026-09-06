@@ -153,7 +153,7 @@ export function StoryCard({
       )}
     >
       {/* `contents` på mobil — se doccen over. */}
-      <div className="contents lg:sticky lg:top-0 lg:z-[4] lg:-mx-6 lg:block lg:bg-white/85 lg:px-6 lg:pb-2 lg:pt-3 lg:backdrop-blur-xl">
+      <div className="contents lg:sticky lg:top-0 lg:z-[4] lg:-mx-6 lg:block lg:bg-white lg:px-6 lg:pb-2 lg:pt-3">
         {/* Utgangen finnes bare på MOBIL. Der ligger indeksen (nabolagslista,
             boardets FAQ, inngangen) bak omvisningen, og krysset er veien
             tilbake til den — øverst til høyre, der en lukkeknapp alltid har
@@ -189,7 +189,7 @@ export function StoryCard({
         {head && !onArea && (
           <span
             aria-hidden
-            className="pointer-events-none absolute inset-x-0 top-full hidden h-6 bg-gradient-to-b from-white/95 to-transparent lg:block"
+            className="pointer-events-none absolute inset-x-0 top-full hidden h-6 bg-gradient-to-b from-white to-transparent lg:block"
           />
         )}
 

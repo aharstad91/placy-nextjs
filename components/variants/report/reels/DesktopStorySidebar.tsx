@@ -364,12 +364,21 @@ export function DesktopStorySidebar({
       className={cn(
         // Flytende panel, ikke en vegg: kartet ligger i full bredde under og
         // fortsetter bak panelet og ut i luften rundt det. Derfor radius og ring
-        // i stedet for en kant mot kartet, og derfor en flate som slipper litt
-        // av kartet gjennom — `backdrop-blur` holder teksten lesbar mens
-        // satellittbildet beveger seg bak den.
+        // i stedet for en kant mot kartet.
+        //
+        // I OMVISNINGEN er flaten helt tett (2026-09-06). Den slapp lenge 7 % av
+        // kartet gjennom, og det var pent — men det festede hodet må ha en egen
+        // bunn (ellers scroller teksten rett gjennom overskriften), og to
+        // halvgjennomsiktige lag oppå hverandre kan aldri bli samme farge som
+        // ett. Resultatet var et lysere bånd i toppen av panelet (Andreas: «det
+        // er to shades her … begge disse kan fjernes slik at de har lik
+        // bakgrunnsfarge som resten av sidebar»). Med en tett flate er hodets
+        // farge og panelets farge den SAMME verdien, og båndet finnes ikke.
+        // Beige-varianten (uten omvisning) har ikke noe festet hode, og beholder
+        // gjennomskinnet.
         "relative z-20 flex h-full shrink-0 flex-col overflow-hidden rounded-[26px]",
-        "ring-1 ring-black/5 shadow-[0_18px_50px_-12px_rgba(28,25,23,0.35)] backdrop-blur-xl",
-        showStoryColumn ? "bg-white/[0.93]" : "bg-[#f2e9dc]/[0.94]",
+        "ring-1 ring-black/5 shadow-[0_18px_50px_-12px_rgba(28,25,23,0.35)]",
+        showStoryColumn ? "bg-white" : "bg-[#f2e9dc]/[0.94] backdrop-blur-xl",
       )}
     >
       {/* Header — logo (→ velkomst) + tittel. Ingen divider; ren look som skisse.
