@@ -8,6 +8,9 @@ import type { NextRequest } from "next/server";
  * Routes:
  * - /eiendom/.../rapport → 301 → /eiendom/.../rapport-board (scroll-rapporten
  *   døde ved cutover-trimmen 2026-07-06; boardet er produktflaten)
+ * - /eiendom/.../innsikt* → passthrough MED `x-insight-search`-header
+ *   (innsiktssidene har rammen i en layout, og en layout ser ikke
+ *   searchParams — se app/eiendom/[customer]/[project]/innsikt/layout.tsx)
  * - /eiendom/... → Eiendom passthrough (primary)
  * - /for/.../explore → 301 → /eiendom/.../
  * - /for/.../report → 301 → /eiendom/.../rapport-board
@@ -44,6 +47,16 @@ export function proxy(request: NextRequest) {
         new URL(`/eiendom/${segments[1]}/${segments[2]}/rapport-board${search}`, request.url),
         301
       );
+    }
+    // Innsiktssidenes lenke-token ligger i `?t=`, og rammen rundt dem bor i en
+    // layout for at sidepanelet skal overleve navigasjon. Layouts får ikke
+    // searchParams, så spørrestrengen sendes videre som header. Bare denne ene
+    // ruta: ingen andre sider trenger den, og en header som settes overalt er
+    // en header ingen husker hvor kommer fra.
+    if (segments.length >= 4 && segments[3] === "innsikt") {
+      const headers = new Headers(request.headers);
+      headers.set("x-insight-search", search);
+      return NextResponse.next({ request: { headers } });
     }
     return NextResponse.next();
   }

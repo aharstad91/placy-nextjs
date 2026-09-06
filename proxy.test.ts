@@ -90,6 +90,25 @@ describe("passthroughs (AC1/AC4)", () => {
   });
 });
 
+describe("innsikt-headeren (spørrestrengen til layouten)", () => {
+  it("setter x-insight-search på innsiktsrutene, med token og alt", () => {
+    const res = proxy(new NextRequest("https://placy.no/eiendom/kunde/prosjekt/innsikt?t=abc&demo=1"));
+    expect(res.status).toBe(200);
+    expect(res.headers.get("x-middleware-override-headers")).toContain("x-insight-search");
+    expect(res.headers.get("x-middleware-request-x-insight-search")).toBe("?t=abc&demo=1");
+  });
+
+  it("gjelder også temasidene under innsikt", () => {
+    const res = proxy(new NextRequest("https://placy.no/eiendom/kunde/prosjekt/innsikt/barn-oppvekst?t=abc"));
+    expect(res.headers.get("x-middleware-request-x-insight-search")).toBe("?t=abc");
+  });
+
+  it("settes IKKE på andre sider — en header overalt er en header ingen husker", () => {
+    const res = proxy(new NextRequest("https://placy.no/eiendom/kunde/prosjekt/rapport-board?t=abc"));
+    expect(res.headers.get("x-middleware-request-x-insight-search")).toBeNull();
+  });
+});
+
 describe("/admin-branchen (AC3 — dokumentert passthrough, IKKE guard)", () => {
   it("slipper /admin gjennom uten redirect/blokkering", () => {
     const res = proxy(req("/admin/projects"));
