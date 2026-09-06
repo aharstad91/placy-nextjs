@@ -6,6 +6,55 @@
 
 ---
 
+## 2026-09-06 (natt) — SEKS WORKTREES INN I MAIN, OG TRE TING SOM LÅ OG RÅTNET I DEM
+
+**Kontekst:** *«nå baller det på seg med worktrees igjen. hva kan vi få inn og rydde bort?»* — sju worktrees, ingen av branchene pushet, og flere av dem så langt bak main at de var i ferd med å bli umulige å rebase. Andreas fulgte opp med *«fortsett å få merget ting»*. Målet var ikke bare å slå sammen, men å avgjøre hva som faktisk fortsatt hadde verdi.
+
+### 1. Fem branches merget, to erklært innhentet
+
+Main gikk fra `572a408` til `aaf9f20` (ni commits, pushet). Merget inn:
+
+- **`fix/postgrest-radtak`** — kveldens FAQ-arbeid, 16 commits. Var alt en fast-forward-etterkommer av main.
+- **`feat/portefoljekart-per-kjede`** — ruten `/portefolje/[kjede]`. Merget rent, ingen konflikt.
+- **`feat/kategori-grid-forside`** — tema-rutenettet på områdestoppet. Bare PROJECT-LOG i konflikt.
+- **`feat/rekkevidde-konturer`** — isokron-konturene. Migrasjon 091 lå alt i prod fra worktreen, så koden hang etter databasen, ikke omvendt.
+- **`feat/poi-i-sidebar`** — stedets side i kolonnen.
+
+**`feat/reisemate-enhet-fluid-sheet` og `feat/omvisning-nabolagsflaten` ble IKKE merget.** Begge var innhentet av main. `git cherry` sa at ingen av de 19 commitene lå der, men det er patch-id-en som lyver: arbeidet ble re-implementert via `feat/3d-innramming` og story-kolonnen, ikke cherry-picket. Den avgjørende målingen var å sammenligne fil mot fil — main hadde 59 flere linjer i `NeighbourhoodSurface.tsx` og 84 flere i `board-camera-fit.ts` enn branchene. Også `deriveFocusCamera3D`, som jeg trodde var branchens siste gjenværende verdi, lå alt i main fra 1. september.
+
+Det som faktisk gjensto var dokumentene: tre plandokumenter, en brainstorm og `docs/todos/2026-08-26-reisemate-oppfolging.md` med fem bevisst utsatte funn fra kodegjennomgangen. De er hentet inn som egen commit (`e3a3f6c`) før branchene ble slettet.
+
+**Metodenotat:** `git branch -d` sjekker mot HEAD, ikke mot main. Fra en sesjon som står på en annen branch nekter den å slette selv fullt merget arbeid, og hint-linjene maskerer feilmeldingen. Slettingen må kjøres fra en worktree som faktisk står på main.
+
+### 2. Konfliktløsningen som kompilerte i hodet mitt, men ikke i tsc
+
+`faq_opened` (migrasjon 086) og `isochrones_toggled` (091) ble lagt til på nøyaktig samme sted i event-taksonomien, fra hver sin branch. «Behold begge» er riktig svar — men konfliktblokkene lå MIDT inne i to objektliteraler, ikke rundt dem. Sammenslåingen droppet `.strict()` fra `faq_opened` i skjemaet og `context`-linja fra payload-typen, og `tsc` ga 27 syntaksfeil.
+
+Verdt å merke seg for neste gang: en mekanisk «ta begge sider»-resolusjon er trygg bare når konfliktmarkørene omslutter hele syntaktiske enheter. Her sto de inni to `z.object(...)`-kjeder.
+
+Migrasjon 091 lister forøvrig `faq_opened` i sin egen CHECK — forfatteren så den. Kode og database er enige.
+
+### 3. To ting som lå ukommittert og hadde forsvunnet med worktreen
+
+- **`components/portfolio/PortfolioMap.tsx`** i `../placy-portefolje`: ferdig arbeid som strammer 3D-utsnittet når motoren er oppe. Server-rangen regnes mot en fast referanserute som er trangere enn de fleste ekte ruter, så porteføljen lå midt i et halvtomt hav. Fiksen justerer `range` på den LEVENDE instansen framfor via `defaultRange` — den propen leses bare ved mount, og en remount av `gmp-map-3d` lekker en WebGL-kontekst. Typesjekket, 35 tester passerer, committet.
+
+- **`components/insight/InsightReportView.tsx`**: min egen commit `9962929` fra i kveld hadde sveipet med seg halvferdig innsikts-arbeid fra en parallell sesjon. `observations` og `actions` ble fjernet fra `InsightReport` da `lib/insight/recommendations.ts` kom til, men visningen rendret dem fortsatt — `tsc` feilet på syv linjer i committet tilstand. **Main har altså stått med en typefeil siden i kveld uten at noen målte det.** Signaler-kortet leser nå `deriveRecommendations()`, som bærer beviset sitt i `why`.
+
+### 4. Verifisering av det samlede treet
+
+Fem branches som aldri hadde sett hverandre, verifisert samlet i en egen worktree: **3 817 tester passerer (226 filer)**, `tsc` rent, `npm run lint` 0 errors (54 warnings, alle pre-eksisterende), og `npm run build` går gjennom med `/portefolje/[kjede]` på rutelista.
+
+**Gotcha:** en symlinket `node_modules` i en midlertidig worktree dreper Turbopack (`Symlink [project]/node_modules is invalid, it points out of the filesystem root`). `cp -Rc` (APFS clonefile) tar sekunder og virker.
+
+### 5. Åpent etter denne sesjonen
+
+- **Hovedrepoet står fortsatt på `fix/postgrest-radtak`.** En parallell innsikts-sesjon har ukommitterte endringer i `app/globals.css` og `InsightReportView.tsx` som ville kollidert med et branch-bytte. Byttes til main når den er ferdig — branchen er fullt merget.
+- **Tjueen branches gjenstår** (`feat/*` + `fix/*`), alle uten worktree bortsett fra `fix/postgrest-radtak`. De eldste (`feat/prospekt-skanner`, 166 commits bak main) er trolig i samme kategori som omvisnings-branchene: innhentet, med dokumenter som eneste rest.
+- **To filer heter `086_`.** `086_postal_areas.sql` og `086_event_type_faq_opened.sql` kolliderer i nummerering. Begge er kjørt i prod, så det er ikke en feil i dag — men rekkefølgen er ikke lenger entydig for den som skal spille dem av på nytt.
+- **Aggregering av `isochrones_toggled` mangler fortsatt** i Innsikt-flaten. Hendelsen logges, men har ingen case i `lib/insight/`. Nå som innsikts-koden ER i main, er blokkeren fra 3. september borte.
+
+---
+
 ## 2026-09-06 (kveld) — FRA 34 TIL 53 SVAR, EN TIDOLLARS TØRRKJØRING, OG TO TALL JEG IKKE MÅLTE
 
 **Kontekst:** Fortsettelsen av FAQ-arbeidet samme dag. Andreas ba først om Entur-firen, så om at Wesselsløkka skulle bli «best mulig», og til slutt — med en berettiget innvending — om det han faktisk bestilte om morgenen: *«og jeg har enda ikke fått flere faq elementer som var det jeg ønsket å starte med i dag»*. Han hadde rett. Jeg hadde brukt formiddagen på byggerne han bestilte, og så gått videre til datakvalitet uten å sjekke hva som lå rett foran meg.
