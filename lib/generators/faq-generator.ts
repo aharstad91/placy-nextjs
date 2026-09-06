@@ -1362,6 +1362,215 @@ function pakkerPost(input: FaqGeneratorInput): string | undefined {
   return parts.join(" ");
 }
 
+/**
+ * VINMONOPOL — navnegate til Vinmonopolets butikk-API er koblet på.
+ * Monopolet har ett navn i hele landet, så porten er entydig. «Søndag stengt»
+ * er en nasjonal konstant og står ikke i raden.
+ */
+function vinmonopol(input: FaqGeneratorInput): string | undefined {
+  const [naermest] = naermesteMedTid(input, "liquor_store", "butikk", "shopping").filter((p) =>
+    navnefilter(p, { krever: ["vinmonopolet", "vinmonopol"] }),
+  );
+  if (!naermest) return undefined;
+  // BARE DET NÆRMESTE. Fire rader i poolen heter bare «Vinmonopolet», og minst
+  // ett utsalg ligger inne to ganger under to navn på samme adresse — en hale
+  // ville da navngitt samme butikk to ganger. Ett vinmonopol svarer dessuten
+  // på spørsmålet; det andre er ikke et alternativ, det er en omvei.
+  const w = walkMinutes(naermest)!;
+  const tider = hverdagstider(naermest);
+  const hale = tider ? `, med åpent ${apningstid(tider)} på hverdager` : "";
+  return w <= WALK_RADIUS_MIN
+    ? `${namedPoi(naermest)} er nærmeste Vinmonopol, ${minutter(w)} til fots${hale}.`
+    : `Nærmeste Vinmonopol på kartet er ${namedPoi(naermest)}, ${reisetid(naermest)}${hale}.`;
+}
+
+/**
+ * DAGLIGVARE LENGST ÅPENT — formen er STENGETIDEN, ikke stedet. Spørsmålet er
+ * «rekker jeg det etter jobb», og da er klokkeslettet svaret og navnet
+ * konteksten.
+ *
+ * Bare butikker der alle fem hverdagene er like kvalifiserer. Er tidene ulike,
+ * finnes det ikke ETT klokkeslett å oppgi, og et gjennomsnitt ville vært et
+ * tall ingen dør viser.
+ */
+function dagligvareLengstApent(input: FaqGeneratorInput): string | undefined {
+  const medTider = naermesteMedTid(input, "supermarket", "convenience")
+    .filter((p) => walkMinutes(p)! <= DINING_RADIUS_MIN)
+    .map((poi) => ({ poi, tider: hverdagstider(poi) }))
+    .filter((g): g is { poi: FaqPoi; tider: DayHours } => g.tider !== null)
+    .sort(
+      (a, b) => b.tider.closeMin - a.tider.closeMin || walkMinutes(a.poi)! - walkMinutes(b.poi)!,
+    );
+  const [senest, neste] = medTider;
+  if (!senest) return undefined;
+
+  const stengetid = klokkeslett(senest.tider.closeMin);
+  // To butikker som stenger likt er ÉN opplysning, ikke to.
+  if (neste && neste.tider.closeMin === senest.tider.closeMin) {
+    return `${namedPoi(senest.poi)} og ${namedPoi(neste.poi)} holder åpent til ${stengetid} på hverdager, ${minutter(walkMinutes(senest.poi)!)} og ${minutter(walkMinutes(neste.poi)!)} til fots.`;
+  }
+  const parts = [
+    `${namedPoi(senest.poi)} holder åpent til ${stengetid} på hverdager, ${minutter(walkMinutes(senest.poi)!)} til fots.`,
+  ];
+  if (neste) {
+    parts.push(
+      `${namedPoi(neste.poi)} stenger ${klokkeslett(neste.tider.closeMin)}, ${minutter(walkMinutes(neste.poi)!)} unna.`,
+    );
+  }
+  return parts.join(" ");
+}
+
+/**
+ * DAGLIGVARE SØNDAG — «På søndag» i entall, som skiller raden fra
+ * `sondagsapent` i Mat & drikke, som åpner «På søndager holder …».
+ *
+ * Søndagsåpne dagligvarer i Norge er i praksis småbutikkene, så raden navngir
+ * oftest en Joker eller en Bunnpris. Det er riktig svar, ikke et hull i dataen.
+ */
+function dagligvareSondag(input: FaqGeneratorInput): string | undefined {
+  const aapne: Array<{ poi: FaqPoi; tider: DayHours }> = [];
+  for (const poi of naermesteMedTid(input, "supermarket", "convenience")) {
+    if (walkMinutes(poi)! > DINING_RADIUS_MIN) continue;
+    const days = parseWeekdayText(poi.openingHoursJson?.weekday_text);
+    const sondag = days ? sundayHours(days) : null;
+    if (sondag && sondag !== "closed") aapne.push({ poi, tider: sondag });
+  }
+  const [først, neste] = aapne;
+  if (!først) return undefined;
+  const parts = [
+    `På søndag holder ${namedPoi(først.poi)} åpent ${apningstid(først.tider)}, ${minutter(walkMinutes(først.poi)!)} til fots.`,
+  ];
+  if (neste) {
+    parts.push(
+      `${namedPoi(neste.poi)} har åpent ${apningstid(neste.tider)}, ${minutter(walkMinutes(neste.poi)!)} unna.`,
+    );
+  }
+  return parts.join(" ");
+}
+
+/**
+ * LEGEVAKT — ALDRI Google-kategorien `hospital`. Et sykehus er ikke en
+ * legevakt, og for spørsmålet «hvor drar jeg når fastlegen er stengt» er
+ * forskjellen hele poenget. Porten er ordet i navnet.
+ *
+ * Ingen «på kartet»-variant: legevakten ligger nesten alltid utenfor
+ * gangavstand, og kommunens oppføring er komplett per kommune — det er ikke
+ * poolens recall-problem.
+ */
+function legevakt(input: FaqGeneratorInput): string | undefined {
+  const [naermest] = naermesteMedTidFra(
+    markAnchorMembers(input.allPois),
+    input.center,
+    "doctor",
+    "hospital",
+  ).filter((p) => navnefilter(p, { krever: ["legevakt"] }));
+  if (!naermest) return undefined;
+  return `${namedPoi(naermest)} er nærmeste legevakt, ${reisetid(naermest)}.`;
+}
+
+/**
+ * HELSESTASJON — nærmeste, aldri «deres». Hvilken helsestasjon en familie
+ * hører til bestemmer kommunen etter adresse, og det står ikke i kilden.
+ */
+function helsestasjon(input: FaqGeneratorInput): string | undefined {
+  const kandidater = naermesteMedTidFra(
+    markAnchorMembers(input.allPois),
+    input.center,
+    "doctor",
+    "hospital",
+  ).filter((p) => navnefilter(p, { krever: ["helsestasjon"] }));
+  return naermesteAvSlag(kandidater, () => "helsestasjon");
+}
+
+/** Racketsportene, og ordet svaret bruker om hver. */
+const RACKET_SPORTER = [
+  { ord: "padel", navn: "padel" },
+  { ord: "tennis", navn: "tennis" },
+  { ord: "squash", navn: "squash" },
+] as const;
+
+/** Idrettene et anlegg BÆRER i navnet. Bare de funne nevnes, aldri spørsmålets liste. */
+function racketSporter(poi: POI): string[] {
+  return RACKET_SPORTER.filter(({ ord }) => navnefilter(poi, { krever: [ord] })).map((r) => r.navn);
+}
+
+/**
+ * PADEL, TENNIS OG SQUASH — formen er ANLEGGET MED IDRETTEN. Bare idrettene
+ * navnet faktisk bærer nevnes; «padel, tennis eller squash» er spørsmålets
+ * liste, ikke svarets påstand.
+ */
+function padelTennis(input: FaqGeneratorInput): string | undefined {
+  const alle = naermesteMedTidFra(markAnchorMembers(input.allPois), input.center, "idrett", "gym")
+    .map((poi) => ({ poi, sporter: racketSporter(poi) }))
+    .filter((x) => x.sporter.length > 0);
+  const [først] = alle;
+  if (!først) return undefined;
+  const parts = [`${namedPoi(først.poi)} har ${ogJoin(først.sporter)}, ${reisetid(først.poi)}.`];
+  // Helst en ANNEN idrett enn den første — to padelhaller svarer på mindre.
+  const neste = alle.find(
+    (x) => !sammeKort(x.poi, først.poi) && x.sporter.some((s) => !først.sporter.includes(s)),
+  );
+  if (neste) parts.push(`${namedPoi(neste.poi)} har ${ogJoin(neste.sporter)}, ${reisetid(neste.poi)}.`);
+  return parts.join(" ");
+}
+
+/** «ishall» når navnet bærer hall, arena eller curling — ellers «skøytebane». */
+function isSlag(poi: POI): string {
+  return navnefilter(poi, { krever: ["hall", "arena", "curling"] }) ? "ishall" : "skøytebane";
+}
+
+/**
+ * IS OG SKØYTER — sesong påstås ALDRI. En skøytebane i juli er fortsatt
+ * nærmeste skøytebane, og publikumstidene står ikke i kilden.
+ */
+function isSkoyter(input: FaqGeneratorInput): string | undefined {
+  const kandidater = naermesteMedTidFra(
+    markAnchorMembers(input.allPois),
+    input.center,
+    "idrett",
+    "swimming",
+  ).filter((p) => navnefilter(p, { krever: ["ishall", "skøyte", "isbane", "curling"] }));
+  return naermesteAvSlag(kandidater, isSlag);
+}
+
+/** Spesialidrettene, og ordet svaret bruker. Rekkefølgen er svarets rekkefølge. */
+const SPESIALTRENING = [
+  { ord: ["klatr", "buldre"], navn: "klatring" },
+  { ord: ["yoga"], navn: "yoga" },
+  { ord: ["kampsport", "karate", "judo", "taekwondo", "boksing", "bryting"], navn: "kampsport" },
+  { ord: ["pilates"], navn: "pilates" },
+  { ord: ["crossfit"], navn: "crossfit" },
+  { ord: ["dans", "ballett"], navn: "dans" },
+] as const;
+
+function spesialSlag(poi: POI): string[] {
+  return SPESIALTRENING.filter(({ ord }) => navnefilter(poi, { krever: ord })).map((s) => s.navn);
+}
+
+/**
+ * SPESIALTRENING — formen er TILBUDET, ikke nærheten. Bare de idrettene som
+ * faktisk er funnet navngis; å svare «yoga, kampsport og klatring» ville vært
+ * å gjenta spørsmålet som om det var et svar.
+ */
+function spesialtrening(input: FaqGeneratorInput): string | undefined {
+  const alle = naermesteMedTidFra(markAnchorMembers(input.allPois), input.center, "gym", "idrett")
+    .map((poi) => ({ poi, slag: spesialSlag(poi) }))
+    .filter((x) => x.slag.length > 0);
+  const [først] = alle;
+  if (!først) return undefined;
+  const w = walkMinutes(først.poi)!;
+  const parts = [
+    w <= DINING_RADIUS_MIN
+      ? `${namedPoi(først.poi)} tilbyr ${ogJoin(først.slag)}, ${minutter(w)} til fots.`
+      : `Nærmeste sted med ${ogJoin(først.slag)} på kartet er ${namedPoi(først.poi)}, ${reisetid(først.poi)}.`,
+  ];
+  const neste = alle.find(
+    (x) => !sammeKort(x.poi, først.poi) && x.slag.some((s) => !først.slag.includes(s)),
+  );
+  if (neste) parts.push(`${namedPoi(neste.poi)} tilbyr ${ogJoin(neste.slag)}, ${reisetid(neste.poi)}.`);
+  return parts.join(" ");
+}
+
 /** KINO — traff riktig på Wesselsløkka uten filter. Bussreisen er ikke målt. */
 function kino(input: FaqGeneratorInput): string | undefined {
   return naermesteAvSlag(naermesteMedTid(input, "cinema"), () => "kino");
@@ -1680,6 +1889,14 @@ const ANSWER_BUILDERS: Record<string, AnswerBuilder> = {
   // Katalogens S-spørsmål (2026-09-06), setningsformene fra Fable-leveransen.
   skolevei,
   skoleskyss,
+  helsestasjon,
+  vinmonopol,
+  "dagligvare-lengst-apent": dagligvareLengstApent,
+  "dagligvare-sondag": dagligvareSondag,
+  "legevakt-sykehus": legevakt,
+  "padel-tennis": padelTennis,
+  "is-skoyter": isSkoyter,
+  spesialtrening,
   "pakker-post": pakkerPost,
   frekvens,
   "til-arbeidsplassene": tilArbeidsplassene,

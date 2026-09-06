@@ -902,6 +902,44 @@ export const THEME_BOARD_QUESTIONS: Record<string, SpecQuestion[]> = {
       lag: "board",
       felt: "POI-pool post + navnegate «Post i Butikk» + precomputet gangtid",
     },
+    // Dagligvare-tidene: to spørsmål, ett datagrunnlag (cachede åpningstider).
+    // Radius 15, ikke ærend-radiusen — «rekker jeg det etter jobb» tåler
+    // et kvarter.
+    {
+      id: "dagligvare-lengst-apent",
+      spørsmål: "Hvor sent kan jeg handle mat på hverdager?",
+      kilde: "eget",
+      kjerne: true,
+      lag: "board",
+      felt: "Cachede åpningstider, hverdagskonsensus + supermarket/convenience ≤15 min",
+    },
+    {
+      id: "dagligvare-sondag",
+      spørsmål: "Hvor kan jeg handle dagligvarer på søndag?",
+      kilde: "eget",
+      kjerne: true,
+      lag: "board",
+      felt: "Søndagslinja i cachede åpningstider + supermarket/convenience ≤15 min",
+    },
+    // Monopolet har ett navn i hele landet, så navnegaten er entydig.
+    {
+      id: "vinmonopol",
+      spørsmål: "Hvor er nærmeste Vinmonopol?",
+      kilde: "eget",
+      kjerne: true,
+      lag: "board",
+      felt: "POI-pool liquor_store/butikk + navnegate + precomputet gangtid",
+    },
+    // ALDRI Google-kategorien `hospital`: et sykehus er ikke en legevakt, og
+    // for «hvor drar jeg når fastlegen er stengt» er forskjellen hele poenget.
+    {
+      id: "legevakt-sykehus",
+      spørsmål: "Hvor er nærmeste legevakt?",
+      kilde: "eget",
+      kjerne: true,
+      lag: "board",
+      felt: "POI-pool doctor/hospital + navnegate «legevakt» + precomputet reisetid",
+    },
     // Legesenter, med navnegate: `doctor` blander fastlege, hudlege og
     // urolog, så byggeren krever et allmennlege-ord i navnet (katalogen § 6).
     // Ledig fastlegeplass påstås aldri.
@@ -935,6 +973,16 @@ export const THEME_BOARD_QUESTIONS: Record<string, SpecQuestion[]> = {
       kjerne: true,
       lag: "board",
       felt: "POI-pool fritidsklubb + precomputet gangtid",
+    },
+    // Nærmeste, aldri «deres»: hvilken helsestasjon familien hører til
+    // bestemmer kommunen etter adresse, og det står ikke i kilden.
+    {
+      id: "helsestasjon",
+      spørsmål: "Hvor er nærmeste helsestasjon?",
+      kilde: "eget",
+      kjerne: true,
+      lag: "board",
+      felt: "POI-pool doctor + navnegate «helsestasjon» + precomputet gangtid",
     },
     // Skoleveien er kretsskolens gangtid — ikke nærmeste skole-POI. Mangler
     // målt gangtid, utelates raden; aldri et estimat.
@@ -1113,6 +1161,32 @@ export const THEME_BOARD_QUESTIONS: Record<string, SpecQuestion[]> = {
       kilde: "søk",
       kjerne: false,
       lag: "board",
+    },
+    // Tre spørsmål med navnegate på `idrett`/`gym`. Bare idrettene navnet
+    // faktisk bærer nevnes — spørsmålets liste er ikke svarets påstand.
+    {
+      id: "padel-tennis",
+      spørsmål: "Hvor kan jeg spille padel, tennis eller squash?",
+      kilde: "eget",
+      kjerne: true,
+      lag: "board",
+      felt: "POI-pool idrett/gym + navnegate racketsport + precomputet reisetid",
+    },
+    {
+      id: "is-skoyter",
+      spørsmål: "Hvor er nærmeste ishall eller skøytebane?",
+      kilde: "eget",
+      kjerne: true,
+      lag: "board",
+      felt: "POI-pool idrett + navnegate is/skøyte/curling + precomputet reisetid",
+    },
+    {
+      id: "spesialtrening",
+      spørsmål: "Finnes det yoga, kampsport eller klatring her?",
+      kilde: "eget",
+      kjerne: true,
+      lag: "board",
+      felt: "POI-pool gym/idrett + navnegate spesialidrett + precomputet gangtid",
     },
     // Leser `idrett` fra HELE boardet: kategorien ligger i Oppvekst-temaet,
     // spørsmålet i Trening (katalogen § 5 pkt 8).

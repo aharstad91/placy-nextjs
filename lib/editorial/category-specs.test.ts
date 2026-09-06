@@ -285,6 +285,7 @@ describe("faqQuestionsForTheme", () => {
       "barnehage-dekning",
       "lekeplass",
       "oppvekst-fritid",
+      "helsestasjon",
       "skolevei",
       "skoleskyss",
     ]);

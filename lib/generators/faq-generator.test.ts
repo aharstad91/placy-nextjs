@@ -2415,3 +2415,137 @@ describe("navnløse steder", () => {
     expect(svar).not.toMatch(/ligger 32/);
   });
 });
+
+describe("de åtte fra data boardet alt hadde", () => {
+  const hverdag = (pois: POI[]) =>
+    generateCategoryFaq(
+      input({ themeId: "hverdagsliv", categoryIds: ["supermarket", "convenience", "liquor_store", "doctor"], pois, allPois: pois }),
+    );
+
+  it("vinmonopol navngir BARE det nærmeste — fire rader heter bare «Vinmonopolet»", () => {
+    const svar = answerFor(
+      hverdag([
+        poi({ id: "v1", name: "Valentinlyst Vinmonopol", categoryId: "liquor_store", travelTime: { walk: 8 } }),
+        poi({ id: "v2", name: "Vinmonopolet", categoryId: "liquor_store", travelTime: { walk: 8 } }),
+      ]),
+      "vinmonopol",
+    );
+    expect(svar).toBe("[Valentinlyst Vinmonopol](poi:v1) er nærmeste Vinmonopol, 8 minutter til fots.");
+    expect(svar).not.toContain("v2");
+  });
+
+  it("dagligvare-lengst-apent leder med STENGETIDEN, ikke med stedet", () => {
+    const svar = answerFor(
+      hverdag([
+        poi({ id: "d1", name: "Kiwi", categoryId: "supermarket", travelTime: { walk: 14 }, openingHoursJson: tider("7:00 AM – 11:00 PM") }),
+        poi({ id: "d2", name: "Coop Mega", categoryId: "supermarket", travelTime: { walk: 8 }, openingHoursJson: tider("7:00 AM – 10:00 PM") }),
+      ]),
+      "dagligvare-lengst-apent",
+    );
+    expect(svar).toBe(
+      "[Kiwi](poi:d1) holder åpent til 23 på hverdager, 14 minutter til fots. [Coop Mega](poi:d2) stenger 22, 8 minutter unna.",
+    );
+  });
+
+  it("dagligvare-lengst-apent slår sammen to som stenger likt", () => {
+    const svar = answerFor(
+      hverdag([
+        poi({ id: "d1", name: "Kiwi", categoryId: "supermarket", travelTime: { walk: 14 }, openingHoursJson: tider("7:00 AM – 11:00 PM") }),
+        poi({ id: "d2", name: "Rema", categoryId: "supermarket", travelTime: { walk: 8 }, openingHoursJson: tider("8:00 AM – 11:00 PM") }),
+      ]),
+      "dagligvare-lengst-apent",
+    );
+    // Lik stengetid → nærmest først, som ellers i fila.
+    expect(svar).toBe(
+      "[Rema](poi:d2) og [Kiwi](poi:d1) holder åpent til 23 på hverdager, 8 minutter og 14 minutter til fots.",
+    );
+  });
+
+  it("dagligvare-sondag åpner i ENTALL, så den ikke leses som Mat & drikkes søndagsrad", () => {
+    const svar = answerFor(
+      hverdag([
+        poi({ id: "d3", name: "Bunnpris", categoryId: "supermarket", travelTime: { walk: 14 }, openingHoursJson: tider("7:00 AM – 11:00 PM", "Saturday: Closed", "Sunday: 11:00 AM – 10:00 PM") }),
+      ]),
+      "dagligvare-sondag",
+    );
+    expect(svar).toBe("På søndag holder [Bunnpris](poi:d3) åpent 11–22, 14 minutter til fots.");
+  });
+
+  it("legevakt bruker ALDRI et sykehus — porten er ordet i navnet", () => {
+    const entries = hverdag([
+      poi({ id: "s1", name: "St. Olavs hospital", categoryId: "hospital", travelTime: { walk: 30 } }),
+    ]);
+    expect(entries.find((e) => e.id === "legevakt-sykehus")).toBeUndefined();
+  });
+
+  it("legevakt svarer med reisetid, ikke med «på kartet»", () => {
+    const svar = answerFor(
+      hverdag([
+        poi({ id: "l1", name: "Trondheim Interkommunale Legevakt", categoryId: "doctor", travelTime: { walk: 42, car: 11 } }),
+      ]),
+      "legevakt-sykehus",
+    );
+    expect(svar).toBe(
+      "[Trondheim Interkommunale Legevakt](poi:l1) er nærmeste legevakt, 42 minutter til fots eller 11 med bil.",
+    );
+    expect(svar).not.toContain("på kartet");
+  });
+
+  it("spesialtrening navngir bare idrettene som er FUNNET, ikke spørsmålets liste", () => {
+    const svar = answerFor(
+      generateCategoryFaq(
+        input({
+          themeId: "trening-aktivitet",
+          categoryIds: ["gym"],
+          pois: [],
+          allPois: [poi({ id: "k1", name: "Grip Klatring Leangen", categoryId: "gym", travelTime: { walk: 19, bike: 8 } })],
+        }),
+      ),
+      "spesialtrening",
+    );
+    expect(svar).toBe(
+      "Nærmeste sted med klatring på kartet er [Grip Klatring Leangen](poi:k1), 19 minutter til fots eller 8 med sykkel.",
+    );
+    expect(svar).not.toMatch(/yoga|kampsport/);
+  });
+
+  it("padel-tennis foretrekker en ANNEN idrett som nummer to", () => {
+    const svar = answerFor(
+      generateCategoryFaq(
+        input({
+          themeId: "trening-aktivitet",
+          categoryIds: ["gym"],
+          pois: [],
+          allPois: [
+            poi({ id: "p1", name: "Nyhavna padel", categoryId: "idrett", travelTime: { walk: 37, car: 12 } }),
+            poi({ id: "p2", name: "Lade padelsenter", categoryId: "idrett", travelTime: { walk: 38, car: 12 } }),
+            poi({ id: "p3", name: "Lade Tennisarena", categoryId: "idrett", travelTime: { walk: 39, car: 9 } }),
+          ],
+        }),
+      ),
+      "padel-tennis",
+    );
+    expect(svar).toContain("[Nyhavna padel](poi:p1) har padel");
+    expect(svar).toContain("[Lade Tennisarena](poi:p3) har tennis");
+    expect(svar).not.toContain("p2");
+  });
+
+  it("is-skoyter skiller ishall fra skøytebane på navnet, og påstår aldri sesong", () => {
+    const svar = answerFor(
+      generateCategoryFaq(
+        input({
+          themeId: "trening-aktivitet",
+          categoryIds: ["gym"],
+          pois: [],
+          allPois: [
+            poi({ id: "i1", name: "Leangen Curlinghall", categoryId: "idrett", travelTime: { walk: 13, bike: 5 } }),
+            poi({ id: "i2", name: "Jakobsli skøytebane", categoryId: "idrett", travelTime: { walk: 36, bike: 14 } }),
+          ],
+        }),
+      ),
+      "is-skoyter",
+    );
+    expect(svar).toContain("Nærmeste ishall på kartet er [Leangen Curlinghall](poi:i1)");
+    expect(svar).not.toMatch(/sesong|vinter|åpent fra/);
+  });
+});
