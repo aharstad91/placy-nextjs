@@ -44,7 +44,17 @@ To følgeendringer fulgte av omdøpingen, begge fordi ordet endret hva brikken E
 
 Verifisert i Chrome på 1400 og 390 px med sporet rullet helt til høyre: utgangen står synlig, ligger utenfor sporet, og sporet har ingen synlig rullefelt (`offsetHeight − clientHeight` = 0). Merk: den svarte «N»-sirkelen som ligger over nedre venstre hjørne i dev er Next.js sin egen dev-indikator, ikke noe i produktet.
 
-### 5. Åpent
+### 5. Kortene ble én horisontal linje da labelene ble korte (2026-09-06)
+
+Kategorinavnene er kortet ned til ett ord hver i hovedmappa — Hverdag, Oppvekst, Servering, Natur, Transport, Trening — og boardet leser dem allerede fra provisjonert data, så Wesselsløkka viser dem live. Andreas: *«så på gridet, tror jeg vi kan nå samle både ikon og de to linjene med tekst på en og samme horisontale linje.»*
+
+Ikonet lå over teksten fordi et navn som «Transport & Mobilitet» brøt i to på halv kolonnebredde. Med ettordsnavn faller den grunnen bort: ikon til venstre, navn og antall stablet til høyre, alt på én linje. Kortet gikk fra 114 til 60 px høyt, og rutenettet fra ~340 til 226 px — som er forskjellen på at strøkets spørsmål og svar ligger under fold eller ikke. På 390 px får hele FAQ-lista nå plass på samme skjerm som rutenettet.
+
+Navnet står på én linje og klippes heller enn å brytes: ett kort som er én linje høyere enn nabokortet gjør raden skjev, og et rutenett med ujevne rader slutter å lese som et sett med likeverdige valg. Målt: ingen av de seks navnene klippes i dag, verken på 1400 eller 390 px.
+
+Merk om kilden: labelene lever i `lib/themes/default-themes.ts` (+ `report-defaults.ts`, `bransjeprofiler.ts`) og var ved dette tidspunktet UKOMMITERT arbeid i hovedmappa, ikke i main-historikken. Denne branchen har dem derfor ikke i koden — men boardet henter navnet fra `theme.name` i produktkonfigurasjonen (`board-data.ts`), ikke fra tema-filen ved render, så de korte navnene vises uansett. Rutenettets layout er ikke avhengig av hvilken vei det løses.
+
+### 6. Åpent
 
 - **Mobil-inngangen.** «La nabolaget presentere seg» i mobil-indeksen starter fortsatt på første tema, ikke på Beliggenhet-rutenettet (indeksen har alt sin egen kategoriliste). Andreas må avgjøre om mobil-play skal lande på området slik desktop-kolonnen gjør.
 - Raden ruller aktivt tema til 44 px fra venstre, så «Beliggenhet» (veien tilbake) ligger ofte utenfor synsfeltet etter et kort-trykk. Pre-eksisterende, men mer synlig nå som rutenettet er inngangen.

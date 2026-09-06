@@ -22,6 +22,19 @@ import { useStoryTour } from "./story-tour";
  *
  * Samme form på mobil og desktop: to kolonner er nok til å fylle en sheet og
  * en sidekolonne uten å bli enten en liste eller en frimerkevegg.
+ *
+ * ## Kortet er én horisontal linje (2026-09-06)
+ *
+ * Ikonet sto først OVER teksten, fordi kategorinavnene var lange nok til å
+ * bryte ved siden av en sirkel («Transport & Mobilitet» i en halv kolonnebredde
+ * er to linjer). Da navnene ble kortet ned til ett ord hver, forsvant den
+ * grunnen: ikon og de to tekstlinjene får plass på samme linje, og kortet blir
+ * en tredjedel lavere. Det er hele rutenettet som vinner på det — seks kort
+ * over strøkets spørsmål og svar skal ikke skyve svarene ut av skjermen.
+ *
+ * Navnet står på ÉN linje og klippes heller enn å brytes: et kort som er én
+ * linje høyere enn nabokortet gjør raden skjev, og et rutenett med ujevne rader
+ * slutter å lese som et sett med likeverdige valg.
  */
 export function StoryThemeGrid({ className = "" }: { className?: string }) {
   const { stops, goto } = useStoryTour();
@@ -40,7 +53,7 @@ export function StoryThemeGrid({ className = "" }: { className?: string }) {
               data-story-theme={c.id}
               onClick={() => goto(n)}
               className={cn(
-                "flex flex-col items-start gap-2.5 rounded-2xl bg-white p-3.5 text-left",
+                "flex items-center gap-2.5 rounded-2xl bg-white p-3 text-left",
                 "shadow-[inset_0_0_0_1px_rgba(28,25,23,0.07),0_1px_3px_rgba(28,25,23,0.06)]",
                 "transition-[box-shadow,transform] duration-150",
                 "hover:shadow-[inset_0_0_0_1px_rgba(28,25,23,0.12),0_4px_14px_rgba(28,25,23,0.1)]",
@@ -49,16 +62,16 @@ export function StoryThemeGrid({ className = "" }: { className?: string }) {
             >
               <span
                 aria-hidden
-                className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-white"
+                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-white"
                 style={{ backgroundColor: c.color }}
               >
-                <Icon size={16} strokeWidth={2.2} />
+                <Icon size={17} strokeWidth={2.2} />
               </span>
-              <span className="min-w-0">
-                <span className="block text-[13.5px] font-semibold leading-[1.25] tracking-[-0.01em] text-stone-900">
+              <span className="min-w-0 flex-1">
+                <span className="block truncate text-[13.5px] font-semibold leading-[1.3] tracking-[-0.01em] text-stone-900">
                   {c.label}
                 </span>
-                <span className="mt-0.5 block text-[12px] font-medium tabular-nums text-stone-500">
+                <span className="block text-[12px] font-medium leading-[1.3] tabular-nums text-stone-500">
                   {c.pois.length} {c.pois.length === 1 ? "sted" : "steder"}
                 </span>
               </span>
