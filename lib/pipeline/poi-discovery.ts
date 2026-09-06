@@ -356,34 +356,67 @@ const NEARBY_FIELD_MASK = [
   // `regularOpeningHours` er Enterprise, og masken ber alt om
   // rating/userRatingCount (Enterprise) — SKU-en er uendret.
   //
-  // SPRÅK: målt mot searchNearby 2026-09-06 uten `languageCode` — dagsnavnene
-  // kommer på ENGELSK («Monday: 8:00 AM – 10:00 PM») mens stedsnavnene forblir
-  // norske. Det er nøyaktig kombinasjonen konsumentene krever: `computeIsOpen`
-  // og `parseWeekdayText` matcher engelske dagsnavn og AM/PM (se
-  // OPENING_HOURS_LANGUAGE i places-backfill-lib.ts). Å sette languageCode:"en"
-  // ville i tillegg oversatt stedsnavnene, og det er nettopp derfor den IKKE
-  // settes.
+  // SPRÅK: begge søkene sender `languageCode: "no"` (se SEARCH_LANGUAGE), så
+  // linjene kommer på norsk 24-timersform («mandag: 08:00–18:00»). Både
+  // `parseWeekdayLine` og `computeIsOpen` leser den formen.
   "places.regularOpeningHours.weekdayDescriptions",
 ].join(",");
 
 /**
- * Feltmasken for TEKSTSØKET — den samme, minus åpningstidene.
+ * Språket BEGGE Google-søkene ber om.
  *
- * Tekstsøket sender `languageCode: "no"` (norske søkeord treffer norske
- * oppføringer), og det påvirker ALLE tekstfelt i svaret. Målt 2026-09-06:
- * samme sted gir «Monday: 8:00 AM – 10:00 PM» uten languageCode og
- * «mandag: 08:00–18:00» med `no`. Konsumentene (`parseWeekdayText`,
- * `computeIsOpen`) matcher engelske dagsnavn og AM/PM, så den norske formen
- * ville blitt lagret og deretter STILLE ignorert — verre enn ingen tider, for
- * `--force`-logikken i refresh-scriptet ville trodd stedet var hentet.
+ * Tekstsøket har alltid sendt «no» (norske søkeord treffer norske
+ * oppføringer). Nærhetssøket sendte ingenting, og fikk dermed Googles
+ * standardspråk — engelsk — på alt Google ikke har lagret et egennavn for.
+ * Målt på Wesselsløkka-boardet 2026-09-06: åtte pins het «Sports Field», én
+ * «Athletic Field», én «Playground» og én «Church». Med «no» leverer Google
+ * selv det riktige navnet på fire av dem — «Church» er «Vår Frue kirke»,
+ * «Playground» er «Lekeplass», og to av idrettsbanene heter «Rosenborgbanen
+ * 11er» og «Rosenborgbanen 9er». De navnene lå der hele tiden; vi spurte på
+ * feil språk.
  *
- * Derfor ber tekstsøket ikke om feltet i det hele tatt. De fire kategoriene det
- * dekker (trafikkskole, ungdomsklubb, legesenter) får tidene sine fra
- * `refresh-opening-hours.ts`, som setter språket eksplisitt.
+ * Resten (steder Google rett og slett ikke har navn på) håndteres av
+ * `GENERISKE_NAVN` nedenfor.
  */
-const TEXT_FIELD_MASK = NEARBY_FIELD_MASK.split(",")
-  .filter((f) => !f.startsWith("places.regularOpeningHours"))
-  .join(",");
+const SEARCH_LANGUAGE = "no";
+
+/**
+ * Googles egne etiketter for steder den ikke har navn på, og den norske formen.
+ *
+ * `languageCode: "no"` løser de fleste, men ikke alle: målt 2026-09-06 kommer
+ * «Playground» og «Church» tilbake oversatt, mens «Sports Field» og «Athletic
+ * Field» står på engelsk uansett språk. De blir liggende som pins på et norsk
+ * board og sier ingenting om stedet.
+ *
+ * KATEGORIEN MÅ STEMME før navnet byttes. En klesbutikk i Falkenborgvegen 9
+ * heter faktisk «Park» (`clothing_store`) — uten kategoriporten ville regelen
+ * døpt om en ekte forretning. Derfor er dette ikke en ordliste, men en liste
+ * over etikett + hvilken kategori etiketten er gyldig for.
+ *
+ * Bare oppføringer vi har MÅLT i poolen står her. Dukker det opp en ny engelsk
+ * etikett, legges den til når den er observert — ikke på forhånd.
+ */
+const GENERISKE_NAVN: ReadonlyArray<{
+  google: string;
+  norsk: string;
+  kategorier: readonly string[];
+}> = [
+  { google: "Sports Field", norsk: "Idrettsbane", kategorier: ["idrett"] },
+  { google: "Athletic Field", norsk: "Idrettsbane", kategorier: ["idrett"] },
+  { google: "Playground", norsk: "Lekeplass", kategorier: ["lekeplass"] },
+];
+
+/**
+ * Navnet stedet skal bære på boardet. Uendret for alt som har et egennavn —
+ * bare Googles rene etiketter byttes, og bare i kategorien etiketten gjelder.
+ */
+export function norskStedsnavn(navn: string, kategoriId: string): string {
+  const treff = GENERISKE_NAVN.find(
+    (g) => g.google.toLowerCase() === navn.trim().toLowerCase()
+  );
+  if (!treff || !treff.kategorier.includes(kategoriId)) return navn;
+  return treff.norsk;
+}
 
 const NEARBY_TIMEOUT_MS = 10_000;
 
@@ -489,6 +522,7 @@ export async function searchNearbyOnce(
           // `null` = ingen typefilter. Brukes av medlems-proben, som spør
           // «hva ligger i dette bygget» og ikke «hvor er nærmeste bakeri».
           ...(category ? { includedTypes: [category] } : {}),
+          languageCode: SEARCH_LANGUAGE,
           maxResultCount: NEARBY_PAGE_MAX,
           ...(rankPreference ? { rankPreference } : {}),
           locationRestriction: {
@@ -681,7 +715,10 @@ export async function discoverGooglePlaces(
 
         allPOIs.push({
           id,
-          name: placeName,
+          // Filtrene over kjører på Googles egen streng; det er den
+          // `CATEGORY_NAME_BLOCKLIST` er skrevet mot. Navnebyttet skjer først
+          // her, når stedet faktisk skal på boardet.
+          name: norskStedsnavn(placeName, categoryDef.id),
           coordinates: {
             lat: place.location.latitude,
             lng: place.location.longitude,
@@ -818,7 +855,7 @@ export async function discoverAnchorCandidates(
     hits.push({
       poi: {
         id,
-        name: placeName,
+        name: norskStedsnavn(placeName, categoryDef.id),
         coordinates: {
           lat: place.location.latitude,
           lng: place.location.longitude,
@@ -971,11 +1008,11 @@ async function searchTextPage(
       headers: {
         "Content-Type": "application/json",
         "X-Goog-Api-Key": apiKey,
-        "X-Goog-FieldMask": `${TEXT_FIELD_MASK},nextPageToken`,
+        "X-Goog-FieldMask": `${NEARBY_FIELD_MASK},nextPageToken`,
       },
       body: JSON.stringify({
         textQuery: query,
-        languageCode: "no",
+        languageCode: SEARCH_LANGUAGE,
         pageSize: TEXT_PAGE_SIZE,
         ...(pageToken ? { pageToken } : {}),
         locationBias: {
@@ -1073,7 +1110,7 @@ export async function discoverGooglePlacesByText(
 
         allPOIs.push({
           id,
-          name: placeName,
+          name: norskStedsnavn(placeName, category.id),
           coordinates: {
             lat: place.location.latitude,
             lng: place.location.longitude,
@@ -1085,9 +1122,8 @@ export async function discoverGooglePlacesByText(
           googleReviewCount: place.userRatingCount,
           source: "google",
           containedInIds: mapContainingPlaces(place.containingPlaces),
-          // Ingen åpningstider her — se TEXT_FIELD_MASK. Statusen er
-          // språkuavhengig og bæres videre som i searchNearby-stien.
           googleBusinessStatus: place.businessStatus,
+          openingHoursWeekdayText: place.regularOpeningHours?.weekdayDescriptions,
         });
         addedCount++;
       }

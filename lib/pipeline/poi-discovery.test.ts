@@ -10,6 +10,7 @@ import {
   subdivideCircle,
   ANCHOR_SEARCH_RADIUS_M,
   GOOGLE_CATEGORY_MAP,
+  norskStedsnavn,
 } from "./poi-discovery";
 
 /**
@@ -200,16 +201,19 @@ describe("discoverGooglePlaces — åpningstider og driftsstatus", () => {
     expect(headers["X-Goog-FieldMask"]).not.toContain("periods");
   });
 
-  it("setter IKKE languageCode — den ville oversatt stedsnavnene", async () => {
-    // Målt 2026-09-06: uten languageCode kommer dagsnavnene på engelsk (som
-    // `parseWeekdayText` krever) mens stedsnavnene forblir norske.
+  it("setter languageCode «no» — uten den navngir Google navnløse steder på engelsk", async () => {
+    // Målt 2026-09-06 mot Places-API-et på ekte place-id-er fra boardet:
+    // «Playground» → «Lekeplass», «Church» → «Vår Frue kirke», og to
+    // «Sports Field» → «Rosenborgbanen 11er» / «Rosenborgbanen 9er».
+    // Åpningstidene kommer da på norsk 24-timersform, som `parseWeekdayLine`
+    // og `computeIsOpen` begge leser.
     fetchMock.mockResolvedValueOnce(
       placesResponse([googlePlace({ id: "p1", name: "Coop Mega", types: ["supermarket"] })])
     );
     await discoverGooglePlaces(baseConfig(["supermarket"]), "key");
 
     const body = JSON.parse(fetchMock.mock.calls[0][1].body as string);
-    expect(body).not.toHaveProperty("languageCode");
+    expect(body.languageCode).toBe("no");
   });
 
   it("bærer åpningstidene og statusen helt fram til POI-en", async () => {
@@ -830,11 +834,8 @@ describe("discoverBysykkelStations", () => {
   });
 });
 
-describe("discoverGooglePlacesByText — språk og feltmaske", () => {
-  it("ber IKKE om åpningstider: languageCode «no» ville gitt uparserbare dagsnavn", async () => {
-    // Målt 2026-09-06: samme sted gir «Monday: 8:00 AM – 10:00 PM» uten
-    // languageCode og «mandag: 08:00–18:00» med `no`. Den norske formen ville
-    // blitt lagret og deretter stille ignorert av `parseWeekdayText`.
+describe("begge Google-søkene spør på norsk", () => {
+  it("tekstsøket ber om åpningstider og norsk — masken er den samme som nærhetssøkets", async () => {
     fetchMock.mockResolvedValueOnce(
       placesResponse([googlePlace({ id: "t1", name: "Øya legesenter", types: ["doctor"] })])
     );
@@ -846,7 +847,56 @@ describe("discoverGooglePlacesByText — språk og feltmaske", () => {
 
     const [, init] = fetchMock.mock.calls[0];
     const headers = init.headers as Record<string, string>;
-    expect(headers["X-Goog-FieldMask"]).not.toContain("regularOpeningHours");
+    expect(headers["X-Goog-FieldMask"]).toContain("regularOpeningHours");
     expect(JSON.parse(init.body as string).languageCode).toBe("no");
+  });
+
+  it("nærhetssøket sender languageCode «no» — uten den kom navnløse steder på engelsk", async () => {
+    // Målt 2026-09-06 mot Places-API-et: samme place-id gir «Playground» uten
+    // languageCode og «Lekeplass» med `no`, «Church» blir «Vår Frue kirke», og
+    // to «Sports Field» blir «Rosenborgbanen 11er» / «Rosenborgbanen 9er».
+    fetchMock.mockResolvedValue(placesResponse([]));
+    await discoverGooglePlaces(baseConfig(["restaurant"]), "key");
+
+    const [, init] = fetchMock.mock.calls[0];
+    expect(JSON.parse(init.body as string).languageCode).toBe("no");
+  });
+});
+
+describe("norskStedsnavn — Googles engelske etiketter for navnløse steder", () => {
+  it("bytter etiketten når kategorien stemmer", () => {
+    expect(norskStedsnavn("Sports Field", "idrett")).toBe("Idrettsbane");
+    expect(norskStedsnavn("Athletic Field", "idrett")).toBe("Idrettsbane");
+    expect(norskStedsnavn("Playground", "lekeplass")).toBe("Lekeplass");
+  });
+
+  it("lar en ekte forretning som HETER etiketten være i fred", () => {
+    // Falkenborgvegen 9 i Trondheim: klesbutikken «Park» (clothing_store).
+    // Uten kategoriporten ville en ren ordliste døpt den om.
+    expect(norskStedsnavn("Park", "butikk")).toBe("Park");
+    expect(norskStedsnavn("Sports Field", "butikk")).toBe("Sports Field");
+  });
+
+  it("rører ikke navn som bærer et egennavn", () => {
+    expect(norskStedsnavn("Sollia Sports Field", "idrett")).toBe("Sollia Sports Field");
+    expect(norskStedsnavn("Trondheim Performance Center", "gym")).toBe(
+      "Trondheim Performance Center",
+    );
+  });
+
+  it("navnet på boardet er det normaliserte, ikke Googles etikett", async () => {
+    fetchMock.mockResolvedValueOnce(
+      placesResponse([
+        googlePlace({
+          id: "sf1",
+          name: "Sports Field",
+          types: ["athletic_field", "sports_activity_location"],
+          rating: 4.2,
+          reviews: 5,
+        }),
+      ])
+    );
+    const pois = await discoverGooglePlaces(baseConfig(["athletic_field"]), "key");
+    expect(pois.map((p) => p.name)).toEqual(["Idrettsbane"]);
   });
 });

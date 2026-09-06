@@ -36,66 +36,75 @@ export function useOpeningHours(visiblePOIs: POI[]) {
 }
 
 /**
- * Compute whether a place is currently open from weekday_text.
+ * Er stedet åpent akkurat nå, lest ut av `weekday_text`.
  *
- * Google's weekday_text format: "Monday: 8:00 AM – 5:00 PM"
- * Returns undefined if hours cannot be parsed.
+ * SPRÅKUAVHENGIG (2026-09-06). Fram til nå fant denne dagens linje ved å matche
+ * engelske dagsnavn («Monday») og leste bare AM/PM-tider. Google svarer på
+ * språket kallet ble gjort på, og nærhetssøket spør nå på norsk
+ * (`SEARCH_LANGUAGE` i poi-discovery.ts) — hver eneste linje ville sluttet å
+ * matche. Ikke med en feil: bare en åpent/stengt-markør som forsvant fra hvert
+ * kort på boardet.
+ *
+ * Dagen finnes ved POSISJON i lista (Places-kontrakten er alltid mandag først),
+ * ikke ved dagsnavn, og tidsmønsteret gjør AM/PM valgfritt. Flere intervaller
+ * per dag (lunsjstengt) og åpent over midnatt beholdes — begge var håndtert før
+ * og skal fortsatt være det.
  */
 export function computeIsOpen(weekdayText: string[]): boolean | undefined {
-  const days = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+  if (weekdayText.length !== 7) return undefined;
+  // JS: 0 = søndag. Googles liste: 0 = mandag.
   const now = new Date();
-  const todayName = days[now.getDay()];
+  const line = weekdayText[(now.getDay() + 6) % 7];
+  if (!line) return undefined;
 
-  const todayLine = weekdayText.find((line) =>
-    line.toLowerCase().startsWith(todayName.toLowerCase())
-  );
+  const idx = line.indexOf(": ");
+  if (idx === -1) return undefined;
+  // Googles engelske strenger bruker U+202F (narrow no-break) og U+2009 (thin).
+  const value = line
+    .slice(idx + 2)
+    .replace(/[\u202f\u2009]/g, " ")
+    .trim();
 
-  if (!todayLine) return undefined;
+  if (/^(closed|stengt)$/i.test(value)) return false;
+  if (/^(open 24 hours|døgnåpent)$/i.test(value)) return true;
 
-  // "Monday: Closed" or "Monday: Open 24 hours"
-  const lower = todayLine.toLowerCase();
-  if (lower.includes("closed")) return false;
-  if (lower.includes("open 24 hours")) return true;
-
-  // Parse time range: "Monday: 8:00 AM – 5:00 PM"
-  // May have multiple ranges: "8:00 AM – 12:00 PM, 1:00 PM – 5:00 PM"
-  const timePart = todayLine.split(": ").slice(1).join(": ");
-  if (!timePart) return undefined;
-
-  const ranges = timePart.split(",").map((r) => r.trim());
   const currentMinutes = now.getHours() * 60 + now.getMinutes();
+  let sawRange = false;
 
-  for (const range of ranges) {
-    const match = range.match(
-      /(\d{1,2}):(\d{2})\s*(AM|PM)\s*[–-]\s*(\d{1,2}):(\d{2})\s*(AM|PM)/i
+  for (const range of value.split(",").map((r) => r.trim())) {
+    const m = /^(\d{1,2})[:.](\d{2})\s*(AM|PM)?\s*[–—-]\s*(\d{1,2})[:.](\d{2})\s*(AM|PM)?$/i.exec(
+      range
     );
-    if (!match) continue;
+    if (!m) continue;
+    sawRange = true;
+    // Google dropper åpningstidens markør når begge ligger i samme døgnhalvdel:
+    // «1:00 – 10:00 PM» er 13–22. Uten arven leses «1:00» som klokka 01.
+    const open = toMinutes(Number(m[1]), Number(m[2]), m[3] ?? m[6]);
+    const close = toMinutes(Number(m[4]), Number(m[5]), m[6]);
+    if (open === null || close === null) continue;
 
-    const openMinutes = toMinutes(
-      parseInt(match[1]),
-      parseInt(match[2]),
-      match[3].toUpperCase()
-    );
-    const closeMinutes = toMinutes(
-      parseInt(match[4]),
-      parseInt(match[5]),
-      match[6].toUpperCase()
-    );
-
-    // Handle overnight (e.g., 6:00 PM – 2:00 AM)
-    if (closeMinutes <= openMinutes) {
-      if (currentMinutes >= openMinutes || currentMinutes < closeMinutes) return true;
-    } else {
-      if (currentMinutes >= openMinutes && currentMinutes < closeMinutes) return true;
+    if (close <= open) {
+      // Over midnatt (nattklubb): åpent fra i kveld til utpå natta.
+      if (currentMinutes >= open || currentMinutes < close) return true;
+    } else if (currentMinutes >= open && currentMinutes < close) {
+      return true;
     }
   }
 
-  return false;
+  // Ingen lesbar tidslinje = vi vet ikke. Bare et intervall vi FAKTISK leste,
+  // og som ikke omsluttet klokka nå, betyr stengt.
+  return sawRange ? false : undefined;
 }
 
-function toMinutes(hours: number, minutes: number, ampm: string): number {
+/** Klokkeslett → minutter fra midnatt. `null` når tallene ikke er en gyldig tid. */
+function toMinutes(hours: number, minutes: number, ampm: string | undefined): number | null {
   let h = hours;
-  if (ampm === "PM" && h !== 12) h += 12;
-  if (ampm === "AM" && h === 12) h = 0;
+  if (ampm) {
+    const upper = ampm.toUpperCase();
+    if (h < 1 || h > 12) return null;
+    if (upper === "AM") h = h === 12 ? 0 : h;
+    else h = h === 12 ? 12 : h + 12;
+  }
+  if (h > 24 || minutes > 59) return null;
   return h * 60 + minutes;
 }

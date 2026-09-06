@@ -152,6 +152,29 @@ export const CATEGORY_NAME_BLOCKLIST: Record<string, string[]> = {
   // athletic_field og gir den INGEN parking-type, så type-filteret kan ikke se
   // det. Navnet er det eneste signalet som finnes (2026-08-24).
   idrett: ["parkering", "parking", "p-hus", "garasje"],
+  // «Geo Seabed Instruments AS» sto som frisør på Wesselsløkka-boardet
+  // (2026-09-06). Feilen er Googles egen: `primaryType` på oppføringen ER
+  // `beauty_salon`, verifisert direkte mot Places-API-et på både engelsk og
+  // norsk. Type-filteret kan derfor aldri fange den — navnet er det eneste
+  // signalet, akkurat som for Rotvoll.
+  //
+  // Termene er avgrenset til bransjeord som strukturelt ikke kan tilhøre en
+  // frisør eller hudpleiesalong. Målt mot boardets 38 haircare-oppføringer
+  // treffer bare «instrument» noe i dag, og ingen ekte salong rammes —
+  // «Injection Specialist AS» og «Velbehag Medisinsk Hudklinikk» er reelle
+  // kosmetiske klinikker og skal bli stående.
+  haircare: [
+    "instrument",
+    "seabed",
+    "subsea",
+    "offshore",
+    "maritim",
+    "engineering",
+    "entreprenør",
+    "regnskap",
+    "advokat",
+    "verksted",
+  ],
 };
 
 // === Grovfiltre ===

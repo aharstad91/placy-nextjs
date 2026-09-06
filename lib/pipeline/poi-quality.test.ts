@@ -399,3 +399,28 @@ describe("calculateQualityStats", () => {
     expect(stats.rejected).toBe(0);
   });
 });
+
+describe("isNameCategoryMismatch — frisørkategorien", () => {
+  it("kaster «Geo Seabed Instruments AS» ut av frisør", () => {
+    // Googles egen `primaryType` på oppføringen ER `beauty_salon` — verifisert
+    // mot Places-API-et på både engelsk og norsk 2026-09-06. Type-filteret kan
+    // aldri fange den; navnet er det eneste signalet som finnes.
+    expect(isNameCategoryMismatch("Geo Seabed Instruments AS", "haircare")).toBe(true);
+  });
+
+  it("lar de ekte salongene på boardet stå", () => {
+    // Alle 38 haircare-oppføringene på Wesselsløkka ble gjennomgått; disse er
+    // de som ligner mest på en bransje-treffer uten å være det.
+    for (const navn of [
+      "Injection Specialist AS",
+      "Velbehag Medisinsk Hudklinikk",
+      "Lade Allè hudklinikk AS",
+      "Mooi Klinikken AS",
+      "Edge Barbershop Trondheim",
+      "Stas hår og bryn",
+      "Nails Trondheim",
+    ]) {
+      expect(isNameCategoryMismatch(navn, "haircare")).toBe(false);
+    }
+  });
+});
