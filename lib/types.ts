@@ -315,6 +315,13 @@ const BoardKretsSchoolSchema = z.object({
   trinnTil: z.number().int().nullable(),
   elevtall: z.number().int().nullable(),
   offentlig: z.boolean(),
+  /**
+   * Gangrutens lengde til skolen, i meter. Kilden er Enturs `walkDistance` på
+   * et reisemønster som er HELT til fots — skoleskyss-retten måles langs
+   * gangveien, ikke i luftlinje, og et mønster med buss ville målt gangen til
+   * holdeplassen. Utelatt når ingen gå-rute ble funnet; da utelates raden.
+   */
+  gangMeter: z.number().int().positive().optional(),
 });
 
 const BoardVideregaendeSchema = z.object({
@@ -326,6 +333,50 @@ const BoardVideregaendeSchema = z.object({
   distanceM: z.number().int().min(0),
   /** Tom når Entur ikke fant en reise — skolen står da uten bussetid. */
   patterns: z.array(BoardTripPatternSchema).default([]),
+});
+
+/** Én stor arbeidsplass, med reisen dit fra boligen. */
+const BoardWorkplaceSchema = z.object({
+  navn: z.string().min(1),
+  /** Tom når Entur ikke fant en reise — arbeidsplassen utelates da fra svaret. */
+  patterns: z.array(BoardTripPatternSchema).default([]),
+});
+
+/** Avganger telt i ett tidsvindu på én vanlig hverdag. */
+const BoardDepartureWindowSchema = z.object({
+  /** Vinduets start og slutt som hele timer, 0–24. «07–09» er `{7, 9}`. */
+  fraTime: z.number().int().min(0).max(24),
+  tilTime: z.number().int().min(0).max(24),
+  /** Antall avganger i vinduet. NULL er et gyldig, etterprøvbart svar her:
+   *  Enturs avgangsliste er komplett for datoen, i motsetning til POI-poolen. */
+  avganger: z.number().int().min(0),
+});
+
+const BoardFrequencySchema = z.object({
+  stopPlaceId: z.string().min(1),
+  stopName: z.string().min(1),
+  /** Skiltet retningen viser, f.eks. «Marienborg via Strindh.-sentrum». */
+  retning: z.string().min(1),
+  morgen: BoardDepartureWindowSchema,
+  kveld: BoardDepartureWindowSchema,
+});
+
+/** Siste avgang for én ukedagstype. */
+const BoardLastDepartureLegSchema = z.object({
+  /** Minutter etter midnatt på AVREISEDØGNET. 00.30 natt til lørdag er 1470,
+   *  ikke 30 — ellers ville en nattavgang sortert som tidlig morgen. */
+  minutt: z.number().int().min(0).max(2880),
+  lines: z.array(z.string().min(1)).default([]),
+});
+
+const BoardLastDepartureSchema = z.object({
+  /** Sentrumsstoppet reisen går fra — samme stopp som `cityCentre`. */
+  fraNavn: z.string().min(1),
+  /** Holdeplassen reisen ender på, nærmest boligen. */
+  tilNavn: z.string().min(1),
+  hverdag: BoardLastDepartureLegSchema.optional(),
+  /** Natt til lørdag og søndag. Utelatt når helgeoppslaget ikke ga svar. */
+  helg: BoardLastDepartureLegSchema.optional(),
 });
 
 export const ReportBoardFactsSchema = z.object({
@@ -347,6 +398,28 @@ export const ReportBoardFactsSchema = z.object({
       videregaaende: z.array(BoardVideregaendeSchema).default([]),
     })
     .optional(),
+  /**
+   * Reisene til byens store arbeidsplasser. Lista er REDAKSJONELL og per by —
+   * hvem det er verdt å reise til er et valg, ikke et registeroppslag, og det
+   * hører hjemme samme sted som valget av sentrumsstopp.
+   *
+   * Valgfri og ikke defaultet til tom liste: en by uten arbeidsplassliste er en
+   * ekte tilstand, og `.default([])` ville tvunget hver eksisterende
+   * fakta-fikstur til å bære et tomt felt den ikke har noe forhold til.
+   */
+  workplaces: z.array(BoardWorkplaceSchema).optional(),
+  /**
+   * Avgangstelling i to hverdagsvinduer for ÉN retning fra ÉN holdeplass —
+   * sentrumsretningen. Ikke per time: et to-timers vindu delt på to gir halve
+   * avganger, og tallet leseren kan slå opp hos Entur er tellingen i vinduet.
+   */
+  frequency: BoardFrequencySchema.optional(),
+  /**
+   * Siste avgang hjem fra sentrumsstoppet, per ukedagstype. Nattavgangene i
+   * Trondheim kjører ofte andre linjer enn dagavgangene, så linjene lagres per
+   * type og ikke én gang.
+   */
+  lastDeparture: BoardLastDepartureSchema.optional(),
 });
 
 export type ReportBoardFacts = z.infer<typeof ReportBoardFactsSchema>;
@@ -354,6 +427,9 @@ export type BoardTripPattern = z.infer<typeof BoardTripPatternSchema>;
 export type BoardTransitStop = z.infer<typeof BoardTransitStopSchema>;
 export type BoardKretsSchool = z.infer<typeof BoardKretsSchoolSchema>;
 export type BoardVideregaende = z.infer<typeof BoardVideregaendeSchema>;
+export type BoardWorkplace = z.infer<typeof BoardWorkplaceSchema>;
+export type BoardFrequency = z.infer<typeof BoardFrequencySchema>;
+export type BoardLastDeparture = z.infer<typeof BoardLastDepartureSchema>;
 
 // === Kuratert FAQ (strøkets svar, arvet inn i board-config) ===
 

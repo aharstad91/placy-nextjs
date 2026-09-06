@@ -268,6 +268,9 @@ describe("faqQuestionsForTheme", () => {
       "naermeste-holdeplass",
       "linjer",
       "til-sentrum",
+      "frekvens",
+      "til-arbeidsplassene",
+      "siste-buss",
       "tog",
       "lading",
       "bysykkel",
@@ -283,6 +286,7 @@ describe("faqQuestionsForTheme", () => {
       "lekeplass",
       "oppvekst-fritid",
       "skolevei",
+      "skoleskyss",
     ]);
   });
 

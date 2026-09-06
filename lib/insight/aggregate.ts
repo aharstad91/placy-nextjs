@@ -167,6 +167,7 @@ export function aggregateInsight(input: AggregateInput): InsightReport {
   }
 
   const categoryLabel = new Map(labels.categories.map((c) => [c.id, c.label]));
+  const categoryMeta = new Map(labels.categories.map((c) => [c.id, c]));
   const baseOpens = new Map<string, number>();
   for (const row of baselineRows) { const id = str(row.payload?.category_id); if (id) inc(baseOpens, id); }
   const baseTotal = sum(baseOpens);
@@ -178,7 +179,8 @@ export function aggregateInsight(input: AggregateInput): InsightReport {
     const share = catTotal > 0 ? opens / catTotal : 0;
     const baselineShare = baseTotal > 0 ? (baseOpens.get(id) ?? 0) / baseTotal : null;
     return {
-      id, label: categoryLabel.get(id) ?? id, opens, prevOpens: prev.cat.get(id) ?? 0, share, baselineShare,
+      id, label: categoryLabel.get(id) ?? id, icon: categoryMeta.get(id)?.icon, color: categoryMeta.get(id)?.color,
+      opens, prevOpens: prev.cat.get(id) ?? 0, share, baselineShare,
       deltaPp: baselineShare === null ? null : Math.round((share - baselineShare) * 1000) / 10 || 0,
       presentedPosition: mostCommon(cur.presented.get(id) ?? []) ?? null,
     };
@@ -189,18 +191,25 @@ export function aggregateInsight(input: AggregateInput): InsightReport {
     const meta = labels.pois.get(id);
     return {
       id, name: meta?.name ?? id,
+      categoryId: meta?.categoryId ?? null,
       categoryLabel: meta?.categoryId ? (categoryLabel.get(meta.categoryId) ?? null) : null,
       clicks: cur.poiClicks.get(id) ?? 0, explores: cur.poiExplores.get(id) ?? 0, outbound: cur.poiOutbound.get(id) ?? 0,
       prevTotal: (prev.poiClicks.get(id) ?? 0) + (prev.poiExplores.get(id) ?? 0),
     };
-  }).sort((a, b) => b.clicks + b.explores - (a.clicks + a.explores)).slice(0, 10);
+  }).sort((a, b) => b.clicks + b.explores - (a.clicks + a.explores));
 
-  const faq: FaqInsight[] = [...cur.faq.entries()].map(([id, opens]) => {
+  // Alle VISTE spørsmål er med — et spørsmål med 0 åpninger er et funn
+  // (revider/bytt ut), ikke et fravær. Åpnede id-er utenfor katalogen tas med.
+  const faqIds = new Set([...labels.faq.keys(), ...cur.faq.keys()]);
+  const faq: FaqInsight[] = [...faqIds].map((id) => {
     const meta = labels.faq.get(id);
     // Katalogens tema vinner; konvoluttens category_id er fallback (kurators egne id-er).
-    const cat = meta?.categoryId ?? cur.faqCategory.get(id);
-    return { id, question: meta?.question ?? id, categoryLabel: cat ? (categoryLabel.get(cat) ?? cat) : null, opens, prevOpens: prev.faq.get(id) ?? 0 };
-  }).sort((a, b) => b.opens - a.opens).slice(0, 8);
+    const cat = meta?.categoryId ?? cur.faqCategory.get(id) ?? null;
+    return {
+      id, question: meta?.question ?? id, categoryId: cat, categoryLabel: cat ? (categoryLabel.get(cat) ?? cat) : null,
+      opens: cur.faq.get(id) ?? 0, prevOpens: prev.faq.get(id) ?? 0,
+    };
+  }).sort((a, b) => b.opens - a.opens);
 
   const sources: SourceInsight[] = [...cur.sources.entries()]
     .map(([source, n]) => ({ source, views: n, share: cur.views > 0 ? n / cur.views : 0, prevViews: prev.sources.get(source) ?? 0 }))
@@ -217,44 +226,8 @@ export function aggregateInsight(input: AggregateInput): InsightReport {
     categories, pois, faq, sources,
     travelModes: cur.travel,
     threeDShare: cur.threeDKnown > 0 ? cur.threeDOn / cur.threeDKnown : null,
-    observations: [], actions: [],
   };
-  if (reached) Object.assign(report, deriveNarrative(report));
   return report;
-}
-
-// ---------------------------------------------------------------------------
-// Signaler: korte én-linjere, ingen avsnitt. Segment-ord bare når to
-// uavhengige signaler peker samme vei.
-// ---------------------------------------------------------------------------
-const pct = (x: number) => `${Math.round(x * 100)} %`;
-
-export function deriveNarrative(r: InsightReport): { observations: string[]; actions: string[] } {
-  const observations: string[] = [];
-  const actions: string[] = [];
-  const withBase = r.categories.filter((c) => c.deltaPp !== null);
-  const lead = [...withBase].sort((a, b) => (b.deltaPp ?? 0) - (a.deltaPp ?? 0))[0];
-  if (lead && (lead.deltaPp ?? 0) >= 5) {
-    observations.push(`${lead.label}: ${pct(lead.share)} her mot ${pct(lead.baselineShare ?? 0)} på andre boards`);
-    const poi = r.pois.find((p) => p.categoryLabel === lead.label);
-    actions.push(poi ? `Åpne visningen med ${lead.label.toLowerCase()} — ${poi.name}` : `Åpne visningen med ${lead.label.toLowerCase()}`);
-    actions.push(`Målrett annonser mot ${lead.label.toLowerCase()}-segmentet`);
-  }
-  const ignored = withBase.filter((c) => (c.deltaPp ?? 0) <= -5)[0];
-  if (ignored) observations.push(`${ignored.label} ignoreres: ${pct(ignored.share)} mot ${pct(ignored.baselineShare ?? 0)}`);
-
-  const modeTotal = r.travelModes.walk + r.travelModes.bike + r.travelModes.car;
-  if (modeTotal >= 20 && r.travelModes.car / modeTotal >= 0.35) {
-    observations.push(`${pct(r.travelModes.car / modeTotal)} sjekker avstander med bil`);
-    actions.push("Ha kjøretid til sentrum og E6 klart som tall");
-  }
-  const topFaq = r.faq[0];
-  if (topFaq && topFaq.opens >= 5) actions.push(`Svar på «${topFaq.question}» i annonsen`);
-
-  if (r.views >= 30 && !r.sources.some((s) => s.source !== "direkte")) {
-    actions.push("Bruk ?src=qr / finn / mail i lenkene så kilden blir målbar");
-  }
-  return { observations: observations.slice(0, 3), actions: actions.slice(0, 3) };
 }
 
 export function sourceName(source: string): string {

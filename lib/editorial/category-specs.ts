@@ -643,6 +643,33 @@ export const TRANSPORT_SPEC: CategorySpec = {
       lag: "board",
       felt: "Entur trip",
     },
+    // De tre Entur-spørsmålene som trengte nye spørringer mot en kobling som
+    // allerede sto: avgangstelling i to hverdagsvinduer, reise til byens store
+    // arbeidsplasser, og siste avgang hjem per ukedagstype.
+    {
+      id: "frekvens",
+      spørsmål: "Hvor ofte er det avganger på hverdager?",
+      kilde: "eget",
+      kjerne: true,
+      lag: "board",
+      felt: "boardFacts.frequency (Entur estimatedCalls, telt per vindu)",
+    },
+    {
+      id: "til-arbeidsplassene",
+      spørsmål: "Hvor lang tid tar det til de store arbeidsplassene?",
+      kilde: "eget",
+      kjerne: true,
+      lag: "board",
+      felt: "boardFacts.workplaces (Entur trip til redaksjonell destinasjonsliste)",
+    },
+    {
+      id: "siste-buss",
+      spørsmål: "Når går siste avgang hjem fra sentrum?",
+      kilde: "eget",
+      kjerne: true,
+      lag: "board",
+      felt: "boardFacts.lastDeparture (Entur estimatedCalls fra sentrumsstoppet)",
+    },
     // Toget er et adressespørsmål («herfra»), ikke et stoppestedsspørsmål —
     // og malen eier det fordi `train` er en av kategoriene dens. Ranheim har
     // et kuratert svar på samme id; det vinner der, dette dekker alle andre.
@@ -864,6 +891,17 @@ export const THEME_BOARD_QUESTIONS: Record<string, SpecQuestion[]> = {
       lag: "board",
       felt: "POI-pool shopping + precomputet gangtid",
     },
+    // Post i butikk, med navnegate på `post`: Posten merker vertsbutikkene
+    // sine med ordene i navnet, så Bring-API-et trengs ikke. Pakkeautomater
+    // faller ut — spørsmålet ble snevret til den betjente disken.
+    {
+      id: "pakker-post",
+      spørsmål: "Hvor er nærmeste Post i butikk?",
+      kilde: "eget",
+      kjerne: true,
+      lag: "board",
+      felt: "POI-pool post + navnegate «Post i Butikk» + precomputet gangtid",
+    },
     // Legesenter, med navnegate: `doctor` blander fastlege, hudlege og
     // urolog, så byggeren krever et allmennlege-ord i navnet (katalogen § 6).
     // Ledig fastlegeplass påstås aldri.
@@ -907,6 +945,15 @@ export const THEME_BOARD_QUESTIONS: Record<string, SpecQuestion[]> = {
       kjerne: true,
       lag: "board",
       felt: "boardFacts.schools + precomputet gangtid til kretsskolen",
+    },
+    // Avstanden er svaret; lovteksten alene ville stått likt på alle adresser.
+    {
+      id: "skoleskyss",
+      spørsmål: "Har barna rett på gratis skoleskyss?",
+      kilde: "eget",
+      kjerne: true,
+      lag: "board",
+      felt: "boardFacts.schools[].gangMeter (Enturs gå-mønster) + opplæringsloven § 7-1",
     },
   ],
   "mat-drikke": [

@@ -2036,3 +2036,207 @@ describe("områdets «regnværsdag»", () => {
     expect(svar).toBe("[3T Valentinlyst](poi:g) er nærmeste treningssenter, 5 minutter til fots.");
   });
 });
+
+// ── Entur-firen og Post i butikk (2026-09-06) ───────────────────────────────
+
+describe("pakker-post", () => {
+  const hverdag = (pois: POI[]) =>
+    generateCategoryFaq(input({ themeId: "hverdagsliv", categoryIds: ["post"], pois }));
+
+  it("navngir vertsbutikken, ikke pakkeautomaten som ligger nærmere", () => {
+    const svar = answerFor(
+      hverdag([
+        poi({ id: "p1", name: "Pakkeautomat Ranheim Post i Butikk", categoryId: "post", travelTime: { walk: 2 } }),
+        poi({ id: "p2", name: "Coop Mega Valentinlyst Post i Butikk", categoryId: "post", travelTime: { walk: 8 } }),
+      ]),
+      "pakker-post",
+    );
+    expect(svar).toBe(
+      "[Coop Mega Valentinlyst Post i Butikk](poi:p2) har Post i butikk, 8 minutter til fots.",
+    );
+  });
+
+  it("utelater et generisk «Post office» — navnet lover ikke Post i butikk", () => {
+    const entries = hverdag([
+      poi({ id: "p3", name: "Post office", categoryId: "post", travelTime: { walk: 4 } }),
+    ]);
+    expect(entries.find((e) => e.id === "pakker-post")).toBeUndefined();
+  });
+
+  it("nevner aldri PostNord eller Helthjem — de finnes ikke i kilden", () => {
+    const svar = answerFor(
+      hverdag([poi({ id: "p2", name: "Rema 1000 Post i Butikk", categoryId: "post", travelTime: { walk: 5 } })]),
+      "pakker-post",
+    );
+    expect(svar).not.toMatch(/PostNord|Helthjem|andre transportører/i);
+  });
+});
+
+describe("skoleskyss", () => {
+  const medGang = (barn?: number, ung?: number) =>
+    generateCategoryFaq(
+      input({
+        pois: [RANHEIM_SKOLE, CHARLOTTENLUND_U],
+        boardFacts: {
+          ...FACTS,
+          schools: {
+            ...FACTS.schools!,
+            barneskole: { ...FACTS.schools!.barneskole!, ...(barn ? { gangMeter: barn } : {}) },
+            ungdomsskole: { ...FACTS.schools!.ungdomsskole!, ...(ung ? { gangMeter: ung } : {}) },
+          },
+        },
+      }),
+    );
+
+  it("leder med avstanden og bærer lovteksten etterpå", () => {
+    expect(answerFor(medGang(850), "skoleskyss")).toBe(
+      "Til [Ranheim skole](poi:nsr-975278980) er det 850 meter langs gangveien. Gratis skoleskyss gjelder fra to kilometer for 1. trinn og fire kilometer fra 2. trinn.",
+    );
+  });
+
+  it("skriver kilometer med én desimal over tusen meter", () => {
+    expect(answerFor(medGang(2350), "skoleskyss")).toContain("2,4 kilometer langs gangveien");
+  });
+
+  it("tar begge skolene med når begge er målt", () => {
+    expect(answerFor(medGang(850, 2350), "skoleskyss")).toContain(
+      "850 meter langs gangveien, og 2,4 kilometer til [Charlottenlund ungdomsskole](poi:nsr-975290158)",
+    );
+  });
+
+  it("utelater raden når ingen gangrute ble målt — lovteksten alene er ikke et svar", () => {
+    const entries = medGang();
+    expect(entries.find((e) => e.id === "skoleskyss")).toBeUndefined();
+  });
+
+  it("sier aldri at barna IKKE har rett", () => {
+    expect(answerFor(medGang(400), "skoleskyss")).not.toMatch(/ikke rett|har ikke|uten rett/);
+  });
+});
+
+describe("frekvens", () => {
+  const medFrekvens = (morgen: number, kveld: number) =>
+    generateCategoryFaq(
+      input({
+        themeId: "transport",
+        categoryIds: ["bus"],
+        pois: [STRINDFJORDVEGEN],
+        boardFacts: {
+          ...FACTS,
+          frequency: {
+            stopPlaceId: "NSR:StopPlace:60260",
+            stopName: "Strindfjordvegen",
+            retning: "Marienborg via Strindh.-sentrum",
+            morgen: { fraTime: 7, tilTime: 9, avganger: morgen },
+            kveld: { fraTime: 19, tilTime: 21, avganger: kveld },
+          },
+        },
+      }),
+    );
+
+  it("teller avganger i vinduet, ikke per time, og lenker holdeplassen", () => {
+    expect(answerFor(medFrekvens(14, 6), "frekvens")).toBe(
+      "Mellom 7 og 9 på hverdager går det 14 avganger mot Marienborg via Strindh.-sentrum fra [Strindfjordvegen](poi:entur-nsr-stopplace-60260), og 6 avganger mellom 19 og 21.",
+    );
+  });
+
+  it("skriver NULL i kveldsvinduet — Enturs liste er komplett, i motsetning til poolen", () => {
+    const svar = answerFor(medFrekvens(14, 0), "frekvens");
+    expect(svar).toContain("0 avganger mellom 19 og 21");
+  });
+
+  it("bøyer entall", () => {
+    expect(answerFor(medFrekvens(1, 1), "frekvens")).toContain("én avgang mot");
+  });
+
+  it("utelates når tellingen mangler", () => {
+    const entries = generateCategoryFaq(input({ themeId: "transport", categoryIds: ["bus"] }));
+    expect(entries.find((e) => e.id === "frekvens")).toBeUndefined();
+  });
+});
+
+describe("til-arbeidsplassene", () => {
+  const medArbeid = (n: number) =>
+    generateCategoryFaq(
+      input({
+        themeId: "transport",
+        categoryIds: ["bus"],
+        boardFacts: {
+          ...FACTS,
+          workplaces: [
+            { navn: "St. Olavs hospital", patterns: [{ minutes: 24, lines: ["12"], transfers: 0, walkMeters: 300 }] },
+            { navn: "NTNU Gløshaugen", patterns: [{ minutes: 19, lines: ["12", "3"], transfers: 1, walkMeters: 250 }] },
+            { navn: "Sluppen", patterns: [{ minutes: 31, lines: [], transfers: 0, walkMeters: 2600 }] },
+          ].slice(0, n),
+        },
+      }),
+    );
+
+  it("navngir alle tre reisemålene — destinasjonene ER spørsmålet", () => {
+    expect(answerFor(medArbeid(3), "til-arbeidsplassene")).toBe(
+      "Reisen til St. Olavs hospital tar 24 minutter med linje 12, til NTNU Gløshaugen 19 minutter med linje 12 og 3 og til Sluppen 31 minutter til fots.",
+    );
+  });
+
+  it("står med ett reisemål alene", () => {
+    expect(answerFor(medArbeid(1), "til-arbeidsplassene")).toBe(
+      "Reisen til St. Olavs hospital tar 24 minutter med linje 12.",
+    );
+  });
+
+  it("utelates når byen ikke har en arbeidsplassliste", () => {
+    const entries = generateCategoryFaq(input({ themeId: "transport", categoryIds: ["bus"] }));
+    expect(entries.find((e) => e.id === "til-arbeidsplassene")).toBeUndefined();
+  });
+});
+
+describe("siste-buss", () => {
+  const medSiste = (
+    hverdag: { minutt: number; lines: string[] } | undefined,
+    helg?: { minutt: number; lines: string[] },
+  ) =>
+    generateCategoryFaq(
+      input({
+        themeId: "transport",
+        categoryIds: ["bus"],
+        boardFacts: {
+          ...FACTS,
+          lastDeparture: {
+            fraNavn: "Trondheim S",
+            tilNavn: "Strindfjordvegen",
+            ...(hverdag ? { hverdag } : {}),
+            ...(helg ? { helg } : {}),
+          },
+        },
+      }),
+    );
+
+  it("skriver nattavgangen i døgnform — 00.30, ikke «midnatt» eller 30", () => {
+    const svar = answerFor(
+      medSiste({ minutt: 23 * 60 + 45, lines: ["12"] }, { minutt: 1470, lines: ["N1"] }),
+      "siste-buss",
+    );
+    expect(svar).toBe(
+      "Siste avgang fra Trondheim S til Strindfjordvegen går 23.45 på hverdager med linje 12. Natt til lørdag og søndag går den 00.30 med linje N1.",
+    );
+  });
+
+  it("gjentar ikke linja når nattavgangen kjører den samme", () => {
+    const svar = answerFor(
+      medSiste({ minutt: 23 * 60, lines: ["12"] }, { minutt: 1440 + 15, lines: ["12"] }),
+      "siste-buss",
+    );
+    expect(svar).toContain("Natt til lørdag og søndag går den 00.15.");
+    expect(svar.match(/linje 12/g)!.length).toBe(1);
+  });
+
+  it("står med hverdagen alene når helgeoppslaget ikke ga svar", () => {
+    const svar = answerFor(medSiste({ minutt: 22 * 60 + 5, lines: [] }), "siste-buss");
+    expect(svar).toBe("Siste avgang fra Trondheim S til Strindfjordvegen går 22.05 på hverdager til fots.");
+  });
+
+  it("utelates uten hverdagsavgang — helgen alene svarer ikke på spørsmålet", () => {
+    const entries = medSiste(undefined, { minutt: 1470, lines: ["N1"] });
+    expect(entries.find((e) => e.id === "siste-buss")).toBeUndefined();
+  });
+});

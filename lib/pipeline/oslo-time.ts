@@ -83,8 +83,9 @@ function osloWallClockToInstant(
   month: number,
   day: number,
   hour: number,
+  minute = 0,
 ): Date {
-  const guess = Date.UTC(year, month - 1, day, hour, 0, 0);
+  const guess = Date.UTC(year, month - 1, day, hour, minute, 0);
   const seen = osloParts(new Date(guess));
   const seenAsUtc = Date.UTC(
     seen.year,
@@ -108,21 +109,49 @@ function osloWallClockToInstant(
  * @param now Injiserbar for tester. Default: nå.
  */
 export function nextWeekdayRushHour(now: Date = new Date()): string {
+  return nextOsloDayAt({ weekdays: WEEKDAYS, hour: RUSHTIME_HOUR, now });
+}
+
+/** Mandag til fredag, i `Date.getDay()`-koding. */
+export const WEEKDAYS = [1, 2, 3, 4, 5] as const;
+
+/**
+ * Natt til lørdag og natt til søndag er FREDAG og LØRDAG kveld. Spørsmålet om
+ * siste avgang hjem stilles av en som er ute på byen, og den kvelden begynner
+ * dagen før datoen folk kaller den.
+ */
+export const WEEKEND_NIGHTS = [5, 6] as const;
+
+/**
+ * Neste dag som faller på en av `weekdays`, klokka `hour` norsk tid, som
+ * ISO-8601 med offset — formen Enturs `DateTime`-skalar tar imot.
+ *
+ * «Neste» betyr alltid en dag FRAM, aldri i dag: et tidspunkt som er passert
+ * når faktaene brukes, er umulig å etterprøve mot Entur.
+ */
+export function nextOsloDayAt(options: {
+  weekdays: readonly number[];
+  hour: number;
+  minute?: number;
+  now?: Date;
+}): string {
+  const { weekdays, hour, minute = 0, now = new Date() } = options;
   const here = osloParts(now);
-  // Start på morgendagen i Oslo-kalenderen og gå fram til første hverdag.
   const cursor = new Date(Date.UTC(here.year, here.month - 1, here.day));
   for (let i = 0; i < 8; i++) {
     cursor.setUTCDate(cursor.getUTCDate() + 1);
-    const y = cursor.getUTCFullYear();
-    const m = cursor.getUTCMonth() + 1;
-    const d = cursor.getUTCDate();
-    const instant = osloWallClockToInstant(y, m, d, RUSHTIME_HOUR);
-    const weekday = osloParts(instant).weekday;
-    if (weekday >= 1 && weekday <= 5) return toOffsetIso(instant);
+    const instant = osloWallClockToInstant(
+      cursor.getUTCFullYear(),
+      cursor.getUTCMonth() + 1,
+      cursor.getUTCDate(),
+      hour,
+      minute,
+    );
+    if (weekdays.includes(osloParts(instant).weekday)) return toOffsetIso(instant);
   }
-  // Uoppnåelig: åtte dager inneholder alltid en hverdag. Kaster framfor å
-  // returnere et tidspunkt ingen har regnet på.
-  throw new Error("Fant ingen hverdag innen åtte dager — sjekk systemklokka");
+  // Uoppnåelig for et ikke-tomt ukedagssett: åtte dager dekker hele uka.
+  // Kaster framfor å returnere et tidspunkt ingen har regnet på.
+  throw new Error("Fant ingen passende ukedag innen åtte dager — sjekk systemklokka");
 }
 
 /** `2026-08-24T08:00:00+02:00`. Offsetet leses av Oslo-veggklokka, ikke antatt. */

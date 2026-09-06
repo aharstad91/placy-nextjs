@@ -1233,6 +1233,39 @@ function bibliotek(input: FaqGeneratorInput): string | undefined {
   );
 }
 
+/**
+ * POST I BUTIKK — vertsbutikken, ikke pakkeboksen.
+ *
+ * Katalogen hadde dette som S+ på Bring Pickup Point API. Målt i poolen
+ * 2026-09-06 trengs den ikke: 24 `post`-rader, og navnet bærer «Post i Butikk»
+ * ordrett på nesten alle — det er slik Posten merker vertsbutikkene sine. Samme
+ * navnegate som `legesenter` og `pizza`.
+ *
+ * Pakkeautomatene faller ut med vilje. Spørsmålsteksten ble snevret til «Post i
+ * butikk» nettopp fordi det er det kilden lover, og en automat er ikke en
+ * betjent disk. PostNord og Helthjem finnes ikke i kilden og nevnes ikke —
+ * svaret sier hva som ER der, ikke hva som mangler.
+ */
+function pakkerPost(input: FaqGeneratorInput): string | undefined {
+  const kandidater = naermesteMedTid(input, "post").filter((p) =>
+    navnefilter(p, {
+      krever: ["post i butikk"],
+      utelukker: ["pakkeautomat", "pakkeboks"],
+    }),
+  );
+  const [naermest] = kandidater;
+  if (!naermest) return undefined;
+  const w = walkMinutes(naermest)!;
+  const parts = [
+    w <= WALK_RADIUS_MIN
+      ? `${namedPoi(naermest)} har Post i butikk, ${minutter(w)} til fots.`
+      : `Nærmeste Post i butikk på kartet er ${namedPoi(naermest)}, ${reisetid(naermest)}.`,
+  ];
+  const neste = kandidater.find((p) => !sammeKort(p, naermest));
+  if (neste) parts.push(`${namedPoi(neste)} er alternativet, ${unna(neste)}.`);
+  return parts.join(" ");
+}
+
 /** KINO — traff riktig på Wesselsløkka uten filter. Bussreisen er ikke målt. */
 function kino(input: FaqGeneratorInput): string | undefined {
   return naermesteAvSlag(naermesteMedTid(input, "cinema"), () => "kino");
@@ -1310,6 +1343,126 @@ function erMuseum(poi: POI): boolean {
 function museum(input: FaqGeneratorInput): string | undefined {
   const kandidater = naermesteMedTid(input, "museum").filter(erMuseum);
   return naermesteAvSlag(kandidater, () => "museum");
+}
+
+/** «850 meter» under kilometeren, «1,4 kilometer» over. */
+function gangavstandTekst(m: number): string {
+  if (m < 1000) return roundedMeters(m);
+  const km = (m / 1000).toFixed(1).replace(".", ",");
+  return `${km} kilometer`;
+}
+
+/**
+ * SKOLESKYSS — formen er AVSTANDEN, så lovteksten.
+ *
+ * Lovsetningen alene er ALDRI en rad. Den er identisk på alle adresser, og det
+ * var nøyaktig derfor `barnehage-plass` gikk ut av katalogen: et svar som er
+ * likt overalt svarer ikke på noe om denne boligen. Kommer avstanden, bærer den
+ * lovsetningen; uteblir avstanden, uteblir raden.
+ *
+ * Bare positiv form. «Retten gjelder fra to kilometer», aldri «dere har ikke
+ * rett» — kommunen kan innvilge skyss for trafikkfarlig veg uavhengig av
+ * avstand, og et nei fra oss ville vært feil like ofte som det var ubehagelig.
+ */
+function skoleskyss(input: FaqGeneratorInput): string | undefined {
+  const s = input.boardFacts?.schools;
+  const del = (skole: typeof s extends undefined ? never : NonNullable<typeof s>["barneskole"]) =>
+    skole?.gangMeter
+      ? { navn: poiLink(skole.navn, findSchoolPoi(input.allPois, skole)), m: skole.gangMeter }
+      : undefined;
+  const barn = del(s?.barneskole);
+  const ung = del(s?.ungdomsskole);
+  if (!barn && !ung) return undefined;
+
+  const først = barn ?? ung!;
+  const avstand = barn && ung
+    ? `Til ${barn.navn} er det ${gangavstandTekst(barn.m)} langs gangveien, og ${gangavstandTekst(ung.m)} til ${ung.navn}.`
+    : `Til ${først.navn} er det ${gangavstandTekst(først.m)} langs gangveien.`;
+  return `${avstand} Gratis skoleskyss gjelder fra to kilometer for 1. trinn og fire kilometer fra 2. trinn.`;
+}
+
+/**
+ * FREKVENS — formen er ANTALL I VINDU, ikke per time. Katalogen skrev «ganger i
+ * timen», men et to-timers vindu delt på to gir halve avganger; tellingen i
+ * vinduet er tallet leseren kan slå opp hos Entur.
+ *
+ * NULL I KVELDSVINDUET SKRIVES. Det er ikke poolens recall-problem — Enturs
+ * avgangsliste er komplett for datoen, og «ingen avganger» er like etterprøvbart
+ * som «fjorten». Dette er den ene raden i hele katalogen der en negativ
+ * opplysning er sann nok til å stå.
+ */
+function frekvens(input: FaqGeneratorInput): string | undefined {
+  const f = input.boardFacts?.frequency;
+  if (!f) return undefined;
+  const stopp = poiLink(f.stopName, stopPoi(input, f.stopPlaceId));
+  const antall = (n: number) => (n === 1 ? "én avgang" : `${n} avganger`);
+  return (
+    `Mellom ${f.morgen.fraTime} og ${f.morgen.tilTime} på hverdager går det ` +
+    `${antall(f.morgen.avganger)} mot ${f.retning} fra ${stopp}, og ` +
+    `${antall(f.kveld.avganger)} mellom ${f.kveld.fraTime} og ${f.kveld.tilTime}.`
+  );
+}
+
+/** ` med linje 1 og 70` eller ` til fots` — samme hale som `cityCentreSentence`. */
+function linjeHale(lines: readonly string[]): string {
+  return lines.length > 0 ? ` med linje ${ogJoin([...lines])}` : " til fots";
+}
+
+/**
+ * TIL ARBEIDSPLASSENE — formen er REISETID PER MÅL. Åpner «Reisen til» fordi
+ * `tilSentrum` alt åpner «Til ${sentrum} tar det».
+ *
+ * Tre mål, ikke to. Regelen om maks to navngitte steder finnes for at et svar
+ * ikke skal bli en liste leseren hopper over — men her ER destinasjonene
+ * spørsmålet, og lista er redaksjonelt valgt til nettopp tre.
+ */
+function tilArbeidsplassene(input: FaqGeneratorInput): string | undefined {
+  const medReise = (input.boardFacts?.workplaces ?? []).filter((w) => w.patterns.length > 0);
+  if (medReise.length === 0) return undefined;
+  const [først, ...resten] = medReise;
+  const deler = resten.map(
+    (w) => `til ${w.navn} ${w.patterns[0].minutes} minutter${linjeHale(w.patterns[0].lines)}`,
+  );
+  const hale = deler.length > 0 ? `, ${ogJoin(deler)}` : "";
+  return `Reisen til ${først.navn} tar ${først.patterns[0].minutes} minutter${linjeHale(først.patterns[0].lines)}${hale}.`;
+}
+
+/**
+ * Klokkeslett som kan ligge etter midnatt: «23.45», «00.30».
+ *
+ * `klokkeslett` gir «midnatt» for 1440 og har ingen form for tidene etter, og
+ * det er nattavgangene som er hele poenget med spørsmålet.
+ */
+function klokkeslettDøgn(minutt: number): string {
+  const m = minutt % 1440;
+  const h = Math.floor(m / 60);
+  const min = m % 60;
+  return `${String(h).padStart(2, "0")}.${String(min).padStart(2, "0")}`;
+}
+
+/**
+ * SISTE AVGANG — formen er KLOKKESLETT PER UKEDAGSTYPE. Modus-nøytral i teksten
+ * («avgang», ikke «buss») selv om id-en sier buss: i Bergen er svaret bybanen.
+ *
+ * Helgelinja nevnes bare når den er en ANNEN enn hverdagslinja. Nattavgangene i
+ * Trondheim kjører ofte egne linjenummer, og da er det en opplysning; er det
+ * samme linje, er gjentakelsen bare støy.
+ */
+function sisteBuss(input: FaqGeneratorInput): string | undefined {
+  const d = input.boardFacts?.lastDeparture;
+  const hverdag = d?.hverdag;
+  if (!d || !hverdag) return undefined;
+  const parts = [
+    `Siste avgang fra ${d.fraNavn} til ${d.tilNavn} går ${klokkeslettDøgn(hverdag.minutt)} på hverdager${linjeHale(hverdag.lines)}.`,
+  ];
+  if (d.helg) {
+    const sammeLinje =
+      d.helg.lines.length === hverdag.lines.length &&
+      d.helg.lines.every((l) => hverdag.lines.includes(l));
+    const hale = sammeLinje ? "" : linjeHale(d.helg.lines);
+    parts.push(`Natt til lørdag og søndag går den ${klokkeslettDøgn(d.helg.minutt)}${hale}.`);
+  }
+  return parts.join(" ");
 }
 
 /**
@@ -1401,6 +1554,11 @@ const ANSWER_BUILDERS: Record<string, AnswerBuilder> = {
   treningspark,
   // Katalogens S-spørsmål (2026-09-06), setningsformene fra Fable-leveransen.
   skolevei,
+  skoleskyss,
+  "pakker-post": pakkerPost,
+  frekvens,
+  "til-arbeidsplassene": tilArbeidsplassene,
+  "siste-buss": sisteBuss,
   legesenter,
   pizza,
   hund,

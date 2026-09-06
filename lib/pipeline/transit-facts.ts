@@ -29,7 +29,7 @@
  * `ET-Client-Name` er påkrevd av Entur og identifiserer oss.
  */
 
-import { nextWeekdayRushHour } from "@/lib/pipeline/oslo-time";
+import { nextOsloDayAt, nextWeekdayRushHour } from "@/lib/pipeline/oslo-time";
 
 const JOURNEY_PLANNER_URL = "https://api.entur.io/journey-planner/v3/graphql";
 const GEOCODER_URL = "https://api.entur.io/geocoder/v1/autocomplete";
@@ -152,8 +152,104 @@ export function parseNearestStops(raw: unknown, max = MAX_STOPS): TransitStopFac
 }
 
 interface RawCall {
+  aimedDepartureTime?: string | null;
   destinationDisplay?: { frontText?: string | null } | null;
   serviceJourney?: { line?: { publicCode?: string | null } | null } | null;
+}
+
+/** Én avgang, flatet ut av quay-strukturen. */
+export interface DepartureCall {
+  quayId: string;
+  /** Lokal veggklokke i minutter etter midnatt, 0–1439. */
+  minutt: number;
+  /** Datodelen av avgangen, `YYYY-MM-DD`, slik Entur skrev den. */
+  dato: string;
+  line: string | null;
+  destination: string | null;
+}
+
+/**
+ * Klokkeslettet slik det står på skiltet, uten tidssone-regning.
+ *
+ * `aimedDepartureTime` er ISO med offset («2026-09-07T23:45:00+02:00»), og
+ * offseten ER Europe/Oslo. Å parse den gjennom `Date` og lese timen tilbake
+ * ville gitt maskinens tidssone, ikke holdeplassens — en byggeserver i UTC
+ * hadde flyttet siste avgang to timer. Derfor leses veggklokka rett ut av
+ * strengen.
+ */
+export function parseLocalClock(iso: string): { dato: string; minutt: number } | null {
+  const m = /^(\d{4}-\d{2}-\d{2})T(\d{2}):(\d{2})/.exec(iso);
+  if (!m) return null;
+  return { dato: m[1], minutt: Number(m[2]) * 60 + Number(m[3]) };
+}
+
+/** Alle avgangene i svaret, flatet ut. Kaller som vil ha per quay, filtrerer selv. */
+export function parseDepartureCalls(raw: unknown): DepartureCall[] {
+  const out: DepartureCall[] = [];
+  for (const q of extractArray(raw, ["stopPlace", "quays"])) {
+    const quay = q as { id?: string; estimatedCalls?: RawCall[] | null };
+    if (!quay.id) continue;
+    for (const call of Array.isArray(quay.estimatedCalls) ? quay.estimatedCalls : []) {
+      const t = call.aimedDepartureTime ? parseLocalClock(call.aimedDepartureTime) : null;
+      if (!t) continue;
+      out.push({
+        quayId: quay.id,
+        minutt: t.minutt,
+        dato: t.dato,
+        line: call.serviceJourney?.line?.publicCode?.trim() || null,
+        destination: call.destinationDisplay?.frontText?.trim() || null,
+      });
+    }
+  }
+  return out;
+}
+
+/**
+ * Tell avganger fra én quay innenfor et klokketimevindu.
+ *
+ * Vinduet er halvåpent: en avgang 09.00 tilhører ikke 07–09. Ellers ville en
+ * avgang blitt talt i to nabovinduer, og summen ville ikke stemt med
+ * avgangslista leseren kan slå opp.
+ */
+export function countDeparturesInWindow(
+  calls: readonly DepartureCall[],
+  quayId: string,
+  fraTime: number,
+  tilTime: number,
+): number {
+  return calls.filter(
+    (c) => c.quayId === quayId && c.minutt >= fraTime * 60 && c.minutt < tilTime * 60,
+  ).length;
+}
+
+/**
+ * Siste avgang i settet, med linjene som kjører akkurat den.
+ *
+ * Minuttet er DØGNFORTSATT: en avgang 00.30 dagen etter start-datoen blir
+ * 1470, ikke 30. Uten det ville nattbussen sortert som tidlig morgen og
+ * «siste avgang» blitt 06.10.
+ */
+export function findLastDeparture(
+  calls: readonly DepartureCall[],
+  startDato: string,
+): { minutt: number; lines: string[] } | undefined {
+  const medDøgn = calls.map((c) => ({
+    ...c,
+    absolutt: c.dato === startDato ? c.minutt : c.minutt + 1440,
+  }));
+  const siste = medDøgn.reduce<(typeof medDøgn)[number] | undefined>(
+    (best, c) => (!best || c.absolutt > best.absolutt ? c : best),
+    undefined,
+  );
+  if (!siste) return undefined;
+  const lines = [
+    ...new Set(
+      medDøgn
+        .filter((c) => c.absolutt === siste.absolutt && c.line)
+        .map((c) => c.line as string),
+    ),
+  ].sort((a, b) => a.localeCompare(b, "no"));
+  return { minutt: siste.absolutt, lines };
 }
 
 /**
@@ -280,6 +376,7 @@ const DEPARTURES_QUERY = `
       quays {
         id
         estimatedCalls(startTime: $start, timeRange: $range, numberOfDepartures: $n) {
+          aimedDepartureTime
           destinationDisplay { frontText }
           serviceJourney { line { publicCode } }
         }
@@ -459,6 +556,100 @@ export async function fetchTransitFacts(options: {
   }
 
   return { facts, warnings };
+}
+
+/** Morgen- og kveldsvinduet `frekvens` teller i. Hele klokketimer. */
+export const FREQUENCY_WINDOWS = {
+  morgen: { fraTime: 7, tilTime: 9 },
+  kveld: { fraTime: 19, tilTime: 21 },
+} as const;
+
+/**
+ * Avganger per quay i ett to-timers vindu på neste hverdag.
+ *
+ * Taket er høyt med vilje: dette ER en telling, og et tak som bet ville gjort
+ * svaret til et gulv uten å si fra. Midtbyen har stopp med over hundre
+ * avganger i rushen.
+ */
+const FREQUENCY_DEPARTURES_CAP = 300;
+
+export async function fetchDepartureWindow(options: {
+  stopPlaceId: string;
+  fraTime: number;
+  tilTime: number;
+  weekdays: readonly number[];
+  now?: Date;
+}): Promise<{ calls: DepartureCall[]; startDato: string }> {
+  const start = nextOsloDayAt({
+    weekdays: options.weekdays,
+    hour: options.fraTime,
+    now: options.now,
+  });
+  const data = await graphql(DEPARTURES_QUERY, {
+    id: options.stopPlaceId,
+    start,
+    range: (options.tilTime - options.fraTime) * 3600,
+    n: FREQUENCY_DEPARTURES_CAP,
+  });
+  return { calls: parseDepartureCalls(data), startDato: start.slice(0, 10) };
+}
+
+/**
+ * Retningen `frekvens` teller: den som går mot byen.
+ *
+ * Sentrumsretningen finnes ved at quayens linjer overlapper med linjene i den
+ * raskeste sentrumsreisen. Uten overlapp faller vi tilbake på quayen med flest
+ * avganger, som er den en beboer mener når hun sier «bussen».
+ */
+export function velgSentrumsretning(
+  stop: TransitStopFact,
+  sentrumsLinjer: readonly string[],
+  calls: readonly DepartureCall[],
+): TransitDirection | undefined {
+  const sett = new Set(sentrumsLinjer);
+  const treff = stop.directions.filter((d) => d.lines.some((l) => sett.has(l)));
+  if (treff.length === 1) return treff[0];
+  const kandidater = treff.length > 1 ? treff : stop.directions;
+  return kandidater.reduce<TransitDirection | undefined>((best, d) => {
+    if (!best) return d;
+    const antall = (x: TransitDirection) =>
+      calls.filter((c) => c.quayId === x.quayId).length;
+    return antall(d) > antall(best) ? d : best;
+  }, undefined);
+}
+
+/** Kveldsvinduet `siste-buss` leter i: fra 21 og seks timer fram, over midnatt. */
+const LAST_DEPARTURE_FROM_HOUR = 21;
+const LAST_DEPARTURE_RANGE_S = 6 * 3600;
+
+/**
+ * Siste avgang fra sentrumsstoppet som faktisk går hjem.
+ *
+ * Filteret på linjer er det som gjør svaret sant: sentrumsstoppet betjener hele
+ * byen, og den siste avgangen derfra kan gå stikk motsatt veg. Bare avganger på
+ * linjene som inngår i sentrumsreisen teller som «hjem».
+ */
+export async function fetchLastDepartureHome(options: {
+  centreStopPlaceId: string;
+  homeLines: readonly string[];
+  weekdays: readonly number[];
+  now?: Date;
+}): Promise<{ minutt: number; lines: string[] } | undefined> {
+  if (options.homeLines.length === 0) return undefined;
+  const start = nextOsloDayAt({
+    weekdays: options.weekdays,
+    hour: LAST_DEPARTURE_FROM_HOUR,
+    now: options.now,
+  });
+  const data = await graphql(DEPARTURES_QUERY, {
+    id: options.centreStopPlaceId,
+    start,
+    range: LAST_DEPARTURE_RANGE_S,
+    n: FREQUENCY_DEPARTURES_CAP,
+  });
+  const sett = new Set(options.homeLines);
+  const hjem = parseDepartureCalls(data).filter((c) => c.line && sett.has(c.line));
+  return findLastDeparture(hjem, start.slice(0, 10));
 }
 
 function message(e: unknown): string {
