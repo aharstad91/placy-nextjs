@@ -108,8 +108,6 @@ describe("aggregateInsight", () => {
   it("holder tilbake lesninger under terskelen", () => {
     const r = aggregateInsight({ rows: [row("board_viewed")], baselineRows: [], labels: LABELS, since: SINCE, until: UNTIL });
     expect(r.threshold).toEqual({ minViews: MIN_VIEWS_FOR_REPORT, reached: false });
-    expect(r.observations).toEqual([]);
-    expect(r.actions).toEqual([]);
   });
 
   it("uten grunnlag er delta null, ikke 0", () => {
@@ -143,8 +141,8 @@ describe("demodata", () => {
     expect(r.previous.views).toBeGreaterThan(0);
     expect(r.categories[0].id).toBe("barn-oppvekst");
     expect(r.categories[0].deltaPp).toBeGreaterThan(5);
-    expect(r.observations.length).toBeGreaterThan(0);
-    expect(r.actions.length).toBeGreaterThan(0);
+    // Alle viste spørsmål er med, også de som aldri ble åpnet.
+    expect(r.faq.length).toBeGreaterThanOrEqual(LABELS.faq.size);
     expect(r.sources.some((s) => s.source === "finn")).toBe(true);
   });
 });

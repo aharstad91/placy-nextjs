@@ -70,12 +70,12 @@ describe("enrichReportPois — Unit 7 (foto-fase DEFERRED → Unit 4)", () => {
     expect(result).not.toHaveProperty("photos");
   });
 
-  it("AC1: default kategoriliste er BOLIG_GOOGLE_CATEGORIES (58 — butikk/dagligvare-recall 2026-08-24)", async () => {
+  it("AC1: default kategoriliste er BOLIG_GOOGLE_CATEGORIES (62 — 58 etter butikk/dagligvare-recall 2026-08-24, + 4 scene/bowling for Opplevelser 2026-09-06)", async () => {
     importMock.mockResolvedValue({ total: 15, new: 15, updated: 0, byCategory: {} });
 
     await enrichReportPois(BASE_OPTIONS);
 
-    expect(BOLIG_GOOGLE_CATEGORIES).toHaveLength(58);
+    expect(BOLIG_GOOGLE_CATEGORIES).toHaveLength(62);
     expect(importMock.mock.calls[0][0].categories).toEqual(BOLIG_GOOGLE_CATEGORIES);
   });
 

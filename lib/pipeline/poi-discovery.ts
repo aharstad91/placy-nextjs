@@ -50,6 +50,14 @@ export interface DiscoveredPOI {
    * derfor er adresse- og nærhets-gatene der.
    */
   containedInIds?: string[];
+  /** Googles egen driftsstatus (OPERATIONAL / CLOSED_TEMPORARILY / …). */
+  googleBusinessStatus?: string;
+  /**
+   * Åpningstidenes tekstlinjer, én per ukedag, på engelsk.
+   * Lagres som `opening_hours_json.weekday_text` — samme form som
+   * `refresh-opening-hours.ts` skriver, slik at de to kildene er utbyttbare.
+   */
+  openingHoursWeekdayText?: string[];
   // Editorial fields (added later via Claude or manual editing)
   editorialHook?: string;
   localInsight?: string;
@@ -80,6 +88,23 @@ const GOOGLE_CATEGORY_MAP: Record<string, Category> = {
   library: { id: "library", name: "Bibliotek", icon: "BookOpen", color: "#14b8a6" },
   park: { id: "park", name: "Park", icon: "TreePine", color: "#10b981" },
   movie_theater: { id: "cinema", name: "Kino", icon: "Film", color: "#f472b6" },
+  // Opplevelser-temaet (2026-09-06). `theatre` og `bowling` sto som deklarerte
+  // tema-kategorier uten en eneste produsent — 0 rader i poolen, som ser
+  // nøyaktig ut som «det finnes ingen scene i Trondheim».
+  //
+  // Målt mot produksjons-bboxen (5 km fra Wesselsløkka) samme dag:
+  //   performing_arts_theater → 19 (Olavshallen, Trøndelag Teater, Rosendal)
+  //   concert_hall            → 12 (Trondheim Spektrum, Dokkhuset)
+  //   cultural_center         → 13 (Kultursenteret ISAK, Byscenen)
+  //   bowling_alley           →  3 (Centrum Bowling, Dora 1 Bowling & Biljard)
+  //
+  // Rekkefølgen er ikke tilfeldig: dedupliseringen lar FØRSTE treff eie
+  // kategorien, og Olavshallen bærer alle tre scene-typene. Den skal bli en
+  // scene, ikke et kulturhus.
+  performing_arts_theater: { id: "theatre", name: "Teater", icon: "Drama", color: "#0ea5e9" },
+  concert_hall: { id: "theatre", name: "Teater", icon: "Drama", color: "#0ea5e9" },
+  cultural_center: { id: "theatre", name: "Teater", icon: "Drama", color: "#0ea5e9" },
+  bowling_alley: { id: "bowling", name: "Bowling", icon: "Disc", color: "#0ea5e9" },
   hospital: { id: "hospital", name: "Sykehus", icon: "Hospital", color: "#ef4444" },
   doctor: { id: "doctor", name: "Legesenter", icon: "Stethoscope", color: "#3b82f6" },
   dentist: { id: "dentist", name: "Tannlege", icon: "Smile", color: "#22d3ee" },
@@ -318,6 +343,7 @@ interface GooglePlaceResult {
   shortFormattedAddress?: string;
   types?: string[];
   containingPlaces?: Array<{ id?: string; name?: string }>;
+  regularOpeningHours?: { weekdayDescriptions?: string[] };
 }
 
 // Feltmaske = eksakt det discovery-filteret/POI-byggingen konsumerer.
@@ -336,7 +362,78 @@ const NEARBY_FIELD_MASK = [
   // Ligger i Pro-SKU-en (samme nivå som displayName/businessStatus), og masken
   // ber alt om rating/userRatingCount (Enterprise) — tillegget hever ikke prisen.
   "places.containingPlaces",
+  // Åpningstider (2026-09-06). Fram til nå ble `opening_hours_json` KUN skrevet
+  // av `scripts/refresh-opening-hours.ts`, et manuelt Place Details-pass per
+  // prosjekt — så et nyprovisjonert board hadde null åpningstider, og de fem
+  // FAQ-radene som hviler på dem var tomme. På Wesselsløkka hadde ingen av de
+  // 13 stedene i gangavstand tider, mens byens sentrum hadde det fra en annen
+  // kjøring; «er noe åpent på søndag?» svarte derfor med Midtbyen.
+  //
+  // Underfelt-masken henter BARE tekstlinjene vi bruker, ikke `periods`.
+  // `regularOpeningHours` er Enterprise, og masken ber alt om
+  // rating/userRatingCount (Enterprise) — SKU-en er uendret.
+  //
+  // SPRÅK: begge søkene sender `languageCode: "no"` (se SEARCH_LANGUAGE), så
+  // linjene kommer på norsk 24-timersform («mandag: 08:00–18:00»). Både
+  // `parseWeekdayLine` og `computeIsOpen` leser den formen.
+  "places.regularOpeningHours.weekdayDescriptions",
 ].join(",");
+
+/**
+ * Språket BEGGE Google-søkene ber om.
+ *
+ * Tekstsøket har alltid sendt «no» (norske søkeord treffer norske
+ * oppføringer). Nærhetssøket sendte ingenting, og fikk dermed Googles
+ * standardspråk — engelsk — på alt Google ikke har lagret et egennavn for.
+ * Målt på Wesselsløkka-boardet 2026-09-06: åtte pins het «Sports Field», én
+ * «Athletic Field», én «Playground» og én «Church». Med «no» leverer Google
+ * selv det riktige navnet på fire av dem — «Church» er «Vår Frue kirke»,
+ * «Playground» er «Lekeplass», og to av idrettsbanene heter «Rosenborgbanen
+ * 11er» og «Rosenborgbanen 9er». De navnene lå der hele tiden; vi spurte på
+ * feil språk.
+ *
+ * Resten (steder Google rett og slett ikke har navn på) håndteres av
+ * `GENERISKE_NAVN` nedenfor.
+ */
+const SEARCH_LANGUAGE = "no";
+
+/**
+ * Googles egne etiketter for steder den ikke har navn på, og den norske formen.
+ *
+ * `languageCode: "no"` løser de fleste, men ikke alle: målt 2026-09-06 kommer
+ * «Playground» og «Church» tilbake oversatt, mens «Sports Field» og «Athletic
+ * Field» står på engelsk uansett språk. De blir liggende som pins på et norsk
+ * board og sier ingenting om stedet.
+ *
+ * KATEGORIEN MÅ STEMME før navnet byttes. En klesbutikk i Falkenborgvegen 9
+ * heter faktisk «Park» (`clothing_store`) — uten kategoriporten ville regelen
+ * døpt om en ekte forretning. Derfor er dette ikke en ordliste, men en liste
+ * over etikett + hvilken kategori etiketten er gyldig for.
+ *
+ * Bare oppføringer vi har MÅLT i poolen står her. Dukker det opp en ny engelsk
+ * etikett, legges den til når den er observert — ikke på forhånd.
+ */
+const GENERISKE_NAVN: ReadonlyArray<{
+  google: string;
+  norsk: string;
+  kategorier: readonly string[];
+}> = [
+  { google: "Sports Field", norsk: "Idrettsbane", kategorier: ["idrett"] },
+  { google: "Athletic Field", norsk: "Idrettsbane", kategorier: ["idrett"] },
+  { google: "Playground", norsk: "Lekeplass", kategorier: ["lekeplass"] },
+];
+
+/**
+ * Navnet stedet skal bære på boardet. Uendret for alt som har et egennavn —
+ * bare Googles rene etiketter byttes, og bare i kategorien etiketten gjelder.
+ */
+export function norskStedsnavn(navn: string, kategoriId: string): string {
+  const treff = GENERISKE_NAVN.find(
+    (g) => g.google.toLowerCase() === navn.trim().toLowerCase()
+  );
+  if (!treff || !treff.kategorier.includes(kategoriId)) return navn;
+  return treff.norsk;
+}
 
 const NEARBY_TIMEOUT_MS = 10_000;
 
@@ -442,6 +539,7 @@ export async function searchNearbyOnce(
           // `null` = ingen typefilter. Brukes av medlems-proben, som spør
           // «hva ligger i dette bygget» og ikke «hvor er nærmeste bakeri».
           ...(category ? { includedTypes: [category] } : {}),
+          languageCode: SEARCH_LANGUAGE,
           maxResultCount: NEARBY_PAGE_MAX,
           ...(rankPreference ? { rankPreference } : {}),
           locationRestriction: {
@@ -634,7 +732,10 @@ export async function discoverGooglePlaces(
 
         allPOIs.push({
           id,
-          name: placeName,
+          // Filtrene over kjører på Googles egen streng; det er den
+          // `CATEGORY_NAME_BLOCKLIST` er skrevet mot. Navnebyttet skjer først
+          // her, når stedet faktisk skal på boardet.
+          name: norskStedsnavn(placeName, categoryDef.id),
           coordinates: {
             lat: place.location.latitude,
             lng: place.location.longitude,
@@ -646,6 +747,8 @@ export async function discoverGooglePlaces(
           googleReviewCount: place.userRatingCount,
           source: "google",
           containedInIds: mapContainingPlaces(place.containingPlaces),
+          googleBusinessStatus: place.businessStatus,
+          openingHoursWeekdayText: place.regularOpeningHours?.weekdayDescriptions,
         });
 
         addedCount++;
@@ -769,7 +872,7 @@ export async function discoverAnchorCandidates(
     hits.push({
       poi: {
         id,
-        name: placeName,
+        name: norskStedsnavn(placeName, categoryDef.id),
         coordinates: {
           lat: place.location.latitude,
           lng: place.location.longitude,
@@ -926,7 +1029,7 @@ async function searchTextPage(
       },
       body: JSON.stringify({
         textQuery: query,
-        languageCode: "no",
+        languageCode: SEARCH_LANGUAGE,
         pageSize: TEXT_PAGE_SIZE,
         ...(pageToken ? { pageToken } : {}),
         locationBias: {
@@ -1024,7 +1127,7 @@ export async function discoverGooglePlacesByText(
 
         allPOIs.push({
           id,
-          name: placeName,
+          name: norskStedsnavn(placeName, category.id),
           coordinates: {
             lat: place.location.latitude,
             lng: place.location.longitude,
@@ -1036,6 +1139,8 @@ export async function discoverGooglePlacesByText(
           googleReviewCount: place.userRatingCount,
           source: "google",
           containedInIds: mapContainingPlaces(place.containingPlaces),
+          googleBusinessStatus: place.businessStatus,
+          openingHoursWeekdayText: place.regularOpeningHours?.weekdayDescriptions,
         });
         addedCount++;
       }

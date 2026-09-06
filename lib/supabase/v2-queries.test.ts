@@ -13,6 +13,9 @@ import { join } from "node:path";
 // Scriptbar chainable v2-klient. Hver from(tabell) leverer neste svar fra køen.
 type QueryResult = { data: unknown; error: { message: string } | null };
 
+/** PostgREST' `db-max-rows` hos Supabase. Mocken håndhever det som serveren. */
+const SERVER_MAX_ROWS = 1_000;
+
 const queues = new Map<string, QueryResult[]>();
 
 function enqueue(table: string, result: QueryResult) {
@@ -35,9 +38,48 @@ function chain(table: string) {
   for (const m of ["select", "eq", "in", "order"]) {
     builder[m] = vi.fn(self);
   }
+
+  // `.range()` gjør chainen paginerings-bevisst, slik ekte PostgREST er: kø-
+  // oppføringen er HELE tabellen, og hvert vindu får sin skive av den. Uten
+  // dette måtte hver test enqueue en ekstra tom side for stoppsignalet — og da
+  // ville testene beskrevet mocken i stedet for lesestien.
+  let window: [number, number] | null = null;
+  builder.range = vi.fn((from: number, to: number) => {
+    window = [from, to];
+    return builder;
+  });
+
   builder.maybeSingle = vi.fn(async () => result());
   // Await-bar uten maybeSingle (thenable)
-  builder.then = (resolve: (r: QueryResult) => void) => resolve(result());
+  builder.then = (resolve: (r: QueryResult) => void) => {
+    if (!window) {
+      // Ingen `.range()` = spørringen tror den får alt. Serveren kapper
+      // likevel, uten feil og uten logg. Det er akkurat sånn 1 615 rader ble
+      // til 1 000 i prod, så mocken må gjøre det samme — ellers kan en test
+      // ikke feile på det.
+      const r = result();
+      if (Array.isArray(r.data) && r.data.length > SERVER_MAX_ROWS) {
+        return resolve({ data: r.data.slice(0, SERVER_MAX_ROWS), error: null });
+      }
+      return resolve(r);
+    }
+
+    const queue = queues.get(table);
+    if (!queue || queue.length === 0) {
+      throw new Error(`Uventet query mot ${table} — ingen kø-oppføring`);
+    }
+    const head = queue[0];
+    if (head.error || !Array.isArray(head.data)) {
+      queue.shift();
+      return resolve(head);
+    }
+    const [from, to] = window;
+    const width = Math.min(to - from + 1, SERVER_MAX_ROWS);
+    const slice = (head.data as unknown[]).slice(from, from + width);
+    // Tomt vindu = vi er forbi siste rad. Da er oppføringen brukt opp.
+    if (slice.length === 0) queue.shift();
+    return resolve({ data: slice, error: null });
+  };
   return builder;
 }
 
@@ -59,6 +101,7 @@ import {
   parsePoiGroundingOrLog,
 } from "./v2-queries";
 import type { DbPoi } from "./types";
+import { chunkIds } from "./chunk-ids";
 
 const PROJECT_ROW = {
   id: "proj-1",
@@ -188,6 +231,39 @@ describe("getProductFromSupabaseV2 — komposisjon", () => {
     expect(project!.pois.map((p) => p.id).sort()).toEqual(["trusted", "unscored"]);
   });
 
+  it("stengt dør holdes utenfor boardet, uansett hvor høy tilliten er", async () => {
+    // Frumento på Wesselsløkka: CLOSED_TEMPORARILY med trust 0,85. Trust-gaten
+    // slapp den gjennom, og de cachede åpningstidene gjorde et stengt sted til
+    // svaret på «er noe åpent på søndag?». `null` er «vet ikke», ikke «stengt»:
+    // 601 av boardets rader er registerimport uten Google-status.
+    enqueue("projects", { data: PROJECT_ROW, error: null });
+    enqueue("products", { data: PRODUCT_ROW, error: null });
+    enqueue("project_pois", { data: [], error: null });
+    enqueue("product_pois", {
+      data: [
+        { poi_id: "apen", featured: false, sort_order: 1 },
+        { poi_id: "midlertidig", featured: false, sort_order: 2 },
+        { poi_id: "permanent", featured: false, sort_order: 3 },
+        { poi_id: "register", featured: false, sort_order: 4 },
+      ],
+      error: null,
+    });
+    enqueue("pois", {
+      data: [
+        poiRow("apen", { trust_score: 0.9, google_business_status: "OPERATIONAL" }),
+        poiRow("midlertidig", { trust_score: 0.85, google_business_status: "CLOSED_TEMPORARILY" }),
+        poiRow("permanent", { trust_score: null, google_business_status: "CLOSED_PERMANENTLY" }),
+        poiRow("register", { trust_score: null, google_business_status: null }),
+      ],
+      error: null,
+    });
+    enqueue("categories", { data: [CAT_ROW], error: null });
+    enqueue("product_categories", { data: [], error: null });
+
+    const project = await getProductFromSupabaseV2("intern", "pilot", "report");
+    expect(project!.pois.map((p) => p.id).sort()).toEqual(["apen", "register"]);
+  });
+
   it("tom product_categories → kategorier avledes fra POI-ene", async () => {
     enqueue("projects", { data: PROJECT_ROW, error: null });
     enqueue("products", { data: PRODUCT_ROW, error: null });
@@ -199,6 +275,76 @@ describe("getProductFromSupabaseV2 — komposisjon", () => {
 
     const project = await getProductFromSupabaseV2("intern", "pilot", "report");
     expect(project!.categories.map((c) => c.id)).toEqual(["cat-1"]);
+  });
+});
+
+describe("getProductFromSupabaseV2 — pooler over PostgREST-taket", () => {
+  // Tallene er Wesselsløkkas egne, målt 2026-09-06: `project_pois` 1 615 rader,
+  // `product_pois` 943. Uten paginering leste lesestien 1 000 av de 1 615, og
+  // 615 steder mistet reisetiden sin. Feilen ga ingen logg og ingen exception —
+  // boardet svarte bare feil om avstander.
+  const POOL_ROWS = 1_615;
+  const SELECTION_ROWS = 943;
+
+  it("gir reisetid til ALLE stedene, også de bak rad 1 000", async () => {
+    // Stedene på boardet ligger SPREDT gjennom hele poolen, ikke samlet i
+    // starten — slik de faktisk gjør. Lå de først, ville taket ikke rørt dem,
+    // og testen ville bestått også med feilen i behold.
+    const poolIds = Array.from({ length: POOL_ROWS }, (_, i) => `poi-${i}`);
+    const selectionIds = Array.from(
+      { length: SELECTION_ROWS },
+      (_, i) => poolIds[Math.floor((i * POOL_ROWS) / SELECTION_ROWS)]
+    );
+    const bakTaket = selectionIds.filter((id) => poolIds.indexOf(id) >= 1_000);
+    expect(bakTaket.length).toBeGreaterThan(300); // ellers tester vi ingenting
+
+    enqueue("projects", { data: PROJECT_ROW, error: null });
+    enqueue("products", { data: PRODUCT_ROW, error: null });
+    enqueue("project_pois", {
+      data: poolIds.map((id) => ({ poi_id: id, travel_times: { walk: 4 } })),
+      error: null,
+    });
+    enqueue("product_pois", {
+      data: selectionIds.map((id, i) => ({ poi_id: id, featured: false, sort_order: i })),
+      error: null,
+    });
+    for (const chunk of chunkIds(selectionIds)) {
+      enqueue("pois", { data: chunk.map((id) => poiRow(id)), error: null });
+    }
+    enqueue("categories", { data: [CAT_ROW], error: null });
+    enqueue("product_categories", { data: [], error: null });
+
+    const project = await getProductFromSupabaseV2("intern", "pilot", "report");
+
+    expect(project!.pois).toHaveLength(SELECTION_ROWS);
+    const utenReisetid = project!.pois.filter((p) => p.travelTime === undefined);
+    expect(utenReisetid).toHaveLength(0);
+  });
+
+  it("mister ingen steder fra utvalget når det passerer taket", async () => {
+    // `product_pois` er 57 rader unna taket i dag. Skulle det passere, ville
+    // stedene forsvinne fra boardet, ikke bare miste et felt.
+    const overCap = 1_240;
+    const ids = Array.from({ length: overCap }, (_, i) => `poi-${i}`);
+
+    enqueue("projects", { data: PROJECT_ROW, error: null });
+    enqueue("products", { data: PRODUCT_ROW, error: null });
+    enqueue("project_pois", { data: [], error: null });
+    enqueue("product_pois", {
+      data: ids.map((id, i) => ({ poi_id: id, featured: false, sort_order: i })),
+      error: null,
+    });
+    for (const chunk of chunkIds(ids)) {
+      enqueue("pois", { data: chunk.map((id) => poiRow(id)), error: null });
+    }
+    enqueue("categories", { data: [CAT_ROW], error: null });
+    enqueue("product_categories", { data: [], error: null });
+
+    const project = await getProductFromSupabaseV2("intern", "pilot", "report");
+
+    expect(project!.pois).toHaveLength(overCap);
+    expect(project!.pois[0].id).toBe("poi-0");
+    expect(project!.pois.at(-1)!.id).toBe(`poi-${overCap - 1}`);
   });
 });
 

@@ -69,6 +69,16 @@ export interface BackfillMode {
   apply: boolean;
   force: boolean;
   limit?: number;
+  /**
+   * Snevre til POI-er innenfor så mange minutters gange fra prosjektets origo.
+   *
+   * HVORFOR DETTE FINNES: 2026-09-06 kostet en TØRRKJØRING mot ett board 600
+   * Enterprise-kall (~10 USD) og skrev ingenting. Boardet har 1 474 POI-er,
+   * men svarene som trenger åpningstider bruker bare de 36 innen et kvarter.
+   * `--limit` hjelper ikke — den kutter på navnerekkefølge, ikke på nærhet, så
+   * den kan kutte bort nettopp de stedene svaret handler om.
+   */
+  nearMinutes?: number;
 }
 
 /**
@@ -124,18 +134,61 @@ export function parseScope(argv: string[]): { scope: BackfillScope } | { error: 
   return { scope: { kind: "all" } };
 }
 
-/** Parser `--apply`, `--force` og `--limit N`. Dry-run er default. */
+/** Parser `--apply`, `--force`, `--limit N` og `--near N`. Dry-run er default. */
 export function parseMode(argv: string[]): BackfillMode | { error: string } {
-  const limitIdx = argv.indexOf("--limit");
-  let limit: number | undefined;
-  if (limitIdx !== -1) {
-    const parsed = Number.parseInt(argv[limitIdx + 1] ?? "", 10);
+  const heltall = (flagg: string): number | undefined | { error: string } => {
+    const i = argv.indexOf(flagg);
+    if (i === -1) return undefined;
+    const parsed = Number.parseInt(argv[i + 1] ?? "", 10);
     if (!Number.isFinite(parsed) || parsed < 1) {
-      return { error: "--limit krever et positivt heltall" };
+      return { error: `${flagg} krever et positivt heltall` };
     }
-    limit = parsed;
+    return parsed;
+  };
+
+  const limit = heltall("--limit");
+  if (typeof limit === "object") return limit;
+  const nearMinutes = heltall("--near");
+  if (typeof nearMinutes === "object") return nearMinutes;
+
+  return {
+    apply: argv.includes("--apply"),
+    force: argv.includes("--force"),
+    limit,
+    nearMinutes,
+  };
+}
+
+/**
+ * POI-ene i et prosjekt som ligger innenfor N minutters gange.
+ *
+ * Reisetidene er precomputet i `v2.project_pois.travel_times` (migrasjon 071),
+ * i MINUTTER. En POI uten målt gangtid holdes UTENFOR: filteret er der for å
+ * kutte kostnad, og et sted vi ikke vet avstanden til kan vi heller ikke si er
+ * nært.
+ */
+export async function poisWithinWalk(
+  ctx: SupabaseCtx,
+  projectId: string,
+  minutes: number,
+): Promise<Set<string>> {
+  const res = await sbFetch(ctx)(
+    `${ctx.url}/rest/v1/project_pois?project_id=eq.${encodeURIComponent(projectId)}&select=poi_id,travel_times`,
+    { headers: readHeaders(ctx.key) },
+  );
+  if (!res.ok) {
+    throw new Error(`Kunne ikke hente reisetider: ${res.status} ${await res.text()}`);
   }
-  return { apply: argv.includes("--apply"), force: argv.includes("--force"), limit };
+  const rader = (await res.json()) as Array<{
+    poi_id: string;
+    travel_times: { walk?: number } | null;
+  }>;
+  const ut = new Set<string>();
+  for (const r of rader) {
+    const w = r.travel_times?.walk;
+    if (typeof w === "number" && Number.isFinite(w) && w <= minutes) ut.add(r.poi_id);
+  }
+  return ut;
 }
 
 export function describeScope(scope: BackfillScope): string {
@@ -220,14 +273,28 @@ export async function fetchScopedPois<T extends BackfillPoiRow>(
 
     const productIds = products.map((p) => p.id);
     const inList = productIds.map((id) => `"${id}"`).join(",");
-    const rowsRes = await doFetch(
-      `${ctx.url}/rest/v1/product_pois?product_id=in.(${inList})&select=poi_id,pois(${selectColumns})`,
-      { headers },
-    );
-    if (!rowsRes.ok) {
-      throw new Error(`Kunne ikke hente product_pois: ${rowsRes.status} ${await rowsRes.text()}`);
+
+    // SIDEVIS. PostgREST kapper et svar på 1 000 rader UTEN å si fra
+    // (`docs/solutions/.../postgrest-row-cap`). Uten paginering her så
+    // scriptet bare de 1 000 første koblingene på et board med 1 474 steder,
+    // og 474 POI-er var usynlige — blant dem KIWI Valentinlyst, som er
+    // nettopp et sted åpningstider betyr noe for. Feilen var stille: ingen
+    // HTTP-feil, bare et kortere svar.
+    const rows: { poi_id: string; pois: T | null }[] = [];
+    const pageSize = 1000;
+    for (let offset = 0; ; offset += pageSize) {
+      const rowsRes = await doFetch(
+        `${ctx.url}/rest/v1/product_pois?product_id=in.(${inList})` +
+          `&select=poi_id,pois(${selectColumns})&order=poi_id&offset=${offset}&limit=${pageSize}`,
+        { headers },
+      );
+      if (!rowsRes.ok) {
+        throw new Error(`Kunne ikke hente product_pois: ${rowsRes.status} ${await rowsRes.text()}`);
+      }
+      const page = (await rowsRes.json()) as { poi_id: string; pois: T | null }[];
+      rows.push(...page);
+      if (page.length < pageSize) break;
     }
-    const rows = (await rowsRes.json()) as { poi_id: string; pois: T | null }[];
 
     // Samme POI kan ligge på flere produkter i samme prosjekt — dedupliser, ellers
     // hentes og betales samme sted flere ganger.

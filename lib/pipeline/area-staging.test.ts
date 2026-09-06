@@ -288,9 +288,10 @@ describe("parseAreaStaging — bolig-profil-grense (AC4b)", () => {
 // ── VALID_THEME_IDS-avledning (AC4) + eksportert kontrakt (AC2) ──────────────
 
 describe("VALID_THEME_IDS-avledning + ThemeEditorialStagingSchema-kontrakt", () => {
-  it("aksepterer ALLE 6 bolig-tema-IDer fra REPORT_THEME_DEFAULTS, uten duplikat (AC4)", () => {
-    // Avledet fra taksonomien (PRD 2), ikke hardkodet: nøyaktig 6, ingen duplikat.
-    expect(REPORT_THEME_DEFAULTS).toHaveLength(6);
+  it("aksepterer ALLE 7 bolig-tema-IDer fra REPORT_THEME_DEFAULTS, uten duplikat (AC4)", () => {
+    // Avledet fra taksonomien (PRD 2), ikke hardkodet: nøyaktig 7, ingen duplikat.
+    // 7 siden Opplevelser ble åpnet 2026-09-06 (var 6).
+    expect(REPORT_THEME_DEFAULTS).toHaveLength(7);
     const ids = REPORT_THEME_DEFAULTS.map((t) => t.id);
     expect(new Set(ids).size).toBe(ids.length);
     // Hver gyldig bolig-tema-id passerer som report_editorial-nøkkel.

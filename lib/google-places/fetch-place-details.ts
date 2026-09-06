@@ -22,6 +22,8 @@ import { PlacesApiError } from "./errors";
 import { belastApiKall } from "@/lib/api-budget";
 
 export interface PlaceDetails {
+  /** Stedets navn på språket kallet ba om (`options.languageCode`). */
+  displayName?: string;
   rating?: number;
   reviewCount?: number;
   photos?: Array<{ reference: string }>;
@@ -103,6 +105,7 @@ function mapPriceLevel(value: unknown): number | undefined {
 
 /** Places-New Place-objekt — kun feltene vi leser (alt optional; FieldMask styrer hva som kommer). */
 interface PlacesNewResult {
+  displayName?: { text?: string };
   rating?: number;
   userRatingCount?: number;
   photos?: Array<{ name: string }>;
@@ -187,6 +190,7 @@ export async function fetchPlaceDetails(
   const place = (await response.json()) as PlacesNewResult;
 
   return {
+    displayName: place.displayName?.text,
     rating: place.rating,
     reviewCount: place.userRatingCount,
     photos: place.photos?.slice(0, 5).map((photo) => ({

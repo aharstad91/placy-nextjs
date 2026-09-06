@@ -60,6 +60,9 @@ export interface KretsSchoolFact {
   trinnTil: number | null;
   elevtall: number | null;
   offentlig: boolean;
+  /** Skolens koordinat fra NSR. Brukes til å måle gangruta (skoleskyss), og
+   *  følger derfor ikke med ut på boardet. Utelatt når registeret mangler den. */
+  koordinat?: RegisterKoordinat;
 }
 
 export interface VideregaendeFact {
@@ -173,6 +176,7 @@ export async function fetchSchoolFacts(options: {
       trinnTil: detail.trinnTil,
       elevtall: detail.elevtall,
       offentlig: detail.offentlig,
+      ...(detail.koordinat ? { koordinat: detail.koordinat } : {}),
     };
   }
 

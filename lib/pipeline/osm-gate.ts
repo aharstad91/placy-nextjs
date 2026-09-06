@@ -169,6 +169,12 @@ export const OSM_GATE_RULES: readonly OsmGateRule[] = Object.freeze([
     categoryId: "outdoor",
     why: "Offentlig utsiktspunkt; navngitt betyr at noen har regnet det som et sted.",
   },
+  {
+    key: "leisure",
+    value: "fitness_station",
+    categoryId: "fitness_park",
+    why: "Utendørs treningsapparater — gratis og offentlig. Målt i Trondheim 2026-09-06: 25 objekter, 3 med navn («Trimpark på Øya», «Tufteparken Moholt Trimpark», «Trimpark Theisendammen») — alle tre ekte trimparker. Navnekravet gjør jobben alene her, som for pitch. Google har INGEN type for dette: tekstsøket «utendørs treningspark» ga Valentinlyst Senter og et klatresenter blant treffene, og de ekte bærer `gym` — så de kom inn som treningssenter og forsvant som trimpark.",
+  },
 ]);
 
 /**
@@ -251,6 +257,7 @@ export const OSM_GATE_CATEGORIES = Object.freeze([
   { id: "park", name: "Park", icon: "TreePine", color: "#10b981" },
   { id: "badeplass", name: "Badeplass", icon: "Waves", color: "#0ea5e9" },
   { id: "outdoor", name: "Utendørs aktivitet", icon: "TreePine", color: "#10b981" },
+  { id: "fitness_park", name: "Treningspark", icon: "Dumbbell", color: "#ec4899" },
 ]);
 
 function resolveCoordinates(

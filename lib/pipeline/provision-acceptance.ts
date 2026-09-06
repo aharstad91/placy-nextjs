@@ -23,6 +23,7 @@ import {
   summarizeTierFindings,
 } from "@/lib/validation/report-tier";
 import type { ReportConfig } from "@/lib/types";
+import { fetchAllRows } from "@/lib/supabase/fetch-all-rows";
 
 export type AcceptanceLevel = "pass" | "warn" | "error";
 
@@ -176,17 +177,24 @@ export async function runAcceptanceCheck(options: {
   }
 
   // 3. POI-antall (advarsel, ikke feil)
-  const { data: pois, error: poisError } = await db
-    .from("product_pois")
-    .select("poi_id")
-    .eq("product_id", productId);
+  // PAGINERT: dette er akseptansetesten. Talte den 1 000 når det var 1 615,
+  // ville den godkjent et board den ikke hadde sett — og feilen ville sett ut
+  // som et bestått steg.
+  const { rows: pois, error: poisError } = await fetchAllRows((from, to) =>
+    db
+      .from("product_pois")
+      .select("poi_id")
+      .eq("product_id", productId)
+      .order("poi_id")
+      .range(from, to)
+  );
   if (poisError) {
     findings.push({
       level: "warn",
-      message: `Henting av product_pois feilet: ${poisError.message}`,
+      message: `Henting av product_pois feilet: ${poisError}`,
     });
   } else {
-    const poiCount = pois?.length ?? 0;
+    const poiCount = pois.length;
     findings.push({ level: "pass", message: `product_pois: ${poiCount} POI-er` });
     if (poiCount < 10) {
       findings.push({ level: "warn", message: "Færre enn 10 POI-er — boardet kan bli tynt" });

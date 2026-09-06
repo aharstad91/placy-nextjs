@@ -23,6 +23,7 @@ import {
   POIImportData,
 } from "@/lib/supabase/mutations";
 import { createServerClient } from "@/lib/supabase/client";
+import { fetchAllRows } from "@/lib/supabase/fetch-all-rows";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -108,25 +109,36 @@ async function fetchExistingPOIsInBoundingBox(
   const supabase = createServerClient();
   if (!supabase) return [];
 
-  const { data, error } = await supabase
-    .schema("v2")
-    .from("pois")
-    .select("id, google_place_id, entur_stopplace_id, bysykkel_station_id")
-    .gte("lat", bbox.minLat)
-    .lte("lat", bbox.maxLat)
-    .gte("lng", bbox.minLng)
-    .lte("lng", bbox.maxLng);
+  // PAGINERT, og her er det dyrest av alt: denne lista ER dedupen. PostgREST
+  // kapper på 1 000 rader uten å si fra, og Wesselsløkkas boks inneholder
+  // 3 202 POI-er (målt 2026-09-06). Uten paginering var 2 202 av dem usynlige
+  // for dedupen, og hvert av de stedene gikk ned insert-veien ved neste
+  // import — som skriver `trust_score: null` over en score vi har regnet ut,
+  // og lager en dublett når den eksisterende raden har en id fra en annen
+  // kilde. En kappet LESING ble altså til feil SKRIVING.
+  const { rows, error } = await fetchAllRows((from, to) =>
+    supabase
+      .schema("v2")
+      .from("pois")
+      .select("id, google_place_id, entur_stopplace_id, bysykkel_station_id")
+      .gte("lat", bbox.minLat)
+      .lte("lat", bbox.maxLat)
+      .gte("lng", bbox.minLng)
+      .lte("lng", bbox.maxLng)
+      .order("id")
+      .range(from, to)
+  );
 
   if (error) {
     // Dedup-tap (ikke abort): uten eksisterende-POI-lista re-inserteres POIer
     // som allerede finnes. Logges eksplisitt (AC7 — ingen stille return []).
     console.error(
-      `[import-pois] Kunne ikke hente eksisterende POIer for dedup: ${error.message}`
+      `[import-pois] Kunne ikke hente eksisterende POIer for dedup: ${error}`
     );
     return [];
   }
 
-  return data || [];
+  return rows;
 }
 
 /** Categorize POIs for insert vs update using O(1) lookup */
@@ -212,8 +224,20 @@ function convertToPOIImportData(
     trust_flags: [],
     trust_score_updated_at: null,
     google_website: null,
-    google_business_status: null,
+    // Googles egen status, båret helt fram. Fram til 2026-09-06 sto det `null`
+    // her selv om discovery hadde verdien: import-kvalitetsfilteret droppet
+    // CLOSED_PERMANENTLY, men CLOSED_TEMPORARILY gikk gjennom og ble lagret som
+    // «vet ikke». Read-path-porten (`filterTrustedPOIs`) kunne derfor ikke se
+    // en stengt dør på en fersk import.
+    google_business_status: poi.googleBusinessStatus || null,
     google_price_level: null,
+    // `undefined` når Google ikke ga tider — merge-laget lar da den
+    // eksisterende verdien stå. `null` ville slettet tider fra
+    // `refresh-opening-hours.ts`.
+    opening_hours_json:
+      poi.openingHoursWeekdayText && poi.openingHoursWeekdayText.length > 0
+        ? { weekday_text: poi.openingHoursWeekdayText }
+        : undefined,
     // Speiler Google. Fravær lagres som null, ikke som tom liste — «Google sa
     // ingenting» og «ligger ikke i noe bygg» er ikke samme påstand.
     contained_in_ids: poi.containedInIds ?? null,
@@ -258,19 +282,25 @@ async function addPOIsToProject(projectId: string, poiIds: string[]) {
   if (!supabase || poiIds.length === 0) return;
   const db = supabase.schema("v2");
 
-  // Get existing links to avoid duplicates
-  const { data: existingLinks, error: linksError } = await db
-    .from("project_pois")
-    .select("poi_id")
-    .eq("project_id", projectId);
+  // Get existing links to avoid duplicates — PAGINERT: over 1 000 lenker ville
+  // et kappet svar gjort eksisterende koblinger usynlige, og insert-en under
+  // ville truffet primærnøkkelen. Wesselsløkka har 1 615.
+  const { rows: existingLinks, error: linksError } = await fetchAllRows((from, to) =>
+    db
+      .from("project_pois")
+      .select("poi_id")
+      .eq("project_id", projectId)
+      .order("poi_id")
+      .range(from, to)
+  );
 
   if (linksError) {
     console.error(
-      `[import-pois] Kunne ikke hente project_pois-lenker for ${projectId}: ${linksError.message}`
+      `[import-pois] Kunne ikke hente project_pois-lenker for ${projectId}: ${linksError}`
     );
   }
 
-  const existingPoiIds = new Set((existingLinks || []).map((l) => l.poi_id));
+  const existingPoiIds = new Set(existingLinks.map((l) => l.poi_id));
   const newLinks = poiIds
     .filter((id) => !existingPoiIds.has(id))
     .map((poiId) => ({ project_id: projectId, poi_id: poiId }));

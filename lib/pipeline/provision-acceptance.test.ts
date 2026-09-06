@@ -6,6 +6,7 @@ vi.mock("@/lib/supabase/client", () => ({
 
 import { createServerClient } from "@/lib/supabase/client";
 import { runAcceptanceCheck } from "./provision-acceptance";
+import { pagedResult } from "@/lib/test-support/supabase-chain";
 
 const sixThemes = Array.from({ length: 6 }, (_, i) => ({
   id: `tema-${i}`,
@@ -37,7 +38,11 @@ function buildMockSupabase(opts: {
         return { select: () => ({ eq: () => ({ single: async () => product }) }) };
       }
       if (table === "product_pois") {
-        return { select: () => ({ eq: async () => pois }) };
+        return {
+          select: () => ({
+            eq: () => pagedResult((pois.data as unknown[]) ?? [], pois.error),
+          }),
+        };
       }
       return {};
     }),

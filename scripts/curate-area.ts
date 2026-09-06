@@ -54,6 +54,7 @@ import {
 import { REPORT_THEME_DEFAULTS } from "@/lib/pipeline/report-defaults";
 import { calculateDistance } from "@/lib/utils/geo";
 import { createServerClient } from "@/lib/supabase/client";
+import { fetchAllRows } from "@/lib/supabase/fetch-all-rows";
 
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const SUPABASE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
@@ -337,18 +338,25 @@ async function listPoiCandidates(opts: {
   // v2-targeting (AC3): board-settet lever i v2 → les v2.project_pois/v2.pois.
   const poiIdSet = new Set<string>();
   for (const projectId of opts.projectIds) {
-    const { data, error } = await supabase
-      .schema("v2")
-      .from("project_pois")
-      .select("poi_id")
-      .eq("project_id", projectId);
+    // PAGINERT: dette er settet kuratoren faktisk skriver tekst for. Et kappet
+    // svar ville stille utelatt steder fra kurateringen — Moat 1 med hull vi
+    // ikke ser. Se `fetch-all-rows.ts`.
+    const { rows: data, error } = await fetchAllRows((from, to) =>
+      supabase
+        .schema("v2")
+        .from("project_pois")
+        .select("poi_id")
+        .eq("project_id", projectId)
+        .order("poi_id")
+        .range(from, to)
+    );
     if (error) {
       console.error(
-        `Feil: henting av project_pois for ${projectId} feilet: ${error.message}`
+        `Feil: henting av project_pois for ${projectId} feilet: ${error}`
       );
       process.exit(1);
     }
-    if (!data || data.length === 0) {
+    if (data.length === 0) {
       console.warn(`⚠️  Ingen POI-er for prosjekt ${projectId} — er prosjektet provisjonert?`);
       continue;
     }

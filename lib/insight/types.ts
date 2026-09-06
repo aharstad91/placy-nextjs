@@ -21,8 +21,8 @@ export interface InsightEventRow {
 
 /** Oppslag fra id → visningsnavn, bygd fra boardets egne data. */
 export interface InsightLabels {
-  /** Tema-id (category_opened.category_id) → visningsnavn. Bevarer boardets rekkefølge. */
-  categories: Array<{ id: string; label: string }>;
+  /** Tema-id (category_opened.category_id) → visningsnavn + boardets ikon/farge. Bevarer boardets rekkefølge. */
+  categories: Array<{ id: string; label: string; icon?: string; color?: string }>;
   /** POI-id → navn + temaet POI-et hører til på boardet. */
   pois: Map<string, { name: string; categoryId?: string }>;
   /** FAQ-spørsmåls-id → spørsmålstekst + temaet spørsmålet hører til (utelatt = global). */
@@ -32,6 +32,9 @@ export interface InsightLabels {
 export interface CategoryInsight {
   id: string;
   label: string;
+  /** Lucide-ikonnavn og hex-farge fra boardet — så rapporten ser ut som boardet. */
+  icon?: string;
+  color?: string;
   opens: number;
   /** Åpninger i forrige periode av samme lengde. */
   prevOpens: number;
@@ -48,6 +51,7 @@ export interface CategoryInsight {
 export interface PoiInsight {
   id: string;
   name: string;
+  categoryId: string | null;
   categoryLabel: string | null;
   clicks: number;
   explores: number;
@@ -56,9 +60,11 @@ export interface PoiInsight {
   prevTotal: number;
 }
 
+/** Ett spørsmål boardet VISER — også de som aldri er åpnet (opens = 0). */
 export interface FaqInsight {
   id: string;
   question: string;
+  categoryId: string | null;
   categoryLabel: string | null;
   opens: number;
   prevOpens: number;
@@ -93,14 +99,12 @@ export interface InsightReport {
   /** Åpninger per time siste 24 t (indeks 0 = for 23 t siden, 23 = nå). */
   hourly: number[];
   categories: CategoryInsight[];
+  /** Alle steder med minst én handling, sortert. Visningen kutter selv. */
   pois: PoiInsight[];
+  /** Alle viste spørsmål (katalog + kurator + globale), også de med 0 åpninger. */
   faq: FaqInsight[];
   sources: SourceInsight[];
   travelModes: Record<TravelMode, number>;
   /** Andel interaksjoner med 3D aktivt (0–1); null uten grunnlag. */
   threeDShare: number | null;
-  /** Regelbaserte lesninger av tallene, i klartekst. Tomme under terskel. */
-  observations: string[];
-  /** Hva megleren kan gjøre med det. Tomme under terskel. */
-  actions: string[];
 }

@@ -407,6 +407,7 @@ describe("importPublicPois — Unit 2", () => {
     expect(ids.sort()).toEqual([
       "badeplass",
       "barnehage",
+      "fitness_park",
       "idrett",
       "marina",
       "outdoor",

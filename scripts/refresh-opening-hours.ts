@@ -4,12 +4,18 @@
  *
  * Usage:
  *   npx tsx scripts/refresh-opening-hours.ts --project placy-demo_sundsoya            # dry-run
+ *   npx tsx scripts/refresh-opening-hours.ts --project X --near 15 --apply           # kun nærområdet
  *   npx tsx scripts/refresh-opening-hours.ts --project placy-demo_sundsoya --apply    # skriv
  *   npx tsx scripts/refresh-opening-hours.ts --area ranheim --apply
  *   npx tsx scripts/refresh-opening-hours.ts --all --apply                           # hele v2.pois
  *
  * Flagg: `--apply` (skriv), `--force` (hent på nytt selv om åpningstider finnes),
- * `--limit N` (behandle kun N POI-er — billig røyktest).
+ * `--limit N` (behandle kun N POI-er — billig røyktest), `--near N` (kun
+ * POI-er innen N minutters gange — det er dem FAQ-svarene bruker).
+ *
+ * TØRRKJØRING ER IKKE GRATIS. Den henter fra Google i fase 1 og hopper bare
+ * over skrivingen. En tørrkjøring mot et helt board kostet 600 Enterprise-kall
+ * (~10 USD) 2026-09-06 uten å skrive en rad. Bruk `--near` eller `--limit`.
  *
  * MIGRERT 2026-08-12 (PRD Unit 4): scriptet kalte tidligere LEGACY-endepunktet
  * `maps.googleapis.com/maps/api/place/details/json` og sendte API-nøkkelen som
@@ -36,6 +42,7 @@ import {
   formatSummary,
   parseMode,
   parseScope,
+  poisWithinWalk,
   QuotaAbort,
   verifyWritten,
   writeBackup,
@@ -81,10 +88,31 @@ async function main() {
   console.log(`Scope:  ${describeScope(scope)}`);
   console.log(`Modus:  ${mode.apply ? "APPLY" : "DRY RUN"}${mode.force ? " (force)" : ""}`);
   if (mode.limit) console.log(`Limit:  ${mode.limit}`);
+  if (mode.nearMinutes) console.log(`Nærhet: kun POI-er innen ${mode.nearMinutes} min gange`);
+  if (!mode.apply) {
+    // Tørrkjøringen HENTER fra Google og koster nøyaktig det samme som --apply.
+    // Den utelater bare skrivingen. 2026-09-06 gikk 600 Enterprise-kall (~10 USD)
+    // tapt på en tørrkjøring der dataen ble hentet og kastet.
+    console.log("OBS:    tørrkjøring henter fra Google og koster som --apply — den skriver bare ikke.");
+  }
   console.log();
 
-  const { pois, note } = await fetchScopedPois<OpeningHoursPoiRow>(ctx, scope, SELECT);
+  const scoped = await fetchScopedPois<OpeningHoursPoiRow>(ctx, scope, SELECT);
+  let pois = scoped.pois;
+  const note = scoped.note;
   console.log(`Hentet: ${note}`);
+
+  if (mode.nearMinutes) {
+    if (scope.kind !== "project") {
+      console.error("--near krever --project (reisetidene er per prosjekt).");
+      process.exit(1);
+    }
+    const nære = await poisWithinWalk(ctx, scope.projectId, mode.nearMinutes);
+    const før = pois.length;
+    pois = pois.filter((p) => nære.has(p.id));
+    console.log(`Nærhet: ${pois.length} av ${før} ligger innen ${mode.nearMinutes} min gange`);
+  }
+
   if (pois.length === 0) {
     console.log("Ingen POI-er i scope. Ingenting å gjøre.");
     return;

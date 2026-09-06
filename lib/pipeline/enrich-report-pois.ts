@@ -97,6 +97,12 @@ export const BOLIG_GOOGLE_CATEGORIES = [
   "hiking_area",
   "dog_park",
   "sports_activity_location",
+  // Opplevelser-temaet (2026-09-06): scene og bowling hadde ingen produsent.
+  // Måletall og rekkefølge-begrunnelse står i GOOGLE_CATEGORY_MAP.
+  "performing_arts_theater",
+  "concert_hall",
+  "cultural_center",
+  "bowling_alley",
 ];
 
 /** Norske tekstsøk for hverdagssteder uten pålitelig Google-type.
@@ -115,6 +121,20 @@ export const BOLIG_TEXT_QUERIES = [
     // fant fysioterapeuten, ikke legesenteret) — tekstsøk bærer kategorien.
     query: "legesenter",
     category: { id: "doctor", name: "Legesenter", icon: "Stethoscope", color: "#3b82f6" },
+  },
+  // Bildeling (2026-09-06). `carshare` sto i transport-temaet uten at NOEN
+  // kilde produserte den. Google har ingen bildelings-type, og `car_rental`
+  // kan ikke brukes: den dekker Avis og Hertz like godt som Hyre, og et
+  // bilutleiekontor er ikke bildeling. Målt i produksjons-bboxen 2026-09-06:
+  // «Hyre bildeling» ga 6 treff, alle Hyre-stasjoner; «bilkollektivet» ga
+  // Trondheim Bilkollektiv og ingenting annet. Merkenavnene ER presisjonen.
+  {
+    query: "Hyre bildeling",
+    category: { id: "carshare", name: "Bildeling", icon: "Car", color: "#6366f1" },
+  },
+  {
+    query: "bilkollektivet",
+    category: { id: "carshare", name: "Bildeling", icon: "Car", color: "#6366f1" },
   },
 ];
 

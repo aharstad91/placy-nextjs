@@ -525,9 +525,9 @@ describe("kuratert lag", () => {
 
   it("dropper et kuratert tillegg uten spørsmålstekst — et svar uten spørsmål er hjemløst", () => {
     const entries = generateCategoryFaq(
-      input({ pois: [RANHEIM_SKOLE], curated: [{ id: "skolevei", svar: "Uten kryssing." }] }),
+      input({ pois: [RANHEIM_SKOLE], curated: [{ id: "trafikk", svar: "Uten kryssing." }] }),
     );
-    expect(entries.find((e) => e.id === "skolevei")).toBeUndefined();
+    expect(entries.find((e) => e.id === "trafikk")).toBeUndefined();
   });
 
   it("merker kilden internt så to-lags-modellen kan evalueres", () => {
@@ -557,19 +557,22 @@ function tider(hverdag: string, lordag = "Saturday: Closed", sondag = "Sunday: C
 
 describe("tema-spørsmålene", () => {
   it("uten-bil navngir ærend-typene som er dekket, aldri de som mangler", () => {
-    const entries = generateCategoryFaq(
-      input({
-        themeId: "hverdagsliv",
-        categoryIds: ["supermarket", "pharmacy", "post", "haircare", "shopping"],
-        pois: [
-          poi({ id: "s1", name: "Extra Grilstad", categoryId: "supermarket", travelTime: { walk: 3 } }),
-          poi({ id: "a1", name: "Vitusapotek", categoryId: "pharmacy", travelTime: { walk: 3 } }),
-          poi({ id: "p1", name: "Post i Butikk", categoryId: "post", travelTime: { walk: 3 } }),
-          poi({ id: "f1", name: "Ranheim Frisør", categoryId: "haircare", travelTime: { walk: 8 } }),
-          poi({ id: "k1", name: "Grilstad mall", categoryId: "shopping", travelTime: { walk: 3 } }),
-        ],
-      }),
-    );
+    // Området eier spørsmålet (katalogen § 6, flyttet 2026-09-06).
+    const entries = generateGlobalFaq({
+      themes: [
+        {
+          id: "hverdagsliv",
+          label: "Hverdagsliv",
+          pois: [
+            poi({ id: "s1", name: "Extra Grilstad", categoryId: "supermarket", travelTime: { walk: 3 } }),
+            poi({ id: "a1", name: "Vitusapotek", categoryId: "pharmacy", travelTime: { walk: 3 } }),
+            poi({ id: "p1", name: "Post i Butikk", categoryId: "post", travelTime: { walk: 3 } }),
+            poi({ id: "f1", name: "Ranheim Frisør", categoryId: "haircare", travelTime: { walk: 8 } }),
+            poi({ id: "k1", name: "Grilstad mall", categoryId: "shopping", travelTime: { walk: 3 } }),
+          ],
+        },
+      ],
+    });
     const svar = answerFor(entries, "uten-bil");
     expect(svar).toBe(
       "Hverdagsærendene er i gangavstand: dagligvare, apotek, post, frisør og kjøpesenter ligger alle innenfor 10 minutter til fots.",
@@ -577,18 +580,20 @@ describe("tema-spørsmålene", () => {
   });
 
   it("uten-bil med bare to dekket sier «deler av», og påstår ingenting om resten", () => {
-    const entries = generateCategoryFaq(
-      input({
-        themeId: "hverdagsliv",
-        categoryIds: ["supermarket", "pharmacy"],
-        pois: [
-          poi({ id: "s1", name: "Extra", categoryId: "supermarket", travelTime: { walk: 3 } }),
-          poi({ id: "a1", name: "Apotek 1", categoryId: "pharmacy", travelTime: { walk: 9 } }),
-          // Frisøren finnes, men utenfor radiusen — skal ikke telle.
-          poi({ id: "f1", name: "Klipp", categoryId: "haircare", travelTime: { walk: 25 } }),
-        ],
-      }),
-    );
+    const entries = generateGlobalFaq({
+      themes: [
+        {
+          id: "hverdagsliv",
+          label: "Hverdagsliv",
+          pois: [
+            poi({ id: "s1", name: "Extra", categoryId: "supermarket", travelTime: { walk: 3 } }),
+            poi({ id: "a1", name: "Apotek 1", categoryId: "pharmacy", travelTime: { walk: 9 } }),
+            // Frisøren finnes, men utenfor radiusen — skal ikke telle.
+            poi({ id: "f1", name: "Klipp", categoryId: "haircare", travelTime: { walk: 25 } }),
+          ],
+        },
+      ],
+    });
     const svar = answerFor(entries, "uten-bil");
     expect(svar).toContain("Deler av hverdagen");
     expect(svar).toContain("dagligvare og apotek");
@@ -596,11 +601,29 @@ describe("tema-spørsmålene", () => {
   });
 
   it("uten-bil utelates når bare én ærend-type er dekket", () => {
+    const entries = generateGlobalFaq({
+      themes: [
+        {
+          id: "hverdagsliv",
+          label: "Hverdagsliv",
+          pois: [poi({ id: "s1", name: "Extra", categoryId: "supermarket", travelTime: { walk: 3 } })],
+        },
+      ],
+    });
+    expect(entries.find((e) => e.id === "uten-bil")).toBeUndefined();
+  });
+
+  it("uten-bil står ikke lenger i Hverdagsliv — id-en har ett hjem", () => {
     const entries = generateCategoryFaq(
       input({
         themeId: "hverdagsliv",
-        categoryIds: ["supermarket"],
-        pois: [poi({ id: "s1", name: "Extra", categoryId: "supermarket", travelTime: { walk: 3 } })],
+        categoryIds: ["supermarket", "pharmacy", "post", "haircare"],
+        pois: [
+          poi({ id: "s1", name: "Extra", categoryId: "supermarket", travelTime: { walk: 3 } }),
+          poi({ id: "a1", name: "Apotek 1", categoryId: "pharmacy", travelTime: { walk: 3 } }),
+          poi({ id: "p1", name: "Posten", categoryId: "post", travelTime: { walk: 3 } }),
+          poi({ id: "f1", name: "Frisøren", categoryId: "haircare", travelTime: { walk: 3 } }),
+        ],
       }),
     );
     expect(entries.find((e) => e.id === "uten-bil")).toBeUndefined();
@@ -811,7 +834,7 @@ describe("tema-spørsmålene", () => {
     const tursti = entries.find((e) => e.id === "turstier")!;
     expect(tursti.source).toBe("curated");
     // Katalogens spørsmålstekst brukes når kurator ikke har egen.
-    expect(tursti.question).toBe("Hvor går turstiene?");
+    expect(tursti.question).toBe("Hvor kommer jeg inn på nærmeste tursti?");
   });
 });
 
@@ -861,18 +884,9 @@ describe("svarformene", () => {
       ),
       answerFor(
         generateCategoryFaq(
-          input({
-            themeId: "hverdagsliv",
-            categoryIds: ["supermarket", "pharmacy", "post", "haircare"],
-            pois: [
-              poi({ id: "s1", name: "Extra", categoryId: "supermarket", travelTime: { walk: 3 } }),
-              poi({ id: "a1", name: "Vitusapotek", categoryId: "pharmacy", travelTime: { walk: 3 } }),
-              poi({ id: "p1", name: "Posten", categoryId: "post", travelTime: { walk: 3 } }),
-              poi({ id: "f1", name: "Frisøren", categoryId: "haircare", travelTime: { walk: 8 } }),
-            ],
-          }),
+          input({ pois: [{ ...RANHEIM_SKOLE, travelTime: { walk: 8 } }] }),
         ),
-        "uten-bil",
+        "skolevei",
       ),
       answerFor(
         generateCategoryFaq(
@@ -1149,12 +1163,16 @@ describe("generateGlobalFaq", () => {
 
   it("står i katalogens rekkefølge, ikke i den rekkefølgen svarene ble laget", () => {
     const entries = generateGlobalFaq({ boardFacts: FACTS, themes: BOARD });
+    // Katalogens rekkefølge (§ 4.1, 2026-09-06); `naermest` og `mest-av` er
+    // reserve der og står sist. `uten-bil` svarer fordi tre ærendtyper ligger
+    // innenfor ti minutter i fikstursettet.
     expect(ids(entries)).toEqual([
       "til-byen",
-      "naermest",
       "gangavstand",
-      "mest-av",
+      "uten-bil",
       "apent-sent",
+      "naermest",
+      "mest-av",
     ]);
   });
 
@@ -1183,10 +1201,10 @@ describe("generateGlobalFaq", () => {
       themes: BOARD,
       curated: [{ id: "gangavstand", svar: "Alt ligger i gangavstand." }],
     });
-    expect(ids(entries)[2]).toBe("gangavstand");
+    expect(ids(entries)[1]).toBe("gangavstand");
     expect(answer(entries, "gangavstand")).toBe("Alt ligger i gangavstand.");
-    expect(entries[2].source).toBe("curated");
-    expect(entries[2].question).toBe("Hvor mye ligger i gangavstand?");
+    expect(entries[1].source).toBe("curated");
+    expect(entries[1].question).toBe("Hva finnes innen ti minutters gange?");
   });
 
   it("legger kurators eget spørsmål til SIST, og krever at det har en tekst", () => {
@@ -1206,5 +1224,1328 @@ describe("generateGlobalFaq", () => {
     expect(generateGlobalFaq({ themes: THEMES.map((t) => ({ ...t, pois: [] })) })).toEqual(
       [],
     );
+  });
+});
+
+// ── Ankermedlemmer, radius og terskler (2026-09-06) ─────────────────────────
+//
+// Alle fire feilene i denne blokken sto samtidig på Wesselsløkka-boardet og ble
+// funnet i FAQ-katalogens verifikasjonsrunde. De har samme form: svaret var
+// SANT, men svarte på et annet spørsmål enn det som sto over det.
+
+describe("ankermedlemmer i svarene", () => {
+  const SENTER = poi({
+    id: "google-valentinlyst",
+    name: "Valentinlyst Senter",
+    categoryId: "shopping",
+    travelTime: { walk: 8 },
+    anchorSummary: "Kjøpesenter med 30 virksomheter",
+  });
+  const BOOTS = poi({
+    id: "google-boots",
+    name: "Boots Apotek",
+    categoryId: "pharmacy",
+    travelTime: { walk: 8 },
+    parentPoiId: "google-valentinlyst",
+  });
+  const APOTEK_LANGT = poi({
+    id: "google-apotek-strindheim",
+    name: "Apotek 1 Strindheim",
+    categoryId: "pharmacy",
+    travelTime: { walk: 17 },
+  });
+  const HVERDAG = {
+    themeId: "hverdagsliv",
+    categoryIds: ["shopping", "supermarket", "pharmacy"],
+  };
+
+  it("ser apoteket INNE i kjøpesenteret, ikke bare det som står alene på kartet", () => {
+    // Board-laget absorberer BOOTS inn i senterets kort, så temaets liste har
+    // bare senteret og det fjerne apoteket. Uten fiksen svarer raden «17
+    // minutter» mens Boots ligger 8 minutter unna.
+    const svar = answerFor(
+      generateCategoryFaq(
+        input({
+          ...HVERDAG,
+          pois: [SENTER, APOTEK_LANGT],
+          allPois: [SENTER, APOTEK_LANGT, BOOTS],
+        }),
+      ),
+      "apotek",
+    );
+    expect(svar).toBe("[Boots Apotek i Valentinlyst Senter](poi:google-valentinlyst) ligger 8 minutter unna.");
+  });
+
+  it("lenker medlemmet til ANKERET — medlemmet har ingen markør å åpne", () => {
+    const svar = answerFor(
+      generateCategoryFaq(
+        input({ ...HVERDAG, pois: [SENTER], allPois: [SENTER, BOOTS] }),
+      ),
+      "apotek",
+    );
+    expect(svar).toContain("poi:google-valentinlyst");
+    expect(svar).not.toContain("poi:google-boots");
+  });
+
+  it("gjentar ikke senternavnet når butikken alt bærer det", () => {
+    const fresh = poi({
+      id: "google-fresh",
+      name: "Fresh Fitness Valentinlyst",
+      categoryId: "gym",
+      travelTime: { walk: 6 },
+      parentPoiId: "google-valentinlyst",
+    });
+    const svar = answerFor(
+      generateCategoryFaq(
+        input({
+          themeId: "trening-aktivitet",
+          categoryIds: ["gym", "swimming"],
+          // Senteret er LØFTET inn i temaet fordi et medlem hører hjemme her
+          // (R4) — det beholder sin egen kategori `shopping`, så det er ikke
+          // selv et treningssenter.
+          pois: [SENTER],
+          allPois: [SENTER, fresh],
+        }),
+      ),
+      "treningssenter",
+    );
+    expect(svar).toBe("[Fresh Fitness Valentinlyst](poi:google-valentinlyst) ligger 6 minutter unna.");
+  });
+
+  it("slipper ikke medlemmer inn i et tema kategorien deres ikke hører til", () => {
+    // Senteret står i Hverdagsliv; restauranten inne i det hører til Mat &
+    // drikke. Uten kategori-porten ville apotek-raden i Mat & drikke fått den.
+    const restaurant = poi({
+      id: "google-r",
+      name: "Egon Valentinlyst",
+      categoryId: "restaurant",
+      travelTime: { walk: 8 },
+      parentPoiId: "google-valentinlyst",
+    });
+    const entries = generateCategoryFaq(
+      input({
+        ...HVERDAG,
+        pois: [SENTER],
+        allPois: [SENTER, restaurant],
+      }),
+    );
+    expect(entries.map((e) => e.answer).join(" ")).not.toContain("Egon");
+  });
+});
+
+describe("nærhet i spørsmålsteksten", () => {
+  const MAT = { themeId: "mat-drikke", categoryIds: ["restaurant", "cafe", "bar", "bakery"] };
+
+  it("scoper kafé-svaret til kartet når «i nabolaget» ikke er sant", () => {
+    const filo = poi({
+      id: "c1",
+      name: "Filo Café",
+      categoryId: "cafe",
+      travelTime: { walk: 22 },
+    });
+    expect(answerFor(generateCategoryFaq(input({ ...MAT, pois: [filo] })), "kafe")).toBe(
+      "Nærmeste kafé på kartet er [Filo Café](poi:c1), 22 minutter til fots.",
+    );
+  });
+
+  it("beholder den enkle formen når kaféen faktisk ligger i nabolaget", () => {
+    const naer = poi({
+      id: "c2",
+      name: "Dromedar",
+      categoryId: "cafe",
+      travelTime: { walk: 6 },
+    });
+    expect(answerFor(generateCategoryFaq(input({ ...MAT, pois: [naer] })), "kafe")).toBe(
+      "[Dromedar](poi:c2) ligger 6 minutter til fots.",
+    );
+  });
+
+  it("holder søndagslista innenfor spiseavstand", () => {
+    const naer = poi({
+      id: "s-naer",
+      name: "Kafé Nær",
+      categoryId: "cafe",
+      travelTime: { walk: 7 },
+      openingHoursJson: tider("8:00 AM – 4:00 PM", "Saturday: Closed", "Sunday: 11:00 AM – 5:00 PM"),
+    });
+    const fjern = poi({
+      id: "s-fjern",
+      name: "Kafé Fjern",
+      categoryId: "cafe",
+      travelTime: { walk: 40 },
+      openingHoursJson: tider("8:00 AM – 4:00 PM", "Saturday: Closed", "Sunday: 11:00 AM – 5:00 PM"),
+    });
+    const svar = answerFor(
+      generateCategoryFaq(input({ ...MAT, pois: [naer, fjern] })),
+      "sondagsapent",
+    );
+    expect(svar).toContain("Kafé Nær");
+    expect(svar).not.toContain("Kafé Fjern");
+  });
+});
+
+describe("trene tidlig eller sent", () => {
+  const TRENING = { themeId: "trening-aktivitet", categoryIds: ["gym", "swimming"] };
+
+  it("lar raden falle bort når ingen åpner tidlig eller stenger sent", () => {
+    // Et studentvelferdskontor feilkategorisert som treningssenter — 08–15.45,
+    // 37 minutter unna — var svaret på «kan jeg trene før jobb?» før fiksen.
+    const kontortid = poi({
+      id: "gym-kontor",
+      name: "Sit Idrett",
+      categoryId: "gym",
+      travelTime: { walk: 37 },
+      openingHoursJson: tider("8:00 AM – 3:45 PM"),
+    });
+    const entries = generateCategoryFaq(input({ ...TRENING, pois: [kontortid] }));
+    expect(entries.find((e) => e.id === "trene-tidlig-sent")).toBeUndefined();
+  });
+
+  it("svarer når noen faktisk stenger sent", () => {
+    const sent = poi({
+      id: "gym-sent",
+      name: "3T Rosenborg",
+      categoryId: "gym",
+      travelTime: { walk: 9 },
+      openingHoursJson: tider("6:30 AM – 11:30 PM"),
+    });
+    expect(answerFor(generateCategoryFaq(input({ ...TRENING, pois: [sent] })), "trene-tidlig-sent")).toBe(
+      "[3T Rosenborg](poi:gym-sent) holder åpent til 23.30 på hverdager.",
+    );
+  });
+});
+
+describe("uten bil", () => {
+  it("teller ærend som ligger i ANDRE temaer enn Hverdagsliv", () => {
+    // Bakeriet ligger i Mat & drikke, treningssenteret i Trening. Begge er
+    // gåturer i hverdagen, og ingen av dem talte med da svaret leste temaets
+    // egen liste.
+    const butikk = poi({ id: "u1", name: "Rema", categoryId: "supermarket", travelTime: { walk: 3 } });
+    const bakeri = poi({ id: "u2", name: "Godt Brød", categoryId: "bakery", travelTime: { walk: 5 } });
+    const gym = poi({ id: "u3", name: "3T", categoryId: "gym", travelTime: { walk: 7 } });
+    const barnehage = poi({ id: "u4", name: "Sol barnehage", categoryId: "barnehage", travelTime: { walk: 4 } });
+    const svar = answerFor(
+      generateGlobalFaq({
+        themes: [
+          { id: "hverdagsliv", label: "Hverdagsliv", pois: [butikk] },
+          { id: "mat-drikke", label: "Mat & Drikke", pois: [bakeri] },
+          { id: "trening-aktivitet", label: "Trening", pois: [gym] },
+          { id: "barn-oppvekst", label: "Oppvekst", pois: [barnehage] },
+        ],
+      }),
+      "uten-bil",
+    );
+    expect(svar).toMatch(/^Hverdagsærendene er i gangavstand/);
+    expect(svar).toContain("bakeri");
+    expect(svar).toContain("treningssenter");
+    expect(svar).toContain("barnehage");
+  });
+});
+
+describe("områdets «åpent sent»", () => {
+  const dogn = tider("12:00 AM – 11:59 PM");
+  const PARK = poi({
+    id: "a-park",
+    name: "Dokkparken",
+    categoryId: "park",
+    travelTime: { walk: 4 },
+    openingHoursJson: dogn,
+  });
+  const RESTAURANT = poi({
+    id: "a-rest",
+    name: "VYDA",
+    categoryId: "restaurant",
+    travelTime: { walk: 4 },
+    openingHoursJson: tider("11:00 AM – 10:00 PM"),
+  });
+  const FJERN = poi({
+    id: "a-fjern",
+    name: "Nattbaren",
+    categoryId: "bar",
+    travelTime: { walk: 40 },
+    openingHoursJson: tider("4:00 PM – 11:59 PM"),
+  });
+  const svarFor = (pois: POI[], allPois?: POI[]) =>
+    generateGlobalFaq({
+      themes: [{ id: "hverdagsliv", label: "Hverdag", pois }],
+      allPois,
+    }).find((e) => e.id === "apent-sent")?.answer;
+
+  it("regner ikke en park som et sted med åpent — den har ingen dør", () => {
+    expect(svarFor([PARK, RESTAURANT])).toBe("[VYDA](poi:a-rest) har åpent til 22 på hverdager.");
+  });
+
+  it("ser bort fra steder utenfor gangavstand", () => {
+    expect(svarFor([RESTAURANT, FJERN])).toBe("[VYDA](poi:a-rest) har åpent til 22 på hverdager.");
+  });
+
+  it("finner butikken inne i kjøpesenteret", () => {
+    const senter = poi({
+      id: "a-senter",
+      name: "Valentinlyst Senter",
+      categoryId: "shopping",
+      travelTime: { walk: 8 },
+      anchorSummary: "Kjøpesenter",
+    });
+    const rema = poi({
+      id: "a-rema",
+      name: "REMA 1000",
+      categoryId: "supermarket",
+      travelTime: { walk: 8 },
+      parentPoiId: "a-senter",
+      openingHoursJson: tider("7:00 AM – 11:00 PM"),
+    });
+    expect(svarFor([senter], [senter, rema])).toBe(
+      "[REMA 1000 i Valentinlyst Senter](poi:a-senter) har åpent til 23 på hverdager.",
+    );
+  });
+
+  it("lar raden falle bort når ingenting i gangavstand holder åpent sent", () => {
+    expect(svarFor([PARK, FJERN])).toBeUndefined();
+  });
+});
+
+// ── Katalogens S-spørsmål (2026-09-06) — setningsformene fra Fable-leveransen ─
+
+describe("reisetiden utenfor gangavstand", () => {
+  const kino = (travelTime: NonNullable<POI["travelTime"]>) =>
+    generateCategoryFaq(
+      input({
+        themeId: "opplevelser",
+        categoryIds: ["cinema"],
+        pois: [poi({ id: "k1", name: "Nova Kinosenter", categoryId: "cinema", travelTime })],
+      }),
+    );
+
+  it("nevner bilen når sykkelturen er over et kvarter — aldri tre tall", () => {
+    const svar = answerFor(kino({ walk: 38, bike: 20, car: 15 }), "kino");
+    expect(svar).toBe(
+      "Nærmeste kino på kartet er [Nova Kinosenter](poi:k1), 38 minutter til fots eller 15 med bil.",
+    );
+  });
+
+  it("nevner sykkelen når den er innenfor et kvarter", () => {
+    const svar = answerFor(kino({ walk: 21, bike: 10, car: 6 }), "kino");
+    expect(svar).toContain("21 minutter til fots eller 10 med sykkel.");
+    expect(svar).not.toContain("med bil");
+  });
+
+  it("nevner ingen alternativ tid som ikke er målt", () => {
+    const svar = answerFor(kino({ walk: 38 }), "kino");
+    expect(svar).toBe("Nærmeste kino på kartet er [Nova Kinosenter](poi:k1), 38 minutter til fots.");
+  });
+
+  it("nevner intet alternativ innenfor gangavstand — da går man", () => {
+    const svar = answerFor(kino({ walk: 6, bike: 2, car: 3 }), "kino");
+    expect(svar).toBe("[Nova Kinosenter](poi:k1) er nærmeste kino, 6 minutter til fots.");
+  });
+
+  it("navngir ALDRI to steder som åpner samme kort på kartet", () => {
+    // Trondheim Film Club og Cinemateket ligger begge i Olavskvartalet. Begge
+    // navnene lenker til senterets kort, så raden ga to navn på én dør.
+    const SENTER = poi({
+      id: "olavskvartalet",
+      name: "Olavskvartalet",
+      categoryId: "shopping",
+      travelTime: { walk: 38 },
+      anchorSummary: "Kulturkvartal",
+    });
+    const medlem = (id: string, name: string) =>
+      poi({ id, name, categoryId: "cinema", parentPoiId: SENTER.id, travelTime: { walk: 38 } });
+    const NOVA = poi({ id: "nova", name: "Nova Kinosenter", categoryId: "cinema", travelTime: { walk: 41 } });
+    const svar = answerFor(
+      generateCategoryFaq(
+        input({
+          themeId: "opplevelser",
+          categoryIds: ["cinema", "shopping"],
+          pois: [SENTER, NOVA],
+          allPois: [SENTER, NOVA, medlem("film", "Trondheim Film Club"), medlem("cine", "Cinemateket")],
+        }),
+      ),
+      "kino",
+    );
+    expect(svar).toContain("Nærmeste kino på kartet er [Trondheim Film Club i Olavskvartalet](poi:olavskvartalet)");
+    // Nummer to er stedet med et EGET kort, ikke naboen i samme bygg.
+    expect(svar).toContain("[Nova Kinosenter](poi:nova) ligger 41 minutter unna.");
+    expect(svar.match(/olavskvartalet/g)!.length).toBe(1);
+  });
+
+  it("skriver halen med norsk ordstilling: «unna til fots, eller … med sykkel»", () => {
+    const entries = generateCategoryFaq(
+      input({
+        themeId: "opplevelser",
+        categoryIds: ["cinema"],
+        pois: [
+          poi({ id: "k1", name: "Nova", categoryId: "cinema", travelTime: { walk: 6 } }),
+          poi({ id: "k2", name: "Prinsen", categoryId: "cinema", travelTime: { walk: 42, bike: 14 } }),
+          poi({ id: "k3", name: "Tredje", categoryId: "cinema", travelTime: { walk: 50 } }),
+        ],
+      }),
+    );
+    const svar = answerFor(entries, "kino");
+    expect(svar).toBe(
+      "[Nova](poi:k1) er nærmeste kino, 6 minutter til fots. [Prinsen](poi:k2) ligger 42 minutter unna til fots, eller 14 med sykkel.",
+    );
+    // Maks to navngitte steder.
+    expect(svar).not.toContain("Tredje");
+  });
+});
+
+describe("skolevei", () => {
+  it("svarer med gangtiden til KRETSSKOLEN, ikke nærmeste skole-POI", () => {
+    const naermereSkole = poi({
+      id: "nsr-annen",
+      name: "Vikåsen skole",
+      categoryId: "skole",
+      travelTime: { walk: 3 },
+    });
+    const svar = answerFor(
+      generateCategoryFaq(
+        input({
+          pois: [{ ...RANHEIM_SKOLE, travelTime: { walk: 8 } }, naermereSkole],
+        }),
+      ),
+      "skolevei",
+    );
+    expect(svar).toBe("Skoleveien til [Ranheim skole](poi:nsr-975278980) er 8 minutter til fots.");
+  });
+
+  it("tar ungdomsskolen med når begge er målt", () => {
+    const svar = answerFor(
+      generateCategoryFaq(
+        input({
+          pois: [
+            { ...RANHEIM_SKOLE, travelTime: { walk: 8 } },
+            { ...CHARLOTTENLUND_U, travelTime: { walk: 23 } },
+          ],
+        }),
+      ),
+      "skolevei",
+    );
+    expect(svar).toBe(
+      "Skoleveien til [Ranheim skole](poi:nsr-975278980) er 8 minutter til fots, og til [Charlottenlund ungdomsskole](poi:nsr-975290158), der ungdomstrinnet hører til, 23 minutter.",
+    );
+  });
+
+  it("nevner bare ungdomsskolen når barneskolen mangler målt tid — aldri et estimat", () => {
+    const svar = answerFor(
+      generateCategoryFaq(
+        input({ pois: [RANHEIM_SKOLE, { ...CHARLOTTENLUND_U, travelTime: { walk: 23 } }] }),
+      ),
+      "skolevei",
+    );
+    expect(svar).toBe(
+      "Skoleveien til [Charlottenlund ungdomsskole](poi:nsr-975290158), der ungdomstrinnet hører til, er 23 minutter til fots.",
+    );
+  });
+
+  it("utelates når ingen av kretsskolene har målt gangtid", () => {
+    const entries = generateCategoryFaq(input({ pois: [RANHEIM_SKOLE, CHARLOTTENLUND_U] }));
+    expect(entries.find((e) => e.id === "skolevei")).toBeUndefined();
+  });
+});
+
+describe("legesenter", () => {
+  const hverdag = (pois: POI[]) =>
+    generateCategoryFaq(input({ themeId: "hverdagsliv", categoryIds: ["doctor"], pois }));
+
+  it("krever et allmennlege-ord i navnet — urologen 3 minutter unna er ikke svaret", () => {
+    const svar = answerFor(
+      hverdag([
+        poi({ id: "d1", name: "Dr. Hansen Urologi", categoryId: "doctor", travelTime: { walk: 3 } }),
+        poi({ id: "d2", name: "Valentinlyst Legesenter", categoryId: "doctor", travelTime: { walk: 8 } }),
+      ]),
+      "legesenter",
+    );
+    expect(svar).toBe("[Valentinlyst Legesenter](poi:d2) er nærmeste legesenter, 8 minutter til fots.");
+  });
+
+  it("utelates når ingen doctor-rad bærer et allmennlege-ord", () => {
+    const entries = hverdag([
+      poi({ id: "d1", name: "Hudklinikken", categoryId: "doctor", travelTime: { walk: 3 } }),
+    ]);
+    expect(entries.find((e) => e.id === "legesenter")).toBeUndefined();
+  });
+
+  it("påstår aldri ledig fastlegeplass", () => {
+    const svar = answerFor(
+      hverdag([poi({ id: "d2", name: "Moholt Legekontor", categoryId: "doctor", travelTime: { walk: 14 } })]),
+      "legesenter",
+    );
+    expect(svar).toBe("Nærmeste legesenter på kartet er [Moholt Legekontor](poi:d2), 14 minutter til fots.");
+    expect(svar).not.toMatch(/ledig|plass/);
+  });
+});
+
+describe("pizza", () => {
+  const mat = (pois: POI[]) =>
+    generateCategoryFaq(input({ themeId: "mat-drikke", categoryIds: ["restaurant"], pois }));
+
+  it("porten er ordet i navnet innenfor restaurant — Chopsticks er ikke pizza", () => {
+    const svar = answerFor(
+      mat([
+        poi({ id: "r1", name: "Chopsticks", categoryId: "restaurant", travelTime: { walk: 4 } }),
+        poi({ id: "r2", name: "Peppes Pizza Moholt", categoryId: "restaurant", travelTime: { walk: 12 } }),
+      ]),
+      "pizza",
+    );
+    // 12 minutter er innenfor serverings-radiusen (15) — ingen «på kartet».
+    expect(svar).toBe("[Peppes Pizza Moholt](poi:r2) er nærmeste pizzasted, 12 minutter til fots.");
+  });
+
+  it("scoper til kartet over et kvarter", () => {
+    const svar = answerFor(
+      mat([poi({ id: "r2", name: "Pizzeria Italia", categoryId: "restaurant", travelTime: { walk: 20 } })]),
+      "pizza",
+    );
+    expect(svar).toBe("Nærmeste pizzasted på kartet er [Pizzeria Italia](poi:r2), 20 minutter til fots.");
+  });
+});
+
+describe("hundepark", () => {
+  const natur = (pois: POI[]) =>
+    generateCategoryFaq(input({ themeId: "natur-friluftsliv", categoryIds: ["park", "hundepark"], pois }));
+
+  it("finner hundeparken som ligger som park, og ikke den vanlige parken", () => {
+    const svar = answerFor(
+      natur([
+        poi({ id: "p1", name: "Sjøparken", categoryId: "park", travelTime: { walk: 2 } }),
+        poi({ id: "p2", name: "Lade hundepark", categoryId: "park", travelTime: { walk: 9 } }),
+      ]),
+      "hund",
+    );
+    expect(svar).toBe("[Lade hundepark](poi:p2) er nærmeste hundepark, 9 minutter til fots.");
+  });
+
+  it("teller kategorien hundepark uansett navn", () => {
+    const svar = answerFor(
+      natur([poi({ id: "h1", name: "Løsområdet på Lade", categoryId: "hundepark", travelTime: { walk: 5 } })]),
+      "hund",
+    );
+    expect(svar).toContain("er nærmeste hundepark, 5 minutter til fots.");
+  });
+
+  it("utelates når bare vanlige parker finnes — aldri «ingen hundepark»", () => {
+    const entries = natur([poi({ id: "p1", name: "Sjøparken", categoryId: "park", travelTime: { walk: 2 } })]);
+    expect(entries.find((e) => e.id === "hund")).toBeUndefined();
+  });
+});
+
+describe("idrettsanlegg", () => {
+  const BANE = poi({ id: "i1", name: "Eberg kunstgress", categoryId: "idrett", travelTime: { walk: 6 } });
+  const HALL = poi({ id: "i2", name: "Charlottenlundhallen", categoryId: "idrett", travelTime: { walk: 14, bike: 5 } });
+  const SVOMME = poi({ id: "i3", name: "Svømmehallen", categoryId: "idrett", travelTime: { walk: 3 } });
+  const trening = (allPois: POI[]) =>
+    generateCategoryFaq(
+      input({ themeId: "trening-aktivitet", categoryIds: ["gym", "swimming"], pois: [], allPois }),
+    );
+
+  it("leser idrett fra HELE boardet — kategorien ligger i Oppvekst, spørsmålet i Trening", () => {
+    const svar = answerFor(trening([BANE, HALL]), "idrettsanlegg");
+    expect(svar).toBe(
+      "[Eberg kunstgress](poi:i1) er nærmeste idrettsanlegg, 6 minutter til fots. [Charlottenlundhallen](poi:i2) er nærmeste idrettshall, 14 minutter til fots eller 5 med sykkel.",
+    );
+  });
+
+  it("svarer med nærmeste bane som hale når det nærmeste alt er en hall", () => {
+    const svar = answerFor(
+      trening([{ ...HALL, travelTime: { walk: 4 } }, { ...BANE, travelTime: { walk: 9 } }]),
+      "idrettsanlegg",
+    );
+    expect(svar).toBe(
+      "[Charlottenlundhallen](poi:i2) er nærmeste idrettsanlegg, 4 minutter til fots. [Eberg kunstgress](poi:i1) er nærmeste bane, 9 minutter til fots.",
+    );
+  });
+
+  it("regner ikke svømmehallen som idrettshall — den er sitt eget spørsmål", () => {
+    const svar = answerFor(trening([SVOMME, BANE]), "idrettsanlegg");
+    expect(svar).not.toContain("idrettshall");
+    expect(svar).toContain("[Svømmehallen](poi:i3) er nærmeste idrettsanlegg");
+  });
+
+  it("nevner aldri et antall", () => {
+    const svar = answerFor(trening([BANE, HALL, SVOMME]), "idrettsanlegg");
+    expect(svar).not.toMatch(/\d+ anlegg|innenfor/);
+  });
+});
+
+describe("Opplevelser-filtrene (Wesselsløkka 2026-09-06)", () => {
+  const opplevelser = (pois: POI[]) =>
+    generateCategoryFaq(
+      input({ themeId: "opplevelser", categoryIds: ["library", "cinema", "museum", "kirke"], pois }),
+    );
+
+  it("bibliotek: NTNU Marinbiblioteket 13 minutter unna er ikke svaret", () => {
+    const svar = answerFor(
+      opplevelser([
+        poi({ id: "b1", name: "NTNU Marinbiblioteket", categoryId: "library", travelTime: { walk: 13 } }),
+        poi({ id: "b2", name: "Moholt folkebibliotek", categoryId: "library", travelTime: { walk: 21, bike: 10 } }),
+      ]),
+      "bibliotek",
+    );
+    expect(svar).toBe(
+      "Nærmeste folkebibliotek på kartet er [Moholt folkebibliotek](poi:b2), 21 minutter til fots eller 10 med sykkel.",
+    );
+  });
+
+  it("bibliotek: Deichman-filialene bærer merkenavnet, ikke ordet — og teller likevel", () => {
+    const svar = answerFor(
+      opplevelser([
+        poi({ id: "b3", name: "Deichman Grünerløkka", categoryId: "library", travelTime: { walk: 7 } }),
+      ]),
+      "bibliotek",
+    );
+    expect(svar).toBe("[Deichman Grünerløkka](poi:b3) er nærmeste bibliotek, 7 minutter til fots.");
+  });
+
+  it("bibliotek: bokbytteskapet i telefonkiosken er ikke et bibliotek", () => {
+    // Sto som nummer to i Wesselsløkka-raden før filteret ble målt mot poolen.
+    const entries = opplevelser([
+      poi({ id: "b4", name: "Telefonkiosk i Thornesparken i Trondheim", categoryId: "library", travelTime: { walk: 33 } }),
+      poi({ id: "b5", name: "Knappen bokbytteskap", categoryId: "library", travelTime: { walk: 12 } }),
+    ]);
+    expect(entries.find((e) => e.id === "bibliotek")).toBeUndefined();
+  });
+
+  it("bibliotek: kaféen og arkitektkontoret som Google kaller library, teller ikke", () => {
+    const entries = opplevelser([
+      poi({ id: "b6", name: "Kafén i Ila", categoryId: "library", travelTime: { walk: 4 } }),
+      poi({ id: "b7", name: "LINK arkitektur AS Bergen", categoryId: "library", travelTime: { walk: 6 } }),
+    ]);
+    expect(entries.find((e) => e.id === "bibliotek")).toBeUndefined();
+  });
+
+  it("bibliotek: utelates når bare forskningsbibliotek finnes", () => {
+    const entries = opplevelser([
+      poi({ id: "b1", name: "Trøndelag fylkesbibliotek", categoryId: "library", travelTime: { walk: 5 } }),
+    ]);
+    expect(entries.find((e) => e.id === "bibliotek")).toBeUndefined();
+  });
+
+  it("kirke: sykehuskapellet på engelsk faller på «hospital», ikke på «sykehus»", () => {
+    const entries = opplevelser([
+      poi({ id: "c9", name: "St. Olavs Hospital Kapell", categoryId: "kirke", travelTime: { walk: 6 } }),
+    ]);
+    expect(entries.find((e) => e.id === "kirke")).toBeUndefined();
+  });
+
+  it("kirke: menighetskontoret er administrasjon, ikke et gudshus", () => {
+    const entries = opplevelser([
+      poi({ id: "c8", name: "Menighetskontoret Oppdal", categoryId: "kirke", travelTime: { walk: 4 } }),
+    ]);
+    expect(entries.find((e) => e.id === "kirke")).toBeUndefined();
+  });
+
+  it("kirke: sykehjemskapellet 7 minutter unna er ikke en menighet", () => {
+    const svar = answerFor(
+      opplevelser([
+        poi({ id: "c1", name: "Zion bo- og servicesenter kapell", categoryId: "kirke", travelTime: { walk: 7 } }),
+        poi({ id: "c2", name: "Strinda kirke", categoryId: "kirke", travelTime: { walk: 12, bike: 4 } }),
+      ]),
+      "kirke",
+    );
+    expect(svar).toBe("Nærmeste kirke på kartet er [Strinda kirke](poi:c2), 12 minutter til fots eller 4 med sykkel.");
+  });
+
+  it("kirke: svarer med det ordet navnet bærer — menighetshus, kirkesenter, kapell", () => {
+    const svar = answerFor(
+      opplevelser([
+        poi({ id: "c3", name: "Moholt menighetshus", categoryId: "kirke", travelTime: { walk: 5 } }),
+        poi({ id: "c4", name: "Berg kirkesenter", categoryId: "kirke", travelTime: { walk: 9 } }),
+      ]),
+      "kirke",
+    );
+    expect(svar).toContain("er nærmeste menighetshus, 5 minutter til fots.");
+    // «kirkesenter» inneholder «kirke» og må ikke leses som kirke.
+    const svar2 = answerFor(
+      opplevelser([poi({ id: "c4", name: "Berg kirkesenter", categoryId: "kirke", travelTime: { walk: 9 } })]),
+      "kirke",
+    );
+    expect(svar2).toContain("er nærmeste kirkesenter,");
+  });
+
+  it("museum: Berlin Wall Segments — uten museumsord og uten åpningstider — er et monument", () => {
+    const svar = answerFor(
+      opplevelser([
+        poi({ id: "m1", name: "Berlin Wall Segments", categoryId: "museum", travelTime: { walk: 33 } }),
+        poi({ id: "m2", name: "Trondheim Kunstmuseum Gråmølna", categoryId: "museum", travelTime: { walk: 40, bike: 15 } }),
+      ]),
+      "museum",
+    );
+    expect(svar).toBe(
+      "Nærmeste museum på kartet er [Trondheim Kunstmuseum Gråmølna](poi:m2), 40 minutter til fots eller 15 med sykkel.",
+    );
+  });
+
+  it("museum: cachede åpningstider er stedfortreder for «åpent for publikum»", () => {
+    const svar = answerFor(
+      opplevelser([
+        poi({
+          id: "m3",
+          name: "Rockheim",
+          categoryId: "museum",
+          travelTime: { walk: 9 },
+          openingHoursJson: tider("10:00 AM – 5:00 PM"),
+        }),
+      ]),
+      "museum",
+    );
+    expect(svar).toBe("[Rockheim](poi:m3) er nærmeste museum, 9 minutter til fots.");
+  });
+
+  it("museum: parkeringsplassen arver museets åpningstider, og teller likevel ikke", () => {
+    const entries = opplevelser([
+      poi({
+        id: "m4",
+        name: "NTNU Ringve botaniske hage Parkering",
+        categoryId: "museum",
+        travelTime: { walk: 8 },
+        openingHoursJson: tider("10:00 AM – 5:00 PM"),
+      }),
+    ]);
+    expect(entries.find((e) => e.id === "museum")).toBeUndefined();
+  });
+
+  it("museum: utelates når bare monumenter finnes", () => {
+    const entries = opplevelser([
+      poi({ id: "m1", name: "Berlin Wall Segments", categoryId: "museum", travelTime: { walk: 33 } }),
+    ]);
+    expect(entries.find((e) => e.id === "museum")).toBeUndefined();
+  });
+
+  it("temaet gir alle fire svarene når stedene finnes", () => {
+    const entries = opplevelser([
+      poi({ id: "b3", name: "Moholt bibliotek", categoryId: "library", travelTime: { walk: 7 } }),
+      poi({ id: "k1", name: "Nova Kinosenter", categoryId: "cinema", travelTime: { walk: 38, car: 15 } }),
+      poi({ id: "c2", name: "Strinda kirke", categoryId: "kirke", travelTime: { walk: 12 } }),
+      poi({ id: "m3", name: "Ringve Musikkmuseum", categoryId: "museum", travelTime: { walk: 25 } }),
+    ]);
+    expect(entries.map((e) => e.id)).toEqual(["bibliotek", "kino", "kirke", "museum"]);
+    for (const e of entries) {
+      expect(e.answer.endsWith("."), e.id).toBe(true);
+      expect(/^[A-ZÆØÅ0-9[]/.test(e.answer), e.id).toBe(true);
+    }
+  });
+});
+
+describe("områdets «tjenester samme sted»", () => {
+  const SENTER = poi({
+    id: "google-valentinlyst",
+    name: "Valentinlyst Senter",
+    categoryId: "shopping",
+    travelTime: { walk: 8 },
+    anchorSummary: "Kjøpesenter med 30 virksomheter",
+  });
+  const medlem = (id: string, name: string, categoryId: string, parentPoiId = SENTER.id) =>
+    poi({ id, name, categoryId, parentPoiId, travelTime: { walk: 8 } });
+  const COOP = medlem("c", "Coop Mega Valentinlyst", "supermarket");
+  const BOOTS = medlem("b", "Boots Apotek", "pharmacy");
+  const BAKERI = medlem("r", "Rosenborg bakeri", "bakery");
+  const FITNESS = medlem("f", "Fresh Fitness Valentinlyst", "gym");
+  const SUSHI = medlem("s", "Sabi Sushi", "restaurant");
+
+  const omraadet = (allPois: POI[], themes = [{ id: "hverdagsliv", label: "Hverdagsliv", pois: [SENTER] }]) =>
+    generateGlobalFaq({ themes, allPois, center: CENTER });
+
+  it("navngir ankeret og beskriver medlemmene som ÆRENDTYPER, ikke butikknavn", () => {
+    const svar = answerFor(omraadet([SENTER, COOP, BOOTS, BAKERI, FITNESS, SUSHI]), "tjenester-samme-sted");
+    expect(svar).toBe(
+      "På [Valentinlyst Senter](poi:google-valentinlyst) ligger dagligvare, apotek, bakeri og treningssenter samlet, 8 minutter til fots.",
+    );
+    expect(svar).not.toContain("Coop");
+    // Sushi er ikke et ærend i ÆREND-lista, og nevnes ikke.
+    expect(svar).not.toContain("sushi");
+  });
+
+  it("et anker med bare ÉN ærendtype er ikke «samle» — raden utelates", () => {
+    const entries = omraadet([SENTER, COOP, SUSHI]);
+    expect(entries.find((e) => e.id === "tjenester-samme-sted")).toBeUndefined();
+  });
+
+  it("scoper til kartet når nærmeste anker er utenfor gangavstand, og tar det neste med sykkeltid", () => {
+    const MOHOLT = poi({
+      id: "google-moholt",
+      name: "Moholt Storsenter",
+      categoryId: "shopping",
+      travelTime: { walk: 22, bike: 9 },
+      anchorSummary: "Kjøpesenter",
+    });
+    const langt = (over: Partial<POI>) => ({ ...over, travelTime: { walk: 17, bike: 7 } }) as POI;
+    const entries = omraadet(
+      [
+        langt({ ...SENTER, travelTime: undefined }),
+        langt({ ...COOP }),
+        langt({ ...BOOTS }),
+        MOHOLT,
+        medlem("mm", "MENY Moholt", "supermarket", MOHOLT.id),
+        medlem("ma", "Apotek 1 Moholt", "pharmacy", MOHOLT.id),
+      ],
+      [{ id: "hverdagsliv", label: "Hverdagsliv", pois: [] }],
+    );
+    expect(answerFor(entries, "tjenester-samme-sted")).toBe(
+      "Nærmeste sted på kartet som samler flere ærender er [Valentinlyst Senter](poi:google-valentinlyst), 17 minutter til fots eller 7 med sykkel, med dagligvare og apotek. [Moholt Storsenter](poi:google-moholt) samler dagligvare og apotek, 22 minutter til fots eller 9 med sykkel.",
+    );
+  });
+
+  it("utelates uten anker-register (eldre kallere uten allPois)", () => {
+    const entries = generateGlobalFaq({ themes: [{ id: "hverdagsliv", label: "Hverdagsliv", pois: [SENTER] }] });
+    expect(entries.find((e) => e.id === "tjenester-samme-sted")).toBeUndefined();
+  });
+});
+
+describe("områdets «regnværsdag»", () => {
+  const GYM = poi({ id: "g", name: "3T Valentinlyst", categoryId: "gym", travelTime: { walk: 5 } });
+  const GYM2 = poi({ id: "g2", name: "Fresh Fitness", categoryId: "gym", travelTime: { walk: 7 } });
+  const BAD = poi({ id: "s", name: "Pirbadet", categoryId: "swimming", travelTime: { walk: 21, bike: 10 } });
+  const KINO = poi({ id: "k", name: "Nova Kinosenter", categoryId: "cinema", travelTime: { walk: 38, bike: 20 } });
+  const NTNU = poi({ id: "b", name: "NTNU Marinbiblioteket", categoryId: "library", travelTime: { walk: 13 } });
+  const MONUMENT = poi({ id: "m", name: "Berlin Wall Segments", categoryId: "museum", travelTime: { walk: 9 } });
+  const HALL = poi({ id: "i", name: "Leangen Arena", categoryId: "idrett", travelTime: { walk: 12 } });
+  const BANE = poi({ id: "i2", name: "Eberg kunstgress", categoryId: "idrett", travelTime: { walk: 2 } });
+
+  const omraadet = (pois: POI[]) =>
+    generateGlobalFaq({
+      themes: [{ id: "alt", label: "Alt", pois }],
+      center: CENTER,
+    });
+
+  it("navngir nærmeste i to ULIKE kategorier — to treningssentre svarer ikke på «hva finnes»", () => {
+    const svar = answerFor(omraadet([GYM, GYM2, BAD]), "regnvaersdag");
+    expect(svar).toBe(
+      "[3T Valentinlyst](poi:g) er nærmeste treningssenter, 5 minutter til fots, og [Pirbadet](poi:s) nærmeste svømmehall, 21 minutter til fots eller 10 med sykkel.",
+    );
+  });
+
+  it("et kvarter til fots ELLER et kvarter med sykkel er grensen; utenfor finnes ingen «på kartet»", () => {
+    const entries = omraadet([KINO]);
+    expect(entries.find((e) => e.id === "regnvaersdag")).toBeUndefined();
+  });
+
+  it("bruker Opplevelsers filtre: forskningsbiblioteket og monumentet teller ikke", () => {
+    const entries = omraadet([NTNU, MONUMENT]);
+    expect(entries.find((e) => e.id === "regnvaersdag")).toBeUndefined();
+  });
+
+  it("regner en idrettshall som innendørs, men ikke en bane", () => {
+    const svar = answerFor(omraadet([HALL, BANE]), "regnvaersdag");
+    expect(svar).toBe("[Leangen Arena](poi:i) er nærmeste idrettshall, 12 minutter til fots.");
+  });
+
+  it("ett sted alene får den korte formen", () => {
+    const svar = answerFor(omraadet([GYM]), "regnvaersdag");
+    expect(svar).toBe("[3T Valentinlyst](poi:g) er nærmeste treningssenter, 5 minutter til fots.");
+  });
+});
+
+// ── Entur-firen og Post i butikk (2026-09-06) ───────────────────────────────
+
+describe("pakker-post", () => {
+  const hverdag = (pois: POI[]) =>
+    generateCategoryFaq(input({ themeId: "hverdagsliv", categoryIds: ["post"], pois }));
+
+  it("navngir vertsbutikken, ikke pakkeautomaten som ligger nærmere", () => {
+    const svar = answerFor(
+      hverdag([
+        poi({ id: "p1", name: "Pakkeautomat Ranheim Post i Butikk", categoryId: "post", travelTime: { walk: 2 } }),
+        poi({ id: "p2", name: "Coop Mega Valentinlyst Post i Butikk", categoryId: "post", travelTime: { walk: 8 } }),
+      ]),
+      "pakker-post",
+    );
+    expect(svar).toBe(
+      "[Coop Mega Valentinlyst Post i Butikk](poi:p2) har Post i butikk, 8 minutter til fots.",
+    );
+  });
+
+  it("utelater et generisk «Post office» — navnet lover ikke Post i butikk", () => {
+    const entries = hverdag([
+      poi({ id: "p3", name: "Post office", categoryId: "post", travelTime: { walk: 4 } }),
+    ]);
+    expect(entries.find((e) => e.id === "pakker-post")).toBeUndefined();
+  });
+
+  it("nevner aldri PostNord eller Helthjem — de finnes ikke i kilden", () => {
+    const svar = answerFor(
+      hverdag([poi({ id: "p2", name: "Rema 1000 Post i Butikk", categoryId: "post", travelTime: { walk: 5 } })]),
+      "pakker-post",
+    );
+    expect(svar).not.toMatch(/PostNord|Helthjem|andre transportører/i);
+  });
+});
+
+describe("skoleskyss", () => {
+  const medGang = (barn?: number, ung?: number) =>
+    generateCategoryFaq(
+      input({
+        pois: [RANHEIM_SKOLE, CHARLOTTENLUND_U],
+        boardFacts: {
+          ...FACTS,
+          schools: {
+            ...FACTS.schools!,
+            barneskole: { ...FACTS.schools!.barneskole!, ...(barn ? { gangMeter: barn } : {}) },
+            ungdomsskole: { ...FACTS.schools!.ungdomsskole!, ...(ung ? { gangMeter: ung } : {}) },
+          },
+        },
+      }),
+    );
+
+  it("leder med avstanden og bærer lovteksten etterpå", () => {
+    expect(answerFor(medGang(850), "skoleskyss")).toBe(
+      "Til [Ranheim skole](poi:nsr-975278980) er det 850 meter langs gangveien. Gratis skoleskyss gjelder fra to kilometer for 1. trinn og fire kilometer fra 2. trinn.",
+    );
+  });
+
+  it("skriver kilometer med én desimal over tusen meter", () => {
+    expect(answerFor(medGang(2350), "skoleskyss")).toContain("2,4 kilometer langs gangveien");
+  });
+
+  it("tar begge skolene med når begge er målt", () => {
+    expect(answerFor(medGang(850, 2350), "skoleskyss")).toContain(
+      "850 meter langs gangveien, og 2,4 kilometer til [Charlottenlund ungdomsskole](poi:nsr-975290158)",
+    );
+  });
+
+  it("utelater raden når ingen gangrute ble målt — lovteksten alene er ikke et svar", () => {
+    const entries = medGang();
+    expect(entries.find((e) => e.id === "skoleskyss")).toBeUndefined();
+  });
+
+  it("sier aldri at barna IKKE har rett", () => {
+    expect(answerFor(medGang(400), "skoleskyss")).not.toMatch(/ikke rett|har ikke|uten rett/);
+  });
+});
+
+describe("frekvens", () => {
+  const medFrekvens = (morgen: number, kveld: number) =>
+    generateCategoryFaq(
+      input({
+        themeId: "transport",
+        categoryIds: ["bus"],
+        pois: [STRINDFJORDVEGEN],
+        boardFacts: {
+          ...FACTS,
+          frequency: {
+            stopPlaceId: "NSR:StopPlace:60260",
+            stopName: "Strindfjordvegen",
+            retning: "Marienborg via Strindh.-sentrum",
+            morgen: { fraTime: 7, tilTime: 9, avganger: morgen },
+            kveld: { fraTime: 19, tilTime: 21, avganger: kveld },
+          },
+        },
+      }),
+    );
+
+  it("teller avganger i vinduet, ikke per time, og lenker holdeplassen", () => {
+    expect(answerFor(medFrekvens(14, 6), "frekvens")).toBe(
+      "Mellom 07 og 09 på hverdager går det 14 avganger mot Marienborg via Strindh.-sentrum fra [Strindfjordvegen](poi:entur-nsr-stopplace-60260), og 6 avganger mellom 19 og 21.",
+    );
+  });
+
+  it("skriver NULL i kveldsvinduet — Enturs liste er komplett, i motsetning til poolen", () => {
+    const svar = answerFor(medFrekvens(14, 0), "frekvens");
+    expect(svar).toContain("0 avganger mellom 19 og 21");
+  });
+
+  it("bøyer entall", () => {
+    expect(answerFor(medFrekvens(1, 1), "frekvens")).toContain("én avgang mot");
+  });
+
+  it("utelates når tellingen mangler", () => {
+    const entries = generateCategoryFaq(input({ themeId: "transport", categoryIds: ["bus"] }));
+    expect(entries.find((e) => e.id === "frekvens")).toBeUndefined();
+  });
+});
+
+describe("til-arbeidsplassene", () => {
+  const medArbeid = (n: number) =>
+    generateCategoryFaq(
+      input({
+        themeId: "transport",
+        categoryIds: ["bus"],
+        boardFacts: {
+          ...FACTS,
+          workplaces: [
+            { navn: "St. Olavs hospital", patterns: [{ minutes: 24, lines: ["12"], transfers: 0, walkMeters: 300 }] },
+            { navn: "NTNU Gløshaugen", patterns: [{ minutes: 19, lines: ["12", "3"], transfers: 1, walkMeters: 250 }] },
+            { navn: "Sluppen", patterns: [{ minutes: 31, lines: [], transfers: 0, walkMeters: 2600 }] },
+          ].slice(0, n),
+        },
+      }),
+    );
+
+  it("navngir alle tre reisemålene — destinasjonene ER spørsmålet", () => {
+    expect(answerFor(medArbeid(3), "til-arbeidsplassene")).toBe(
+      "Reisen til St. Olavs hospital tar 24 minutter med linje 12, til NTNU Gløshaugen 19 minutter med linje 12 og 3 og til Sluppen 31 minutter til fots.",
+    );
+  });
+
+  it("står med ett reisemål alene", () => {
+    expect(answerFor(medArbeid(1), "til-arbeidsplassene")).toBe(
+      "Reisen til St. Olavs hospital tar 24 minutter med linje 12.",
+    );
+  });
+
+  it("utelates når byen ikke har en arbeidsplassliste", () => {
+    const entries = generateCategoryFaq(input({ themeId: "transport", categoryIds: ["bus"] }));
+    expect(entries.find((e) => e.id === "til-arbeidsplassene")).toBeUndefined();
+  });
+});
+
+describe("siste-buss", () => {
+  const medSiste = (
+    hverdag: { minutt: number; lines: string[] } | undefined,
+    helg?: { minutt: number; lines: string[] },
+  ) =>
+    generateCategoryFaq(
+      input({
+        themeId: "transport",
+        categoryIds: ["bus"],
+        boardFacts: {
+          ...FACTS,
+          lastDeparture: {
+            fraNavn: "Trondheim S",
+            ...(hverdag ? { hverdag: { ...hverdag, tilNavn: "Strindfjordvegen" } } : {}),
+            ...(helg ? { helg: { ...helg, tilNavn: "Strindfjordvegen" } } : {}),
+          },
+        },
+      }),
+    );
+
+  it("skriver nattavgangen i døgnform — 00.30, ikke «midnatt» eller 30", () => {
+    const svar = answerFor(
+      medSiste({ minutt: 23 * 60 + 45, lines: ["12"] }, { minutt: 1470, lines: ["N1"] }),
+      "siste-buss",
+    );
+    expect(svar).toBe(
+      "Siste avgang fra Trondheim S til Strindfjordvegen går 23.45 på hverdager med linje 12. Natt til lørdag og søndag går den 00.30 med linje N1.",
+    );
+  });
+
+  it("gjentar ikke linja når nattavgangen kjører den samme", () => {
+    const svar = answerFor(
+      medSiste({ minutt: 23 * 60, lines: ["12"] }, { minutt: 1440 + 15, lines: ["12"] }),
+      "siste-buss",
+    );
+    expect(svar).toContain("Natt til lørdag og søndag går den 00.15.");
+    expect(svar.match(/linje 12/g)!.length).toBe(1);
+  });
+
+  it("står med hverdagen alene når helgeoppslaget ikke ga svar", () => {
+    const svar = answerFor(medSiste({ minutt: 22 * 60 + 5, lines: [] }), "siste-buss");
+    expect(svar).toBe("Siste avgang fra Trondheim S til Strindfjordvegen går 22.05 på hverdager til fots.");
+  });
+
+  it("utelates uten hverdagsavgang — helgen alene svarer ikke på spørsmålet", () => {
+    const entries = medSiste(undefined, { minutt: 1470, lines: ["N1"] });
+    expect(entries.find((e) => e.id === "siste-buss")).toBeUndefined();
+  });
+});
+
+describe("siste-buss når uka er lik", () => {
+  it("sier klokkeslettet ÉN gang når helga har samme avgang — ikke to like setninger", () => {
+    // Målt på Wesselsløkka 2026-09-06: linje 12 går 00.23 både mandag og fredag.
+    const svar = answerFor(
+      generateCategoryFaq(
+        input({
+          themeId: "transport",
+          categoryIds: ["bus"],
+          boardFacts: {
+            ...FACTS,
+            lastDeparture: {
+              fraNavn: "Trondheim S",
+              hverdag: { minutt: 1463, lines: ["12"], tilNavn: "Brøset Hageby" },
+              helg: { minutt: 1463, lines: ["12"], tilNavn: "Brøset Hageby" },
+            },
+          },
+        }),
+      ),
+      "siste-buss",
+    );
+    expect(svar).toBe(
+      "Siste avgang fra Trondheim S til Brøset Hageby går 00.23 med linje 12, også natt til lørdag og søndag.",
+    );
+    expect(svar.match(/00\.23/g)!.length).toBe(1);
+  });
+
+  it("deler i to setninger når helga faktisk går senere", () => {
+    const svar = answerFor(
+      generateCategoryFaq(
+        input({
+          themeId: "transport",
+          categoryIds: ["bus"],
+          boardFacts: {
+            ...FACTS,
+            lastDeparture: {
+              fraNavn: "Trondheim S",
+              hverdag: { minutt: 1463, lines: ["12"], tilNavn: "Brøset Hageby" },
+              helg: { minutt: 1440 + 150, lines: ["N12"], tilNavn: "Brøset Hageby" },
+            },
+          },
+        }),
+      ),
+      "siste-buss",
+    );
+    expect(svar).toContain("Natt til lørdag og søndag går den 02.30 med linje N12.");
+  });
+});
+
+describe("siste-buss når nattbussen ender et annet sted", () => {
+  it("navngir destinasjonen på HVER reise — nattbussen går ikke dit kveldsbussen går", () => {
+    // Målt på Wesselsløkka: hverdag linje 22 til Valentinlyst, natt til lørdag
+    // linje 102 til et annet stopp. Ett felles «til X» ville påstått at begge
+    // ender samme sted.
+    const svar = answerFor(
+      generateCategoryFaq(
+        input({
+          themeId: "transport",
+          categoryIds: ["bus"],
+          boardFacts: {
+            ...FACTS,
+            lastDeparture: {
+              fraNavn: "Trondheim S",
+              hverdag: { minutt: 1468, lines: ["22"], tilNavn: "Valentinlyst" },
+              helg: { minutt: 1527, lines: ["102"], tilNavn: "Moholt" },
+            },
+          },
+        }),
+      ),
+      "siste-buss",
+    );
+    expect(svar).toBe(
+      "Siste avgang fra Trondheim S går 00.28 på hverdager, med linje 22 til Valentinlyst. Natt til lørdag og søndag går den 01.27, med linje 102 til Moholt.",
+    );
+  });
+});
+
+describe("døgnåpent", () => {
+  const døgn = tider("12:00 AM – 12:00 AM");
+
+  it("trene tidlig/sent sier døgnåpent, ikke «00–24»", () => {
+    const svar = answerFor(
+      generateCategoryFaq(
+        input({
+          themeId: "trening-aktivitet",
+          categoryIds: ["gym"],
+          pois: [poi({ id: "g1", name: "TrenHer", categoryId: "gym", travelTime: { walk: 9 }, openingHoursJson: døgn })],
+        }),
+      ),
+      "trene-tidlig-sent",
+    );
+    expect(svar).toBe("[TrenHer](poi:g1) er døgnåpent på hverdager.");
+  });
+
+  it("kaféhalen sier døgnåpent framfor et klokkeslettspenn", () => {
+    const svar = answerFor(
+      generateCategoryFaq(
+        input({
+          themeId: "mat-drikke",
+          categoryIds: ["cafe"],
+          pois: [poi({ id: "c1", name: "Nattkafeen", categoryId: "cafe", travelTime: { walk: 4 }, openingHoursJson: døgn })],
+        }),
+      ),
+      "kafe",
+    );
+    expect(svar).toBe("[Nattkafeen](poi:c1) ligger 4 minutter til fots, og er døgnåpent.");
+  });
+
+  it("beholder klokkeslettene når døra faktisk stenger", () => {
+    const svar = answerFor(
+      generateCategoryFaq(
+        input({
+          themeId: "mat-drikke",
+          categoryIds: ["cafe"],
+          pois: [
+            poi({ id: "c2", name: "Dagkafeen", categoryId: "cafe", travelTime: { walk: 4 }, openingHoursJson: tider("8:00 AM – 4:00 PM") }),
+          ],
+        }),
+      ),
+      "kafe",
+    );
+    expect(svar).toContain("med åpent 08–16 på hverdager");
+  });
+});
+
+describe("navnløse steder", () => {
+  it("lar være å navngi et sted som bare heter kategorien sin", () => {
+    // Poolen har seks POI-er som heter «Idrettsbane». «Idrettsbane er nærmeste
+    // idrettsanlegg» sier det samme to ganger.
+    const svar = answerFor(
+      generateCategoryFaq(
+        input({
+          themeId: "trening-aktivitet",
+          categoryIds: ["gym"],
+          pois: [],
+          allPois: [poi({ id: "i1", name: "Idrettsbane", categoryId: "idrett", travelTime: { walk: 6 } })],
+        }),
+      ),
+      "idrettsanlegg",
+    );
+    expect(svar).toBe("Nærmeste idrettsanlegg ligger 6 minutter til fots.");
+  });
+
+  it("navngir det likevel når stedet HAR et egennavn", () => {
+    const svar = answerFor(
+      generateCategoryFaq(
+        input({
+          themeId: "trening-aktivitet",
+          categoryIds: ["gym"],
+          pois: [],
+          allPois: [poi({ id: "i2", name: "Eberg kunstgress", categoryId: "idrett", travelTime: { walk: 6 } })],
+        }),
+      ),
+      "idrettsanlegg",
+    );
+    expect(svar).toBe("[Eberg kunstgress](poi:i2) er nærmeste idrettsanlegg, 6 minutter til fots.");
+  });
+
+  it("hopper over et navnløst sted i HALEN — det legger ingenting til", () => {
+    const svar = answerFor(
+      generateCategoryFaq(
+        input({
+          themeId: "natur-friluftsliv",
+          categoryIds: ["hundepark"],
+          pois: [
+            poi({ id: "h1", name: "Brøset Hundepark", categoryId: "hundepark", travelTime: { walk: 3 } }),
+            poi({ id: "h2", name: "Hundepark", categoryId: "hundepark", travelTime: { walk: 32 } }),
+          ],
+        }),
+      ),
+      "hund",
+    );
+    expect(svar).toBe("[Brøset Hundepark](poi:h1) er nærmeste hundepark, 3 minutter til fots.");
+    expect(svar).not.toMatch(/ligger 32/);
+  });
+});
+
+describe("de åtte fra data boardet alt hadde", () => {
+  const hverdag = (pois: POI[]) =>
+    generateCategoryFaq(
+      input({ themeId: "hverdagsliv", categoryIds: ["supermarket", "convenience", "liquor_store", "doctor"], pois, allPois: pois }),
+    );
+
+  it("vinmonopol navngir BARE det nærmeste — fire rader heter bare «Vinmonopolet»", () => {
+    const svar = answerFor(
+      hverdag([
+        poi({ id: "v1", name: "Valentinlyst Vinmonopol", categoryId: "liquor_store", travelTime: { walk: 8 } }),
+        poi({ id: "v2", name: "Vinmonopolet", categoryId: "liquor_store", travelTime: { walk: 8 } }),
+      ]),
+      "vinmonopol",
+    );
+    expect(svar).toBe("[Valentinlyst Vinmonopol](poi:v1) er nærmeste Vinmonopol, 8 minutter til fots.");
+    expect(svar).not.toContain("v2");
+  });
+
+  it("dagligvare-lengst-apent leder med STENGETIDEN, ikke med stedet", () => {
+    const svar = answerFor(
+      hverdag([
+        poi({ id: "d1", name: "Kiwi", categoryId: "supermarket", travelTime: { walk: 14 }, openingHoursJson: tider("7:00 AM – 11:00 PM") }),
+        poi({ id: "d2", name: "Coop Mega", categoryId: "supermarket", travelTime: { walk: 8 }, openingHoursJson: tider("7:00 AM – 10:00 PM") }),
+      ]),
+      "dagligvare-lengst-apent",
+    );
+    expect(svar).toBe(
+      "[Kiwi](poi:d1) holder åpent til 23 på hverdager, 14 minutter til fots. [Coop Mega](poi:d2) stenger 22, 8 minutter unna.",
+    );
+  });
+
+  it("dagligvare-lengst-apent slår sammen to som stenger likt", () => {
+    const svar = answerFor(
+      hverdag([
+        poi({ id: "d1", name: "Kiwi", categoryId: "supermarket", travelTime: { walk: 14 }, openingHoursJson: tider("7:00 AM – 11:00 PM") }),
+        poi({ id: "d2", name: "Rema", categoryId: "supermarket", travelTime: { walk: 8 }, openingHoursJson: tider("8:00 AM – 11:00 PM") }),
+      ]),
+      "dagligvare-lengst-apent",
+    );
+    // Lik stengetid → nærmest først, som ellers i fila.
+    expect(svar).toBe(
+      "[Rema](poi:d2) og [Kiwi](poi:d1) holder åpent til 23 på hverdager, 8 minutter og 14 minutter til fots.",
+    );
+  });
+
+  it("dagligvare-sondag åpner i ENTALL, så den ikke leses som Mat & drikkes søndagsrad", () => {
+    const svar = answerFor(
+      hverdag([
+        poi({ id: "d3", name: "Bunnpris", categoryId: "supermarket", travelTime: { walk: 14 }, openingHoursJson: tider("7:00 AM – 11:00 PM", "Saturday: Closed", "Sunday: 11:00 AM – 10:00 PM") }),
+      ]),
+      "dagligvare-sondag",
+    );
+    expect(svar).toBe("På søndag holder [Bunnpris](poi:d3) åpent 11–22, 14 minutter til fots.");
+  });
+
+  it("legevakt bruker ALDRI et sykehus — porten er ordet i navnet", () => {
+    const entries = hverdag([
+      poi({ id: "s1", name: "St. Olavs hospital", categoryId: "hospital", travelTime: { walk: 30 } }),
+    ]);
+    expect(entries.find((e) => e.id === "legevakt-sykehus")).toBeUndefined();
+  });
+
+  it("legevakt svarer med reisetid, ikke med «på kartet»", () => {
+    const svar = answerFor(
+      hverdag([
+        poi({ id: "l1", name: "Trondheim Interkommunale Legevakt", categoryId: "doctor", travelTime: { walk: 42, car: 11 } }),
+      ]),
+      "legevakt-sykehus",
+    );
+    expect(svar).toBe(
+      "[Trondheim Interkommunale Legevakt](poi:l1) er nærmeste legevakt, 42 minutter til fots eller 11 med bil.",
+    );
+    expect(svar).not.toContain("på kartet");
+  });
+
+  it("spesialtrening navngir bare idrettene som er FUNNET, ikke spørsmålets liste", () => {
+    const svar = answerFor(
+      generateCategoryFaq(
+        input({
+          themeId: "trening-aktivitet",
+          categoryIds: ["gym"],
+          pois: [],
+          allPois: [poi({ id: "k1", name: "Grip Klatring Leangen", categoryId: "gym", travelTime: { walk: 19, bike: 8 } })],
+        }),
+      ),
+      "spesialtrening",
+    );
+    expect(svar).toBe(
+      "Nærmeste sted med klatring på kartet er [Grip Klatring Leangen](poi:k1), 19 minutter til fots eller 8 med sykkel.",
+    );
+    expect(svar).not.toMatch(/yoga|kampsport/);
+  });
+
+  it("padel-tennis foretrekker en ANNEN idrett som nummer to", () => {
+    const svar = answerFor(
+      generateCategoryFaq(
+        input({
+          themeId: "trening-aktivitet",
+          categoryIds: ["gym"],
+          pois: [],
+          allPois: [
+            poi({ id: "p1", name: "Nyhavna padel", categoryId: "idrett", travelTime: { walk: 37, car: 12 } }),
+            poi({ id: "p2", name: "Lade padelsenter", categoryId: "idrett", travelTime: { walk: 38, car: 12 } }),
+            poi({ id: "p3", name: "Lade Tennisarena", categoryId: "idrett", travelTime: { walk: 39, car: 9 } }),
+          ],
+        }),
+      ),
+      "padel-tennis",
+    );
+    expect(svar).toContain("[Nyhavna padel](poi:p1) har padel");
+    expect(svar).toContain("[Lade Tennisarena](poi:p3) har tennis");
+    expect(svar).not.toContain("p2");
+  });
+
+  it("is-skoyter skiller ishall fra skøytebane på navnet, og påstår aldri sesong", () => {
+    const svar = answerFor(
+      generateCategoryFaq(
+        input({
+          themeId: "trening-aktivitet",
+          categoryIds: ["gym"],
+          pois: [],
+          allPois: [
+            poi({ id: "i1", name: "Leangen Curlinghall", categoryId: "idrett", travelTime: { walk: 13, bike: 5 } }),
+            poi({ id: "i2", name: "Jakobsli skøytebane", categoryId: "idrett", travelTime: { walk: 36, bike: 14 } }),
+          ],
+        }),
+      ),
+      "is-skoyter",
+    );
+    expect(svar).toContain("Nærmeste ishall på kartet er [Leangen Curlinghall](poi:i1)");
+    expect(svar).not.toMatch(/sesong|vinter|åpent fra/);
   });
 });

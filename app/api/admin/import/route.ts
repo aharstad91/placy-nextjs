@@ -21,6 +21,7 @@ import {
   POIImportData,
 } from "@/lib/supabase/mutations";
 import { createServerClient } from "@/lib/supabase/client";
+import { fetchAllRows } from "@/lib/supabase/fetch-all-rows";
 import { requireAdminApi } from "@/lib/admin/require-admin";
 
 // Allowed Google Places categories
@@ -144,16 +145,23 @@ async function fetchExistingPOIsInBoundingBox(bbox: BoundingBox) {
   const supabase = createServerClient();
   if (!supabase) return [];
 
-  const { data } = await supabase
-    .schema("v2")
-    .from("pois")
-    .select("id, google_place_id, entur_stopplace_id, bysykkel_station_id")
-    .gte("lat", bbox.minLat)
-    .lte("lat", bbox.maxLat)
-    .gte("lng", bbox.minLng)
-    .lte("lng", bbox.maxLng);
+  // PAGINERT: dedup-lista. Samme feil og samme grunn som i
+  // `lib/pipeline/import-pois.ts` — 3 202 POI-er i Wesselsløkkas boks, 1 000
+  // lest. En kappet lesing her blir til feil skriving.
+  const { rows } = await fetchAllRows((from, to) =>
+    supabase
+      .schema("v2")
+      .from("pois")
+      .select("id, google_place_id, entur_stopplace_id, bysykkel_station_id")
+      .gte("lat", bbox.minLat)
+      .lte("lat", bbox.maxLat)
+      .gte("lng", bbox.minLng)
+      .lte("lng", bbox.maxLng)
+      .order("id")
+      .range(from, to)
+  );
 
-  return data || [];
+  return rows;
 }
 
 interface ExistingPOI {
@@ -285,13 +293,17 @@ async function addPOIsToProject(projectId: string, poiIds: string[]) {
   if (!supabase || poiIds.length === 0) return;
 
   // Get existing links to avoid duplicates
-  const { data: existingLinks } = await supabase
-    .schema("v2")
-    .from("project_pois")
-    .select("poi_id")
-    .eq("project_id", projectId);
+  const { rows: existingLinks } = await fetchAllRows((from, to) =>
+    supabase
+      .schema("v2")
+      .from("project_pois")
+      .select("poi_id")
+      .eq("project_id", projectId)
+      .order("poi_id")
+      .range(from, to)
+  );
 
-  const existingPoiIds = new Set((existingLinks || []).map((l) => l.poi_id));
+  const existingPoiIds = new Set(existingLinks.map((l) => l.poi_id));
   const newLinks = poiIds
     .filter((id) => !existingPoiIds.has(id))
     .map((poiId) => ({ project_id: projectId, poi_id: poiId }));

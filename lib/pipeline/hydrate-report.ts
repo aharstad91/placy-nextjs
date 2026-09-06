@@ -10,6 +10,7 @@
 
 import { createServerClient } from "@/lib/supabase/client";
 import { chunkIds } from "@/lib/supabase/chunk-ids";
+import { fetchAllRows } from "@/lib/supabase/fetch-all-rows";
 import { REPORT_THEME_DEFAULTS } from "@/lib/pipeline/report-defaults";
 import {
   dedupeColocatedPins,
@@ -101,13 +102,20 @@ export async function hydrateReport(options: {
   const warnings: string[] = [];
 
   // 1. Hent alle POI-er koblet til prosjektet
-  const { data: projectPois, error: ppError } = await db
-    .from("project_pois")
-    .select("poi_id")
-    .eq("project_id", projectId);
+  // PAGINERT: denne lista blir boardets utvalg. Et kappet svar på 1 000 rader
+  // ville stille utelatt resten av poolen fra `product_pois`, altså fjernet
+  // steder fra boardet. Wesselsløkka har 1 615. Se `fetch-all-rows.ts`.
+  const { rows: projectPois, error: ppError } = await fetchAllRows((from, to) =>
+    db
+      .from("project_pois")
+      .select("poi_id")
+      .eq("project_id", projectId)
+      .order("poi_id")
+      .range(from, to)
+  );
 
-  if (ppError) throw new Error(`Henting av project_pois feilet: ${ppError.message}`);
-  if (!projectPois || projectPois.length === 0) {
+  if (ppError) throw new Error(`Henting av project_pois feilet: ${ppError}`);
+  if (projectPois.length === 0) {
     warnings.push("⚠️  Ingen POI-er koblet til prosjektet ennå");
     return { productPoisLinked: 0, featuredMarked: 0, categoriesPopulated: 0, warnings };
   }

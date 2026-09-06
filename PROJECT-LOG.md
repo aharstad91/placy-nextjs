@@ -6,6 +6,153 @@
 
 ---
 
+## 2026-09-06 (kveld) — FRA 34 TIL 53 SVAR, EN TIDOLLARS TØRRKJØRING, OG TO TALL JEG IKKE MÅLTE
+
+**Kontekst:** Fortsettelsen av FAQ-arbeidet samme dag. Andreas ba først om Entur-firen, så om at Wesselsløkka skulle bli «best mulig», og til slutt — med en berettiget innvending — om det han faktisk bestilte om morgenen: *«og jeg har enda ikke fått flere faq elementer som var det jeg ønsket å starte med i dag»*. Han hadde rett. Jeg hadde brukt formiddagen på byggerne han bestilte, og så gått videre til datakvalitet uten å sjekke hva som lå rett foran meg.
+
+### 1. Resultatet: 53 FAQ-rader på Wesselsløkka, fra 34
+
+| Beliggenhet | Hverdag | Oppvekst | Transport | Trening | Servering | Opplevelser | Natur |
+|---|---|---|---|---|---|---|---|
+| 8 | 10 | 7 | 8 | 7 | 6 | 4 | 3 |
+
+Hverdag traff katalogens mål på ti. Tre bolker kom inn:
+
+**Entur-firen + Post i butikk.** `frekvens`, `til-arbeidsplassene`, `siste-buss`, `skoleskyss`. Alle mot en Entur-kobling som allerede sto i `transit-facts.ts` — nye spørringer, ikke ny integrasjon. `pakker-post` trengte aldri Bring: Posten merker vertsbutikkene sine med «Post i Butikk» i selve navnet, så en navnegate på `post` gir svaret gratis.
+
+**Åtte til fra data boardet allerede hadde.** `vinmonopol`, `dagligvare-lengst-apent`, `dagligvare-sondag`, `legevakt-sykehus`, `helsestasjon`, `padel-tennis`, `is-skoyter`, `spesialtrening`. Null nye kilder, null API-kostnad. Disse tok tjue minutter da jeg først lette etter dem — og det er poenget med Andreas' innvending.
+
+**Åpningstider.** Fra null til 23 av 36 steder med dør innen et kvarter. Låste opp `apent-sent` og `sondagsapent`, og reddet `trene-tidlig-sent`, som før svarte med et studentvelferdskontor 37 minutter unna.
+
+### 2. Siste avgang hjem tok tre forsøk, og de to første var gjetninger
+
+Verdt å skrive ned fordi begge var plausible.
+
+**Forsøk 1:** filtrer sentrumsstoppets avganger på linjene i rushtidsreisen. Bommer på nattbussene — de kjører egne linjenummer som ikke finnes i en rush-sampling.
+
+**Forsøk 2:** krev at linja betjener BÅDE sentrumsstoppet og boligens holdeplass. Raden forsvant helt. Målt på Wesselsløkka går linje 12 aldri fra Trondheim S; reisen hjem er linje 10 pluss et bytte, så snittet var tomt.
+
+**Det som virket:** spør reiseplanleggeren. En reise i svaret ER en reise som kommer fram, bytter og nattbusser inkludert, og `aimedStartTime` på den siste er nøyaktig det spørsmålet spør om. Lærdommen generaliserer: når to filtre begge er gjetninger om hva et domenebegrep betyr, finnes det ofte et API som allerede vet det.
+
+### 3. Tørrkjøringen som kostet ti dollar
+
+Jeg kjørte `refresh-opening-hours.ts --project <board>` uten `--apply` og trodde den var gratis. Den brukte 600 Google Places Enterprise-kall, hele døgnkvoten, og skrev ingenting.
+
+To årsaker. Scriptet er to-fase — fase 1 henter fra Google, fase 2 skriver — og `--apply` gater bare fase 2. Og `--project` trakk hele boardet når bare de 36 stedene innen et kvarter trengtes.
+
+Fikset med `--near N` (nærhet fra precomputede reisetider, gratis å bruke), en kostnadsadvarsel før fase 1, og samme advarsel i header-kommentaren. Etterpå: 46 kall, 36 rader skrevet.
+
+**Og en tredje defekt dukket opp under fiksen.** `fetchScopedPois` hentet `product_pois` upaginert, så PostgREST kappet på 1 000 rader uten feilmelding. 548 av 1 548 koblinger var usynlige for hver eneste prosjekt-scopet backfill — deriblant KIWI Valentinlyst, en dagligvarebutikk hvis åpningstider er nøyaktig det FAQ-en bruker. Kjent feilmodus i kodebasen (`fetchAllRows` finnes for den), men aldri skrevet ned i `docs/solutions/` før nå.
+
+### 4. Navn og tautologier
+
+27 POI-navn rettet til norsk, gratis via Essentials-masken. «Trondheim Public Library Moholt» → «Trondheim folkebibliotek Moholt», «Valentinlyst Dental Office» → «Valentinlyst Tannlegekontor». `fix-poi-names.ts` fanget bare navn som ER en engelsk etikett; utvidet til ordsøk på engelske ord der den norske formen er et annet ord (office/kontor, club/klubb, center/senter), valgt så våre EGNE generiske navn ikke treffes.
+
+Og: navnløse steder navngis ikke lenger. Poolen har seks POI-er som heter «Idrettsbane» — vår egen form for et anlegg uten egennavn. «Idrettsbane er nærmeste idrettsanlegg» brukte halve setningen på å si det samme to ganger. Nå står avstanden alene.
+
+### 5. Opplevelser var deaktivert hele tiden
+
+Temaet fikk kategorier i `05a48d7`, men strengen `"opplevelser"` sto fortsatt i `GLOBAL_DISABLED_REPORT_THEMES` fra april. Filteret kjører etter merge, så temaet ble stille strøket fra hvert board uansett hva konfigen sa.
+
+Og `kirke` var hjemløs: kategorien flyttet til Opplevelser i koden, men boardenes lagrede `reportConfig`-kategorier er eldre. Survey av alle 12 boards viste at bare to var rammet — seks har kirke i Hverdagsliv uten Opplevelser-tema og virker fint, fire har ingen av delene. Patchet de to.
+
+### 6. Kunnskapsbasen: én ny læring, fire docs refreshet, én ordbok
+
+`/ce-compound` skrev tørrkjørings-læringen (`docs/solutions/performance-issues/dry-run-koster-fullt-i-places-backfill.md`) og opprettet `CONCEPTS.md` med ni domenebegreper. `/ce-compound-refresh Google Places Integration` gjennomgikk fem docs: fire oppdatert, én beholdt.
+
+Det som kom ut av refreshen er verdt å merke seg: **to docs sa at fotohenting koster null.** Det stemmer bare for navneoppslaget. `resolvePhotoUri` belastes `places-photo`, 3 USD per 1 000. Forskjellen betyr noe akkurat når man batcher, som er situasjonen docsene handler om.
+
+### 7. To ganger stolte jeg på et tall jeg ikke hadde målt
+
+Dette er sesjonens egentlige lærdom, og den gjelder meg.
+
+**Først:** jeg skrev «474 skjulte rader» i selve læringsdokumentet om å ikke stole på umålte tall. Tallet kom fra en gammel kodekommentar. Riktig svar var 548, målt mot koblingstabellen. Grunnlagsvalidatoren fanget det.
+
+**Så:** jeg klassifiserte `google-places-photo-cost-reduction` som Keep fordi alt jeg sjekket sto i koden. Det gjorde det. Men jeg hadde ikke lest dokumentet ferdig — det bar «Next priority: migrer til Places API (New)» som åpen oppgave, og den migreringen ble gjort samme måned. Undersøkelsesagentens fulle rapport kom etter at jeg hadde committet.
+
+Begge ble fanget av kontroller etterpå, ikke av meg først. Mønsteret: jeg måler når jeg mistenker noe, og antar når jeg ikke gjør det. Verktøyene som fanget begge — `Content-Range: count=exact` og en lesning til — er billige.
+
+### Åpne tråder
+
+- **Brøset er ikke kurert.** Sju rader venter på det: turstier, marka, idrettslag, møteplasser, kor og kurs, kulturskole, støysone. Ingen kilde svarer; det trengs et menneske som kjenner strøket. Ni strøk har kuratert innhold i dag, Brøset er ikke blant dem.
+- **En rute ingen kaller, men som kan koste penger.** `app/api/places/[placeId]` kaller Google i runtime bak en minne-cache som er ubrukelig på Vercel, med Enterprise-felt i standardmasken. Eneste treff i koden er kommentarer.
+- **Herdingen fra 2026-07-06** (rate limiting, SSRF-vern) finnes i koden uten å være dokumentert. Fortjener en egen `/ce-compound`.
+- **Ungdomsskolen mangler** på Wesselsløkka: kretsen «BLUSSUVOLD» matcher ingen NSR-enhet, så `skoleskyss` svarer bare for barneskolen.
+- Ingenting pushet. Alt ligger på `fix/postgrest-radtak`.
+
+---
+
+## 2026-09-06 — FAQ-BYGGERNE: ELLEVE NYE SVAR, OG TRE FEIL SOM BARE EKTE DATA KUNNE VISE
+
+**Kontekst:** Fable leverte setningsformene til de 46 manglende FAQ-byggerne som et dokument (`docs/research/2026-09-06-faq-byggere-setningsformer-fable.md`, commit `2dc572a`). Denne sesjonen implementerte dem. Andreas: *«kjør på»*, og senere *«kan jeg nå se dette en plass? er det 10 faq per kategori nå?»*
+
+### 1. Hva ble bygd
+
+Elleve av de tolv S-spørsmålene — de katalogen sier kan bygges av data boardet alt har:
+
+- **Tema:** `skolevei`, `legesenter`, `pizza`, `hund`, `idrettsanlegg`, og Opplevelsers `bibliotek`, `kino`, `kirke`, `museum`.
+- **Området:** `tjenester-samme-sted` (anker + ærendtyper) og `regnvaersdag` (to ulike innendørs-slag).
+- **`uten-bil` flyttet** fra Hverdagsliv til Området, slik katalogens § 6 bestemte. Den leser nå hele boardet med ankermedlemmer, ikke bare ett tema.
+
+Nye hjelpere: `bikeMinutes`/`carMinutes` (samme kontrakt som `walkMinutes` — et målt tall eller ingenting), `reisetid`/`unna`, `navnefilter`, `aerendtyper`, `naermesteAvSlag`, `sammeKort`.
+
+**Ett alternativ, aldri to.** `reisetid` gir «42 minutter til fots eller 18 med sykkel» — sykkel når sykkelturen er innenfor et kvarter, ellers bil. Katalogens eksempler skrev «37 til fots, 17 med sykkel eller 9 med bil», og det er en liste, ikke en setning.
+
+**`barnehage-alder` ble IKKE bygd.** Katalogen har den som S, men `importBarnehagefakta` lagrer bare navn og koordinat på POI-en. `AlderstrinnFra` fra Barnehagefakta når aldri boardet, så spørsmålet er S+ til importeren tar feltet med.
+
+### 2. Opplevelser var deaktivert hele tiden
+
+Temaet ble åpnet i `05a48d7` med kategorier, farge og ikon — men strengen `"opplevelser"` sto fortsatt i `GLOBAL_DISABLED_REPORT_THEMES` (`lib/themes/bransjeprofiler.ts`) fra 2026-04-28, satt fordi temaet den gang ikke hadde innhold å vise. Filteret kjører etter merge, så temaet ble stille strøket fra hvert board uansett hva konfigen sa. Nå fjernet: begge hullene som begrunnet flagget er tettet.
+
+### 3. Tre feil som testene ikke kunne fange
+
+Alle tre kom av å kjøre byggerne mot Wesselsløkka-poolen headless (`transformToReportData`), ikke av å lese kode.
+
+**`library` er en skitten kategori, og det er målt nå.** 71 rader i poolen, rundt 20 er folkebibliotek. Resten er universitetsfilialer (NTNU har elleve), fylkesbibliotekene, Nasjonalbiblioteket, bokbytteskap i telefonkiosker — og ting som ikke er bibliotek i det hele tatt: «Kafén i Ila», «LINK arkitektur AS Bergen», «Bergen Dansesenter». Wesselsløkka-raden navnga «Telefonkiosk i Thornesparken» som nest nærmeste bibliotek.
+
+Fable-dokumentet foreslo en ren ekskluderingsliste, med begrunnelsen at en allowlist på «bibliotek» ville miste Oslo-filialene. Dataen viste at det var feil vei: Deichman er den ENE operatøren som bruker merkenavn i stedet for ordet, og den kan navngis eksplisitt. Filteret ble `krever` + `utelukker`, og luker 48 av 51 feil. De siste seks (BAS biblioteket, Europarettsbiblioteket, Gunnerus Library, KVT Bibliotek, Musikkbiblioteket, Tibi) har ingenting felles leksikalsk — å liste dem ved navn ville vært kuratering, ikke data. Det ærlige fikset står fortsatt i katalogen: Nasjonalbibliotekets Base Bibliotek med `bibliotektype = folkebibliotek`.
+
+**Google skriver «Hospital», ikke «sykehus».** Kirke-filteret ekskluderte sykehjem og sykehus, men «St. Olavs Hospital Kapell» slapp gjennom på den engelske formen. Samme klasse feil som den filteret ble bygd for. Menighetskontoret og kirkelig fellesråd er også lagt til — et kontor er ikke en kirke du kan gå inn i.
+
+**To navn på én dør.** Trondheim Film Club og Cinemateket ligger begge i Olavskvartalet. Begge er ankermedlemmer, så begge lenket til samme kort med samme minuttall: «X er nærmeste kino. Y ligger 38 minutter unna» pekte to ganger på det samme bygget. `sammeKort` sammenligner ankerets id, ikke POI-ens, og halen hopper over naboen i samme bygg. Regelen om maks to navngitte steder handlet alltid om to STEDER.
+
+### 4. Svaret på «er det 10 per kategori nå?» er nei
+
+Målt på Wesselsløkka etter endringen — katalogens ambisjon er ti per tema:
+
+| Tema | Rader nå |
+|---|---|
+| Området | 7 |
+| Hverdag | 5 |
+| Oppvekst | 5 |
+| Servering | 5 |
+| Transport | 5 |
+| Trening | 4 |
+| Natur | 3 |
+| Opplevelser | 3 |
+
+Gapet er ikke byggere som mangler kode, det er kilder som mangler kobling: 27 av katalogens 46 er S+ og venter på én navngitt datakilde hver (Turrutebasen, Bring, Vinmonopolets API, Entur-frekvens, SSB). De 7 K-spørsmålene venter på kurator.
+
+### 5. `kirke` var hjemløs — og konfig-patchen viste hvor liten skaden var
+
+Kategorien flyttet fra Hverdagsliv til Opplevelser i `05a48d7`, men boardenes egen `reportConfig.themes[].categories` er skrevet før flyttingen. Samme mekanisme som ettordsnavnene tidligere samme dag: **den lagrede konfigen vinner over kodens defaults.**
+
+Survey av alle 12 boards viste at skaden var avgrenset til to:
+
+- **2 boards har Opplevelser-temaet** (Wesselsløkka, StasjonsKvartalet) og listet `kirke` ingen steder. På Wesselsløkka betydde det 36 koblede kirke-POI-er uten et tema å rendre i.
+- **6 boards har `kirke` i Hverdagsliv og intet Opplevelser-tema.** Der virker raden fortsatt, i det gamle hjemmet. Å flytte den ville FJERNET innhold, så de er urørt.
+- **4 boards har ingen av delene.** Ingenting å gjøre.
+
+Patchet de to, etter full backup av alle 12 configs (`products-backup-*.json`) og med lesebekreftelse mot databasen per board pluss en diff som verifiserte at ingen andre temaer endret seg. Wesselsløkka fikk også `theatre` — konfigen listet `theater`, som matcher null rader i poolen mens `theatre` matcher elleve. Samme klasse feil: en kategori uten hjem.
+
+Resultat: Opplevelser gikk fra 29 til 64 steder og fra 3 til 4 FAQ-rader. Kirke-raden svarer «Strindheim kirke er nærmeste kirke, 8 minutter til fots» — og filteret gjorde jobben sin, for Zion bo- og servicesenter kapell ligger 7 minutter unna og ble luket. Cache bustet via `/api/revalidate` for begge boards.
+
+### 6. Verifisering
+
+3 624 tester passerer (fra 3 618; 6 nye), ESLint rent, `tsc` rent. Byggerne kjørt headless mot Wesselsløkka-poolen tre ganger under arbeidet — det var den tredje kjøringen som bekreftet at Telefonkiosken og Cinemateket var borte. Commits: `58765ba` (byggerne) og `a535c3d` (av-blokkering + datafiksene). Konfig-patchen lever i Supabase, ikke i git — backupen ligger i scratchpad. Ingenting pushet.
+
+---
+
 ## 2026-09-06 — KATEGORINAVNENE BLE ETT ORD: RADEN VISER FEM TEMAER I STEDET FOR TRE
 
 **Kontekst:** Andreas med et skjermbilde av kategori-raden: *«jeg vil ha korte kategorier. og jeg ser at det ikke er tenkt gjennom så mye hva de ulike labels er for kategoriene nå.»* Forslaget hans var Oppvekst, Transport, Natur og Aktivitet. Tre av fire ble stående.

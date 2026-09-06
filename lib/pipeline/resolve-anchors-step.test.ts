@@ -11,6 +11,7 @@ import {
   buildAnchorNameSummary,
 } from "./resolve-anchors-step";
 import fixture from "@/lib/board/__fixtures__/anchor-membership.fixture.json";
+import { pagedResult } from "@/lib/test-support/supabase-chain";
 
 const SIRKUS = "google-ChIJVZdRQJoxbUYRTcToJ4smjeM";
 const LADE_ARENA = fixture.malls.find((m) => m.name === "Lade Arena")!.id;
@@ -71,10 +72,12 @@ function buildMockSupabase(opts: {
       if (table === "project_pois") {
         return {
           select: vi.fn(() => ({
-            eq: vi.fn().mockResolvedValue({
-              data: opts.projectPoisError ? null : rows.map((r) => ({ poi_id: r.id })),
-              error: opts.projectPoisError ?? null,
-            }),
+            eq: vi.fn(() =>
+              pagedResult(
+                rows.map((r) => ({ poi_id: r.id })),
+                opts.projectPoisError ?? null
+              )
+            ),
           })),
         };
       }

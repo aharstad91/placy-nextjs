@@ -79,6 +79,7 @@ import {
   isFamilyCandidate,
   type AnchorFamily,
 } from "@/lib/board/anchor-families";
+import { fetchAllRows } from "@/lib/supabase/fetch-all-rows";
 
 /** Antall kategorinavn `anchor_summary` nevner før den sier «og mer». */
 const SUMMARY_MAX_CATEGORIES = 5;
@@ -288,18 +289,25 @@ export async function resolveProjectAnchors(options: {
   const db = baseClient.schema("v2") as unknown as typeof baseClient;
 
   // ── 1. Prosjektets POI-pool ─────────────────────────────────────────────
-  const { data: projectPois, error: ppError } = await db
-    .from("project_pois")
-    .select("poi_id")
-    .eq("project_id", options.projectId);
+  // PAGINERT: et anker krever ≥4 medlemmer. Leser vi bare 1 000 av 1 615, kan
+  // et ekte anker havne under terskelen og bli oppløst — og en oppløsning uten
+  // re-hydrering er usynlig på boardet.
+  const { rows: projectPois, error: ppError } = await fetchAllRows((from, to) =>
+    db
+      .from("project_pois")
+      .select("poi_id")
+      .eq("project_id", options.projectId)
+      .order("poi_id")
+      .range(from, to),
+  );
 
   if (ppError) {
     result.warnings.push(
-      `⚠️  Henting av project_pois feilet: ${ppError.message} — anker-oppløsning hoppet over`,
+      `⚠️  Henting av project_pois feilet: ${ppError} — anker-oppløsning hoppet over`,
     );
     return result;
   }
-  if (!projectPois || projectPois.length === 0) {
+  if (projectPois.length === 0) {
     result.warnings.push("⚠️  Ingen POI-er koblet til prosjektet — anker-oppløsning hoppet over");
     return result;
   }

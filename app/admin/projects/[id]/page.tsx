@@ -13,6 +13,7 @@ import type { DbCustomer, TablesV2 } from "@/lib/supabase/types";
 type DbCategory = TablesV2<"categories">;
 import { requireAdmin } from "@/lib/admin/require-admin";
 import { setReportTier } from "@/lib/admin/set-report-tier";
+import { fetchAllRows } from "@/lib/supabase/fetch-all-rows";
 
 export const metadata = {
   title: "Prosjekt | Placy Admin",
@@ -230,15 +231,20 @@ export default async function ProjectDetailPage({
   }
 
   const productIds = (productRows || []).map((pr) => pr.id);
-  const { data: productPoiRows, error: ppError } = productIds.length
-    ? await supabase
-        .schema("v2")
-        .from("product_pois")
-        .select("product_id, poi_id")
-        .in("product_id", productIds)
-    : { data: [], error: null };
+  const { rows: productPoiRows, error: ppError } = productIds.length
+    ? await fetchAllRows((from, to) =>
+        supabase
+          .schema("v2")
+          .from("product_pois")
+          .select("product_id, poi_id")
+          .in("product_id", productIds)
+          .order("product_id")
+          .order("poi_id")
+          .range(from, to)
+      )
+    : { rows: [], error: null };
   if (ppError) {
-    console.error("Kunne ikke hente product_pois:", ppError.message);
+    console.error("Kunne ikke hente product_pois:", ppError);
   }
 
   const poisByProduct = new Map<string, Array<{ poi_id: string }>>();
@@ -274,13 +280,20 @@ export default async function ProjectDetailPage({
 
   // Fetch all POIs for "Add POI" modal — kategori-info komponeres fra
   // categoryById (v2-typene mangler relasjons-metadata for nested select)
-  const { data: allPoiRows } = await supabase
-    .schema("v2")
-    .from("pois")
-    .select("id, name, category_id")
-    .order("name");
+  // PAGINERT: velgeren skal vise HELE basen (6 498 rader 2026-09-06). Uten
+  // paginering listet den 1 000 av dem, og et sted som fantes så ut til å
+  // mangle. `id` som sekundærsortering gir total orden — `name` er ikke unik.
+  const { rows: allPoiRows } = await fetchAllRows((from, to) =>
+    supabase
+      .schema("v2")
+      .from("pois")
+      .select("id, name, category_id")
+      .order("name")
+      .order("id")
+      .range(from, to)
+  );
 
-  const allPois = (allPoiRows || []).map((poi) => {
+  const allPois = allPoiRows.map((poi) => {
     const cat = poi.category_id ? categoryById.get(poi.category_id) : undefined;
     return {
       id: poi.id,
