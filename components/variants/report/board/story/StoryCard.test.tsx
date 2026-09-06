@@ -566,7 +566,7 @@ describe("områdestoppet", () => {
     const utils = setup();
     utils.begin();
     expect(railTabs().map((t) => t.textContent)).toEqual([
-      "Beliggenhet",
+      "Tilbake",
       "Mat & drikke",
       "Natur & friluft",
     ]);

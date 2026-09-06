@@ -191,6 +191,73 @@ Prod leser samme Supabase, så navnene gjelder der umiddelbart — men prod-boar
 
 ---
 
+## 2026-09-05 — BELIGGENHET SOM STARTSIDE: TEMA-RUTENETT I STEDET FOR EN RAD INGEN INTRODUSERTE, OG ET LAGBYTTE MELLOM DEM
+
+**Kontekst:** Andreas med et skjermbilde av områdestoppet på Wesselsløkka: *«da er det ikke så gitt at de kan velge blant kategorier. kategori-bar i topp ligger der, klart, men den blir ikke særlig introdusert her.»* Beliggenhet fungerte alt som startside (2026-08-27), men inngangen til temaene var seks små brikker i en rad, og setningen «Velg et tema» pekte på noe som ikke så ut som et valg. Worktree `../placy-kategorigrid`, branch `feat/kategori-grid-forside`, ikke pushet.
+
+### 1. Rutenettet erstatter raden på områdestoppet
+
+Ny `StoryThemeGrid` (2 kolonner, ikon + navn + «N steder») ligger i `AreaPane` mellom strøkets intro og «Spørsmål og svar». Raden (`StoryRail`) og mobil-dekket (`StoryDeck`) returnerer `null` mens `onArea` er sann, og desktop-hodet i `StoryCard` rendrer ikke `head` da. Et trykk på et kort er `goto(n)`: temaet åpnes, og raden kommer inn med det temaet aktivt. «Beliggenhet» i raden er veien tilbake til rutenettet. Samme form på mobil og desktop, verifisert i Chrome på 1400 og 390 px, 0 konsollfeil.
+
+Desktop-testene gikk inn i temaene via raden fra ankomsten, som nå ikke finnes der; de går via rutenettet (`enterTheme`-hjelper), og fire nye tester dekker vekslingen rutenett/rad.
+
+### 2. Overgangen: morfing forkastet, lagbytte valgt
+
+Første forsøk var View Transitions med delt `view-transition-name` per tema, så kortet gled og krympet inn i brikken sin. Teknisk virket det (ready/finished begge veier), men Andreas så det og sa nei: *«den overgangen der var ikke helt heldig»*. Det han ville ha var et **lagbytte**: forside-innholdet toner ut, og på den nye siden kommer tab-raden først, med en liten glidning fra toppen, så resten av innholdet. Samme tilbake. Og bare til/fra området, aldri tema til tema.
+
+Bygd som to trinn i `story-tour`: `goto` som krysser `AREA_STEP` setter `leaving` (→ `.story-leave`, 160 ms fade, `STORY_LAYER_LEAVE_MS`) og bytter steg først etter det. Det nye laget monteres med `key={onArea ? "area" : "theme"}` på overskrift/faner og på innholdet, så de animeres ved LAGBYTTE men ikke tema til tema. Raden er `story-enter-first` (fra toppen; `-up` fra bunnen på mobil-dekket), resten `story-enter-rest` (fade, 110 ms forsinket). Bevegelsen gates på `prefers-reduced-motion: no-preference` spurt positivt, så testenes matchMedia-polyfill (svarer false) gir øyeblikkelig bytte, og en bruker med redusert bevegelse får det samme. Målt i Chrome: leave-klasse ved 60 ms med gridet fortsatt i DOM, rad + nytt innhold ved 310 ms, alt på opacity 1 ved 810 ms; tema→tema utløser ingen lag-animasjon.
+
+### 3. Tre tweaks samme dag, alle på overgangen
+
+Andreas prøvde den og fant tre ting, som hver traff et eget problem:
+
+**a) Raden og innholdet kom for likt.** *«det er langt i fra enkelt for meg å forstå det at den kategorien jeg trykte på, vises i toppen der … det må være større avstand mellom dem.»* Målt: raden var ferdig på 300 ms, innholdet startet på 340 — 40 ms mellom to bevegelser leses som én. Nå starter innholdet på 460 ms (`--story-enter-rest-delay`), altså 160 ms etter at raden har landet, og raden reiser 14 px i stedet for 8. Luften under raden på desktop økte fra 10 til 16 px, så den leser som sitt eget bånd. Frosset frame i Chrome bekrefter beatet: raden står ferdig og alene med den trykkede brikken hvit, innholdet på opacity 0.
+
+**b) Returen var for treg.** *«det går for sakte å gå tilbake fra cat-tabs, da vet en på et vis at man skal tilbake.»* Retningene er nå ulike, og det er en regel, ikke en finjustering: veien INN forklarer noe (valget ditt har skiftet form), returen forklarer ingenting. Egen `STORY_LAYER_LEAVE_BACK_MS` (80 mot 120) og egne `story-enter-back*`-klasser (190 ms, 50 ms forsinkelse) mot temalagets 300/460. Målt over tre runder: forsiden synlig etter ~218 ms og ferdig etter ~663 ms, mot ~400 ms / ~1 180 ms inn i et tema.
+
+**c) Raden anker-scrollet i det den kom.** *«jeg ser at tab-cat da scroller bortover raskt som en slags anchor effekt … det må skje før den vises.»* `StoryRail` posisjonerte aktivt stopp i en `useEffect`, og sporet har `scroll-behavior: smooth` — som gjelder tilordninger av `scrollLeft` også. Første posisjonering er nå en `useLayoutEffect` med `scroll-behavior: auto` slått på for akkurat den ene (`mountedRef`), så plasseringen er gjort før nettleseren tegner. Senere stoppbytter glir fortsatt mykt. Verifisert med MutationObserver på innsettingsøyeblikket: `scrollLeft` er 349 (desktop) / 267 (mobil) i første frame og står stille i 20 frames etter.
+
+### 4. «Beliggenhet» ble «Tilbake», og festet til venstre i baren
+
+Andreas, med to utsnitt av raden: *«den er ikke like ille på mac med magic mouse, for da kan jeg enkelt slide bortover som på en mobil. men på en desktop mus … så jeg tenker at vi muligens må ha sticky left «beliggenhet» funksjonen som omdøpes til «Tilbake», for det er jo nettopp det hele funksjonen egentlig er.»*
+
+Brikken lå FØRST i sporet, altså inne i det som ruller — og kunne derfor rulle ut av syne. Det gikk så lenge kategoriene også fantes som faner andre steder; etter at rutenettet overtok inngangen samme dag er brikken den eneste veien tilbake, og en eneste vei ut kan ikke ligge bak en horisontal scroll man trenger en Magic Mouse for å betjene.
+
+Baren er derfor delt i to: en fast venstredel (utgangen) og et rullende spor (temaene), begge inne i den samme avrundede flaten, så den fortsatt leser som én ting. `role="tablist"` flyttet ut på baren og sporet fikk `role="presentation"`, slik at brikkene fortsatt eksponeres som faner i tilgjengelighetstreet — testene som spør etter `[aria-label="Stopp"] [role="tab"]` er uendret. En ny test låser strukturen: «Tilbake» skal IKKE ligge inne i sporet, temaene skal.
+
+To følgeendringer fulgte av omdøpingen, begge fordi ordet endret hva brikken ER: ikonet gikk fra kartnål til venstrepil (en nål under ordet «Tilbake» beskriver et sted, ikke en handling), og chevronen mellom utgang og temaer ble en loddrett strek (en høyrepil rett ved siden av en venstrepil er to piler i hver sin retning). Kantklippet i sporet ble en maske i stedet for et gradient-overlegg, fordi overlegget lå i barens koordinater og nå ville dekket den faste brikken — og masken toner bare den kanten det faktisk ligger mer bak (`edges`-state, lest på scroll).
+
+Verifisert i Chrome på 1400 og 390 px med sporet rullet helt til høyre: utgangen står synlig, ligger utenfor sporet, og sporet har ingen synlig rullefelt (`offsetHeight − clientHeight` = 0). Merk: den svarte «N»-sirkelen som ligger over nedre venstre hjørne i dev er Next.js sin egen dev-indikator, ikke noe i produktet.
+
+### 5. Kortene ble én horisontal linje da labelene ble korte (2026-09-06)
+
+Kategorinavnene er kortet ned til ett ord hver i hovedmappa — Hverdag, Oppvekst, Servering, Natur, Transport, Trening — og boardet leser dem allerede fra provisjonert data, så Wesselsløkka viser dem live. Andreas: *«så på gridet, tror jeg vi kan nå samle både ikon og de to linjene med tekst på en og samme horisontale linje.»*
+
+Ikonet lå over teksten fordi et navn som «Transport & Mobilitet» brøt i to på halv kolonnebredde. Med ettordsnavn faller den grunnen bort: ikon til venstre, navn og antall stablet til høyre, alt på én linje. Kortet gikk fra 114 til 60 px høyt, og rutenettet fra ~340 til 226 px — som er forskjellen på at strøkets spørsmål og svar ligger under fold eller ikke. På 390 px får hele FAQ-lista nå plass på samme skjerm som rutenettet.
+
+Navnet står på én linje og klippes heller enn å brytes: ett kort som er én linje høyere enn nabokortet gjør raden skjev, og et rutenett med ujevne rader slutter å lese som et sett med likeverdige valg. Målt: ingen av de seks navnene klippes i dag, verken på 1400 eller 390 px.
+
+Merk om kilden: labelene lever i `lib/themes/default-themes.ts` (+ `report-defaults.ts`, `bransjeprofiler.ts`) og var ved dette tidspunktet UKOMMITERT arbeid i hovedmappa, ikke i main-historikken. Denne branchen har dem derfor ikke i koden — men boardet henter navnet fra `theme.name` i produktkonfigurasjonen (`board-data.ts`), ikke fra tema-filen ved render, så de korte navnene vises uansett. Rutenettets layout er ikke avhengig av hvilken vei det løses.
+
+### 6. To flater som ikke skulle vært der (2026-09-06)
+
+Andreas, med to utsnitt: *«det er to shades her, på grid forside, hvor tittel ligger i en lysere shade. inne på en kategori, er det et grått område i toppen av sidebar. begge disse kan fjernes slik at de har lik bakgrunnsfarge som resten av sidebar.»*
+
+**Det grå området** var radens egen bar (`bg-black/[0.045]`). Den fylte nesten hele panelbredden — 390 av 438 px etter at ettordsnavnene fikk alle seks temaene til å få plass uten rulling — og leste som en plate lagt oppå toppen av kolonnen. Den er borte på DESKTOP. Mobil-dekket beholder sin: der FLYTER raden over innholdet, og uten flate ville brikkene ligget rett på kartet. Den valgte brikken løftes fortsatt av hvitt og skygge, så utvalget leses uten sporet.
+
+**Det lysere båndet** var vanskeligere, og verdt å skrive ned. Det festede hodet hadde `bg-white/85` + `backdrop-blur-xl`, panelet `bg-white/[0.93]`. To halvgjennomsiktige lag oppå hverandre kan ikke bli samme farge som ett: 0,85 over 0,93 komposit­terer til 0,995, og de 6,5 prosentene er nettopp så mye kart som slapp gjennom panelet men ikke gjennom hodet. Å bare fjerne hodets bunn er IKKE et alternativ — det ble testet live, og da scroller brødteksten rett gjennom overskriften.
+
+Derfor er panelet nå TETT i omvisningen (`bg-white`), og hodet har samme verdi. Da er de to fargene den samme verdien, ikke to verdier som er nesten like. Prisen er de 7 % satellittbilde som skinte gjennom sidekolonnen; gevinsten er at båndet ikke kan oppstå. Beige-varianten (uten omvisning) har ikke noe festet hode og beholder gjennomskinnet sitt. Mobil var aldri berørt: der er både `h3` og arket rent hvitt fra før.
+
+### 7. Åpent
+
+- **Mobil-inngangen.** «La nabolaget presentere seg» i mobil-indeksen starter fortsatt på første tema, ikke på Beliggenhet-rutenettet (indeksen har alt sin egen kategoriliste). Andreas må avgjøre om mobil-play skal lande på området slik desktop-kolonnen gjør.
+- Raden ruller aktivt tema til 44 px fra venstre, så «Beliggenhet» (veien tilbake) ligger ofte utenfor synsfeltet etter et kort-trykk. Pre-eksisterende, men mer synlig nå som rutenettet er inngangen.
+- **Temaer langt til høyre er tunge å nå med vanlig mus.** Utgangen er løst, men selve sporet krever fortsatt shift+hjul på en mus uten sidelengs sveip. En mulig neste spak er å oversette vanlig hjul til horisontal scroll i sporet; ikke bygd, fordi det kan kapre sidescrollen.
+- **~300 ms hovedtråd-stall ved lagbytte.** Målt: tema→tema stopper hovedtråden i ~100 ms, mens område↔tema stopper den i ~300 ms (board-render + montering/avmontering av rutenettet eller raden). Det er derfor raden dukker opp ~400 ms etter trykket og ikke ~120 ms. Selve animasjonene går på kompositoren og er glatte; stallet er død luft FØR dem. Ikke rørt — det krever at det tunge arbeidet flyttes inn i utton-fasen.
+
+---
+
 ## 2026-09-01 — WORKTREE-RYDDING SOM BLE EN LEVERANSE: KAMERA-INVERSEN FOR GOOGLE-MOTOREN, HENTET UT AV EN DØENDE BRANCH
 
 **Kontekst:** Andreas med et Finder-skjermbilde: *«vi har mange worktrees nå, hva er status på dem?»* Fem stykker. Svaret viste seg å være at to var ferdige, én var levende, og to var utdaterte — men at den ene av de utdaterte hadde 817 linjer ukommitert arbeid liggende som ingen visste om.

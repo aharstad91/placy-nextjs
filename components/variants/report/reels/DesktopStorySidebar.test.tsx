@@ -239,6 +239,15 @@ function setup(props: { noBrokers?: boolean } = {}) {
 const rail = (utils: ReturnType<typeof setup>) =>
   utils.getByRole("tablist", { name: "Stopp" });
 
+/** Temarutenettet på områdestoppet — inngangen til omvisningen (2026-09-05). */
+const grid = (utils: ReturnType<typeof setup>) =>
+  utils.getByTestId("story-theme-grid");
+
+/** Inn i et tema slik brukeren gjør det fra ankomsten: via rutenettet. Raden
+ *  finnes ikke før dette trykket. */
+const enterTheme = (utils: ReturnType<typeof setup>, label = "Hverdagsliv") =>
+  fireEvent.click(within(grid(utils)).getByText(label));
+
 describe("kolonnen ER omvisningen", () => {
   it("slår den på selv, og har ingen utgang — det finnes ikke noe å gå tilbake til", () => {
     const utils = setup();
@@ -251,7 +260,58 @@ describe("kolonnen ER omvisningen", () => {
 
   it("legger transporten INNE i det festede hodet, ikke som en rad over det", () => {
     const utils = setup();
+    enterTheme(utils);
     expect(utils.getByTestId("story-card").contains(rail(utils))).toBe(true);
+  });
+});
+
+describe("temarutenettet på områdestoppet (2026-09-05)", () => {
+  it("viser temaene som rutenett, med navn og dekning i tall — og INGEN rad", () => {
+    const utils = setup();
+    const cards = within(grid(utils)).getAllByRole("button");
+    expect(cards.map((c) => c.textContent)).toEqual([
+      "Hverdagsliv3 steder",
+      "Natur & Friluftsliv1 sted",
+    ]);
+    // Raden er transport, og på ankomsten er det ingenting å transportere.
+    expect(utils.queryByRole("tablist", { name: "Stopp" })).toBeNull();
+  });
+
+  it("ligger OVER strøkets spørsmål og svar — veien videre før bakgrunnen", () => {
+    const utils = setup();
+    const body = utils.getByTestId("story-card").textContent ?? "";
+    expect(body.indexOf("Hverdagsliv3 steder")).toBeLessThan(
+      body.indexOf("Hva kjennetegner området?"),
+    );
+    // …men UNDER introen: stedet først, så valget.
+    expect(body.indexOf("Ranheim ligger mellom")).toBeLessThan(
+      body.indexOf("Hverdagsliv3 steder"),
+    );
+  });
+
+  it("et trykk går inn i temaet, og først DA kommer raden — med området først", () => {
+    const utils = setup();
+    enterTheme(utils, "Natur & Friluftsliv");
+    expect(utils.getByRole("heading", { level: 3 }).textContent).toBe(
+      "Kommer jeg ut i naturen?",
+    );
+    expect(utils.queryByTestId("story-theme-grid")).toBeNull();
+    const tabs = within(rail(utils)).getAllByRole("tab");
+    expect(tabs.map((t) => t.textContent)).toEqual([
+      "Tilbake",
+      "Hverdagsliv",
+      "Natur & Friluftsliv",
+    ]);
+    expect(tabs[2].getAttribute("aria-current")).toBe("true");
+  });
+
+  it("«Tilbake» i raden er veien tilbake: rutenettet igjen, raden borte", () => {
+    const utils = setup();
+    enterTheme(utils);
+    fireEvent.click(within(rail(utils)).getByText("Tilbake"));
+    expect(utils.getByRole("heading", { level: 3 }).textContent).toBe("Ranheim");
+    expect(grid(utils)).not.toBeNull();
+    expect(utils.queryByRole("tablist", { name: "Stopp" })).toBeNull();
   });
 });
 
@@ -292,8 +352,8 @@ describe("områdestoppet", () => {
     expect(utils.camera.flyToPoint).not.toHaveBeenCalled();
     expect(utils.camera.fitCoordinates).not.toHaveBeenCalled();
     // Et stoppbytte bytter pinner, ikke utsnitt (2026-08-28).
-    fireEvent.click(within(rail(utils)).getByText("Hverdagsliv"));
-    fireEvent.click(within(rail(utils)).getByText("Beliggenhet"));
+    enterTheme(utils);
+    fireEvent.click(within(rail(utils)).getByText("Tilbake"));
     expect(utils.camera.flyToPoint).not.toHaveBeenCalled();
     expect(utils.camera.fitCoordinates).not.toHaveBeenCalled();
   });
@@ -305,24 +365,40 @@ describe("områdestoppet", () => {
 });
 
 describe("raden", () => {
-  it("legger området FØRST, foran temaene — med et fast ord, ikke stedsnavnet", () => {
+  it("legger utgangen FØRST, foran temaene — festet, med et fast ord", () => {
     const utils = setup();
+    enterTheme(utils);
     const tabs = within(rail(utils)).getAllByRole("tab");
     expect(tabs.map((t) => t.textContent)).toEqual([
-      "Beliggenhet",
+      "Tilbake",
       "Hverdagsliv",
       "Natur & Friluftsliv",
     ]);
-    expect(tabs[0].getAttribute("aria-current")).toBe("true");
+    expect(tabs[1].getAttribute("aria-current")).toBe("true");
+  });
+
+  it("fester utgangen UTENFOR sporet — den kan ikke rulle ut av syne", () => {
+    // Etter at rutenettet overtok inngangen er brikken den eneste veien
+    // tilbake, og en desktop-mus kan ikke sveipe raden sidelengs (2026-09-05).
+    const utils = setup();
+    enterTheme(utils);
+    const bar = rail(utils);
+    const spor = bar.querySelector('[role="presentation"]');
+    expect(spor).not.toBeNull();
+    const tilbake = within(bar).getByText("Tilbake").closest('[role="tab"]')!;
+    expect(spor!.contains(tilbake)).toBe(false);
+    // Temaene ligger derimot i sporet, og ruller.
+    const tema = within(bar).getByText("Hverdagsliv").closest('[role="tab"]')!;
+    expect(spor!.contains(tema)).toBe(true);
   });
 
   it("bytter til et tema, og tilbake til området igjen", () => {
     const utils = setup();
-    fireEvent.click(within(rail(utils)).getByText("Hverdagsliv"));
+    enterTheme(utils);
     expect(utils.getByRole("heading", { level: 3 }).textContent).toBe(
       "Hva kan jeg ordne i nærheten?",
     );
-    fireEvent.click(within(rail(utils)).getByText("Beliggenhet"));
+    fireEvent.click(within(rail(utils)).getByText("Tilbake"));
     expect(utils.getByRole("heading", { level: 3 }).textContent).toBe(
       "Ranheim",
     );
@@ -332,7 +408,7 @@ describe("raden", () => {
 describe("temastoppet på desktop", () => {
   const openTheme = () => {
     const utils = setup();
-    fireEvent.click(within(rail(utils)).getByText("Hverdagsliv"));
+    enterTheme(utils);
     return utils;
   };
 
@@ -398,7 +474,7 @@ describe("temastoppet på desktop", () => {
     // endring midt i omvisningen tar den med seg, og uten tvangen ville
     // kolonnen rendret en fane som ikke finnes: tom flate.
     const utils = setup();
-    fireEvent.click(within(rail(utils)).getByText("Hverdagsliv"));
+    enterTheme(utils);
     fireEvent.click(utils.getByTestId("force-faq-pane"));
     expect(utils.getByText("Verdt å merke seg")).not.toBeNull();
     expect(utils.getByText("Steder i nærheten")).not.toBeNull();
@@ -439,7 +515,7 @@ describe("megler-kortet", () => {
   it("står også på områdestoppet — kontakten er ikke bundet til et tema", () => {
     const utils = setup();
     expect(utils.getByText("Ansvarlig megler")).not.toBeNull();
-    fireEvent.click(within(rail(utils)).getByText("Hverdagsliv"));
+    enterTheme(utils);
     expect(utils.getByText("Ansvarlig megler")).not.toBeNull();
   });
 
@@ -463,7 +539,7 @@ describe("utfoldingslistene har ÉN form", () => {
    */
   const openTheme = () => {
     const utils = setup();
-    fireEvent.click(within(rail(utils)).getByText("Hverdagsliv"));
+    enterTheme(utils);
     return utils;
   };
 
