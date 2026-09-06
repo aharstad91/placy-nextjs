@@ -5,6 +5,7 @@
 
 import type { CategoryInsight, DailyPoint, InsightReport } from "@/lib/insight/types";
 import { sourceName } from "@/lib/insight/aggregate";
+import { deriveRecommendations } from "@/lib/insight/recommendations";
 
 const BLUE = "#1a56db";
 const pct = (x: number) => `${Math.round(x * 100)} %`;
@@ -136,6 +137,10 @@ function CategoryTable({ rows, reached }: { rows: CategoryInsight[]; reached: bo
 export function InsightReportView({ report: r, projectName, customerName, demo }: {
   report: InsightReport; projectName: string; customerName: string; demo: boolean;
 }) {
+  // «Signaler» leser nå anbefalingsmotoren direkte. Tidligere lå de ferdig
+  // formulerte strengene på rapporten (`observations`/`actions`); de er
+  // erstattet av `deriveRecommendations`, som bærer beviset sitt i `why`.
+  const recommendations = deriveRecommendations(r);
   const perView = r.views > 0 ? r.interactions / r.views : 0;
   const prevPerView = r.previous.views > 0 ? r.previous.interactions / r.previous.views : 0;
   const known = r.sources.filter((s) => s.source !== "direkte").reduce((a, s) => a + s.views, 0);
@@ -218,22 +223,21 @@ export function InsightReportView({ report: r, projectName, customerName, demo }
           <CategoryTable rows={r.categories} reached={r.threshold.reached} />
         </Card>
         <Card title="Signaler" right={r.threshold.reached ? "regelbasert" : undefined}>
-          {r.observations.length + r.actions.length === 0 ? (
+          {recommendations.length === 0 ? (
             <p className="text-[13px] text-stone-400">Ingen signaler over terskel.</p>
           ) : (
-            <>
-              <ul className="space-y-1.5 text-[13px]">
-                {r.observations.map((o) => <li key={o} className="flex gap-2"><span style={{ color: BLUE }}>●</span><span>{o}</span></li>)}
-              </ul>
-              {r.actions.length > 0 && (
-                <>
-                  <div className="mt-4 text-[11px] font-medium uppercase tracking-wide text-stone-400">Gjør</div>
-                  <ul className="mt-1.5 space-y-1.5 text-[13px]">
-                    {r.actions.map((a) => <li key={a} className="flex gap-2"><span className="text-stone-400">→</span><span>{a}</span></li>)}
-                  </ul>
-                </>
-              )}
-            </>
+            <ul className="space-y-2.5 text-[13px]">
+              {recommendations.map((rec) => (
+                <li key={rec.id} className="flex gap-2">
+                  <span style={{ color: BLUE }}>●</span>
+                  <span>
+                    {rec.title}
+                    <span className="block text-stone-400">{rec.why}</span>
+                    {rec.next && <span className="block text-stone-400">→ {rec.next}</span>}
+                  </span>
+                </li>
+              ))}
+            </ul>
           )}
         </Card>
       </div>
