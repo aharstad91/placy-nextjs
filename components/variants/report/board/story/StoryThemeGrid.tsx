@@ -3,6 +3,7 @@
 import { getIcon } from "@/lib/utils/map-icons";
 import { cn } from "@/lib/utils";
 import { SIDEBAR_SECTION_TITLE } from "../sidebar-style";
+import { DISCLOSURE_ROW_HOVER } from "../Disclosure";
 import { useStoryTour } from "./story-tour";
 
 /**
@@ -35,6 +36,17 @@ import { useStoryTour } from "./story-tour";
  * Navnet står på ÉN linje og klippes heller enn å brytes: et kort som er én
  * linje høyere enn nabokortet gjør raden skjev, og et rutenett med ujevne rader
  * slutter å lese som et sett med likeverdige valg.
+ *
+ * ## Hover er en TONE, ikke et løft (2026-09-07)
+ *
+ * Kortene løftet seg først på hover — sterkere kantlinje, større slippskygge og
+ * en liten skalering ved trykk. Det var en annen hover-tilstand enn spørsmålene
+ * rett under, som bare toner bunnen (`DISCLOSURE_ROW_HOVER`). To ulike svar på
+ * samme gest, i samme kolonne, leser som to ulike slags element — og de er det
+ * ikke: både et temakort og et spørsmål er en rad du trykker for å komme videre.
+ *
+ * Kortet beholder sin egen kantlinje og hvilende skygge i ro. Det er bare
+ * SVARET på pekeren som er delt med spørsmålene.
  */
 export function StoryThemeGrid({ className = "" }: { className?: string }) {
   const { stops, goto } = useStoryTour();
@@ -55,9 +67,8 @@ export function StoryThemeGrid({ className = "" }: { className?: string }) {
               className={cn(
                 "flex items-center gap-2.5 rounded-2xl bg-white p-3 text-left",
                 "shadow-[inset_0_0_0_1px_rgba(28,25,23,0.07),0_1px_3px_rgba(28,25,23,0.06)]",
-                "transition-[box-shadow,transform] duration-150",
-                "hover:shadow-[inset_0_0_0_1px_rgba(28,25,23,0.12),0_4px_14px_rgba(28,25,23,0.1)]",
-                "active:scale-[0.985]",
+                "transition-colors duration-150",
+                DISCLOSURE_ROW_HOVER,
               )}
             >
               <span
