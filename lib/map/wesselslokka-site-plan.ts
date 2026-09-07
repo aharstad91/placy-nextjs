@@ -58,3 +58,47 @@ export const WESSELSLOKKA_PLAN_BUILDINGS = [
   { id: "a2", name: "Bygg A2", label: "A2", storeys: 5, pixels: [[409, 843], [487, 850], [484, 881], [406, 875]] },
   { id: "b", name: "Bygg B", label: "B", storeys: 7, pixels: [[458, 757], [507, 761], [499, 844], [450, 840]] },
 ] as const;
+
+/**
+ * Bygg som står på tomta i dag, og som stikker opp gjennom grunnflaten.
+ *
+ * Grunnflaten dekker asfalten, men den drapereres på terrenget — alt som er
+ * høyere enn bakken blir stående. Låven er det eneste som faktisk synes:
+ * et langt, grått tak midt i tregruppa, som leser som rot mellom rene volumer.
+ *
+ * Planen river den ikke. Situasjonsplanen tegner den mørkerød, som er måten
+ * den sier «dette bygget blir stående». OSM-omrisset (way 101106919,
+ * `ref:bygningsnr` 182222860) lander på plan-piksel (720, 593), fem meter fra
+ * den mørkerøde flaten på (732, 602). Derfor får den et volum på linje med de
+ * planlagte byggene i stedet for å bli malt bort.
+ *
+ * Den andre eksisterende bygningen på feltet (way 101106926, en liten
+ * driftsbygning på 8 × 9 m) har ingen mørkerød flate nærmere enn 33 m — planen
+ * river den. Den ligger under tretakket og er ikke synlig i fotoflisene, så
+ * den står ikke her. Dukker den opp, hører den hjemme i denne lista med et
+ * volum i jordets farge.
+ *
+ * Omrisset er utvidet tre og en halv meter fra sitt eget tyngdepunkt. Halvannen
+ * var for lite — den røde gavlen i østenden stakk ut forbi volumet. Høyden er
+ * lest av fotoflisene mot treetasjes-blokkene ved siden av; det finnes ingen
+ * kilde å slå den opp i, og elleve meter dekker mønet med litt å gå på.
+ */
+export const WESSELSLOKKA_STANDING_BUILDINGS = [
+  {
+    id: "laven",
+    name: "Låven",
+    heightMeters: 11,
+    footprint: [
+      [10.455073, 63.422462],
+      [10.455003, 63.422441],
+      [10.455367, 63.422142],
+      [10.455554, 63.422184],
+      [10.455407, 63.422347],
+      [10.455401, 63.422345],
+      [10.455214, 63.422493],
+      [10.455137, 63.422478],
+      [10.455122, 63.422491],
+      [10.45506, 63.422477],
+    ],
+  },
+] as const;

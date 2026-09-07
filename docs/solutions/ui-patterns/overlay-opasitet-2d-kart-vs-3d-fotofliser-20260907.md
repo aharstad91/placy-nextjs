@@ -1,11 +1,11 @@
 ---
 name: Overlay-opasitet går motsatt vei i 2D-kart og 3D-fotofliser
-description: Samme lyse fyll som er riktig over Mapbox' vektorkart blir grumsete brunt over Googles fotorealistiske fliser. Bakgrunnen er lys og tegnet i 2D, mørk og fotografert i 3D — så gjennomsiktighet er en gave i den ene motoren og et tap i den andre. Ett palettvalg, to ulike alfaverdier.
+description: Samme lyse fyll som er riktig over Mapbox' vektorkart blir grumsete brunt over Googles fotorealistiske fliser, fordi bakgrunnen er lys og tegnet i den ene motoren og mørk og fotografert i den andre. For ekstruderte volumer snur regelen igjen — der skyggelegger Google flatene selv, og lavere dekkevne gjør dem mørkere, ikke lysere.
 type: ui-pattern
 problem_type: ui_bug
 module: components/map
 date: 2026-09-07
-tags: [mapbox, google-3d-tiles, photorealistic, opasitet, alpha, massing, volumer, palett, kartmotor]
+tags: [mapbox, google-3d-tiles, photorealistic, opasitet, alpha, massing, volumer, palett, kartmotor, polygon3delement, skyggelegging, model3delement]
 ---
 
 # Overlay-opasitet går motsatt vei i 2D-kart og 3D-fotofliser
@@ -46,9 +46,13 @@ dekkevnen er en motorbeslutning og må det.
 "fill-opacity": ["interpolate", ["linear"], ["zoom"], 14, 0, 15.4, 0.82],  // kontekst
 
 // 3D — fyllet må nesten dekke, ellers blir det grumsete brunt
-sale:    withAlpha(palette.fill, 0.94)
-context: withAlpha(palette.contextFill, 0.90)
+sale:    withAlpha(palette.shellFill, 0.95)
+context: withAlpha(palette.shellFill, 0.92)
 ```
+
+Fargene er heller ikke de samme lenger: 3D fikk `shellFill`/`shellEdge` i rent
+hvitt, fordi volumene der skal lese som en fysisk modell, ikke som karttegning.
+Se seksjonen om ekstruderte volumer under for hvorfor det måtte bli *rent* hvitt.
 
 Google-motoren tar bare CSS-farger, ikke Mapbox-paint, så palettens hex må
 uansett gjennom en `withAlpha()`-funksjon på vei inn. Det er stedet å legge
@@ -67,6 +71,44 @@ som ligger under, ikke av laget du tegner**.
 Samme avveining gjelder ruter, sirkler for rekkevidde og alt annet vi tegner i
 begge motorer. Deler man én alfaverdi mellom dem, er den nødvendigvis feil i én
 av dem.
+
+## Ekstruderte volumer: motoren skygger, og fargen din taper
+
+Regelen over gjelder **flate** overlegg. Ekstruderte `gmp-polygon-3d` er et annet
+dyr, og her tar intuisjonen feil.
+
+Google skyggelegger sideflatene selv, etter hvilken vei de vender, og det lyset
+kan ikke settes. Målt på ett og samme kamera, med rent hvitt og full dekning,
+tegner motoren den samme flaten fra **122 til 247** i luminans. Hele spennet
+mellom svart og hvitt er altså brukt opp av motorens eget lys før fargen din får
+si noe. Et fyll som starter under hvitt blir bare gråere; over hvitt finnes ikke.
+
+Og dekkevnen redder deg ikke:
+
+| Dekkevne | Lyse flater | Mørke flater |
+|---|---|---|
+| 1,00 | 223 | 127 |
+| 0,86 | 210 | 118 |
+| 0,55 | 181 | 109 |
+
+De mørke flatene lot seg nesten ikke lyse opp av å slippe det lyse gresset
+gjennom — 127 mot 109 — mens de lyse flatene tapte 42. **Lav dekkevne gjorde
+volumene jevnt over mørkere, ikke lysere**, selv om hver enkelt mørk flate ble
+en anelse lysere. Det er motsatt av hva den flate regelen over skulle tilsi, og
+grunnen er at skyggen ligger på materialet, ikke på komposisjonen.
+
+To utveier ble prøvd og forkastet:
+
+- **Droppe ekstruderingen** og bygge veggene som egne flate polygoner. En
+  loddrett prøveflate landet på 128 — nøyaktig samme skyggelegging. Normalen
+  avgjør, ikke `extruded`.
+- **Snu vindingen** på omrisset, i håp om at toppflatens normal pekte ned.
+  Ingen forskjell.
+
+Vil man ha en jevnt hvit modell — den fysiske akrylmodellen på salgskontoret —
+må volumene tegnes som `Model3DElement` med en glTF der materialet er
+`KHR_materials_unlit`. Det er den eneste veien utenom motorens lys, og det er
+en egen jobb.
 
 ## Fallgruve ved verifisering
 

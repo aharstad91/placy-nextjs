@@ -62,6 +62,9 @@ MIN_HALF_WIDTH_PX = 5.0     # innskrevet sirkel: smalere = gangsti
 MIN_RECT_FILL = 0.40        # andel av omskrevet rektangel
 MIN_DARK_EDGE = 0.45        # andel av kanten som har mørk kontur utenfor seg
 SIMPLIFY_PX = 4.0           # forenkler bort takstripene; ~1,6 m i planens målestokk
+SITE_BRIDGE_PX = 55         # binder planens grønne flater sammen over gatetun og bygg
+SITE_SMOOTH_PX = 75         # glatter bort hakkene der tverrveiene møter kanten
+SITE_SIMPLIFY_PX = 14.0     # ~6 m; grunnflaten trenger ikke skarpere kant enn det
 STOREY_SEARCH_M = 35.0      # hvor langt vi leter etter etasjetall utenfor omrisset
 DEFAULT_STOREYS = 4         # brukes bare hvis takplanen ikke sier noe i nærheten
 
@@ -113,6 +116,41 @@ def register(source: np.ndarray, target: np.ndarray) -> np.ndarray:
     if np.median(residual) > 1.5 or inliers.sum() < 200:
         sys.exit("registreringen er for svak — sjekk at planene viser samme tegning")
     return matrix
+
+
+def site_outline(bgr: np.ndarray, alpha: np.ndarray) -> np.ndarray:
+    """Planområdets grunnflate: alt tegningen har farget grønt, sydd sammen.
+
+    Vi tar det grønne og ikke det grå, slik at flaten stopper på innsiden av
+    Brøsetvegen, Kollektivgata og Tungasletta. De veiene finnes i dag og skal
+    fortsatt være synlige i fotoflisene; det er bare innmaten planen bygger om.
+    Gatetun, torg og bygg inni feltet er hull som lukkes igjen, ikke kanter.
+    """
+    b, g, r = (bgr[:, :, i].astype(int) for i in range(3))
+    green = (g > r + 5) & (g > b + 4) & (bgr.max(axis=2) > 95) & (alpha > 200)
+    mask = (green * 255).astype(np.uint8)
+
+    def ellipse(size: int) -> np.ndarray:
+        return cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (size, size))
+
+    mask = cv2.morphologyEx(mask, cv2.MORPH_CLOSE, ellipse(SITE_BRIDGE_PX))
+    count, labels, stats, _ = cv2.connectedComponentsWithStats(mask, 8)
+    if count < 2:
+        sys.exit("fant ingen grønn flate i planen — sjekk fargeterskelen")
+    mask = ((labels == 1 + int(np.argmax(stats[1:, cv2.CC_STAT_AREA]))) * 255).astype(
+        np.uint8
+    )
+
+    outside = mask.copy()
+    height, width = mask.shape
+    cv2.floodFill(outside, np.zeros((height + 2, width + 2), np.uint8), (0, 0), 255)
+    mask |= cv2.bitwise_not(outside)
+    mask = cv2.morphologyEx(mask, cv2.MORPH_CLOSE, ellipse(SITE_SMOOTH_PX))
+    mask = cv2.morphologyEx(mask, cv2.MORPH_OPEN, ellipse(SITE_BRIDGE_PX // 2))
+
+    contours, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+    contour = max(contours, key=cv2.contourArea)
+    return cv2.approxPolyDP(contour, SITE_SIMPLIFY_PX, True).reshape(-1, 2)
 
 
 def reconstruct(marker: np.ndarray, mask: np.ndarray) -> np.ndarray:
@@ -334,6 +372,13 @@ def main() -> None:
     spread = {n: storeys.count(n) for n in sorted(set(storeys))}
     print(f"etasjer: {spread}")
 
+    site = cv2.transform(
+        site_outline(broset, alpha).reshape(-1, 1, 2).astype(np.float32), matrix
+    ).reshape(-1, 2)
+    site = np.round(site).astype(int)
+    print(f"grunnflate: {len(site)} punkter")
+
+    site_body = ", ".join(f"[{int(x)}, {int(y)}]" for x, y in site)
     body = ",\n".join(
         f"  {{ storeys: {n}, pixels: "
         + json.dumps([[int(x), int(y)] for x, y in poly], separators=(", ", ", "))
@@ -357,7 +402,14 @@ def main() -> None:
         "  readonly pixels: readonly (readonly [number, number])[];\n"
         "}\n\n"
         "export const BROSET_PLAN_BUILDINGS: readonly BrosetPlanBuilding[] = [\n"
-        f"{body},\n];\n",
+        f"{body},\n];\n\n"
+        "// Planområdets grunnflate — omrisset av alt tegningen har farget grønt,\n"
+        "// med gatetun, torg og bygg lukket igjen. Den stopper på innsiden av\n"
+        "// Brøsetvegen, Kollektivgata og Tungasletta, som finnes i dag og skal\n"
+        "// forbli synlige. Brukes bare i 3D, der fotoflisene ellers viser gammel\n"
+        "// asfalt under de planlagte byggene.\n"
+        "export const BROSET_PLAN_SITE_OUTLINE: readonly (readonly [number, number])[] =\n"
+        f"  [{site_body}];\n",
         encoding="utf-8",
     )
     print(f"skrev {OUT_TS.relative_to(ROOT)}")

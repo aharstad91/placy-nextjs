@@ -1,7 +1,11 @@
-import { BROSET_PLAN_BUILDINGS } from "@/lib/map/broset-plan-buildings.generated";
+import {
+  BROSET_PLAN_BUILDINGS,
+  BROSET_PLAN_SITE_OUTLINE,
+} from "@/lib/map/broset-plan-buildings.generated";
 import {
   sitePlanCoordinate,
   WESSELSLOKKA_PLAN_BUILDINGS,
+  WESSELSLOKKA_STANDING_BUILDINGS,
 } from "@/lib/map/wesselslokka-site-plan";
 
 export type LngLat = readonly [lng: number, lat: number];
@@ -34,6 +38,24 @@ export interface ProjectMassingPalette {
   labelHalo: string;
   contextFill: string;
   contextLine: string;
+  /** Volumenes materiale i 3D. Se shell-kommentaren under. */
+  shellFill: string;
+  shellEdge: string;
+  /** Grunnflaten under volumene. Ikke en av planens farger, men jordets egen
+   *  — se ground-kommentaren under. */
+  ground: string;
+}
+
+/** Et bygg som allerede står på tomta, og som planen beholder. Det tegnes bare
+ *  i 3D: der stikker det opp gjennom grunnflaten som ellers dekker det gamle,
+ *  og et fotografert tak mellom rene volumer leser som rot. Mapbox trenger det
+ *  ikke — der er bygget allerede med i kartet, og å legge det i `buildings`
+ *  ville dessuten stemple et hus som står, som planlagt. */
+export interface ProjectStandingBuilding {
+  id: string;
+  name: string;
+  footprint: readonly LngLat[];
+  heightMeters: number;
 }
 
 export interface ProjectMassing {
@@ -41,6 +63,15 @@ export interface ProjectMassing {
   sourceNote: string;
   palette: ProjectMassingPalette;
   buildings: readonly ProjectBuildingMassing[];
+  /** Planområdets grunnflate, tegnet under volumene. Fotoflisene viser
+   *  nabolaget slik det ser ut i dag — parkeringsplasser, innkjørsler og
+   *  gammel asfalt akkurat der planen legger bygg og hage. Uten en grunnflate
+   *  reiser volumene seg oppå det gamle, og bildet motsier seg selv.
+   *
+   *  Bare 3D bruker den. Mapbox tegner ikke det som skal bort. */
+  siteGround?: readonly LngLat[];
+  /** Se ProjectStandingBuilding. Tegnes over grunnflaten, under volumene. */
+  standingBuildings?: readonly ProjectStandingBuilding[];
 }
 
 // Lyse volumer med farget kontur. Fyllet er så lyst at kartet under fortsatt
@@ -49,6 +80,25 @@ export interface ProjectMassing {
 // med stiplet linje — den kartografiske måten å si «planlagt, ikke bygd» på.
 // En nøytral grå ble prøvd og var feil: da så de planlagte byggene ut som hus
 // som allerede står der, siden Mapbox tegner eksisterende bygg i den grå tonen.
+//
+// `shellFill`/`shellEdge` gjelder bare 3D, og de er ikke planens farger heller.
+// Der tegner vi ikke en karttegning, men en fysisk modell: bordmodellen på
+// salgskontoret er hvit akryl på grønt underlag, og det er den lesningen
+// volumene skal ha over fotoflisene.
+//
+// Rent hvitt, ikke nesten hvitt. Google skyggelegger flatene selv, etter hvilken
+// vei de vender, og det lyset kan vi ikke sette. Målt på samme kamera tegner
+// motoren én og samme helhvite flate fra 122 til 247 i luminans. Da er hver
+// tilgjengelige verdi brukt opp av skyggen, og et fyll som starter under hvitt
+// blir bare gråere. Dekkevnen hjelper heller ikke: veggene lå på 127 ved full
+// dekning og 109 ved 0,55 — det er skyggen, ikke gjennomsiktigheten, som styrer.
+// I 2D ville rent hvitt forsvinne i det lyse vektorkartet, så der blir den varme
+// paletten stående.
+//
+// `ground` hører ikke til planen i det hele tatt. Den er avlest av Googles egne
+// fotofliser over jordet rundt feltet (medianen av gresspikslene i utsnittet,
+// #64815c, løftet et hakk fordi prøven lå delvis under volumene). Poenget er at
+// kanten av grunnflaten ikke skal kunne ses.
 const WESSELSLOKKA_PALETTE: ProjectMassingPalette = {
   fill: "#f6e7dc",
   line: "#c07f68",
@@ -56,6 +106,9 @@ const WESSELSLOKKA_PALETTE: ProjectMassingPalette = {
   labelHalo: "rgba(255, 255, 255, 0.92)",
   contextFill: "#fbf4ee",
   contextLine: "#cfa894",
+  ground: "#6b8b5f",
+  shellFill: "#ffffff",
+  shellEdge: "#ffffff",
 };
 
 /** Etasje til meter. Takplanens maks kotehøyder minus dagens terreng (Kartverket
@@ -91,6 +144,15 @@ const PROJECT_MASSING_BY_SLUG: Readonly<Record<string, ProjectMassing>> = {
       "Volumer fra innpasset situasjonsplan; etasjetall fra reguleringens takplan.",
     palette: WESSELSLOKKA_PALETTE,
     buildings: WESSELSLOKKA_BUILDINGS,
+    siteGround: BROSET_PLAN_SITE_OUTLINE.map(sitePlanCoordinate),
+    standingBuildings: WESSELSLOKKA_STANDING_BUILDINGS.map(
+      ({ id, name, heightMeters, footprint }) => ({
+        id,
+        name,
+        heightMeters,
+        footprint: footprint.map(([lng, lat]) => [lng, lat] as LngLat),
+      }),
+    ),
   },
 };
 

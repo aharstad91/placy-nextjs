@@ -10,12 +10,33 @@ interface ProjectMassingLayer3DProps {
 }
 
 const SHELL_STROKE_WIDTH = 2.25;
+const GROUND_ID = "__site-ground";
+/** Grunnflaten skal dekke asfalten, men ikke flate ut jordet. Litt av flisen
+ *  under slipper gjennom, så sol og skygge fra fotografiet blir stående — det
+ *  er den variasjonen som gjør at kanten ikke leses som en kant. */
+const GROUND_ALPHA = 0.8;
+
+/** Volumene skal lese som bordmodellen på salgskontoret: hvit akryl.
+ *
+ *  Nesten tett, ikke gjennomskinnelig. Det er motsatt av hva man skulle tro,
+ *  og det er målt: motoren skyggelegger flatene etter retning, og de mørke
+ *  flatene lot seg ikke lyse opp av å slippe bakgrunnen gjennom (127 ved full
+ *  dekning mot 109 ved 0,55). De lyse flatene taper derimot mye på det — 223
+ *  mot 181. Lav dekkevne gjorde altså volumene jevnt over mørkere, ikke lysere.
+ *  Et hår av gjennomsiktighet står igjen så de ikke leses som utklipp.
+ *
+ *  De tre til salgs står et hakk tettere enn resten. */
+const SHELL_ALPHA = { sale: 0.95, context: 0.92 } as const;
+
+/** Låven og de andre som allerede står, tegnes nesten tette. Gjennom et
+ *  halvgjennomsiktig skall ville taket deres skinne igjennom og gi tilbake
+ *  akkurat den rotet volumet skulle rydde bort. Det gir dem samtidig en
+ *  lesning som stemmer: det som står er massivt, det som er planlagt er
+ *  gjennomskinnelig. */
+const STANDING_ALPHA = 0.98;
 
 /** Google-motoren tar bare CSS-farger, ikke Mapbox-paint. Palettens hex får
- *  derfor en alfa-kanal her. I 3D må den ligge høyt: fotoflisene under er
- *  grønne og mørke, og et halvgjennomsiktig lyst fyll blir grumsete brunt i
- *  stedet for lyst. Formen skal bæres av høydeforskjellene, ikke av teksturen
- *  som skinner gjennom. I 2D er det motsatt — der er kartet under verdt å se. */
+ *  derfor en alfa-kanal her. */
 function withAlpha(hex: string, alpha: number): string {
   const value = hex.replace("#", "");
   const [r, g, b] = [0, 2, 4].map((i) => parseInt(value.slice(i, i + 2), 16));
@@ -60,17 +81,61 @@ export function ProjectMassingLayer3D({
         const surfaces = massing.buildings;
         const paintByRole = {
           sale: {
-            fill: withAlpha(massing.palette.fill, 0.94),
+            fill: withAlpha(massing.palette.shellFill, SHELL_ALPHA.sale),
             stroke: withAlpha(massing.palette.line, 0.95),
           },
           context: {
-            fill: withAlpha(massing.palette.contextFill, 0.9),
-            stroke: withAlpha(massing.palette.contextLine, 0.8),
+            fill: withAlpha(massing.palette.shellFill, SHELL_ALPHA.context),
+            stroke: withAlpha(massing.palette.shellEdge, 0.92),
           },
         };
+        const standing = massing.standingBuildings ?? [];
         const activeIds = new Set(surfaces.map((surface) => surface.id));
+        if (massing.siteGround) activeIds.add(GROUND_ID);
+        for (const building of standing) activeIds.add(building.id);
         for (const [id, polygon] of polygonById) {
           if (!activeIds.has(id) && polygon.parentNode) polygon.remove();
+        }
+
+        // Grunnflaten først, så den ligger under volumene i tegnerekkefølgen.
+        if (massing.siteGround) {
+          let ground = polygonById.get(GROUND_ID);
+          if (!ground) {
+            ground = new lib.Polygon3DElement();
+            polygonById.set(GROUND_ID, ground);
+          }
+          ground.path = massing.siteGround.map(([lng, lat]) => ({ lat, lng }));
+          ground.altitudeMode = lib.AltitudeMode.CLAMP_TO_GROUND;
+          ground.extruded = false;
+          ground.fillColor = withAlpha(massing.palette.ground, GROUND_ALPHA);
+          ground.strokeColor = "rgba(0, 0, 0, 0)";
+          ground.strokeWidth = 0;
+          ground.drawsOccludedSegments = false;
+          if (ground.parentNode && ground.parentNode !== map3d) ground.remove();
+          if (!ground.parentNode) map3d.append(ground);
+        }
+
+        // Låven og andre hus som blir stående. De hører til grunnen, ikke til
+        // planen, så de tegnes rett etter den og før volumene.
+        for (const building of standing) {
+          let polygon = polygonById.get(building.id);
+          if (!polygon) {
+            polygon = new lib.Polygon3DElement();
+            polygonById.set(building.id, polygon);
+          }
+          polygon.path = building.footprint.map(([lng, lat]) => ({
+            lat,
+            lng,
+            altitude: building.heightMeters,
+          }));
+          polygon.altitudeMode = lib.AltitudeMode.RELATIVE_TO_GROUND;
+          polygon.extruded = true;
+          polygon.fillColor = withAlpha(massing.palette.shellFill, STANDING_ALPHA);
+          polygon.strokeColor = withAlpha(massing.palette.shellEdge, 0.92);
+          polygon.strokeWidth = SHELL_STROKE_WIDTH * 0.6;
+          polygon.drawsOccludedSegments = false;
+          if (polygon.parentNode && polygon.parentNode !== map3d) polygon.remove();
+          if (!polygon.parentNode) map3d.append(polygon);
         }
 
         for (const building of surfaces) {

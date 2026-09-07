@@ -69,3 +69,11 @@ export const BROSET_PLAN_BUILDINGS: readonly BrosetPlanBuilding[] = [
   { storeys: 6, pixels: [[649, 781], [587, 819], [601, 846], [663, 808]] },
   { storeys: 3, pixels: [[538, 797], [535, 818], [554, 862], [588, 849], [578, 827], [567, 818], [567, 800]] },
 ];
+
+// Planområdets grunnflate — omrisset av alt tegningen har farget grønt,
+// med gatetun, torg og bygg lukket igjen. Den stopper på innsiden av
+// Brøsetvegen, Kollektivgata og Tungasletta, som finnes i dag og skal
+// forbli synlige. Brukes bare i 3D, der fotoflisene ellers viser gammel
+// asfalt under de planlagte byggene.
+export const BROSET_PLAN_SITE_OUTLINE: readonly (readonly [number, number])[] =
+  [[1181, 110], [1163, 96], [1096, 103], [1083, 139], [1047, 153], [882, 40], [820, 116], [814, 157], [770, 178], [702, 291], [667, 311], [657, 360], [615, 409], [579, 415], [241, 658], [196, 730], [231, 759], [217, 818], [251, 840], [259, 876], [287, 887], [352, 870], [524, 901], [659, 818], [725, 813], [824, 760], [878, 682], [939, 703], [1019, 654], [1017, 615], [1058, 563], [1020, 497], [1046, 459], [1128, 507], [1095, 559], [1114, 607], [1087, 668], [1109, 689], [1238, 688], [1276, 714], [1324, 717], [1374, 698], [1392, 637], [1368, 424], [1306, 406], [1263, 355], [1260, 231], [1183, 157]];
