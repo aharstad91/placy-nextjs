@@ -13,7 +13,7 @@ import {
 } from "lucide-react";
 import { Fragment, useState, type ReactNode } from "react";
 import { cn, travelModeInSentence, travelModeLabels } from "@/lib/utils";
-import type { TravelMode } from "@/lib/types";
+import { ISOCHRONE_MINUTES, type TravelMode } from "@/lib/types";
 import { REACH_INACTIVE, type ReachState } from "@/lib/board/reach";
 import { ControlDropdown, ControlPanelRow } from "./ControlDropdown";
 import { TRAVEL_MODE_ICONS, TravelModeSelector } from "./TravelModeSelector";
@@ -166,13 +166,11 @@ function minuteList(minutes: readonly string[]): string {
  *
  * ## Rekkefølgen er argumentet (2026-09-07)
  *
- * `reisemåte · rekkevidde · kartvisning · kameramodus` leser som «hvordan jeg
- * reiser · hvor langt jeg kommer · hvilket kart · hvordan kameraet står».
- * Rekkevidde sto tidligere SIST, plassert som om den var et kartlag på linje
- * med Satelitt. Den er ikke det: konturene er 5/10/15 minutter MED den valgte
- * reisemåten (`contourTravelModes` leser dem per profil), så den hører inntil
- * reisemåten. Naboskapet er hele forklaringen brukeren får — og den holder,
- * fordi knappen dessuten sier fra når den valgte reisemåten mangler konturer.
+ * `reisemåte · kartvisning · kameramodus` leser som «hvordan jeg reiser ·
+ * hvilket kart · hvordan kameraet står». Rekkevidde er IKKE en fjerde gruppe:
+ * konturene er 5/10/15 minutter med den valgte reisemåten, så av/på-bryteren
+ * ligger inne i reisemåte-panelet. Den sto tidligere som egen knapp i baren og
+ * leste da som et kartlag på linje med Satelitt.
  *
  * ## Hvorfor to dropdowns og ikke seks knapper
  *
@@ -244,14 +242,20 @@ export function BoardMapControls({
   // måtte oppdateres hver gang rekkefølgen endret seg.
   const groups: { key: string; node: ReactNode }[] = [];
 
-  /* Reisemåte og rekkevidde er ÉN gruppe, ikke to (2026-09-07).
+  /* Rekkevidde bor INNE i reisemåte-panelet (2026-09-07).
    *
-   * De sto som naboer med skilletegn mellom seg, og leste da som to uavhengige
-   * valg — «de to kontrollene henger ikke sammen, de er to separate» (Andreas).
-   * Skilletegnet er borte, og når rekkevidde er PÅ legger en kapsel seg rundt
-   * begge: de blir bokstavelig talt ett objekt i baren så lenge funksjonen er i
-   * bruk. Ingen tekst kan si det like fort. */
-  const travelNode = showTravelModes ? (
+   * Den sto først som egen knapp i baren, deretter som nabo i en felles kapsel.
+   * Begge leste som to uavhengige valg — «de to kontrollene henger ikke sammen»
+   * (Andreas). Nå er den en av/på-rad under reisemåtene i samme panel: du kan
+   * ikke slå den på uten å se hvilken reisemåte den gjelder, og koblingen
+   * trenger ingen forklaring i baren.
+   *
+   * Den er også skjult som standard (`initialBoardState.showContours = false`)
+   * og aktiveres av brukeren. Et kart som åpner med 888 blasse prikker
+   * forklarer ikke seg selv; ett du selv slår på, gjør det. */
+  const showTravelPanel = travelModes.length > 0 && (showTravelModes || showContours);
+
+  const travelNode = showTravelPanel ? (
     <ControlDropdown
       variant="bar"
       direction={panelDirection}
@@ -263,80 +267,87 @@ export function BoardMapControls({
     >
       {(close) => (
         <>
-          <TravelModeSelector
-            modes={travelModes}
-            active={activeMode}
-            onChange={(mode) => {
-              onTravelModeChange!(mode);
-              close();
-            }}
-          />
-          {/* Koblingen sagt i ord, på stedet der valget tas. Står bare når
-              rekkevidde faktisk er i bruk — ellers er den støy om en funksjon
-              leseren ikke har slått på. Dette er ALT mobilen får (kapselen og
-              bildeteksten under hører til den fulle pillen), og er derfor
-              formulert til å stå alene. */}
-          {reach.active && (
-            <p className="mt-1 border-t border-black/5 px-2.5 pt-1.5 text-[11.5px] leading-snug text-stone-500">
-              Rekkevidde-ringene og punktene på kartet følger valget her.
-            </p>
+          {showTravelModes && (
+            <TravelModeSelector
+              modes={travelModes}
+              active={activeMode}
+              onChange={(mode) => {
+                onTravelModeChange!(mode);
+                close();
+              }}
+            />
+          )}
+          {showContours && (
+            <>
+              {showTravelModes && (
+                <span aria-hidden className="mx-2.5 my-1 block h-px bg-black/[0.07]" />
+              )}
+              {/* Av/på-raden. Panelet lukkes IKKE ved trykk: rekkevidde er en
+                  tilstand du vil se effekten av mens du står i kontrollen, og
+                  du bytter ofte reisemåte rett etterpå. */}
+              <button
+                type="button"
+                onClick={onContoursToggle}
+                aria-pressed={contoursOn}
+                aria-label="Vis rekkevidde-konturer"
+                disabled={!contoursAvailable}
+                className={cn(
+                  "flex w-full items-center gap-2.5 rounded-lg px-2.5 py-2 text-left transition-colors duration-150",
+                  !contoursAvailable && "cursor-not-allowed opacity-50",
+                  contoursAvailable &&
+                    (contoursOn ? "bg-stone-100" : "hover:bg-stone-50"),
+                )}
+              >
+                <Radar
+                  aria-hidden
+                  className={cn(
+                    "h-4 w-4 shrink-0",
+                    contoursOn ? "text-stone-900" : "text-stone-500",
+                  )}
+                />
+                <span
+                  className={cn(
+                    "min-w-0 flex-1 truncate text-[13.5px]",
+                    contoursOn ? "font-semibold text-stone-900" : "text-stone-600",
+                  )}
+                >
+                  Rekkevidde
+                </span>
+                {/* Bryteren sier tilstanden uten et ord — raden er en av/på,
+                    ikke et valg mellom likestilte alternativer som radene over. */}
+                <span
+                  aria-hidden
+                  className={cn(
+                    "relative h-4 w-7 shrink-0 rounded-full transition-colors duration-200",
+                    contoursOn ? "bg-stone-900" : "bg-stone-300",
+                  )}
+                >
+                  <span
+                    className={cn(
+                      "absolute top-0.5 h-3 w-3 rounded-full bg-white shadow-sm transition-transform duration-200",
+                      contoursOn ? "translate-x-[0.875rem]" : "translate-x-0.5",
+                    )}
+                  />
+                </span>
+              </button>
+              {/* Hva raden gjør, sagt på stedet. `contoursAvailable` er falsk
+                  når pipelinen manglet konturer for nettopp denne reisemåten —
+                  da skal linja si det, ikke love ringer som ikke kommer. */}
+              <p className="px-2.5 pb-0.5 pt-1 text-[11.5px] leading-snug text-stone-500">
+                {!contoursAvailable
+                  ? `Ingen rekkevidde for ${travelModeLabels[travelMode].toLowerCase()}.`
+                  : reach.active
+                    ? `${minuteList(reach.minutes)} min ${travelModeInSentence[travelMode]} — ${reach.inside} steder innenfor. Punkter utenfor blir blasse prikker.`
+                    : `Tegner ${minuteList(ISOCHRONE_MINUTES as readonly string[])} min ${travelModeInSentence[travelMode]} i kartet, og demper stedene utenfor.`}
+              </p>
+            </>
           )}
         </>
       )}
     </ControlDropdown>
   ) : null;
 
-  const contourNode = showContours ? (
-    <button
-      type="button"
-      onClick={onContoursToggle}
-      aria-pressed={contoursOn}
-      aria-label="Vis rekkevidde-konturer"
-      disabled={!contoursAvailable}
-      title={
-        !contoursAvailable
-          ? `Ingen rekkevidde for ${travelModeLabels[travelMode].toLowerCase()}`
-          : reach.active
-            ? `${reach.inside} steder ligger innenfor ${reach.minutes[reach.minutes.length - 1]} min ${travelModeInSentence[travelMode]}`
-            : undefined
-      }
-      className={cn(
-        "inline-flex items-center justify-center gap-1.5 rounded-full text-sm font-medium transition-colors duration-200",
-        compact ? "px-3" : "px-3.5",
-        btnH,
-        !contoursAvailable && "cursor-not-allowed text-stone-400 opacity-50",
-        contoursAvailable &&
-          (contoursOn
-            ? "bg-stone-900 text-white shadow-sm"
-            : "text-stone-600 hover:bg-stone-900/[0.05] hover:text-stone-900"),
-      )}
-    >
-      <Radar className="h-4 w-4" />
-      {/* Ikon-bare på mobil. Pillen sto alt på kapasitetsgrensen ved
-          320 px, og en tekst-etikett i tillegg dyttet den ut over
-          venstre kant (målt 2026-09-03). Betydningen bæres av
-          aria-label, som skjermlesere leser uansett bredde. */}
-      {!compact && <span>Rekkevidde</span>}
-    </button>
-  ) : null;
-
-  if (travelNode || contourNode) {
-    groups.push({
-      key: "reach",
-      node: (
-        <div
-          data-testid="map-reach-group"
-          className={cn(
-            "flex items-center gap-0.5 rounded-full transition-colors duration-300",
-            contoursOn && contoursAvailable && "bg-stone-900/[0.06] px-0.5",
-          )}
-        >
-          {travelNode}
-          {contourNode}
-        </div>
-      ),
-    });
-  }
+  if (travelNode) groups.push({ key: "reach", node: travelNode });
 
   if (showViewToggle) {
     groups.push({

@@ -246,237 +246,125 @@ describe("BoardMapControls — reisemåten (dropdown)", () => {
   });
 });
 
+/**
+ * Rekkevidde er en av/på-RAD inne i reisemåte-panelet fra 2026-09-07 — ikke en
+ * knapp i baren. Den sto først som nabo, deretter som nabo i en felles kapsel;
+ * begge leste som to uavhengige valg (Andreas: «de to kontrollene henger ikke
+ * sammen, de er to separate»). Testene åpner derfor reisemåte-panelet først.
+ */
+const REACH_PROPS = {
+  ...baseProps,
+  view: "2d" as const,
+  showViewToggle: false,
+  showCameraMode: false,
+  travelModes: ["walk", "bike", "car"] as const,
+  travelMode: "walk" as const,
+  onTravelModeChange: vi.fn(),
+  showContourToggle: true,
+  onContoursToggle: vi.fn(),
+};
+
+/** Åpner reisemåte-panelet og gir raden for rekkevidde (eller null). */
+function openReach(container: HTMLElement): HTMLButtonElement | null {
+  fireEvent.click(trigger(container, "Reisemåte")!);
+  return container.querySelector<HTMLButtonElement>(
+    "button[aria-label='Vis rekkevidde-konturer']",
+  );
+}
+
 describe("BoardMapControls — rekkevidde-konturer", () => {
-  it("knappen finnes ikke uten konturer i dataene (AE3)", () => {
-    const { queryByLabelText } = render(
-      <BoardMapControls {...baseProps} onContoursToggle={vi.fn()} />,
-    );
-    expect(queryByLabelText("Vis rekkevidde-konturer")).toBeNull();
-  });
-
-  it("knappen finnes når minst én reisemåte har konturer", () => {
-    const { getByLabelText } = render(
-      <BoardMapControls {...baseProps} showContourToggle onContoursToggle={vi.fn()} />,
-    );
-    expect(getByLabelText("Vis rekkevidde-konturer")).toBeTruthy();
-  });
-
-  it("melder av/på-tilstanden som aria-pressed og kaller handlingen ved klikk", () => {
-    const onContoursToggle = vi.fn();
-    const { getByLabelText, rerender } = render(
-      <BoardMapControls {...baseProps} showContourToggle onContoursToggle={onContoursToggle} />,
-    );
-    const button = getByLabelText("Vis rekkevidde-konturer");
-    expect(button.getAttribute("aria-pressed")).toBe("false");
-    fireEvent.click(button);
-    expect(onContoursToggle).toHaveBeenCalledTimes(1);
-
-    rerender(
-      <BoardMapControls
-        {...baseProps}
-        showContourToggle
-        contoursOn
-        onContoursToggle={onContoursToggle}
-      />,
-    );
-    expect(getByLabelText("Vis rekkevidde-konturer").getAttribute("aria-pressed")).toBe("true");
-  });
-
-  it("står MELLOM reisemåten og kartvisningen — konturene er 5/10/15 min MED reisemåten, ikke et kartlag", () => {
+  it("raden finnes ikke uten konturer i dataene (AE3)", () => {
     const { container } = render(
-      <BoardMapControls
-        {...baseProps}
-        showCameraMode={false}
-        showViewToggle
-        travelModes={ALL_MODES}
-        travelMode="walk"
-        onTravelModeChange={vi.fn()}
-        showContourToggle
-        onContoursToggle={vi.fn()}
-      />,
+      <BoardMapControls {...REACH_PROPS} showContourToggle={false} />,
+    );
+    expect(openReach(container)).toBeNull();
+  });
+
+  it("raden ligger INNE i reisemåte-panelet, ikke i baren", () => {
+    /* Koblingen er plasseringen: du kan ikke slå rekkevidde på uten å se
+       hvilken reisemåte den gjelder. */
+    const { container } = render(<BoardMapControls {...REACH_PROPS} />);
+    expect(
+      container.querySelector("button[aria-label='Vis rekkevidde-konturer']"),
+    ).toBeNull();
+    expect(openReach(container)).toBeTruthy();
+  });
+
+  it("baren har ingen egen rekkevidde-knapp igjen — kun reisemåte og kartvisning", () => {
+    const { container } = render(
+      <BoardMapControls {...REACH_PROPS} showViewToggle />,
     );
     const labels = Array.from(container.querySelectorAll("button")).map((b) =>
       b.getAttribute("aria-label"),
     );
-    expect(labels).toEqual([
-      "Reisemåte",
-      "Vis rekkevidde-konturer",
-      "Kartvisning",
-    ]);
+    expect(labels).toEqual(["Reisemåte", "Kartvisning"]);
+  });
+
+  it("melder av/på-tilstanden som aria-pressed og kaller handlingen ved klikk", () => {
+    const onContoursToggle = vi.fn();
+    const { container, rerender } = render(
+      <BoardMapControls {...REACH_PROPS} onContoursToggle={onContoursToggle} />,
+    );
+    const row = openReach(container)!;
+    expect(row.getAttribute("aria-pressed")).toBe("false");
+    fireEvent.click(row);
+    expect(onContoursToggle).toHaveBeenCalledTimes(1);
+
+    rerender(
+      <BoardMapControls
+        {...REACH_PROPS}
+        contoursOn
+        onContoursToggle={onContoursToggle}
+      />,
+    );
+    // Panelet lukkes IKKE av trykket: du vil se effekten mens du står i
+    // kontrollen, og bytter ofte reisemåte rett etterpå.
+    expect(
+      container
+        .querySelector("button[aria-label='Vis rekkevidde-konturer']")!
+        .getAttribute("aria-pressed"),
+    ).toBe("true");
   });
 
   it("er avslått når den VALGTE reisemåten mangler konturer, og sier hvorfor", () => {
-    const { getByLabelText } = render(
+    const { container, getByText } = render(
       <BoardMapControls
-        {...baseProps}
-        showCameraMode={false}
-        travelModes={ALL_MODES}
+        {...REACH_PROPS}
         travelMode="car"
-        onTravelModeChange={vi.fn()}
-        showContourToggle
         contourModes={["walk", "bike"]}
-        onContoursToggle={vi.fn()}
       />,
     );
-    const button = getByLabelText("Vis rekkevidde-konturer") as HTMLButtonElement;
-    expect(button.disabled).toBe(true);
-    expect(button.getAttribute("title")).toBe("Ingen rekkevidde for bil");
+    expect(openReach(container)!.disabled).toBe(true);
+    expect(getByText("Ingen rekkevidde for bil.")).toBeTruthy();
   });
 
   it("er på når den valgte reisemåten HAR konturer", () => {
-    const { getByLabelText } = render(
-      <BoardMapControls
-        {...baseProps}
-        showCameraMode={false}
-        travelModes={ALL_MODES}
-        travelMode="walk"
-        onTravelModeChange={vi.fn()}
-        showContourToggle
-        contourModes={["walk", "bike"]}
-        onContoursToggle={vi.fn()}
-      />,
+    const { container } = render(
+      <BoardMapControls {...REACH_PROPS} contourModes={["walk", "bike"]} />,
     );
-    const button = getByLabelText("Vis rekkevidde-konturer") as HTMLButtonElement;
-    expect(button.disabled).toBe(false);
-    expect(button.getAttribute("title")).toBeNull();
+    expect(openReach(container)!.disabled).toBe(false);
   });
 
-  it("utelatt contourModes betyr «ikke oppgitt», ikke «ingen» — knappen er brukbar", () => {
-    const { getByLabelText } = render(
-      <BoardMapControls {...baseProps} showContourToggle onContoursToggle={vi.fn()} />,
-    );
-    expect((getByLabelText("Vis rekkevidde-konturer") as HTMLButtonElement).disabled).toBe(
-      false,
-    );
+  it("utelatt contourModes betyr «ikke oppgitt», ikke «ingen» — raden er brukbar", () => {
+    const { container } = render(<BoardMapControls {...REACH_PROPS} />);
+    expect(openReach(container)!.disabled).toBe(false);
   });
 
-  it("AE10: på et board uten 3D-tillegg vises knappen, men ikke kartvisningen", () => {
+  it("panelet finnes selv med ÉN reisemåte, så rekkevidde ikke blir unåbar", () => {
+    /* Modus-lista rendres ikke under to moduser (R6), men bryteren må fortsatt
+       ha et sted å bo. */
+    const { container } = render(
+      <BoardMapControls {...REACH_PROPS} travelModes={["walk"]} />,
+    );
+    expect(openReach(container)).toBeTruthy();
+  });
+
+  it("kollapset (mobil) bærer raden i popoveren", () => {
     const { getByLabelText, container } = render(
-      <BoardMapControls
-        {...baseProps}
-        view="2d"
-        showViewToggle={false}
-        showContourToggle
-        onContoursToggle={vi.fn()}
-      />,
+      <BoardMapControls {...REACH_PROPS} collapsed compact />,
     );
-    expect(getByLabelText("Vis rekkevidde-konturer")).toBeTruthy();
-    expect(trigger(container, "Kartvisning")).toBeNull();
-  });
-
-  it("konturknappen alene gir én pille uten ledende skilletegn", () => {
-    const { container } = render(
-      <BoardMapControls
-        {...baseProps}
-        view="2d"
-        showViewToggle={false}
-        showCameraMode={false}
-        showContourToggle
-        onContoursToggle={vi.fn()}
-      />,
-    );
-    expect(container.querySelectorAll("span.bg-stone-300\\/70")).toHaveLength(0);
-    expect(container.querySelectorAll("button")).toHaveLength(1);
-  });
-
-  it("INGEN skilletegn mellom reisemåte og rekkevidde — de er én gruppe", () => {
-    /* De sto som naboer med strek mellom seg, og leste da som to uavhengige
-       valg (Andreas, 2026-09-07: «de to kontrollene henger ikke sammen, de er
-       to separate»). Rekkevidde er 5/10/15 minutter MED den valgte
-       reisemåten, så de hører i samme gruppe. */
-    const { container } = render(
-      <BoardMapControls
-        {...baseProps}
-        view="2d"
-        showViewToggle={false}
-        showCameraMode={false}
-        travelModes={["walk", "bike"]}
-        travelMode="walk"
-        onTravelModeChange={vi.fn()}
-        showContourToggle
-        onContoursToggle={vi.fn()}
-      />,
-    );
-    expect(container.querySelectorAll("span.bg-stone-300\\/70")).toHaveLength(0);
-    const group = container.querySelector("[data-testid='map-reach-group']")!;
-    expect(group.querySelector("button[aria-label='Reisemåte']")).toBeTruthy();
-    expect(
-      group.querySelector("button[aria-label='Vis rekkevidde-konturer']"),
-    ).toBeTruthy();
-  });
-
-  it("kapselen legger seg rundt begge når rekkevidde er PÅ", () => {
-    // Ett objekt i baren så lenge funksjonen er i bruk — ingen tekst sier det
-    // like fort.
-    const props = {
-      ...baseProps,
-      view: "2d" as const,
-      showViewToggle: false,
-      showCameraMode: false,
-      travelModes: ["walk", "bike"] as const,
-      travelMode: "walk" as const,
-      onTravelModeChange: vi.fn(),
-      showContourToggle: true,
-      onContoursToggle: vi.fn(),
-    };
-    const { container, rerender } = render(
-      <BoardMapControls {...props} contoursOn={false} />,
-    );
-    const capsule = () =>
-      container.querySelector("[data-testid='map-reach-group']")!.className;
-    expect(capsule()).not.toContain("bg-stone-900/[0.06]");
-    rerender(<BoardMapControls {...props} contoursOn />);
-    expect(capsule()).toContain("bg-stone-900/[0.06]");
-  });
-
-  it("kapselen holder seg borte når reisemåten mangler konturer", () => {
-    // Knappen er avslått da, og en kapsel rundt en død knapp ville lovet noe
-    // kartet ikke leverer.
-    const { container } = render(
-      <BoardMapControls
-        {...baseProps}
-        view="2d"
-        showViewToggle={false}
-        showCameraMode={false}
-        travelModes={["walk", "car"]}
-        travelMode="car"
-        onTravelModeChange={vi.fn()}
-        showContourToggle
-        contourModes={["walk"]}
-        contoursOn
-        onContoursToggle={vi.fn()}
-      />,
-    );
-    expect(
-      container.querySelector("[data-testid='map-reach-group']")!.className,
-    ).not.toContain("bg-stone-900/[0.06]");
-  });
-
-  it("er ikon-bare på mobil — teksten dyttet pillen ut over kanten", () => {
-    const { getByLabelText, rerender } = render(
-      <BoardMapControls {...baseProps} showContourToggle onContoursToggle={vi.fn()} compact />,
-    );
-    expect(getByLabelText("Vis rekkevidde-konturer").textContent).toBe("");
-
-    rerender(
-      <BoardMapControls {...baseProps} showContourToggle onContoursToggle={vi.fn()} />,
-    );
-    expect(getByLabelText("Vis rekkevidde-konturer").textContent).toContain("Rekkevidde");
-  });
-
-  it("kollapset (mobil) bærer knappen i popoveren", () => {
-    const { getByLabelText } = render(
-      <BoardMapControls
-        {...baseProps}
-        collapsed
-        compact
-        showContourToggle
-        onContoursToggle={vi.fn()}
-      />,
-    );
-    // Åpne ⚙-popoveren, så skal konturknappen være nåbar der.
     fireEvent.click(getByLabelText("Kart-innstillinger"));
-    expect(getByLabelText("Vis rekkevidde-konturer")).toBeTruthy();
+    expect(openReach(container)).toBeTruthy();
   });
 });
 
@@ -497,8 +385,8 @@ describe("BoardMapControls — ingen grupper, ingen pille", () => {
 describe("BoardMapControls — koblingen reisemåte ⇄ rekkevidde", () => {
   /* Koblingen fantes ikke for brukeren: to knapper ved siden av hverandre, og
      ingenting som sa at «Til fots» ga ringene sine minutter (Andreas,
-     2026-09-07). Tre flater sier det nå — kapselen (over), bildeteksten under
-     pillen, og linja i reisemåte-panelet. */
+     2026-09-07). Nå sier tre ting det — plasseringen (raden bor under
+     reisemåtene), linja under raden, og bildeteksten under pillen. */
   const REACH = {
     active: true,
     outsideIds: new Set(["a", "b"]),
@@ -506,22 +394,9 @@ describe("BoardMapControls — koblingen reisemåte ⇄ rekkevidde", () => {
     minutes: ["5", "10", "15"] as const,
   };
 
-  const props = {
-    ...baseProps,
-    view: "2d" as const,
-    showViewToggle: false,
-    showCameraMode: false,
-    travelModes: ["walk", "bike"] as const,
-    travelMode: "walk" as const,
-    onTravelModeChange: vi.fn(),
-    showContourToggle: true,
-    onContoursToggle: vi.fn(),
-    contoursOn: true,
-  };
+  const props = { ...REACH_PROPS, contoursOn: true };
 
   it("bildeteksten sier minuttene, reisemåten OG hvor mange som er innenfor", () => {
-    // Tallet er selve verdien av funksjonen: hvor stor del av nabolaget rekker
-    // du innenfor tiden — og grunnen til at resten er blasse prikker.
     const { getByTestId } = render(
       <BoardMapControls {...props} reach={{ ...REACH, minutes: [...REACH.minutes] }} />,
     );
@@ -542,8 +417,6 @@ describe("BoardMapControls — koblingen reisemåte ⇄ rekkevidde", () => {
   });
 
   it("bildeteksten nevner bare konturene som FINNES", () => {
-    // Et delvis sett er lovlig — pipelinen kan ha gått for én minuttverdi og
-    // ikke de andre.
     const { getByTestId } = render(
       <BoardMapControls {...props} reach={{ ...REACH, minutes: ["5", "10"] }} />,
     );
@@ -552,14 +425,16 @@ describe("BoardMapControls — koblingen reisemåte ⇄ rekkevidde", () => {
 
   it("ingen bildetekst når rekkevidde er av", () => {
     const { queryByTestId } = render(
-      <BoardMapControls {...props} contoursOn={false} reach={{ ...REACH, minutes: [...REACH.minutes] }} />,
+      <BoardMapControls
+        {...props}
+        contoursOn={false}
+        reach={{ ...REACH, minutes: [...REACH.minutes] }}
+      />,
     );
     expect(queryByTestId("reach-caption")).toBeNull();
   });
 
   it("ingen bildetekst når reisemåten mangler konturer", () => {
-    // Knappen er avslått, og ingenting tegnes — da skal det ikke stå en
-    // bildetekst som beskriver et kart brukeren ikke ser.
     const { queryByTestId } = render(
       <BoardMapControls
         {...props}
@@ -576,34 +451,31 @@ describe("BoardMapControls — koblingen reisemåte ⇄ rekkevidde", () => {
     expect(queryByTestId("reach-caption")).toBeNull();
   });
 
-  it("reisemåte-panelet sier at kartet følger valget — mobilens eneste kobling", () => {
-    // Den kollapsede varianten har ingen ledig bunn-midt til bildeteksten, så
-    // denne linja må stå alene.
+  it("linja under raden sier tallet og reisemåten når rekkevidde er PÅ", () => {
+    // Mobilens kollapsede variant har ingen ledig bunn-midt til bildeteksten,
+    // så denne linja må stå alene.
     const { container, getByText } = render(
       <BoardMapControls {...props} reach={{ ...REACH, minutes: [...REACH.minutes] }} />,
     );
-    fireEvent.click(container.querySelector("button[aria-label='Reisemåte']")!);
+    openReach(container);
     expect(
-      getByText("Rekkevidde-ringene og punktene på kartet følger valget her."),
+      getByText(
+        "5, 10 og 15 min til fots — 34 steder innenfor. Punkter utenfor blir blasse prikker.",
+      ),
     ).toBeTruthy();
   });
 
-  it("panel-linja står ikke når rekkevidde er av — da er den støy", () => {
-    const { container, queryByText } = render(
+  it("linja sier hva raden VIL gjøre når rekkevidde er av", () => {
+    /* Den er av som standard, så dette er teksten de fleste ser først — den må
+       forklare funksjonen, ikke beskrive et kart som ikke er tegnet. */
+    const { container, getByText } = render(
       <BoardMapControls {...props} contoursOn={false} />,
     );
-    fireEvent.click(container.querySelector("button[aria-label='Reisemåte']")!);
+    openReach(container);
     expect(
-      queryByText("Rekkevidde-ringene og punktene på kartet følger valget her."),
-    ).toBeNull();
-  });
-
-  it("knappens tooltip bærer tellingen", () => {
-    const { getByLabelText } = render(
-      <BoardMapControls {...props} reach={{ ...REACH, minutes: [...REACH.minutes] }} />,
-    );
-    expect(getByLabelText("Vis rekkevidde-konturer").getAttribute("title")).toBe(
-      "34 steder ligger innenfor 15 min til fots",
-    );
+      getByText(
+        "Tegner 5, 10 og 15 min til fots i kartet, og demper stedene utenfor.",
+      ),
+    ).toBeTruthy();
   });
 });
