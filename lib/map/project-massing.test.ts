@@ -2,9 +2,9 @@ import { describe, expect, it } from "vitest";
 import {
   getProjectMassing,
   projectMassingFeatureCollection,
-  rectangleFootprint,
   type LngLat,
-} from "./project-massing";
+} from "@/lib/map/project-massing";
+import { sitePlanCoordinate, WESSELSLOKKA_CONTROL_POINTS } from "@/lib/map/wesselslokka-site-plan";
 
 function distanceMeters(a: LngLat, b: LngLat): number {
   const lat = ((a[1] + b[1]) / 2) * (Math.PI / 180);
@@ -32,42 +32,26 @@ describe("project-massing", () => {
     );
   });
 
-  it("lager et rotert rektangel med oppgitte fysiske mål", () => {
-    const building = rectangleFootprint(
-      { lat: 63.422074, lng: 10.450617 },
-      {
-        id: "test",
-        name: "Test",
-        eastMeters: 0,
-        northMeters: 0,
-        lengthMeters: 40,
-        widthMeters: 12,
-        headingDegrees: 33,
-        heightMeters: 10,
-      },
-    );
-
-    expect(building.footprint).toHaveLength(4);
-    expect(distanceMeters(building.footprint[0], building.footprint[1])).toBeCloseTo(
-      40,
-      1,
-    );
-    expect(distanceMeters(building.footprint[1], building.footprint[2])).toBeCloseTo(
-      12,
-      1,
-    );
+  it("registrerer alle tre holdepunktene uten aksebytte", () => {
+    for (const { pixel, coordinate } of WESSELSLOKKA_CONTROL_POINTS) {
+      expect(distanceMeters(sitePlanCoordinate(pixel), coordinate)).toBeLessThan(0.01);
+    }
+    // Independent visual check: Brøsetvegen's middle bend, not a fit anchor.
+    expect(distanceMeters(sitePlanCoordinate([600, 407]), [10.4541, 63.4232])).toBeLessThan(15);
   });
 
   it("lukker GeoJSON-ringene og bærer høyden som egenskap", () => {
     const massing = getProjectMassing("wesselslokka")!;
     const collection = projectMassingFeatureCollection(massing);
 
-    expect(collection.features).toHaveLength(3);
+    expect(collection.features).toHaveLength(4);
     for (const feature of collection.features) {
       const ring = feature.geometry.coordinates[0];
-      expect(ring).toHaveLength(5);
+      expect(ring.length).toBeGreaterThanOrEqual(5);
       expect(ring.at(-1)).toEqual(ring[0]);
-      expect(feature.properties?.heightMeters).toBe(14);
+      if (feature.properties?.kind === "building") {
+        expect(feature.properties.heightMeters).toBe(14);
+      }
     }
   });
 
@@ -80,8 +64,17 @@ describe("project-massing", () => {
     expect(Math.min(...allCorners.map(([, lat]) => lat))).toBeLessThan(origin.lat);
     expect(
       allCorners.every((corner) =>
-        distanceMeters([origin.lng, origin.lat], corner) < 90,
+        distanceMeters([origin.lng, origin.lat], corner) < 170,
       ),
     ).toBe(true);
+  });
+
+  it("holder veien sør for A1/A2 og kobler den til Brøsetvegen", () => {
+    const massing = getProjectMassing("wesselslokka")!;
+    const street = massing.streets![0];
+    expect(distanceMeters(street.footprint[0], [10.4496, 63.42176])).toBeLessThan(5);
+    const streetAtBuildings = street.footprint.filter(([lng]) => lng > 10.4517 && lng < 10.4531);
+    const southernBuildingEdge = Math.min(...massing.buildings.slice(0, 2).flatMap(b => b.footprint.map(p => p[1])));
+    expect(streetAtBuildings.every(([, lat]) => lat < southernBuildingEdge)).toBe(true);
   });
 });

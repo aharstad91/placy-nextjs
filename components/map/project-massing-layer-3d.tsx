@@ -48,12 +48,18 @@ export function ProjectMassingLayer3D({
         )) as google.maps.Maps3DLibrary;
         if (cancelled) return;
 
-        const activeIds = new Set(massing.buildings.map((building) => building.id));
+        const surfaces = [
+          ...(massing.streets ?? []).map((street) => ({
+            ...street, id: `street:${street.id}`, heightMeters: 0, isStreet: true,
+          })),
+          ...massing.buildings.map((building) => ({ ...building, isStreet: false })),
+        ];
+        const activeIds = new Set(surfaces.map((surface) => surface.id));
         for (const [id, polygon] of polygonById) {
           if (!activeIds.has(id) && polygon.parentNode) polygon.remove();
         }
 
-        for (const building of massing.buildings) {
+        for (const building of surfaces) {
           let polygon = polygonById.get(building.id);
           if (!polygon) {
             polygon = new lib.Polygon3DElement();
@@ -65,11 +71,13 @@ export function ProjectMassingLayer3D({
             lng,
             altitude: building.heightMeters,
           }));
-          polygon.altitudeMode = lib.AltitudeMode.RELATIVE_TO_GROUND;
-          polygon.extruded = true;
-          polygon.fillColor = SHELL_FILL_COLOR;
-          polygon.strokeColor = SHELL_STROKE_COLOR;
-          polygon.strokeWidth = SHELL_STROKE_WIDTH;
+          polygon.altitudeMode = building.isStreet
+            ? lib.AltitudeMode.CLAMP_TO_GROUND
+            : lib.AltitudeMode.RELATIVE_TO_GROUND;
+          polygon.extruded = !building.isStreet;
+          polygon.fillColor = building.isStreet ? "rgba(183, 173, 163, 0.65)" : SHELL_FILL_COLOR;
+          polygon.strokeColor = building.isStreet ? "rgba(141, 129, 118, 0.75)" : SHELL_STROKE_COLOR;
+          polygon.strokeWidth = building.isStreet ? 1 : SHELL_STROKE_WIDTH;
           polygon.drawsOccludedSegments = false;
 
           if (polygon.parentNode && polygon.parentNode !== map3d) polygon.remove();

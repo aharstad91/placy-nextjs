@@ -45,7 +45,7 @@ beforeEach(() => {
   polygonInstances = [];
   importLibrary = vi.fn(async () => ({
     Polygon3DElement: FakePolygon,
-    AltitudeMode: { RELATIVE_TO_GROUND: "relative-to-ground" },
+    AltitudeMode: { RELATIVE_TO_GROUND: "relative-to-ground", CLAMP_TO_GROUND: "clamp-to-ground" },
   }));
   vi.stubGlobal("google", { maps: { importLibrary } });
   vi.spyOn(console, "warn").mockImplementation(() => {});
@@ -75,9 +75,13 @@ describe("ProjectMassingLayer3D", () => {
     await flush();
 
     expect(importLibrary).toHaveBeenCalledWith("maps3d");
-    expect(polygonInstances).toHaveLength(3);
-    expect(map3d.appended).toHaveLength(3);
-    for (const polygon of polygonInstances) {
+    expect(polygonInstances).toHaveLength(4);
+    expect(map3d.appended).toHaveLength(4);
+    const street = polygonInstances.find(p => !p.extruded)!;
+    expect(street.altitudeMode).toBe("clamp-to-ground");
+    expect(street.path?.every(p => p.altitude === 0)).toBe(true);
+    expect(polygonInstances.filter(p => p.extruded)).toHaveLength(3);
+    for (const polygon of polygonInstances.filter(p => p.extruded)) {
       expect(polygon.altitudeMode).toBe("relative-to-ground");
       expect(polygon.extruded).toBe(true);
       expect(polygon.path).toHaveLength(4);
@@ -114,7 +118,7 @@ describe("ProjectMassingLayer3D", () => {
     );
     await flush();
 
-    expect(polygonInstances).toHaveLength(3);
+    expect(polygonInstances).toHaveLength(4);
     expect(polygonInstances.every((polygon) => polygon.parentNode === map3d)).toBe(
       true,
     );
