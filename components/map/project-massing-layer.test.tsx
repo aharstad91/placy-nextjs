@@ -50,7 +50,7 @@ describe("ProjectMassingLayer", () => {
       Number(screen.getByTestId("project-massing-source").dataset.features),
     ).toBeGreaterThan(40);
     expect(screen.getByTestId("project-massing-fill").dataset.type).toBe("fill");
-    expect(screen.getByTestId("project-massing-fill").dataset.color).toBe("#e79bbc");
+    expect(screen.getByTestId("project-massing-fill").dataset.color).toBe("#f6e7dc");
     expect(screen.getByTestId("project-massing-outline").dataset.type).toBe("line");
   });
 
@@ -58,7 +58,7 @@ describe("ProjectMassingLayer", () => {
     render(<ProjectMassingLayer massing={getProjectMassing("wesselslokka")!} />);
 
     const context = screen.getByTestId("project-massing-context-fill");
-    expect(context.dataset.color).toBe("#f7ecf1");
+    expect(context.dataset.color).toBe("#fbf4ee");
     expect(context.dataset.filter).toContain("context");
     expect(screen.getByTestId("project-massing-fill").dataset.filter).toContain(
       "sale",

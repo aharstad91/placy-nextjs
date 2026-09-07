@@ -31,7 +31,9 @@ describe("project-massing", () => {
 
     expect(sale.map((b) => b.id)).toEqual(["a1", "a2", "b"]);
     expect(sale.map((b) => b.label)).toEqual(["A1", "A2", "B"]);
-    expect(sale.every((b) => b.heightMeters === 14)).toBe(true);
+    // Fem, fem og sju etasjer slik prosjektet selges — hus B er det høye.
+    expect(sale.map((b) => b.storeys)).toEqual([5, 5, 7]);
+    expect(sale.map((b) => b.heightMeters)).toEqual([17.5, 17.5, 24.5]);
     // Kontekstvolumene er navnløse i planen; en bokstav ville vært oppdiktet.
     expect(context.every((b) => b.label === undefined)).toBe(true);
     expect(context.length).toBeGreaterThan(40);
@@ -89,6 +91,22 @@ describe("project-massing", () => {
       );
     },
   );
+
+  // Kontekstvolumene arver etasjetall fra takplanen. Faller alle sammen til
+  // samme tall igjen, er avlesningen død og silhuetten borte — uten at noe
+  // annet i kartet ser galt ut.
+  it("gir områdeplanen høyder som varierer, fra to til åtte etasjer", () => {
+    const massing = getProjectMassing("wesselslokka")!;
+    const context = massing.buildings.filter((b) => b.role === "context");
+    const storeys = context.map((b) => b.storeys);
+
+    expect(Math.min(...storeys)).toBeGreaterThanOrEqual(2);
+    expect(Math.max(...storeys)).toBeLessThanOrEqual(8);
+    expect(new Set(storeys).size).toBeGreaterThanOrEqual(5);
+    expect(
+      context.every((b) => b.heightMeters === b.storeys * 3.5),
+    ).toBe(true);
+  });
 
   it("lukker GeoJSON-ringene og bærer høyden som egenskap", () => {
     const massing = getProjectMassing("wesselslokka")!;

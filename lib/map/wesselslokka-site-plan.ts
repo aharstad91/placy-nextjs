@@ -45,9 +45,16 @@ export const WESSELSLOKKA_REGISTRATION_CHECKS = [
   { name: "OSM-plassholder for prosjektet", pixel: [430, 830], coordinate: [10.452544, 63.421517], toleranceMeters: 25 },
 ] as const;
 
-// Main envelopes, omitting small facade recesses and balconies.
+/**
+ * Main envelopes, omitting small facade recesses and balconies.
+ *
+ * `storeys` står ikke i situasjonsplanen. Wesselsløkka (BS3) selges som to bygg
+ * på fem og sju etasjer med 122 leiligheter, der hus B alene er 51 — A1 og A2
+ * er to seksjoner av femetasjeren. Kontekstbyggene rundt henter etasjetallet
+ * sitt maskinelt fra takplanen i stedet, se broset-plan-buildings.generated.ts.
+ */
 export const WESSELSLOKKA_PLAN_BUILDINGS = [
-  { id: "a1", name: "Bygg A1", label: "A1", pixels: [[350, 837], [407, 842], [404, 875], [347, 870]] },
-  { id: "a2", name: "Bygg A2", label: "A2", pixels: [[409, 843], [487, 850], [484, 881], [406, 875]] },
-  { id: "b", name: "Bygg B", label: "B", pixels: [[458, 757], [507, 761], [499, 844], [450, 840]] },
+  { id: "a1", name: "Bygg A1", label: "A1", storeys: 5, pixels: [[350, 837], [407, 842], [404, 875], [347, 870]] },
+  { id: "a2", name: "Bygg A2", label: "A2", storeys: 5, pixels: [[409, 843], [487, 850], [484, 881], [406, 875]] },
+  { id: "b", name: "Bygg B", label: "B", storeys: 7, pixels: [[458, 757], [507, 761], [499, 844], [450, 840]] },
 ] as const;

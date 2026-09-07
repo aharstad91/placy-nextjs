@@ -12,8 +12,10 @@ interface ProjectMassingLayer3DProps {
 const SHELL_STROKE_WIDTH = 2.25;
 
 /** Google-motoren tar bare CSS-farger, ikke Mapbox-paint. Palettens hex får
- *  derfor en alfa-kanal her: flatene må være gjennomsiktige nok til at
- *  fotoflisene under fortsatt leses som terreng. */
+ *  derfor en alfa-kanal her. I 3D må den ligge høyt: fotoflisene under er
+ *  grønne og mørke, og et halvgjennomsiktig lyst fyll blir grumsete brunt i
+ *  stedet for lyst. Formen skal bæres av høydeforskjellene, ikke av teksturen
+ *  som skinner gjennom. I 2D er det motsatt — der er kartet under verdt å se. */
 function withAlpha(hex: string, alpha: number): string {
   const value = hex.replace("#", "");
   const [r, g, b] = [0, 2, 4].map((i) => parseInt(value.slice(i, i + 2), 16));
@@ -58,11 +60,11 @@ export function ProjectMassingLayer3D({
         const surfaces = massing.buildings;
         const paintByRole = {
           sale: {
-            fill: withAlpha(massing.palette.fill, 0.5),
+            fill: withAlpha(massing.palette.fill, 0.94),
             stroke: withAlpha(massing.palette.line, 0.95),
           },
           context: {
-            fill: withAlpha(massing.palette.contextFill, 0.42),
+            fill: withAlpha(massing.palette.contextFill, 0.9),
             stroke: withAlpha(massing.palette.contextLine, 0.8),
           },
         };

@@ -17,9 +17,10 @@ interface ProjectMassingLayerProps {
  * Kartet er ovenfra, så et flatefyll med tydelig kontur er ærligere og mer
  * lesbart enn en perspektivisk ekstrudering brukeren aldri ser med pitch 0.
  *
- * To roller: salgsbyggene i prosjektets rosa, resten av områdeplanen i en
- * nøytral tone bak dem. Poenget er at leseren ser to ting samtidig — hvilke
- * tre bygg boligen ligger i, og at det kommer et helt nabolag rundt dem.
+ * To roller: salgsbyggene med farget kontur, resten av områdeplanen lysere og
+ * stiplet bak dem. Poenget er at leseren ser to ting samtidig — hvilke tre bygg
+ * boligen ligger i, og at det kommer et helt nabolag rundt dem. Flatene er lyse
+ * med vilje: kartet under skal fortsatt kunne leses gjennom dem.
  *
  * Volumene toner INN med zoom. Boardet åpner på ~13,5 der hele feltet er noen
  * få piksler bredt: der er prosjektet pinnen, ikke femti omriss som krangler
@@ -46,7 +47,7 @@ export function ProjectMassingLayer({ massing }: ProjectMassingLayerProps) {
         filter={[...IS_CONTEXT]}
         paint={{
           "fill-color": palette.contextFill,
-          "fill-opacity": ["interpolate", ["linear"], ["zoom"], 14, 0, 15.4, 0.7],
+          "fill-opacity": ["interpolate", ["linear"], ["zoom"], 14, 0, 15.4, 0.82],
         }}
       />
       <Layer
@@ -69,7 +70,7 @@ export function ProjectMassingLayer({ massing }: ProjectMassingLayerProps) {
         filter={[...IS_SALE]}
         paint={{
           "fill-color": palette.fill,
-          "fill-opacity": ["interpolate", ["linear"], ["zoom"], 14, 0, 15.4, 0.6],
+          "fill-opacity": ["interpolate", ["linear"], ["zoom"], 14, 0, 15.4, 0.88],
         }}
       />
       <Layer

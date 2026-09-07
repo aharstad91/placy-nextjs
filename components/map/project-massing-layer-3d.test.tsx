@@ -88,8 +88,13 @@ describe("ProjectMassingLayer3D", () => {
       expect(polygon.fillColor).toContain("rgba");
       expect(polygon.strokeColor).toBeTruthy();
     }
-    // Salgsbyggene står 14 m, områdeplanen 12 m — to roller, to høyder.
-    expect([...heights].sort((a, b) => a - b)).toEqual([12, 14]);
+    // Hvert bygg står så høyt som takplanen tillater der det ligger: fra to
+    // etasjer på felleshusene til åtte mot Tungasletta. Faller alt sammen til
+    // én verdi, er etasjeavlesningen borte og feltet ser ut som én kake.
+    const sorted = [...heights].sort((a, b) => a - b);
+    expect(sorted.length).toBeGreaterThanOrEqual(5);
+    expect(sorted.at(0)).toBe(7);
+    expect(sorted.at(-1)).toBe(28);
   });
 
   it("tar volumene ut og inn igjen uten å opprette nye WebGL-elementer", async () => {

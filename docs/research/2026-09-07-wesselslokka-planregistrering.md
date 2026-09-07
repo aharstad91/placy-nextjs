@@ -103,31 +103,85 @@ salgsbygg. Dubletter er usynlige i 2D og doble vegger i 3D.
 Skriptet er `scripts/extract-broset-massing.py` og kjøres bare når det kommer
 en ny plantegning. Det krever `opencv-python-headless`.
 
+## Etasjetall (2026-09-07, tredje runde)
+
+Volumene sto først på anslåtte 12 og 14 m — flatt og likt, så feltet leste som
+én kake i 3D. Etasjetallene er nå hentet fra en kilde i stedet.
+
+**Feilspor først:** reguleringen for *Søndre del av Brøset* (2025) har en fin
+aksonometri med etasjetall på hvert bygg. Den er feil plan. Kartverkets
+terrengmodell avgjorde det: planområdet der beskrives som kote +79 i nord
+stigende til +98 i sør, mens våre omriss ligger på 70,7–84,8 m. Brøsetjordet er
+plangrensa mellom dem — vår markedsplan ligger nord for gata, den planen sør
+for. OSM bekrefter det samme: utviklingen vår er way 1502590317
+(«Brøsetporten / Bo Brøset / Wesselsløka»), og Brøsetjordet (way 1502590316)
+er sørkanten av den.
+
+**Kilden vi endte på** er takplanen i `Del av Brøset med tilliggende veger,
+detaljregulering (r20210042)`, Dyrvik arkitekter / ATSITE 07.04.2022, lagt inn
+som `docs/kilder/wesselslokka/broset-takplan-2022.pdf`. Den er en
+målestokkriktig karttegning, nord opp, med «N etg» og maks kotehøyde påskrevet
+hvert bygg.
+
+To ting gjorde den enkel å bruke:
+
+1. **Teksten ligger i PDF-en, med posisjon.** Fonten er innebygd med egen
+   koding der hver bokstav ligger 29 kodepunkt for lavt («HWJ» er «etg»); vi
+   flytter den tilbake i stedet for å OCR-e. 101 etasjepåskrifter kommer ut med
+   nøyaktig koordinat.
+2. **Tegningen lar seg stadfeste mot tre veikryss.** Rundkjøringa på
+   Tungasletta, Brøsetvegen × Sigurd Munns veg og Brøsetvegen × Brøsetflata,
+   alle med koordinat fra OSM. Similaritetstilpasningen gir 0,7026 m per
+   PDF-enhet og −1,98° rotasjon, med avvik på 1,5 / 2,1 / 3,0 m over 800 m.
+
+Hvert omriss arver så etasjetallet som står oppå det. 36 av 52 har en påskrift
+inne i seg; resten tar den nærmeste innen 35 m. Et sammenslått rekkehusfelt kan
+ha flere påskrifter — da gjelder den høyeste, slik «2-3 etg» også leses som 3.
+Fordelingen ble 2 × 2 etasjer, 20 × 3, 15 × 4, 7 × 5, 4 × 6, 2 × 7 og 2 × 8.
+
+**A1/A2/B står ikke i den planen** — den er fra 2022, og Wesselsløkka-oppdelingen
+kom etter. De tre får etasjetallet fra salgsmaterialet i stedet: BS3 selges som
+to bygg på fem og sju etasjer med 122 leiligheter, der hus B alene er 51. A1 og
+A2 er to seksjoner av femetasjeren. Nærmeste-påskrift ville gitt 6/7/4 her, som
+er feil vei — hus B er det høye.
+
+**Etasje til meter: 3,5.** Tallet er avledet av planens egne maks kotehøyder
+minus dagens terreng (Kartverket DTM1) for byggene på seks til åtte etasjer,
+der en meters slingring betyr minst. Volumene settes på dagens terreng i 3D, så
+det er nettopp den differansen som skal treffe.
+
 ## Implementasjon
 
 `lib/map/wesselslokka-site-plan.ts` bevarer avtegnede hjørner i kildebildets
 pikselrom. Adressepunktet flyttes ikke. Byggenes hovedomriss er forenklet;
 balkonger og små innhakk er utelatt.
 
-Fargene kommer fra salgsmaterialet: flatene i planens rosa (`#e79bbc`),
-konturen i logoens mørkere rosa (`#a8386a`). Omrisset i kartet skal leses som
-«dette er byggene i planen du nettopp så».
+Volumene er lyse med farget kontur: fyll `#f6e7dc` og kontur `#c07f68` på
+salgsbyggene, `#fbf4ee` og `#cfa894` på områdeplanen rundt. Rosa fra
+salgsmaterialet ble prøvd først og gjorde feltet tungt — nå bærer
+høydeforskjellene formen, og fargen holder seg unna. En nøytral grå er
+fortsatt feil: Mapbox tegner eksisterende bygg i nettopp den tonen, så de
+planlagte byggene så ut som hus som allerede står der. Kontekstvolumene har
+stiplet kontur, det kartografiske tegnet for «planlagt», og det er hele poenget
+med å ha dem med.
 
-Kontekstvolumene har stiplet kontur i en uttynnet variant av samme rosa. En
-nøytral grå ble prøvd først og var feil: Mapbox tegner eksisterende bygg i
-nettopp den tonen, så de planlagte byggene så ut som hus som allerede står der.
-Stiplet strek er det kartografiske tegnet for «planlagt», og det er hele
-poenget med å ha dem med.
+Dekkevnen går motsatt vei i de to motorene. I 2D er kartet under verdt å se
+gjennom flatene (0,82–0,88). I 3D må fyllet nesten dekke (0,90–0,94): fotoflisene
+er grønne og mørke, og et halvgjennomsiktig lyst fyll blir grumsete brunt.
 
 **Mapbox (2D):** ett GeoJSON-lag, fem paint-lag filtrert på `role`. Volumene
 toner inn med zoom — usynlige på boardets åpningszoom (~13,5), fulle fra 15,4,
 bokstavene A1/A2/B fra 15,5. Grunnen er at hele feltet er noen få piksler bredt
 i oversikten: der er prosjektet pinnen, ikke femti omriss som krangler med den.
 
-**Google (3D):** samme polygoner, ekstruderte og halvtransparente, i samme
-palett omgjort til rgba. Salgsbyggene står 14 m, områdeplanen 12 m. Ingen
-bildefiler eller modeller lastes i produktet.
+**Google (3D):** samme polygoner, ekstruderte, i samme palett omgjort til rgba.
+Hvert bygg står så høyt som takplanen tillater der det ligger — fra 7 m på
+felleshusene til 28 m mot Tungasletta. Ingen bildefiler eller modeller lastes i
+produktet.
 
-Akseptanse: samme grunnriss i begge motorer, 55 volumer, ingen dupliserte
-elementer ved motorbytte, ingen tegnet vei oppå en ekte vei, og ingen planlagt
-bygg oppå et eksisterende.
+Akseptanse: samme grunnriss i begge motorer, 55 volumer, sju ulike høyder
+(7–28 m), ingen dupliserte elementer ved motorbytte, ingen tegnet vei oppå en
+ekte vei, og ingen planlagt bygg oppå et eksisterende.
+
+Det som fortsatt ikke er hentet fra kilde: takform (volumene er esker, planen
+har saltak mot Brøsetvegen) og byggetrinn.

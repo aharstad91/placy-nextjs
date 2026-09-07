@@ -1,4 +1,4 @@
-import { BROSET_PLAN_BUILDING_PIXELS } from "@/lib/map/broset-plan-buildings.generated";
+import { BROSET_PLAN_BUILDINGS } from "@/lib/map/broset-plan-buildings.generated";
 import {
   sitePlanCoordinate,
   WESSELSLOKKA_PLAN_BUILDINGS,
@@ -19,7 +19,9 @@ export interface ProjectBuildingMassing {
    *  Kontekstvolumene har ingen — planen navngir dem ikke. */
   label?: string;
   footprint: readonly LngLat[];
-  /** Sketch height; the supplied plan has no elevation information. */
+  /** Maks etasjetall fra reguleringens takplan. Bærer silhuetten i 3D. */
+  storeys: number;
+  /** `storeys` ganget opp; se STOREY_HEIGHT_METERS for hvorfor faktoren er 3,5. */
   heightMeters: number;
 }
 
@@ -41,39 +43,44 @@ export interface ProjectMassing {
   buildings: readonly ProjectBuildingMassing[];
 }
 
-// Rosa som i situasjonsplanen (flatene), konturen i logoens mørkere rosa.
-// Kontekstvolumene tar en uttynnet variant av samme rosa. En nøytral grå ble
-// prøvd først og var feil: da så de planlagte byggene ut som hus som allerede
-// står der, siden Mapbox tegner eksisterende bygg i nettopp den grå tonen.
+// Lyse volumer med farget kontur. Fyllet er så lyst at kartet under fortsatt
+// leses, og høydeforskjellene får bære formen i stedet for fargen. Konturen
+// holder igjen den varme tonen fra situasjonsplanen, og kontekstbyggene tegnes
+// med stiplet linje — den kartografiske måten å si «planlagt, ikke bygd» på.
+// En nøytral grå ble prøvd og var feil: da så de planlagte byggene ut som hus
+// som allerede står der, siden Mapbox tegner eksisterende bygg i den grå tonen.
 const WESSELSLOKKA_PALETTE: ProjectMassingPalette = {
-  fill: "#e79bbc",
-  line: "#a8386a",
-  label: "#7d2a4f",
+  fill: "#f6e7dc",
+  line: "#c07f68",
+  label: "#8d4f3c",
   labelHalo: "rgba(255, 255, 255, 0.92)",
-  contextFill: "#f7ecf1",
-  contextLine: "#bb8ba3",
+  contextFill: "#fbf4ee",
+  contextLine: "#cfa894",
 };
 
-/** Planen bærer ingen etasjetall. 14 m ≈ fire etasjer for salgsbyggene, 12 m
- *  for resten — nok til at 3D-motoren får et volum, og eksplisitt et anslag. */
-const SALE_HEIGHT_METERS = 14;
-const CONTEXT_HEIGHT_METERS = 12;
+/** Etasje til meter. Takplanens maks kotehøyder minus dagens terreng (Kartverket
+ *  DTM1) gir omtrent 3,5 m per etasje på blokkene den er mest til å stole på —
+ *  de på seks til åtte etasjer, der en meters slingring betyr minst. Volumene
+ *  settes på dagens terreng i 3D, så det er nettopp det tallet som passer. */
+const STOREY_HEIGHT_METERS = 3.5;
 
 const WESSELSLOKKA_BUILDINGS: readonly ProjectBuildingMassing[] = [
-  ...WESSELSLOKKA_PLAN_BUILDINGS.map(({ id, name, label, pixels }) => ({
+  ...WESSELSLOKKA_PLAN_BUILDINGS.map(({ id, name, label, storeys, pixels }) => ({
     id,
     name,
     label,
     role: "sale" as const,
     footprint: pixels.map(sitePlanCoordinate),
-    heightMeters: SALE_HEIGHT_METERS,
+    storeys,
+    heightMeters: storeys * STOREY_HEIGHT_METERS,
   })),
-  ...BROSET_PLAN_BUILDING_PIXELS.map((pixels, index) => ({
+  ...BROSET_PLAN_BUILDINGS.map(({ storeys, pixels }, index) => ({
     id: `broset-${String(index + 1).padStart(2, "0")}`,
     name: `Brøset, planlagt bygg ${index + 1}`,
     role: "context" as const,
     footprint: pixels.map(sitePlanCoordinate),
-    heightMeters: CONTEXT_HEIGHT_METERS,
+    storeys,
+    heightMeters: storeys * STOREY_HEIGHT_METERS,
   })),
 ];
 
@@ -81,7 +88,7 @@ const PROJECT_MASSING_BY_SLUG: Readonly<Record<string, ProjectMassing>> = {
   wesselslokka: {
     projectSlug: "wesselslokka",
     sourceNote:
-      "Skjematisk volumstudie fra innpasset situasjonsplan; høyder anslått.",
+      "Volumer fra innpasset situasjonsplan; etasjetall fra reguleringens takplan.",
     palette: WESSELSLOKKA_PALETTE,
     buildings: WESSELSLOKKA_BUILDINGS,
   },
