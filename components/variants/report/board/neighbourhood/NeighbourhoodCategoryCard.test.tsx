@@ -24,6 +24,8 @@ function poi(id: string, name = id): BoardPOI {
     name,
     coordinates: { lat: 63.43, lng: 10.4 },
     categoryId: "mat" as BoardPOI["categoryId"],
+    icon: "MapPin",
+    color: "#94a3b8",
     raw: {
       id,
       name,

@@ -19,10 +19,11 @@ import { mutedColor } from "@/lib/themes/muted-palette";
 /** Minimums-formen en POI må ha for å avlede identitet. Strukturell, så både
  *  `BoardPOI` og en rå `POI` med sub-kategori oppfyller den. */
 export interface PoiIdentitySource {
-  category: { icon?: string; color?: string };
+  category: { icon?: string };
 }
 
-/** Kategoriens identitet — fallback når POI-en mangler sub-kategori-verdier. */
+/** Temaets identitet. Fargen brukes ALLTID; ikonet er fallback når POI-en
+ *  mangler et eget. */
 export interface CategoryIdentityFallback {
   icon: string;
   color: string;
@@ -37,16 +38,30 @@ export interface PoiVisualIdentity {
 }
 
 /**
- * En POI-s visuelle identitet: sub-kategorien vinner, temaet er fallback.
+ * En POI-s visuelle identitet: TEMAETS farge, kategoriens ikon.
  *
- * Sub-kategorien differensierer bar (lilla), bakeri (gul) og restaurant (rød)
- * innen Mat-temaet — det er dette som gjør kartet lesbart. Fargen dempes til
- * ~450-nivå så den ikke roper mot den lyse kartbakgrunnen.
+ * Fargen arves fra temaet, ikke fra underkategorien. Temaraden er det eneste
+ * stedet brukeren får en fargenøkkel — «Hverdag» står der i grønt — og en
+ * markør som bryter med den nøkkelen er ikke informasjon, den er støy. Ingen
+ * lærer at fuchsia betyr frisør, mens alle leser at grønn betyr Hverdag etter
+ * ett blikk på raden.
  *
- * Fantes tidligere kun inne i `BoardMap.markerStates`, mens sidebar-radene
- * hardkodet et nål-ikon i temafargen. Samme sted så da ulikt ut på kartet og i
- * lista (rød knivgaffel mot rød nål). Derivasjonen bor her nå så en ny liste
- * ikke kan drifte fra kartet på nytt.
+ * Underkategori-fargene løy også (Andreas, 2026-09-07: «en frisør har f.eks
+ * en lilla saks ikon, selv om det er på grønn hverdag»). De ble delt ut per
+ * kategori i `poi-discovery` uten et felles budsjett, så legesenter fikk
+ * `#3b82f6` — nøyaktig Transport-temaets blå. En blå pin midt i Hverdag-
+ * visningen leste da som en holdeplass.
+ *
+ * Forskjellen inni et tema bæres av IKONET, som fortsatt kommer fra
+ * underkategorien: saks, handlekurv og pille er umiddelbart lesbare uten at
+ * noen må lære en kode. Det er også den eneste kanalen som kan bære 40+
+ * kategorier — fargerommet kan ikke.
+ *
+ * Gevinsten ligger i områdenivået, der alle temaene vises samtidig: da sier
+ * fargen HVOR hverdagsbehovene klumper seg mot hvor kollektivet går. Tidligere
+ * var den samme visningen konfetti.
+ *
+ * Fargen dempes til ~450-nivå så den ikke roper mot den lyse kartbakgrunnen.
  *
  * Returnerer PRIMITIVER, ikke et objekt som mates videre som prop: `BoardMarker`
  * er `React.memo`-et på `color`/`icon`-strenger, og et ferskt objekt per render
@@ -58,6 +73,6 @@ export function poiVisualIdentity(
 ): PoiVisualIdentity {
   return {
     icon: poi.category.icon || fallback.icon,
-    color: mutedColor(poi.category.color) ?? fallback.color,
+    color: mutedColor(fallback.color) ?? fallback.color,
   };
 }

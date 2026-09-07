@@ -66,6 +66,8 @@ function boardPoi(over: Partial<POI> = {}): BoardPOI {
     address: raw.address,
     body: desc || undefined,
     categoryId: "kn-musikk" as BoardCategoryId,
+    icon: "MapPin",
+    color: "#94a3b8",
     eventDates:
       raw.eventDates && raw.eventDates.length > 0 ? raw.eventDates : undefined,
     eventTimeStart: raw.eventTimeStart,

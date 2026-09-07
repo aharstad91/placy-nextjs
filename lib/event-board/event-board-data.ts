@@ -27,6 +27,10 @@ import type {
   BoardPOI,
   BoardPOIId,
 } from "@/components/variants/report/board/board-data";
+import {
+  poiVisualIdentity,
+  type CategoryIdentityFallback,
+} from "@/components/variants/report/board/marker-style";
 
 /**
  * Bygg `BoardData` fra et event-prosjekt + dets bransjeprofil-features.
@@ -67,14 +71,18 @@ export function eventToBoardData(
       const pois = poisByCategoryId.get(cat.id);
       if (!pois || pois.length === 0) return null;
       const categoryId = cat.id as BoardCategoryId;
-      const boardPois = pois.map((p) => adaptEventPOI(p, categoryId));
+      const identity = {
+        icon: cat.icon || "MapPin",
+        color: cat.color || "#94a3b8", // stone-400
+      };
+      const boardPois = pois.map((p) => adaptEventPOI(p, categoryId, identity));
       const boardCat: BoardCategory = {
         id: categoryId,
         label: cat.name || cat.id,
         lead: "",
         body: "",
-        icon: cat.icon || "MapPin",
-        color: cat.color || "#94a3b8", // stone-400
+        icon: identity.icon,
+        color: identity.color,
         pois: boardPois,
         // Events har ingen score-rangering; topRankedPois speiler distanse-
         // sorterte pois så board-laget får samme BoardPOI-form.
@@ -122,7 +130,11 @@ export function eventToBoardData(
  * `undefined` her (ikke-dagfiltrerbar), konsistent med `useKompassFilter`s
  * `eventDates && length > 0`-semantikk.
  */
-function adaptEventPOI(poi: POI, categoryId: BoardCategoryId): BoardPOI {
+function adaptEventPOI(
+  poi: POI,
+  categoryId: BoardCategoryId,
+  categoryIdentity: CategoryIdentityFallback,
+): BoardPOI {
   const hook = poi.editorialHook?.trim();
   const insight = poi.localInsight?.trim();
   const desc = poi.eventDescription?.trim() || poi.description?.trim();
@@ -144,6 +156,10 @@ function adaptEventPOI(poi: POI, categoryId: BoardCategoryId): BoardPOI {
     eventDates,
     eventTimeStart: poi.eventTimeStart,
     eventTimeEnd: poi.eventTimeEnd,
+    // Samme regel som boligboardet: kategorien eier fargen, POI-en ikon.
+    // Event-kategoriene ER filter-chipsene, så en POI som bryter med chipsens
+    // farge er direkte misvisende.
+    ...poiVisualIdentity(poi, categoryIdentity),
     // D5: hele kilde-POIen bevares; eventDates/Start/End ligger urørt her.
     raw: poi,
   };

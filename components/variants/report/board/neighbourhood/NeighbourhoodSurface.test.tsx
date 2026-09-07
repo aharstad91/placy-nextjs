@@ -60,6 +60,8 @@ function poi(
     name: id,
     coordinates,
     categoryId: "mat" as BoardPOI["categoryId"],
+    icon: "MapPin",
+    color: "#94a3b8",
     raw: {
       id,
       name: id,

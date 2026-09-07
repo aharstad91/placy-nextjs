@@ -28,6 +28,8 @@ function makeCategory(id: string, pois: POI[]): BoardCategory {
         name: p.name,
         coordinates: p.coordinates,
         categoryId: id as BoardCategoryId,
+        icon: "MapPin",
+        color: "#94a3b8",
         raw: p,
       }),
     ),

@@ -101,7 +101,7 @@ export function StoryPoiPanel() {
   if (!shown) return null;
 
   const Icon = getFilledIcon(shown.raw.category.icon);
-  const circle = markerCircleStyle(shown.raw.category.color);
+  const circle = markerCircleStyle(shown.color);
   // Ekstern lenke KUN når vi ikke har grounded narrativ — har vi det, er
   // kildelenkene i attribusjonsblokken utveien, og en ekstra «gå til Google»
   // ville undergravd poenget med å beholde leseren.

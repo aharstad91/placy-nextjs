@@ -75,6 +75,8 @@ function boardPoi(): BoardPOI {
     address: raw.address,
     body: raw.eventDescription,
     categoryId: "kn-musikk" as BoardCategoryId,
+    icon: "MapPin",
+    color: "#94a3b8",
     eventDates: raw.eventDates,
     eventTimeStart: raw.eventTimeStart,
     eventTimeEnd: raw.eventTimeEnd,

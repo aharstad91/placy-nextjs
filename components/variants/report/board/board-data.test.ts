@@ -26,10 +26,12 @@ function makePOI(id: string, overrides: Partial<POI> = {}): POI {
   };
 }
 
-/** Identiteten `makePOI`s sub-kategori (restaurant / #ef4444) gir: ikon fra
- *  sub-kategorien, farge dempet til 450-nivå. Highlight-radene bærer den så de
- *  ser identiske ut med kartmarkøren for samme sted. */
-const IDENTITY = { icon: "Utensils", color: "#f35a5a" } as const;
+/** Identiteten en `makePOI` i et `makeTheme` får: ikon fra sub-kategorien
+ *  (restaurant → Utensils), farge fra TEMAET (#3b82f6, dempet til 450-nivå).
+ *  Highlight-radene bærer den så de ser identiske ut med kartmarkøren for
+ *  samme sted. Sub-kategoriens egen farge (#ef4444) brukes IKKE — se
+ *  marker-style.test.ts for hvorfor. */
+const IDENTITY = { icon: "Utensils", color: "#4d93f8" } as const;
 
 function makeTheme(id: string, pois: POI[], overrides: Partial<ReportTheme> = {}): ReportTheme {
   return {
@@ -630,6 +632,9 @@ describe("highlight-identitet matcher kartmarkøren (2026-08-13)", () => {
   // Buggen: sidebar-radene viste nål i temafargen mens pinnen viste
   // sub-kategoriens ikon i dempet farge. Denne testen binder de to sammen —
   // begge må lese samme derivasjon.
+  //
+  // 2026-09-07: fargen kommer nå fra temaet i BEGGE ender. Bindingen består;
+  // det er verdien på begge sider som er endret.
   it("highlight-raden får samme ikon/farge som markøren for samme POI", () => {
     const kafe = makePOI("p-kafe", {
       category: { id: "cafe", name: "Kafé", icon: "Coffee", color: "#f97316" },
@@ -648,9 +653,10 @@ describe("highlight-identitet matcher kartmarkøren (2026-08-13)", () => {
     });
 
     expect({ icon: highlight.icon, color: highlight.color }).toEqual(markerIdentity);
-    // Og konkret: kafé-ikon i dempet oransje — ikke tema-ikon i tema-farge.
+    // Og konkret: kafé-IKON i TEMAETS dempede blå. Kaféens egen oransje
+    // (#f97316) skal ikke overleve derivasjonen.
     expect(highlight.icon).toBe("Coffee");
-    expect(highlight.color).toBe("#fa8229");
+    expect(highlight.color).toBe("#4d93f8");
   });
 
   it("genererte highlights (nivå 1) får identitet på samme måte", () => {
@@ -661,10 +667,11 @@ describe("highlight-identitet matcher kartmarkøren (2026-08-13)", () => {
     const highlight = data.categories[0].editorial!.highlights[0];
     expect(data.categories[0].editorial!.generated).toBe(true);
     expect(highlight.icon).toBe("Pill");
-    expect(highlight.color).toBe("#14c4e1");
+    // Apotekets cyan (#06b6d4) taper mot temafargen; ikonet består.
+    expect(highlight.color).toBe("#4d93f8");
   });
 
-  it("POI uten sub-kategori-farge arver temaets farge i raden", () => {
+  it("temaets farge gjelder også når sub-kategorien mangler en helt", () => {
     const bar = makePOI("p-ukjent", {
       category: { id: "x", name: "X", icon: "Star", color: "" },
     });
@@ -673,7 +680,9 @@ describe("highlight-identitet matcher kartmarkøren (2026-08-13)", () => {
       editorial: { body: "Tekst.", highlightPoiIds: ["p-ukjent"] },
     });
     const data = adaptBoardData(makeReportData([theme]));
-    expect(data.categories[0].editorial!.highlights[0].color).toBe("#ec4899");
+    // #ec4899 (pink-500) dempes til 450-nivå som alle andre markørfarger —
+    // temafargen går nå gjennom samme demping som sub-kategorifargene gjorde.
+    expect(data.categories[0].editorial!.highlights[0].color).toBe("#f05da7");
   });
 });
 

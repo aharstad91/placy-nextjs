@@ -176,10 +176,10 @@ export function AnchorRegister({ poi }: { poi: BoardPOI }) {
   if (groups.length === 0 && !summary) return null;
 
   const total = groups.reduce((sum, g) => sum + g.members.length, 0);
-  const fallback = {
-    icon: poi.raw.category.icon,
-    color: poi.raw.category.color,
-  };
+  // Ankerets egen avledede identitet (temafarge + ikon), så medlemsradene
+  // fargelegges som ankeret og resten av temaet — ikke av hver medlems-
+  // underkategori.
+  const fallback = { icon: poi.icon, color: poi.color };
 
   return (
     <section data-testid="anchor-register" className="mt-5 border-t border-stone-100 pt-4">

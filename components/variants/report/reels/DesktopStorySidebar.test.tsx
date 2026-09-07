@@ -76,6 +76,8 @@ function poi(
     name,
     coordinates,
     categoryId: "hverdagsliv" as BoardPOI["categoryId"],
+    icon: "MapPin",
+    color: "#94a3b8",
     raw: {
       id,
       name,

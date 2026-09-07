@@ -32,6 +32,8 @@ function makeBoardPOI(id: string): BoardPOI {
     name: `Event ${id}`,
     coordinates: { lat: 63.43, lng: 10.39 },
     categoryId: "kn-musikk" as BoardCategoryId,
+    icon: "MapPin",
+    color: "#94a3b8",
     eventTimeStart: "18:00",
     eventTimeEnd: "23:00",
     raw,

@@ -120,7 +120,7 @@ export function BoardPOI3DMiniPopup({ map3d, pinScale = 1 }: Props) {
   if (!poi) return null;
 
   const Icon = getFilledIcon(poi.raw.category.icon);
-  const color = poi.raw.category.color;
+  const color = poi.color;
   const circle = markerCircleStyle(color);
   // Samme kontrakt som 2D-popupen: innhold → modal i Placy, ellers ekstern
   // lenke merket med ekstern-lenke-ikon. Begge kart-flatene MÅ oppføre seg likt.

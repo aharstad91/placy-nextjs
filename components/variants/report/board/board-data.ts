@@ -15,7 +15,10 @@ import { estimateWalkMin, getHeroInsightPOIIds } from "../hero-insight-pois";
 import { getProjectBrokers } from "@/lib/themes/project-brand";
 import { computeSpreadCoordinates } from "@/lib/board/spread-co-located";
 import { isAnchorPOI } from "@/lib/board/anchor-poi";
-import { poiVisualIdentity } from "./marker-style";
+import {
+  poiVisualIdentity,
+  type CategoryIdentityFallback,
+} from "./marker-style";
 import type {
   BoardAudioTimings,
   BoardAudioTrack,
@@ -37,6 +40,16 @@ export interface BoardPOI {
   body?: string;
   /** Kategori-IDen POI tilhører i board-modellen — brukes når vi opener POI uten å vite hvilken kategori. */
   categoryId: BoardCategoryId;
+  /**
+   * Visuell identitet, avledet ÉN gang med `poiVisualIdentity`: temaets farge
+   * og underkategoriens ikon. Ligger her fordi markøren, mini-popupen,
+   * utforsk-modalen, ankerregisteret og omvisningens stedspanel alle viser
+   * samme sted og må se identiske ut. Leste de `raw.category.color` hver for
+   * seg, kunne kartet og lista drifte fra hverandre — og gjorde det
+   * (2026-09-07).
+   */
+  icon: string;
+  color: string;
   /** Event-datoer (ISO, eks. ["2025-09-12"]) — display-only. Filteret leser
    *  `raw.eventDates` (D5), ikke dette feltet. Undefined for boligrapporter
    *  (adaptBoardData setter det aldri). */
@@ -572,10 +585,10 @@ function adaptCategory(theme: ReportTheme, center: Coordinates): BoardCategory {
     illustration: theme.image,
     icon,
     color,
-    pois: theme.allPOIs.map((p) => adaptPOI(p, id)),
+    pois: theme.allPOIs.map((p) => adaptPOI(p, id, { icon, color })),
     // topRanked er score-rangert (byTierThenScore), ikke distanse-sortert som
     // allPOIs. Adapteres på samme måte så board-laget får samme BoardPOI-form.
-    topRankedPois: theme.topRanked.map((p) => adaptPOI(p, id)),
+    topRankedPois: theme.topRanked.map((p) => adaptPOI(p, id, { icon, color })),
     audio: pickPlayableAudio(theme.audio),
     reelsAudio: pickPlayableAudio(theme.reelsAudio),
   };
@@ -610,12 +623,33 @@ export function toDisplayPOI(poi: BoardPOI): POI {
   return { ...raw, coordinates: poi.coordinates };
 }
 
-function adaptPOI(poi: POI, categoryId: BoardCategoryId): BoardPOI {
+function adaptPOI(
+  poi: POI,
+  categoryId: BoardCategoryId,
+  themeIdentity: CategoryIdentityFallback,
+): BoardPOI {
   const hook = poi.editorialHook?.trim();
   const insight = poi.localInsight?.trim();
   const body = [hook, insight].filter(Boolean).join("\n\n") || undefined;
 
   const anchor = isAnchorPOI(poi);
+  const identity = poiVisualIdentity(poi, themeIdentity);
+
+  // Fargen settes også på `raw.category`, ikke bare på BoardPOI-en. Grunnen er
+  // at 3D-lagene tar imot rå `POI[]` (RevealLayer3D, blob-prikkene under
+  // velkommen-flyover-en) og leser `category.color` direkte — de kan ikke se
+  // hvilket tema POI-en ble hentet fra. Uten dette ville prikkene under introen
+  // beholdt underkategori-fargene mens pinnene rett etterpå byttet til
+  // temafarge. Navnet på underkategorien står urørt: det er bare fargen som er
+  // en visnings-avgjørelse.
+  //
+  // Samme POI kan ligge i to temaer (et anker løftes inn i hvert), og får da
+  // ett objekt per tema med den temafargen. Det er tilsiktet — pinnen skal
+  // høre til den visningen du står i.
+  const raw: POI =
+    poi.category.color === identity.color
+      ? poi
+      : { ...poi, category: { ...poi.category, color: identity.color } };
 
   return {
     id: poi.id as BoardPOIId,
@@ -624,8 +658,9 @@ function adaptPOI(poi: POI, categoryId: BoardCategoryId): BoardPOI {
     address: poi.address,
     body,
     categoryId,
+    ...identity,
     ...(anchor ? { isAnchor: true } : {}),
     ...(anchor && poi.childPOIs?.length ? { childPOIs: poi.childPOIs } : {}),
-    raw: poi,
+    raw,
   };
 }

@@ -44,7 +44,7 @@ export function BoardPOIMiniPopup() {
   if (!poi) return null;
 
   const Icon = getFilledIcon(poi.raw.category.icon);
-  const color = poi.raw.category.color;
+  const color = poi.color;
   const circle = markerCircleStyle(color);
   // Har POI-et grounded innhold eller Google-fakta, åpner CTA-en modalen i
   // Placy. Ellers beholder den dagens utlenking til Google AI Mode — men merket

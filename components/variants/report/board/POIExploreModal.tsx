@@ -73,7 +73,7 @@ export function POIExploreModal({
   if (!poi) return null;
 
   const Icon = getFilledIcon(poi.raw.category.icon);
-  const circle = markerCircleStyle(poi.raw.category.color);
+  const circle = markerCircleStyle(poi.color);
 
   return (
     <Modal

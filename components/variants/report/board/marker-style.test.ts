@@ -2,66 +2,83 @@ import { describe, it, expect } from "vitest";
 import { poiVisualIdentity } from "./marker-style";
 
 /**
- * Den delte derivasjonen av en POI-s visuelle identitet (2026-08-13).
+ * Den delte derivasjonen av en POI-s visuelle identitet.
  *
- * Bakgrunn: kartmarkøren avledet ikon/farge fra POI-ens sub-kategori, mens
- * sidebar-radene hardkodet et nål-ikon i temafargen. Samme sted så ulikt ut på
- * de to flatene. Derivasjonen bor nå på ett sted, og disse testene er kontrakten
- * som holder den der.
+ * Opprinnelig kontrakt (2026-08-13): kartmarkøren og sidebar-raden for samme
+ * sted skal se identiske ut, så derivasjonen bor på ett sted.
+ *
+ * Endret regel (2026-09-07): FARGEN kommer fra temaet, ikke fra
+ * underkategorien. Underkategori-fargene ble delt ut per kategori uten et
+ * felles budsjett, så en frisør fikk fuchsia inne i det grønne Hverdag-temaet
+ * og et legesenter fikk Transport-temaets blå. Temaraden er den eneste
+ * fargenøkkelen brukeren får se; markørene må lyde den. Ikonet bærer fortsatt
+ * forskjellen inni temaet.
  */
 
 const TEMA = { icon: "Utensils", color: "#ef4444" };
 
 describe("poiVisualIdentity", () => {
-  it("sub-kategoriens ikon og dempede farge vinner over temaets", () => {
-    expect(
-      poiVisualIdentity({ category: { icon: "Coffee", color: "#f97316" } }, TEMA),
-    ).toEqual({ icon: "Coffee", color: "#fa8229" });
-  });
-
-  it("faller tilbake til temaets farge når sub-kategorien mangler farge", () => {
+  it("bruker temaets farge, ikke underkategoriens", () => {
     expect(
       poiVisualIdentity({ category: { icon: "Coffee" } }, TEMA),
-    ).toEqual({ icon: "Coffee", color: "#ef4444" });
+    ).toEqual({ icon: "Coffee", color: "#f35a5a" });
   });
 
-  it("faller tilbake til temaets ikon når sub-kategorien mangler ikon", () => {
-    expect(
-      poiVisualIdentity({ category: { color: "#f97316" } }, TEMA),
-    ).toEqual({ icon: "Utensils", color: "#fa8229" });
-  });
-
-  it("faller tilbake på begge når sub-kategorien er tom", () => {
-    expect(poiVisualIdentity({ category: {} }, TEMA)).toEqual(TEMA);
-  });
-
-  it("behandler tom streng som manglende verdi (ikke som gyldig ikon)", () => {
-    expect(
-      poiVisualIdentity({ category: { icon: "", color: "" } }, TEMA),
-    ).toEqual(TEMA);
-  });
-
-  it("slipper ukjent hex gjennom uendret — aldri undefined inn i backgroundColor", () => {
-    const out = poiVisualIdentity(
-      { category: { icon: "Star", color: "#123456" } },
-      TEMA,
+  it("beholder underkategoriens ikon", () => {
+    expect(poiVisualIdentity({ category: { icon: "Coffee" } }, TEMA).icon).toBe(
+      "Coffee",
     );
+  });
+
+  it("demper temafargen til 450-nivå når den er kjent", () => {
+    // green-500 → 450. Uten dempingen roper markøren mot lys kartbakgrunn.
+    expect(
+      poiVisualIdentity({ category: { icon: "Star" } }, {
+        icon: "ShoppingCart",
+        color: "#22c55e",
+      }).color,
+    ).toBe("#36d16f");
+  });
+
+  it("faller tilbake til temaets ikon når underkategorien mangler ikon", () => {
+    expect(poiVisualIdentity({ category: {} }, TEMA)).toEqual({
+      icon: "Utensils",
+      color: "#f35a5a",
+    });
+  });
+
+  it("behandler tom streng som manglende ikon (ikke som gyldig ikon)", () => {
+    expect(poiVisualIdentity({ category: { icon: "" } }, TEMA)).toEqual({
+      icon: "Utensils",
+      color: "#f35a5a",
+    });
+  });
+
+  it("slipper ukjent temafarge gjennom uendret — aldri undefined inn i backgroundColor", () => {
+    const out = poiVisualIdentity({ category: { icon: "Star" } }, {
+      icon: "Utensils",
+      color: "#123456",
+    });
     expect(out.color).toBe("#123456");
     expect(out.color).toBeTypeOf("string");
   });
 
+  it("to POI-er i samme tema får samme farge, uansett underkategori", () => {
+    const frisor = poiVisualIdentity({ category: { icon: "Scissors" } }, TEMA);
+    const butikk = poiVisualIdentity({ category: { icon: "Store" } }, TEMA);
+    expect(frisor.color).toBe(butikk.color);
+    expect(frisor.icon).not.toBe(butikk.icon);
+  });
+
   it("returnerer primitiver, ikke nøstede objekter (React.memo-stabilitet)", () => {
-    const out = poiVisualIdentity(
-      { category: { icon: "Coffee", color: "#f97316" } },
-      TEMA,
-    );
+    const out = poiVisualIdentity({ category: { icon: "Coffee" } }, TEMA);
     expect(typeof out.icon).toBe("string");
     expect(typeof out.color).toBe("string");
     expect(Object.keys(out).sort()).toEqual(["color", "icon"]);
   });
 
   it("er ren: samme input gir samme output", () => {
-    const poi = { category: { icon: "Coffee", color: "#f97316" } };
+    const poi = { category: { icon: "Coffee" } };
     expect(poiVisualIdentity(poi, TEMA)).toEqual(poiVisualIdentity(poi, TEMA));
   });
 });

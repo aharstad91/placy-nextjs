@@ -30,6 +30,8 @@ const STOP_POI: BoardPOI = {
   name: "Strindfjordvegen bussholdeplass",
   coordinates: { lat: 63.4351, lng: 10.5053 },
   categoryId: "transport" as BoardPOI["categoryId"],
+  icon: "MapPin",
+  color: "#94a3b8",
   raw: {
     id: "entur-NSR-StopPlace-60260",
     name: "Strindfjordvegen bussholdeplass",
