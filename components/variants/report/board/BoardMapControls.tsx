@@ -12,8 +12,9 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import { Fragment, useState, type ReactNode } from "react";
-import { cn, travelModeLabels } from "@/lib/utils";
+import { cn, travelModeInSentence, travelModeLabels } from "@/lib/utils";
 import type { TravelMode } from "@/lib/types";
+import { REACH_INACTIVE, type ReachState } from "@/lib/board/reach";
 import { ControlDropdown, ControlPanelRow } from "./ControlDropdown";
 import { TRAVEL_MODE_ICONS, TravelModeSelector } from "./TravelModeSelector";
 
@@ -81,6 +82,18 @@ interface Props {
   /** Konturene vises nå. */
   contoursOn?: boolean;
   onContoursToggle?: () => void;
+  /**
+   * Utfallet av rekkevidden på punktene (`useReach`): hvilke konturer som
+   * finnes for valgt reisemåte, og hvor mange av stedene som ligger innenfor.
+   *
+   * Kontrollen bruker den til å SI hva den gjør. Uten den var «Rekkevidde» en
+   * knapp ved siden av «Til fots» uten noe som fortalte at de to hang sammen
+   * (Andreas, 2026-09-07) — og tallet er dessuten selve verdien av funksjonen:
+   * hvor stor del av nabolaget rekker du faktisk innenfor tiden.
+   *
+   * Utelatt (event-boardet) → ingen bildetekst, som før.
+   */
+  reach?: ReachState;
   /** Progressiv avsløring (mobil to-flate, R11): kollaps kontrollene til ett ⚙
    *  FAB som åpner en popover med de samme kontrollene. Holder kart-flaten ren
    *  — kontrollene er der når du vil ha dem, ikke alltid utbrettet. Default
@@ -140,6 +153,13 @@ const VIEW_OPTIONS: {
   { value: "3d", label: "3D", aria: "3D-kart", icon: Box, source: "google" },
 ];
 
+/** «5, 10 og 15» — norsk oppramsing av konturene som faktisk finnes. */
+function minuteList(minutes: readonly string[]): string {
+  if (minutes.length === 0) return "";
+  if (minutes.length === 1) return minutes[0];
+  return `${minutes.slice(0, -1).join(", ")} og ${minutes[minutes.length - 1]}`;
+}
+
 /**
  * Samlet kontroll-cluster for board-kartet — ÉN pille, sentrert NEDERST I
  * MIDTEN.
@@ -190,6 +210,7 @@ export function BoardMapControls({
   contourModes = [],
   contoursOn = false,
   onContoursToggle,
+  reach = REACH_INACTIVE,
   insetLeftPx = 0,
 }: Props) {
   // Auto/Fri vises kun i 3D OG når det finnes en orbit å vise (voice-over-tier).
@@ -223,67 +244,96 @@ export function BoardMapControls({
   // måtte oppdateres hver gang rekkefølgen endret seg.
   const groups: { key: string; node: ReactNode }[] = [];
 
-  if (showTravelModes) {
-    groups.push({
-      key: "travel",
-      node: (
-        <ControlDropdown
-          variant="bar"
-          direction={panelDirection}
-          icon={TRAVEL_MODE_ICONS[activeMode]}
-          label={travelModeLabels[activeMode]}
-          ariaLabel="Reisemåte"
-          compact={compact}
-          testId="map-travel-mode-control"
-        >
-          {(close) => (
-            <TravelModeSelector
-              modes={travelModes}
-              active={activeMode}
-              onChange={(mode) => {
-                onTravelModeChange!(mode);
-                close();
-              }}
-            />
+  /* Reisemåte og rekkevidde er ÉN gruppe, ikke to (2026-09-07).
+   *
+   * De sto som naboer med skilletegn mellom seg, og leste da som to uavhengige
+   * valg — «de to kontrollene henger ikke sammen, de er to separate» (Andreas).
+   * Skilletegnet er borte, og når rekkevidde er PÅ legger en kapsel seg rundt
+   * begge: de blir bokstavelig talt ett objekt i baren så lenge funksjonen er i
+   * bruk. Ingen tekst kan si det like fort. */
+  const travelNode = showTravelModes ? (
+    <ControlDropdown
+      variant="bar"
+      direction={panelDirection}
+      icon={TRAVEL_MODE_ICONS[activeMode]}
+      label={travelModeLabels[activeMode]}
+      ariaLabel="Reisemåte"
+      compact={compact}
+      testId="map-travel-mode-control"
+    >
+      {(close) => (
+        <>
+          <TravelModeSelector
+            modes={travelModes}
+            active={activeMode}
+            onChange={(mode) => {
+              onTravelModeChange!(mode);
+              close();
+            }}
+          />
+          {/* Koblingen sagt i ord, på stedet der valget tas. Står bare når
+              rekkevidde faktisk er i bruk — ellers er den støy om en funksjon
+              leseren ikke har slått på. Dette er ALT mobilen får (kapselen og
+              bildeteksten under hører til den fulle pillen), og er derfor
+              formulert til å stå alene. */}
+          {reach.active && (
+            <p className="mt-1 border-t border-black/5 px-2.5 pt-1.5 text-[11.5px] leading-snug text-stone-500">
+              Rekkevidde-ringene og punktene på kartet følger valget her.
+            </p>
           )}
-        </ControlDropdown>
-      ),
-    });
-  }
+        </>
+      )}
+    </ControlDropdown>
+  ) : null;
 
-  if (showContours) {
+  const contourNode = showContours ? (
+    <button
+      type="button"
+      onClick={onContoursToggle}
+      aria-pressed={contoursOn}
+      aria-label="Vis rekkevidde-konturer"
+      disabled={!contoursAvailable}
+      title={
+        !contoursAvailable
+          ? `Ingen rekkevidde for ${travelModeLabels[travelMode].toLowerCase()}`
+          : reach.active
+            ? `${reach.inside} steder ligger innenfor ${reach.minutes[reach.minutes.length - 1]} min ${travelModeInSentence[travelMode]}`
+            : undefined
+      }
+      className={cn(
+        "inline-flex items-center justify-center gap-1.5 rounded-full text-sm font-medium transition-colors duration-200",
+        compact ? "px-3" : "px-3.5",
+        btnH,
+        !contoursAvailable && "cursor-not-allowed text-stone-400 opacity-50",
+        contoursAvailable &&
+          (contoursOn
+            ? "bg-stone-900 text-white shadow-sm"
+            : "text-stone-600 hover:bg-stone-900/[0.05] hover:text-stone-900"),
+      )}
+    >
+      <Radar className="h-4 w-4" />
+      {/* Ikon-bare på mobil. Pillen sto alt på kapasitetsgrensen ved
+          320 px, og en tekst-etikett i tillegg dyttet den ut over
+          venstre kant (målt 2026-09-03). Betydningen bæres av
+          aria-label, som skjermlesere leser uansett bredde. */}
+      {!compact && <span>Rekkevidde</span>}
+    </button>
+  ) : null;
+
+  if (travelNode || contourNode) {
     groups.push({
-      key: "contours",
+      key: "reach",
       node: (
-        <button
-          type="button"
-          onClick={onContoursToggle}
-          aria-pressed={contoursOn}
-          aria-label="Vis rekkevidde-konturer"
-          disabled={!contoursAvailable}
-          title={
-            contoursAvailable
-              ? undefined
-              : `Ingen rekkevidde for ${travelModeLabels[travelMode].toLowerCase()}`
-          }
+        <div
+          data-testid="map-reach-group"
           className={cn(
-            "inline-flex items-center justify-center gap-1.5 rounded-full text-sm font-medium transition-colors duration-200",
-            compact ? "px-3" : "px-3.5",
-            btnH,
-            !contoursAvailable && "cursor-not-allowed text-stone-400 opacity-50",
-            contoursAvailable &&
-              (contoursOn
-                ? "bg-stone-900 text-white shadow-sm"
-                : "text-stone-600 hover:bg-stone-900/[0.05] hover:text-stone-900"),
+            "flex items-center gap-0.5 rounded-full transition-colors duration-300",
+            contoursOn && contoursAvailable && "bg-stone-900/[0.06] px-0.5",
           )}
         >
-          <Radar className="h-4 w-4" />
-          {/* Ikon-bare på mobil. Pillen sto alt på kapasitetsgrensen ved
-              320 px, og en tekst-etikett i tillegg dyttet den ut over
-              venstre kant (målt 2026-09-03). Betydningen bæres av
-              aria-label, som skjermlesere leser uansett bredde. */}
-          {!compact && <span>Rekkevidde</span>}
-        </button>
+          {travelNode}
+          {contourNode}
+        </div>
       ),
     });
   }
@@ -392,12 +442,54 @@ export function BoardMapControls({
   // er verre enn ingen kontroll.
   if (groups.length === 0) return null;
 
-  // Recovery-hint (delt) — sentrert over kontrollene etter drag-takeover.
+  /**
+   * Bildeteksten som forklarer rekkevidden — den KOBLINGEN brukeren ba om.
+   *
+   * Den sier tre ting i én linje: hvilke minutter ringene er, hvilken reisemåte
+   * de gjelder, og hvor mange av stedene som ligger innenfor. Det siste tallet
+   * er grunnen til at punktene utenfor er blasse prikker, og svaret på det
+   * funksjonen egentlig er til for: hvor stor del av nabolaget rekker du.
+   *
+   * Vedvarende, ikke transient: dette er ikke et hint om en gest du nettopp
+   * gjorde, det er tilstanden kartet står i. Den forsvinner i det du slår
+   * rekkevidde av.
+   *
+   * Kun i den fulle pillen. Mobilens kollapsede variant har ingen ledig
+   * bunn-midt (transport-baren står der), og koblingen bæres der av
+   * reisemåte-glyfen på hver konturetikett, prikkene utenfor ringene og linja i
+   * reisemåte-panelet.
+   */
+  const reachCaption =
+    reach.active && contoursOn && contoursAvailable ? (
+      <div
+        role="status"
+        data-testid="reach-caption"
+        className={cn(
+          "pointer-events-none absolute left-1/2 max-w-[26rem] -translate-x-1/2 rounded-full bg-white/85 px-3 py-1.5 text-center text-xs leading-snug text-stone-600 shadow-md ring-1 ring-black/5 backdrop-blur-md",
+          // Klarer pillens egen topp: kompakt er både høyere (44 px knapper) og
+          // står lenger opp fra kanten.
+          compact ? "bottom-[5.75rem]" : "bottom-[4.5rem]",
+        )}
+      >
+        <span className="font-semibold text-stone-800">
+          {minuteList(reach.minutes)} min {travelModeInSentence[travelMode]}
+        </span>{" "}
+        — {reach.inside} steder innenfor
+      </div>
+    ) : null;
+
+  // Recovery-hint (delt) — sentrert over kontrollene etter drag-takeover. Løftes
+  // over bildeteksten når begge står, så de ikke legger seg oppå hverandre.
   const freeHint = showCamera ? (
     <div
       role="status"
       className={cn(
-        "pointer-events-none absolute bottom-[4.75rem] left-1/2 max-w-[20rem] -translate-x-1/2 rounded-xl bg-stone-900/85 px-3 py-2 text-center text-xs font-medium text-white shadow-lg ring-1 ring-black/5 backdrop-blur-md transition-opacity duration-300",
+        "pointer-events-none absolute left-1/2 max-w-[20rem] -translate-x-1/2 rounded-xl bg-stone-900/85 px-3 py-2 text-center text-xs font-medium text-white shadow-lg ring-1 ring-black/5 backdrop-blur-md transition-opacity duration-300",
+        reachCaption
+          ? compact
+            ? "bottom-[8.75rem]"
+            : "bottom-[7.5rem]"
+          : "bottom-[4.75rem]",
         showFreeHint ? "opacity-100" : "opacity-0",
       )}
     >
@@ -461,6 +553,7 @@ export function BoardMapControls({
       )}
     >
       {freeHint}
+      {reachCaption}
 
       {/* Samlet pille, sentrert nederst. Mobil løftes litt så den klarer
           kart-sheetens bunnkant og Google-attribusjonen. */}

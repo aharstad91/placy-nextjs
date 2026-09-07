@@ -19,6 +19,8 @@ import { BoardPOI3DMiniPopup } from "./BoardPOI3DMiniPopup";
 import { BoardTravelChip3D } from "./BoardTravelChip3D";
 import { BoardContourLabels3D } from "./BoardContourLabels3D";
 import { contourRingsForMode } from "@/lib/board/contour-geometry";
+import { REACH_OUTSIDE_OPACITY } from "@/lib/board/reach";
+import { useReach } from "./use-reach";
 import { type CameraMode } from "./BoardMapControls";
 import { CameraCutOverlay } from "./CameraCutOverlay";
 import { CameraWaypointAuthor } from "./CameraWaypointAuthor";
@@ -223,6 +225,10 @@ export function BoardMap3D({
 
   // Rekkevidde-konturene for aktiv reisemåte. Tom liste når valget er av eller
   // profilen mangler konturer — laget beholder da instansene, se ContourLayer3D.
+  // Rekkevidde-tilstanden. Samme hook og samme sett som Mapbox-motoren leser,
+  // så et punkt som er blasst i «Kart» også er blasst i «Satelitt».
+  const reach = useReach();
+
   const contourRings = useMemo(
     () =>
       state.showContours
@@ -776,6 +782,7 @@ export function BoardMap3D({
     homeName: data.home.name,
     activePOIId: state.activePOIId,
     textureIds: storyTextureIds,
+    dotIds: reach.outsideIds,
     // Mini-popupen viser navnet — da skal ikke pinnen vise det også.
     suppressActiveLabel: popupMode === "mini",
     enabled: !compactMarkers && markerPOIs.length > 0,
@@ -887,6 +894,10 @@ export function BoardMap3D({
         dimmedMarkerIds={storyTextureIds}
         dimmedOpacity={STORY_EMPHASIS_OPACITY.texture}
         dimmedPinScale={STORY_EMPHASIS_PIN_SCALE.texture}
+        // Utenfor rekkevidde: prikk-formen kommer via `declutter.demotedIds`
+        // (hooken folder `dotIds` inn der), dempingen herfra.
+        fadedMarkerIds={reach.outsideIds}
+        fadedOpacity={REACH_OUTSIDE_OPACITY}
         revealItems={revealItems}
         showReveal={showReveal}
         animateReveal={!reducedMotion}
@@ -910,7 +921,12 @@ export function BoardMap3D({
       {isFront && <BoardTravelChip3D map3d={map3dInstance} />}
       {/* Etikettene er HTML-overlegg, så de skal bare projiseres når Google er
           den fremste motoren — ellers ville de svevd over Mapbox-kartet. */}
-      {isFront && <BoardContourLabels3D map3d={map3dInstance} />}
+      {isFront && (
+        <BoardContourLabels3D
+          map3d={map3dInstance}
+          insetLeftPx={mapPaddingLeft}
+        />
+      )}
       <CameraCutOverlay
         visible={cutVisible}
         // Kategorier bruker sin egen label; Nabolaget/Oppsummert har ingen

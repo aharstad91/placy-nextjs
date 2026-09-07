@@ -242,6 +242,20 @@ export interface UseMarker3DDeclutterParams {
    */
   textureIds?: ReadonlySet<string>;
   /**
+   * Punkter som ALT tegnes som prikk av en annen grunn enn trengsel — i praksis
+   * de som ligger utenfor rekkevidde-konturene (`useReach`).
+   *
+   * De må inn her og ikke bare i markørlaget: en prikk har ingen skive å slåss
+   * om plassen med, så den skal verken kunne demotere en nabo som fortsatt
+   * tegnes som pin, eller holde av plass til et navn den ikke viser. Uten dette
+   * ville et blasst punkt utenfor 15-minutters-linja kunnet dytte navnet vekk
+   * fra en butikk rett ved døra.
+   *
+   * Id-ene kommer tilbake i {@link Marker3DDeclutter.demotedIds}, så
+   * markørlaget har ÉN kilde til «dette er en prikk».
+   */
+  dotIds?: ReadonlySet<string>;
+  /**
    * Av når markørene uansett ikke er fulle ikon-pins: `compactMarkers` tegner
    * alt som prikker, og capture/intro-modusene mounter ingen markører i det
    * hele tatt. Da skal hooken tie helt.
@@ -308,6 +322,7 @@ export function useMarker3DDeclutter({
   homeSubtitle,
   activePOIId,
   textureIds,
+  dotIds,
   enabled,
   suppressActiveLabel = false,
   visibleLeftPx = 0,
@@ -325,6 +340,7 @@ export function useMarker3DDeclutter({
     homeSubtitle,
     activePOIId,
     textureIds,
+    dotIds,
     enabled,
     suppressActiveLabel,
     visibleLeftPx,
@@ -337,6 +353,7 @@ export function useMarker3DDeclutter({
     homeSubtitle,
     activePOIId,
     textureIds,
+    dotIds,
     enabled,
     suppressActiveLabel,
     visibleLeftPx,
@@ -352,6 +369,7 @@ export function useMarker3DDeclutter({
       homeSubtitle: siteSubtitle,
       activePOIId: activeId,
       textureIds: texture,
+      dotIds: dots,
       enabled: on,
       suppressActiveLabel: hideActiveLabel,
       visibleLeftPx: windowLeft,
@@ -467,13 +485,25 @@ export function useMarker3DDeclutter({
         ? Number.POSITIVE_INFINITY
         : (poi.googleRating ?? 0) + (isTexture(poi) ? 0 : SCENE_PRIORITY_BOOST);
 
-    const pinCandidates: PinCandidate[] = projected.map(({ poi, x, y }) => ({
-      id: poi.id,
-      x,
-      y,
-      priority: priorityOf(poi),
-    }));
-    const demotedIds = computePinDemotions(pinCandidates, blockers);
+    // Punktene som alt ER prikker (utenfor rekkevidde) står utenfor
+    // konkurransen — se `dotIds`. De kommer inn igjen i `demotedIds` under, så
+    // markørlaget bare har ett sett å lese.
+    const isDot = (poi: POI) => dots?.has(poi.id) ?? false;
+    const pinCandidates: PinCandidate[] = projected
+      .filter(({ poi }) => !isDot(poi))
+      .map(({ poi, x, y }) => ({
+        id: poi.id,
+        x,
+        y,
+        priority: priorityOf(poi),
+      }));
+    const crowdedOut = computePinDemotions(pinCandidates, blockers);
+    const demotedIds: ReadonlySet<string> = dots?.size
+      ? new Set([
+          ...crowdedOut,
+          ...projected.filter(({ poi }) => isDot(poi)).map(({ poi }) => poi.id),
+        ])
+      : crowdedOut;
 
     const labels: Record<string, LabelPlacement> = {};
     if (tier === "icon+label") {
@@ -581,6 +611,17 @@ export function useMarker3DDeclutter({
     [textureIds],
   );
 
+  /**
+   * Og samme nøkkel for prikk-settet, av nøyaktig samme grunn: å slå rekkevidde
+   * av og på — eller bytte reisemåte — endrer hvilke punkter som er prikker uten
+   * å røre markørsettet eller kameraet. Uten nøkkelen ville de nye prikkene
+   * beholdt navnene og plassreservasjonene sine fra før toggelen.
+   */
+  const dotKey = useMemo(
+    () => (dotIds ? [...dotIds].sort().join(",") : ""),
+    [dotIds],
+  );
+
   // Datasett-timeren. Egen fra kamera-timeren, se doc-blokken.
   useEffect(() => {
     if (!map3d || !enabled) return;
@@ -591,6 +632,7 @@ export function useMarker3DDeclutter({
     enabled,
     poisKey,
     textureKey,
+    dotKey,
     activePOIId,
     suppressActiveLabel,
   ]);

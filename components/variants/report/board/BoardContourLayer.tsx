@@ -1,14 +1,19 @@
 "use client";
 
-import { useMemo } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { Source, Layer, Marker } from "react-map-gl/mapbox";
 import type { MapRef } from "react-map-gl/mapbox";
 import {
   contourFeatureCollection,
-  contourLabels,
+  contourLabelCandidates,
   contourRingsForMode,
 } from "@/lib/board/contour-geometry";
+import {
+  chooseContourLabels,
+  type ContourLabelSlot,
+} from "@/lib/board/contour-label-placement";
 import { useBoard } from "./board-state";
+import { ContourLabelChip } from "./ContourLabelChip";
 import { useContourLabelsVisible } from "./use-board-zoom-tier";
 
 /**
@@ -42,9 +47,19 @@ interface Props {
   /** Kartreferansen etikett-terskelen leser zoom fra. */
   mapRef: React.RefObject<MapRef | null>;
   mapLoaded: boolean;
+  /**
+   * Bredden (px) en sidekolonne dekker fra venstre. Kartet ligger UNDER panelet
+   * på desktop, så en etikett bak det er tegnet men usett — og ville blitt
+   * valgt fremfor en som faktisk vises. Default 0.
+   */
+  insetLeftPx?: number;
 }
 
-export function BoardContourLayer({ mapRef, mapLoaded }: Props) {
+export function BoardContourLayer({
+  mapRef,
+  mapLoaded,
+  insetLeftPx = 0,
+}: Props) {
   const { state, data } = useBoard();
   const labelsVisible = useContourLabelsVisible(mapRef, mapLoaded);
 
@@ -54,7 +69,54 @@ export function BoardContourLayer({ mapRef, mapLoaded }: Props) {
   );
 
   const geojson = useMemo(() => contourFeatureCollection(rings), [rings]);
-  const labels = useMemo(() => contourLabels(rings), [rings]);
+  const candidates = useMemo(() => contourLabelCandidates(rings), [rings]);
+
+  /* Etikett-punktene velges mot det kameraet FAKTISK ser, ikke mot konturens
+   * nordligste punkt — se `contourLabelCandidates`. Zoomer leseren inn på
+   * boligen, ligger 15-minutters-konturens nordspiss langt over skjermkanten,
+   * og etiketten var da tegnet uten å være synlig. Regnes ved kamera-ro, samme
+   * takt som markør-utglisningen i `BoardMap`. */
+  const [slots, setSlots] = useState<ContourLabelSlot[]>([]);
+  const chooseLabels = useCallback(() => {
+    const map = mapRef.current?.getMap?.();
+    if (!map || candidates.length === 0) {
+      setSlots((prev) => (prev.length === 0 ? prev : []));
+      return;
+    }
+    const container = map.getContainer();
+    const next = chooseContourLabels(
+      candidates,
+      (lng, lat) => map.project([lng, lat]),
+      {
+        left: insetLeftPx + 8,
+        top: 8,
+        right: container.clientWidth - 8,
+        bottom: container.clientHeight - 8,
+      },
+    );
+    setSlots((prev) =>
+      prev.length === next.length &&
+      prev.every(
+        (p, i) =>
+          p.minutes === next[i].minutes &&
+          p.lng === next[i].lng &&
+          p.lat === next[i].lat,
+      )
+        ? prev
+        : next,
+    );
+  }, [mapRef, candidates, insetLeftPx]);
+
+  useEffect(() => {
+    if (!mapLoaded) return;
+    chooseLabels();
+    const map = mapRef.current?.getMap?.();
+    if (!map) return;
+    map.on("moveend", chooseLabels);
+    return () => {
+      map.off("moveend", chooseLabels);
+    };
+  }, [mapLoaded, mapRef, chooseLabels]);
 
   // Av, eller ingen konturer for denne reisemåten (AE4): ingenting tegnes, men
   // knappen i kartkontrollen står — den gates på om NOEN profil har konturer.
@@ -82,18 +144,14 @@ export function BoardContourLayer({ mapRef, mapLoaded }: Props) {
       </Source>
 
       {labelsVisible &&
-        labels.map((label) => (
+        slots.map((slot) => (
           <Marker
-            key={label.minutes}
-            longitude={label.lng}
-            latitude={label.lat}
+            key={slot.minutes}
+            longitude={slot.lng}
+            latitude={slot.lat}
             anchor="bottom"
           >
-            {/* pointer-events-none: etiketten skal aldri stjele et klikk fra en
-                markør som ligger i nærheten. */}
-            <span className="pointer-events-none select-none rounded-full bg-white/85 px-1.5 py-0.5 text-[10px] font-medium tabular-nums text-stone-600 shadow-sm ring-1 ring-black/5 backdrop-blur-sm">
-              {label.text}
-            </span>
+            <ContourLabelChip minutes={slot.minutes} mode={state.travelMode} />
           </Marker>
         ))}
     </>

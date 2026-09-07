@@ -1,10 +1,9 @@
 import { describe, it, expect } from "vitest";
 import {
   contourFeatureCollection,
-  contourLabels,
+  contourLabelCandidates,
   contourRings,
   contourRingsForMode,
-  northmostPoint,
 } from "./contour-geometry";
 import type { IsochroneContours, IsochroneSet } from "@/lib/types";
 
@@ -89,51 +88,54 @@ describe("contourRingsForMode", () => {
   });
 });
 
-describe("northmostPoint", () => {
-  it("velger punktet med høyest breddegrad", () => {
-    const point = northmostPoint(contourRings(polygonContours));
-    expect(point![1]).toBeCloseTo(63.412, 6);
+describe("contourLabelCandidates", () => {
+  it("gir kandidater per kontur, nordligst først", () => {
+    const cands = contourLabelCandidates(contourRings(polygonContours));
+    expect(cands.map((c) => c.minutes)).toEqual(["5", "10", "15"]);
+    for (const c of cands) {
+      const lats = c.points.map((p) => p[1]);
+      expect([...lats].sort((a, b) => b - a)).toEqual(lats);
+    }
   });
 
-  it("gir null uten ringer", () => {
-    expect(northmostPoint([])).toBeNull();
-  });
-});
-
-describe("contourLabels", () => {
-  it("gir én etikett per kontur med minutt-teksten", () => {
-    const labels = contourLabels(contourRings(polygonContours));
-    expect(labels.map((l) => l.text)).toEqual(["5 min", "10 min", "15 min"]);
-  });
-
-  it("plasserer hver etikett på sin egen konturs nordligste punkt", () => {
-    const labels = contourLabels(contourRings(polygonContours));
-    expect(labels[0].lat).toBeCloseTo(63.404, 6);
-    expect(labels[1].lat).toBeCloseTo(63.408, 6);
-    expect(labels[2].lat).toBeCloseTo(63.412, 6);
-  });
-
-  it("gir ÉN etikett for en kontur med flere flater", () => {
+  it("slår flere flater med samme minuttverdi sammen til ÉN kandidatliste", () => {
+    // Isochrone gir MultiPolygon når et nåbart område henger på en bru uten
+    // kobling i veinettet — det er fortsatt én kontur, med én etikett.
     const multi = {
       ...polygonContours,
       "15": { type: "MultiPolygon", coordinates: [[square(0.012)], [square(0.02)]] },
     } as unknown as IsochroneContours;
-    const labels = contourLabels(contourRings(multi));
-    expect(labels.filter((l) => l.minutes === "15")).toHaveLength(1);
-    // Den nordligste av flatene vinner.
-    expect(labels[2].lat).toBeCloseTo(63.42, 6);
+    const cands = contourLabelCandidates(contourRings(multi));
+    expect(cands.filter((c) => c.minutes === "15")).toHaveLength(1);
+    // Den nordligste flatens toppunkt ligger først.
+    expect(cands[2].points[0][1]).toBeCloseTo(63.42, 6);
   });
 
-  it("skyver en etikett nordover når to konturer stopper på samme sted", () => {
-    // En ås rett nord: 10 og 15 min når ikke lenger enn 5 min gjør.
-    const blocked = {
-      "5": { type: "Polygon", coordinates: [square(0.004)] },
-      "10": { type: "Polygon", coordinates: [square(0.004)] },
-      "15": { type: "Polygon", coordinates: [square(0.004)] },
-    } as unknown as IsochroneContours;
-    const labels = contourLabels(contourRings(blocked), 0.001);
-    expect(labels[1].lat - labels[0].lat).toBeCloseTo(0.001, 6);
-    expect(labels[2].lat - labels[1].lat).toBeCloseTo(0.001, 6);
+  it("subsampler FØR sorteringen, så kandidatene er spredt rundt ringen", () => {
+    /* Sorterte vi først og kappet, ville alle kandidatene ligget i samme
+       nordlige hjørne — og et kamera som ikke ser hjørnet hadde stått uten
+       etikett likevel. */
+    const ring = {
+      minutes: "10" as const,
+      outer: Array.from({ length: 400 }, (_, i) => {
+        const a = (i / 400) * Math.PI * 2;
+        return [10.4 + 0.01 * Math.cos(a), 63.41 + 0.01 * Math.sin(a)] as [
+          number,
+          number,
+        ];
+      }),
+      holes: [],
+    };
+    ring.outer.push(ring.outer[0]);
+    const [cand] = contourLabelCandidates([ring], 40);
+    expect(cand.points.length).toBeLessThanOrEqual(40);
+    const lats = cand.points.map((p) => p[1]);
+    // Spennet dekker hele ringen, ikke bare toppen.
+    expect(Math.max(...lats) - Math.min(...lats)).toBeGreaterThan(0.015);
+  });
+
+  it("hopper over konturer uten ringer", () => {
+    expect(contourLabelCandidates([])).toEqual([]);
   });
 });
 

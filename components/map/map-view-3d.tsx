@@ -198,6 +198,25 @@ export interface MapView3DProps {
    * `PoiMarkerContent.pinFactor`.
    */
   dimmedPinScale?: number;
+  /**
+   * POI-ider som skal tegnes BLASST — punkter utenfor rekkevidde-konturene
+   * (`useReach`).
+   *
+   * Tredje akse ved siden av de to over, fordi den svarer på et tredje
+   * spørsmål: `demotedMarkerIds` bytter form fordi plassen er tatt,
+   * `dimmedMarkerIds` bytter vekt fordi punktet ikke er det stoppet handler om,
+   * og denne sier «du rekker ikke hit innenfor tiden du har valgt». Den kan
+   * dessuten være på SAMTIDIG med omvisningens vekting og trenger en sterkere
+   * demping enn den (se `REACH_OUTSIDE_OPACITY`), så én felles skalar kunne
+   * ikke tjent begge.
+   *
+   * Kalleren legger de samme id-ene i `demotedMarkerIds` når punktet også skal
+   * falle til prikk — formen og styrken er to valg, og laget her tar ikke det
+   * ene på vegne av det andre.
+   */
+  fadedMarkerIds?: ReadonlySet<string>;
+  /** Styrken `fadedMarkerIds` tegnes med. Vinner over `dimmedOpacity`. 1 = av. */
+  fadedOpacity?: number;
 }
 
 /**
@@ -402,6 +421,8 @@ function Map3DInner({
   dimmedMarkerIds,
   dimmedOpacity = 1,
   dimmedPinScale = 1,
+  fadedMarkerIds,
+  fadedOpacity = 1,
 }: MapView3DProps) {
   // freeMode dropper alle camera-låser så brukeren får standard Google Maps
   // 3D-feel. Andre kontekster (overview, modal) beholder dagens lock for
@@ -531,7 +552,14 @@ function Map3DInner({
           const placement = markerLabels?.[poi.id];
           const compact = compactMarkers || (demotedMarkerIds?.has(poi.id) ?? false);
           const dimmed = dimmedMarkerIds?.has(poi.id) ?? false;
-          const opacity = dimmed ? dimmedOpacity : 1;
+          const faded = fadedMarkerIds?.has(poi.id) ?? false;
+          // Blassest vinner: er punktet både kontekst i omvisningen OG utenfor
+          // rekkevidde, er det det svakeste av de to som gjelder.
+          const opacity = faded
+            ? Math.min(fadedOpacity, dimmed ? dimmedOpacity : 1)
+            : dimmed
+              ? dimmedOpacity
+              : 1;
           const pinFactor = dimmed ? dimmedPinScale : 1;
           return (
             <Marker3DItem

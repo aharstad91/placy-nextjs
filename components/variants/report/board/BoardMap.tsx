@@ -30,6 +30,7 @@ import {
   MARKER_DOT_SIZE,
 } from "./BoardMarker";
 import { BoardContourLayer } from "./BoardContourLayer";
+import { useReach } from "./use-reach";
 import { useEngagement } from "@/lib/instrumentation/engagement-scope";
 import { useBoardZoomTier } from "./use-board-zoom-tier";
 import { HomeMarker } from "./HomeMarker";
@@ -230,6 +231,15 @@ export function BoardMap({
   const availableModes = useAvailableTravelModes();
   // Konturene gates på data: har ingen reisemåte konturer, finnes ikke knappen.
   const contourModes = useContourTravelModes();
+  // Hvilke steder ligger innenfor det du rekker? Regnet ÉN gang her og delt av
+  // begge motorene, så «utenfor» er samme sett i Kart som i Satelitt. Inaktiv
+  // (tomt sett) når rekkevidde er av eller reisemåten mangler konturer.
+  const reach = useReach();
+  // Egen referanse fordi utglisningen leser settet i en `useCallback` — hele
+  // `reach`-objektet i dep-arrayet ville re-registrert `moveend`-lytteren
+  // hver gang tellingen endret seg, og en re-registrering midt i et drag
+  // nullstiller ro-beregningen.
+  const reachOutsideIds = reach.outsideIds;
   const engagement = useEngagement();
   const popupMode = useBoardPopupMode();
   const mapRef = useRef<MapRef>(null);
@@ -557,6 +567,10 @@ export function BoardMap({
     const pinCandidates: PinCandidate[] = [];
     for (const { poi, emphasis, x, y, onscreen } of projected) {
       if (!onscreen) continue;
+      // Utenfor rekkevidde er punktet ALT en prikk (`BoardMarker.outOfReach`).
+      // Da har det ingen skive å slåss om plassen med, og skal ikke kunne
+      // demotere en nabo som fortsatt tegnes som pin.
+      if (reachOutsideIds.has(poi.id)) continue;
       pinCandidates.push({
         id: poi.id,
         x,
@@ -598,7 +612,10 @@ export function BoardMap({
     const candidates: LabelCandidate[] = [];
     const obstacles: LabelObstacle[] = [];
     for (const { poi, x, y } of projected) {
-      const isDemoted = nextDemoted.has(poi.id);
+      // «Er dette tegnet som en prikk?» — to grunner gir samme form:
+      // utglisningen tok plassen, eller punktet ligger utenfor rekkevidden.
+      const isDemoted =
+        nextDemoted.has(poi.id) || reachOutsideIds.has(poi.id);
       // Markørene tegnes alltid — tekst under en nabo-pin er like uleselig som
       // tekst under tekst. Egen sirkel blokkerer aldri egen label (labelen
       // starter utenfor sirkelkanten). Demoterte reserverer bare prikkas
@@ -635,7 +652,13 @@ export function BoardMap({
         ? prev
         : next,
     );
-  }, [zoomTier, visiblePOIs, state.activePOIId, data.home.coordinates]);
+  }, [
+    zoomTier,
+    visiblePOIs,
+    state.activePOIId,
+    data.home.coordinates,
+    reachOutsideIds,
+  ]);
 
   useEffect(() => {
     if (!mapLoaded) return;
@@ -1251,6 +1274,7 @@ export function BoardMap({
               {markerStates.map(
                 ({ poi, color, icon, isVisible, inCollection, emphasis }) => {
                   const isActive = state.activePOIId === poi.id;
+                  const outOfReach = reach.outsideIds.has(poi.id);
                   // R10c: når mini-popup viser POI-navn, undertrykk inline-label
                   // for aktiv markør så vi ikke får dobbel-navn-rendering.
                   // Kollisjonskulling: en label uten plassering på label-tieren
@@ -1280,6 +1304,7 @@ export function BoardMap({
                       labelSide={placement ?? "right"}
                       demoted={demotedPinIds.has(poi.id)}
                       emphasis={emphasis}
+                      outOfReach={outOfReach}
                       // Samme vei inn som 3D-pinnene: punkt + måling + flatens
                       // oppfølging. Se `useMapPinClick`.
                       onClick={() => handlePinClick(String(poi.id))}
@@ -1290,7 +1315,11 @@ export function BoardMap({
 
               {/* Konturene FØRST i lista: linje-lag legges i Mapbox i den
                   rekkefølgen de monteres, så rutelinja tegnes over dem. */}
-              <BoardContourLayer mapRef={mapRef} mapLoaded={mapLoaded} />
+              <BoardContourLayer
+                mapRef={mapRef}
+                mapLoaded={mapLoaded}
+                insetLeftPx={mapPaddingLeft}
+              />
               <BoardPathLayer />
               <BoardPathMidpointMarker />
               <BoardPOILabel />
@@ -1334,6 +1363,7 @@ export function BoardMap({
             contourModes={contourModes}
             contoursOn={state.showContours}
             onContoursToggle={handleContoursToggle}
+            reach={reach}
             cameraMode={cameraMode}
             onCameraModeChange={handleCameraModeChange}
             showCameraMode={hasVoiceOver}

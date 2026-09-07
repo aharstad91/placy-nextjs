@@ -63,6 +63,7 @@ interface Props {
   enabled: boolean;
   suppressActiveLabel: boolean;
   textureIds?: ReadonlySet<string> | undefined;
+  dotIds?: ReadonlySet<string> | undefined;
 }
 
 function setup(
@@ -83,6 +84,7 @@ function setup(
         homeSubtitle: overrides.homeSubtitle,
         activePOIId: props.activePOIId,
         textureIds: props.textureIds,
+        dotIds: props.dotIds,
         enabled: props.enabled,
         suppressActiveLabel: props.suppressActiveLabel,
       }),
@@ -93,6 +95,7 @@ function setup(
         enabled: overrides.enabled ?? true,
         suppressActiveLabel: overrides.suppressActiveLabel ?? false,
         textureIds: overrides.textureIds,
+        dotIds: overrides.dotIds,
       },
     },
   );
@@ -306,6 +309,7 @@ describe("useMarker3DDeclutter — når den skal tie", () => {
         enabled: false,
         suppressActiveLabel: false,
         textureIds: undefined,
+        dotIds: undefined,
       });
     });
     expect(result.current.labels).toEqual({});
@@ -377,6 +381,7 @@ describe("useMarker3DDeclutter — ro-signalet", () => {
         enabled: true,
         suppressActiveLabel: false,
         textureIds: undefined,
+        dotIds: undefined,
       });
     });
     for (let i = 0; i < 5; i++) {
@@ -470,6 +475,7 @@ describe("useMarker3DDeclutter — omvisningens tekstur", () => {
         enabled: true,
         suppressActiveLabel: false,
         textureIds: new Set(["a"]),
+        dotIds: undefined,
       });
     });
     settle();
@@ -485,5 +491,67 @@ describe("useMarker3DDeclutter — omvisningens tekstur", () => {
     );
     settle();
     expect(result.current.demotedIds.has("tekstur")).toBe(false);
+  });
+});
+
+describe("useMarker3DDeclutter — punkter utenfor rekkevidde", () => {
+  /**
+   * Utenfor rekkevidde-konturene tegnes punktet som prikk (`useReach` →
+   * `dotIds`). En prikk har ingen skive å slåss om plassen med, så den skal
+   * verken kunne demotere en nabo som fortsatt tegnes som pin, eller holde av
+   * plass til et navn den ikke viser.
+   */
+  it("gir prikk-id-ene tilbake i demotedIds — markørlaget har ÉN kilde", () => {
+    const { result } = setup(makeMap(900), [poi("nær", 100, 100, 4), poi("fjern", 600, 600, 5)], {
+      dotIds: new Set(["fjern"]),
+    });
+    settle();
+    expect(result.current.demotedIds.has("fjern")).toBe(true);
+    expect(result.current.demotedIds.has("nær")).toBe(false);
+  });
+
+  it("en prikk tar ikke pin-plassen fra naboen sin", () => {
+    // Samme punkt på skjermen, og prikken har HØYERE rating — uten gaten ville
+    // et blasst punkt utenfor 15-minutters-linja gjort butikken ved døra til
+    // prikk.
+    const { result } = setup(
+      makeMap(900),
+      [poi("nær", 300, 300, 3), poi("fjern", 305, 305, 5)],
+      { dotIds: new Set(["fjern"]) },
+    );
+    settle();
+    expect(result.current.demotedIds.has("nær")).toBe(false);
+  });
+
+  it("en prikk bærer ikke navn", () => {
+    const { result } = setup(makeMap(900), [poi("nær", 100, 100, 4), poi("fjern", 600, 600, 5)], {
+      dotIds: new Set(["fjern"]),
+    });
+    settle();
+    expect(result.current.labels["fjern"]).toBeUndefined();
+    expect(result.current.labels["nær"]?.text).toBe("nær");
+  });
+
+  it("regner på nytt når prikk-settet endrer seg, selv om markørsettet er likt", () => {
+    // Å slå rekkevidde av/på — eller bytte reisemåte — rører verken markørsettet
+    // eller kameraet. Uten egen nøkkel ville de nye prikkene beholdt navnene
+    // sine fra før toggelen.
+    const pois = [poi("a", 100, 100, 4), poi("b", 600, 600, 5)];
+    const { result, rerender } = setup(makeMap(900), pois);
+    settle();
+    expect(result.current.labels["b"]?.text).toBe("b");
+    act(() => {
+      rerender({
+        pois,
+        activePOIId: null,
+        enabled: true,
+        suppressActiveLabel: false,
+        dotIds: new Set(["b"]),
+        textureIds: undefined,
+      });
+    });
+    settle();
+    expect(result.current.labels["b"]).toBeUndefined();
+    expect(result.current.demotedIds.has("b")).toBe(true);
   });
 });

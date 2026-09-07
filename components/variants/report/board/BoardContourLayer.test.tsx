@@ -51,8 +51,20 @@ vi.mock("react-map-gl/mapbox", () => ({
       data-filter={JSON.stringify(filter)}
     />
   ),
-  Marker: ({ children, latitude }: { children: ReactNode; latitude: number }) => (
-    <div data-testid="contour-label" data-lat={String(latitude)}>
+  Marker: ({
+    children,
+    latitude,
+    longitude,
+  }: {
+    children: ReactNode;
+    latitude: number;
+    longitude: number;
+  }) => (
+    <div
+      data-testid="contour-label"
+      data-lat={String(latitude)}
+      data-lng={String(longitude)}
+    >
       {children}
     </div>
   ),
@@ -77,11 +89,39 @@ const contours = {
   "15": { type: "Polygon", coordinates: [square(0.012)] },
 } as unknown as IsochroneContours;
 
+/**
+ * Kart-dobbel for etikett-plasseringen.
+ *
+ * Etikettene velges nå mot det kameraet FAKTISK ser (`chooseContourLabels`), så
+ * testen må gi en projeksjon og en beholder-størrelse. Projeksjonen er lineær
+ * og sentrert: 0,0001° ≈ 1 px, sør er nedover — nok til at «over toppkanten»
+ * og «innenfor» er meningsfulle begreper.
+ */
+function fakeMapbox(options: { height?: number; shiftY?: number } = {}) {
+  const height = options.height ?? 800;
+  const shiftY = options.shiftY ?? 0;
+  return {
+    current: {
+      getMap: () => ({
+        project: ([lng, lat]: [number, number]) => ({
+          x: 500 + (lng - 10.4) * 10000,
+          y: height / 2 - (lat - 63.4) * 10000 + shiftY,
+        }),
+        getContainer: () => ({ clientWidth: 1000, clientHeight: height }),
+        on: () => {},
+        off: () => {},
+      }),
+    },
+  } as unknown as React.RefObject<import("react-map-gl/mapbox").MapRef | null>;
+}
+
 function setup(options: {
   showContours: boolean;
   travelMode?: TravelMode;
   byMode?: IsochroneSet["byMode"];
   labelsVisible?: boolean;
+  height?: number;
+  shiftY?: number;
 }) {
   const isochrones =
     options.byMode === undefined
@@ -98,7 +138,7 @@ function setup(options: {
   } as unknown as ReturnType<typeof useBoard>);
   vi.mocked(useContourLabelsVisible).mockReturnValue(options.labelsVisible ?? true);
 
-  const mapRef = { current: null };
+  const mapRef = fakeMapbox({ height: options.height, shiftY: options.shiftY });
   return render(<BoardContourLayer mapRef={mapRef} mapLoaded />);
 }
 
@@ -158,10 +198,52 @@ describe("BoardContourLayer", () => {
     const { getAllByTestId } = setup({ showContours: true, byMode: { walk: contours } });
     const labels = getAllByTestId("contour-label");
     expect(labels).toHaveLength(3);
-    expect(labels.map((l) => l.textContent)).toEqual(["5 min", "10 min", "15 min"]);
+    // Etiketten NAVNGIR reisemåten (`ContourLabelChip`): glyfen visuelt, ordet
+    // for skjermlesere. Uten det sto det ingen steder på kartet HVA de fem
+    // minuttene var, og rekkevidde leste som et valg uten kobling til
+    // «Til fots» (Andreas, 2026-09-07).
+    expect(labels.map((l) => l.textContent)).toEqual([
+      "5 min til fots",
+      "10 min til fots",
+      "15 min til fots",
+    ]);
     const lats = labels.map((l) => Number(l.getAttribute("data-lat")));
     expect(lats[0]).toBeLessThan(lats[1]);
     expect(lats[1]).toBeLessThan(lats[2]);
+  });
+
+  it("velger et SYNLIG punkt på konturen når nordspissen er utenfor bildet", () => {
+    /* Nøyaktig feilen fra Satelitt (2026-09-07): etiketten sto på konturens
+       nordligste punkt, som lå på y=−330 og y=−812 — tegnet, men usynlig. Nå
+       glir valget rundt ringen til noe kameraet ser. */
+    const { getAllByTestId } = setup({
+      showContours: true,
+      byMode: { walk: contours },
+      // Hele bildet skjøvet 300 px ned: nordkantene havner over toppkanten.
+      shiftY: -300,
+    });
+    const labels = getAllByTestId("contour-label");
+    expect(labels).toHaveLength(3);
+    // Alle tre står nå innenfor beholderen (0–800 px).
+    const ys = labels.map(
+      (l) => 400 - (Number(l.getAttribute("data-lat")) - 63.4) * 10000 - 300,
+    );
+    for (const y of ys) {
+      expect(y).toBeGreaterThan(0);
+      expect(y).toBeLessThan(800);
+    }
+  });
+
+  it("dropper etiketten helt når INGEN del av konturen er i bildet", () => {
+    // En etikett klemt mot kanten ville påstått at linja ligger der kanten er.
+    const { queryAllByTestId, getByTestId } = setup({
+      showContours: true,
+      byMode: { walk: contours },
+      shiftY: -3000,
+    });
+    expect(queryAllByTestId("contour-label")).toHaveLength(0);
+    // Linjene står fortsatt.
+    expect(getByTestId("board-contour-5")).toBeTruthy();
   });
 
   it("AE8: under etikett-grensen forsvinner etikettene, linjene består", () => {

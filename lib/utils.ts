@@ -52,6 +52,19 @@ export const travelModeLabels = {
   car: "Bil",
 } as const;
 
+/**
+ * Reisemåten som SETNINGSLEDD: «15 min til fots», «10 min på sykkel».
+ *
+ * `travelModeLabels` er substantiver til knapper og listerader, og i løpende
+ * tekst blir de feil norsk — «15 min sykkel». Rekkevidde-bildeteksten under
+ * kart-baren og etikettene på konturene sier setningen, ikke knappen.
+ */
+export const travelModeInSentence = {
+  walk: "til fots",
+  bike: "på sykkel",
+  car: "med bil",
+} as const;
+
 // Ikoner for reisemodus (Lucide)
 export const travelModeIcons = {
   walk: "Footprints",

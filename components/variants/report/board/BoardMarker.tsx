@@ -17,6 +17,7 @@ import {
   STORY_EMPHASIS_PIN_SCALE,
   type StoryEmphasis,
 } from "./story/story-model";
+import { REACH_OUTSIDE_OPACITY } from "@/lib/board/reach";
 
 /**
  * Ikon-sirkelens diameter for en INAKTIV markør, i px.
@@ -91,6 +92,21 @@ interface Props {
    * ikke to.
    */
   emphasis?: StoryEmphasis | null;
+  /**
+   * Punktet ligger UTENFOR rekkevidde-konturene for den valgte reisemåten
+   * (`useReach`), og rekkevidde er slått på.
+   *
+   * Utslaget er det samme som utglisningen bruker — pinnen faller til prikk —
+   * pluss en reell demping (`REACH_OUTSIDE_OPACITY`). Det er dét som gjør
+   * ringene til en grense man SER: fulle ikoner innenfor, blasse prikker
+   * utenfor. Uten det lå konturene som tre streker punktene ikke svarte på
+   * (Andreas, 2026-09-07).
+   *
+   * Prikken er fortsatt klikkbar, og et ÅPNET punkt er unntatt — åpner du et
+   * sted langt unna, skal det ikke være en blass prikk under popupen din.
+   * Samme regel som `demoted`.
+   */
+  outOfReach?: boolean;
   onClick: () => void;
 }
 
@@ -106,6 +122,7 @@ function BoardMarkerImpl({
   labelSide,
   demoted = false,
   emphasis = null,
+  outOfReach = false,
   onClick,
 }: Props) {
   const Icon = getFilledIcon(poi.raw.category.icon || icon);
@@ -119,7 +136,8 @@ function BoardMarkerImpl({
   // samme måte som et punkt under dot-tieren er det, og R10 løfter det tilbake
   // hvis brukeren åpner det. `BoardMap` gir aldri aktiv POI eller et anker
   // `demoted` (de har Infinity-prioritet), så dette er bare et sikkerhetsnett.
-  const crowdedTier: BoardZoomTier = demoted ? "dot" : zoomTier;
+  const crowdedTier: BoardZoomTier =
+    demoted || outOfReach ? "dot" : zoomTier;
 
   // R10: aktiv markør på `dot`-tier promoteres visuelt til `icon`-tier-størrelse
   // så label har et anker å stå ved siden av.
@@ -159,6 +177,13 @@ function BoardMarkerImpl({
   // ikke kan bære skillet alene (2026-08-28).
   const emphasisOpacity = emphasis ? STORY_EMPHASIS_OPACITY[emphasis] : 1;
 
+  // Rekkevidde legger seg OPPÅ omvisningens vekting i stedet for å erstatte
+  // den: begge kan være på samtidig (omvisningen kjører, leseren slår på
+  // rekkevidde), og et punkt som både er kontekst og utenfor rekkevidde er
+  // svakere enn hvert av dem alene. `effectiveTier` over har alt fritatt den
+  // åpne POI-en fra prikk-formen; her fritas den fra dempingen.
+  const reachOpacity = outOfReach && !isActive ? REACH_OUTSIDE_OPACITY : 1;
+
   return (
     <Marker
       longitude={poi.coordinates.lng}
@@ -184,7 +209,7 @@ function BoardMarkerImpl({
           position: "relative",
           width: containerSize,
           height: containerSize,
-          opacity: isVisible ? emphasisOpacity : 0,
+          opacity: isVisible ? emphasisOpacity * reachOpacity : 0,
           transform: isVisible ? "scale(1)" : "scale(0.5)",
           // Vektskiftet skal SEES, ikke bare være der: ved et stoppbytte endrer
           // flere hundre markører nivå samtidig, og en rask fade leser som at
@@ -381,5 +406,10 @@ export const BoardMarker = React.memo(
     prev.suppressLabel === next.suppressLabel &&
     prev.labelSide === next.labelSide &&
     prev.demoted === next.demoted &&
-    prev.emphasis === next.emphasis,
+    prev.emphasis === next.emphasis &&
+    // MÅ stå her. Sammenligneren er en hvitliste, så en prop som ikke er nevnt
+    // rører aldri skjermen: uten denne linja slo rekkevidde på konturene og
+    // bildeteksten, mens alle 973 markørene sto igjen som fulle pins (målt i
+    // nettleseren 2026-09-07 — 0 dempede av 973).
+    prev.outOfReach === next.outOfReach,
 );

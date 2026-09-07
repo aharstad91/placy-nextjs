@@ -1,6 +1,6 @@
 /**
  * Ren geometri for rekkevidde-konturene: GeoJSON-formen begge kartmotorene
- * tegner, og punktet etikettene henges på.
+ * tegner, og punktene etikettene kan henges på.
  *
  * Ligger utenfor komponentene fordi Mapbox-laget og Google-laget må gi SAMME
  * svar — en etikett som står nord for konturen i «Kart» og øst for den i
@@ -65,59 +65,44 @@ export function contourRingsForMode(
 }
 
 /**
- * Punktet etiketten henges på: konturens NORDLIGSTE punkt.
+ * Kandidatpunkter etiketten kan henges på, per kontur — nord først.
  *
- * Nord er valgt fordi konturene er nøstet — 5 min ligger inni 10, som ligger
- * inni 15 — så nordligste punkt stabler de tre etikettene utover fra boligen i
- * stedet for å legge dem oppå hverandre. Ved flere flater per kontur vinner
- * den nordligste av dem, så konturen får ÉN etikett og ikke én per flate.
+ * Fram til 2026-09-07 sto ett fast punkt per kontur her — det nordligste. Det
+ * holder når kameraet rammer inn hele konturen, og feiler stille når det ikke
+ * gjør det.
+ * Målt i Satelitt på Wesselsløkka (2026-09-07): 5-minutters-etiketten sto på
+ * y=96, 10 min på y=−330 og 15 min på y=−812 — to av tre projisert OVER
+ * skjermkanten, altså usynlige. Etikettene er det eneste stedet på kartet som
+ * navngir reisemåten, så to tapte etiketter er to tredjedeler av koblingen.
  *
- * Alternativet, etiketter langs linja, er forkastet: Mapbox' linje-plasserte
- * etiketter er upålitelige i denne kodebasen, og Google-motoren har dem ikke.
+ * Med en liste kan visningslaget velge det punktet som faktisk er på skjermen.
+ * Rekkefølgen er nordligst først, så valget lander der etiketten alltid har
+ * stått når det er plass — konturene er nøstet, og nord stabler dem utover fra
+ * boligen i stedet for oppå hverandre.
+ *
+ * Punktene subsamples FØR sorteringen. Sorterte vi først og kappet, ville alle
+ * kandidatene ligget i samme nordlige hjørne — og et kamera som ikke ser det
+ * hjørnet hadde stått uten etikett likevel.
  */
-export function northmostPoint(rings: ContourRing[]): [number, number] | null {
-  let best: [number, number] | null = null;
-  for (const ring of rings) {
-    for (const point of ring.outer) {
-      if (!best || point[1] > best[1]) best = point;
-    }
-  }
-  return best;
-}
-
-export interface ContourLabel {
-  minutes: IsochroneMinutes;
-  /** «5 min» — samme form som minutt-kolonnen i lista. */
-  text: string;
-  lng: number;
-  lat: number;
-}
-
-/**
- * Én etikett per kontur, plassert på konturens nordligste punkt.
- *
- * Etikettene sorteres innerst-først, og en etikett som ville stått nærmere enn
- * `minGapDeg` breddegrader fra den forrige skyves nordover. Uten det kan to
- * konturer med samme nordligste flate — en fjord eller en ås rett nord for
- * boligen stopper begge på samme sted — legge to etiketter oppå hverandre.
- */
-export function contourLabels(
-  rings: ContourRing[],
-  minGapDeg = 0.0012
-): ContourLabel[] {
-  const labels: ContourLabel[] = [];
+export function contourLabelCandidates(
+  rings: readonly ContourRing[],
+  maxPerContour = 48
+): { minutes: IsochroneMinutes; points: [number, number][] }[] {
+  const out: { minutes: IsochroneMinutes; points: [number, number][] }[] = [];
   for (const minutes of ISOCHRONE_MINUTES) {
-    const forMinute = rings.filter((r) => r.minutes === minutes);
-    const point = northmostPoint(forMinute);
-    if (!point) continue;
-    let lat = point[1];
-    const previous = labels[labels.length - 1];
-    if (previous && lat - previous.lat < minGapDeg) {
-      lat = previous.lat + minGapDeg;
+    const points: [number, number][] = [];
+    for (const ring of rings) {
+      if (ring.minutes !== minutes) continue;
+      // Siste punkt er en gjentakelse av det første (lukket ring) — utelates.
+      const outer = ring.outer.slice(0, -1);
+      const step = Math.max(1, Math.ceil(outer.length / maxPerContour));
+      for (let i = 0; i < outer.length; i += step) points.push(outer[i]);
     }
-    labels.push({ minutes, text: `${minutes} min`, lng: point[0], lat });
+    if (points.length === 0) continue;
+    points.sort((a, b) => b[1] - a[1]);
+    out.push({ minutes, points });
   }
-  return labels;
+  return out;
 }
 
 /** Mapbox-kilden: én LineString per ytre ring, med minuttverdien som egenskap. */
