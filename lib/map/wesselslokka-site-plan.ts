@@ -26,17 +26,28 @@ export function sitePlanCoordinate([x, y]: Point): [number, number] {
   ];
 }
 
-// Main envelopes, omitting small facade recesses and balconies.
-export const WESSELSLOKKA_PLAN_BUILDINGS = [
-  { id: "a1", name: "Bygg A1", pixels: [[350, 837], [407, 842], [404, 875], [347, 870]] },
-  { id: "a2", name: "Bygg A2", pixels: [[409, 843], [487, 850], [484, 881], [406, 875]] },
-  { id: "b", name: "Bygg B", pixels: [[458, 757], [507, 761], [499, 844], [450, 840]] },
+/**
+ * To uavhengige holdepunkter som ikke inngår i tilpasningen, og som derfor kan
+ * felle registreringen hvis noen flytter på et kontrollpunkt:
+ *
+ * 1. Planens søndre kollektivgate faller sammen med Brøsetjordet slik OSM
+ *    tegner den (way 1502590316). Sjekkpunktene under er avlest fra den.
+ * 2. OSM har allerede et grovt plassholder-omriss for prosjektet
+ *    (way 1502590318, `building=construction` + `construction=apartments`,
+ *    merket «very approximate position / size»). A1/A2/B lander oppå det.
+ *
+ * Begge er bildeuavhengige kilder. Registreringen er en innpassing, ikke en
+ * oppmåling — vi holder den innenfor ~15 m, ikke bedre.
+ */
+export const WESSELSLOKKA_REGISTRATION_CHECKS = [
+  { name: "Brøsetjordet vest", pixel: [110, 788], coordinate: [10.449732, 63.421765], toleranceMeters: 15 },
+  { name: "Brøsetjordet ved feltet", pixel: [350, 890], coordinate: [10.451748, 63.421270], toleranceMeters: 15 },
+  { name: "OSM-plassholder for prosjektet", pixel: [430, 830], coordinate: [10.452544, 63.421517], toleranceMeters: 25 },
 ] as const;
 
-// Local section from Brøsetvegen to the east edge of this test site.
-export const WESSELSLOKKA_PLAN_STREET: readonly Point[] = [
-  [110, 788], [136, 815], [172, 840], [223, 861], [282, 879], [350, 890],
-  [420, 897], [488, 893], [544, 878], [600, 854],
-  [611, 875], [552, 900], [495, 917], [422, 921], [345, 914],
-  [274, 903], [215, 885], [163, 865], [125, 839], [94, 803],
-];
+// Main envelopes, omitting small facade recesses and balconies.
+export const WESSELSLOKKA_PLAN_BUILDINGS = [
+  { id: "a1", name: "Bygg A1", label: "A1", pixels: [[350, 837], [407, 842], [404, 875], [347, 870]] },
+  { id: "a2", name: "Bygg A2", label: "A2", pixels: [[409, 843], [487, 850], [484, 881], [406, 875]] },
+  { id: "b", name: "Bygg B", label: "B", pixels: [[458, 757], [507, 761], [499, 844], [450, 840]] },
+] as const;

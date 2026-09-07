@@ -9,9 +9,16 @@ interface ProjectMassingLayer3DProps {
   massing: ProjectMassing | null;
 }
 
-const SHELL_FILL_COLOR = "rgba(236, 244, 240, 0.42)";
-const SHELL_STROKE_COLOR = "rgba(255, 255, 255, 0.98)";
 const SHELL_STROKE_WIDTH = 2.25;
+
+/** Google-motoren tar bare CSS-farger, ikke Mapbox-paint. Palettens hex får
+ *  derfor en alfa-kanal her: flatene må være gjennomsiktige nok til at
+ *  fotoflisene under fortsatt leses som terreng. */
+function withAlpha(hex: string, alpha: number): string {
+  const value = hex.replace("#", "");
+  const [r, g, b] = [0, 2, 4].map((i) => parseInt(value.slice(i, i + 2), 16));
+  return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+}
 
 /**
  * Enkle, ekstruderte prosjektvolumer i Google Photorealistic 3D Tiles.
@@ -48,12 +55,9 @@ export function ProjectMassingLayer3D({
         )) as google.maps.Maps3DLibrary;
         if (cancelled) return;
 
-        const surfaces = [
-          ...(massing.streets ?? []).map((street) => ({
-            ...street, id: `street:${street.id}`, heightMeters: 0, isStreet: true,
-          })),
-          ...massing.buildings.map((building) => ({ ...building, isStreet: false })),
-        ];
+        const surfaces = massing.buildings;
+        const fillColor = withAlpha(massing.palette.fill, 0.5);
+        const strokeColor = withAlpha(massing.palette.line, 0.95);
         const activeIds = new Set(surfaces.map((surface) => surface.id));
         for (const [id, polygon] of polygonById) {
           if (!activeIds.has(id) && polygon.parentNode) polygon.remove();
@@ -71,13 +75,11 @@ export function ProjectMassingLayer3D({
             lng,
             altitude: building.heightMeters,
           }));
-          polygon.altitudeMode = building.isStreet
-            ? lib.AltitudeMode.CLAMP_TO_GROUND
-            : lib.AltitudeMode.RELATIVE_TO_GROUND;
-          polygon.extruded = !building.isStreet;
-          polygon.fillColor = building.isStreet ? "rgba(183, 173, 163, 0.65)" : SHELL_FILL_COLOR;
-          polygon.strokeColor = building.isStreet ? "rgba(141, 129, 118, 0.75)" : SHELL_STROKE_COLOR;
-          polygon.strokeWidth = building.isStreet ? 1 : SHELL_STROKE_WIDTH;
+          polygon.altitudeMode = lib.AltitudeMode.RELATIVE_TO_GROUND;
+          polygon.extruded = true;
+          polygon.fillColor = fillColor;
+          polygon.strokeColor = strokeColor;
+          polygon.strokeWidth = SHELL_STROKE_WIDTH;
           polygon.drawsOccludedSegments = false;
 
           if (polygon.parentNode && polygon.parentNode !== map3d) polygon.remove();
