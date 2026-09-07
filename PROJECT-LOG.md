@@ -6,6 +6,74 @@
 
 ---
 
+## 2026-09-07 (kveld) — BRØSET-PLANEN INN I KARTET: STADFESTET FØRST, SÅ HELE OMRÅDET
+
+**Kontekst:** *«se hva som er gjort i dette worktree. codex har gått tom for tokens. den skulle jobbe med å stadfeste 2d mapbox slik at vi bygde dette i 2d først, som igjen legger grunnlag for en 3d versjon etterpå»* — worktree `../placy-wesselslokka-building-masses`, gren `feat/wesselslokka-building-masses`, to commits fra Codex og et skjermbilde av tre hvite omriss ute på et jorde.
+
+Sesjonen ble to runder: først stadfeste det Codex hadde gjort, så bygge ut resten av planen på det grunnlaget.
+
+---
+
+### Runde 1 — `447bd8d`: plasseringen var riktig, kontrollen manglet, veien var feil
+
+Codex hadde bygd en affin innpassing av Wesselsløkka-situasjonsplanen på tre visuelt avleste holdepunkter, og lagt A1/A2/B + en «kollektivgate» i kartet. Skjermbildet så feil ut: byggene lå ~150 m fra adressepinnen, ute på jordet.
+
+**Plasseringen var riktig.** Det var kontrollen som ikke fantes — testen sjekket innpassingen mot det samme satellittbildet den var avlest fra, altså mot seg selv. Jeg kontrollerte mot to kilder som ikke er bildet:
+
+1. **Brøsetjordets senterlinje i OSM** (way `1502590316`). Planens søndre gate faller sammen med den: tre punkter langs den ligger 4–11 m fra OSMs strek. Det binder både skala og rotasjon over 540 m.
+2. **OSMs egen plassholder for prosjektet** (way `1502590318`, `building=construction` + `construction=apartments`, merket «very approximate position / size»). A1/A2/B lander oppå den, ~10 m fra tyngdepunktet. En helt annen kartlegger har plassert prosjektet samme sted.
+
+Begge er kodet som `WESSELSLOKKA_REGISTRATION_CHECKS` og testet. De inngår ikke i tilpasningen, så de faller hvis noen flytter et holdepunkt.
+
+**Adressepunktet er ikke fasit.** Prosjektets registrerte senter (10.450617 / 63.422074) ligger på Brøsetvegen. At volumene tegnes ~100 m unna er riktig: pinnen er adressen, byggene står inne på jordet. Den rosa logo-pinnen i situasjonsplanen er dekor i logobåndet og har ingen posisjonsbetydning — den er ikke et holdepunkt.
+
+**Det som VAR feil: den avtegnede kollektivgata.** Den lå innenfor ~10 m av Brøsetjordet — en vei begge kartmotorene tegner selv. Resultatet var en dobbel vei: et beige belte forskjøvet fra den ekte streken. Planens «Kollektivgata» er i praksis en oppgradering av Brøsetjordet, og forteller ikke leseren noe nytt. Slettet fra data og fra begge lagene.
+
+**2D-en ble lesbar:** flater i planens rosa (`#e79bbc`), kontur i logoens rosa (`#a8386a`), bokstavene A1/A2/B. Volumene toner inn med zoom — usynlige på boardets åpningszoom (~13,5) der hele feltet er noen få piksler bredt, fulle fra 15,4, bokstavene fra 15,5.
+
+---
+
+### Runde 2 — `38b890b`: hele områdeplanen, 52 volumer til
+
+*«kan vi nå prøve å bygge ut hele prosjektet som ligger i bildet i 2d? så vi får brukt det som grunnlag?»* — med den store Brøset-situasjonsplanen, den offisielle områdeplanen, den fargekodede delområdeplanen og en 3D-render.
+
+**Ingen ny innpassing.** Den store planen er samme tegning som den vi nettopp stadfestet, i et større utsnitt og uten logobånd. Den registreres mot den stadfestede med SIFT + RANSAC: **1 024 av 1 779 treff, skala 0,8832, rotasjon 0,021°, median avvik 0,56 px**. Dermed arves hele innpassingen — vi lager ingen ny som måtte stadfestes på nytt. Skriptet nekter å skrive noe hvis registreringen blir svakere enn 200 treff eller 1,5 px.
+
+**Byggene er hvite flater — men det er gangstiene og bekkedraget også.** Farge skiller dem ikke. Bredde gjør det, i to trinn:
+
+1. **Avstandstransformasjon.** Bare flater som rommer en innskrevet sirkel på ≥ 3,4 px får en kjerne, og kjernene vokses ut igjen i den hvite masken (morfologisk rekonstruksjon). Stiene er for smale til å ha kjerner og forsvinner helt.
+2. **Formtest.** Det som overlever og likevel fyller under 40 % av sitt omskrevne rektangel uten å ha mørk kontur rundt seg, er langt og buet — altså sti. Unntaket for mørk kontur er det som redder L- og T-formene i sentrum (Helse og velferdssenter, Dagligvare).
+
+Rekkehusrekkene er tegnet med delestreker mellom hver enhet. En lukking på 5 px binder dem til ett volum per rekke. Det er riktig kartografi i denne målestokken: åtte enheter à fem meter sier ikke mer enn én rekke gjør.
+
+**Forkastet underveis:** to andre veier til geometrien. Tekst-sammensmelting (la svart etikett-tekst bli med i byggflatene, så «Wesselsløkka»-etiketten ikke deler A1 fra A2) slo tilbake — konturer langs veier kjedet bygg sammen, og antallet falt fra 55 til 49. Og den fargekodede delområdeplanen, som er fri for etiketter over bygg og hadde gitt gratis byggetrinn-inndeling, lot seg ikke registrere: SIFT finner ingen felles trekk mellom akvarellstrek og den rendrede planen (49 inliers, ingen modell). Den ligger fortsatt der som mulig kilde til byggetrinn hvis vi registrerer den for hånd.
+
+**Kontrollen er i satellittvisning:** alle 52 volumene ligger inne på Brøset-jordet, mellom Brøsetvegen i nordvest og Tungasletta i sørøst, uten å treffe et eneste eksisterende hus. Det er en sjekk over hele kilometeren, ikke bare i hjørnet der holdepunktene ligger.
+
+**Rollene:** `MassingRole` er `"sale"` (A1/A2/B, håndavtegnet) eller `"context"` (de 52). Uttrekket hopper over volumer med tyngdepunkt nærmere enn 26 px fra et salgsbygg, og en test holder settene fra hverandre: ingen kontekstvolum har tyngdepunkt nærmere enn 10 m fra et salgsbygg. Dubletter er usynlige i 2D og doble vegger i 3D.
+
+**Stiplet rosa kontur = planlagt.** Nøytral grå ble prøvd først og var feil: Mapbox tegner eksisterende bygg i nettopp den tonen, så de planlagte så ut som hus som alt står der. Stiplet strek er det kartografiske tegnet for «planlagt», og det er hele poenget med å ha dem med.
+
+**Lagring:** omrissene forenkles til ~1,6 m (median fire hjørner) og lagres som heltalls-piksler i den registrerte planens koordinatrom, ikke som grader. Da bor registreringen ett sted. `lib/map/broset-plan-buildings.generated.ts`, 8 KB.
+
+---
+
+### Verifisering
+
+`npx tsc --noEmit` rent, `npm run lint` 0 errors (54 pre-eksisterende warnings), **3 911 tester i 235 filer** grønne. Begge motorer verifisert i Chrome på `/eiendom/broset-utvikling-as/wesselslokka/rapport-board`: 55 volumer i Mapbox og 55 `gmp-polygon-3d` i Google, ingen dubletter ved motorbytte, ingen tegnet vei oppå en ekte vei.
+
+**To commits på gren i worktree `../placy-wesselslokka-building-masses`, ikke merget, ikke pushet.**
+
+Nye filer: `scripts/extract-broset-massing.py` (krever `opencv-python-headless`, kjøres bare ved ny plantegning), `lib/map/broset-plan-buildings.generated.ts`, `docs/kilder/wesselslokka/{broset,wesselslokka}-situasjonsplan.png` (kildene ligger i repoet så uttrekket kan kjøres om). Full metode i `docs/research/2026-09-07-wesselslokka-planregistrering.md`.
+
+### Åpne tråder
+
+- **Høydene er anslag.** Alt står på 14 m (salg) / 12 m (kontekst); planen bærer ingen etasjetall. 3D-rendringen Andreas sendte viser etasjene bygg for bygg og kan leses av — spurt, ikke besvart.
+- **Byggetrinn mangler.** Den fargekodede planen deler Brøset i Elvely / Wesselsløkka / Kafe og service / Urtehagen / sentrum / dagligvare. Krever håndregistrering (SIFT feiler mot akvarell), og gir farge per delområde og navn på landemerkene (Torg, Låven, Dagligvare, Helse og velferdssenter).
+- **Ingen av volumene er klikkbare.** De er ren geometri i kartet — ikke POI-er, ikke koblet til leiligheter.
+
+---
+
 ## 2026-09-07 — MAPBOX FIKK ANKER-BEHANDLINGEN GOOGLE-MOTOREN HAR HATT SIDEN AUGUST
 
 **Kontekst:** *«jeg ser at mapbox ikke får samme behandling som google maps satelitt, valentinlyst senter blir ikke samlet i sine poi, det må vi få inn»* — to skjermbilder av samme sted på Wesselsløkka-boardet, ett per motor. På Google-siden sto Valentinlyst-klyngen som to pinner og en prikk; på Mapbox som fem hele skiver oppå hverandre.
