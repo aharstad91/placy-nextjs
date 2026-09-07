@@ -56,8 +56,16 @@ export function ProjectMassingLayer3D({
         if (cancelled) return;
 
         const surfaces = massing.buildings;
-        const fillColor = withAlpha(massing.palette.fill, 0.5);
-        const strokeColor = withAlpha(massing.palette.line, 0.95);
+        const paintByRole = {
+          sale: {
+            fill: withAlpha(massing.palette.fill, 0.5),
+            stroke: withAlpha(massing.palette.line, 0.95),
+          },
+          context: {
+            fill: withAlpha(massing.palette.contextFill, 0.42),
+            stroke: withAlpha(massing.palette.contextLine, 0.8),
+          },
+        };
         const activeIds = new Set(surfaces.map((surface) => surface.id));
         for (const [id, polygon] of polygonById) {
           if (!activeIds.has(id) && polygon.parentNode) polygon.remove();
@@ -77,9 +85,11 @@ export function ProjectMassingLayer3D({
           }));
           polygon.altitudeMode = lib.AltitudeMode.RELATIVE_TO_GROUND;
           polygon.extruded = true;
-          polygon.fillColor = fillColor;
-          polygon.strokeColor = strokeColor;
-          polygon.strokeWidth = SHELL_STROKE_WIDTH;
+          const paint = paintByRole[building.role];
+          polygon.fillColor = paint.fill;
+          polygon.strokeColor = paint.stroke;
+          polygon.strokeWidth =
+            building.role === "sale" ? SHELL_STROKE_WIDTH : SHELL_STROKE_WIDTH * 0.6;
           polygon.drawsOccludedSegments = false;
 
           if (polygon.parentNode && polygon.parentNode !== map3d) polygon.remove();

@@ -23,11 +23,13 @@ vi.mock("react-map-gl/mapbox", () => ({
     type,
     paint,
     minzoom,
+    filter,
   }: {
     id: string;
     type: string;
     paint: Record<string, unknown>;
     minzoom?: number;
+    filter?: unknown;
   }) => (
     <div
       data-testid={id}
@@ -35,6 +37,7 @@ vi.mock("react-map-gl/mapbox", () => ({
       data-color={String(paint[`${type}-color`])}
       data-opacity={JSON.stringify(paint[`${type}-opacity`])}
       data-minzoom={String(minzoom)}
+      data-filter={JSON.stringify(filter)}
     />
   ),
 }));
@@ -43,10 +46,27 @@ describe("ProjectMassingLayer", () => {
   it("tegner de tre volumene i prosjektets egen farge", () => {
     render(<ProjectMassingLayer massing={getProjectMassing("wesselslokka")!} />);
 
-    expect(screen.getByTestId("project-massing-source").dataset.features).toBe("3");
+    expect(
+      Number(screen.getByTestId("project-massing-source").dataset.features),
+    ).toBeGreaterThan(40);
     expect(screen.getByTestId("project-massing-fill").dataset.type).toBe("fill");
     expect(screen.getByTestId("project-massing-fill").dataset.color).toBe("#e79bbc");
     expect(screen.getByTestId("project-massing-outline").dataset.type).toBe("line");
+  });
+
+  it("skiller salgsbyggene fra resten av områdeplanen", () => {
+    render(<ProjectMassingLayer massing={getProjectMassing("wesselslokka")!} />);
+
+    const context = screen.getByTestId("project-massing-context-fill");
+    expect(context.dataset.color).toBe("#f7ecf1");
+    expect(context.dataset.filter).toContain("context");
+    expect(screen.getByTestId("project-massing-fill").dataset.filter).toContain(
+      "sale",
+    );
+    // Bokstavene hører salgsbyggene til; kontekstvolumene har ingen navn.
+    expect(screen.getByTestId("project-massing-label").dataset.filter).toContain(
+      "sale",
+    );
   });
 
   it("toner flatene inn med zoom i stedet for å ligge på i oversikten", () => {

@@ -75,16 +75,21 @@ describe("ProjectMassingLayer3D", () => {
     await flush();
 
     expect(importLibrary).toHaveBeenCalledWith("maps3d");
-    expect(polygonInstances).toHaveLength(3);
-    expect(map3d.appended).toHaveLength(3);
+    expect(polygonInstances.length).toBeGreaterThan(40);
+    expect(map3d.appended.length).toBe(polygonInstances.length);
+    const heights = new Set<number>();
     for (const polygon of polygonInstances) {
       expect(polygon.altitudeMode).toBe("relative-to-ground");
       expect(polygon.extruded).toBe(true);
-      expect(polygon.path).toHaveLength(4);
-      expect(polygon.path?.every((point) => point.altitude === 14)).toBe(true);
+      expect(polygon.path?.length).toBeGreaterThanOrEqual(3);
+      const altitude = polygon.path![0].altitude;
+      expect(polygon.path?.every((point) => point.altitude === altitude)).toBe(true);
+      heights.add(altitude);
       expect(polygon.fillColor).toContain("rgba");
       expect(polygon.strokeColor).toBeTruthy();
     }
+    // Salgsbyggene står 14 m, områdeplanen 12 m — to roller, to høyder.
+    expect([...heights].sort((a, b) => a - b)).toEqual([12, 14]);
   });
 
   it("tar volumene ut og inn igjen uten å opprette nye WebGL-elementer", async () => {
@@ -114,7 +119,7 @@ describe("ProjectMassingLayer3D", () => {
     );
     await flush();
 
-    expect(polygonInstances).toHaveLength(3);
+    expect(polygonInstances.length).toBeGreaterThan(40);
     expect(polygonInstances.every((polygon) => polygon.parentNode === map3d)).toBe(
       true,
     );

@@ -1,7 +1,9 @@
 # Wesselsløkka: felles plangrunnlag for 2D og 3D
 
-Omfang: A1, A2 og B — de tre byggene salgsmaterialet merker i rosa.
-Resten av Brøset er fortsatt utenfor prototypen.
+Omfang: hele Brøset-områdeplanen. A1, A2 og B — de tre byggene salgsmaterialet
+merker i rosa — er håndavtegnet og tegnes som salgsbygg. De 52 øvrige
+volumene er trukket ut maskinelt av den store situasjonsplanen og tegnes som
+kontekst: nabolaget som reises rundt boligen.
 
 ## Grunnlag og innpassing
 
@@ -59,6 +61,48 @@ beige belte forskjøvet fra den ekte streken. Veipolygonet er slettet fra både
 data og de to lagene. Planens «Kollektivgata» er i praksis en oppgradering av
 Brøsetjordet, og den forteller ikke leseren noe nytt.
 
+## Hele områdeplanen (2026-09-07, andre runde)
+
+Kilden er `docs/kilder/wesselslokka/broset-situasjonsplan.png` — samme tegning
+som den registrerte planen, i et større utsnitt og uten logobånd.
+
+Den registreres mot den stadfestede planen med SIFT + RANSAC:
+1 024 av 1 779 treff, skala 0,8832, rotasjon 0,021°, median avvik 0,56 px.
+Dermed arves hele innpassingen over — vi lager ingen ny som måtte stadfestes
+på nytt. Skriptet stopper hvis registreringen blir svakere enn 200 treff eller
+1,5 px median.
+
+Byggene er hvite flater med tynn mørk kontur. Problemet er at gangstiene og
+bekkedraget også er hvite. De skilles i to trinn:
+
+1. **Avstandstransformasjon.** Bare flater med en innskrevet sirkel på ≥ 3,4 px
+   får en kjerne, og kjernene vokses ut igjen i den hvite masken (morfologisk
+   rekonstruksjon). Stiene er for smale til å ha kjerner og forsvinner helt.
+2. **Formtest.** Det som blir igjen og fyller under 40 % av sitt omskrevne
+   rektangel uten å ha mørk kontur rundt seg, er buet og langt — altså sti.
+   Unntaket for mørk kontur er det som redder L- og T-formene i sentrum.
+
+Rekkehusrekkene er tegnet med delestreker mellom hver enhet. En lukking på
+5 px binder dem til ett volum. Det er riktig kartografi her: åtte enheter à
+5 meter sier ingenting mer på et kart i denne målestokken enn én rekke gjør.
+
+Resultatet er 52 volumer. Omrissene forenkles til ~1,6 m (median fire hjørner)
+og lagres som heltalls-piksler i den registrerte planens koordinatrom, ikke som
+grader — så er det ett sted registreringen bor.
+
+**Kontrollen:** i satellittvisning ligger alle 52 innenfor Brøset-jordet, mellom
+Brøsetvegen i nordvest og Tungasletta i sørøst, uten å treffe et eneste
+eksisterende hus. Det er en sjekk over hele kilometeren, ikke bare i hjørnet
+der holdepunktene ligger.
+
+A1/A2/B kastes ut av uttrekket ved at et volum med tyngdepunkt nærmere enn
+26 px fra et av salgsbyggene hoppes over. En test holder de to settene fra
+hverandre: ingen kontekstvolum har tyngdepunkt nærmere enn 10 m fra et
+salgsbygg. Dubletter er usynlige i 2D og doble vegger i 3D.
+
+Skriptet er `scripts/extract-broset-massing.py` og kjøres bare når det kommer
+en ny plantegning. Det krever `opencv-python-headless`.
+
 ## Implementasjon
 
 `lib/map/wesselslokka-site-plan.ts` bevarer avtegnede hjørner i kildebildets
@@ -69,14 +113,21 @@ Fargene kommer fra salgsmaterialet: flatene i planens rosa (`#e79bbc`),
 konturen i logoens mørkere rosa (`#a8386a`). Omrisset i kartet skal leses som
 «dette er byggene i planen du nettopp så».
 
-**Mapbox (2D):** tre GeoJSON-polygoner med fyll, kontur og bokstav (A1/A2/B).
-Volumene toner inn med zoom — usynlige på boardets åpningszoom (~13,5), fulle
-fra 15,4, bokstavene fra 15,5. Grunnen er at hele feltet er noen få piksler
-bredt i oversikten: der er prosjektet pinnen, ikke tre omriss som krangler med
-den.
+Kontekstvolumene har stiplet kontur i en uttynnet variant av samme rosa. En
+nøytral grå ble prøvd først og var feil: Mapbox tegner eksisterende bygg i
+nettopp den tonen, så de planlagte byggene så ut som hus som allerede står der.
+Stiplet strek er det kartografiske tegnet for «planlagt», og det er hele
+poenget med å ha dem med.
 
-**Google (3D):** samme tre polygoner, ekstrudert og halvtransparente, i samme
-palett omgjort til rgba. Ingen bildefiler eller modeller lastes i produktet.
+**Mapbox (2D):** ett GeoJSON-lag, fem paint-lag filtrert på `role`. Volumene
+toner inn med zoom — usynlige på boardets åpningszoom (~13,5), fulle fra 15,4,
+bokstavene A1/A2/B fra 15,5. Grunnen er at hele feltet er noen få piksler bredt
+i oversikten: der er prosjektet pinnen, ikke femti omriss som krangler med den.
 
-Akseptanse: samme grunnriss i begge motorer, tre bygg, ingen dupliserte
-elementer ved motorbytte, og ingen tegnet vei oppå en ekte vei.
+**Google (3D):** samme polygoner, ekstruderte og halvtransparente, i samme
+palett omgjort til rgba. Salgsbyggene står 14 m, områdeplanen 12 m. Ingen
+bildefiler eller modeller lastes i produktet.
+
+Akseptanse: samme grunnriss i begge motorer, 55 volumer, ingen dupliserte
+elementer ved motorbytte, ingen tegnet vei oppå en ekte vei, og ingen planlagt
+bygg oppå et eksisterende.

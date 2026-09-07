@@ -17,13 +17,19 @@ interface ProjectMassingLayerProps {
  * Kartet er ovenfra, så et flatefyll med tydelig kontur er ærligere og mer
  * lesbart enn en perspektivisk ekstrudering brukeren aldri ser med pitch 0.
  *
+ * To roller: salgsbyggene i prosjektets rosa, resten av områdeplanen i en
+ * nøytral tone bak dem. Poenget er at leseren ser to ting samtidig — hvilke
+ * tre bygg boligen ligger i, og at det kommer et helt nabolag rundt dem.
+ *
  * Volumene toner INN med zoom. Boardet åpner på ~13,5 der hele feltet er noen
- * få piksler bredt: der er prosjektet pinnen, ikke tre omriss som krangler med
- * den. Fra zoom 15 er tomta stor nok til at grunnrisset faktisk sier noe, og
- * da er det det man ser. Samme grunn til at bokstavene (A1/A2/B) først kommer
- * på 15,5 — under det får de ikke plass uten å kollidere med hverandre.
+ * få piksler bredt: der er prosjektet pinnen, ikke femti omriss som krangler
+ * med den. Fra zoom 15 er tomta stor nok til at grunnrisset faktisk sier noe.
+ * Samme grunn til at bokstavene (A1/A2/B) først kommer på 15,5 — under det
+ * får de ikke plass uten å kollidere med hverandre.
  */
 const FADE_IN = ["interpolate", ["linear"], ["zoom"], 14, 0, 15.4, 1] as const;
+const IS_SALE = ["==", ["get", "role"], "sale"] as const;
+const IS_CONTEXT = ["==", ["get", "role"], "context"] as const;
 
 export function ProjectMassingLayer({ massing }: ProjectMassingLayerProps) {
   const geojson = useMemo(
@@ -35,24 +41,41 @@ export function ProjectMassingLayer({ massing }: ProjectMassingLayerProps) {
   return (
     <Source id="project-massing-source" type="geojson" data={geojson}>
       <Layer
+        id="project-massing-context-fill"
+        type="fill"
+        filter={[...IS_CONTEXT]}
+        paint={{
+          "fill-color": palette.contextFill,
+          "fill-opacity": ["interpolate", ["linear"], ["zoom"], 14, 0, 15.4, 0.7],
+        }}
+      />
+      <Layer
+        id="project-massing-context-outline"
+        type="line"
+        filter={[...IS_CONTEXT]}
+        // Stiplet = planlagt. Heltrukket ville lest som «står der allerede»,
+        // som er nettopp det disse byggene ikke gjør.
+        layout={{ "line-cap": "butt", "line-join": "round" }}
+        paint={{
+          "line-dasharray": [2.5, 1.5],
+          "line-color": palette.contextLine,
+          "line-opacity": ["interpolate", ["linear"], ["zoom"], 14, 0, 15.4, 0.7],
+          "line-width": ["interpolate", ["linear"], ["zoom"], 14, 0.5, 17, 1.2],
+        }}
+      />
+      <Layer
         id="project-massing-fill"
         type="fill"
+        filter={[...IS_SALE]}
         paint={{
           "fill-color": palette.fill,
-          "fill-opacity": [
-            "interpolate",
-            ["linear"],
-            ["zoom"],
-            14,
-            0,
-            15.4,
-            0.45,
-          ],
+          "fill-opacity": ["interpolate", ["linear"], ["zoom"], 14, 0, 15.4, 0.6],
         }}
       />
       <Layer
         id="project-massing-outline"
         type="line"
+        filter={[...IS_SALE]}
         layout={{ "line-cap": "round", "line-join": "round" }}
         paint={{
           "line-color": palette.line,
@@ -63,6 +86,7 @@ export function ProjectMassingLayer({ massing }: ProjectMassingLayerProps) {
       <Layer
         id="project-massing-label"
         type="symbol"
+        filter={[...IS_SALE]}
         minzoom={15.5}
         layout={{
           "text-field": ["get", "label"],
