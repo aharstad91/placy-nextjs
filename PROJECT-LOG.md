@@ -9130,3 +9130,69 @@ Etter audit-GO: materialisert hele rebuild-backloggen som beads dependency-graf 
 ### Neste stadium (ikke startet — krever eksplisitt go)
 
 Byggeloopen: goal-drevet de første PRD-ene (start `r01.1`) → ralph for bulken. `bd ready` driver; loopen må kjøre `bd epic close-eligible` når units lukkes. Ingenting pushet.
+
+---
+
+## 2026-09-07 — Kart-sesjon: fargeregel, anker i 2D, kart-baren som dropdowns, og rekkevidde som svarer
+
+Seks commits på `main` (ikke pushet, prototype-regel). Alt verifisert i Chrome på `/eiendom/broset-utvikling-as/wesselslokka/rapport-board`, 0 konsoll-feil, og `npx vitest run` grønn hele veien (endte på 232 filer / 3892 tester).
+
+### 1. `e514b40` — temaet eier fargen, underkategorien eier ikonet
+
+Markørfargen kom fra underkategorien, så «Hverdag» sto med fire-fem farger i samme rad og kartet leste som en fargeklump uten struktur. Nå: **fargen tilhører TEMAET, ikonet tilhører underkategorien.** Avgjort som regel, ikke som tweak — ikke re-foreslå underkategori-farger eller fargeløst kart.
+
+### 2. `576f1ba` — 2D-kartet fikk anker-merket og utglisningen fra Google-motoren
+
+Ankerfamiliene (kjøpesenter/idrettsanlegg) og declutter-passet fantes bare på Google-motoren. Mapbox-kartet viste dem som vanlige pins. De to motorene skal svare likt på samme data.
+
+### 3. `4fb8208` — tema-kortene toner på hover, som spørsmålene under dem
+
+Rein konsistens-fiks: kortene var statiske mens FAQ-radene under dem alt hadde hover-tonen.
+
+### 4. `67db08d` — to dropdowns i stedet for seks knapper
+
+Kart-pillen la alle valgene utbrettet: tre ikonknapper for reisemåte + tre tekstknapper for kartvisning. Det sto på kapasitetsgrensen ved 320 px, og hver ny kontroll måtte kappe en etikett for å få plass. Begge er nå `ControlDropdown` — samme trigger+panel-mønster som enheten over minutt-kolonnen i nabolagslista. Ett trykk ekstra, halve bredden, og radene bærer mer enn ikonknappene kunne («Sykkel · 8 min»).
+
+`TravelModeSelector` mistet `segment`-varianten samtidig (dead code slettet umiddelbart, per hygieneregelen).
+
+### 5. `051e506` — punktene svarer på ringene, og reisemåten står i kartet
+
+Andreas' diagnose: rekkevidde-konturene ga ingenting, fordi «tilhørighet mellom til fots og rekkevidde ikke er koblet sammen i mindset hos brukeren» — ingenting på kartet sa at ringene ER 5/10/15 min i valgt reisemåte, og ingenting reagerte på dem.
+
+Fire grep:
+
+- **`lib/board/reach.ts`** (ny) — ren geometri: point-in-polygon (ray casting) mot de **tegnede** ringene, ikke mot `POI.travelTime`. Konturene kommer fra Mapbox Isochrone, reisetidene fra Matrix, og de er uenige i marginen; leseren dømmer etter linja han ser, så linja bestemmer. Hull i en kontur er en ekte grense (en lomme du ikke rekker inn i) → punkt i hull er utenfor.
+- **Punkter utenfor faller til blass prikk** (`REACH_OUTSIDE_OPACITY = 0.45`). FORMEN er hovedsignalet, dempingen forsterker — omvendt av historie-emfasen, der opasitet alene ikke kunne bære forskjellen. Tre ortogonale markør-akser nå: **form** (`demotedMarkerIds`, plassen er tatt), **vekt** (`dimmedMarkerIds`, historie-kontekst) og **rekkevidde** (`fadedMarkerIds`).
+- **Konturetikettene navngir reisemåten** med glyf, gjentatt på alle tre. Bytter du til sykkel, endrer tre steder på kartet seg samtidig — koblingen blir noe du SER, ikke noe du slutter deg til. `ContourLabelChip` er delt mellom motorene så de ikke kan drifte.
+- **Bildetekst over pillen:** «5, 10 og 15 min til fots — 85 steder innenfor».
+
+Rekkevidde-settet mates også inn i BEGGE motorenes declutter-pass (`dotIds`), så en prikk verken stjeler pin-plass fra en nabo som fortsatt tegnes som pin, eller reserverer rom for en etikett den ikke viser.
+
+**Fikset samtidig — Google-etikettene sto usynlige.** Etiketten hang på konturens nordligste punkt, som forsvinner så snart kameraet ikke rammer inn hele konturen (målt i Satelitt: 10 min på y=−330, 15 min på y=−812). Nå velges punktet blant kandidater rundt ringen, nord-preferert, mot det vinduet FAKTISK viser (`chooseContourLabels`) — og en kontur uten synlig kandidat dropper etiketten helt i stedet for å pinne den til kanten, som ville hevdet at linja ligger i kanten. Kandidatene subsamples FØR nord-sorteringen; sorterte vi først og kappet, lå alle i samme hjørne.
+
+**Måletallet som er selve produktinnsikten:** på Wesselsløkka ligger **85 av 973** steder innenfor 15 min GANGE (888 blir prikker) — men **959 av 973** innenfor 15 min SYKKEL. Rekkevidde er i praksis et gange-instrument; på sykkel bærer den nesten ingen informasjon. Verdt å vite før vi bygger mer på den.
+
+### 6. `e6c0c63` — bryteren flytter INN i reisemåte-panelet
+
+Andreas: rekkevidde må gjemmes under «Til fots» som en enkel av/på i dropdownen, ikke stå som egen kontroll. Kapselen rundt de to (fra 051e506) gjorde dem til ett objekt visuelt, men ikke i mindset.
+
+Nå er den en av/på-rad under reisemåtene i samme panel — **koblingen er plasseringen**: du kan ikke slå den på uten å se hvilken reisemåte den gjelder. Raden har bryter (den er av/på, ikke et likestilt valg som radene over) og én linje som sier hva den gjør: «Tegner 5, 10 og 15 min til fots i kartet, og demper stedene utenfor» før du slår på, tallet innenfor etterpå, «Ingen rekkevidde for bil» når pipelinen mangler konturer for valgt modus. Panelet lukkes IKKE av trykket — du vil se effekten mens du står i kontrollen, og bytter ofte reisemåte rett etterpå.
+
+Fortsatt **av som standard** (uendret `initialBoardState.showContours = false`), og det er nå en bevisst begrunnelse: et kart som åpner med 888 blasse prikker forklarer ikke seg selv; ett du selv slår på, gjør det.
+
+### Feil verdt å huske
+
+- **`React.memo`-sammenlignere er hvitlister.** `outOfReach` nådde aldri skjermen fordi `BoardMarker`s comparator ikke nevnte den: konturene og bildeteksten slo på, mens alle 973 markørene sto igjen som fulle pins (målt: 0 dempede av 973). En prop som ikke står i sammenligneren finnes ikke for brukeren. Regresjonstest lagt inn.
+- **`bg-white/92` forsvinner i stillhet.** Tailwinds opacity-skala går i steg på 5; verdier utenfor droppes uten build-, lint- eller typefeil. Repoets egen vaktpost-test (`components/tailwind-opacity-scale.test.ts`) fanget det. Eksplisitt form (`bg-white/[.92]`) er lovlig.
+- **To motstridende totaler.** Bildeteksten sa først «85 av 973», mens nabolagspanelet sier «998 steder» (tema-summene teller ankere én gang per tema; deduping gir 973). `total` er fjernet fra `ReachState` helt — ingen synlig tall kan lenger motsi panelet.
+- **3D-elementet henger bevisst utenfor høyre viewport-kant** (`overhangRightPx`), så element-rekten er ikke rammen. Etikettene havnet på x=1676 og x=1871 i et 1566 px vindu før klemmingen mot `window.innerWidth`.
+
+### Filer
+
+NYE: `lib/board/reach.ts` + test, `lib/board/contour-label-placement.ts` + test, `components/variants/report/board/use-reach.ts`, `components/variants/report/board/ContourLabelChip.tsx`. ENDRET (utvalg): `BoardMap.tsx`, `BoardMap3D.tsx`, `BoardMarker.tsx`, `BoardMapControls.tsx`, `BoardContourLayer.tsx`, `BoardContourLabels3D.tsx`, `use-3d-marker-declutter.ts`, `map-view-3d.tsx`, `lib/board/contour-geometry.ts`, `lib/utils.ts` (`travelModeInSentence`).
+
+### Åpent
+
+- **`isochrones_toggled` har ingen aggregeringsgren i `lib/insight/`** — hendelsen sendes, men innsiktsflaten viser den ikke. Nå mer relevant enn før: av-som-standard betyr at *om* folk slår den på er selve målingen.
+- Fire umergede grener står fortsatt (`feat/hotell-dashboard`, `feat/megler-self-serve`, `feat/prospekt-skanner`, `feat/story-opt-in`).
+- `086_postal_areas.sql` og `086_event_type_faq_opened.sql` deler prefiks — replay-rekkefølgen er tvetydig.
