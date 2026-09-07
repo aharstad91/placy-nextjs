@@ -46,6 +46,7 @@ import {
 } from "./board-flythrough-orchestrator";
 import { getProjectPinThumbnail } from "@/lib/themes/project-brand";
 import { isMarker3DTarget } from "@/components/map/marker-3d-selectors";
+import { getProjectMassing } from "@/lib/map/project-massing";
 import {
   useCurrentTrack,
   useAudioTourPhase,
@@ -93,6 +94,16 @@ const ContourLayer3D = dynamic(
   () =>
     import("@/components/map/contour-layer-3d").then((mod) => ({
       default: mod.ContourLayer3D,
+    })),
+  { ssr: false },
+);
+
+// Prosjektvolumene bruker samme imperative Google-lifecycle som de andre
+// scenelagene, og holdes derfor ute av 2D-bundlen.
+const ProjectMassingLayer3D = dynamic(
+  () =>
+    import("@/components/map/project-massing-layer-3d").then((mod) => ({
+      default: mod.ProjectMassingLayer3D,
     })),
   { ssr: false },
 );
@@ -228,6 +239,7 @@ export function BoardMap3D({
   // Rekkevidde-tilstanden. Samme hook og samme sett som Mapbox-motoren leser,
   // så et punkt som er blasst i «Kart» også er blasst i «Satelitt».
   const reach = useReach();
+  const projectMassing = getProjectMassing(data.projectSlug) ?? null;
 
   const contourRings = useMemo(
     () =>
@@ -911,6 +923,10 @@ export function BoardMap3D({
           name: data.home.name,
           imageSrc: getProjectPinThumbnail(data.projectSlug, data.assets),
         }}
+      />
+      <ProjectMassingLayer3D
+        map3d={map3dInstance}
+        massing={projectMassing}
       />
       <ContourLayer3D map3d={map3dInstance} rings={contourRings} />
       <RouteLayer3D map3d={map3dInstance} routeData={routeData} />
