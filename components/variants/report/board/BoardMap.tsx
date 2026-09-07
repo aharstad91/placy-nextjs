@@ -24,7 +24,11 @@ import {
 } from "./board-state";
 import { useStoryTourOptional } from "./story/story-tour";
 import { useMapPinClick } from "./use-map-pin-click";
-import { BoardMarker } from "./BoardMarker";
+import {
+  BoardMarker,
+  MARKER_CIRCLE_SIZE,
+  MARKER_DOT_SIZE,
+} from "./BoardMarker";
 import { BoardContourLayer } from "./BoardContourLayer";
 import { useEngagement } from "@/lib/instrumentation/engagement-scope";
 import { useBoardZoomTier } from "./use-board-zoom-tier";
@@ -53,6 +57,11 @@ import {
   type LabelSide,
 } from "@/lib/board/label-collision";
 import {
+  computePinDemotions,
+  type PinBlocker,
+  type PinCandidate,
+} from "@/lib/board/pin-declutter";
+import {
   computeFitBounds,
   rectFromCorners,
   shouldFitToFilter,
@@ -64,6 +73,41 @@ import {
 } from "@/components/map/motor-camera";
 
 const TOKEN = process.env.NEXT_PUBLIC_MAPBOX_TOKEN;
+
+/**
+ * Halv skive og halv prikk, i px. Importert fra markøren som TEGNER dem
+ * (`BoardMarker`) i stedet for skrevet av på nytt: kollisjonsmodellen og
+ * skjermen må være enige om hvor stor en pin er.
+ */
+const MARKER_HALF_PX = MARKER_CIRCLE_SIZE / 2;
+const DOT_HALF_PX = MARKER_DOT_SIZE / 2;
+
+/**
+ * Halvstørrelsen prosjektmarkøren opptar. Tallet er det label-kullingen har
+ * brukt siden Oppdal-runden; utglisningen arver det så de to reserverer samme
+ * flate for boligen.
+ */
+const HOME_BLOCKER_HALF_PX = 28;
+
+/**
+ * Hvor langt utenfor kartflaten en markør får ligge og fortsatt regnes med i
+ * utglisningen. Samme margin som Google-motoren bruker.
+ *
+ * Marginen finnes ikke for pinnenes skyld, men fordi settet er ~1 000 markører
+ * mens bare et par hundre er i bildet: uten kullingen ville hvert `moveend`
+ * regnet avstander mellom punkter i hele nabolaget. En prikk utenfor bildet er
+ * dessuten ingen forbedring for noen.
+ */
+const OFFSCREEN_MARGIN_PX = 200;
+
+/**
+ * Løftet stoppets egen scene får over omvisningens kontekst-pinner, når to
+ * pinner konkurrerer om samme plass. Samme tall som Google-motoren
+ * (`use-3d-marker-declutter`), og av samme grunn: det ligger over
+ * Google-ratingens 0–5-skala, så rangeringen innenfor hvert lag er fortsatt
+ * ratingens.
+ */
+const SCENE_PRIORITY_BOOST = 100;
 
 /**
  * Persistent-3D-modell for WebGL-trygt 2D/3D-bytte.
@@ -436,9 +480,116 @@ export function BoardMap({
   const [labelPlacements, setLabelPlacements] = useState<
     ReadonlyMap<string, LabelSide>
   >(() => new globalThis.Map());
-  const recomputeLabelPlacements = useCallback(() => {
+  /**
+   * Pinnene som falt tilbake til prikk fordi de ikke fikk plass ved siden av
+   * naboene sine. Se `lib/board/pin-declutter` — regelen har vært på
+   * Google-motoren siden 2026-08-23, og manglet her.
+   *
+   * At 2D «slapp unna» med et rent zoom-svar var sant så lenge
+   * `computeSpreadCoordinates` var hele problemet: den vifter ut punkter på
+   * NØYAKTIG samme koordinat. Valentinlyst er det målte moteksempelet — fem
+   * steder 20–70 m fra hverandre, altså fem ulike koordinater som ved
+   * board-zoom blir fem 32 px-skiver oppå hverandre. Spredningen rører dem
+   * ikke, og resultatet var en fargeklump der Google viste én pin og fire
+   * prikker.
+   */
+  const [demotedPinIds, setDemotedPinIds] = useState<ReadonlySet<string>>(
+    () => new Set<string>(),
+  );
+  const recomputeMarkerDeclutter = useCallback(() => {
     const map = mapRef.current?.getMap?.();
-    if (!map || zoomTier !== "icon+label") {
+    // Under dot-tieren er ALT prikk uansett (`BoardMarker`), så det finnes
+    // ingen skiver å glisne ut og ingen labels å plassere.
+    if (!map || zoomTier === "dot") {
+      setLabelPlacements((prev) =>
+        prev.size === 0 ? prev : new globalThis.Map(),
+      );
+      setDemotedPinIds((prev) => (prev.size === 0 ? prev : new Set<string>()));
+      return;
+    }
+
+    // Én projeksjon, to konsumenter. `onscreen` skiller dem: utglisningen
+    // gjelder bare det brukeren faktisk ser (en prikk utenfor bildet er ingen
+    // forbedring, og settet er ~1 000 markører), mens label-plasseringen tar
+    // imot alle som før — en pin så vidt utenfor kanten kan ha en label som
+    // stikker inn i bildet.
+    const container = map.getContainer();
+    const width = container.clientWidth;
+    const height = container.clientHeight;
+    const projected: Array<{
+      poi: (typeof visiblePOIs)[number]["poi"];
+      emphasis: (typeof visiblePOIs)[number]["emphasis"];
+      x: number;
+      y: number;
+      onscreen: boolean;
+    }> = [];
+    for (const { poi, emphasis } of visiblePOIs) {
+      const pt = map.project([poi.coordinates.lng, poi.coordinates.lat]);
+      projected.push({
+        poi,
+        emphasis,
+        x: pt.x,
+        y: pt.y,
+        onscreen:
+          pt.x >= -OFFSCREEN_MARGIN_PX &&
+          pt.x <= width + OFFSCREEN_MARGIN_PX &&
+          pt.y >= -OFFSCREEN_MARGIN_PX &&
+          pt.y <= height + OFFSCREEN_MARGIN_PX,
+      });
+    }
+    const home = map.project([
+      data.home.coordinates.lng,
+      data.home.coordinates.lat,
+    ]);
+
+    // ---- Utglisning ----
+    //
+    // Prioriteringen er Google-motorens, ord for ord (`use-3d-marker-declutter`):
+    // to slags steder eier plassen sin og demoteres aldri — det brukeren har
+    // åpnet, og ANKERET. Det siste fordi ankeret ER virksomhetene inni: blir
+    // det en prikk, forsvinner hele klyngen som ett navnløst punkt og
+    // «Valentinlyst Senter» står ikke lenger noe sted på kartet.
+    //
+    // Under en omvisning løftes stoppets egen scene over kontekst-pinnene, så
+    // en tilfeldig kafé med god rating ikke gjør en barnehage til prikk under
+    // et barne-stopp. Boosten ligger over Google-ratingens 0–5-skala, så
+    // rangeringen INNENFOR hvert lag er fortsatt ratingens.
+    const pinCandidates: PinCandidate[] = [];
+    for (const { poi, emphasis, x, y, onscreen } of projected) {
+      if (!onscreen) continue;
+      pinCandidates.push({
+        id: poi.id,
+        x,
+        y,
+        priority:
+          state.activePOIId === poi.id || poi.isAnchor === true
+            ? Number.POSITIVE_INFINITY
+            : (poi.raw.googleRating ?? 0) +
+              (emphasis !== null && emphasis !== "texture"
+                ? SCENE_PRIORITY_BOOST
+                : 0),
+      });
+    }
+    // Prosjektmarkøren er stor, alltid synlig og bærer sin egen tekst. En
+    // POI-pin bak den er uleselig uansett; den blir prikk i stedet. Samme
+    // halvstørrelse som label-kullingen alt reserverte for den.
+    const blockers: PinBlocker[] = [
+      {
+        x: home.x,
+        y: home.y,
+        halfWidth: HOME_BLOCKER_HALF_PX,
+        halfHeight: HOME_BLOCKER_HALF_PX,
+      },
+    ];
+    const nextDemoted = computePinDemotions(pinCandidates, blockers);
+    setDemotedPinIds((prev) =>
+      prev.size === nextDemoted.size && [...nextDemoted].every((id) => prev.has(id))
+        ? prev
+        : nextDemoted,
+    );
+
+    // ---- Label-plassering ----
+    if (zoomTier !== "icon+label") {
       setLabelPlacements((prev) =>
         prev.size === 0 ? prev : new globalThis.Map(),
       );
@@ -446,31 +597,38 @@ export function BoardMap({
     }
     const candidates: LabelCandidate[] = [];
     const obstacles: LabelObstacle[] = [];
-    for (const { poi } of visiblePOIs) {
-      const pt = map.project([poi.coordinates.lng, poi.coordinates.lat]);
+    for (const { poi, x, y } of projected) {
+      const isDemoted = nextDemoted.has(poi.id);
+      // Markørene tegnes alltid — tekst under en nabo-pin er like uleselig som
+      // tekst under tekst. Egen sirkel blokkerer aldri egen label (labelen
+      // starter utenfor sirkelkanten). Demoterte reserverer bare prikkas
+      // plass; ellers holdt de av rom de ikke bruker. Prikken er sentrert i
+      // samme container som sirkelen, så senteret er det samme punktet.
+      obstacles.push({
+        x,
+        y,
+        halfSize: isDemoted ? DOT_HALF_PX : MARKER_HALF_PX,
+      });
+      // En prikk bærer ikke navn: navnet ville pekt på noe som ikke lenger ser
+      // ut som et sted.
+      if (isDemoted) continue;
       candidates.push({
         id: poi.id,
-        x: pt.x,
-        y: pt.y,
+        x,
+        y,
         name: poi.name,
         priority:
           state.activePOIId === poi.id
             ? Number.POSITIVE_INFINITY
             : (poi.raw.googleRating ?? 0),
       });
-      // Markør-sirklene tegnes alltid — tekst under en nabo-pin er like
-      // uleselig som tekst under tekst. Egen sirkel blokkerer aldri egen
-      // label (labelen starter utenfor sirkelkanten).
-      obstacles.push({ x: pt.x, y: pt.y, halfSize: 16 });
     }
-    const home = map.project([
-      data.home.coordinates.lng,
-      data.home.coordinates.lat,
-    ]);
-    obstacles.push({ x: home.x, y: home.y, halfSize: 28 });
-    const next = computeLabelPlacements(candidates, obstacles, {
-      width: map.getContainer().clientWidth,
+    obstacles.push({
+      x: home.x,
+      y: home.y,
+      halfSize: HOME_BLOCKER_HALF_PX,
     });
+    const next = computeLabelPlacements(candidates, obstacles, { width });
     setLabelPlacements((prev) =>
       prev.size === next.size &&
       [...next].every(([id, side]) => prev.get(id) === side)
@@ -481,14 +639,14 @@ export function BoardMap({
 
   useEffect(() => {
     if (!mapLoaded) return;
-    recomputeLabelPlacements();
+    recomputeMarkerDeclutter();
     const map = mapRef.current?.getMap?.();
     if (!map) return;
-    map.on("moveend", recomputeLabelPlacements);
+    map.on("moveend", recomputeMarkerDeclutter);
     return () => {
-      map.off("moveend", recomputeLabelPlacements);
+      map.off("moveend", recomputeMarkerDeclutter);
     };
-  }, [mapLoaded, recomputeLabelPlacements]);
+  }, [mapLoaded, recomputeMarkerDeclutter]);
 
   const handleMapLoad = useCallback(() => {
     setMapLoaded(true);
@@ -1120,6 +1278,7 @@ export function BoardMap({
                       zoomTier={zoomTier}
                       suppressLabel={suppressLabel}
                       labelSide={placement ?? "right"}
+                      demoted={demotedPinIds.has(poi.id)}
                       emphasis={emphasis}
                       // Samme vei inn som 3D-pinnene: punkt + måling + flatens
                       // oppfølging. Se `useMapPinClick`.

@@ -38,6 +38,9 @@ const h = vi.hoisted(() => {
       contourTravelModes: [] as string[],
     },
     tour: { phase: "idle" as string, currentTrack: null as unknown },
+    // Zoom-tieren utglisningen og labelene henger på. `icon` er default
+    // fordi det er tieren boardet åpner i.
+    zoomTier: "icon" as "dot" | "icon" | "icon+label",
     emit: vi.fn(),
     captured: {
       controls: [] as Record<string, unknown>[],
@@ -58,6 +61,10 @@ const h = vi.hoisted(() => {
 const MOCK_VIEWPORT = { w: 390, h: 800 };
 const px2lng = (x: number) => 10.3 + x * 0.0001;
 const px2lat = (y: number) => 63.5 - y * 0.0001;
+/** Den eksakte inversen. Utglisningen og label-kullingen projiserer geo→px, og
+ *  må kunne regnes ut for hånd i testene på samme måte som utsnittet. */
+const lng2px = (lng: number) => (lng - 10.3) / 0.0001;
+const lat2py = (lat: number) => (63.5 - lat) / 0.0001;
 
 function makeMapInstance() {
   return {
@@ -68,7 +75,16 @@ function makeMapInstance() {
       lng: px2lng(x),
       lat: px2lat(y),
     })),
+    project: vi.fn(([lng, lat]: [number, number]) => ({
+      x: lng2px(lng),
+      y: lat2py(lat),
+    })),
     getCanvas: vi.fn(() => ({
+      clientWidth: MOCK_VIEWPORT.w,
+      clientHeight: MOCK_VIEWPORT.h,
+    })),
+    // Kartflaten utglisningen kuller mot. Samme mål som canvaset.
+    getContainer: vi.fn(() => ({
       clientWidth: MOCK_VIEWPORT.w,
       clientHeight: MOCK_VIEWPORT.h,
     })),
@@ -127,7 +143,11 @@ vi.mock("react-map-gl/mapbox", () => {
   MapMock.displayName = "MapMock";
   return { default: MapMock };
 });
-vi.mock("./BoardMarker", () => ({
+// Bare KOMPONENTEN stubbes. Markør-geometrien (`MARKER_CIRCLE_SIZE`,
+// `MARKER_DOT_SIZE`) leses av BoardMaps kollisjonsmodell og kommer fra den
+// ekte modulen — det er hele poenget med at den bor der pinnen tegnes.
+vi.mock("./BoardMarker", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("./BoardMarker")>()),
   BoardMarker: (props: Record<string, unknown>) => {
     h.captured.markers.push(props);
     return <div data-testid="marker" />;
@@ -145,7 +165,7 @@ vi.mock("./board-route", () => ({
 vi.mock("./BoardPOILabel", () => ({ BoardPOILabel: () => null }));
 vi.mock("./BoardPOIMiniPopup", () => ({ BoardPOIMiniPopup: () => null }));
 vi.mock("./use-board-zoom-tier", () => ({
-  useBoardZoomTier: () => "icon",
+  useBoardZoomTier: () => h.zoomTier,
   useContourLabelsVisible: () => true,
 }));
 vi.mock("./use-popup-mode", () => ({ useBoardPopupMode: () => "label" }));
@@ -219,6 +239,7 @@ beforeEach(() => {
   h.captured.mapProps = [];
   h.captured.markers = [];
   h.mapbox.instance = makeMapInstance();
+  h.zoomTier = "icon";
   h.tour.phase = "idle";
   h.tour.currentTrack = null;
   h.emit.mockClear();
@@ -985,5 +1006,140 @@ describe("BoardMap — rekkevidde-konturer", () => {
       payload: { enabled: true },
     });
     h.board.contourTravelModes = [];
+  });
+});
+
+/**
+ * Utglisning på 2D-kartet (2026-09-07).
+ *
+ * Google-motoren har demotert trange pinner til prikk siden
+ * Strindfjordvegen-runden; Mapbox gjorde det ikke, og det var MÅLT på
+ * Wesselsløkka-boardet: 8 av 973 markører var prikker på Google-motoren, 0 av
+ * 974 på Mapbox. Fem steder rundt Valentinlyst Senter ble derfor fem hele
+ * skiver oppå hverandre der Google viste én pin og fire prikker.
+ *
+ * Mock-projeksjonen er lineær med 1 px per 0,0001° lengdegrad, så avstandene
+ * under er skjerm-piksler vi kan regne ut for hånd. Terskelen er
+ * `DEFAULT_PIN_SEPARATION_PX` = 34.
+ */
+describe("BoardMap — utglisning av trange pinner (2D)", () => {
+  /** POI på en kjent SKJERM-koordinat i mock-projeksjonen. */
+  function poiAt(
+    id: string,
+    x: number,
+    y: number,
+    opts: { rating?: number; isAnchor?: boolean } = {},
+  ) {
+    return {
+      id,
+      coordinates: { lat: px2lat(y), lng: px2lng(x) },
+      categoryId: "mat",
+      ...(opts.isAnchor ? { isAnchor: true } : {}),
+      raw: {
+        category: { id: "restaurant", color: "#cc3300", icon: "Utensils" },
+        googleRating: opts.rating,
+      },
+    };
+  }
+
+  function withPois(pois: unknown[], stateOverrides: Record<string, unknown> = {}) {
+    setBoard(
+      {
+        categories: [
+          {
+            id: "mat",
+            label: "Mat",
+            lead: "",
+            body: "",
+            icon: "Utensils",
+            color: "#cc3300",
+            pois,
+            topRankedPois: [],
+          },
+        ],
+      },
+      stateOverrides,
+    );
+  }
+
+  /** `demoted` per POI-id, lest av markør-propsene (siste render vinner). */
+  function demotedByPoi(): Record<string, boolean> {
+    const out: Record<string, boolean> = {};
+    for (const props of h.captured.markers) {
+      out[(props.poi as { id: string }).id] = props.demoted as boolean;
+    }
+    return out;
+  }
+
+  it("demoterer den svakeste av to pinner som ikke får plass ved siden av hverandre", () => {
+    // 20 px fra hverandre — under 34, altså to skiver som overlapper.
+    withPois([
+      poiAt("sterk", 100, 300, { rating: 4.6 }),
+      poiAt("svak", 120, 300, { rating: 3.1 }),
+    ]);
+    render(<BoardMap has3dAddon={false} />);
+    expect(demotedByPoi()).toEqual({ sterk: false, svak: true });
+  });
+
+  it("lar naboer med klaring beholde ikonet", () => {
+    // 40 px fra hverandre — over 34, altså to naboer som så vidt går klar.
+    withPois([
+      poiAt("a", 100, 300, { rating: 4.6 }),
+      poiAt("b", 140, 300, { rating: 3.1 }),
+    ]);
+    render(<BoardMap has3dAddon={false} />);
+    expect(demotedByPoi()).toEqual({ a: false, b: false });
+  });
+
+  it("demoterer ALDRI et anker, uansett hvor godt naboene er rangert", () => {
+    // Ankeret har ingen Google-rating i det hele tatt og ville tapt på
+    // rangering alene. Blir det en prikk, forsvinner hele klyngen som ett
+    // navnløst punkt og senteret står ikke lenger noe sted på kartet.
+    withPois([
+      poiAt("senter", 100, 300, { isAnchor: true }),
+      poiAt("butikk-1", 108, 300, { rating: 5 }),
+      poiAt("butikk-2", 116, 300, { rating: 5 }),
+    ]);
+    render(<BoardMap has3dAddon={false} />);
+    const demoted = demotedByPoi();
+    expect(demoted.senter).toBe(false);
+    expect(demoted["butikk-1"]).toBe(true);
+    expect(demoted["butikk-2"]).toBe(true);
+  });
+
+  it("demoterer ALDRI punktet brukeren har åpnet", () => {
+    withPois(
+      [
+        poiAt("apen", 100, 300),
+        poiAt("nabo", 118, 300, { rating: 5 }),
+      ],
+      { activePOIId: "apen" },
+    );
+    render(<BoardMap has3dAddon={false} />);
+    const demoted = demotedByPoi();
+    expect(demoted.apen).toBe(false);
+    expect(demoted.nabo).toBe(true);
+  });
+
+  it("glisner ikke ut under dot-tieren — der er alt prikk uansett", () => {
+    h.zoomTier = "dot";
+    withPois([
+      poiAt("sterk", 100, 300, { rating: 4.6 }),
+      poiAt("svak", 120, 300, { rating: 3.1 }),
+    ]);
+    render(<BoardMap has3dAddon={false} />);
+    expect(demotedByPoi()).toEqual({ sterk: false, svak: false });
+  });
+
+  it("regner ikke på pinner langt utenfor kartflaten", () => {
+    // Begge ligger 2 000 px øst for en 390 px bred flate. De overlapper
+    // hverandre, men brukeren ser dem ikke, og da er en prikk ingen
+    // forbedring — bare avstandsregning på ~1 000 markører.
+    withPois([
+      poiAt("utenfor-1", 2000, 300, { rating: 4.6 }),
+      poiAt("utenfor-2", 2010, 300, { rating: 3.1 }),
+    ]);
+    render(<BoardMap has3dAddon={false} />);
+    expect(demotedByPoi()).toEqual({ "utenfor-1": false, "utenfor-2": false });
   });
 });

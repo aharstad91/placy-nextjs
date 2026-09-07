@@ -6,6 +6,61 @@
 
 ---
 
+## 2026-09-07 — MAPBOX FIKK ANKER-BEHANDLINGEN GOOGLE-MOTOREN HAR HATT SIDEN AUGUST
+
+**Kontekst:** *«jeg ser at mapbox ikke får samme behandling som google maps satelitt, valentinlyst senter blir ikke samlet i sine poi, det må vi få inn»* — to skjermbilder av samme sted på Wesselsløkka-boardet, ett per motor. På Google-siden sto Valentinlyst-klyngen som to pinner og en prikk; på Mapbox som fem hele skiver oppå hverandre.
+
+### Målingen først, fordi klagen kunne bety tre ting
+
+«Blir ikke samlet» kan være at ankeret mangler i dataene, at barna ikke absorberes, eller at rendringen skiller seg. Jeg målte alle tre før jeg rørte kode.
+
+Dataene er friske: `google-ChIJnW_zJ20xbUYRqaLffSVJpgY` («Valentinlyst Senter», `shopping`) har `anchor_summary` satt og **ti barn** med `parent_poi_id` mot seg — KIWI, Coop Mega, Boots Apotek, Fresh Fitness, Feelgood, Sabi Sushi, Fyr på, Rosenborg bakeri og to trafikkskoler. Absorpsjonen virker, og barna rendres ikke som egne pinner på noen av motorene.
+
+Forskjellen lå i rendringen, og den ble målt i DOM-en på samme board, samme utsnitt, én motor av gangen:
+
+| | Google (Satelitt) | Mapbox (Kart) |
+|---|---|---|
+| Markører | 973 | 974 |
+| Med `+`-merke | **20** | **0** |
+| Demotert til prikk | **8** | **0** |
+
+To mangler, ikke én.
+
+### 1. `isAnchor` lå der og ventet
+
+`BoardPOI.isAnchor` har eksistert siden anker-familiene kom, og doc-kommentaren navngir de tre leserne eksplisitt: «markør-innholdet (`+`-merket), utglisningen (aldri demotert) og POI-flaten (registeret)». `PoiDetail` leser den, 3D-markøren leser den via `isAnchorPOI` — `BoardMarker` gjorde det ikke. På 2D var Valentinlyst Senter en butikkpinne blant butikkpinner, og de ti virksomhetene inni var usynlige.
+
+Merket er tegnet med identisk geometri som `PoiMarkerContent`: 16 px boks, 1,5 px kant i kategorifargen, 2 px utenfor sirkelkanten, og `+` — aldri et tall. Det ligger INNE i ikon-sirkelen, så det fader og krymper med den; en prikk bærer ikke merke.
+
+### 2. Utglisningen fantes bare på 3D — og premisset for det var falskt
+
+`lib/board/pin-declutter` har demotert trange pinner til klikkbar prikk siden Strindfjordvegen-runden (2026-08-23), men `computePinDemotions` hadde ÉN konsument: `use-3d-marker-declutter`. Doc-en forklarte hvorfor 2D slapp unna: markøren er mindre, og `computeSpreadCoordinates` har alt viftet ut de samlokaliserte punktene.
+
+Det holder bare når punktene deler koordinat. **Valentinlyst er moteksempelet:** Vinmonopol (16), Vinmonopolet (16), tannlegekontoret (14), den offentlige tannklinikken (18) og legesenteret (18) ligger 20–70 m fra hverandre — fem ULIKE koordinater, som spredningen per definisjon ikke rører, og som ved board-zoom blir fem 32 px-skiver i én haug.
+
+2D-passet som alt projiserte for label-kullingen på `moveend` gjør nå begge jobbene i samme sveip. Prioriteringen er kopiert ord for ord fra 3D: aktiv POI og ANKER får `Infinity` og demoteres aldri, resten rangeres på Google-rating, og under en omvisning løftes stoppets egen scene over kontekst-pinnene med samme `SCENE_PRIORITY_BOOST = 100`. Demoterte reserverer bare prikkas plass i label-kullingen, og de mister navnet — et navn ved en prikk peker på noe som ikke lenger ser ut som et sted.
+
+Ankerets unntak er ikke pynt: blir Valentinlyst Senter en prikk, forsvinner hele klyngen som ett navnløst punkt og senteret står ikke lenger noe sted på kartet.
+
+**Geometrien importeres, ikke speiles.** `MARKER_CIRCLE_SIZE` (32) og `MARKER_DOT_SIZE` (8) eksporteres nå fra `BoardMarker` — komponenten som faktisk TEGNER dem — og kollisjonsmodellen i `BoardMap` leser dem derfra. Speilede tall ville latt oss kollidere mot en størrelse som ikke finnes på skjermen. Samme disiplin som `PIN_SIZE` i 3D-stien. Konsekvens for testene: `vi.mock("./BoardMarker")` måtte bli `importOriginal`-basert — mocken skal stubbe komponenten, ikke geometrien.
+
+### Verifisering
+
+Etter endringen, samme måling i nettleseren: **20 `+`-merker og 11 prikker på Mapbox**. Prikkene er nøyaktig haugen fra skjermbildet — Grande Frisør, tannlegekontoret, legesenteret, Vinmonopol og den offentlige tannklinikken — pluss seks andre klynger i nabolaget. Visuelt bekreftet: klyngen over senteret er nå Vinmonopol-pinnen, Vinmonopolet-pinnen og tre prikker.
+
+Google-motoren viser 8 prikker mot Mapbox' 11. Det skal IKKE være samme tall: de to motorene projiserer ulikt og kuller ulike sett offscreen. Regelen er delt, resultatet er per projeksjon.
+
+`npx tsc --noEmit` rent, `npm run lint` 0 errors (54 pre-eksisterende warnings), **3 839 tester i 229 filer**, hvorav 13 nye: seks i `BoardMap.test.tsx` (svakeste av to naboer demoteres, klaring beholder ikonet, anker aldri, aktivt punkt aldri, ingen utglisning under dot-tieren, offscreen regnes ikke) og syv i den nye `BoardMarker.test.tsx`. Mapbox-mocken manglet `project` og `getContainer` — de er lagt til med den eksakte inversen av `unproject`, så testene kan regne skjermkoordinater for hånd.
+
+**Committet på `main`, ikke pushet.** Fire filer: `BoardMap.tsx`, `BoardMarker.tsx`, `BoardMap.test.tsx`, ny `BoardMarker.test.tsx`.
+
+### Åpne tråder funnet underveis
+
+- **Valentinlyst-ankeret absorberer ikke alt det burde.** Legesenteret (18), den offentlige tannklinikken (18), tannlegekontoret (14) og begge vinmonopol-radene (16) står som egne pinner selv om de deler gate med senteret. Årsaken er målt: ankerets husnummer-sett bygges fra naboer innenfor `tightRadiusM` = 60 m, og der ligger bare 2, 4 og 20. Medlemmer på 12/14/16/18 kommer derfor bare inn via Googles `containingPlaces` — Boots Apotek (18, 62 m) og Feelgood (12, 83 m) gjorde det, de andre har ikke feltet. Dette er en pipeline-sak, ikke en render-sak, og utglisningen skjuler symptomet uten å fikse det.
+- **`anchorMarkerName` / `withAnchorMarkerName` i `lib/board/anchor-poi.ts` er dead code.** Ingen renderer kaller dem — verken 2D eller 3D. Det er den tredje halvdelen av anker-behandlingen («SATS Sirkus — i Sirkus Shopping»), og den er aldri koblet til.
+
+---
+
 ## 2026-09-06 (sen kveld) — Wesselsløkka: delt aktivitetskunnskap gir to FAQ-svar
 
 **Resultat:** 55 FAQ-svar i lokal demo, fra 53. Oppvekst svarer nå på hva barna kan gjøre etter skoletid; Trening svarer på lokale idrettslag. Kilder: Strindheim ILs allidrett på Brøset og Åsvang og Eberg Skolekorps' øvingssted på Åsvang skole. To nye `place_knowledge`-rader er skrevet i v2, og Wesselsløkkas config velger dem via `localActivityIds`. Kilde og kontrollert dato vises under svarene. Alle 53 gamle FAQ-objekter er uendret.

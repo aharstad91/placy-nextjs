@@ -18,6 +18,19 @@ import {
   type StoryEmphasis,
 } from "./story/story-model";
 
+/**
+ * Ikon-sirkelens diameter for en INAKTIV markør, i px.
+ *
+ * Eksportert fordi kollisjonsmodellen i `BoardMap` må reservere den samme
+ * skiva som faktisk tegnes — både label-kullingen og utglisningen. Speiles
+ * tallet i stedet for å importeres, kolliderer vi mot en størrelse som ikke
+ * finnes på skjermen. Samme disiplin som `PIN_SIZE` i 3D-stien.
+ */
+export const MARKER_CIRCLE_SIZE = 32;
+
+/** Den demoterte prikkas diameter, i px. Se {@link MARKER_CIRCLE_SIZE}. */
+export const MARKER_DOT_SIZE = 8;
+
 interface Props {
   poi: BoardPOI;
   color: string;
@@ -55,6 +68,17 @@ interface Props {
    */
   labelSide: LabelSide;
   /**
+   * Utglisning (`computePinDemotions`, regnet i `BoardMap` ved kamera-ro):
+   * pinnen fikk ikke plass ved siden av naboene sine og faller tilbake til
+   * prikk. Prikken står fortsatt der, er fortsatt klikkbar, og forfremmes
+   * tilbake til full pin så snart brukeren zoomer inn.
+   *
+   * Samme regel som Google-motoren har hatt siden Strindfjordvegen-runden
+   * (2026-08-23) — 2D manglet den, og fem steder i samme kjøpesenter ble fem
+   * hele skiver stablet oppå hverandre der 3D viste én pin og fire prikker.
+   */
+  demoted?: boolean;
+  /**
    * Omvisningens vekt på dette punktet, eller null/utelatt når ingen omvisning
    * kjører (kartet er da urørt).
    *
@@ -80,6 +104,7 @@ function BoardMarkerImpl({
   zoomTier,
   suppressLabel,
   labelSide,
+  demoted = false,
   emphasis = null,
   onClick,
 }: Props) {
@@ -90,10 +115,16 @@ function BoardMarkerImpl({
   // Aktiv markør beholder full farge for tydelig fokus-signal.
   const inactiveBorder = hexLightTint(color, 0.5);
 
+  // Utglisningen slår inn FØR R10 under: et demotert punkt er en prikk på
+  // samme måte som et punkt under dot-tieren er det, og R10 løfter det tilbake
+  // hvis brukeren åpner det. `BoardMap` gir aldri aktiv POI eller et anker
+  // `demoted` (de har Infinity-prioritet), så dette er bare et sikkerhetsnett.
+  const crowdedTier: BoardZoomTier = demoted ? "dot" : zoomTier;
+
   // R10: aktiv markør på `dot`-tier promoteres visuelt til `icon`-tier-størrelse
   // så label har et anker å stå ved siden av.
   const effectiveTier: BoardZoomTier =
-    isActive && zoomTier === "dot" ? "icon" : zoomTier;
+    isActive && crowdedTier === "dot" ? "icon" : crowdedTier;
 
   const showDot = effectiveTier === "dot";
   const showIconCircle = !showDot;
@@ -108,7 +139,10 @@ function BoardMarkerImpl({
     ? 44
     : emphasis === "named"
       ? 38
-      : Math.round(32 * (emphasis ? STORY_EMPHASIS_PIN_SCALE[emphasis] : 1));
+      : Math.round(
+          MARKER_CIRCLE_SIZE *
+            (emphasis ? STORY_EMPHASIS_PIN_SCALE[emphasis] : 1),
+        );
 
   // Omvisningens tre nivåer. `named` beholder full styrke og får sin vekt fra
   // størrelsen over; de to andre trekker seg tilbake.
@@ -196,8 +230,8 @@ function BoardMarkerImpl({
             left: "50%",
             top: "50%",
             transform: "translate(-50%, -50%)",
-            width: 8,
-            height: 8,
+            width: MARKER_DOT_SIZE,
+            height: MARKER_DOT_SIZE,
             borderRadius: "50%",
             backgroundColor: color,
             opacity: showDot ? 1 : 0,
@@ -245,6 +279,44 @@ function BoardMarkerImpl({
             }
             weight="fill"
           />
+
+          {/* Kjøpesenter-merket. Samme `+` som Google-motoren tegner
+              (`PoiMarkerContent`), og med vilje samme geometri: 16 px boks,
+              1,5 px kant i kategorifargen, 2 px utenfor sirkelkanten. Uten det
+              var Valentinlyst Senter en butikkpinne som alle andre på 2D-
+              kartet, og de ti virksomhetene inni var usynlige.
+
+              Merket er KVALITATIVT — aldri et tall. Se `PoiMarkerContent`:
+              «60» forutsetter at de seksti er likeverdige objekter, og for en
+              boligkjøper er spørsmålet «har senteret det jeg trenger», ikke
+              «hvor mange leietakere har det».
+
+              Ligger inne i ikon-sirkelen, så det fader og krymper med den —
+              en prikk bærer ikke merke. */}
+          {poi.isAnchor && (
+            <span
+              aria-hidden="true"
+              data-poi-badge="anchor"
+              style={{
+                position: "absolute",
+                top: -2,
+                right: -2,
+                minWidth: 16,
+                height: 16,
+                padding: "0 3px",
+                borderRadius: 999,
+                background: "#ffffff",
+                border: `1.5px solid ${color}`,
+                color,
+                font: "700 10px/16px system-ui, -apple-system, sans-serif",
+                textAlign: "center",
+                boxSizing: "border-box",
+                pointerEvents: "none",
+              }}
+            >
+              +
+            </span>
+          )}
         </div>
 
         {/* Label — absolute inntil container, side styrt av labelSide
@@ -308,5 +380,6 @@ export const BoardMarker = React.memo(
     prev.zoomTier === next.zoomTier &&
     prev.suppressLabel === next.suppressLabel &&
     prev.labelSide === next.labelSide &&
+    prev.demoted === next.demoted &&
     prev.emphasis === next.emphasis,
 );
