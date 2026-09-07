@@ -1,10 +1,21 @@
 "use client";
 
-import { Hand, Orbit, Radar, SlidersHorizontal, X } from "lucide-react";
-import { Fragment, useState } from "react";
-import { cn } from "@/lib/utils";
+import {
+  Box,
+  Hand,
+  Map as MapIcon,
+  Orbit,
+  Radar,
+  Satellite,
+  SlidersHorizontal,
+  X,
+  type LucideIcon,
+} from "lucide-react";
+import { Fragment, useState, type ReactNode } from "react";
+import { cn, travelModeLabels } from "@/lib/utils";
 import type { TravelMode } from "@/lib/types";
-import { TravelModeSelector } from "./TravelModeSelector";
+import { ControlDropdown, ControlPanelRow } from "./ControlDropdown";
+import { TRAVEL_MODE_ICONS, TravelModeSelector } from "./TravelModeSelector";
 
 export type CameraMode = "auto" | "free";
 
@@ -38,10 +49,10 @@ interface Props {
    *  attribusjonen. Default false (desktop). */
   compact?: boolean;
   /**
-   * Vis Kart/3D-segmentet. Gaten flyttet INN i komponenten 2026-08-14: pillen
-   * var tidligere montert bare når prosjektet hadde 3D-tillegget, så en kontroll
-   * som gjelder alle boards (reisemåte) ville vært usynlig på nøyaktig de
-   * boardsene som trenger den mest. Default true.
+   * Vis kartvisnings-velgeren. Gaten flyttet INN i komponenten 2026-08-14:
+   * pillen var tidligere montert bare når prosjektet hadde 3D-tillegget, så en
+   * kontroll som gjelder alle boards (reisemåte) ville vært usynlig på nøyaktig
+   * de boardsene som trenger den mest. Default true.
    */
   showViewToggle?: boolean;
   /**
@@ -59,13 +70,21 @@ interface Props {
    * ikke gjør noe. Default false.
    */
   showContourToggle?: boolean;
+  /**
+   * Reisemåtene som faktisk HAR konturer (`contourTravelModes`). Et delvis sett
+   * er lovlig — pipelinen kan ha gått for gange og ikke for bil — og da er
+   * knappen død for nettopp den reisemåten. Med dette settet sier den det selv
+   * (avslått + forklaring) i stedet for å slå på et lag som ikke tegner noe.
+   * Utelatt → knappen antas å gjelde alle moduser.
+   */
+  contourModes?: readonly TravelMode[];
   /** Konturene vises nå. */
   contoursOn?: boolean;
   onContoursToggle?: () => void;
   /** Progressiv avsløring (mobil to-flate, R11): kollaps kontrollene til ett ⚙
-   *  FAB som åpner en popover med Auto/Fri + Kart/3D. Holder kart-flaten ren —
-   *  kontrollene er der når du vil ha dem, ikke alltid utbrettet. Default false
-   *  (desktop/event beholder den fulle pillen). */
+   *  FAB som åpner en popover med de samme kontrollene. Holder kart-flaten ren
+   *  — kontrollene er der når du vil ha dem, ikke alltid utbrettet. Default
+   *  false (desktop/event beholder den fulle pillen). */
   collapsed?: boolean;
   /**
    * Bredden (px) en sidekolonne dekker fra venstre. Beholderen starter der i
@@ -96,42 +115,59 @@ const CAMERA_SEGMENTS: { mode: CameraMode; label: string; aria: string }[] = [
   },
 ];
 
-const VIEW_OPTIONS: { value: BoardView; label: string; aria: string }[] = [
-  { value: "2d", label: "Kart", aria: "2D-kart" },
-  { value: "sat", label: "Satelitt", aria: "Satellitt ovenfra" },
-  { value: "3d", label: "3D", aria: "3D-kart" },
+/**
+ * Kartvisningene, i rekkefølge. `source` grupperer dem etter MOTOR: Kart er
+ * Mapbox-vektorkartet, mens Satelitt og 3D er samme Google-motor i to vinkler.
+ * Grupperingen tegnes som en hårstrek mellom radene i panelet — uten den leses
+ * de tre som tre likestilte kart, og brukeren skjønner ikke hvorfor
+ * Satelitt→3D glir mens Kart→Satelitt klipper.
+ */
+const VIEW_OPTIONS: {
+  value: BoardView;
+  label: string;
+  aria: string;
+  icon: LucideIcon;
+  source: "mapbox" | "google";
+}[] = [
+  { value: "2d", label: "Kart", aria: "2D-kart", icon: MapIcon, source: "mapbox" },
+  {
+    value: "sat",
+    label: "Satelitt",
+    aria: "Satellitt ovenfra",
+    icon: Satellite,
+    source: "google",
+  },
+  { value: "3d", label: "3D", aria: "3D-kart", icon: Box, source: "google" },
 ];
 
 /**
- * Marginene rundt kilde-streken (Kart | Satelitt), per aktiv visning.
- *
- * Knappene har 14px sidepadding. Når en av dem er aktiv fylles den paddingen av
- * den mørke pillen, så det ØYET leser som luft er ikke det samme som den
- * geometriske åpningen: en strek plassert midt i gapet ser høyrestilt ut når
- * Satelitt er aktiv, og venstrestilt når Kart er. Marginene kompenserer for den
- * fylte siden, og summen er alltid 16px så pillen ikke endrer bredde når du
- * bytter visning.
- */
-const SEPARATOR_MARGIN: Record<BoardView, { marginLeft: number; marginRight: number }> = {
-  // Kart fylt til venstre → streken skyves mot Satelitt.
-  "2d": { marginLeft: 15, marginRight: 1 },
-  // Satelitt fylt til høyre → streken skyves mot Kart.
-  sat: { marginLeft: 1, marginRight: 15 },
-  // 3D aktiv → ingen av naboene er fylt, streken står midt i gapet.
-  "3d": { marginLeft: 8, marginRight: 8 },
-};
-
-/**
  * Samlet kontroll-cluster for board-kartet — ÉN pille, sentrert NEDERST I
- * MIDTEN. Auto/Fri (kameramodus, glidende tommel, kun i 3D) + en divider +
- * Kart/3D (motor-bytte, split-knapp) lever i samme beholder. Bygget som én
- * komponent vi kan utvide (samme prinsipp som player-raden: funksjonalitet i
- * bunn).
+ * MIDTEN.
+ *
+ * ## Rekkefølgen er argumentet (2026-09-07)
+ *
+ * `reisemåte · rekkevidde · kartvisning · kameramodus` leser som «hvordan jeg
+ * reiser · hvor langt jeg kommer · hvilket kart · hvordan kameraet står».
+ * Rekkevidde sto tidligere SIST, plassert som om den var et kartlag på linje
+ * med Satelitt. Den er ikke det: konturene er 5/10/15 minutter MED den valgte
+ * reisemåten (`contourTravelModes` leser dem per profil), så den hører inntil
+ * reisemåten. Naboskapet er hele forklaringen brukeren får — og den holder,
+ * fordi knappen dessuten sier fra når den valgte reisemåten mangler konturer.
+ *
+ * ## Hvorfor to dropdowns og ikke seks knapper
+ *
+ * Reisemåte og kartvisning lå utbrettet (tre ikonknapper + tre tekstknapper).
+ * Det skalerte ikke: pillen sto på kapasitetsgrensen ved 320 px, «Rekkevidde»
+ * måtte kappes til ikon på mobil for å få plass (2026-09-03), og hver ny
+ * kontroll ville kostet en etikett. Begge er nå `ControlDropdown` — samme
+ * trigger + panel som enheten over minutt-kolonnen i nabolagslista. Ett trykk
+ * ekstra, halve bredden, og radene bærer mer enn ikonknappene kunne (reisemåte
+ * viser tid per modus der et sted er valgt).
  *
  * Bunn-midten er bevisst valgt: Google-attribusjonen er låst nederst-VENSTRE
  * (kan ikke flyttes per Googles vilkår), Mapbox-attribusjonen nederst-HØYRE —
- * midten er fri. Auto/Fri skjules i 2D (irrelevant over Mapbox-kartet); da
- * krymper pillen til kun Kart/3D.
+ * midten er fri. Auto/Fri skjules utenfor 3D (irrelevant over Mapbox-kartet og
+ * i rett-ovenfra-satelitten); da krymper pillen.
  *
  * `collapsed` (mobil to-flate, R11): samme kontroller, men kollapset til ett ⚙
  * FAB som folder ut en popover. Holder kart-flaten ren.
@@ -151,6 +187,7 @@ export function BoardMapControls({
   travelMode = "walk",
   onTravelModeChange,
   showContourToggle = false,
+  contourModes = [],
   contoursOn = false,
   onContoursToggle,
   insetLeftPx = 0,
@@ -167,157 +204,193 @@ export function BoardMapControls({
   const btnH = compact ? "h-11" : "h-8";
   const [fabOpen, setFabOpen] = useState(false);
 
-  // Kontroll-innholdet (Auto/Fri + divider + Kart/3D) — delt mellom den fulle
-  // pillen og FAB-popoveren så de aldri driver fra hverandre.
-  const controlsBody = (
-    <>
-      {/* Reisemåte først: den gjelder hele boardet, mens Auto/Fri og Kart/3D er
-          kamera- og motor-valg. Delt komponent med chipens panel (R5). */}
-      {showTravelModes && (
-        <>
-          <TravelModeSelector
-            variant="segment"
-            modes={travelModes}
-            active={travelMode}
-            onChange={onTravelModeChange!}
-            compact={compact}
-          />
-          {(showCamera || showViewToggle || showContours) && (
-            <span aria-hidden className="mx-0.5 h-5 w-px bg-stone-300/70" />
-          )}
-        </>
-      )}
+  // Panelene folder opp fra pillen (den er låst til bunnen), og ned fra
+  // FAB-popoveren (den henger fra topp-høyre).
+  const panelDirection = collapsed ? "down" : "up";
 
-      {showCamera && (
-        <>
-          <div role="group" aria-label="Kameramodus" className="relative flex items-center">
-            <span
-              aria-hidden
-              className={cn(
-                "pointer-events-none absolute inset-y-0 left-0 rounded-full bg-stone-900 shadow-sm transition-transform duration-[420ms] ease-[cubic-bezier(0.34,1.4,0.5,1)]",
-              )}
-              style={{
-                width: seg,
-                transform: isFree ? `translateX(${seg}px)` : "translateX(0)",
+  const activeMode = travelModes.includes(travelMode) ? travelMode : travelModes[0];
+  const activeView = VIEW_OPTIONS.find((o) => o.value === view) ?? VIEW_OPTIONS[0];
+
+  /* Har den VALGTE reisemåten konturer? Et tomt `contourModes` betyr «ikke
+   * oppgitt», ikke «ingen» — gaten for om knappen finnes i det hele tatt er
+   * `showContourToggle`. */
+  const contoursAvailable =
+    contourModes.length === 0 || contourModes.includes(travelMode);
+
+  // Gruppene, i leserekkefølge. Bygget som liste så skilletegnene kan legges
+  // MELLOM dem: hver gruppe er valgfri, og en betinget divider per gruppe
+  // («vis meg hvis noe kommer etter») var fire sammenkjedede betingelser som
+  // måtte oppdateres hver gang rekkefølgen endret seg.
+  const groups: { key: string; node: ReactNode }[] = [];
+
+  if (showTravelModes) {
+    groups.push({
+      key: "travel",
+      node: (
+        <ControlDropdown
+          variant="bar"
+          direction={panelDirection}
+          icon={TRAVEL_MODE_ICONS[activeMode]}
+          label={travelModeLabels[activeMode]}
+          ariaLabel="Reisemåte"
+          compact={compact}
+          testId="map-travel-mode-control"
+        >
+          {(close) => (
+            <TravelModeSelector
+              modes={travelModes}
+              active={activeMode}
+              onChange={(mode) => {
+                onTravelModeChange!(mode);
+                close();
               }}
             />
-            {CAMERA_SEGMENTS.map((segment) => {
-              const active = segment.mode === cameraMode;
-              const Icon = segment.mode === "auto" ? Orbit : Hand;
-              return (
-                <button
-                  key={segment.mode}
-                  type="button"
-                  onClick={() => onCameraModeChange(segment.mode)}
-                  aria-pressed={active}
-                  aria-label={segment.aria}
-                  style={{ width: seg }}
-                  className={cn(
-                    "relative z-[1] inline-flex items-center justify-center gap-1.5 rounded-full text-sm font-medium transition-colors duration-200",
-                    btnH,
-                    active ? "text-white" : "text-stone-500 hover:text-stone-700",
-                  )}
-                >
-                  <Icon
-                    className={cn(
-                      "h-4 w-4",
-                      segment.mode === "auto" &&
-                        active &&
-                        "animate-[spin_7s_linear_infinite]",
-                    )}
-                  />
-                  <span>{segment.label}</span>
-                </button>
-              );
-            })}
-          </div>
-
-          {/* Divider mellom kameramodus og motor-bytte. */}
-          {(showViewToggle || showContours) && (
-            <span aria-hidden className="mx-0.5 h-5 w-px bg-stone-300/70" />
           )}
-        </>
-      )}
+        </ControlDropdown>
+      ),
+    });
+  }
 
-      {/* Kart | Satelitt · 3D — split-knapp. Den tynne streken foran Satelitt
-          skiller de to KILDENE fra hverandre: Kart er Mapbox-vektorkartet, mens
-          Satelitt og 3D er samme Google-motor i to vinkler. Uten streken leses
-          de tre som tre likestilte kart, og brukeren skjønner ikke hvorfor
-          Satelitt→3D glir mens Kart→Satelitt klipper. */}
-      {showViewToggle && (
-      <div role="group" aria-label="Kartvisning" className="flex items-center gap-0.5">
-        {VIEW_OPTIONS.map((opt) => {
-          const active = view === opt.value;
-          return (
-            <Fragment key={opt.value}>
-            {opt.value === "sat" && (
-              <span
-                aria-hidden
-                style={SEPARATOR_MARGIN[view]}
-                className="h-5 w-px rounded-full bg-stone-400 transition-[margin] duration-200"
-              />
-            )}
-            <button
-              type="button"
-              onClick={() => onViewChange(opt.value)}
-              aria-pressed={active}
-              aria-label={opt.aria}
-              className={cn(
-                "inline-flex items-center justify-center rounded-full px-3.5 text-sm font-medium transition-colors duration-200",
-                btnH,
-                active
-                  ? "bg-stone-900 text-white shadow-sm"
-                  : "text-stone-500 hover:text-stone-700",
-              )}
-            >
-              {opt.label}
-            </button>
-            </Fragment>
-          );
-        })}
-      </div>
-      )}
-
-      {/* Rekkevidde-konturer — av/på. Står SIST fordi den er et lag oppå
-          kartet, ikke et valg av kart: rekkefølgen i pillen leser da som
-          «hvordan reiser jeg · hvordan står kameraet · hvilket kart · hva
-          legges oppå». */}
-      {showContours && (
-        <>
-          {/* Bare kartvisnings-gruppa mangler egen etterfølgende strek —
-              reisemåte og kameramodus sender ut sin når noe følger etter. */}
-          {showViewToggle && (
-            <span aria-hidden className="mx-0.5 h-5 w-px bg-stone-300/70" />
-          )}
-          <button
-            type="button"
-            onClick={onContoursToggle}
-            aria-pressed={contoursOn}
-            aria-label="Vis rekkevidde-konturer"
-            className={cn(
-              "inline-flex items-center justify-center gap-1.5 rounded-full text-sm font-medium transition-colors duration-200",
-              compact ? "px-3" : "px-3.5",
-              btnH,
-              contoursOn
+  if (showContours) {
+    groups.push({
+      key: "contours",
+      node: (
+        <button
+          type="button"
+          onClick={onContoursToggle}
+          aria-pressed={contoursOn}
+          aria-label="Vis rekkevidde-konturer"
+          disabled={!contoursAvailable}
+          title={
+            contoursAvailable
+              ? undefined
+              : `Ingen rekkevidde for ${travelModeLabels[travelMode].toLowerCase()}`
+          }
+          className={cn(
+            "inline-flex items-center justify-center gap-1.5 rounded-full text-sm font-medium transition-colors duration-200",
+            compact ? "px-3" : "px-3.5",
+            btnH,
+            !contoursAvailable && "cursor-not-allowed text-stone-400 opacity-50",
+            contoursAvailable &&
+              (contoursOn
                 ? "bg-stone-900 text-white shadow-sm"
-                : "text-stone-500 hover:text-stone-700",
-            )}
-          >
-            <Radar className="h-4 w-4" />
-            {/* Ikon-bare på mobil. Pillen sto alt på kapasitetsgrensen ved
-                320 px, og en tekst-etikett i tillegg dyttet den ut over
-                venstre kant (målt 2026-09-03). Betydningen bæres av
-                aria-label, som skjermlesere leser uansett bredde. */}
-            {!compact && <span>Rekkevidde</span>}
-          </button>
-        </>
-      )}
-    </>
-  );
+                : "text-stone-600 hover:bg-stone-900/[0.05] hover:text-stone-900"),
+          )}
+        >
+          <Radar className="h-4 w-4" />
+          {/* Ikon-bare på mobil. Pillen sto alt på kapasitetsgrensen ved
+              320 px, og en tekst-etikett i tillegg dyttet den ut over
+              venstre kant (målt 2026-09-03). Betydningen bæres av
+              aria-label, som skjermlesere leser uansett bredde. */}
+          {!compact && <span>Rekkevidde</span>}
+        </button>
+      ),
+    });
+  }
 
-  // Ingen segmenter = ingen pille. En tom, halvtransparent kapsel midt på kartet
+  if (showViewToggle) {
+    groups.push({
+      key: "view",
+      node: (
+        <ControlDropdown
+          variant="bar"
+          direction={panelDirection}
+          icon={activeView.icon}
+          label={activeView.label}
+          ariaLabel="Kartvisning"
+          compact={compact}
+          testId="map-view-control"
+        >
+          {(close) => (
+            <div role="group" aria-label="Kartvisning" className="flex flex-col">
+              {VIEW_OPTIONS.map((opt, i) => (
+                <Fragment key={opt.value}>
+                  {/* Hårstrek der MOTOREN skifter — Kart er Mapbox, Satelitt og
+                      3D er Google i to vinkler. */}
+                  {i > 0 && opt.source !== VIEW_OPTIONS[i - 1].source && (
+                    <span
+                      aria-hidden
+                      className="mx-2.5 my-1 h-px bg-black/[0.07]"
+                    />
+                  )}
+                  <ControlPanelRow
+                    icon={opt.icon}
+                    label={opt.label}
+                    ariaLabel={opt.aria}
+                    active={view === opt.value}
+                    onClick={() => {
+                      onViewChange(opt.value);
+                      close();
+                    }}
+                  />
+                </Fragment>
+              ))}
+            </div>
+          )}
+        </ControlDropdown>
+      ),
+    });
+  }
+
+  if (showCamera) {
+    groups.push({
+      key: "camera",
+      node: (
+        <div role="group" aria-label="Kameramodus" className="relative flex items-center">
+          <span
+            aria-hidden
+            className="pointer-events-none absolute inset-y-0 left-0 rounded-full bg-stone-900 shadow-sm transition-transform duration-[420ms] ease-[cubic-bezier(0.34,1.4,0.5,1)]"
+            style={{
+              width: seg,
+              transform: isFree ? `translateX(${seg}px)` : "translateX(0)",
+            }}
+          />
+          {CAMERA_SEGMENTS.map((segment) => {
+            const active = segment.mode === cameraMode;
+            const Icon = segment.mode === "auto" ? Orbit : Hand;
+            return (
+              <button
+                key={segment.mode}
+                type="button"
+                onClick={() => onCameraModeChange(segment.mode)}
+                aria-pressed={active}
+                aria-label={segment.aria}
+                style={{ width: seg }}
+                className={cn(
+                  "relative z-[1] inline-flex items-center justify-center gap-1.5 rounded-full text-sm font-medium transition-colors duration-200",
+                  btnH,
+                  active ? "text-white" : "text-stone-500 hover:text-stone-700",
+                )}
+              >
+                <Icon
+                  className={cn(
+                    "h-4 w-4",
+                    segment.mode === "auto" &&
+                      active &&
+                      "animate-[spin_7s_linear_infinite]",
+                  )}
+                />
+                <span>{segment.label}</span>
+              </button>
+            );
+          })}
+        </div>
+      ),
+    });
+  }
+
+  // Kontroll-innholdet — delt mellom den fulle pillen og FAB-popoveren så de
+  // aldri driver fra hverandre.
+  const controlsBody = groups.map((group, i) => (
+    <Fragment key={group.key}>
+      {i > 0 && <span aria-hidden className="mx-0.5 h-5 w-px bg-stone-300/70" />}
+      {group.node}
+    </Fragment>
+  ));
+
+  // Ingen grupper = ingen pille. En tom, halvtransparent kapsel midt på kartet
   // er verre enn ingen kontroll.
-  if (!showTravelModes && !showCamera && !showViewToggle && !showContours) return null;
+  if (groups.length === 0) return null;
 
   // Recovery-hint (delt) — sentrert over kontrollene etter drag-takeover.
   const freeHint = showCamera ? (
@@ -347,14 +420,17 @@ export function BoardMapControls({
 
         {/* Popover med kontrollene — folder ut UNDER FAB-en (topp-høyre).
 
-            `flex-wrap` + `max-w`: innholdet er bredere enn 320 px når alle
-            gruppene vises, og uten brekking rant popoveren ut over venstre
-            skjermkant (målt 2026-09-03). En nestet vannrett scroller er
-            forkastet — én scroller per flate er prinsippet på mobil. Radiusen
-            går fra pille til avrundet boks når den brekker, ellers ville andre
-            rad hatt en halvmåne-kant. */}
+            `flex-wrap` + `max-w`: innholdet kan fortsatt bli bredere enn
+            skjermen når alle gruppene vises, og uten brekking rant popoveren ut
+            over venstre skjermkant (målt 2026-09-03). En nestet vannrett
+            scroller er forkastet — én scroller per flate er prinsippet på
+            mobil. Radiusen går fra pille til avrundet boks når den brekker,
+            ellers ville andre rad hatt en halvmåne-kant. */}
         {fabOpen && (
-          <div className="pointer-events-auto absolute right-4 top-16 flex max-w-[calc(100vw-2rem)] flex-wrap items-center justify-end gap-1 rounded-3xl border border-white/50 bg-white/85 p-1 shadow-lg ring-1 ring-black/5 backdrop-blur-md">
+          <div
+            data-testid="board-map-controls"
+            className="pointer-events-auto absolute right-4 top-16 flex max-w-[calc(100vw-2rem)] flex-wrap items-center justify-end gap-1 rounded-3xl border border-white/50 bg-white/85 p-1 shadow-lg ring-1 ring-black/5 backdrop-blur-md"
+          >
             {controlsBody}
           </div>
         )}
@@ -375,7 +451,7 @@ export function BoardMapControls({
     );
   }
 
-  // ---- Full pille (desktop + event) — uendret ----
+  // ---- Full pille (desktop + event) ----
   return (
     <div
       style={{ left: insetLeftPx }}
@@ -389,6 +465,7 @@ export function BoardMapControls({
       {/* Samlet pille, sentrert nederst. Mobil løftes litt så den klarer
           kart-sheetens bunnkant og Google-attribusjonen. */}
       <div
+        data-testid="board-map-controls"
         className={cn(
           "pointer-events-auto absolute left-1/2 flex -translate-x-1/2 items-center gap-1 rounded-full border border-white/50 bg-white/80 p-1 shadow-lg ring-1 ring-black/5 backdrop-blur-md",
           compact ? "bottom-7" : "bottom-5",

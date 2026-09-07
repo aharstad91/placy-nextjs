@@ -33,9 +33,9 @@ import {
  * `-mr-1.5` nuller knappens egen vannrette padding, så det er TEKSTEN som
  * flukter med kanten av lista under — ikke den usynlige treffflaten rundt den.
  *
- * Panelet er `TravelModeSelector variant="panel"` — samme komponent chipen på
- * ruta bruker. To innganger til samme tilstand er med vilje; er de ulike, leser
- * de som to funksjoner.
+ * Panelet er `TravelModeSelector` — samme komponent chipen på ruta bruker. To
+ * innganger til samme tilstand er med vilje; er de ulike, leser de som to
+ * funksjoner.
  */
 export function StoryTravelCell() {
   const { state, dispatch } = useBoard();
@@ -107,7 +107,6 @@ export function StoryTravelCell() {
         // den kan ligge hvor som helst i viewporten — her kan den ikke.
         <div className="absolute right-0 top-full z-20 mt-1.5 w-[194px] rounded-2xl border border-stone-200 bg-white/[0.97] p-1.5 shadow-[0_14px_34px_rgba(28,25,23,0.2)] backdrop-blur">
           <TravelModeSelector
-            variant="panel"
             modes={modes}
             active={active}
             // Tidene i panelet hører til det ÅPNE stedet. Uten et åpent sted

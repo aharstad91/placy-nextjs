@@ -1331,6 +1331,7 @@ export function BoardMap({
             travelMode={state.travelMode}
             onTravelModeChange={handleTravelModeChange}
             showContourToggle={contourModes.length > 0}
+            contourModes={contourModes}
             contoursOn={state.showContours}
             onContoursToggle={handleContoursToggle}
             cameraMode={cameraMode}

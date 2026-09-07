@@ -129,7 +129,6 @@ export function BoardTravelChip3D({ map3d }: Props) {
           )}
         >
           <TravelModeSelector
-            variant="panel"
             modes={modes}
             active={travelMode}
             minutesByMode={travelTime}

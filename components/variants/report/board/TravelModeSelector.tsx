@@ -1,27 +1,34 @@
 "use client";
 
 import { Bike, Car, Footprints, type LucideIcon } from "lucide-react";
-import { cn, travelModeLabels } from "@/lib/utils";
+import { travelModeLabels } from "@/lib/utils";
+import { ControlPanelRow } from "./ControlDropdown";
 import type { TravelMode } from "@/lib/types";
 
 /**
- * Modus-utvalget, delt mellom de to inngangene (R5).
+ * Modus-utvalget — listen over reisemåter, delt av alle inngangene til
+ * `SET_TRAVEL_MODE` (R5): chipen på ruta, chipen i 3D, enheten over
+ * minutt-kolonnen i nabolagslista, cellen i omvisningens kolonne og
+ * kart-kontrollen nederst.
  *
- * `panel` er chipens utvidede liste — alle tre tidene for det åpne punktet, så
- * leseren ser hva hun bytter TIL før hun bytter. `segment` er kart-kontrollens
- * ikon-rad, som bare viser hvilken modus som er aktiv.
- *
- * Én komponent, ikke to: rekkefølgen, etikettene, ikonene, aria-tekstene og
- * regelen for utilgjengelig data må være identiske på de to flatene. Er de ikke
+ * Én komponent, ikke fem: rekkefølgen, etikettene, ikonene, aria-tekstene og
+ * regelen for utilgjengelig data må være identiske på alle flatene. Er de ikke
  * det, drifter de fra hverandre — samme grunn til at `BoardMapControls` deler
  * `controlsBody` mellom pillen og FAB-popoveren.
  *
  * Tidene kommer fra PRECOMPUTED data (`POI.travelTime`), ikke fra Directions.
- * Derfor har panelet ingen lastetilstand: tallene finnes i det chipen åpnes.
+ * Derfor har listen ingen lastetilstand: tallene finnes i det panelet åpnes.
+ *
+ * ## Hvorfor det bare finnes én variant (2026-09-07)
+ *
+ * Fram til nå hadde komponenten to: `panel` (denne lista) og `segment` (tre
+ * ikonknapper på rad, brukt i kart-pillen). Segmentet er borte fordi pillen
+ * gikk over til dropdown — utbrettet skalerte ikke, og en 36 px ikonknapp kunne
+ * aldri bære «Sykkel · 8 min» slik raden kan. Se `ControlDropdown`.
  */
 
-/** Ikon per modus. Eksportert fordi chipen viser aktiv modus' ikon kollapset —
- *  to kart ville kunnet drifte fra hverandre. */
+/** Ikon per modus. Eksportert fordi flere flater viser aktiv modus' ikon
+ *  kollapset (chip, dropdown-trigger) — to kart ville kunnet drifte. */
 export const TRAVEL_MODE_ICONS: Record<TravelMode, LucideIcon> = {
   walk: Footprints,
   bike: Bike,
@@ -36,23 +43,18 @@ interface Props {
   modes: readonly TravelMode[];
   active: TravelMode;
   onChange: (mode: TravelMode) => void;
-  variant: "panel" | "segment";
   /**
-   * Reisetid per modus for det åpne punktet, i minutter. Bare `panel` bruker
-   * dem. En modus uten verdi her markeres som «ingen rute», ikke «undefined min».
+   * Reisetid per modus for det åpne punktet, i minutter. En modus uten verdi
+   * her markeres som «ingen rute», ikke «undefined min».
    */
   minutesByMode?: Partial<Record<TravelMode, number>>;
-  /** Touch-vennlig høyde (mobil). Default false. */
-  compact?: boolean;
 }
 
 export function TravelModeSelector({
   modes,
   active,
   onChange,
-  variant,
   minutesByMode,
-  compact = false,
 }: Props) {
   // Én modus er ikke et valg. Da rendres ingen veksler i det hele tatt, og
   // flaten ser ut som før modusen fantes.
@@ -65,87 +67,30 @@ export function TravelModeSelector({
     minutesByMode !== undefined &&
     modes.some((m) => typeof minutesByMode[m] === "number");
 
-  if (variant === "segment") {
-    return (
-      <div
-        role="group"
-        aria-label="Reisemåte"
-        className="flex items-center gap-0.5"
-      >
-        {modes.map((mode) => {
-          const Icon = TRAVEL_MODE_ICONS[mode];
-          const isActive = mode === active;
-          return (
-            <button
-              key={mode}
-              type="button"
-              onClick={() => onChange(mode)}
-              aria-pressed={isActive}
-              aria-label={travelModeLabels[mode]}
-              title={travelModeLabels[mode]}
-              className={cn(
-                "inline-flex items-center justify-center rounded-full transition-colors duration-200",
-                compact ? "h-11 w-11" : "h-8 w-9",
-                isActive
-                  ? "bg-stone-900 text-white shadow-sm"
-                  : "text-stone-500 hover:text-stone-700",
-              )}
-            >
-              <Icon className="h-4 w-4" />
-            </button>
-          );
-        })}
-      </div>
-    );
-  }
-
   return (
     <div role="group" aria-label="Reisemåte" className="flex flex-col">
       {modes.map((mode) => {
-        const Icon = TRAVEL_MODE_ICONS[mode];
-        const isActive = mode === active;
         const minutes = minutesByMode?.[mode];
         return (
-          <button
+          <ControlPanelRow
             key={mode}
-            type="button"
+            icon={TRAVEL_MODE_ICONS[mode]}
+            label={travelModeLabels[mode]}
+            active={mode === active}
             onClick={() => onChange(mode)}
-            aria-pressed={isActive}
-            className={cn(
-              "flex items-center gap-2.5 rounded-lg px-2.5 py-2 text-left transition-colors duration-150",
-              isActive ? "bg-stone-100" : "hover:bg-stone-50",
-            )}
-          >
-            <Icon
-              className={cn(
-                "h-4 w-4 shrink-0",
-                isActive ? "text-stone-900" : "text-stone-500",
-              )}
-            />
-            <span
-              className={cn(
-                "min-w-0 flex-1 truncate text-[13.5px]",
-                isActive ? "font-semibold text-stone-900" : "text-stone-600",
-              )}
-            >
-              {travelModeLabels[mode]}
-            </span>
-            {/* Mangler ruten for denne modusen, sier vi det — aldri «undefined min».
-                Er `minutesByMode` helt utelatt, er det ikke ruten som mangler:
-                da finnes det ikke noe punkt å måle til ennå (omvisningens
-                enhet over minutt-kolonnen åpnes før et sted er valgt), og «–»
-                tre ganger ville lest som «ingen rute finnes». */}
-            {minutesByMode !== undefined && (
-              <span
-                className={cn(
-                  "shrink-0 text-[13px] tabular-nums",
-                  isActive ? "font-semibold text-stone-900" : "text-stone-500",
-                )}
-              >
-                {minutes === undefined ? "–" : `${minutes} min`}
-              </span>
-            )}
-          </button>
+            /* Mangler ruten for denne modusen, sier vi det — aldri «undefined
+               min». Er `minutesByMode` helt utelatt, er det ikke ruten som
+               mangler: da finnes det ikke noe punkt å måle til ennå
+               (omvisningens enhet over minutt-kolonnen åpnes før et sted er
+               valgt), og «–» tre ganger ville lest som «ingen rute finnes». */
+            meta={
+              minutesByMode === undefined
+                ? undefined
+                : minutes === undefined
+                  ? "–"
+                  : `${minutes} min`
+            }
+          />
         );
       })}
       {/* Forbeholdet gjelder TALLENE, så det rendres bare når det finnes noen.

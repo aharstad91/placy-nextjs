@@ -120,7 +120,6 @@ export function BoardPathMidpointMarker() {
             )}
           >
             <TravelModeSelector
-              variant="panel"
               modes={modes}
               active={travelMode}
               minutesByMode={travelTime}
