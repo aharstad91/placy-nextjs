@@ -30,6 +30,7 @@ import {
   MARKER_DOT_SIZE,
 } from "./BoardMarker";
 import { BoardContourLayer } from "./BoardContourLayer";
+import { ProjectMassingLayer } from "@/components/map/project-massing-layer";
 import { useReach } from "./use-reach";
 import { useEngagement } from "@/lib/instrumentation/engagement-scope";
 import { useBoardZoomTier } from "./use-board-zoom-tier";
@@ -72,6 +73,7 @@ import {
   DEFAULT_CAMERA_LOCK,
   type PendingCamera,
 } from "@/components/map/motor-camera";
+import { getProjectMassing } from "@/lib/map/project-massing";
 
 const TOKEN = process.env.NEXT_PUBLIC_MAPBOX_TOKEN;
 
@@ -231,6 +233,9 @@ export function BoardMap({
   const availableModes = useAvailableTravelModes();
   // Konturene gates på data: har ingen reisemåte konturer, finnes ikke knappen.
   const contourModes = useContourTravelModes();
+  // Ukjent prosjekt-slug gir undefined og dermed ingen ekstra kartgeometri.
+  // Wesselsløkka er første prosjekt med en skjematisk volumstudie.
+  const projectMassing = getProjectMassing(data.projectSlug);
   // Hvilke steder ligger innenfor det du rekker? Regnet ÉN gang her og delt av
   // begge motorene, så «utenfor» er samme sett i Kart som i Satelitt. Inaktiv
   // (tomt sett) når rekkevidde er av eller reisemåten mangler konturer.
@@ -1315,6 +1320,9 @@ export function BoardMap({
 
               {/* Konturene FØRST i lista: linje-lag legges i Mapbox i den
                   rekkefølgen de monteres, så rutelinja tegnes over dem. */}
+              {mapLoaded && projectMassing && (
+                <ProjectMassingLayer massing={projectMassing} />
+              )}
               <BoardContourLayer
                 mapRef={mapRef}
                 mapLoaded={mapLoaded}

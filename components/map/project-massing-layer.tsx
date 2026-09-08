@@ -1,0 +1,156 @@
+"use client";
+
+import { useMemo } from "react";
+import { Layer, Source } from "react-map-gl/mapbox";
+import {
+  projectMassingFeatureCollection,
+  projectSurfaceFeatureCollection,
+  type ProjectMassing,
+} from "@/lib/map/project-massing";
+
+interface ProjectMassingLayerProps {
+  massing: ProjectMassing;
+}
+
+/**
+ * Planlagte bygg i Mapbox-visningen.
+ *
+ * Kartet er ovenfra, så et flatefyll med tydelig kontur er ærligere og mer
+ * lesbart enn en perspektivisk ekstrudering brukeren aldri ser med pitch 0.
+ *
+ * To roller: salgsbyggene med farget kontur, resten av områdeplanen lysere og
+ * stiplet bak dem. Poenget er at leseren ser to ting samtidig — hvilke tre bygg
+ * boligen ligger i, og at det kommer et helt nabolag rundt dem. Flatene er lyse
+ * med vilje: kartet under skal fortsatt kunne leses gjennom dem.
+ *
+ * Volumene toner INN med zoom. Boardet åpner på ~13,5 der hele feltet er noen
+ * få piksler bredt: der er prosjektet pinnen, ikke femti omriss som krangler
+ * med den. Fra zoom 15 er tomta stor nok til at grunnrisset faktisk sier noe.
+ * Samme grunn til at bokstavene (A1/A2/B) først kommer på 15,5 — under det
+ * får de ikke plass uten å kollidere med hverandre.
+ */
+const FADE_IN = ["interpolate", ["linear"], ["zoom"], 14, 0, 15.4, 1] as const;
+const IS_SALE = ["==", ["get", "role"], "sale"] as const;
+const IS_CONTEXT = ["==", ["get", "role"], "context"] as const;
+const IS_STREET = ["==", ["get", "kind"], "street"] as const;
+const IS_PATH = ["==", ["get", "kind"], "path"] as const;
+
+export function ProjectMassingLayer({ massing }: ProjectMassingLayerProps) {
+  const geojson = useMemo(
+    () => projectMassingFeatureCollection(massing),
+    [massing],
+  );
+  const surfaces = useMemo(
+    () => projectSurfaceFeatureCollection(massing),
+    [massing],
+  );
+  const { palette } = massing;
+
+  return (
+    <>
+      {/* Gatetun og sti under byggene. Uten gatene står femti omriss i et
+          jorde; det er gatene som gjør at husrekkene leses som kvartaler.
+          Mer dempet enn byggene, siden de er underlaget og ikke poenget. */}
+      <Source id="project-surface-source" type="geojson" data={surfaces}>
+        <Layer
+          id="project-surface-street"
+          type="fill"
+          filter={[...IS_STREET]}
+          paint={{
+            "fill-color": palette.street,
+            "fill-opacity": ["interpolate", ["linear"], ["zoom"], 14, 0, 15.4, 0.75],
+          }}
+        />
+        <Layer
+          id="project-surface-path"
+          type="fill"
+          filter={[...IS_PATH]}
+          paint={{
+            "fill-color": palette.path,
+            "fill-opacity": ["interpolate", ["linear"], ["zoom"], 14, 0, 15.4, 0.9],
+          }}
+        />
+        {/* Stien er lysere enn vektorkartet den ligger på, og forsvinner i det.
+            I 3D er den motsatt — der er underlaget mørkt gress og fyllet holder
+            seg selv. Kanten er det som gjør den synlig her, og stiplet er
+            samtidig måten kart sier «gangvei» på. */}
+        <Layer
+          id="project-surface-path-edge"
+          type="line"
+          filter={[...IS_PATH]}
+          layout={{ "line-cap": "butt", "line-join": "round" }}
+          paint={{
+            "line-dasharray": [2, 1.5],
+            "line-color": palette.contextLine,
+            "line-opacity": ["interpolate", ["linear"], ["zoom"], 14, 0, 15.4, 0.85],
+            "line-width": ["interpolate", ["linear"], ["zoom"], 14, 0.4, 17, 1],
+          }}
+        />
+      </Source>
+      <Source id="project-massing-source" type="geojson" data={geojson}>
+        <Layer
+          id="project-massing-context-fill"
+          type="fill"
+          filter={[...IS_CONTEXT]}
+          paint={{
+            "fill-color": palette.contextFill,
+            "fill-opacity": ["interpolate", ["linear"], ["zoom"], 14, 0, 15.4, 0.82],
+          }}
+        />
+        <Layer
+          id="project-massing-context-outline"
+          type="line"
+          filter={[...IS_CONTEXT]}
+          // Stiplet = planlagt. Heltrukket ville lest som «står der allerede»,
+          // som er nettopp det disse byggene ikke gjør.
+          layout={{ "line-cap": "butt", "line-join": "round" }}
+          paint={{
+            "line-dasharray": [2.5, 1.5],
+            "line-color": palette.contextLine,
+            "line-opacity": ["interpolate", ["linear"], ["zoom"], 14, 0, 15.4, 0.7],
+            "line-width": ["interpolate", ["linear"], ["zoom"], 14, 0.5, 17, 1.2],
+          }}
+        />
+        <Layer
+          id="project-massing-fill"
+          type="fill"
+          filter={[...IS_SALE]}
+          paint={{
+            "fill-color": palette.fill,
+            "fill-opacity": ["interpolate", ["linear"], ["zoom"], 14, 0, 15.4, 0.88],
+          }}
+        />
+        <Layer
+          id="project-massing-outline"
+          type="line"
+          filter={[...IS_SALE]}
+          layout={{ "line-cap": "round", "line-join": "round" }}
+          paint={{
+            "line-color": palette.line,
+            "line-opacity": [...FADE_IN],
+            "line-width": ["interpolate", ["linear"], ["zoom"], 14, 0.8, 17, 2.4],
+          }}
+        />
+        <Layer
+          id="project-massing-label"
+          type="symbol"
+          filter={[...IS_SALE]}
+          minzoom={15.5}
+          layout={{
+            "text-field": ["get", "label"],
+            "text-font": ["DIN Offc Pro Medium", "Arial Unicode MS Regular"],
+            "text-size": ["interpolate", ["linear"], ["zoom"], 15.5, 11, 18, 15],
+            "text-allow-overlap": false,
+            "text-ignore-placement": false,
+          }}
+          paint={{
+            "text-color": palette.label,
+            "text-halo-color": palette.labelHalo,
+            "text-halo-width": 1.4,
+            "text-opacity": ["interpolate", ["linear"], ["zoom"], 15.5, 0, 16, 1],
+          }}
+        />
+      </Source>
+    </>
+  );
+}
