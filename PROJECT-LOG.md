@@ -6,6 +6,115 @@
 
 ---
 
+## 2026-09-08 — FRA OMRISS TIL MODELL: ETASJER, GRUNN, GATER OG EN TOMT SOM BLE RYDDET
+
+**Kontekst:** fortsettelse av samme arbeid i worktree `../placy-wesselslokka-building-masses`, gren `feat/wesselslokka-building-masses`. Forrige økt endte med 55 stadfestede volumer som alle sto på anslåtte 12–14 m, i rosa, oppå fotofliser av dagens Brøset. Fem runder til, nummerert videre fra de to i forrige entry.
+
+Den røde tråden gjennom alle fem: **hver gang noe så ut som en smakssak, viste det seg å være målbart.** Etasjetallene lå i en PDF. Grunnfargen er medianen av gresspikslene. Hvitfargen ble valgt etter å ha målt hva motoren gjør med den. Og der målingen sa nei — de grå veiene, bekkedraget — ble det ikke bygget.
+
+---
+
+### Runde 3 — `6b4fe68`: etasjetallene lå i en tegning, ikke i et anslag
+
+*«kan vi lese av etasjene fra 3d-rendringen?»* — nei, men det fantes en bedre kilde.
+
+**Takplanen i reguleringsplan r20210042** (Dyrvik / ATSITE, 07.04.2022) har etasjetall påskrevet hvert bygg. Den ligger nå i `docs/kilder/wesselslokka/broset-takplan-2022.pdf`.
+
+Tre ting måtte løses for å få tallene ut:
+
+1. **Teksten er kryptert av en font, ikke av et bilde.** PDF-en har tekstlag, men kodepunktene ligger 29 for lavt — «etg» er lagret som «HWJ». Den flyttes tilbake med et skift, ikke med OCR. 101 påskrifter ut.
+2. **Tegningen måtte stadfestes.** Tre veikryss fra OSM gir 0,7026 m per PDF-enhet og −1,98° rotasjon, med avvik 1,5 / 2,1 / 3,0 m over 800 m. Residualen er kodet som gate i generatoren.
+3. **Påskrift til omriss.** 36 av 52 omriss har en påskrift inne i seg; resten tar nærmeste innen 35 m.
+
+**Én kilde ble forkastet på ett API-kall.** Aksonometrien i «Søndre del av Brøset» (2025) ser ut som samme plan — samme arkitekt, samme stedsnavn, samme strek. Kartverkets terrengmodell viser at den ligger på kote 79–98 mens våre omriss ligger på 70,7–84,8. Brøsetjordet er grensa mellom de to planene. Den er nabotomta, ikke vår.
+
+**A1/A2/B er ikke i 2022-planen** og får etasjetallet fra salgsmaterialet: fem, fem og sju. Nærmeste påskrift ville gitt 6/7/4 — altså gitt det laveste bygget den høyeste hatten. Unntaket er kodet, ikke skjult.
+
+Etasje til meter er **3,5**, avledet av planens maks kotehøyder minus dagens terreng for byggene på seks til åtte etasjer. Resultat: 55 volumer, sju ulike høyder fra 7 til 28 m. Feltet fikk silhuett i stedet for å lese som én kake.
+
+Fargen gikk samtidig fra rosa til lys. Høydeforskjellene bærer formen nå, så fyllet kan holde seg unna.
+
+---
+
+### Runde 4 — `64d8603`: to ting som gjelder utenfor Wesselsløkka
+
+`docs/solutions/data-import/plandokument-til-kartdata-20260907.md` dekker hele kjeden fra arkitekt-PDF til kartdata: tekstlaget kan leses uten OCR når fonten har konstant kodeforskyvning, tegningen stadfestes mot veikryss fra OSM med residualen som gate, påskriftene tilordnes omrissene — og **sjekk terrengkoten før du bruker en plan som ligner.** Det siste er det dyre punktet: planbeskrivelser oppgir kote nord/sør, så nabotomta felles på ett kall.
+
+`docs/solutions/ui-patterns/overlay-opasitet-2d-kart-vs-3d-fotofliser-20260907.md`: samme lyse fyll er riktig i Mapbox og grumsete brunt over Googles fotofliser. **Alfa er en funksjon av hva som ligger under, ikke av laget du tegner.**
+
+---
+
+### Runde 5 — `5e4e1b1`: grønn grunn, låven som volum, og hvit akryl som ble målt fram
+
+Volumene reiste seg oppå dagens parkeringsplasser og innkjørsler. Bildet motsa seg selv.
+
+**Grunnflaten** dekker hele planområdet, klamret til terrenget under volumene, malt i jordets egen farge — medianen av gresspikslene i Googles fliser, ikke en valgt grønn. Omrisset er trukket ut av situasjonsplanen: alt tegningen har farget grønt, med gatetun, torg og bygg lukket igjen. Den stopper på innsiden av Brøsetvegen, Kollektivgata og Tungasletta, som finnes i dag og skal forbli synlige.
+
+**Låven** ble stående gjennom grunnflaten, siden den drapereres på terrenget. Situasjonsplanen tegner den mørkerød — planen beholder den — så hun fikk eget volum i stedet for å bli malt bort. Nesten tett, ellers skinner taket hennes igjennom.
+
+**Hvit akryl, målt og ikke gjettet.** Volumene skal lese som bordmodellen på salgskontoret. Google skyggelegger flatene selv etter hvilken vei de vender, og lyset kan ikke settes: samme helhvite flate tegnes fra **122 til 247** i luminans på ett og samme kamera. Hele spennet mellom svart og hvitt er brukt opp før fargen din får si noe. Og dekkevnen redder deg ikke — lav alfa gjorde volumene **jevnt over mørkere, ikke lysere** (lyse flater tapte 42, mørke vant 18). To utveier prøvd og forkastet: bygge veggene som flate polygoner (samme skyggelegging — normalen avgjør, ikke `extruded`) og snu vindingen (ingen forskjell).
+
+2D beholder den varme paletten. Der ville rent hvitt forsvunnet i vektorkartet.
+
+---
+
+### Runde 6 — `55a9f14`: gatetunene og hovedstien, fra samme tegning som byggene
+
+*«i hvilken grad klarer vi å tegne inn veiene og stier som også vises i bildet?»*
+
+Svaret ble målt per objektklasse i stedet for anslått:
+
+| | Målt | Bygget? |
+|---|---|---|
+| Grå hovedveier | 74 108 px, én komponent, første forsøk | **Nei** — Brøsetvegen, Kollektivgata og Tungasletta finnes i dag og ligger allerede i begge motorene |
+| Gatetun | 62 197 px nettverk | Ja — 8 flater, 8 173 m² |
+| Hovedsti | 7 614 px | Ja — 4 flater, 1 372 m², lengste spenn 250 m |
+| Bekkedraget | myk gradient uten kant | **Nei** — det finnes ingen kant å finne |
+
+Alle 423 punktene ligger innenfor grunnflaten. Bygg og grunnflate er byte-identiske etter regenerering.
+
+**Gatetunene ble ikke rene av en bedre fargeterskel.** De har nøyaktig samme farge som fortauene planen tegner *langs* de eksisterende veiene, og verken farge, lokal variasjon (median std 13,4 — hver terskel fragmenterte gatene) eller form skilte dem. Det som virket var å klippe masken mot grunnflaten fra runde 5, krympet et par meter inn: fortauene faller utenfor, gatetunene innenfor. Generalisert: **når to ting i en tegning har samme farge, se etter en geometrisk avgrensning før du finner på en tredje fargeregel.**
+
+**Stien lå allerede i byggfilterets avfallsbunke** — den er nettopp det filteret forkaster: langstrakt, smal, uten mørk kontur. Ett filter til, siden «forkastet» ikke betyr «sti»: omkrets² delt på areal må være ≥ 60. Byggene måler 17–50, stibitene 69–658, så terskelen har luft på begge sider. En halvbredde-gate ble prøvd først og forkastet — ryggraden utvider seg i kryssene og strøk på rektangeltesten, ikke på tynnhetstesten.
+
+**I 2D forsvant stien helt.** Den er lysere enn vektorkartet den ligger på, og da finnes det ingen dekkevne som redder den — full dekning gjør den bare til en litt annen nyanse av det samme lyse. Informasjonen måtte flyttes fra flate til strek: stiplet kant, som samtidig er kartkonvensjonen for gangvei. Gatetunene, som er mørkere enn kartet, trengte ingenting. Regelen står i opasitets-dokumentet.
+
+---
+
+### Runde 7 — `ab9e6cd`: tomta ryddet, så planen ikke står i en skog
+
+*«vi må få bort trær også»* — med skjermbilde av femti hvite bokser med trekroner opp gjennom seg.
+
+Fotoflisene er et fotogrammetri-mesh av dagens Brøset. Trekronene er 10–20 m og altså på høyde med tre- og fireetasjes volumer, så de sto foran og gjennom byggene.
+
+**Fire nærliggende grep er blindveier**, og det er verdt å ha skrevet ned hvorfor: høyere dekkevne hjelper ikke når treet står *foran* bygget i dybde; ekstrudert grunnflate til kronehøyde svelger byggene også; plint over kronene legger feltet 15 m over nabolaget og leser som en svevende bydel; CesiumJS med `clippingPolygons` er den klassiske løsningen, men et helt renderer-bytte for ett problem.
+
+Maps JavaScript API har fått **`FlattenerElement` (`<gmp-flattener>`)**. Den tar en lukket ring og stryker alt som reiser seg innenfor den — trær, hekker, hus — mens terrengets høydedrag blir stående. Ringen er det samme omrisset grunnflaten allerede bruker, så det som ryddes er nøyaktig det teppet dekker. Låven ryker med, og det er riktig: vi tegner henne likevel selv i hvitt, og da er hun i samme materiale som resten i stedet for å være det ene fotografiet midt i modellen.
+
+Egenskapen er ny. Den ligger i `@types/google.maps@3.64` og virker i `weekly`, men `new lib.FlattenerElement()` kaster på eldre API-versjon — og siden kallet står i samme try-blokk som resten av laget, ville det tatt med seg grunnflate, gater og volumer i fallet. Derfor `if (lib.FlattenerElement)`, og resten tegnes uansett. Begge grener har test.
+
+Dokumentert i `docs/solutions/ui-patterns/gmp-flattener-rydde-tomta-under-planlagte-volumer-20260908.md`.
+
+---
+
+### Verifisering
+
+`npx tsc --noEmit` rent, `npm run lint` 0 errors (54 pre-eksisterende warnings), **3 924 tester i 235 filer** grønne, `npm run build` grønn.
+
+Verifisert i Chrome mot prod-fliser på `localhost:3006/eiendom/broset-utvikling-as/wesselslokka/rapport-board` — ikke bare i test. 69 `gmp-polygon-3d`: 1 grunnflate, 8 gatetun, 4 stier, 1 låve, 55 volumer, med målte fyllfarger per klasse. Ett `gmp-flattener` med 48 punkter. A/B med flatteneren av og på bekrefter at kratt og trær inne på feltet forsvinner mens trerekka langs Brøsetvegen står igjen.
+
+**Fem commits på gren i worktree, ikke merget, ikke pushet.**
+
+### Åpne tråder
+
+- **Jevnt hvit modell krever `Model3DElement`.** Motorens skyggelegging kan ikke settes; eneste vei utenom er glTF med `KHR_materials_unlit`. Målt fram i runde 5, ikke bygget. Egen jobb.
+- **Kanten der flatingen stopper er skarp.** Trærne slutter i en rett linje langs omrisset. På en byggetomt leser det som ryddet mark, men det er en visuell beslutning — skal overgangen mykes, må omrisset selv mykes.
+- **Bekkedraget lar seg ikke trekke ut.** Myk gradient uten kant. Skal det inn, må det tegnes for hånd.
+- **Byggetrinn mangler fortsatt** (fra forrige entry): den fargekodede planen deler Brøset i Elvely / Wesselsløkka / Kafe og service / Urtehagen / sentrum / dagligvare. Krever håndregistrering.
+- **Ingen av volumene er klikkbare.** Ren geometri — ikke POI-er, ikke koblet til leiligheter.
+
+---
+
 ## 2026-09-07 (kveld) — BRØSET-PLANEN INN I KARTET: STADFESTET FØRST, SÅ HELE OMRÅDET
 
 **Kontekst:** *«se hva som er gjort i dette worktree. codex har gått tom for tokens. den skulle jobbe med å stadfeste 2d mapbox slik at vi bygde dette i 2d først, som igjen legger grunnlag for en 3d versjon etterpå»* — worktree `../placy-wesselslokka-building-masses`, gren `feat/wesselslokka-building-masses`, to commits fra Codex og et skjermbilde av tre hvite omriss ute på et jorde.
