@@ -66,6 +66,13 @@ const ALLOWED_REPORTCONFIG_KEYS = new Set([
   "district",
   "city",
   "assets",
+  // Board-felt satt av provisjonerings-pipelinen (/provision-rapport)
+  "boardFacts",
+  "isochrones",
+  "reportTier",
+  "globalFaq",
+  "localActivityIds",
+  "hideBrokerCard",
   // Deprecated but tolerated — old rows may still carry these
   "closingTitle",
   "closingText",
@@ -91,6 +98,12 @@ const PRESERVED_REPORTCONFIG_KEYS = [
   "district",
   "city",
   "assets",
+  "boardFacts",
+  "isochrones",
+  "reportTier",
+  "globalFaq",
+  "localActivityIds",
+  "hideBrokerCard",
 ];
 
 const TOTAL_FAILURE_THRESHOLD = 5; // ≥5 av 7 feilet → abort
