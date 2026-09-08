@@ -1,6 +1,9 @@
 import { act, cleanup, render } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { getProjectMassing } from "@/lib/map/project-massing";
+import {
+  getProjectMassing,
+  type ProjectMassing,
+} from "@/lib/map/project-massing";
 import type { Map3DInstance } from "./map-view-3d";
 import { ProjectMassingLayer3D } from "./project-massing-layer-3d";
 
@@ -57,6 +60,12 @@ afterEach(() => {
   vi.restoreAllMocks();
 });
 
+/** Grunnflate + gatetun + sti. Alt dette ligger flatt på terrenget og tegnes
+ *  før noe reiser seg, så volumene i testene under starter etter det. */
+function flatCount(massing: ProjectMassing) {
+  return 1 + (massing.siteStreets?.length ?? 0) + (massing.sitePaths?.length ?? 0);
+}
+
 async function flush() {
   await act(async () => {
     await new Promise((resolve) => setTimeout(resolve));
@@ -78,9 +87,9 @@ describe("ProjectMassingLayer3D", () => {
     expect(importLibrary).toHaveBeenCalledWith("maps3d");
     expect(polygonInstances.length).toBeGreaterThan(40);
     expect(map3d.appended.length).toBe(polygonInstances.length);
-    // Rekkefølgen er grunnflate, så det som allerede står, så planens volumer.
+    // Rekkefølgen er de flate flatene, så det som allerede står, så volumene.
     const planned = map3d.appended.slice(
-      1 + (massing.standingBuildings?.length ?? 0),
+      flatCount(massing) + (massing.standingBuildings?.length ?? 0),
     );
     const shells = planned.filter((polygon) => polygon.extruded);
     expect(shells.length).toBe(massing.buildings.length);
@@ -141,6 +150,41 @@ describe("ProjectMassingLayer3D", () => {
     expect(map3d.appended[0]).toBe(ground);
   });
 
+  it("tegner gatetun og sti flatt oppå grunnflaten", async () => {
+    const map3d = makeMap3d();
+    const massing = getProjectMassing("wesselslokka")!;
+    render(
+      <ProjectMassingLayer3D
+        map3d={map3d as unknown as Map3DInstance}
+        massing={massing}
+      />,
+    );
+    await flush();
+
+    // Første er grunnflaten; så gatene, så stien. Uten dem står volumene i et
+    // jorde, og planen leser ikke som et nabolag.
+    const flat = map3d.appended.slice(1, flatCount(massing));
+    expect(flat.length).toBe(
+      massing.siteStreets!.length + massing.sitePaths!.length,
+    );
+    for (const polygon of flat) {
+      expect(polygon.extruded).toBe(false);
+      expect(polygon.altitudeMode).toBe("clamp-to-ground");
+      expect(polygon.path?.every((point) => point.altitude === undefined)).toBe(true);
+      expect(polygon.strokeWidth).toBe(0);
+    }
+    // Nesten tette: slipper det grønne gjennom, får asfalten grønnskjær og
+    // forsvinner i jordet den ligger på.
+    const streets = flat.slice(0, massing.siteStreets!.length);
+    const paths = flat.slice(massing.siteStreets!.length);
+    expect(new Set(streets.map((polygon) => polygon.fillColor))).toEqual(
+      new Set(["rgba(216, 209, 199, 0.95)"]),
+    );
+    expect(new Set(paths.map((polygon) => polygon.fillColor))).toEqual(
+      new Set(["rgba(240, 245, 240, 0.95)"]),
+    );
+  });
+
   it("gir låven et volum, siden planen beholder den", async () => {
     const map3d = makeMap3d();
     render(
@@ -153,7 +197,8 @@ describe("ProjectMassingLayer3D", () => {
 
     // Låven står der i dag og stikker opp gjennom grunnflaten. Uten et volum
     // blir taket hennes liggende som et fotografi mellom rene bokser.
-    const laven = map3d.appended[1];
+    const massing = getProjectMassing("wesselslokka")!;
+    const laven = map3d.appended[flatCount(massing)];
     expect(laven.extruded).toBe(true);
     expect(laven.altitudeMode).toBe("relative-to-ground");
     expect(laven.path?.every((point) => point.altitude === 11)).toBe(true);

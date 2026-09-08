@@ -1,6 +1,6 @@
 ---
 name: Overlay-opasitet går motsatt vei i 2D-kart og 3D-fotofliser
-description: Samme lyse fyll som er riktig over Mapbox' vektorkart blir grumsete brunt over Googles fotorealistiske fliser, fordi bakgrunnen er lys og tegnet i den ene motoren og mørk og fotografert i den andre. For ekstruderte volumer snur regelen igjen — der skyggelegger Google flatene selv, og lavere dekkevne gjør dem mørkere, ikke lysere.
+description: Samme lyse fyll som er riktig over Mapbox' vektorkart blir grumsete brunt over Googles fotorealistiske fliser, fordi bakgrunnen er lys og tegnet i den ene motoren og mørk og fotografert i den andre. For ekstruderte volumer snur regelen igjen — der skyggelegger Google flatene selv, og lavere dekkevne gjør dem mørkere, ikke lysere. Og en flate som er lysere enn underlaget forsvinner helt i 2D, uansett dekkevne: der må formen bæres av en kant.
 type: ui-pattern
 problem_type: ui_bug
 module: components/map
@@ -109,6 +109,24 @@ Vil man ha en jevnt hvit modell — den fysiske akrylmodellen på salgskontoret 
 må volumene tegnes som `Model3DElement` med en glTF der materialet er
 `KHR_materials_unlit`. Det er den eneste veien utenom motorens lys, og det er
 en egen jobb.
+
+## Når fargen er lysere enn underlaget, hjelper ingen dekkevne
+
+Gang- og sykkelstien fra planen er nesten hvit (`#f0f5f0`). Over Googles mørke
+gress leser den umiddelbart. Over Mapbox' lyse vektorkart forsvant den helt —
+den er lysere enn bakgrunnen den skal skille seg fra, og da finnes det ingen
+dekkevne som redder den. Full dekning gjør den bare til en litt annen nyanse av
+det samme lyse.
+
+Løsningen er ikke en annen farge, for fargen er riktig: stien *er* lys, og i den
+andre motoren gjør nettopp det jobben. Løsningen er å la **kanten** bære formen
+der flaten ikke kan. En stiplet linje i konturfargen leser på lyst underlag, og
+er samtidig kartkonvensjonen for gangvei — så det ekstra laget sier noe det
+fylte polygonet ikke sa.
+
+Regelen utvider den over: **flatens farge er en funksjon av underlaget, og når
+kontrasten uansett ikke finnes, må informasjonen flyttes fra flate til strek.**
+Gatetunene, som er mørkere enn vektorkartet, trengte ingen slik kant.
 
 ## Fallgruve ved verifisering
 

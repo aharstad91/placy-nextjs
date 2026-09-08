@@ -1,11 +1,11 @@
 ---
 name: Fra plandokument til kartdata — finn riktig plan, les tallene, plasser dem
-description: Reguleringsplaner er den eneste kilden til byggehøyder for uoppførte prosjekter, men nabotomta har en plan som ser identisk ut. Terrengmodellen felte feil plan på ett minutt. Tekstlaget i arkitekt-PDF-er kan leses uten OCR (konstant kodeforskyvning), tegningen stadfestes mot tre veikryss fra OSM, og påskriftene tilordnes omrissene med en gate på flaggskipsbyggene.
+description: Reguleringsplaner er den eneste kilden til byggehøyder for uoppførte prosjekter, men nabotomta har en plan som ser identisk ut. Terrengmodellen felte feil plan på ett minutt. Tekstlaget i arkitekt-PDF-er kan leses uten OCR (konstant kodeforskyvning), tegningen stadfestes mot tre veikryss fra OSM, og påskriftene tilordnes omrissene med en gate på flaggskipsbyggene. Gater og stier hentes ut av samme tegning — stien lå allerede i byggfilterets avfallsbunke, og gatene ble rene av å klippes mot planområdet i stedet for av en smartere fargeterskel.
 type: data-import
 problem_type: data_import
 module: lib/map, scripts
 date: 2026-09-07
-tags: [reguleringsplan, pdf, ocr, georeferering, kartverket, dtm1, osm, overpass, byggehøyder, 3d, massing, wesselslokka, broset, verifisering]
+tags: [reguleringsplan, pdf, ocr, georeferering, kartverket, dtm1, osm, overpass, byggehøyder, 3d, massing, wesselslokka, broset, verifisering, gatenett, stier, opencv, segmentering]
 ---
 
 # Fra plandokument til kartdata
@@ -168,6 +168,42 @@ terreng.
 Faktoren skal matche hvordan volumet plasseres. Vi setter volumene på **dagens**
 terreng i 3D (`RELATIVE_TO_GROUND`), så det er nettopp «kote minus dagens
 terreng» som skal treffe.
+
+## 6. Gater og stier fra samme tegning
+
+Byggene er ikke det eneste planen sier. Gatetunene mellom husrekkene og
+gang- og sykkelstien gjennom parkdraget finnes ingen andre steder — de er ikke
+bygd, så verken OSM eller fotoflisene har dem.
+
+**Stien ligger allerede i avfallsbunken.** Den er tegnet i samme hvitt som
+byggene, havner i den samme masken, og kastes ut igjen av byggfilteret fordi
+den er for smal eller ikke fyller rektangelet sitt. Det første forsøket var å
+lete etter den på nytt med egne terskler; det ga tekst-haloer og takkanter, og
+ikke stien. Å plukke opp det filteret forkaster ga hele ryggraden i ett stykke
+på første forsøk.
+
+Ett gate til, fordi «forkastet» ikke betyr «sti»: formen må være langstrakt.
+Omkrets²/areal skiller rent — byggene ligger på 17–50, stibitene på 69–658.
+
+**Gatene ble ikke rene av en bedre fargeterskel, men av en avgrensning.**
+Gatetunene er en varm, lys farge, og det er nøyaktig samme farge som fortauene
+planen tegner langs de eksisterende veiene rundt feltet. Tre forsøk på å skille
+dem på farge, lokal variasjon og form feilet. Det som virket var å klippe masken
+mot planområdets egen grunnflate, krympet et par meter inn: fortauene ligger
+utenfor, gatetunene innenfor. Avgrensningen fantes allerede fra 3D-arbeidet.
+
+Regelen er generell: **når to ting i en tegning har samme farge, se etter en
+geometrisk avgrensning før du finner på en tredje fargeregel.**
+
+De grå hovedveiene tas ikke med i det hele tatt. De kom ut som én sammenhengende
+flate på første forsøk, men Brøsetvegen, Kollektivgata og Tungasletta finnes i
+dag: de ligger allerede i fotoflisene og i vektorkartet, og en kopi oppå ville
+bare vært en unøyaktig versjon av noe kartet tegner selv. Bekkedraget er malt
+som en myk gradient uten kant og har ikke noe omriss å finne — det må eventuelt
+tegnes for hånd.
+
+Presisjonen setter taket: innpassingen sitter med 1,5–3 meters avvik over 800 m,
+så en fire meter bred sti leser som «her går det en sti», ikke som en trasé.
 
 ## Testen som fanger at avlesningen dør
 

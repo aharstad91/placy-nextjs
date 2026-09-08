@@ -21,6 +21,13 @@ bygg. Teksten hentes ut av PDF-en med posisjon, tegningen stadfestes mot tre
 veikryss vi kjenner koordinatene til, og hvert omriss arver etasjetallet som
 står der bygget ligger.
 
+Gatetunene og hovedstien kommer med samme tur. Gatetunene er en egen varm
+farge i tegningen. Stien er derimot hvit som byggene, og faller ut av
+byggfilteret over — den er nettopp det filteret forkaster: langstrakt, smal og
+uten mørk kontur. Vi plukker den opp der i stedet for å lete etter den på nytt.
+De grå hovedveiene tas ikke med. Brøsetvegen, Kollektivgata og Tungasletta
+finnes i dag, og ligger allerede i fotoflisene og i vektorkartet.
+
 Kjøres sjelden — én gang per ny plantegning:
 
     python3 -m pip install opencv-python-headless   # og poppler for pdftotext
@@ -65,6 +72,14 @@ SIMPLIFY_PX = 4.0           # forenkler bort takstripene; ~1,6 m i planens måle
 SITE_BRIDGE_PX = 55         # binder planens grønne flater sammen over gatetun og bygg
 SITE_SMOOTH_PX = 75         # glatter bort hakkene der tverrveiene møter kanten
 SITE_SIMPLIFY_PX = 14.0     # ~6 m; grunnflaten trenger ikke skarpere kant enn det
+SITE_INSET_PX = 25          # gate og sti tegnes bare godt innenfor grunnflaten
+STREET_MIN_AREA_PX = 600    # under dette er det et tre tegnet oppå gata, ikke gate
+STREET_BRIDGE_PX = 13       # lukker hullene trærne og kjørepilene punsjer i asfalten
+STREET_TRIM_PX = 7          # fjerner fortauskantene som henger igjen etter lukkingen
+STREET_SIMPLIFY_PX = 3.0    # ~1,2 m; gatene er rette nok til å tåle det
+PATH_MIN_AREA_PX = 450      # kortere biter er avstandsmarkører, ikke sti
+PATH_MIN_ELONGATION = 60.0  # omkrets²/areal — se path_polygons
+PATH_SIMPLIFY_PX = 2.5      # ~1 m; stien svinger, og svingene er poenget
 STOREY_SEARCH_M = 35.0      # hvor langt vi leter etter etasjetall utenfor omrisset
 DEFAULT_STOREYS = 4         # brukes bare hvis takplanen ikke sier noe i nærheten
 
@@ -153,6 +168,74 @@ def site_outline(bgr: np.ndarray, alpha: np.ndarray) -> np.ndarray:
     return cv2.approxPolyDP(contour, SITE_SIMPLIFY_PX, True).reshape(-1, 2)
 
 
+def site_interior(site: np.ndarray, shape: tuple[int, int]) -> np.ndarray:
+    """Grunnflaten, krympet et par meter inn.
+
+    Gate og sti tegnes bare her. Utenfor kanten står nabolaget slik det faktisk
+    er — der er fortauet langs Brøsetvegen ekte, og en beige stripe fra planen
+    oppå det ville bare vært en unøyaktig kopi av noe kartet allerede viser.
+    Innsparingen tar samtidig bort fortausstripene planen tegner *langs* de
+    veiene, som har nøyaktig samme farge som gatetunene inne i feltet.
+    """
+    mask = np.zeros(shape, np.uint8)
+    cv2.fillPoly(mask, [site.astype(np.int32)], 1)
+    return cv2.erode(
+        mask, cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (SITE_INSET_PX, SITE_INSET_PX))
+    )
+
+
+def outlines(mask: np.ndarray, min_area: int, simplify: float) -> list[np.ndarray]:
+    """Omriss av hver flate i masken, forenklet."""
+    count, labels, stats, _ = cv2.connectedComponentsWithStats(mask, 8)
+    shapes = []
+    for i in range(1, count):
+        if int(stats[i, 4]) < min_area:
+            continue
+        contours, _ = cv2.findContours(
+            (labels == i).astype(np.uint8), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE
+        )
+        contour = max(contours, key=cv2.contourArea)
+        shapes.append(cv2.approxPolyDP(contour, simplify, True).reshape(-1, 2))
+    shapes.sort(key=lambda ring: (ring[:, 1].mean(), ring[:, 0].mean()))
+    return shapes
+
+
+def street_polygons(
+    bgr: np.ndarray, alpha: np.ndarray, interior: np.ndarray
+) -> list[np.ndarray]:
+    """Gatetunene: planens varme, lyse asfalt inne på feltet.
+
+    Fargen alene holder. Det som ellers ville forurenset masken — fortauene
+    langs de eksisterende veiene — ligger utenfor `interior` og er allerede
+    borte. Trærne og kjørepilene som er tegnet oppå gata punsjer hull i den;
+    de lukkes igjen, og så trimmes kanten tilbake så lukkingen ikke gjør gata
+    bredere enn den er.
+    """
+    b, g, r = (bgr[:, :, i].astype(int) for i in range(3))
+    hsv = cv2.cvtColor(bgr, cv2.COLOR_BGR2HSV)
+    saturation = hsv[:, :, 1].astype(int)
+    value = hsv[:, :, 2].astype(int)
+    warm = (
+        (alpha > 60)
+        & (r >= g)
+        & (g >= b)
+        & (r - b >= 6)
+        & (r - b <= 48)
+        & (value >= 196)
+        & (value < 252)
+        & (saturation < 62)
+        & (interior > 0)
+    )
+
+    def ellipse(size: int) -> np.ndarray:
+        return cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (size, size))
+
+    mask = (warm * 255).astype(np.uint8)
+    mask = cv2.morphologyEx(mask, cv2.MORPH_CLOSE, ellipse(STREET_BRIDGE_PX))
+    mask = cv2.morphologyEx(mask, cv2.MORPH_OPEN, ellipse(STREET_TRIM_PX))
+    return outlines((mask > 0).astype(np.uint8), STREET_MIN_AREA_PX, STREET_SIMPLIFY_PX)
+
+
 def reconstruct(marker: np.ndarray, mask: np.ndarray) -> np.ndarray:
     """Morfologisk rekonstruksjon: vokser markøren ut i masken."""
     se = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (3, 3))
@@ -196,6 +279,41 @@ def is_building(component: np.ndarray, contour, area: int, value: np.ndarray) ->
     ring = cv2.dilate(component, cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (5, 5)))
     ring = ring - component
     return float((value[ring > 0] < 175).mean()) >= MIN_DARK_EDGE
+
+
+def path_polygons(
+    mask: np.ndarray, value: np.ndarray, interior: np.ndarray
+) -> list[np.ndarray]:
+    """Gang- og sykkelstien: det byggfilteret allerede har lagt til side.
+
+    Stien er tegnet i samme hvitt som byggene og ligger derfor i den samme
+    masken. `is_building` kaster den ut igjen — den er for smal, eller den
+    fyller ikke rektangelet sitt og har ingen mørk kontur rundt seg. I stedet
+    for å lete etter stien på nytt med egne terskler plukker vi opp det som
+    faller ut der.
+
+    Én gate til: forkastet betyr ikke sti. Formen må være langstrakt. Målt på
+    denne planen ligger byggene på 17–50 i omkrets²/areal og stibitene på
+    69–658, så terskelen på 60 har luft på begge sider. Et kartsymbol eller en
+    tegnefeil som slipper gjennom byggfilteret, blir stoppet her.
+    """
+    count, labels, stats, _ = cv2.connectedComponentsWithStats(mask, 8)
+    keep = np.zeros(mask.shape, np.uint8)
+    for i in range(1, count):
+        area = int(stats[i, 4])
+        if area < MIN_AREA_PX:
+            continue
+        component = (labels == i).astype(np.uint8)
+        contours, _ = cv2.findContours(
+            component, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE
+        )
+        contour = max(contours, key=cv2.contourArea)
+        if is_building(component, contour, area, value):
+            continue
+        if cv2.arcLength(contour, True) ** 2 / area < PATH_MIN_ELONGATION:
+            continue
+        keep |= component & (interior > 0)
+    return outlines(keep, PATH_MIN_AREA_PX, PATH_SIMPLIFY_PX)
 
 
 # --- etasjetall fra takplanen -------------------------------------------
@@ -329,6 +447,16 @@ def centroid(points: np.ndarray) -> np.ndarray:
     return points.mean(axis=0)
 
 
+def to_plan(rings: list[np.ndarray], matrix: np.ndarray) -> list[np.ndarray]:
+    """Fra den store planens piksler til den stadfestede planens."""
+    return [
+        np.round(
+            cv2.transform(ring.reshape(-1, 1, 2).astype(np.float32), matrix).reshape(-1, 2)
+        ).astype(int)
+        for ring in rings
+    ]
+
+
 def main() -> None:
     broset, alpha = flatten(SRC_BROSET)
     registered, _ = flatten(SRC_REGISTERED)
@@ -372,13 +500,25 @@ def main() -> None:
     spread = {n: storeys.count(n) for n in sorted(set(storeys))}
     print(f"etasjer: {spread}")
 
-    site = cv2.transform(
-        site_outline(broset, alpha).reshape(-1, 1, 2).astype(np.float32), matrix
-    ).reshape(-1, 2)
-    site = np.round(site).astype(int)
+    outline = site_outline(broset, alpha)
+    interior = site_interior(outline, alpha.shape)
+    site = to_plan([outline], matrix)[0]
     print(f"grunnflate: {len(site)} punkter")
 
+    streets = to_plan(street_polygons(broset, alpha, interior), matrix)
+    paths = to_plan(path_polygons(mask, value, interior), matrix)
+    print(f"gatetun: {len(streets)} flater, sti: {len(paths)} flater")
+
     site_body = ", ".join(f"[{int(x)}, {int(y)}]" for x, y in site)
+
+    def surfaces(rings: list[np.ndarray]) -> str:
+        return ",\n".join(
+            "  " + json.dumps([[int(x), int(y)] for x, y in ring], separators=(", ", ", "))
+            for ring in rings
+        )
+
+    streets_body = surfaces(streets)
+    paths_body = surfaces(paths)
     body = ",\n".join(
         f"  {{ storeys: {n}, pixels: "
         + json.dumps([[int(x), int(y)] for x, y in poly], separators=(", ", ", "))
@@ -409,7 +549,21 @@ def main() -> None:
         "// forbli synlige. Brukes bare i 3D, der fotoflisene ellers viser gammel\n"
         "// asfalt under de planlagte byggene.\n"
         "export const BROSET_PLAN_SITE_OUTLINE: readonly (readonly [number, number])[] =\n"
-        f"  [{site_body}];\n",
+        f"  [{site_body}];\n\n"
+        "export type BrosetPlanSurface = readonly (readonly [number, number])[];\n\n"
+        "// Gatetunene inne på feltet — planens egne kjøreflater, ikke de grå\n"
+        "// hovedveiene rundt. Brøsetvegen, Kollektivgata og Tungasletta finnes i\n"
+        "// dag og tegnes ikke: de ligger allerede både i fotoflisene og i\n"
+        "// vektorkartet, og en kopi oppå ville bare vært unøyaktig.\n"
+        f"// {len(streets)} flater.\n"
+        "export const BROSET_PLAN_STREETS: readonly BrosetPlanSurface[] = [\n"
+        f"{streets_body},\n];\n\n"
+        "// Gang- og sykkelstien gjennom parkdraget, fra Brøsetvegen i nord,\n"
+        "// over bekkedraget og forbi torget. Hentet ut som det byggfilteret\n"
+        "// forkaster; se path_polygons i generatoren.\n"
+        f"// {len(paths)} flater.\n"
+        "export const BROSET_PLAN_PATHS: readonly BrosetPlanSurface[] = [\n"
+        f"{paths_body},\n];\n",
         encoding="utf-8",
     )
     print(f"skrev {OUT_TS.relative_to(ROOT)}")

@@ -11,10 +11,17 @@ interface ProjectMassingLayer3DProps {
 
 const SHELL_STROKE_WIDTH = 2.25;
 const GROUND_ID = "__site-ground";
+const STREET_ID = "__site-street";
+const PATH_ID = "__site-path";
 /** Grunnflaten skal dekke asfalten, men ikke flate ut jordet. Litt av flisen
  *  under slipper gjennom, så sol og skygge fra fotografiet blir stående — det
  *  er den variasjonen som gjør at kanten ikke leses som en kant. */
 const GROUND_ALPHA = 0.8;
+
+/** Gate og sti er de eneste flatene her som skal *dekke* grunnflaten under seg.
+ *  Slipper vi det grønne gjennom, får asfalten grønnskjær og forsvinner i
+ *  jordet — og da har vi tegnet en gate ingen ser. */
+const SURFACE_ALPHA = 0.95;
 
 /** Volumene skal lese som bordmodellen på salgskontoret: hvit akryl.
  *
@@ -90,8 +97,23 @@ export function ProjectMassingLayer3D({
           },
         };
         const standing = massing.standingBuildings ?? [];
+        // Grunnen, så gatene, så stien — nedenfra og opp, som de ligger i
+        // virkeligheten. Stien krysser gatetunene, ikke omvendt.
+        const flat = [
+          ...(massing.siteStreets ?? []).map((ring, index) => ({
+            id: `${STREET_ID}-${index}`,
+            color: massing.palette.street,
+            ring,
+          })),
+          ...(massing.sitePaths ?? []).map((ring, index) => ({
+            id: `${PATH_ID}-${index}`,
+            color: massing.palette.path,
+            ring,
+          })),
+        ];
         const activeIds = new Set(surfaces.map((surface) => surface.id));
         if (massing.siteGround) activeIds.add(GROUND_ID);
+        for (const surface of flat) activeIds.add(surface.id);
         for (const building of standing) activeIds.add(building.id);
         for (const [id, polygon] of polygonById) {
           if (!activeIds.has(id) && polygon.parentNode) polygon.remove();
@@ -113,6 +135,23 @@ export function ProjectMassingLayer3D({
           ground.drawsOccludedSegments = false;
           if (ground.parentNode && ground.parentNode !== map3d) ground.remove();
           if (!ground.parentNode) map3d.append(ground);
+        }
+
+        for (const surface of flat) {
+          let polygon = polygonById.get(surface.id);
+          if (!polygon) {
+            polygon = new lib.Polygon3DElement();
+            polygonById.set(surface.id, polygon);
+          }
+          polygon.path = surface.ring.map(([lng, lat]) => ({ lat, lng }));
+          polygon.altitudeMode = lib.AltitudeMode.CLAMP_TO_GROUND;
+          polygon.extruded = false;
+          polygon.fillColor = withAlpha(surface.color, SURFACE_ALPHA);
+          polygon.strokeColor = "rgba(0, 0, 0, 0)";
+          polygon.strokeWidth = 0;
+          polygon.drawsOccludedSegments = false;
+          if (polygon.parentNode && polygon.parentNode !== map3d) polygon.remove();
+          if (!polygon.parentNode) map3d.append(polygon);
         }
 
         // Låven og andre hus som blir stående. De hører til grunnen, ikke til

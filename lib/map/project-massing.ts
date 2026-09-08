@@ -1,6 +1,8 @@
 import {
   BROSET_PLAN_BUILDINGS,
+  BROSET_PLAN_PATHS,
   BROSET_PLAN_SITE_OUTLINE,
+  BROSET_PLAN_STREETS,
 } from "@/lib/map/broset-plan-buildings.generated";
 import {
   sitePlanCoordinate,
@@ -44,6 +46,10 @@ export interface ProjectMassingPalette {
   /** Grunnflaten under volumene. Ikke en av planens farger, men jordets egen
    *  — se ground-kommentaren under. */
   ground: string;
+  /** Gatetunene og gang- og sykkelstien, i planens egne farger. Begge er avlest
+   *  som medianen av hver sin flate i tegningen, ikke valgt. */
+  street: string;
+  path: string;
 }
 
 /** Et bygg som allerede står på tomta, og som planen beholder. Det tegnes bare
@@ -72,6 +78,17 @@ export interface ProjectMassing {
   siteGround?: readonly LngLat[];
   /** Se ProjectStandingBuilding. Tegnes over grunnflaten, under volumene. */
   standingBuildings?: readonly ProjectStandingBuilding[];
+  /** Gatetunene inne på feltet, som flater. Uten dem står volumene i et jorde:
+   *  planen er et nabolag med gater mellom husrekkene, og det er gatene som gjør
+   *  at rekkene leses som kvartaler og ikke som en tilfeldig oppstilling.
+   *
+   *  Bare planens egne gater. Brøsetvegen, Kollektivgata og Tungasletta finnes i
+   *  dag, og tegnes av vektorkartet selv i 2D og av fotoflisene i 3D. */
+  siteStreets?: readonly (readonly LngLat[])[];
+  /** Gang- og sykkelstien gjennom parkdraget. Egen akse fra gatene: den er det
+   *  eneste i planen som sier hvordan man kommer seg til fots gjennom feltet
+   *  uten å følge en gate. */
+  sitePaths?: readonly (readonly LngLat[])[];
 }
 
 // Lyse volumer med farget kontur. Fyllet er så lyst at kartet under fortsatt
@@ -107,6 +124,8 @@ const WESSELSLOKKA_PALETTE: ProjectMassingPalette = {
   contextFill: "#fbf4ee",
   contextLine: "#cfa894",
   ground: "#6b8b5f",
+  street: "#d8d1c7",
+  path: "#f0f5f0",
   shellFill: "#ffffff",
   shellEdge: "#ffffff",
 };
@@ -145,6 +164,8 @@ const PROJECT_MASSING_BY_SLUG: Readonly<Record<string, ProjectMassing>> = {
     palette: WESSELSLOKKA_PALETTE,
     buildings: WESSELSLOKKA_BUILDINGS,
     siteGround: BROSET_PLAN_SITE_OUTLINE.map(sitePlanCoordinate),
+    siteStreets: BROSET_PLAN_STREETS.map((ring) => ring.map(sitePlanCoordinate)),
+    sitePaths: BROSET_PLAN_PATHS.map((ring) => ring.map(sitePlanCoordinate)),
     standingBuildings: WESSELSLOKKA_STANDING_BUILDINGS.map(
       ({ id, name, heightMeters, footprint }) => ({
         id,
@@ -158,6 +179,28 @@ const PROJECT_MASSING_BY_SLUG: Readonly<Record<string, ProjectMassing>> = {
 
 export function getProjectMassing(projectSlug?: string): ProjectMassing | undefined {
   return projectSlug ? PROJECT_MASSING_BY_SLUG[projectSlug] : undefined;
+}
+
+/** Gatetun og sti som flater, med `kind` så de kan males hver for seg. Tom
+ *  hvis planen ikke har dem — da tegner laget ingenting. */
+export function projectSurfaceFeatureCollection(
+  massing: ProjectMassing,
+): GeoJSON.FeatureCollection<GeoJSON.Polygon> {
+  const rings = [
+    ...(massing.siteStreets ?? []).map((ring) => ({ kind: "street", ring })),
+    ...(massing.sitePaths ?? []).map((ring) => ({ kind: "path", ring })),
+  ];
+  return {
+    type: "FeatureCollection",
+    features: rings.map(({ kind, ring }) => ({
+      type: "Feature",
+      properties: { kind },
+      geometry: {
+        type: "Polygon",
+        coordinates: [[...ring, ring[0]].map(([lng, lat]) => [lng, lat])],
+      },
+    })),
+  };
 }
 
 export function projectMassingFeatureCollection(

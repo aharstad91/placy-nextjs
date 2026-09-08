@@ -85,4 +85,39 @@ describe("ProjectMassingLayer", () => {
 
     expect(screen.getByTestId("project-massing-label").dataset.minzoom).toBe("15.5");
   });
+
+  // Gatene er det som gjør at femti omriss leses som kvartaler og ikke som en
+  // oppstilling i et jorde. Faller de ut av uttrekket, ser kartet fortsatt
+  // riktig ut — det er bare tommere enn planen.
+  it("legger gatetun og sti under byggene", () => {
+    render(<ProjectMassingLayer massing={getProjectMassing("wesselslokka")!} />);
+
+    const source = screen.getByTestId("project-surface-source");
+    expect(Number(source.dataset.features)).toBeGreaterThanOrEqual(9);
+    expect(screen.getByTestId("project-surface-street").dataset.color).toBe("#d8d1c7");
+    expect(screen.getByTestId("project-surface-path").dataset.color).toBe("#f0f5f0");
+    expect(screen.getByTestId("project-surface-street").dataset.filter).toContain(
+      "street",
+    );
+    expect(screen.getByTestId("project-surface-path").dataset.filter).toContain(
+      "path",
+    );
+    // Stien er lysere enn vektorkartet og forsvinner uten kant. Faller kanten
+    // bort, ser laget riktig ut i koden og er borte på skjermen.
+    const edge = screen.getByTestId("project-surface-path-edge");
+    expect(edge.dataset.type).toBe("line");
+    expect(edge.dataset.color).toBe("#cfa894");
+  });
+
+  it("toner gatene inn sammen med byggene", () => {
+    render(<ProjectMassingLayer massing={getProjectMassing("wesselslokka")!} />);
+
+    // Samme terskel som volumene. Et gatenett uten hus å høre til ville vært
+    // uforståelig i oversikten.
+    const opacity = JSON.parse(
+      screen.getByTestId("project-surface-street").dataset.opacity!,
+    ) as unknown[];
+    expect(opacity[4]).toBe(0);
+    expect(opacity[5]).toBe(15.4);
+  });
 });
