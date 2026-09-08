@@ -9381,3 +9381,27 @@ NYE: `lib/board/reach.ts` + test, `lib/board/contour-label-placement.ts` + test,
 - **`isochrones_toggled` har ingen aggregeringsgren i `lib/insight/`** — hendelsen sendes, men innsiktsflaten viser den ikke. Nå mer relevant enn før: av-som-standard betyr at *om* folk slår den på er selve målingen.
 - Fire umergede grener står fortsatt (`feat/hotell-dashboard`, `feat/megler-self-serve`, `feat/prospekt-skanner`, `feat/story-opt-in`).
 - `086_postal_areas.sql` og `086_event_type_faq_opened.sql` deler prefiks — replay-rekkefølgen er tvetydig.
+
+## 2026-09-08 — Lillebytunet Hus B: teksturert 3D-modell fra boligvelger-renders, i Google 3D-kartet
+
+Teknisk prototype på branch `feat/lillebytunet-3d-model` (worktree `../placy-lillebytunet`, ikke pushet). Spørsmålet var om bildeserien i en eksisterende boligvelger kan bli en ekte, teksturert GLB som står på riktig sted i vårt Google Maps 3D-kart. Svar: ja, for ett bygg, med fire visuelle vurderinger underveis og resten som skript. Tre agenter: Opus på datainnhenting og kartintegrasjon, Fable på modellering/georef.
+
+### Funn som endrer hvordan vi bygger
+
+- **Boligvelgeren (Nordr/newbuilds «property-explorer») er et rent turntable.** 6 serier × 96 bilder à 1920×1080 WebP, 3,75°/steg, kamera i sirkel med fast høyde og 19,9° pitch. `direction 0` = kamera i sør som ser mot nord. Ingen kameradata i API-et, men COLMAP registrerte 96/96 med 0,4 px feil på begge seriene vi kjørte — renders er ideelt SfM-materiale.
+- **Enhetspolygonene i API-et er nøkkelen til segmentering.** Et 3D-punkt hører til Hus B hvis ≥ 50 % av observasjonene ligger i Hus B-polygonene. Ingen manuell masking.
+- **Google Maps 3D leser GLB som Z-opp** (+X øst, +Y nord), mot glTF-standarden. Målt med probe-boks. Bak rotasjonen inn i vertices.
+- **Google har ingen ambient-lys på Model3DElement:** flater som vender fra sola blir helt svarte. Løsning i kjerne-glTF: `emissiveTexture` = fasadetekstur, svart baseColor. Renders har lyset bakt inn uansett.
+- **Georef uten fotavtrykk:** de to eksisterende naboblokkene (Ståltaugen 1/2) finnes både i renderen og i OSM → 2D-likhetstransform med 1 m restfeil. Ga også uavhengig skala: Hus B 16,3 × 27,7 m mot modellens 16,1 × 27,7 (etasjehøyde-anslaget 3,1 m holdt innen 1 %). Agent 2s alternative metode (polygon-sinus + tomtepolygon) traff retning og øst-vest eksakt, men 20 m for langt sør — håndtegnet tomtegrense som skala er for svak.
+- **Hybriden vant:** boks + inntrukket toppetasje (22 trekanter) med homografi-projiserte fasadeteksturer fra ett frontalt kamera per fasade. 1,1 MB GLB, ingen utvidelser. Full tett fotogrammetri ble aldri nødvendig.
+
+### Filer
+
+`app/demo/lillebytunet-3d/`, `components/map/lillebytunet-model-demo.tsx`, `lib/map/lillebytunet-render-rig.ts`, `public/models/lillebytunet/husB.glb`, `scripts/lillebytunet/` (fetch + model-pipeline), `docs/research/lillebytunet-3d/` (01 data, 02 kart, 03 modell; screens/, compare/, model-check/). Rådata, COLMAP og `.blend` under `~/klienter/placy/lillebytunet/` (utenfor git).
+
+### Åpent
+
+- Hus Bs posisjon: 63.441359, 10.440215, heading 110 — to metoder spriker 20 m i nord–sør; avgjøres mot flyfoto/FKB når bygget står.
+- Tak-tekstur er uskarp (20° pitch gir 3× strekk). Balkonger er flate i teksturen, ikke geometri.
+- Neste test for automatiserbarhet: Hus A (L-form), C og D (8 etasjer) med samme pipeline.
+- Demo-kamera er hardt kutt; `flyCameraTo` overkjøres av vis.gl-props.

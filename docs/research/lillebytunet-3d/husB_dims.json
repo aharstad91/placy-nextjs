@@ -1,0 +1,20 @@
+{
+ "scale_m_per_unit": 12.4,
+ "footprint_m": [
+  16.07051764190469,
+  27.740969370683327
+ ],
+ "height_m": 18.6,
+ "body_height_m": 15.5,
+ "top_setback_m": {
+  "b_minus": 5.928206070337947,
+  "a_plus": 1.482915628488071
+ },
+ "cams": {
+  "A-": 54,
+  "A+": 5,
+  "B-": 78,
+  "B+": 30
+ },
+ "note": "A+ = balkongside (fasadeplan = balkongfront). Skala ansl\u00e5tt fra etasjeh\u00f8yde 3.1 m."
+}
