@@ -64,6 +64,7 @@ export function ProjectMassingLayer3D({
   const polygonByIdRef = useRef(
     new Map<string, google.maps.maps3d.Polygon3DElement>(),
   );
+  const flattenerRef = useRef<google.maps.maps3d.FlattenerElement | null>(null);
 
   useEffect(() => {
     if (!map3d) return;
@@ -75,6 +76,7 @@ export function ProjectMassingLayer3D({
       for (const polygon of polygonById.values()) {
         if (polygon.parentNode) polygon.remove();
       }
+      if (flattenerRef.current?.parentNode) flattenerRef.current.remove();
       return;
     }
 
@@ -117,6 +119,32 @@ export function ProjectMassingLayer3D({
         for (const building of standing) activeIds.add(building.id);
         for (const [id, polygon] of polygonById) {
           if (!activeIds.has(id) && polygon.parentNode) polygon.remove();
+        }
+
+        // Fotoflisene bærer dagens tomt: trærne i parkdraget, hekkene og
+        // husene som skal rives. De står midt i det som er tegnet, stikker opp
+        // gjennom volumene og gjør planen uleselig. Flatteneren stryker alt som
+        // reiser seg innenfor omrisset og lar terrenget bli stående — så
+        // høydedraget mot Brøsetvegen er der fortsatt, bare uten skogen.
+        //
+        // Låven ryker med i samme slengen. Det er riktig: vi tegner den selv
+        // igjen som hvitt volum, og da er den i samme materiale som resten i
+        // stedet for å være det ene fotografiet midt i modellen.
+        //
+        // Egenskapen er ny i motoren. Finnes den ikke i den API-versjonen som
+        // lastes, skal resten av laget fortsatt tegnes — derfor sjekken, ikke
+        // en kastet feil.
+        if (massing.siteGround && lib.FlattenerElement) {
+          let flattener = flattenerRef.current;
+          if (!flattener) {
+            flattener = new lib.FlattenerElement();
+            flattenerRef.current = flattener;
+          }
+          flattener.path = massing.siteGround.map(([lng, lat]) => ({ lat, lng }));
+          if (flattener.parentNode && flattener.parentNode !== map3d) {
+            flattener.remove();
+          }
+          if (!flattener.parentNode) map3d.append(flattener);
         }
 
         // Grunnflaten først, så den ligger under volumene i tegnerekkefølgen.
@@ -215,11 +243,14 @@ export function ProjectMassingLayer3D({
 
   useEffect(() => {
     const polygonById = polygonByIdRef.current;
+    const flattenerHolder = flattenerRef;
     return () => {
       for (const polygon of polygonById.values()) {
         if (polygon.parentNode) polygon.remove();
       }
       polygonById.clear();
+      if (flattenerHolder.current?.parentNode) flattenerHolder.current.remove();
+      flattenerHolder.current = null;
     };
   }, []);
 

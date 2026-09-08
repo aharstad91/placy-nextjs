@@ -42,10 +42,40 @@ function makeMap3d() {
   return map3d;
 }
 
+let flattenerInstances: FakeFlattener[] = [];
+
+/** Googles flattener stryker dagens trær og hus innenfor omrisset. Den er ny i
+ *  motoren, så laget må klare seg uten den — derfor er den ikke med i standard-
+ *  mocken; testene som gjelder den slår den på selv. */
+class FakeFlattener {
+  path: { lat: number; lng: number }[] | null = null;
+  parentNode: unknown = null;
+
+  constructor() {
+    flattenerInstances.push(this);
+  }
+
+  remove() {
+    this.parentNode = null;
+  }
+}
+
+function withFlattener() {
+  importLibrary.mockImplementation(async () => ({
+    Polygon3DElement: FakePolygon,
+    FlattenerElement: FakeFlattener,
+    AltitudeMode: {
+      RELATIVE_TO_GROUND: "relative-to-ground",
+      CLAMP_TO_GROUND: "clamp-to-ground",
+    },
+  }));
+}
+
 let importLibrary: ReturnType<typeof vi.fn>;
 
 beforeEach(() => {
   polygonInstances = [];
+  flattenerInstances = [];
   importLibrary = vi.fn(async () => ({
     Polygon3DElement: FakePolygon,
     AltitudeMode: { RELATIVE_TO_GROUND: "relative-to-ground", CLAMP_TO_GROUND: "clamp-to-ground" },
@@ -265,6 +295,61 @@ describe("ProjectMassingLayer3D", () => {
     unmount();
 
     expect(polygonInstances.every((polygon) => polygon.parentNode === null)).toBe(true);
+  });
+
+  it("stryker dagens trær og hus innenfor planområdet", async () => {
+    withFlattener();
+    const map3d = makeMap3d();
+    const massing = getProjectMassing("wesselslokka")!;
+    render(
+      <ProjectMassingLayer3D
+        map3d={map3d as unknown as Map3DInstance}
+        massing={massing}
+      />,
+    );
+    await flush();
+
+    expect(flattenerInstances.length).toBe(1);
+    const flattener = flattenerInstances[0];
+    // Samme omriss som grunnflaten: det som blir strøket er nøyaktig det
+    // grønne teppet dekker, ikke en meter mer.
+    expect(flattener.path?.length).toBe(massing.siteGround!.length);
+    expect(flattener.path![0]).toEqual({
+      lng: massing.siteGround![0][0],
+      lat: massing.siteGround![0][1],
+    });
+    // Først av alt — flatingen er underlaget de andre flatene legger seg på.
+    expect(map3d.appended[0]).toBe(flattener as unknown as FakePolygon);
+    expect(flattener.parentNode).toBe(map3d);
+  });
+
+  it("tegner de samme volumene med og uten flatter i motoren", async () => {
+    const map3d = makeMap3d();
+    const massing = getProjectMassing("wesselslokka")!;
+    render(
+      <ProjectMassingLayer3D
+        map3d={map3d as unknown as Map3DInstance}
+        massing={massing}
+      />,
+    );
+    await flush();
+    const withoutFlattener = polygonInstances.length;
+
+    cleanup();
+    polygonInstances = [];
+    flattenerInstances = [];
+    withFlattener();
+    const next = makeMap3d();
+    render(
+      <ProjectMassingLayer3D
+        map3d={next as unknown as Map3DInstance}
+        massing={massing}
+      />,
+    );
+    await flush();
+
+    expect(polygonInstances.length).toBe(withoutFlattener);
+    expect(next.appended.length).toBe(withoutFlattener + 1);
   });
 
   it("logger bibliotekfeil uten å kaste", async () => {

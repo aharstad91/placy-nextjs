@@ -142,6 +142,8 @@ document.querySelector('gmp-polygon-3d').fillColor
 
 ## Se også
 
+- [gmp-flattener: rydde tomta under planlagte volumer](gmp-flattener-rydde-tomta-under-planlagte-volumer-20260908.md)
+  — hvordan dagens trær og hus fjernes fra fotoflisene inne på tomta
 - [plandokument-til-kartdata](../data-import/plandokument-til-kartdata-20260907.md)
   — hvor volumene og høydene deres kommer fra
 - `docs/research/2026-09-07-wesselslokka-planregistrering.md`
