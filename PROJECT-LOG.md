@@ -6,6 +6,14 @@
 
 ---
 
+## 2026-09-08 — Demo-e-poster sendt og Leangenbukta åpnet på port 3002
+
+Andreas bekreftet utsendelse av demo-invitasjoner for Wesselsløkka til Thomas i HEM og for Leangenbukta til Mari i Koteng og Jan Erik i OBOS. Budskap, mottakere og åpne oppfølginger er logget i `docs/strategy/LOG.md` under samme dato.
+
+Eksisterende Leangenbukta-board ble funnet i v2-prosjektdatabasen (`placy-demo/leangenbukta`). Placy-devserver ble startet med `npm run dev -- --port 3002`, siden 3000 og 3001 var opptatt av andre prosjekter. Åpnet `http://localhost:3002/eiendom/placy-demo/leangenbukta/rapport-board`; Andreas tok skjermbildet til e-posten. Serveren ble etterlatt kjørende. Ingen kodeendringer i denne sesjonen, og derfor ingen kodekontroller kjørt.
+
+---
+
 ## 2026-09-07 — MAPBOX FIKK ANKER-BEHANDLINGEN GOOGLE-MOTOREN HAR HATT SIDEN AUGUST
 
 **Kontekst:** *«jeg ser at mapbox ikke får samme behandling som google maps satelitt, valentinlyst senter blir ikke samlet i sine poi, det må vi få inn»* — to skjermbilder av samme sted på Wesselsløkka-boardet, ett per motor. På Google-siden sto Valentinlyst-klyngen som to pinner og en prikk; på Mapbox som fem hele skiver oppå hverandre.

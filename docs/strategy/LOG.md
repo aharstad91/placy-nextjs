@@ -14,6 +14,24 @@
 
 ---
 
+## 2026-09-08 — Demo-invitasjoner sendt for Wesselsløkka og Leangenbukta
+
+**Status:** Andreas bekreftet at begge e-postene er sendt. Ingen svar eller møter bekreftet i denne sesjonen.
+
+**Utsendelser:**
+- Wesselsløkka: Thomas i Heimdal Eiendomsmegling (`tl@hem.no`). Emne: «Wesselsløkka – la boligkjøperne utforske nærområdet». Foreslått en halvtime neste tirsdag, på kontoret eller infosenteret, tidspunkt etter mottakerens ønske.
+- Leangenbukta: felles e-post til Mari Østgaard Buaas (`mari.buaas@koteng.no`) og Jan Erik Fjeldseth (`jan.erik.fjeldseth@obos.no`). Emne: «Leangenbukta – la boligkjøperne utforske nærområdet». Foreslått en halvtime neste uke og tilbud om å komme innom.
+
+**Budskap:** Dagens tekst, bilder og statiske kart gir et godt utgangspunkt, men begrenser kjøperens mulighet til å utforske nærområdet selv. Placy beskrives konkret som en digital nabolagsguide med interaktivt kart, som gir selgeren knagger for å formidle hverdagen rundt boligen. Anerkjenner eksisterende salgsarbeid og peker på verktøyenes begrensninger. Ingen «kult på gang»-åpning.
+
+**Demo og plassering:** Begge e-postene inneholder et 3D-skjermbilde med prosjekt, skole, gangrute og beregnet gangtid. Wesselsløkka knyttes til eksisterende nabolagskart og plassering på wesselslokka.no i samme type felt som boligvelgeren. Leangenbukta beskrives som mulig å bygge inn direkte på leangenbukta.no. Wesselsløkka-mailen inneholder løftet «oppdaterer seg selv når området rundt endrer seg»; dette er sendt formulering, ikke teknisk verifisert i denne sesjonen.
+
+**Videre inngang:** Andreas opplyser at Jan Erik også er ansvarlig for OBOS-prosjektet Jarlheim (https://www.obos.no/bolig/prosjekt/jarlheim). Mulig samtale om flere prosjekter i et møte; ikke tatt inn i første e-post. Opplysningen er ikke uavhengig verifisert her.
+
+**Åpent:** Følg opp svar og avtal demonstrasjoner. Ingen oppfølging sendt eller kalenderavtale opprettet. Ingen pris eller pilotavtale tilbudt i e-postene.
+
+---
+
 ## 2026-09-08 — Utbygger-først: Plyo eier veggen, og første kalde mail er sendt
 
 **Beslutning:** Go-to-market snus fra megler-først til **utbygger-først**. Megleren eier ingen vegg å henge Placy på — utbyggeren eier prosjektsiden, CMS-påloggingen og markedsbudsjettet. EM1-kontorpiloten avvikles ikke, men er heretter et *annet produkt* (bruktmarkedet, hvor det ikke finnes embed uansett og poenget er FINN «Nyttige lenker» + måling), ikke en konkurrerende dør. Wesselsløkka er unntaket som bekrefter regelen: der eier HEM domenet selv, så der *er* megleren eieren.
