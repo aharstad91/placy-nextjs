@@ -23,6 +23,7 @@ Forretnings- og produktstrategi for Placy. Lever på tvers av sesjoner — i mot
 |---|---|---|
 | `LOG.md` | Kronologisk strategi-loggbok | Etter strategi-sesjoner, salgs-/kunde-møter, sporvalg, prising-endringer, eller validering/falsifisering av strategisk hypotese. Korte entries med peker til detalj. Speiler `PROJECT-LOG.md`-mønsteret. |
 | `YYYY-MM-DD-<topic>-spor.md` | Datert sesjons-dokument | Mens og rett etter en strategisk diskusjon. Beslutninger føres inn dato-stemplet — gamle beslutninger slettes ikke. |
+| `maler/` | Gjenbrukbare salgs-/kontaktmaler | Når en formulering har vært brukt i praksis og skal gjenbrukes. Malen skal alltid inneholde den faktiske teksten som ble sendt, ikke bare strukturen. |
 | `aktor-map.md` | Levende kontaktoversikt | Hver gang en relasjon endrer status (ny kontakt, nytt møte, ny rolle, parkert). |
 
 ## Forholdet til PROJECT-LOG.md

@@ -14,6 +14,24 @@
 
 ---
 
+## 2026-09-08 — Utbygger-først: Plyo eier veggen, og første kalde mail er sendt
+
+**Beslutning:** Go-to-market snus fra megler-først til **utbygger-først**. Megleren eier ingen vegg å henge Placy på — utbyggeren eier prosjektsiden, CMS-påloggingen og markedsbudsjettet. EM1-kontorpiloten avvikles ikke, men er heretter et *annet produkt* (bruktmarkedet, hvor det ikke finnes embed uansett og poenget er FINN «Nyttige lenker» + måling), ikke en konkurrerende dør. Wesselsløkka er unntaket som bekrefter regelen: der eier HEM domenet selv, så der *er* megleren eieren.
+
+**Begrunnelse:** Kartlegging av 315 FINN-prosjektannonser i Trøndelag → 261 innenfor 45 km av Trondheim → **49 egne prosjektnettsteder**, hver målt for plattform, CSP, X-Frame-Options og faktiske CMS-moduler. **Plyo eier 21 av de 49 veggene.** Og de kan omgås: Plyos CMS kjører på kundens eget domene (`<prosjekt>.no/login` → 200 «Logg inn», `/api/admin/image` → 401), modulkatalogen har tre nivåer med rollemerkelapper (SIMPLE=EDITOR, ADVANCED=**BUILDER**, EXPERIMENTAL=ADMIN), og modulen heter bokstavelig **«IFrame»** og ligger på BUILDER — ikke Plyo-only. Ingen Plyo-side sender CSP eller XFO. Presedens: Fredensborg embedder sin egen `husbanken-kalkulator-v4.netlify.app` på tre av sine sider. Forbehold: rollen kan ikke observeres utenfra, og «under the radar» betyr *ingen support-sak*, ikke usynlig (modulen er en rad i Plyos DB, og de kjører PostHog + GTM på kundenes sider).
+
+**Utbygger-kartet (nytt):** **Fredensborg Bolig** er topp-prospekt — eneste med hele porteføljen under ÉN Plyo-konto (Overvik, Bo Brøset, Steinan Park, Poulssons Kvarter, Vikhammerstrand), IFrame-modulen alt i bruk, null utviklere i staben. Dør: **Petter Knut Nedregotten, regionssjef Trondheim, 926 31 378**. Deretter Koteng (5 prosjekter), Trym (4), Rett Hjem Bolig (Saupstad Torg 252 boliger), Villaservice (2), KOBE, Nordr (eneste konsernkonto), HAW Gruppen (Kvass, Klæbu). Sju Plyo-prosjekter mangler fortsatt utbygger-navn. Ekstra funn: Plyos `accountsSites`-felt lekker hele kontoens søsken-sider — finner du én, får du hele porteføljen.
+
+**Konkurransefunn — Plyos Travel Time målt live:** «Location»-kategorien har nøyaktig to moduler, Map og Travel Time, og Travel Time er live på 7 Trondheim-sider. Kjørt på hoisethlia.no: modulen er **tom til brukeren skriver inn sitt eget utgangspunkt**, kaller Google Distance Matrix i fire moduser, og svarer med fire tall. Tre feil i svaret på en norsk side: engelske varigheter («2 hours 46 mins»), tom modus-etikett, og kollektiv-ikonet rendrer som «#». Kartmodulen deres slår av POI-ikonene. **Posisjonering: vi konkurrerer ikke på tallene — vi henter fra samme Google-kilde — men på retningen.** Deres modul spør kjøperen om det hun allerede vet; Placy viser stedene uten å bli spurt. Samme svakhet som FINN Nabolagsprofil: et tall uten et sted. Plyo-regnskap 2025: 55,4 MNOK omsetning, −5,7 MNOK EBIT, egenkapital 7,7 MNOK, likviditetsgrad 0,33 → ~ett år runway, men ~8 MNOK avskrivninger viser at de fortsatt bygger. **Risikoen er ikke et pivot, men en billig defensiv feature utløst av gjentakelse** → be aldri Plyo om noe, og rut aldri spørsmål til dem via meglere.
+
+**Milepæl:** **første kalde mail til noen som faktisk selger boliger er sendt** — Thomas Løbakk (tl@hem.no), 2026-09-08, emne «Wesselsløkka – la boligkjøperne utforske nærområdet», ber om en halvtime «neste tirsdag». Mailen ligger på Marketer-siden, ikke Plyo, og er derfor den mest radar-trygge første døra. Formuleringen er lagret som gjenbrukbar mal.
+
+**Detaljer:** `docs/strategy/2026-09-08-utbygger-forst-plyo-kartlegging.md` (§1–§9) · mal: `docs/strategy/maler/kald-mail-prosjektside.md` · pipeline: Trello «Demo Pipeline» (HA0cmZhp) kort #25–#35.
+
+**Status:** Aktiv. Supersederer ikke prisstrukturen (2026-09-02 forts. står); endrer rekkefølgen på hvem som kontaktes.
+
+---
+
 ## 2026-09-02 (forts.) — Månedsprisen ned til 4 490: land-and-expand med moduler, ikke høy recurring
 
 **Beslutning:** Prosjekt-SKU-en er heretter **oppsett 24 000 (urabattert) + 4 490/mnd per prosjekt-board, kvartalsvis fakturert, til prosjektet er utsolgt**. Supersederer 6 000/mnd fra 2026-09-01 (kveld). 4 490 er *prisen*, ikke åpningen — det finnes ikke lenger et forhandlingsrom under den, så tallet sies flatt og Propti nevnes ikke i rommet (identisk sats; en kjenner leser det som «priset mot Propti»). Volumtrappen (2–4 prosjekter / 5+) legges på oppsettet, ikke på månedsprisen. Gjennomgangen måned 3 og 6 er en rapport, ikke et møte, så recurring forblir lønnsom. Analysen er fortsatt inkludert (entry over).
