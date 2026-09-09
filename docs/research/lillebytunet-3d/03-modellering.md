@@ -1,5 +1,12 @@
 # Lillebytunet Hus B — rekonstruksjon fra boligvelger-renders
 
+**Oppdatert 2026-09-09:** Gjeldende modell er `husB-v2.glb`. Se
+[kvalitetsrapporten](04-kvalitetsrunde.md) for reproduserbar eksport, faktisk Google-kontroll
+og gjenstående begrensninger. Teksten under beskriver prototypen i `94ccf12`, ikke v2.
+Gjennomgangen av alle 192 relevante kildebilder viste to inntrekk (4/5/6 etasjer),
+og balkongfronten trenger egen geometri. Tidligere positive konklusjoner om silhuett,
+teksturstrekking og fullstendig rekonstruksjon var for sterke.
+
 Dato: 2026-09-08. Hovedagent (Fable). Datagrunnlag: `01-datainnhenting.md` (Agent 1).
 Kartintegrasjon: `02-kartintegrasjon.md` (Agent 2).
 
@@ -9,7 +16,11 @@ Hus B er rekonstruert som **ryddig bokse-geometri (22 trekanter) med ortorektifi
 fasadeteksturer fra fire render-kameraer**, eksportert som ren GLB (1,1 MB, ingen
 glTF-utvidelser). Kameraene ble beregnet med COLMAP; alle 96 bilder registrerte.
 
-## Arbeidsflyt (reproduserbar)
+## Historisk arbeidsflyt (prototype `94ccf12`)
+
+De fire gamle modell-/eksportskriptene nedenfor er erstattet av kvalitetsrundens
+eksplisitte CLI-er. Historisk kode finnes i commit `94ccf12` og lokalt under
+`quality-v2/baseline-94ccf12/scripts/`. Bruk kommandoene i rapport 04 for ny eksport.
 
 Alle stier under `~/klienter/placy/lillebytunet/`. Python-venv: `.venv/` (numpy, scipy,
 opencv-python-headless, matplotlib, pillow). Verktøy: COLMAP 4.1.1 (`brew install colmap`),
@@ -33,8 +44,9 @@ S=/path/to/repo/scripts/lillebytunet/model
 /Applications/Blender.app/Contents/MacOS/Blender -b --python $S/render_check.py  # 4 testrender
 ```
 
-`export_glb.py`/`render_check.py` forventer å ligge i samme mappe som `husB.obj` (kopier
-dem til `model/` eller kjør derfra). Total kjøretid på M-serie Mac uten GPU: ~6 min.
+Korrigering: de gamle eksportskriptene brukte skriptets egen plassering ved filoppslag;
+å bare bytte arbeidsmappe var ikke tilstrekkelig. Den historiske kommandolisten var
+derfor ikke komplett. V2 bruker eksplisitte inn- og utstier uten slik kopiering.
 
 ## Hva COLMAP fant (beregnet, ikke antatt)
 
@@ -118,13 +130,13 @@ Avgjøres endelig når bygget synes i flyfoto/FKB.
   `export_yup=False`; bunnen ligger i z = 0.
 - **Ingen utvidelser:** Blender legger på `KHR_materials_specular`; `strip_ext.py` fjerner
   alle `extensions`/`extensionsUsed` etter eksport.
-- **Selvlysende materialer:** Google lyssetter med én sol og null ambient, så flater som
-  vender bort fra sola ble helt svarte (begge kortsidene ved første test, se
+- **Selvlysende materialer:** Første test viste svarte flater (begge kortsidene, se
   `screens/husB-first-render-fra-sor-svart-kortside.jpg`). Løsning i kjerne-glTF:
   `emissiveTexture` = fasadeteksturen, `emissiveFactor` 1, `baseColorFactor` svart. Da vises
   renderens innbakte lys flatt, uavhengig av Googles solretning
-  (`screens/husB-first-render-fra-sor-emissive.jpg`). Bieffekt: modellen kaster/mottar ikke
-  Googles skygger på egne flater — akseptabelt fordi lyset alt er bakt inn.
+  (`screens/husB-first-render-fra-sor-emissive.jpg`). Dette beviser ikke at Google har
+  «null ambient», eller hvordan alle skygger behandles. V2 sammenligner tre materialvalg
+  i faktisk Google-visning; den opprinnelige årsaksforklaringen trekkes tilbake.
 
 ## Teksturer
 
@@ -151,8 +163,8 @@ etasjeantall, toppetasjens inntrekk, alle fasadeteksturer.
 georeferering (se `02-kartintegrasjon.md`).
 
 **Mangelfullt / bevisst forenklet:**
-- Balkonger er flate i teksturen, ikke geometri. Silhuetten påvirkes lite fordi de dekker
-  hele langsiden i et sammenhengende bånd; fra skrått luftperspektiv leses de riktig.
+- Balkonger er flate i teksturen, ikke geometri. Den nye gjennomgangen viser at de er
+  forskjøvet, og at silhuett og dybde påvirkes vesentlig fra skrå vinkler.
 - Taket er uskarpt (bratt projeksjon). Bedre kilde: oversiktsserien (høyere kamera), krever
   felles COLMAP-løsning eller manuell registrering.
 - Bakt lys og skygger fra renderen (B−-fasaden ligger i slagskygge fra nabobygg).
@@ -163,8 +175,8 @@ georeferering (se `02-kartintegrasjon.md`).
 
 1. Skala og posisjon er verifisert mot OSM-naboblokker (±1,5 m). Kartverket/FKB-fotavtrykk
    for selve Hus B finnes ikke ennå; sjekk igjen når bygget er registrert.
-2. `direction`-semantikken er nå avgjort: kamera-POSISJON, mot klokka sett ovenfra, 0 =
-   kamera i sør (ser mot nord). Gjelder både oversikt og Hus B-serien.
+2. `direction` er en kildeindeks med ulike nullretninger i de to seriene. Hus B-riggen
+   bruker kamerabearing `222 − 3,75 × direction`; «0 = sør» gjelder ikke begge.
 3. Tak-tekstur fra oversiktsserien.
 4. Automatisering på tvers av prosjekter: alt over er skript, men kameravalg og
    toppetasje-inntrekk ble vurdert visuelt. Neste bygg (Hus A/C/D) er testen på hvor mye som
@@ -187,12 +199,11 @@ kamera k står (bearing 222 − 3,75·k, 46,6 m ut, 25 m opp, pitch 19,9°; rigg
 | GLB | 1,09 MiB, 22 trekanter, 11 JPEG-teksturer, lastet på 28–46 ms lokalt |
 | Kamerabevegelse | preset-bytte er hardt kutt (ingen fly-to); modellen henger ikke |
 
-**Hva sammenligningen viser:** fasaderytme, vinduer, balkongbånd, toppetasjens inntrekk og
-takterrasse stemmer med renderen fra alle fire retninger. Avvik: Google-kameraet har
-smalere synsfelt enn renderens 76,6°, så bygget fyller mer av bildet i kartet; taket er
-uskarpt; B−-kortsiden bærer nabobyggets slagskygge og pergola nederst; balkonger er flate
-ved nærvisning. Ingen hull, ingen strukne fasader, ingen feilprojisert vegetasjon på
-hovedflatene.
+Etterkontrollen i rapport 04 korrigerer den første vurderingen: prototypen hadde feil
+terrassesilhuett, flate balkonger og strukne detaljer på flere flater. Google-kameraet har
+smalere synsfelt enn renderens 76,6°, så bygget fyller mer av bildet i kartet. B−-kortsiden
+bærer nabobyggets slagskygge og pergola nederst. Den første påstanden om at alle fasader
+og terrasser stemte uten strekk, var ikke dekket av bildene.
 
 ## Leveranser (hvor tingene ligger)
 

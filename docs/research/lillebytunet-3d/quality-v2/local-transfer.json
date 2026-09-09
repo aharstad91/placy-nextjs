@@ -1,0 +1,23 @@
+{
+  "scope": "Local HTTP transfer only; not GPU upload, rendering or production loading",
+  "samples": [
+    {
+      "ms": 19.83,
+      "bytes": 1886792,
+      "status": 200,
+      "sha256": "96137b9474e4fa52479aaa3564c992b3c20c12229d157bde69aa4b3e1f0c9544"
+    },
+    {
+      "ms": 2.67,
+      "bytes": 1886792,
+      "status": 200,
+      "sha256": "96137b9474e4fa52479aaa3564c992b3c20c12229d157bde69aa4b3e1f0c9544"
+    },
+    {
+      "ms": 3.63,
+      "bytes": 1886792,
+      "status": 200,
+      "sha256": "96137b9474e4fa52479aaa3564c992b3c20c12229d157bde69aa4b3e1f0c9544"
+    }
+  ]
+}

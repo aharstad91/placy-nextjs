@@ -9405,3 +9405,65 @@ Teknisk prototype på branch `feat/lillebytunet-3d-model` (worktree `../placy-li
 - Tak-tekstur er uskarp (20° pitch gir 3× strekk). Balkonger er flate i teksturen, ikke geometri.
 - Neste test for automatiserbarhet: Hus A (L-form), C og D (8 etasjer) med samme pipeline.
 - Demo-kamera er hardt kutt; `flyCameraTo` overkjøres av vis.gl-props.
+
+## 2026-09-09 — Lillebytunet Hus B: takterrasser, balkongdybde og etterprøvbar modellrunde
+
+Gjennomført kvalitetsplanen i eksisterende worktree `placy-lillebytunet`, branch
+`feat/lillebytunet-3d-model`. Ny `husB-v2.glb` er standard i demoen. Original `husB.glb`
+er bevart byte-identisk; modellkilder og gamle skript er arkivert lokalt under
+`~/klienter/placy/lillebytunet/quality-v2/baseline-94ccf12/`. Arbeidet lagres lokalt, uten push.
+
+### Hva gjennomgangen endret
+
+- **192 av 192 relevante kildebilder gjennomgått** (96 Hus B, 96 oversikt). To takinntrekk
+  gir 4/5/6 etasjer; prototypens ene inntrekk var feil. 12 forskjøvede balkonger på langsiden
+  og tre på enden er nå volum med dekk, underside, rekkverk, stolper og skjermer.
+- De separate COLMAP-modellene er registrert med 96 inlier-punktpar, medianrest 0,097 m
+  og p95 under 0,76 px på fire utelatte kamerapar. Taket bruker ren oversiktstekstur,
+  mens parapeter, to pergolaer og tre takoppbygg er separat geometri.
+- Projeksjon bak balkonger ga doble rekkverk; pikselfylling ga striper. Sluttmodellen
+  bruker ren kildekledning og gjentatte vindusutsnitt. Skjulte felt er anslått, og møbler
+  og planter er utelatt. Nærfasaden er derfor enklere enn originalrenderen. Naboskygge
+  på enden og små kilderester ved sokkelen består og er dokumentert per visning.
+- Tidligere påstander om «0 = sør» i begge serier, korrekt prototyp-silhuett og Googles
+  «null ambient» var for sterke. Rapport 03 er korrigert. Emissive, PBR og hybrid ble
+  sammenlignet i Google; hybrid er valgt, med liten synlig forskjell fra PBR på fasadene.
+- Kontrollert Map3D-kamera overstyrte faktisk rotasjon. Startverdier og engangsvalg av
+  kamera bevarer nå fri bevegelse; klikk på samme preset tilbakestiller kameraet.
+
+### Leveranse og kontroll
+
+Ny eksplisitt CLI-kjede i `scripts/lillebytunet/model/` erstatter fire gamle
+modell-/eksportskript. Parametere, kameravalg og materialkilder er dokumentert;
+`.blend`, teksturer og variant-GLB-er ligger i lokal `quality-v2/final/`.
+Modellen er 1 886 792 byte, 20 352 trekanter, 19 materialer/teksturer, uten utvidelser.
+Alle tre varianter ble gjenbygd byte-identisk i en tom utmappe. Ny kjøring av hele
+registrerings-/byggekjeden ga også identisk registrerings-JSON og alle tre GLB-er.
+
+**11 av 11 faste Google-visninger, 19 av 19 materialer og alle 12 vinkler i siste
+kontinuerlige rotasjon kontrollert.** Før/etter-kameraene er eksakt like i måle-JSON.
+Syv original/før/etter-ark viser forskjeller og FOV-forbehold. Mobil 390 × 844 viste
+modell og fungerende kameraknapper uten dokument-overflyt. Ingen registrerte nettleserfeil.
+Review av opptaksskriptet fant akkumulert skjermbildeforsinkelse; absolutte tidsfrister
+ga tolv jevnt fordelte vinkler ved ny Google-kjøring og korrekt reset etter omløpet.
+
+Sjekker: lint 0 feil (54 advarsler i uendrede filer), TypeScript og produksjonsbygg besto.
+Vitest besto **3924/3924 tester i 235/235 filer**. Første kjøring hadde én eksisterende
+provision-timeout; både separat testfil og full ny kjøring besto uten testendringer.
+Simplify rettet hardkodet kameravalg til parameterfilen og fjernet ubrukt forsøkskode.
+
+`ce-code-review` fullført, run `20260909-095556-8e83810e`, med uavhengig Claude-review:
+18 kildestier og GLB gjennomgått, åtte kandidater validert, ingen åpne kodefunn.
+To ikke-blokkerende kontrollbegrensninger er bevart i rapportens review-kvittering.
+
+Full rapport og reproduksjon:
+[`docs/research/lillebytunet-3d/04-kvalitetsrunde.md`](docs/research/lillebytunet-3d/04-kvalitetsrunde.md).
+Kamerabevis, materialkontroll og før/etter ligger i samme mappes `quality-v2/`.
+
+### Åpent
+
+Renere underlag bak balkonger, materialkart eller arkitektens modell trengs for mer
+troverdig nærvisning uten gjentatte vinduer. Geografisk usikkerhet rundt ±1,5 m består.
+Hus A/C/D, FKB-kontroll og innhentingsskriptets tidligere dokumenterte variant-cache-feil
+er ikke behandlet; ingen ny variant ble hentet. Utviklings-GLB-er og videofiler er
+arkivert utenfor git, ikke etterlatt som udokumenterte modeller i `public/`.

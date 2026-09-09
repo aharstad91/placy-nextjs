@@ -1,0 +1,20 @@
+{
+  "registration_identical": true,
+  "variants": {
+    "hybrid": {
+      "identical": true,
+      "sha256": "96137b9474e4fa52479aaa3564c992b3c20c12229d157bde69aa4b3e1f0c9544",
+      "bytes": 1886792
+    },
+    "pbr": {
+      "identical": true,
+      "sha256": "4cea9f2697b094020ff9c5a9b9097e2f71978e271896d8e516ee80017a27a717",
+      "bytes": 1886100
+    },
+    "emissive": {
+      "identical": true,
+      "sha256": "eef62cb5564953a1d25c7231112515bf2031f87ae265cfb8a5b45096772a7d95",
+      "bytes": 1886680
+    }
+  }
+}

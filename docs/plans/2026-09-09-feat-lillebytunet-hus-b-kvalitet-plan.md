@@ -1,11 +1,16 @@
 ---
 title: "Lillebytunet Hus B — bedre modellkvalitet og overlevering etter omstart"
 type: feat
-status: planned
+status: completed
 date: 2026-09-09
 ---
 
 # Lillebytunet Hus B — kvalitetsrunde og sesjonsoverlevering
+
+**Gjennomført 2026-09-09.** `husB-v2.glb` er eksportert, gjenbygd byte-identisk og
+kontrollert i faktisk Google Maps 3D. Alle seks gjennomføringssteg er utført.
+Se [resultat, før/etter og gjenværende kildebegrensninger](../research/lillebytunet-3d/04-kvalitetsrunde.md).
+Beskrivelsen av starttilstand og omstart nedenfor er bevart som historikk.
 
 ## Oppdraget og beslutningen
 

@@ -1,0 +1,440 @@
+[
+  {
+    "surface": "cladding",
+    "series": "bygg-b",
+    "direction": 5,
+    "resolution": [
+      61,
+      45
+    ],
+    "repeated_fraction": 0.0,
+    "corners": [
+      [
+        0.467,
+        -0.31,
+        -0.54
+      ],
+      [
+        0.467,
+        -0.2,
+        -0.54
+      ],
+      [
+        0.467,
+        -0.2,
+        -0.46
+      ],
+      [
+        0.467,
+        -0.31,
+        -0.46
+      ]
+    ]
+  },
+  {
+    "surface": "window_single",
+    "series": "bygg-b",
+    "direction": 5,
+    "resolution": [
+      49,
+      71
+    ],
+    "repeated_fraction": 0.0,
+    "corners": [
+      [
+        0.467,
+        -0.166,
+        -0.706
+      ],
+      [
+        0.467,
+        -0.079,
+        -0.706
+      ],
+      [
+        0.467,
+        -0.079,
+        -0.578
+      ],
+      [
+        0.467,
+        -0.166,
+        -0.578
+      ]
+    ]
+  },
+  {
+    "surface": "window_double",
+    "series": "bygg-b",
+    "direction": 5,
+    "resolution": [
+      70,
+      71
+    ],
+    "repeated_fraction": 0.0,
+    "corners": [
+      [
+        0.467,
+        -0.352,
+        -0.706
+      ],
+      [
+        0.467,
+        -0.227,
+        -0.706
+      ],
+      [
+        0.467,
+        -0.227,
+        -0.578
+      ],
+      [
+        0.467,
+        -0.352,
+        -0.578
+      ]
+    ]
+  },
+  {
+    "surface": "roof_membrane",
+    "series": "oversikt",
+    "direction": 90,
+    "resolution": [
+      128,
+      156
+    ],
+    "repeated_fraction": 0.0,
+    "corners": [
+      [
+        -0.44,
+        -0.16,
+        -0.512
+      ],
+      [
+        -0.21,
+        -0.16,
+        -0.512
+      ],
+      [
+        -0.21,
+        0.12,
+        -0.512
+      ],
+      [
+        -0.44,
+        0.12,
+        -0.512
+      ]
+    ]
+  },
+  {
+    "surface": "lower_back_0",
+    "series": "bygg-b",
+    "direction": 54,
+    "resolution": [
+      186,
+      589
+    ],
+    "repeated_fraction": 0.0,
+    "corners": [
+      [
+        -0.632,
+        -0.812,
+        -1.99
+      ],
+      [
+        -0.632,
+        -1.145,
+        -1.99
+      ],
+      [
+        -0.632,
+        -1.145,
+        -0.935
+      ],
+      [
+        -0.632,
+        -0.812,
+        -0.935
+      ]
+    ]
+  },
+  {
+    "surface": "lower_back_1",
+    "series": "bygg-b",
+    "direction": 54,
+    "resolution": [
+      986,
+      542
+    ],
+    "repeated_fraction": 0.0,
+    "corners": [
+      [
+        -0.632,
+        0.955,
+        -1.99
+      ],
+      [
+        -0.632,
+        -0.812,
+        -1.99
+      ],
+      [
+        -0.632,
+        -0.812,
+        -1.018
+      ],
+      [
+        -0.632,
+        0.955,
+        -1.018
+      ]
+    ]
+  },
+  {
+    "surface": "lower_end",
+    "series": "bygg-b",
+    "direction": 78,
+    "resolution": [
+      288,
+      589
+    ],
+    "repeated_fraction": 0.0865874363327674,
+    "corners": [
+      [
+        -0.05,
+        -1.145,
+        -1.99
+      ],
+      [
+        0.467,
+        -1.145,
+        -1.99
+      ],
+      [
+        0.467,
+        -1.145,
+        -0.935
+      ],
+      [
+        -0.05,
+        -1.145,
+        -0.935
+      ]
+    ]
+  },
+  {
+    "surface": "lower_flush_end",
+    "series": "bygg-b",
+    "direction": 30,
+    "resolution": [
+      613,
+      542
+    ],
+    "repeated_fraction": 0.0,
+    "corners": [
+      [
+        0.467,
+        0.955,
+        -1.99
+      ],
+      [
+        -0.632,
+        0.955,
+        -1.99
+      ],
+      [
+        -0.632,
+        0.955,
+        -1.018
+      ],
+      [
+        0.467,
+        0.955,
+        -1.018
+      ]
+    ]
+  },
+  {
+    "surface": "lower_terrace",
+    "source": "bygg-b064-095, overview072-095",
+    "treatment": "estimated clean deck; furniture and planting omitted"
+  },
+  {
+    "surface": "middle_back_0",
+    "series": "bygg-b",
+    "direction": 54,
+    "resolution": [
+      220,
+      188
+    ],
+    "repeated_fraction": 0.0,
+    "corners": [
+      [
+        -0.632,
+        -0.418,
+        -1.018
+      ],
+      [
+        -0.632,
+        -0.812,
+        -1.018
+      ],
+      [
+        -0.632,
+        -0.812,
+        -0.681
+      ],
+      [
+        -0.632,
+        -0.418,
+        -0.681
+      ]
+    ]
+  },
+  {
+    "surface": "middle_back_1",
+    "series": "bygg-b",
+    "direction": 54,
+    "resolution": [
+      766,
+      142
+    ],
+    "repeated_fraction": 0.0,
+    "corners": [
+      [
+        -0.632,
+        0.955,
+        -1.018
+      ],
+      [
+        -0.632,
+        -0.418,
+        -1.018
+      ],
+      [
+        -0.632,
+        -0.418,
+        -0.764
+      ],
+      [
+        -0.632,
+        0.955,
+        -0.764
+      ]
+    ]
+  },
+  {
+    "surface": "middle_flush_end",
+    "series": "bygg-b",
+    "direction": 30,
+    "resolution": [
+      613,
+      142
+    ],
+    "repeated_fraction": 0.0,
+    "corners": [
+      [
+        0.467,
+        0.955,
+        -1.018
+      ],
+      [
+        -0.632,
+        0.955,
+        -1.018
+      ],
+      [
+        -0.632,
+        0.955,
+        -0.764
+      ],
+      [
+        0.467,
+        0.955,
+        -0.764
+      ]
+    ]
+  },
+  {
+    "surface": "middle_terrace",
+    "source": "bygg-b064-095, overview072-095",
+    "treatment": "estimated clean deck; furniture and planting omitted"
+  },
+  {
+    "surface": "upper_back_0",
+    "series": "bygg-b",
+    "direction": 54,
+    "resolution": [
+      766,
+      182
+    ],
+    "repeated_fraction": 0.0,
+    "corners": [
+      [
+        -0.632,
+        0.955,
+        -0.764
+      ],
+      [
+        -0.632,
+        -0.418,
+        -0.764
+      ],
+      [
+        -0.632,
+        -0.418,
+        -0.438
+      ],
+      [
+        -0.632,
+        0.955,
+        -0.438
+      ]
+    ]
+  },
+  {
+    "surface": "upper_flush_end",
+    "series": "bygg-b",
+    "direction": 30,
+    "resolution": [
+      613,
+      182
+    ],
+    "repeated_fraction": 0.0,
+    "corners": [
+      [
+        0.467,
+        0.955,
+        -0.764
+      ],
+      [
+        -0.632,
+        0.955,
+        -0.764
+      ],
+      [
+        -0.632,
+        0.955,
+        -0.438
+      ],
+      [
+        0.467,
+        0.955,
+        -0.438
+      ]
+    ]
+  },
+  {
+    "surface": "front_openings",
+    "count": 51,
+    "source": "building005 rectified using COLMAP; clean window crops from top floor",
+    "treatment": "opening positions traced; hidden portions and lower-floor repeated rhythm estimated; clean source cladding replaces occluding balconies, furniture and plants"
+  },
+  {
+    "surface": "balconies",
+    "count": 15,
+    "source": "building005/012/078/084",
+    "treatment": "separate decks, closed soffits, opaque rail bars, posts and privacy screens; hidden materials estimated"
+  }
+]

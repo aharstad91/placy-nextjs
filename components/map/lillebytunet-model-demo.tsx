@@ -10,6 +10,8 @@ import {
 } from "@vis.gl/react-google-maps";
 import {
   HUS_B_GROUND_MASL,
+  CAMERA_PRESETS,
+  type CameraPreset,
   renderRigCamera as rigCamera,
 } from "@/lib/map/lillebytunet-render-rig";
 
@@ -39,6 +41,8 @@ export interface LillebytunetModelDemoProps {
   scale: number;
   /** Scene 0–95 når render-kameraet er valgt, ellers `null`. */
   renderDir: number | null;
+  /** Navngitt fast kameravinkel for repeterbar før/etter-kontroll. */
+  cameraPresetId: string | null;
   /** Overstyrer siktepunktets høyde i meter over havet. */
   aimAltitudeOverride: number | null;
 }
@@ -55,38 +59,31 @@ function renderPreset(dir: number): CameraPreset {
   };
 }
 
-interface CameraPreset {
-  id: string;
-  label: string;
-  /** Kameraets siktretning i grader. Kameraet står på motsatt side. */
-  heading: number;
-  tilt: number;
-  range: number;
-  /**
-   * Siktepunktets høyde over bakken i meter.
-   *
-   * `range` er avstanden til siktepunktet, ikke til modellen. Ligger punktet på
-   * bakken samtidig som tilt er høy og range kort, havner kameraet under
-   * fotoflisene og modellen forsvinner. Nærvisningen og render-riggen løfter
-   * derfor punktet opp på fasaden.
-   */
-  aimHeightMeters: number;
-}
-
 /**
- * Fire skrå luftvinkler, én mellomvinkel og én nærvisning.
- *
- * Google-kameraets `heading` er siktretningen, ikke der kameraet står. Skal
- * modellen ses fra nord, må kameraet se mot sør — derfor 180 på «fra nord».
+ * Sett valgt kamera én gang, slik at kartets bevegelser kan fortsette fritt.
+ * Kontrollerte kameraprops overstyrer ellers rotasjon ved nye kamerahendelser.
  */
-const CAMERA_PRESETS: CameraPreset[] = [
-  { id: "n", label: "Fra nord", heading: 180, tilt: 45, range: 150, aimHeightMeters: 8 },
-  { id: "e", label: "Fra øst", heading: 270, tilt: 45, range: 150, aimHeightMeters: 8 },
-  { id: "s", label: "Fra sør", heading: 0, tilt: 45, range: 150, aimHeightMeters: 8 },
-  { id: "w", label: "Fra vest", heading: 90, tilt: 45, range: 150, aimHeightMeters: 8 },
-  { id: "mid", label: "Mellomvinkel", heading: 215, tilt: 62, range: 320, aimHeightMeters: 8 },
-  { id: "near", label: "Nærvisning", heading: 200, tilt: 66, range: 70, aimHeightMeters: 9 },
-];
+function CameraLayer({
+  camera,
+  lat,
+  lng,
+  aimAltitude,
+}: {
+  camera: CameraPreset;
+  lat: number;
+  lng: number;
+  aimAltitude: number;
+}) {
+  const map3d = useMap3D("lillebytunet-demo");
+  useEffect(() => {
+    if (!map3d) return;
+    map3d.center = { lat, lng, altitude: aimAltitude };
+    map3d.heading = camera.heading;
+    map3d.tilt = camera.tilt;
+    map3d.range = camera.range;
+  }, [map3d, camera, lat, lng, aimAltitude]);
+  return null;
+}
 
 /**
  * Legger GLB-en inn i den persistente Map3DElement-instansen.
@@ -179,13 +176,16 @@ function ModelLayer({
 
 export function LillebytunetModelDemo({
   renderDir,
+  cameraPresetId,
   aimAltitudeOverride,
   ...model
 }: LillebytunetModelDemoProps) {
   const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
   const renderCamera = renderDir === null ? null : renderPreset(renderDir);
   const [camera, setCamera] = useState<CameraPreset>(
-    renderCamera ?? CAMERA_PRESETS[0],
+    renderCamera ??
+      CAMERA_PRESETS.find((preset) => preset.id === cameraPresetId) ??
+      CAMERA_PRESETS[0],
   );
   const [status, setStatus] = useState("Laster …");
   const onStatus = useCallback((next: string) => setStatus(next), []);
@@ -215,11 +215,17 @@ export function LillebytunetModelDemo({
           className="h-full w-full"
           mode={MapMode.SATELLITE}
           gestureHandling={GestureHandling.GREEDY}
-          center={{ lat: model.lat, lng: model.lng, altitude: aimAltitude }}
-          heading={camera.heading}
-          tilt={camera.tilt}
-          range={camera.range}
+          defaultCenter={{ lat: model.lat, lng: model.lng, altitude: aimAltitude }}
+          defaultHeading={camera.heading}
+          defaultTilt={camera.tilt}
+          defaultRange={camera.range}
         >
+          <CameraLayer
+            camera={camera}
+            lat={model.lat}
+            lng={model.lng}
+            aimAltitude={aimAltitude}
+          />
           <ModelLayer {...model} onStatus={onStatus} />
         </Map3D>
       </APIProvider>
@@ -230,7 +236,7 @@ export function LillebytunetModelDemo({
             <button
               key={preset.id}
               type="button"
-              onClick={() => setCamera(preset)}
+              onClick={() => setCamera({ ...preset })}
               className={`rounded-full px-3 py-1.5 text-xs font-medium shadow-sm transition-colors ${
                 camera.id === preset.id
                   ? "bg-gray-900 text-white"
@@ -257,7 +263,7 @@ export function LillebytunetModelDemo({
           </dd>
           <dt className="text-gray-500">scale</dt>
           <dd>{model.scale}</dd>
-          <dt className="text-gray-500">kamera</dt>
+          <dt className="text-gray-500">kameravalg</dt>
           <dd>
             {camera.heading.toFixed(1)}° / tilt {camera.tilt.toFixed(1)}° /{" "}
             {camera.range.toFixed(1)} m

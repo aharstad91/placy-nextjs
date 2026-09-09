@@ -26,10 +26,10 @@ export const metadata: Metadata = {
  * Bygget måler 27,7 × 16,3 m og er 19,5 m høyt. Modellens +Y-akse er byggets
  * langakse og skal peke mot 110°; da havner +X — balkongsiden — på 200°.
  * `orientation.heading` legger +Y på oppgitt bearing, så heading 110 er riktig
- * for `husB.glb`.
+ * for `husB-v2.glb` (og den bevarte prototypen `husB.glb`).
  */
 const DEFAULTS = {
-  modelSrc: "/models/lillebytunet/husB.glb",
+  modelSrc: "/models/lillebytunet/husB-v2.glb",
   lat: 63.441359,
   lng: 10.440215,
   heading: 110,
@@ -93,6 +93,7 @@ export default async function LillebytunetDemoPage({
       altitudeMode={altitudeMode}
       scale={num(params.scale, DEFAULTS.scale)}
       renderDir={wantsRenderCamera ? (dir ?? 0) : null}
+      cameraPresetId={wantsRenderCamera ? null : first(params.cam) ?? null}
       aimAltitudeOverride={
         params.calt === undefined ? null : num(params.calt, 0)
       }

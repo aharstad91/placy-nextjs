@@ -1,0 +1,336 @@
+{
+  "capturedAt": "2026-09-09T07:51:45.962Z",
+  "baseUrl": "http://localhost:3002",
+  "model": "/models/lillebytunet/husB-v2.glb",
+  "viewport": {
+    "width": 1920,
+    "height": 1080
+  },
+  "deviceScaleFactor": 1,
+  "placement": {
+    "lat": 63.441359,
+    "lng": 10.440215,
+    "heading": 115,
+    "alt": 0,
+    "altmode": "CLAMP_TO_GROUND",
+    "scale": 1
+  },
+  "browser": "152.0.7977.84",
+  "settleMs": 5000,
+  "screenshotFormat": "jpeg",
+  "screenshotQuality": 90,
+  "views": [
+    {
+      "id": "n",
+      "url": "http://localhost:3002/demo/lillebytunet-3d?lat=63.441359&lng=10.440215&heading=115&alt=0&altmode=CLAMP_TO_GROUND&scale=1&model=%2Fmodels%2Flillebytunet%2FhusB-v2.glb&cam=n",
+      "attachedMs": 611,
+      "modelResponse": {
+        "status": 200,
+        "bytes": 1886792,
+        "sha256": "96137b9474e4fa52479aaa3564c992b3c20c12229d157bde69aa4b3e1f0c9544"
+      },
+      "camera": {
+        "heading": 180,
+        "tilt": 45,
+        "range": 150,
+        "center": {
+          "lat": 63.441359,
+          "lng": 10.440215,
+          "altitude": 24.2
+        }
+      },
+      "modelElementAttached": true,
+      "statusText": "Model3DElement lagt til"
+    },
+    {
+      "id": "e",
+      "url": "http://localhost:3002/demo/lillebytunet-3d?lat=63.441359&lng=10.440215&heading=115&alt=0&altmode=CLAMP_TO_GROUND&scale=1&model=%2Fmodels%2Flillebytunet%2FhusB-v2.glb&cam=e",
+      "attachedMs": 176,
+      "modelResponse": {
+        "status": 200,
+        "bytes": 1886792,
+        "sha256": "96137b9474e4fa52479aaa3564c992b3c20c12229d157bde69aa4b3e1f0c9544"
+      },
+      "camera": {
+        "heading": 270,
+        "tilt": 45,
+        "range": 150,
+        "center": {
+          "lat": 63.441359,
+          "lng": 10.440215,
+          "altitude": 24.2
+        }
+      },
+      "modelElementAttached": true,
+      "statusText": "Model3DElement lagt til"
+    },
+    {
+      "id": "s",
+      "url": "http://localhost:3002/demo/lillebytunet-3d?lat=63.441359&lng=10.440215&heading=115&alt=0&altmode=CLAMP_TO_GROUND&scale=1&model=%2Fmodels%2Flillebytunet%2FhusB-v2.glb&cam=s",
+      "attachedMs": 174,
+      "modelResponse": {
+        "status": 200,
+        "bytes": 1886792,
+        "sha256": "96137b9474e4fa52479aaa3564c992b3c20c12229d157bde69aa4b3e1f0c9544"
+      },
+      "camera": {
+        "heading": 0,
+        "tilt": 45,
+        "range": 150,
+        "center": {
+          "lat": 63.441359,
+          "lng": 10.440215,
+          "altitude": 24.2
+        }
+      },
+      "modelElementAttached": true,
+      "statusText": "Model3DElement lagt til"
+    },
+    {
+      "id": "w",
+      "url": "http://localhost:3002/demo/lillebytunet-3d?lat=63.441359&lng=10.440215&heading=115&alt=0&altmode=CLAMP_TO_GROUND&scale=1&model=%2Fmodels%2Flillebytunet%2FhusB-v2.glb&cam=w",
+      "attachedMs": 155,
+      "modelResponse": {
+        "status": 200,
+        "bytes": 1886792,
+        "sha256": "96137b9474e4fa52479aaa3564c992b3c20c12229d157bde69aa4b3e1f0c9544"
+      },
+      "camera": {
+        "heading": 90,
+        "tilt": 45,
+        "range": 150,
+        "center": {
+          "lat": 63.441359,
+          "lng": 10.440215,
+          "altitude": 24.2
+        }
+      },
+      "modelElementAttached": true,
+      "statusText": "Model3DElement lagt til"
+    },
+    {
+      "id": "mid",
+      "url": "http://localhost:3002/demo/lillebytunet-3d?lat=63.441359&lng=10.440215&heading=115&alt=0&altmode=CLAMP_TO_GROUND&scale=1&model=%2Fmodels%2Flillebytunet%2FhusB-v2.glb&cam=mid",
+      "attachedMs": 132,
+      "modelResponse": {
+        "status": 200,
+        "bytes": 1886792,
+        "sha256": "96137b9474e4fa52479aaa3564c992b3c20c12229d157bde69aa4b3e1f0c9544"
+      },
+      "camera": {
+        "heading": 70,
+        "tilt": 58,
+        "range": 100,
+        "center": {
+          "lat": 63.441359,
+          "lng": 10.440215,
+          "altitude": 24.2
+        }
+      },
+      "modelElementAttached": true,
+      "statusText": "Model3DElement lagt til"
+    },
+    {
+      "id": "near",
+      "url": "http://localhost:3002/demo/lillebytunet-3d?lat=63.441359&lng=10.440215&heading=115&alt=0&altmode=CLAMP_TO_GROUND&scale=1&model=%2Fmodels%2Flillebytunet%2FhusB-v2.glb&cam=near",
+      "attachedMs": 138,
+      "modelResponse": {
+        "status": 200,
+        "bytes": 1886792,
+        "sha256": "96137b9474e4fa52479aaa3564c992b3c20c12229d157bde69aa4b3e1f0c9544"
+      },
+      "camera": {
+        "heading": 25,
+        "tilt": 60,
+        "range": 65,
+        "center": {
+          "lat": 63.441359,
+          "lng": 10.440215,
+          "altitude": 28.2
+        }
+      },
+      "modelElementAttached": true,
+      "statusText": "Model3DElement lagt til"
+    },
+    {
+      "id": "render-0",
+      "url": "http://localhost:3002/demo/lillebytunet-3d?lat=63.441359&lng=10.440215&heading=115&alt=0&altmode=CLAMP_TO_GROUND&scale=1&model=%2Fmodels%2Flillebytunet%2FhusB-v2.glb&cam=render&dir=0",
+      "attachedMs": 136,
+      "modelResponse": {
+        "status": 200,
+        "bytes": 1886792,
+        "sha256": "96137b9474e4fa52479aaa3564c992b3c20c12229d157bde69aa4b3e1f0c9544"
+      },
+      "camera": {
+        "heading": 42,
+        "tilt": 69.95768325510636,
+        "range": 49.604032094175565,
+        "center": {
+          "lat": 63.441359,
+          "lng": 10.440215,
+          "altitude": 24.2
+        }
+      },
+      "modelElementAttached": true,
+      "statusText": "Model3DElement lagt til"
+    },
+    {
+      "id": "render-24",
+      "url": "http://localhost:3002/demo/lillebytunet-3d?lat=63.441359&lng=10.440215&heading=115&alt=0&altmode=CLAMP_TO_GROUND&scale=1&model=%2Fmodels%2Flillebytunet%2FhusB-v2.glb&cam=render&dir=24",
+      "attachedMs": 237,
+      "modelResponse": {
+        "status": 200,
+        "bytes": 1886792,
+        "sha256": "96137b9474e4fa52479aaa3564c992b3c20c12229d157bde69aa4b3e1f0c9544"
+      },
+      "camera": {
+        "heading": 312,
+        "tilt": 69.95768325510636,
+        "range": 49.604032094175565,
+        "center": {
+          "lat": 63.441359,
+          "lng": 10.440215,
+          "altitude": 24.2
+        }
+      },
+      "modelElementAttached": true,
+      "statusText": "Model3DElement lagt til"
+    },
+    {
+      "id": "render-36",
+      "url": "http://localhost:3002/demo/lillebytunet-3d?lat=63.441359&lng=10.440215&heading=115&alt=0&altmode=CLAMP_TO_GROUND&scale=1&model=%2Fmodels%2Flillebytunet%2FhusB-v2.glb&cam=render&dir=36",
+      "attachedMs": 299,
+      "modelResponse": {
+        "status": 200,
+        "bytes": 1886792,
+        "sha256": "96137b9474e4fa52479aaa3564c992b3c20c12229d157bde69aa4b3e1f0c9544"
+      },
+      "camera": {
+        "heading": 267,
+        "tilt": 69.95768325510636,
+        "range": 49.604032094175565,
+        "center": {
+          "lat": 63.441359,
+          "lng": 10.440215,
+          "altitude": 24.2
+        }
+      },
+      "modelElementAttached": true,
+      "statusText": "Model3DElement lagt til"
+    },
+    {
+      "id": "render-48",
+      "url": "http://localhost:3002/demo/lillebytunet-3d?lat=63.441359&lng=10.440215&heading=115&alt=0&altmode=CLAMP_TO_GROUND&scale=1&model=%2Fmodels%2Flillebytunet%2FhusB-v2.glb&cam=render&dir=48",
+      "attachedMs": 181,
+      "modelResponse": {
+        "status": 200,
+        "bytes": 1886792,
+        "sha256": "96137b9474e4fa52479aaa3564c992b3c20c12229d157bde69aa4b3e1f0c9544"
+      },
+      "camera": {
+        "heading": 222,
+        "tilt": 69.95768325510636,
+        "range": 49.604032094175565,
+        "center": {
+          "lat": 63.441359,
+          "lng": 10.440215,
+          "altitude": 24.2
+        }
+      },
+      "modelElementAttached": true,
+      "statusText": "Model3DElement lagt til"
+    },
+    {
+      "id": "render-72",
+      "url": "http://localhost:3002/demo/lillebytunet-3d?lat=63.441359&lng=10.440215&heading=115&alt=0&altmode=CLAMP_TO_GROUND&scale=1&model=%2Fmodels%2Flillebytunet%2FhusB-v2.glb&cam=render&dir=72",
+      "attachedMs": 204,
+      "modelResponse": {
+        "status": 200,
+        "bytes": 1886792,
+        "sha256": "96137b9474e4fa52479aaa3564c992b3c20c12229d157bde69aa4b3e1f0c9544"
+      },
+      "camera": {
+        "heading": 132,
+        "tilt": 69.95768325510636,
+        "range": 49.604032094175565,
+        "center": {
+          "lat": 63.441359,
+          "lng": 10.440215,
+          "altitude": 24.2
+        }
+      },
+      "modelElementAttached": true,
+      "statusText": "Model3DElement lagt til"
+    }
+  ],
+  "errors": [],
+  "caveats": [
+    "Google phototiles and lighting can change between sessions.",
+    "Render-rig direction is approximate; FOV is not calibrated to original renders.",
+    "Model3DElement attachment and HTTP success do not confirm visually correct rendering."
+  ],
+  "orbit": {
+    "durationMs": 18000,
+    "interpolation": "requestAnimationFrame",
+    "range": 80,
+    "tilt": 60,
+    "centerAltitude": 26.2,
+    "screenshots": [
+      {
+        "filename": "orbit-00.jpg",
+        "heading": 29.894000000059606
+      },
+      {
+        "filename": "orbit-01.jpg",
+        "heading": 68.56000000005959
+      },
+      {
+        "filename": "orbit-02.jpg",
+        "heading": 109.22400000005962
+      },
+      {
+        "filename": "orbit-03.jpg",
+        "heading": 146.8880000000596
+      },
+      {
+        "filename": "orbit-04.jpg",
+        "heading": 185.5540000000596
+      },
+      {
+        "filename": "orbit-05.jpg",
+        "heading": 226.2200000000596
+      },
+      {
+        "filename": "orbit-06.jpg",
+        "heading": 259.8840000000596
+      },
+      {
+        "filename": "orbit-07.jpg",
+        "heading": 293.21800000005965
+      },
+      {
+        "filename": "orbit-08.jpg",
+        "heading": 330.2160000000596
+      },
+      {
+        "filename": "orbit-09.jpg",
+        "heading": 0
+      },
+      {
+        "filename": "orbit-10.jpg",
+        "heading": 0
+      },
+      {
+        "filename": "orbit-11.jpg",
+        "heading": 0
+      }
+    ],
+    "video": "~/klienter/placy/lillebytunet/quality-v2/google-after-video/ (archived locally)",
+    "presetReset": {
+      "heading": 25,
+      "tilt": 60,
+      "range": 65,
+      "altitude": 28.2
+    }
+  }
+}

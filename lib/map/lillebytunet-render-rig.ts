@@ -78,3 +78,36 @@ export function parseRenderDir(value: string | undefined): number | null {
   if (!Number.isInteger(parsed)) return null;
   return parsed >= 0 && parsed < RENDER_SCENE_COUNT ? parsed : null;
 }
+
+export interface CameraPreset {
+  id: string;
+  label: string;
+  /** Kameraets siktretning i grader. Kameraet står på motsatt side. */
+  heading: number;
+  tilt: number;
+  range: number;
+  /**
+   * Siktepunktets høyde over bakken i meter.
+   *
+   * `range` er avstanden til siktepunktet, ikke til modellen. Ligger punktet på
+   * bakken samtidig som tilt er høy og range kort, havner kameraet under
+   * fotoflisene og modellen forsvinner. Nærvisningen og render-riggen løfter
+   * derfor punktet opp på fasaden.
+   */
+  aimHeightMeters: number;
+}
+
+/**
+ * Fire skrå luftvinkler, én mellomvinkel og én nærvisning.
+ *
+ * Google-kameraets `heading` er siktretningen, ikke der kameraet står. Skal
+ * modellen ses fra nord, må kameraet se mot sør — derfor 180 på «fra nord».
+ */
+export const CAMERA_PRESETS: CameraPreset[] = [
+  { id: "n", label: "Fra nord", heading: 180, tilt: 45, range: 150, aimHeightMeters: 8 },
+  { id: "e", label: "Fra øst", heading: 270, tilt: 45, range: 150, aimHeightMeters: 8 },
+  { id: "s", label: "Fra sør", heading: 0, tilt: 45, range: 150, aimHeightMeters: 8 },
+  { id: "w", label: "Fra vest", heading: 90, tilt: 45, range: 150, aimHeightMeters: 8 },
+  { id: "mid", label: "Mellomvinkel", heading: 70, tilt: 58, range: 100, aimHeightMeters: 8 },
+  { id: "near", label: "Nærvisning", heading: 25, tilt: 60, range: 65, aimHeightMeters: 12 },
+];
