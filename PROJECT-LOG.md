@@ -9467,3 +9467,22 @@ troverdig nærvisning uten gjentatte vinduer. Geografisk usikkerhet rundt ±1,5 
 Hus A/C/D, FKB-kontroll og innhentingsskriptets tidligere dokumenterte variant-cache-feil
 er ikke behandlet; ingen ny variant ble hentet. Utviklings-GLB-er og videofiler er
 arkivert utenfor git, ikke etterlatt som udokumenterte modeller i `public/`.
+
+## 2026-09-09 — Hus B-metoden dokumentert; Opus startet på videre modellarbeid
+
+Andreas bekreftet at Hus B-kvalitetsrunden ga et godt resultat. Arbeidsmåten er nå
+compounded i [arbeidsoppskriften for neste bygg og agent](docs/solutions/workflow-issues/render-til-byggmodell-krever-visuelle-akseptansekriterier.md).
+Den inneholder sju kontrollpunkter, seks grupper med Hus B-spesifikke forutsetninger
+som må undersøkes på nytt, og et ferdig oppdrag til neste agent. Alle 22 faktapåstander
+ble kontrollert mot kilder. Begrepslisten trengte ingen endringer.
+
+Et eldre overlay-notat anbefalte feilaktig `KHR_materials_unlit` for Google-modeller.
+Det er rettet mot Googles dokumenterte støtte og Hus Bs faktiske materialkontroll,
+sammen med to motstridende beskrivelser av lysmålingene og en YAML-feil.
+Dokumentasjonscommits: `1508e8e` og `6bf816e`, lagret lokalt uten push.
+
+**Status:** Andreas opplyser at Opus nå er i gang med videre modellarbeid. Anbefalingen
+er å bruke ett nytt bygg som pilot med samme kildegransking, Google-kontroll og
+gjenbygging før arbeidsmåten skaleres til resten. Hus B-mål, kameraer og koordinater
+skal ikke kopieres ukritisk. Resultatet fra Opus er ennå ikke vurdert i denne sesjonen;
+en bestemt modell eller effort-innstilling er ikke dokumentert som kvalitetsgaranti.
