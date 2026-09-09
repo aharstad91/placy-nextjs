@@ -4,7 +4,8 @@
 arkitekturrenders og åpnet i Google Maps 3D: åtte etasjer, to inntrukne takterrasser
 med pergola, 18 balkonger med faktisk dybde og pussfasader med innfelte vinduer.
 Modellen er kontrollert i 11 faste Google-kameraer, gjennom hele rotasjonen, og mot
-kilden i det eksakte kildekameraet for 13 retninger.
+kilden i det eksakte kildekameraet for 13 retninger, med dekningsgrad 15,7–21,2 % av
+bildet ([overlay.json](hus-c/overlay.json)).
 
 Dette var piloten for [arbeidsmåten fra Hus B](../../solutions/workflow-issues/render-til-byggmodell-krever-visuelle-akseptansekriterier.md).
 Den delte koden er gjort byggagnostisk i samme runde, og Hus B er gjenbygd fra sin
@@ -66,11 +67,26 @@ skalaen: 0,36355 oversiktsenheter per byggenhet × 35,114 m per oversiktsenhet
 Parametrene ligger i `scripts/lillebytunet/model/hus_c_quality.json`. Ingen mål er arvet
 fra Hus B. Alle er estimater fra bildene og punktskyen, ikke BIM-toleranser.
 
-Etasjehøyden ble målt før noe plan ble antatt: punktene på balkongfrontene
-(a > 0,52) danner skarpe topper i høydehistogrammet ved z = −2,41, −2,17, −1,93, −1,69,
-−1,45 og −1,21, altså **0,240 enheter = 3,06 m per etasje**. Deretter ble hvert veggplan
-funnet ved å rektifisere fasaden fra flere kandidat-avstander og velge den der
-vindusrytmen i bildet blir nøyaktig 0,240 — en måling, ikke et øyemål.
+Etasjehøyden ble målt før noe plan ble antatt, med
+`massing.py --slab-beyond 0.52`: punktene utenfor veggplanet er balkongfronter og
+dekkeforkanter, og de danner skarpe topper ved z = −2,417, −2,177, −1,937, −1,697,
+−1,457 og −1,217. Alle fem gap er **0,240 enheter = 3,064 m**
+([massing.json](hus-c/massing.json), `storey_slabs`).
+
+Spredningen mellom de fem gapene er 0. Samme kommando på Hus B gir 0,240 med spredning
+0,02 — kilden er altså mindre regelmessig der, og skriptet oppgir det i stedet for å
+skjule det bak ett tall.
+
+Skriptets andre estimator — autokorrelasjon over hele punktskyen — svarer 0,2368 enheter
+= 3,023 m. Den er kvantisert til histogram-bin (0,0215 enheter) og kan derfor ikke treffe
+0,240. Den er en fornuftskontroll, ikke svaret; `storey_slabs` er tallet konfigurasjonen
+bruker. Den første versjonen av rapporten oppgav bare det målte tallet uten å si hvilken
+av de to estimatorene som gjaldt, og uten at metoden fantes som kommando.
+
+Deretter ble hvert veggplan festet med `facade_grid.py`: rektifiser fasaden fra flere
+`--plane`-verdier og velg den der vindusrytmen i rutenettet blir nøyaktig 0,240 — en
+måling, ikke et øyemål. `massing.py`s `a_wall_units`/`b_wall_units` er histogramflanker og
+lå 0,05 enheter (64 cm) fra det riktige gavlplanet, altså omtrent én bin-bredde.
 
 | Del | Utført | Grunnlag og begrensning |
 |---|---|---|
@@ -89,15 +105,22 @@ vindusrytmen i bildet blir nøyaktig 0,240 — en måling, ikke et øyemål.
 **12 projiserte flater og 8 materialer** er kontrollert. `surface-sources.json` oppgir
 kamera, flatehjørner, oppløsning og eksplisitt gjentakelse per flate.
 
-Balkongdekkets forkant er målt til (0,49, 0,45, 0,38) som medianen av et 20 cm bånd på
-a = 0,630-planet, som kamera 004 ser nesten rett på. Rekkverket er gjennomskinnelig, så
-medianen der leser møblene bak; stavene er de mørkeste 15 prosentene av rekkverksbåndet,
-(0,30, 0,26, 0,22). Terrassedekke, takoppbygg og balkongunderside er oppgitte
+Estimatoren følger flatetypen. Solid flate: median av et bånd på et plan kameraet ser
+nesten rett på — balkongdekkets forkant er (0,49, 0,45, 0,38) av et 20 cm bånd på
+a = 0,630-planet. Gjennomskinnelig flate: de mørkeste 10–15 prosentene, ellers måler man
+det som ligger bak. Rekkverkets median er (0,47, 0,42, 0,37), som er møblene bak; de
+mørkeste 15 prosentene gir (0,30, 0,26, 0,22), som er stavene — og som treffer Hus Bs
+manuelle anslag (0,30, 0,29, 0,265) nesten eksakt. Terrassedekke, takoppbygg og balkongunderside er oppgitte
 fargeanslag, fordi begge seriene skraper de flatene og en prøve der leser veggen bak.
 
-**Taket kan ikke samples, og det er et funn, ikke en forglemmelse.** Begge seriene ser
-taket i 7,5° og en parapet på 1,17 m skjuler 9 m av takflaten fra hvert kamera, så alle
-56 målte kandidatutsnitt er en smøring av parapet, oppbygg og himmel. Første forsøk
+**Taket kan ikke samples, og det er et funn, ikke en forglemmelse.** `occlusion.py`
+regner det ut fra konfigurasjonen alene ([occlusion.json](hus-c/occlusion.json)):
+takflaten sees i 7,5°, parapetet er 1,17 m, og 8,94 m av flatens 14,30 m er skjult fra
+hvert kamera — **37,5 % synlig**, altså under terskelen. Terrassene er 0–7 % synlige.
+Det tallet var tilgjengelig før første utsnitt ble hentet, og alle 56 målte
+kandidatutsnitt er derfor en smøring av parapet, oppbygg og himmel. Samme kommando på
+Hus B ([occlusion-husB.json](hus-c/occlusion-husB.json)) gir 55,8 % synlig — rett over
+terskelen, som er hvorfor Hus Bs takfeil ble subtil i stedet for åpenbar. Første forsøk
 valgte det jevneste utsnittet og fikk et **lyst** tak — kilden viser en mørk membran.
 Taket er derfor en målt flatfarge, (0,30, 0,31, 0,35): medianen av den mørke klyngen
 innenfor det projiserte takpolygonet, samstemt innen 0,07 over fem retninger. To
@@ -184,8 +207,10 @@ GLB-sjekken leser faktiske buffere, indekser, normaler, flateretning og bounds; 
 Z er 0,0000 ([glb-validation.json](hus-c/glb-validation.json)). Målgrensene i `check_glb.py`
 er nå CLI-argumenter, siden Hus B-grensene avviste Hus Cs 25,75 m.
 
-Hele kjeden ble kjørt på nytt i en tom `hus-c-v1/reproduction/`: registreringen ble
-byte-identisk, og alle tre GLB-variantene ble byte-identiske
+Steg 3 og 6 — registrering og geometri, altså alt som produserer leveransen — ble kjørt
+på nytt i en tom `hus-c-v1/reproduction/`: registreringen ble byte-identisk, og alle tre
+GLB-variantene ble byte-identiske. COLMAP-løsningen (steg 1) og rammeverket (steg 2) ble
+ikke kjørt om; de er bevarte inputer, og `frame.npy`/`rect.npy` ligger i `colmap-c/`
 ([reproduction.json](hus-c/reproduction.json)). Etter en ren tekstendring i
 `evidence` ble de tre GLB-ene igjen byte-identiske. Originalbilder, `colmap-b`,
 `colmap-ov`, `quality-v2/final/` og begge Hus B-modellene er urørt.
@@ -205,47 +230,70 @@ colmap sequential_matcher --database_path db.db --FeatureMatching.use_gpu 0 --Se
 mkdir -p sparse && colmap mapper --database_path db.db --image_path images --output_path sparse
 colmap model_converter --input_path sparse/0 --output_path sparse/0 --output_type TXT
 
-# 2. Eget rammeverk, fotavtrykk og massemålinger
+# 2. Eget rammeverk og fotavtrykk
 "$MODEL_PY" "$MODEL_SCRIPTS/frame_fit.py" --data "$MODEL_DATA" --colmap colmap-c \
   --scenes bygg-c --report "$MODEL_OUT/frame-fit.json" --checks "$MODEL_OUT/checks" --write
-"$MODEL_PY" "$MODEL_SCRIPTS/massing.py" --data "$MODEL_DATA" --colmap colmap-c \
-  --scale 12.766 --output "$MODEL_OUT/massing"
 
-# 3. Registrering mot oversikten (setter skalaen)
+# 3. Registrering mot oversikten. MÅ komme før massing.py, som trenger --scale:
+#    scale = registration.scale x 35.114 m/oversiktsenhet = 12.766 for Hus C.
+#    --pairs er forskyvningen mellom serien og oversikten, og den er per serie.
 "$MODEL_PY" "$MODEL_SCRIPTS/register_sources.py" --data "$MODEL_DATA" --colmap colmap-c \
   --pairs 0:2,12:14,24:26,36:38,48:50,60:62,72:74,84:86 --output "$MODEL_OUT/registration.json"
 
-# 4. Geometri, teksturer og tre GLB-varianter
+# 4. Etasjehøyde, trinn og høydeflanker. --slab-beyond er byggets eget veggplan;
+#    storey_slabs er svaret, storey_autocorrelation er fornuftskontrollen. Les
+#    gaps_units og spread_units, ikke bare units.
+#    På et levert bygg: frame_fit.py ... --write-points, ikke --write.
+"$MODEL_PY" "$MODEL_SCRIPTS/massing.py" --data "$MODEL_DATA" --colmap colmap-c \
+  --scale 12.766 --slab-beyond 0.52 --output "$MODEL_OUT/massing"
+
+# 5a. Okklusjonsporten. Kjør FØR kamera- og utsnittsvalg.
+"$MODEL_PY" "$MODEL_SCRIPTS/occlusion.py" --data "$MODEL_DATA" \
+  --config "$MODEL_SCRIPTS/hus_c_quality.json" --output "$MODEL_OUT/occlusion.json"
+
+# 5b. Veggplan: kjør flere --plane-verdier og velg den der vindusrytmen blir 0,240.
+#    Dette leddet er utredning, ikke reproduksjon — konfigurasjonen inneholder svaret.
+"$MODEL_PY" "$MODEL_SCRIPTS/facade_grid.py" --data "$MODEL_DATA" --colmap colmap-c \
+  --output "$MODEL_OUT/facades" --plane b=0.93 --horizontal -0.75,0.55 \
+  --vertical -2.45,-0.45 --direction 29 --ppu 480
+
+# 6. Geometri, teksturer og tre GLB-varianter
 "$MODEL_PY" "$MODEL_SCRIPTS/build_quality.py" --data "$MODEL_DATA" \
   --registration "$MODEL_OUT/registration.json" \
   --config "$MODEL_SCRIPTS/hus_c_quality.json" --output "$MODEL_OUT/model"
 "$MODEL_PY" "$MODEL_SCRIPTS/check_glb.py" "$MODEL_OUT/model/husC-hybrid.glb" \
   --height 22,28 --width 12,20 --depth 20,30
 
-# 5. Stedfesting og redigerbar modellkilde
+# 7. Stedfesting og redigerbar modellkilde. Kjør --building B først og kontrollér mot
+#    63.441359 / 10.440215 / heading 110: et avvik på 180 grader er en fortegnsfeil.
 "$MODEL_PY" "$MODEL_SCRIPTS/georef_building.py" --data "$MODEL_DATA" --building C \
   --output "$MODEL_OUT/georef-C.json"
 /Applications/Blender.app/Contents/MacOS/Blender -b --python "$MODEL_SCRIPTS/blender_quality.py" -- \
   --input "$MODEL_OUT/model/husC-hybrid.glb" --output-dir "$MODEL_OUT/final" \
   --name husC-v1 --radius 62 --camera-height 44 --aim-height 13 --render
 
-# 6. Kilde mot modell i det eksakte kildekameraet
+# 8. Kilde mot modell i det eksakte kildekameraet
 "$MODEL_PY" "$MODEL_SCRIPTS/model_overlay.py" --data "$MODEL_DATA" \
   --config "$MODEL_SCRIPTS/hus_c_quality.json" --glb "$MODEL_OUT/model/husC-hybrid.glb" \
   --output "$MODEL_OUT/overlay" --directions 0,4,16,24,29,36,41,48,53,64,72,77,90 --scale 1.0
 
-# 7. Faktisk Google-kjøring. Dev-server må kjøre på 3002.
+# 9. Faktisk Google-kjøring. Dev-server må kjøre på 3002.
+#    --expect-near-altitude er en påstand om reset-verdien etter rotasjonen, ikke en
+#    kamerainnstilling; feil verdi feiler kjøringen etter 18 sekunder.
 cp -f "$MODEL_OUT/model/husC-hybrid.glb" "$MODEL_REPO/public/models/lillebytunet/husC-v1.glb"
 MODEL_PLAYWRIGHT=/Users/andreasharstad/.npm/_npx/fd3bca3c548369c0/node_modules/playwright/index.mjs
 node "$MODEL_REPO/scripts/lillebytunet/capture-quality.mjs" \
   --base-url http://localhost:3002 --model /models/lillebytunet/husC-v1.glb \
   --output "$MODEL_OUT/google" --playwright "$MODEL_PLAYWRIGHT" \
   --lat 63.441259 --lng 10.440853 --heading 112.4 --dir0bearing 218.4 \
-  --orbit-altitude 29.1 --near-altitude 28.2 --orbit
+  --orbit-altitude 29.1 --expect-near-altitude 28.2 --orbit
 ```
 
 Verktøy ved levering: COLMAP 4.1.1, Blender 5.2.1 LTS, Chrome 152.0.7977.84,
-Python-pakker pinnet i `requirements.txt`. Leverte filer ligger i
+Python-pakker pinnet i `requirements.txt`. `matplotlib` manglet i den filen til
+2026-09-09 og er lagt til; `frame_fit.py` og `massing.py` importerer den, så et nytt miljø
+stoppet på steg 2 uten at det var synlig i det fungerende miljøet. `bpy`/`mathutils` står
+med hensikt ikke der — `blender_quality.py` kjøres inne i Blender. Leverte filer ligger i
 `~/klienter/placy/lillebytunet/hus-c-v1/final/` med `husC-v1.blend` som redigerbar kilde.
 
 ## Nytt kontrollverktøy
@@ -326,12 +374,53 @@ okklusjon, materialkart, eller arkitektens 3D-/BIM-kilde. Høyere oppløsning av
 tildekkede bilde gir ikke de manglende detaljene, og for taket gir ingen oppløsning noe,
 fordi problemet er vinkelen og parapeten.
 
-Hus A og Hus D er ikke modellert. Hus A har innskårne balkonger og en sidefløy; Hus D har
-balkonger rundt flere fasader. Begge trenger egne COLMAP-løsninger, egne veggplan og
-sannsynligvis nye geometri-primitiver — konfigurasjonen alene rekker ikke.
+Hus A og Hus D er ikke modellert, og hva som brekker er nå målt mot koden, ikke antatt.
+Det er tre ulike inngrepsnivåer, og bare det siste er konfigurasjon:
+
+- **L-formen til Hus A treffer datamodellen.** Fotavtrykket er ett rotert rektangel hele
+  veien: `frame_fit.py:76` gir ett rektangel, `rect.npy` er fem tall
+  (`source_geometry.py:55`), `build_quality.py:233` leser fire veggplan, og sokkelplata
+  dekker hele rektangelet (`build_quality.py:306`). Ingen mekanisk sjekk fanger det —
+  en L har samme bounding box som rektangelet den forveksles med (`check_glb.py:55-59`),
+  så feilen dukker først opp i Google, etter at teksturer og balkonger er bygget på feil
+  volum. Fotavtrykket må bli en liste av rektangler før noe annet gjøres.
+- **Innskårne balkonger krever en ny primitiv.** Dekket bygges alltid utover fra
+  veggplanet (`build_quality.py:364,371`), så `front_a` innenfor `a_front` gir
+  `ValueError: Box dimensions must be positive` (`glb_mesh.py:37`) — som leser som en
+  skrivefeil i konfigurasjonen. Og fasaden kan ikke få hull: fronten er én ubrutt quad
+  per nivå (`build_quality.py:247-251`) og `opening()` legger en flate 1 mm foran veggen.
+- **Hus Ds fasetterte hjørne bryter akse-antakelsen.** Alle flater bygges akse-justert i
+  det lokale rammeverket, og `massing.py` måler bare langs a og b. Et skrått plan må
+  måles før det kan bygges.
+
+Begge trenger dessuten egne COLMAP-løsninger, egne veggplan og egen retningsforskyvning.
+
+## Revisjon av denne runden
+
+Etter leveransen ble dokumentene revidert mot faktisk kode av seks uavhengige linser med
+adversariell verifisering: 41 funn kontrollert, 27 bekreftet, 14 forkastet. Tre var
+blokkerende — L-formen og de innskårne balkongene over, og at `matplotlib` manglet i
+`requirements.txt` mens begge rapportene sa miljøet var pinnet der. De øvrige er rettet i
+denne rapporten og i læringen: etasjehøyden har nå én kommando og ett tall,
+okklusjonsbudsjettet er en formel, estimatoren følger flatetypen, gjenbyggingen sier
+hvilke steg den dekker, og `--near-altitude` er omdøpt til `--expect-near-altitude` fordi
+den ikke flyttet kameraet, bare påstanden skriptet sjekker.
+
+## Datagrunnlaget er slettet
+
+`~/klienter/placy/lillebytunet` ble slettet ved et uhell samme dag, etter at leveransen var
+committet. Alle tall, målinger, kontrollbilder og begge modellene i denne rapporten ligger
+i git og er uberørt, men **inputene som produserte dem er borte**: 576 kildebilder, tre
+COLMAP-rekonstruksjoner, `.npy`-rammeverkene og `.blend`-filene. Kjøreoppskriften over kan
+derfor ikke kjøres som den står før datagrunnlaget er bygget opp igjen. Veien tilbake, og
+grensene for den, står i [06-gjenoppbygging.md](06-gjenoppbygging.md). Konsekvensen for
+denne rapporten er én: den byte-identiske reproduksjonen i
+[reproduction.json](hus-c/reproduction.json) kan ikke etterprøves på nytt.
 
 ## Relatert
 
+- [Gjenoppbygging av datagrunnlaget](06-gjenoppbygging.md).
+- [Destruktiv sletting krever eksplisitte stier](../../solutions/workflow-issues/destruktiv-sletting-krever-eksplisitte-stier.md).
 - [Arbeidsmåte for neste bygg og agent](../../solutions/workflow-issues/render-til-byggmodell-krever-visuelle-akseptansekriterier.md)
 - [Hus B: kildevalg, kommandokjede, før/etter og begrensninger](04-kvalitetsrunde.md)
 - [Datagrunnlaget: 576 bilder, API-struktur og negative funn](01-datainnhenting.md)

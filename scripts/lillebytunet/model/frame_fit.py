@@ -100,7 +100,11 @@ def main():
     parser.add_argument('--min-views', type=int, default=2)
     parser.add_argument('--min-fraction', type=float, default=0.5)
     parser.add_argument('--write', action='store_true',
-                        help='write frame.npy/rect.npy into the reconstruction directory')
+                        help='write frame.npy/rect.npy/points.npy into the reconstruction directory')
+    parser.add_argument('--write-points', action='store_true',
+                        help='write only points.npy, expressed in the EXISTING frame.npy. Use this '
+                             'on a delivered building: --write would refit frame.npy/rect.npy and '
+                             'move its model. points.npy is what massing.py and facade_grid.py need.')
     args = parser.parse_args()
 
     directory = args.data/args.colmap
@@ -133,11 +137,25 @@ def main():
                                     p99=float(zhi), range=float(height)),
                   band_fraction=list(args.band), z_peaks_units=peaks)
 
+    if args.write and args.write_points:
+        raise SystemExit('Pass either --write or --write-points, not both')
     if args.write:
         np.save(directory/'frame.npy', np.stack([e1, e2, up, center]))
         np.save(directory/'rect.npy', np.array([theta, *lo, *hi]))
         np.save(directory/'points.npy', local)
         report['written'] = [str(directory/name) for name in ('frame.npy', 'rect.npy', 'points.npy')]
+    elif args.write_points:
+        # Express the points in the frame the delivered model actually uses, so the
+        # measurements downstream agree with the geometry that was exported.
+        existing = np.load(directory/'frame.npy')
+        de1, de2, dup, dcenter = existing
+        delivered = np.stack([(world-dcenter)@de1, (world-dcenter)@de2, (world-dcenter)@dup], axis=1)
+        drift = float(np.linalg.norm(np.stack([e1, e2, up, center])-existing))
+        np.save(directory/'points.npy', delivered)
+        report['written'] = [str(directory/'points.npy')]
+        report['existing_frame_drift'] = drift
+        report['note'] = ('points.npy is in the existing frame.npy, not the freshly fitted one; '
+                          'existing_frame_drift is how far the two frames differ')
 
     if args.checks:
         args.checks.mkdir(parents=True, exist_ok=True)

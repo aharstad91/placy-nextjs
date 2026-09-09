@@ -6,6 +6,67 @@
 
 ---
 
+## 2026-09-09 — HUS C BYGD OG KONTROLLERT, PIPELINEN GJORT BYGGAGNOSTISK, OG DATAMAPPA SLETTET VED ET UHELL
+
+**Kontekst:** worktree `../placy-lillebytunet`, gren `feat/lillebytunet-3d-model`. Oppdraget var «bygg neste bygg og valider at det er like bra som utgangspunkt», etter at Hus B-runden dagen før hadde etterlatt en dokumentert arbeidsmåte i `docs/solutions/workflow-issues/render-til-byggmodell-*`. Fire faser: bygg Hus C, revider dokumentene mot koden, rett funnene — og til slutt en destruktiv feil som må stå i loggen.
+
+### Hus C: `9b9b4e6`
+
+**Pilotbygget ble valgt på tre målinger, ikke på neste bokstav.** Antall enheter med polygon (rekkehuset har 7 mot blokkenes 24–41), byggets medianandel av bildet, og formklassifisering fra fire utsnitt. Hus C vant fordi det testet én ny akse — åtte etasjer og inntrekk i et hjørne — uten samtidig å teste ny balkongtopologi. Hus A har balkonger skåret **inn** i volumet og en sidefløy; Hus D har balkonger rundt flere fasader.
+
+Leveransen: `husC-v1.glb`, 16,08 × 24,89 × 25,75 m, 11 550 trekanter, 20 teksturer, ingen glTF-utvidelser. Kontrollert i 11 faste Google-kameraer, hele 18-sekunders rotasjonen (12 av 12 orbit-bilder jevnt fordelt, ingen hull), og mot kilden i det **eksakte** kildekameraet for 13 retninger. Stedfestet til 63.441259 / 10.440853 med heading 112,4°.
+
+**Den uavhengige bekreftelsen som betyr mest:** oversiktsserien måler Hus C til 25,7 m høy; modellen, bygget fra bygg-c-serien alene, måler 25,75 m. To kjeder som ikke deler noe, med 5 cm avvik.
+
+**Delt kode ble gjort byggagnostisk, og Hus B kom ut byte-identisk etterpå.** Ni filer endret: takoppbygg, pergola, flisstørrelse, gavlåpninger, materialfarger, flate-reparasjoner og per-nivå fasadevalg flyttet fra Python til konfigurasjon; `glb_mesh` fikk nodenavn og flisstørrelse som parametere; `check_glb` fikk målgrenser på CLI (Hus B-grensene avviste Hus Cs 25,75 m); `capture-quality.mjs` og render-riggen fikk plassering og nullpunkt. Alle tre Hus B-GLB-er ble SHA-256-sammenlignet etter hver endring. Det var den billigste garantien i hele runden.
+
+Tre nye byggagnostiske skript måtte skrives, fordi prototypene leste fra arbeidsmappa og bar Hus Bs egne arrays: `frame_fit.py`, `massing.py`, `georef_building.py`. To nye kontrollverktøy: `facade_grid.py` (rektifisert fasade med rutenett) og `model_overlay.py` (rendrer den eksporterte GLB-en gjennom kildekameraet — det fjerner Hus B-rundens forbehold om at original mot Google bare er en tilnærmet retningssammenligning).
+
+**Tre funn som gjelder Hus A og D.** Veggplanet kan ikke leses av punkthistogrammet — Hus Cs gavlvegg lå 64 cm fra den sterkeste toppen, som er omtrent én bin-bredde; det som avgjorde var å tilpasse vindusrytmen til etasjehøyden målt i 3D. Taket kan ikke samples i dette materialet: 7,5° blikkvinkel og 1,17 m parapet skjuler 9 m takflate fra hvert kamera, og et «reint» utsnitt er derfor et anti-signal. Og kontrollverktøyet må selv kontrolleres — den nye rasterizeren speilet teksturene vertikalt, og «feilen» dukket opp som et mørkt nabotak øverst på en vegg.
+
+### En feil i Hus B, funnet av piloten: `e7ed767`
+
+Samme takmåling på Hus B gir (0,34, 0,34, 0,38); den leverte teksturen har median (0,55, 0,53, 0,58) — omtrent 60 % for lys, samme mekanisme. **Ikke rettet, med hensikt:** Hus B er beviset på at refaktoreringen var trygg, og en endring i en levert modell bør være et eget valg. Rettelsen er ett felt i `hus_b_quality.json`.
+
+`occlusion.py`, som ble skrevet senere samme dag, forklarer hvorfor feilen ble subtil: Hus Bs tak er 55,8 % synlig, altså rett over 50 %-terskelen. Hus Cs er 37,5 %.
+
+### Revisjon av egne dokumenter: 27 bekreftede funn
+
+Seks uavhengige linser leste koden mot dokumentasjonen med adversariell verifisering per funn — 41 kontrollert, 27 bekreftet, 14 forkastet. Tre var blokkerende:
+
+1. **L-formen til Hus A treffer datamodellen, ikke bare byggeren.** Fotavtrykket er ett rotert rektangel hele veien, og ingen mekanisk sjekk fanger det, fordi en L har samme bounding box som rektangelet den forveksles med. Feilen ville dukket opp først i Google, etter at teksturer og balkonger var bygget på feil volum.
+2. **Innskårne balkonger feiler som `ValueError: Box dimensions must be positive`** — som leser som en skrivefeil i konfigurasjonen, ikke som «primitiven finnes ikke». Og fasaden kan ikke få hull: fronten er én ubrutt quad og `opening()` legger en flate 1 mm foran veggen.
+3. **`matplotlib` manglet i `requirements.txt`** mens begge rapportene sa at miljøet var pinnet der. Et nytt miljø ville stoppet på steg 2. Rettet.
+
+Resten er rettet i dokumentene og i koden: etasjehøyden har nå én kommando og ett tall (`massing.py --slab-beyond`, som gir 0,240 med spredning 0 for Hus C mot autokorrelasjonens 0,2368, som er kvantisert til histogram-bin); okklusjonsbudsjettet er et skript i stedet for en anekdote; estimatoren følger flatetypen (median for solid flate, mørkeste 15 % for gjennomskinnelig, mål farge for skrapet); `frame_fit.py` fikk `--write-points` så et levert bygg kan måles uten at `frame.npy` tilpasses på nytt og flytter modellen; og `--near-altitude` ble omdøpt til `--expect-near-altitude`, fordi den ikke flyttet kameraet — den flyttet bare påstanden skriptet sjekket, og feil verdi feilet kjøringen etter 18 sekunder.
+
+`CLAUDE.md` peker nå på modellkjeden. Den gjorde ikke det, så en ny sesjon fant ikke læringen.
+
+### Datamappa ble slettet: hva som er tapt og hvordan vi bygger den opp igjen
+
+**`~/klienter/placy/lillebytunet` er borte — 576 kildebilder, tre COLMAP-rekonstruksjoner, alle `.npy`-rammeverk, begge byggs `.blend` og teksturmapper, omtrent 1 GB.** Årsak: en `for`-løkke med `set -- $pair` satte ikke de posisjonelle variablene som antatt, så `rm -rf "$D/$2"` ble `rm -rf "$D/"`. Ingen Time Machine montert, ingen kopi.
+
+**Og kontrollen bestod.** Samme løkke sammenlignet `shasum`-utdata på begge sider; da filene var borte ble begge tomme strenger, og `[ "" = "" ]` er sant. Alle seks GLB-er ble meldt «IDENTISK» i samme sekund som grunnlaget forsvant. To feil på rad: en destruktiv kommando med en variabelsatt sti, og en kontroll som ikke kunne feile.
+
+Ingen leveranse er tapt. Begge modellene, alle skript, alle konfigurasjoner og hele bevismappa med registreringer, målinger og kontrollbilder ligger i git, og demoen svarte 200 på begge GLB-ene etterpå.
+
+**Gjenoppbygging er mulig, og den er planlagt:** `docs/research/lillebytunet-3d/06-gjenoppbygging.md`. Nøkkelen er at COLMAP-løsningen bare skiller seg fra den gamle med en global likhetstransform, og at rammeverket er utledet av kameraposisjonene i samme løsning — rotasjon og translasjon forsvinner altså av seg selv. Bare skalaen står igjen, og den er målbar, fordi orbit-radius (3,744 for C, 3,762 for B), pitch og vinkelsteg ble skrevet til JSON i repoet. Konfigurasjonens koordinater ganges med den faktoren, `scale_m_per_unit` deles på den. Akseptansetesten er ikke hashen, men den leverte GLB-en i git: en gjenoppbygd modell er god nok når punktene faller sammen med den.
+
+Grensene er ærlige: kildebildene er ikke garantert de samme (API-øyeblikksbildet var fra 8. september og enhetspolygonene følger salgsstatus), `.blend`-filene fra runden er tapt selv om nye kan bygges fra GLB-ene, og **den byte-identiske reproduksjonen som ble dokumentert i dag kan ikke demonstreres på nytt.**
+
+Læring: `docs/solutions/workflow-issues/destruktiv-sletting-krever-eksplisitte-stier.md`.
+
+### Åpent
+
+- **Hus A og D er ikke modellert**, og de to første punktene over må løses før de kan bli det.
+- **Hus Bs takfarge er kjent gal og ikke rettet.** Ett felt.
+- **Gjenoppbyggingen er ikke kjørt.** Steg 9 — `.blend` fra GLB — kan gjøres uten noe av det som ble slettet.
+- **Retningsforskyvningen mot oversiktsserien har ikke noe skript**; den måles ad hoc med SIFT.
+- **Riggens avstand og siktehøyde er Hus Bs**, så render-visningene beskjærer et høyere bygg.
+- **Ingen visning har mer enn én modell i kartet samtidig.** Hus A er nærmeste nabo til Hus B, så det blir aktuelt.
+
+---
+
 ## 2026-09-08 — FRA OMRISS TIL MODELL: ETASJER, GRUNN, GATER OG EN TOMT SOM BLE RYDDET
 
 **Kontekst:** fortsettelse av samme arbeid i worktree `../placy-wesselslokka-building-masses`, gren `feat/wesselslokka-building-masses`. Forrige økt endte med 55 stadfestede volumer som alle sto på anslåtte 12–14 m, i rosa, oppå fotofliser av dagens Brøset. Fem runder til, nummerert videre fra de to i forrige entry.

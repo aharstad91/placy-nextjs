@@ -1,0 +1,66 @@
+{
+  "colmap": "colmap-c",
+  "config": "hus_c_quality.json",
+  "scale_m_per_unit": 12.766,
+  "orbit": {
+    "radius_units": 3.72703513459063,
+    "radius_m": 47.6,
+    "camera_z_units": -0.00012669548448451806
+  },
+  "sample_floor": 0.5,
+  "surfaces": [
+    {
+      "surface": "lower_deck",
+      "kind": "horizontal",
+      "grazing_deg": 14.59,
+      "camera_above_m": 12.38,
+      "upstand_m": 1.17,
+      "hidden_depth_m": 4.51,
+      "extent_m": [
+        13.85,
+        4.85
+      ],
+      "visible_fraction": 0.07,
+      "verdict": "measure a flat colour; a rectified patch here is not this surface"
+    },
+    {
+      "surface": "middle_deck",
+      "kind": "horizontal",
+      "grazing_deg": 11.08,
+      "camera_above_m": 9.32,
+      "upstand_m": 1.17,
+      "hidden_depth_m": 6.0,
+      "extent_m": [
+        13.85,
+        3.96
+      ],
+      "visible_fraction": 0.0,
+      "verdict": "measure a flat colour; a rectified patch here is not this surface"
+    },
+    {
+      "surface": "upper_deck",
+      "kind": "horizontal",
+      "grazing_deg": 7.49,
+      "camera_above_m": 6.25,
+      "upstand_m": 1.17,
+      "hidden_depth_m": 8.94,
+      "extent_m": [
+        13.85,
+        14.3
+      ],
+      "visible_fraction": 0.375,
+      "verdict": "measure a flat colour; a rectified patch here is not this surface"
+    },
+    {
+      "surface": "front_wall_behind_balconies",
+      "kind": "vertical",
+      "grazing_deg": 22.84,
+      "projection_m": 2.17,
+      "rail_m": 1.05,
+      "hidden_height_m": 1.96,
+      "storey_m": 3.06,
+      "visible_fraction": 0.359,
+      "verdict": "project the source only where a storey is unoccluded; elsewhere use clean cladding plus traced openings, never the occluded projection"
+    }
+  ]
+}

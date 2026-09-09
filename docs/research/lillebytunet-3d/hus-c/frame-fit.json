@@ -56,18 +56,18 @@
     -0.6553761565650218
   ],
   "written": [
-    "/Users/andreasharstad/klienter/placy/lillebytunet/colmap-c/frame.npy",
-    "/Users/andreasharstad/klienter/placy/lillebytunet/colmap-c/rect.npy",
     "/Users/andreasharstad/klienter/placy/lillebytunet/colmap-c/points.npy"
   ],
+  "existing_frame_drift": 0.0,
+  "note": "points.npy is in the existing frame.npy, not the freshly fitted one; existing_frame_drift is how far the two frames differ",
   "checks": [
-    "/private/tmp/claude-501/-Users-andreasharstad-Documents-placy-lillebytunet/f57d98c1-3b45-4d8e-8713-ef7f326b2c2b/scratchpad/checks-c/box-000.jpg",
-    "/private/tmp/claude-501/-Users-andreasharstad-Documents-placy-lillebytunet/f57d98c1-3b45-4d8e-8713-ef7f326b2c2b/scratchpad/checks-c/box-012.jpg",
-    "/private/tmp/claude-501/-Users-andreasharstad-Documents-placy-lillebytunet/f57d98c1-3b45-4d8e-8713-ef7f326b2c2b/scratchpad/checks-c/box-024.jpg",
-    "/private/tmp/claude-501/-Users-andreasharstad-Documents-placy-lillebytunet/f57d98c1-3b45-4d8e-8713-ef7f326b2c2b/scratchpad/checks-c/box-036.jpg",
-    "/private/tmp/claude-501/-Users-andreasharstad-Documents-placy-lillebytunet/f57d98c1-3b45-4d8e-8713-ef7f326b2c2b/scratchpad/checks-c/box-048.jpg",
-    "/private/tmp/claude-501/-Users-andreasharstad-Documents-placy-lillebytunet/f57d98c1-3b45-4d8e-8713-ef7f326b2c2b/scratchpad/checks-c/box-060.jpg",
-    "/private/tmp/claude-501/-Users-andreasharstad-Documents-placy-lillebytunet/f57d98c1-3b45-4d8e-8713-ef7f326b2c2b/scratchpad/checks-c/box-072.jpg",
-    "/private/tmp/claude-501/-Users-andreasharstad-Documents-placy-lillebytunet/f57d98c1-3b45-4d8e-8713-ef7f326b2c2b/scratchpad/checks-c/box-084.jpg"
+    "/Users/andreasharstad/Documents/placy-lillebytunet/docs/research/lillebytunet-3d/hus-c/model-check/box-000.jpg",
+    "/Users/andreasharstad/Documents/placy-lillebytunet/docs/research/lillebytunet-3d/hus-c/model-check/box-012.jpg",
+    "/Users/andreasharstad/Documents/placy-lillebytunet/docs/research/lillebytunet-3d/hus-c/model-check/box-024.jpg",
+    "/Users/andreasharstad/Documents/placy-lillebytunet/docs/research/lillebytunet-3d/hus-c/model-check/box-036.jpg",
+    "/Users/andreasharstad/Documents/placy-lillebytunet/docs/research/lillebytunet-3d/hus-c/model-check/box-048.jpg",
+    "/Users/andreasharstad/Documents/placy-lillebytunet/docs/research/lillebytunet-3d/hus-c/model-check/box-060.jpg",
+    "/Users/andreasharstad/Documents/placy-lillebytunet/docs/research/lillebytunet-3d/hus-c/model-check/box-072.jpg",
+    "/Users/andreasharstad/Documents/placy-lillebytunet/docs/research/lillebytunet-3d/hus-c/model-check/box-084.jpg"
   ]
 }

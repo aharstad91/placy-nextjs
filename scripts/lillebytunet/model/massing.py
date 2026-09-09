@@ -1,8 +1,13 @@
 """Measure a building's massing from its own point cloud in the fitted local frame.
 
-Produces the numbers the geometry config needs — storey heights, setback positions
-along the long axis, wall planes, ground level — as measurements with plots to check
+Produces the numbers the geometry config needs — storey height, setback positions along
+the long axis, approximate wall bands, ground level — as measurements with plots to check
 them against, instead of values read off a render by eye.
+
+Two caveats the output repeats. The storey height must come from --slab-beyond, not from
+the whole-cloud autocorrelation, which is quantised to the histogram bin. And the wall
+bands here are histogram flanks, not wall planes: fit the plane with facade_grid.py by
+matching the window rhythm to the measured storey height.
 
 Reads frame.npy/rect.npy/points.npy written by frame_fit.py. Writes nothing into the
 reconstruction; plots and JSON go to --output.
@@ -31,9 +36,20 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--data', type=Path, required=True)
     parser.add_argument('--colmap', required=True)
-    parser.add_argument('--scale', type=float, required=True, help='metres per COLMAP unit')
+    parser.add_argument('--scale', type=float, required=True,
+                        help='metres per COLMAP unit, from the overview registration. Every other '
+                             'number here is scale-free, so a placeholder is safe if the '
+                             'registration has not been run yet')
     parser.add_argument('--output', type=Path, required=True)
     parser.add_argument('--slices', type=int, default=8, help='height slices for the plan plots')
+    parser.add_argument('--slab-beyond', type=float,
+                        help='local a beyond which points are balcony fronts or deck edges; '
+                             'their height peaks are the storey signature and the primary answer')
+    parser.add_argument('--slab-bin', type=float, default=0.02,
+                        help='histogram bin for the slab peaks, in local units')
+    parser.add_argument('--slab-min-gap', type=float, default=0.10,
+                        help='minimum separation between accepted slab peaks, in local units; '
+                             'a slab often produces two adjacent bins and the pair must be merged')
     args = parser.parse_args()
 
     directory = args.data/args.colmap
@@ -56,15 +72,59 @@ def main():
                          range_m=float((zhi-zlo)*args.scale)),
                   a_wall_units=edges(a, 0.02, 0.98), b_wall_units=edges(b, 0.02, 0.98))
 
-    # Storey signature: autocorrelation of the height histogram gives the spacing
-    # without assuming a storey height.
+    # Storey signature. Two estimators, and they are not interchangeable.
+    #
+    # The whole-cloud autocorrelation below is quantised to the histogram bin and mixes
+    # every surface in the cloud, so it lands within a bin or two of the truth and can
+    # never return a value off the bin grid. Use it only as a sanity check.
+    #
+    # The primary answer comes from the slab peaks: points beyond --slab-beyond are
+    # balcony fronts and deck edges, which sit exactly at floor level and produce sharp,
+    # well separated peaks. That is the measurement the geometry config must use.
     signal = counts-counts.mean()
     correlation = np.correlate(signal, signal, mode='full')[len(signal)-1:]
     step = float(boundary[1]-boundary[0])
     window = correlation[3:int(0.6/step)] if int(0.6/step) > 4 else correlation[3:]
     lag = int(np.argmax(window))+3
-    report['storey_units'] = lag*step
-    report['storey_m'] = lag*step*args.scale
+    report['storey_autocorrelation'] = dict(
+        units=lag*step, m=lag*step*args.scale, bin_units=step,
+        caveat='quantised to bin_units and computed over every point; sanity check only')
+
+    if args.slab_beyond is not None:
+        slab = z[a > args.slab_beyond]
+        bins = np.arange(zlo-args.slab_bin, zhi+2*args.slab_bin, args.slab_bin)
+        heights, edge = np.histogram(slab, bins=bins)
+        mid = (edge[:-1]+edge[1:])/2
+        floor = max(4, heights.max()*0.25)
+        raw = [i for i in range(1, len(heights)-1)
+               if heights[i] >= floor and heights[i] >= heights[i-1]
+               and heights[i] > heights[i+1]]
+        # One slab often lights up two adjacent bins. Keep the taller of any pair closer
+        # than --slab-min-gap, or the spurious 2 cm gap becomes the reported storey.
+        kept = []
+        for i in sorted(raw, key=lambda i: -heights[i]):
+            if all(abs(mid[i]-mid[j]) >= args.slab_min_gap for j in kept):
+                kept.append(i)
+        peaks = sorted(float(mid[i]) for i in kept)
+        gaps = np.diff(peaks) if len(peaks) > 1 else np.array([])
+        # A level without a balcony leaves a gap of two storeys, so use the median of the
+        # gaps that are not multiples, never the mean.
+        storey = float(np.median(gaps[gaps < 1.6*np.median(gaps)])) if len(gaps) else None
+        report['storey_slabs'] = dict(
+            beyond_a=args.slab_beyond, bin_units=args.slab_bin,
+            min_gap_units=args.slab_min_gap, points=int(len(slab)),
+            peaks_units=peaks, gaps_units=gaps.tolist(),
+            spread_units=float(gaps.max()-gaps.min()) if len(gaps) else None,
+            units=storey, m=storey*args.scale if storey else None,
+            caveat='check gaps_units and spread_units; a wide spread means the peaks are '
+                   'not all slabs')
+        if storey:
+            report['storey_units'] = storey
+            report['storey_m'] = storey*args.scale
+    else:
+        report['storey_units'] = lag*step
+        report['storey_m'] = lag*step*args.scale
+        report['storey_source'] = 'autocorrelation only; pass --slab-beyond for the primary answer'
 
     # Where does the mass end at each height? Slices along the long axis show the
     # setbacks and which end they are on.

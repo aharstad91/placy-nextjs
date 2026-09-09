@@ -5,6 +5,8 @@
  *   --model /models/lillebytunet/husB-before.glb --output /absolute/output \
  *   --playwright /absolute/node_modules/playwright/index.mjs
  * Optional: --views n,near,render-0 --settle-ms 5000 --orbit
+ * Per building: --lat --lng --heading --dir0bearing --orbit-altitude
+ *   --expect-near-altitude is an assertion on the post-orbit reset, not a camera setting.
  * A successful GLB response is recorded separately from element attachment and
  * visual evidence. Neither network success nor a screenshot proves correctness.
  */
@@ -23,7 +25,10 @@ const { values } = parseArgs({ options: {
   lat: { type: 'string', default: '63.441359' }, lng: { type: 'string', default: '10.440215' },
   heading: { type: 'string', default: '115' },
   'orbit-altitude': { type: 'string', default: '26.2' },
-  'near-altitude': { type: 'string', default: '28.2' },
+  // Not a setting: this is the aim altitude the near preset is EXPECTED to reset to
+  // after the orbit. The demo derives the real value from the ground constant plus the
+  // preset's aim height; use ?calt= to move it. A wrong value here fails the run late.
+  'expect-near-altitude': { type: 'string', default: '28.2' },
   'dir0bearing': { type: 'string' },
 } });
 if (!values['base-url'] || !values.model || !values.output) {
@@ -44,9 +49,9 @@ for (const [key, value] of Object.entries(placement)) {
   }
 }
 const orbitAltitude = Number(values['orbit-altitude']);
-const nearAltitude = Number(values['near-altitude']);
-if (!Number.isFinite(orbitAltitude) || !Number.isFinite(nearAltitude)) {
-  throw new Error('--orbit-altitude and --near-altitude must be numbers');
+const expectedNearAltitude = Number(values['expect-near-altitude']);
+if (!Number.isFinite(orbitAltitude) || !Number.isFinite(expectedNearAltitude)) {
+  throw new Error('--orbit-altitude and --expect-near-altitude must be numbers');
 }
 const viewIds = ['n', 'e', 's', 'w', 'mid', 'near',
   'render-0', 'render-24', 'render-36', 'render-48', 'render-72'];
@@ -64,7 +69,7 @@ page.on('console', message => {
 });
 const report = { capturedAt: new Date().toISOString(), baseUrl: values['base-url'],
   model: values.model, viewport, deviceScaleFactor: 1, placement,
-  orbitAltitude, nearAltitude, dir0bearing: values.dir0bearing ?? 'default (Hus B, 222)',
+  orbitAltitude, expectedNearAltitude, dir0bearing: values.dir0bearing ?? 'default (Hus B, 222)',
   browser: browser.version(), settleMs, screenshotFormat: 'jpeg', screenshotQuality: 90, views: [], errors,
   caveats: ['Google phototiles and lighting can change between sessions.',
     'Render-rig direction is approximate; FOV is not calibrated to original renders.',
@@ -158,7 +163,7 @@ try {
     });
     const reset = report.orbit.presetReset;
     if (reset.heading !== 25 || reset.tilt !== 60 || reset.range !== 65 ||
-        reset.altitude !== nearAltitude) {
+        reset.altitude !== expectedNearAltitude) {
       throw new Error(`Preset did not reset after orbit: ${JSON.stringify(reset)}`);
     }
   }
