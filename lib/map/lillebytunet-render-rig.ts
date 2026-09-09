@@ -25,9 +25,17 @@ const RIG = {
   cameraHeightMeters: 25,
   /** Siktepunktets høyde over bakken, midt på fasaden. */
   aimHeightMeters: 8,
-  /** Kameraets bearing fra bygget ved scene 0; hvert steg dreier −3,75°. */
-  bearingAtDirZero: 222,
 } as const;
+
+/**
+ * Kameraets bearing fra bygget ved scene 0; hvert steg dreier −3,75°.
+ *
+ * Nullpunktet er per serie, ikke per prosjekt: boligvelgeren gir hver bygningsserie
+ * sin egen `direction 0`. Hus B måler 222°. Hus C måler 218° av samme regnestykke
+ * — kameraets asimut i byggets eget COLMAP-rammeverk, lagt på fasadens målte
+ * bearing — og den utledningen gjenskaper Hus Bs 222° innen 3°.
+ */
+export const RENDER_BEARING_AT_DIR_ZERO = { husB: 222, husC: 218.4 } as const;
 
 export const RENDER_DEGREES_PER_STEP = 360 / RENDER_SCENE_COUNT;
 
@@ -57,10 +65,13 @@ export interface RenderRigCamera {
 }
 
 /** Kameraet for én scene i serien. `dir` er 0–95. */
-export function renderRigCamera(dir: number): RenderRigCamera {
+export function renderRigCamera(
+  dir: number,
+  bearingAtDirZero: number = RENDER_BEARING_AT_DIR_ZERO.husB,
+): RenderRigCamera {
   const rise = RIG.cameraHeightMeters - RIG.aimHeightMeters;
   const cameraBearing =
-    (RIG.bearingAtDirZero - RENDER_DEGREES_PER_STEP * dir + 360) % 360;
+    (bearingAtDirZero - RENDER_DEGREES_PER_STEP * dir + 360) % 360;
   return {
     // Kameraet ser mot bygget, altså motsatt vei av der det står.
     heading: (cameraBearing + 180) % 360,

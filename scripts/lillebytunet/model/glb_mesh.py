@@ -7,9 +7,12 @@ import numpy as np
 
 
 class Mesh:
-    def __init__(self):
+    def __init__(self, name='Hus B', cladding_tile=(1.36, .99)):
         self.groups = {}
         self.materials = {}
+        # The cladding material is tiled by real size, so the tile is per building.
+        self.name = name
+        self.cladding_tile = cladding_tile
 
     def material(self, name, color=(1, 1, 1), texture=None):
         self.materials[name] = dict(color=color, texture=texture)
@@ -43,16 +46,17 @@ class Mesh:
         ]:
             if material == 'cladding':
                 p=np.array(face)
-                u=np.linalg.norm(p[1]-p[0])/1.36
-                v=np.linalg.norm(p[3]-p[0])/.99
+                u=np.linalg.norm(p[1]-p[0])/self.cladding_tile[0]
+                v=np.linalg.norm(p[3]-p[0])/self.cladding_tile[1]
                 self.quad(face,material,[(0,v),(u,v),(u,0),(0,0)])
             else:
                 self.quad(face, material)
 
     def write(self, path, lighting='hybrid'):
         path = Path(path)
-        document = dict(asset=dict(version='2.0', generator='Placy Hus B source-based reconstruction'),
-                        scene=0, scenes=[dict(nodes=[0])], nodes=[dict(mesh=0, name='Hus B')],
+        document = dict(asset=dict(version='2.0',
+                                   generator=f'Placy {self.name} source-based reconstruction'),
+                        scene=0, scenes=[dict(nodes=[0])], nodes=[dict(mesh=0, name=self.name)],
                         meshes=[dict(primitives=[])], buffers=[], bufferViews=[], accessors=[],
                         materials=[], textures=[], images=[], samplers=[dict(magFilter=9729, minFilter=9987)])
         binary = bytearray()

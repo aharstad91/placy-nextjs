@@ -1,0 +1,651 @@
+{
+  "name": "husC",
+  "model_name": "Hus C",
+  "colmap": "colmap-c",
+  "series": "bygg-c",
+  "scale_m_per_unit": 12.766,
+  "origin_z": -2.41,
+  "walls": {
+    "a_back": -0.625,
+    "a_front": 0.46,
+    "b_start": -0.88,
+    "b_end": 0.93
+  },
+  "levels": [
+    {
+      "name": "lower",
+      "b_start": -0.88,
+      "floor": -2.41,
+      "roof": -0.97,
+      "rim": -0.878
+    },
+    {
+      "name": "middle",
+      "b_start": -0.5,
+      "floor": -0.97,
+      "roof": -0.73,
+      "rim": -0.638
+    },
+    {
+      "name": "upper",
+      "b_start": -0.19,
+      "floor": -0.73,
+      "roof": -0.49,
+      "rim": -0.398,
+      "front_mode": "source"
+    }
+  ],
+  "parapet_thickness_m": 0.18,
+  "texture_pixels_per_meter": 45,
+  "cladding_tile_m": [
+    1.15,
+    1.53
+  ],
+  "source_cameras": {
+    "back": 53,
+    "front": 4,
+    "end": 77,
+    "flush_end": 29,
+    "roof_overview": 65
+  },
+  "material_samples": {
+    "cladding": {
+      "source": "front",
+      "a": "a_front",
+      "b": [
+        0.16,
+        0.25
+      ],
+      "z": [
+        -0.68,
+        -0.56
+      ]
+    },
+    "window_single": {
+      "source": "front",
+      "a": "a_front",
+      "b": [
+        0.016,
+        0.103
+      ],
+      "z": [
+        -0.697,
+        -0.514
+      ]
+    },
+    "window_double": {
+      "source": "front",
+      "a": "a_front",
+      "b": [
+        0.496,
+        0.7
+      ],
+      "z": [
+        -0.697,
+        -0.514
+      ]
+    }
+  },
+  "roof_sample": {
+    "color": [
+      0.3,
+      0.31,
+      0.345
+    ]
+  },
+  "roof_upstands": [
+    [
+      -0.6,
+      0.44,
+      -0.5,
+      0.56,
+      -0.44
+    ],
+    [
+      -0.6,
+      0.6,
+      -0.5,
+      0.72,
+      -0.44
+    ],
+    [
+      -0.55,
+      -0.15,
+      -0.28,
+      0.02,
+      -0.468
+    ]
+  ],
+  "pergola": {
+    "a_inset": [
+      0.08,
+      -0.18
+    ],
+    "b_inset": [
+      -0.2,
+      -0.03
+    ],
+    "height": 0.2,
+    "rafters": 14
+  },
+  "level_ends": [
+    {
+      "mode": "source"
+    },
+    {
+      "mode": "clad",
+      "openings": [
+        {
+          "a": [
+            -0.48,
+            0.26
+          ],
+          "z": [
+            0.03,
+            0.19
+          ],
+          "double": true
+        }
+      ]
+    },
+    {
+      "mode": "clad",
+      "openings": [
+        {
+          "a": [
+            -0.48,
+            0.26
+          ],
+          "z": [
+            0.03,
+            0.19
+          ],
+          "double": true
+        }
+      ]
+    }
+  ],
+  "balconies": {
+    "front_a": 0.63,
+    "slab_thickness_m": 0.2,
+    "rail_height_m": 1.05,
+    "front": [
+      {
+        "floor": -2.17,
+        "spans": [
+          [
+            -0.965,
+            -0.64
+          ],
+          [
+            -0.49,
+            -0.185
+          ],
+          [
+            0.02,
+            0.35
+          ],
+          [
+            0.565,
+            0.975
+          ]
+        ]
+      },
+      {
+        "floor": -1.93,
+        "spans": [
+          [
+            -0.97,
+            -0.64
+          ],
+          [
+            -0.29,
+            0.295
+          ],
+          [
+            0.565,
+            0.975
+          ]
+        ]
+      },
+      {
+        "floor": -1.69,
+        "spans": [
+          [
+            -0.97,
+            -0.64
+          ],
+          [
+            -0.49,
+            -0.155
+          ],
+          [
+            0.02,
+            0.295
+          ],
+          [
+            0.6,
+            0.975
+          ]
+        ]
+      },
+      {
+        "floor": -1.45,
+        "spans": [
+          [
+            -0.965,
+            -0.645
+          ],
+          [
+            -0.345,
+            0.32
+          ],
+          [
+            0.6,
+            0.965
+          ]
+        ]
+      },
+      {
+        "floor": -1.21,
+        "spans": [
+          [
+            -0.965,
+            -0.645
+          ],
+          [
+            -0.55,
+            0.02
+          ],
+          [
+            0.625,
+            0.98
+          ]
+        ]
+      },
+      {
+        "floor": -0.97,
+        "spans": [
+          [
+            0.6,
+            0.98
+          ]
+        ]
+      }
+    ],
+    "side_fins": {
+      "width": 0.012,
+      "height": 0.145
+    }
+  },
+  "front_openings": [
+    {
+      "top": -0.796,
+      "bottom": -0.921,
+      "spans": [
+        [
+          -0.27,
+          -0.16
+        ],
+        [
+          -0.15,
+          -0.019
+        ],
+        [
+          0.015,
+          0.102
+        ],
+        [
+          0.293,
+          0.441
+        ],
+        [
+          0.504,
+          0.601
+        ],
+        [
+          0.66,
+          0.86
+        ]
+      ]
+    },
+    {
+      "top": -1.036,
+      "bottom": -1.161,
+      "spans": [
+        [
+          -0.837,
+          -0.634
+        ],
+        [
+          -0.608,
+          -0.525
+        ],
+        [
+          -0.447,
+          -0.315
+        ],
+        [
+          -0.27,
+          -0.16
+        ],
+        [
+          -0.15,
+          -0.019
+        ],
+        [
+          0.015,
+          0.102
+        ],
+        [
+          0.293,
+          0.441
+        ],
+        [
+          0.504,
+          0.601
+        ],
+        [
+          0.66,
+          0.86
+        ],
+        [
+          0.87,
+          0.92
+        ]
+      ]
+    },
+    {
+      "top": -1.276,
+      "bottom": -1.401,
+      "spans": [
+        [
+          -0.837,
+          -0.634
+        ],
+        [
+          -0.608,
+          -0.525
+        ],
+        [
+          -0.447,
+          -0.315
+        ],
+        [
+          -0.27,
+          -0.16
+        ],
+        [
+          -0.15,
+          -0.019
+        ],
+        [
+          0.015,
+          0.102
+        ],
+        [
+          0.293,
+          0.441
+        ],
+        [
+          0.504,
+          0.601
+        ],
+        [
+          0.66,
+          0.86
+        ],
+        [
+          0.87,
+          0.92
+        ]
+      ]
+    },
+    {
+      "top": -1.516,
+      "bottom": -1.641,
+      "spans": [
+        [
+          -0.837,
+          -0.634
+        ],
+        [
+          -0.608,
+          -0.525
+        ],
+        [
+          -0.447,
+          -0.315
+        ],
+        [
+          -0.27,
+          -0.16
+        ],
+        [
+          -0.15,
+          -0.019
+        ],
+        [
+          0.015,
+          0.102
+        ],
+        [
+          0.293,
+          0.441
+        ],
+        [
+          0.504,
+          0.601
+        ],
+        [
+          0.66,
+          0.86
+        ],
+        [
+          0.87,
+          0.92
+        ]
+      ]
+    },
+    {
+      "top": -1.756,
+      "bottom": -1.881,
+      "spans": [
+        [
+          -0.837,
+          -0.634
+        ],
+        [
+          -0.608,
+          -0.525
+        ],
+        [
+          -0.447,
+          -0.315
+        ],
+        [
+          -0.27,
+          -0.16
+        ],
+        [
+          -0.15,
+          -0.019
+        ],
+        [
+          0.015,
+          0.102
+        ],
+        [
+          0.293,
+          0.441
+        ],
+        [
+          0.504,
+          0.601
+        ],
+        [
+          0.66,
+          0.86
+        ],
+        [
+          0.87,
+          0.92
+        ]
+      ]
+    },
+    {
+      "top": -1.996,
+      "bottom": -2.121,
+      "spans": [
+        [
+          -0.837,
+          -0.634
+        ],
+        [
+          -0.608,
+          -0.525
+        ],
+        [
+          -0.447,
+          -0.315
+        ],
+        [
+          -0.27,
+          -0.16
+        ],
+        [
+          -0.15,
+          -0.019
+        ],
+        [
+          0.015,
+          0.102
+        ],
+        [
+          0.293,
+          0.441
+        ],
+        [
+          0.504,
+          0.601
+        ],
+        [
+          0.66,
+          0.86
+        ],
+        [
+          0.87,
+          0.92
+        ]
+      ]
+    },
+    {
+      "top": -2.236,
+      "bottom": -2.361,
+      "spans": [
+        [
+          -0.837,
+          -0.634
+        ],
+        [
+          -0.608,
+          -0.525
+        ],
+        [
+          -0.447,
+          -0.315
+        ],
+        [
+          -0.27,
+          -0.16
+        ],
+        [
+          -0.15,
+          -0.019
+        ],
+        [
+          0.015,
+          0.102
+        ],
+        [
+          0.293,
+          0.441
+        ],
+        [
+          0.504,
+          0.601
+        ],
+        [
+          0.66,
+          0.86
+        ],
+        [
+          0.87,
+          0.92
+        ]
+      ]
+    }
+  ],
+  "evidence": {
+    "dimensions": "Own COLMAP model of bygg-c (96/96 images registered, PINHOLE f 1213/1220). Local frame and footprint from frame_fit.py; wall planes fitted by matching the facade window rhythm to the 0.240-unit storey spacing measured in the 3D point cloud. Scale 12.766 m/unit from the overview registration (0.36355 x 35.114 m/unit), not from an assumed storey height. Not survey/BIM precision.",
+    "steps": "Two setbacks at the b_start end, at b=-0.500 and b=-0.190, both visible in bygg-c 048-095 and confirmed by point-cloud extents per height slice. Eight storeys: 6 in the main volume plus one per setback. Parapet 0.092 units (1.17 m) matches the measured roof/parapet edges at -0.878 and -0.638.",
+    "balconies": "Six deck levels at -2.170 to -0.970, clustered from front-side points (a>0.52) and cross-checked against the rectified a=0.630 plane from bygg-c 004. Corner balconies project past both end walls, as the source shows at the b_start corner. Slab thickness, rail bar spacing and unseen undersides estimated.",
+    "roof": "Roof plane and parapet heights are confirmed by projecting them back onto bygg-c 016: the roof slab and coping outlines land exactly on the source's roof and parapet edges. The membrane itself cannot be sampled: both series graze the roof at 7.5 degrees, and a 1.17 m parapet hides 9 m of roof from every camera, so every rectified patch is a smear of parapet, upstand and sky. It is therefore a measured flat colour, (0.30, 0.31, 0.35) - the median of the dark cluster inside the projected roof quad, consistent within 0.07 across five directions. Two upstands and one low flat structure are placed from the labelled roof grid in bygg-c 016; their positions are within about 1 m and their sizes are estimates.",
+    "hidden_surfaces": "Front-facade window columns traced on the unoccluded storeys 6-7 and repeated downward, where balconies, furniture and planting hide the wall. The top volume's front is the projected source instead, since no balcony occludes it. Clean plaster replaces occluders rather than projecting them. On the terrace-end wall two strips repeat clean material: the front 2.2 m where the corner balconies cross the camera, and the lowest 1.8 m where a neighbouring roof does. Ground-level terraces, entrance details and planting are omitted.",
+    "terrace_source": "bygg-c 056-095; deck and pergola read at the b_start end",
+    "openings_source": "bygg-c 004 rectified using COLMAP; window columns read on storeys 6-8 where the wall is unoccluded",
+    "balcony_source": "bygg-c 004/090 plus per-level point clusters",
+    "materials": "Balcony slab edge measured as the median of a 20 cm band on the a=0.630 plane, which camera 004 faces almost head-on: (0.49, 0.45, 0.38). The balustrade is see-through, so its median reads the furniture behind it; the bars are the darkest 15 percent of the railing band, (0.30, 0.26, 0.22). Terrace deck, roof upstand and balcony soffit are explicit colour estimates, because both series graze those planes and a sample there reads the wall behind rather than the surface. Coping is measured on a grazed plane, so treat it as indicative.",
+    "registration_use": "The overview registration is not used to sample any surface on Hus C - every projected texture comes from bygg-c itself. It sets the metric scale: 0.36355 overview units per building unit times 35.114 m per overview unit gives 12.766 m per building unit, which the 0.240-unit storey spacing then reads as 3.06 m.",
+    "known_deviations": "The setback terrace fronts are a four-pane glazed band between plaster piers; the source has a near-continuous glass wall with slim mullions and one solid section. Terrace parapets carry a coping but no separate handrail. Pergola slat count and depth are estimates. Ground-level terraces, planting, furniture and the entrance canopy are omitted."
+  },
+  "surface_repairs": {
+    "lower_end": [
+      {
+        "axis": "a",
+        "beyond": 0.29,
+        "repeat_from": 0.285,
+        "period": 0.05
+      },
+      {
+        "axis": "z",
+        "below": -2.19,
+        "repeat_from": -2.16,
+        "period": 0.04
+      }
+    ]
+  },
+  "tile_openings": true,
+  "material_colors": {
+    "concrete": [
+      0.492,
+      0.447,
+      0.382
+    ],
+    "rail": [
+      0.303,
+      0.262,
+      0.221
+    ],
+    "coping": [
+      0.62,
+      0.569,
+      0.492
+    ],
+    "roof_upstand": [
+      0.66,
+      0.66,
+      0.66
+    ],
+    "terrace_deck": [
+      0.62,
+      0.6,
+      0.55
+    ],
+    "soffit": [
+      0.55,
+      0.54,
+      0.51
+    ]
+  }
+}

@@ -1,0 +1,42 @@
+{
+  "building": "Hus C",
+  "chain": "colmap-c (COLMAP 4.1.1) -> frame_fit.py -> massing.py -> register_sources.py -> build_quality.py -> check_glb.py -> blender_quality.py",
+  "note": "No prior model of Hus C existed, so this first volume is the baseline for later comparison.",
+  "full_chain_rebuild": {
+    "directory": "/Users/andreasharstad/klienter/placy/lillebytunet/hus-c-v1/reproduction",
+    "registration_identical": true,
+    "glb_identical": {
+      "husC-emissive.glb": true,
+      "husC-pbr.glb": true,
+      "husC-hybrid.glb": true
+    }
+  },
+  "evidence_only_rebuild": {
+    "note": "Rebuilt again after only evidence text changed; all three GLBs stayed byte-identical.",
+    "glb_identical": {
+      "husC-emissive.glb": true,
+      "husC-pbr.glb": true,
+      "husC-hybrid.glb": true
+    }
+  },
+  "delivered": {
+    "path": "public/models/lillebytunet/husC-v1.glb",
+    "sha256": "109fab8f52de0d9476a7caa2ee69711e711ca3e9a6aba66dc7ff824eb37f36d9",
+    "bytes": 1239388
+  },
+  "hus_b_regression": {
+    "note": "The shared code became building-agnostic in this round. Hus B was rebuilt from its unchanged config after every change.",
+    "glb_identical": {
+      "husB-hybrid.glb": true
+    },
+    "registration_identical": true
+  },
+  "untouched": [
+    "renders/ (576 source images)",
+    "colmap-b/",
+    "colmap-ov/",
+    "quality-v2/final/",
+    "public/models/lillebytunet/husB-v2.glb",
+    "public/models/lillebytunet/husB.glb"
+  ]
+}

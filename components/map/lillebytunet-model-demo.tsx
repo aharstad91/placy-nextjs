@@ -45,10 +45,12 @@ export interface LillebytunetModelDemoProps {
   cameraPresetId: string | null;
   /** Overstyrer siktepunktets høyde i meter over havet. */
   aimAltitudeOverride: number | null;
+  /** Kameraets bearing fra bygget ved scene 0. Per bygningsserie. */
+  rigBearingAtDirZero: number;
 }
 
-function renderPreset(dir: number): CameraPreset {
-  const rig = rigCamera(dir);
+function renderPreset(dir: number, bearingAtDirZero: number): CameraPreset {
+  const rig = rigCamera(dir, bearingAtDirZero);
   return {
     id: `render-${dir}`,
     label: `Render dir ${dir}`,
@@ -178,10 +180,12 @@ export function LillebytunetModelDemo({
   renderDir,
   cameraPresetId,
   aimAltitudeOverride,
+  rigBearingAtDirZero,
   ...model
 }: LillebytunetModelDemoProps) {
   const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
-  const renderCamera = renderDir === null ? null : renderPreset(renderDir);
+  const renderCamera =
+    renderDir === null ? null : renderPreset(renderDir, rigBearingAtDirZero);
   const [camera, setCamera] = useState<CameraPreset>(
     renderCamera ??
       CAMERA_PRESETS.find((preset) => preset.id === cameraPresetId) ??

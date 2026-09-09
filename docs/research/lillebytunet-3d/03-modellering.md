@@ -180,7 +180,9 @@ georeferering (se `02-kartintegrasjon.md`).
 3. Tak-tekstur fra oversiktsserien.
 4. Automatisering på tvers av prosjekter: alt over er skript, men kameravalg og
    toppetasje-inntrekk ble vurdert visuelt. Neste bygg (Hus A/C/D) er testen på hvor mye som
-   må håndjusteres.
+   må håndjusteres. **Besvart for Hus C i [05-hus-c.md](05-hus-c.md):** kjeden holdt, men
+   fire ledd var Hus B-spesifikke i koden og tre ledd måtte skrives nye. Hus A og D
+   gjenstår, og begge har balkongtopologi som konfigurasjonen alene ikke dekker.
 
 ## Verifisering i Google Maps 3D (utført, ikke bare eksportert)
 
@@ -227,7 +229,8 @@ Bildesett, COLMAP-databaser og modellkilde ligger utenfor git (~1 GB); re-hentes
 - **Teknisk mulig:** ja, bevist på Hus B. Renders er ideelt SfM-materiale (0,4 px feil,
   100 % registrering), og turntable-geometrien er så regelmessig at kameraet kan
   parametriseres med fire tall.
-- **Praktisk med noe bearbeiding:** ja. Manuelle valg på Hus B: bounding-bokser for
+- **Praktisk med noe bearbeiding:** ja. Hus C er senere gjort med samme kjede, se
+[05-hus-c.md](05-hus-c.md). Manuelle valg på Hus B: bounding-bokser for
   naboblokkene i georef, tolkning av toppetasjens inntrekk, kameravalg per fasade (alle tre
   var visuelle vurderinger på under ti minutter til sammen). Resten er skript.
 - **Pålitelig automatiserbart på tvers av prosjekter:** ikke ennå. Det som må generaliseres:

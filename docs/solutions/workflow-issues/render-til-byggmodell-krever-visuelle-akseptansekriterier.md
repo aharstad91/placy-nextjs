@@ -11,6 +11,7 @@ applies_when:
   - "Modellarbeidet overføres til en annen agent eller språkmodell."
   - "En fungerende eksport mangler dokumentert visuell kvalitet."
 tags: [3d-modeling, architectural-renders, google-maps, visual-validation, agent-handoff, colmap, gltf, workflow]
+updated: 2026-09-09
 ---
 
 # Fra arkitekturrender til byggmodell
@@ -28,6 +29,38 @@ det gjennomførte eksemplet med kommandoer, bilder og målinger. Denne læringen
 arbeidskravene når metoden overføres til neste bygg. Uten dem kan en ny agent gjenbruke
 kode som virker, men samtidig arve feil mål, kameraretninger og stoppkriterier.
 
+## Pilotresultat: Hus C er gjennomført
+
+Metoden er kjørt én gang etter denne beskrivelsen. Se
+[Hus C-rapporten](../../research/lillebytunet-3d/05-hus-c.md) for tall, bilder og
+restavvik. Piloten besto: sju kontrollpunkter oppfylt, og Hus B kom ut byte-identisk fra
+sin uendrede konfigurasjon etter at den delte koden ble gjort byggagnostisk.
+
+Fire funn endrer beskrivelsen under, og gjelder for Hus A og D:
+
+1. **Veggplanene kan ikke leses av punkthistogrammet alene.** For Hus C lå gavlveggen
+   0,05 enheter (64 cm) fra histogrammets sterkeste topp. Det som avgjorde, var å
+   rektifisere fasaden fra flere kandidat-avstander og velge den der vindusrytmen blir
+   nøyaktig lik etasjehøyden målt i 3D. Etasjehøyden må derfor måles først, av
+   balkong-/dekkepunktenes høydetopper, ikke antas.
+2. **Taket er utenfor rekkevidde i dette kildematerialet.** Begge seriene ser taket i
+   7,5°, og en parapet på 1,17 m skjuler 9 m takflate fra hvert kamera. Et takutsnitt som
+   «ser reint ut» er sannsynligvis en vegg: første forsøk på Hus C valgte det jevneste av
+   56 kandidatutsnitt og fikk et lyst tak, mens kilden viser mørk membran. Bruk en målt
+   flatfarge — medianen av den mørke klyngen innenfor det projiserte takpolygonet — og
+   oppgi det som måling, ikke tekstur.
+3. **Retningsforskyvningen mot oversiktsserien er per serie, ikke per prosjekt.** Hus B
+   er −10 steg, Hus C er +2. Mål den med SIFT-treff mot alle 96 oversiktsbilder før
+   registreringen; ellers feiler den eller blir dårlig.
+4. **Også kontrollverktøyet må kontrolleres.** Den nye rasterizeren speilet teksturene
+   vertikalt (glTF-ens UV-origo er øverst til venstre), og «feilen» dukket opp som et
+   mørkt nabotak øverst på en vegg. Sammenlign den genererte teksturfilen med hvordan
+   den kommer ut i renderen før du tror på et funn.
+
+Et nytt kontrollverktøy erstatter et forbehold fra Hus B-runden:
+`model_overlay.py` rendrer den eksporterte GLB-en gjennom det eksakte kildekameraet, så
+kilde og modell kan sammenlignes uten synsfeltavvik.
+
 ## Arbeidsmåte
 
 ### Avklar hva som kan gjenbrukes
@@ -39,16 +72,26 @@ Bevar Hus B som regresjonsgrunnlag når felles funksjoner endres.
 | Del | Gjenbruk | Må undersøkes eller tilpasses per bygg |
 |---|---|---|
 | Kameralesing og projeksjon | `source_geometry.py` | PINHOLE, tre innledende sifre i bildenavn, egne kameraer og `frame.npy`/`rect.npy`. Kilde: `scripts/lillebytunet/model/source_geometry.py:16`. |
-| Registrering mellom serier | SIFT, triangulerte trekk, likhetstransform, utelatte kamerapar | `colmap-b`, kamerapar, skala og terskler er byggspesifikke. Kilde: `scripts/lillebytunet/model/register_sources.py:31`. |
-| Geometri og teksturering | Flater, bokser, projeksjon og materialeksport | Fotavtrykk, etasjer, inntrekk, balkonger og vinduer. Materialutsnitt, reparasjonsstripe, endevinduer, pergolaer og takoppbygg ligger delvis i Python. Kilde: `scripts/lillebytunet/model/build_quality.py:100`. |
-| GLB og redigerbar kilde | `glb_mesh.py`, binærkontroll og Blender-import | Kontrollens målgrenser og output-navn er Hus B-spesifikke; akser og bakkenivå må fortsatt verifiseres. Kilder: `scripts/lillebytunet/model/check_glb.py:55`, `scripts/lillebytunet/model/blender_quality.py:21`. |
-| Google-bilder og rotasjon | Faktisk kamera, HTTP-hash, stillbilder, kontinuerlig omløp og reset | Plassering, heading, siktepunkt, avstand og resetverdier. Kilder: `scripts/lillebytunet/capture-quality.mjs:33`, `lib/map/lillebytunet-render-rig.ts:21`. |
+| Rammeverk og fotavtrykk | `frame_fit.py`, byggagnostisk med eksplisitte stier | Høydebåndet for fotavtrykket, og at fotavtrykket inkluderer balkongfronter. |
+| Etasjer, trinn og veggplan | `massing.py` gir målingene | Selve tolkningen. Se punkt 1 i pilotresultatet: veggplanet må tilpasses vindusrytmen. |
+| Registrering mellom serier | `register_sources.py`, nå med `--colmap` og `--pairs` | **Kamerapar-forskyvningen er per serie** (Hus B −10, Hus C +2) og må måles først. |
+| Geometri og teksturering | `build_quality.py`; takoppbygg, pergola, flisstørrelse, gavlåpninger, materialfarger, flate-reparasjoner og per-nivå fasadevalg er nå konfigurasjon | Alle mål. Nye former (L-form, innskårne balkonger, saltak) trenger nye primitiver, ikke bare nye tall. |
+| GLB og redigerbar kilde | `glb_mesh.py` med `name`/flisstørrelse, `check_glb.py --height/--width/--depth`, `blender_quality.py --name/--radius` | Målgrensene og kameraavstanden for kontrollrender må settes per bygg. |
+| Google-bilder og rotasjon | `capture-quality.mjs --lat/--lng/--heading/--dir0bearing/--orbit-altitude`, `renderRigCamera(dir, bearing)` | Plassering, riggens nullpunkt og orbit-høyde. Riggens **avstand** er fortsatt Hus Bs, så et høyere bygg beskjæres i render-visningene. |
+| Stedfesting | `georef_building.py --building A\|B\|C\|D\|R` | Ingenting, men den gjenskaper bare Hus B innen 0,2 m — kontroller det ved hver kjøring. |
+| Kilde mot modell | `model_overlay.py` i eksakt kildekamera | Retningsutvalget. |
 | Før/etter-ark | Likhetskontroll av kamera og plassering | Sammenligneren forventer Hus B-kilder og bestemte visnings-ID-er. Kilde: `scripts/lillebytunet/model/compare_quality.py:14`. |
 
 Hus A har tidligere vært beskrevet som L-formet i punktskyen, mens D er beskrevet som
 høyere enn B i [prototype-rapporten](../../research/lillebytunet-3d/03-modellering.md).
 Dette er forhold neste agent må undersøke i bildene, ikke ferdige parametere.
 En rektangulær volumbygger skal ikke tvinges over et L-formet fotavtrykk.
+
+Kildevurderingen før Hus C-piloten målte begge: **Hus A har balkonger skåret inn i
+volumet og en sidefløy, Hus D har balkonger rundt flere fasader og et fasettert hjørne.**
+Rekkehuset har bare 7 enheter med polygon, og polygon-isoleringen er hele grunnlaget for
+å skille byggets punkter fra nabolagets — velg det sist. Hus C ble valgt fordi det testet
+én ny akse (åtte etasjer, hjørneinntrekk) uten samtidig å teste ny balkongtopologi.
 
 ### Gjennomfør sju kontrollpunkter
 

@@ -1,0 +1,18 @@
+{
+  "file": "/Users/andreasharstad/klienter/placy/lillebytunet/hus-c-v1/final/husC-hybrid.glb",
+  "bytes": 1239388,
+  "triangles": 11550,
+  "materials": 20,
+  "textures": 20,
+  "bounds_min": [
+    -7.879535675048828,
+    -12.382741928100586,
+    0.0
+  ],
+  "bounds_max": [
+    8.202591896057129,
+    12.510957717895508,
+    25.749021530151367
+  ],
+  "extensions": []
+}

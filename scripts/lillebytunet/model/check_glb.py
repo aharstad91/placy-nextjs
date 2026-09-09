@@ -7,7 +7,7 @@ from pathlib import Path
 import numpy as np
 
 
-def check(path):
+def check(path, height=(15, 22), width=(10, 20), depth=(20, 35)):
     content=Path(path).read_bytes()
     magic,version,length=struct.unpack_from('<4sII',content)
     assert magic == b'glTF' and version == 2 and length == len(content), 'Invalid GLB header'
@@ -54,7 +54,9 @@ def check(path):
         assert 0 <= image['bufferView'] < len(doc['bufferViews'])
     points=np.array(all_positions);lo=points.min(0);hi=points.max(0)
     assert abs(lo[2])<.001, 'Ground anchor moved'
-    assert 15 < hi[2] < 22 and 10 < hi[0]-lo[0] < 20 and 20 < hi[1]-lo[1] < 35, 'Unexpected Google Z-up bounds'
+    assert height[0] < hi[2] < height[1], f'Height {hi[2]:.2f} m outside {height}'
+    assert width[0] < hi[0]-lo[0] < width[1], f'Width {hi[0]-lo[0]:.2f} m outside {width}'
+    assert depth[0] < hi[1]-lo[1] < depth[1], f'Depth {hi[1]-lo[1]:.2f} m outside {depth}'
     result=dict(file=str(path),bytes=len(content),triangles=triangles,
                 materials=len(doc['materials']),textures=len(doc.get('textures',[])),
                 bounds_min=lo.tolist(),bounds_max=hi.tolist(),extensions=[])
@@ -65,4 +67,10 @@ def check(path):
 if __name__ == '__main__':
     parser=argparse.ArgumentParser(description=__doc__)
     parser.add_argument('glb',type=Path)
-    check(parser.parse_args().glb)
+    # Expected extents are per building; the defaults are Hus B's.
+    parser.add_argument('--height',default='15,22')
+    parser.add_argument('--width',default='10,20')
+    parser.add_argument('--depth',default='20,35')
+    args=parser.parse_args()
+    span=lambda text: tuple(float(v) for v in text.split(','))
+    check(args.glb,span(args.height),span(args.width),span(args.depth))

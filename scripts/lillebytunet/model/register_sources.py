@@ -27,12 +27,16 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--data', type=Path, required=True)
     parser.add_argument('--output', type=Path, required=True)
+    parser.add_argument('--colmap', default='colmap-b', help='building reconstruction directory')
+    parser.add_argument('--pairs', default='10:0,34:24,58:48,82:72,0:90,24:14',
+                        help='building:overview direction pairs; the offset is series-specific')
+    parser.add_argument('--min-inliers', type=int, default=25)
     args = parser.parse_args()
-    building, bp = read_reconstruction(args.data/'colmap-b')
+    building, bp = read_reconstruction(args.data/args.colmap)
     overview, op = read_reconstruction(args.data/'colmap-ov')
     sift = cv2.SIFT_create(nfeatures=18000)
     pairs, audit = [], []
-    for bdir, odir in [(10, 0), (34, 24), (58, 48), (82, 72), (0, 90), (24, 14)]:
+    for bdir, odir in [tuple(int(v) for v in item.split(':')) for item in args.pairs.split(',')]:
         b, o = building[bdir], overview[odir]
         kb, db = sift.detectAndCompute(cv2.imread(str(b['path']), 0), None)
         ko, do = sift.detectAndCompute(cv2.imread(str(o['path']), 0), None)
@@ -59,7 +63,7 @@ def main():
         mask = np.linalg.norm(s*x@r+t-y, axis=1) < .005
         if mask.sum() > best.sum():
             best = mask
-    if best.sum() < 25:
+    if best.sum() < args.min_inliers:
         raise RuntimeError(f'Unstable registration: only {best.sum()} inliers')
     s, r, t = similarity(x[best], y[best])
     residual = np.linalg.norm(s*x@r+t-y, axis=1)

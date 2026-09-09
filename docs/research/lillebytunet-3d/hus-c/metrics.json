@@ -1,0 +1,23 @@
+{
+  "emissive": {
+    "bytes": 1239268,
+    "triangles": 11550,
+    "materials": 20,
+    "textures": 20,
+    "lighting": "emissive"
+  },
+  "pbr": {
+    "bytes": 1238660,
+    "triangles": 11550,
+    "materials": 20,
+    "textures": 20,
+    "lighting": "pbr"
+  },
+  "hybrid": {
+    "bytes": 1239388,
+    "triangles": 11550,
+    "materials": 20,
+    "textures": 20,
+    "lighting": "hybrid"
+  }
+}

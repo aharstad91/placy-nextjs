@@ -19,6 +19,12 @@ const { values } = parseArgs({ options: {
   output: { type: 'string' }, playwright: { type: 'string' },
   views: { type: 'string' }, 'settle-ms': { type: 'string', default: '5000' },
   orbit: { type: 'boolean', default: false },
+  // Placement is per building; the defaults are Hus B's.
+  lat: { type: 'string', default: '63.441359' }, lng: { type: 'string', default: '10.440215' },
+  heading: { type: 'string', default: '115' },
+  'orbit-altitude': { type: 'string', default: '26.2' },
+  'near-altitude': { type: 'string', default: '28.2' },
+  'dir0bearing': { type: 'string' },
 } });
 if (!values['base-url'] || !values.model || !values.output) {
   throw new Error('--base-url, --model and --output are required; see script header.');
@@ -30,8 +36,18 @@ const { chromium } = await import(values.playwright
 const output = resolve(values.output);
 await mkdir(output, { recursive: true });
 const viewport = { width: 1920, height: 1080 };
-const placement = { lat: 63.441359, lng: 10.440215, heading: 115,
-  alt: 0, altmode: 'CLAMP_TO_GROUND', scale: 1 };
+const placement = { lat: Number(values.lat), lng: Number(values.lng),
+  heading: Number(values.heading), alt: 0, altmode: 'CLAMP_TO_GROUND', scale: 1 };
+for (const [key, value] of Object.entries(placement)) {
+  if (typeof value === 'number' && !Number.isFinite(value)) {
+    throw new Error(`--${key} must be a number`);
+  }
+}
+const orbitAltitude = Number(values['orbit-altitude']);
+const nearAltitude = Number(values['near-altitude']);
+if (!Number.isFinite(orbitAltitude) || !Number.isFinite(nearAltitude)) {
+  throw new Error('--orbit-altitude and --near-altitude must be numbers');
+}
 const viewIds = ['n', 'e', 's', 'w', 'mid', 'near',
   'render-0', 'render-24', 'render-36', 'render-48', 'render-72'];
 const selectedViews = values.views ? values.views.split(',') : viewIds;
@@ -48,6 +64,7 @@ page.on('console', message => {
 });
 const report = { capturedAt: new Date().toISOString(), baseUrl: values['base-url'],
   model: values.model, viewport, deviceScaleFactor: 1, placement,
+  orbitAltitude, nearAltitude, dir0bearing: values.dir0bearing ?? 'default (Hus B, 222)',
   browser: browser.version(), settleMs, screenshotFormat: 'jpeg', screenshotQuality: 90, views: [], errors,
   caveats: ['Google phototiles and lighting can change between sessions.',
     'Render-rig direction is approximate; FOV is not calibrated to original renders.',
@@ -58,6 +75,7 @@ try {
     const url = new URL('/demo/lillebytunet-3d', values['base-url']);
     for (const [key, value] of Object.entries(placement)) url.searchParams.set(key, String(value));
     url.searchParams.set('model', values.model);
+    if (values.dir0bearing) url.searchParams.set('dir0bearing', values.dir0bearing);
     url.searchParams.set('cam', id.startsWith('render-') ? 'render' : id);
     if (id.startsWith('render-')) url.searchParams.set('dir', id.slice(7));
     let modelResponse = null;
@@ -98,9 +116,9 @@ try {
   if (values.orbit) {
     const orbitFrames = [];
     const orbitStarted = performance.now();
-    await page.evaluate(() => {
+    await page.evaluate(({ lat, lng, altitude }) => {
       const map = document.querySelector('gmp-map-3d');
-      map.center = { lat: 63.441359, lng: 10.440215, altitude: 26.2 };
+      map.center = { lat, lng, altitude };
       map.tilt = 60; map.range = 80;
       map.dataset.qualityOrbitComplete = 'false';
       const started = performance.now();
@@ -111,7 +129,7 @@ try {
         else map.dataset.qualityOrbitComplete = 'true';
       };
       requestAnimationFrame(rotate);
-    });
+    }, { lat: placement.lat, lng: placement.lng, altitude: orbitAltitude });
     for (let frame = 0; frame < 12; frame++) {
       // Absolute deadlines keep screenshot overhead from accumulating beyond
       // the 18-second animation. Sample the middle of each 30-degree interval.
@@ -125,7 +143,7 @@ try {
     await page.waitForFunction(() => document.querySelector('gmp-map-3d')
       ?.dataset.qualityOrbitComplete === 'true');
     report.orbit = { durationMs: 18000, interpolation: 'requestAnimationFrame',
-      range: 80, tilt: 60, centerAltitude: 26.2, screenshots: orbitFrames,
+      range: 80, tilt: 60, centerAltitude: orbitAltitude, screenshots: orbitFrames,
       video: 'video/ (Playwright WebM recording; includes setup and fixed views)' };
     const observedHeadings = orbitFrames.map(frame => Math.round(frame.heading));
     if (new Set(observedHeadings).size < 9 ||
@@ -139,7 +157,8 @@ try {
       return { heading: map.heading, tilt: map.tilt, range: map.range, altitude: map.center.altitude };
     });
     const reset = report.orbit.presetReset;
-    if (reset.heading !== 25 || reset.tilt !== 60 || reset.range !== 65 || reset.altitude !== 28.2) {
+    if (reset.heading !== 25 || reset.tilt !== 60 || reset.range !== 65 ||
+        reset.altitude !== nearAltitude) {
       throw new Error(`Preset did not reset after orbit: ${JSON.stringify(reset)}`);
     }
   }

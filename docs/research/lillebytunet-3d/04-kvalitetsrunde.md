@@ -1,5 +1,9 @@
 # Hus B — kvalitetsrunde 2026-09-09
 
+**Oppdatert 2026-09-09:** Metoden er senere overført til Hus C, se
+[05-hus-c.md](05-hus-c.md). Den delte koden er gjort byggagnostisk i samme runde, og
+Hus Bs tre GLB-varianter er verifisert byte-identiske etterpå. Alt under gjelder fortsatt.
+
 `husB-v2.glb` har to inntrukne takterrasser, 15 balkonger med faktisk dybde og
 rene materialflater der prototypen strakk bilder over flere høyder. Modellen er
 åpnet i Google Maps 3D og kontrollert i alle 11 faste kameraer samt kontinuerlig rotasjon.
@@ -238,5 +242,6 @@ fasadebilder uten okklusjon, materialkart eller arkitektens 3D-/BIM-kilde; høye
 av samme tildekkede bilde alene gir ikke de manglende detaljene.
 
 Geografisk plassering har fortsatt den tidligere anslåtte usikkerheten rundt ±1,5 m.
-Arbeidet med andre bygg, FKB-kontroll og den tidligere påviste variant-cache-feilen i
-innhentingsskriptet er ikke utført i denne modellrunden. Ingen ny variant ble hentet.
+FKB-kontroll og den tidligere påviste variant-cache-feilen i innhentingsskriptet er ikke
+utført i denne modellrunden. Ingen ny variant ble hentet. Hus C er senere modellert i
+[05-hus-c.md](05-hus-c.md); Hus A og D er fortsatt ikke gjort.

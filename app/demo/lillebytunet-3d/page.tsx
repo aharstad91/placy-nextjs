@@ -3,7 +3,10 @@ import {
   LillebytunetModelDemo,
   type LillebytunetModelDemoProps,
 } from "@/components/map/lillebytunet-model-demo";
-import { parseRenderDir } from "@/lib/map/lillebytunet-render-rig";
+import {
+  parseRenderDir,
+  RENDER_BEARING_AT_DIR_ZERO,
+} from "@/lib/map/lillebytunet-render-rig";
 
 export const metadata: Metadata = {
   title: "Lillebytunet 3D-modell — teknisk demo",
@@ -97,6 +100,10 @@ export default async function LillebytunetDemoPage({
       aimAltitudeOverride={
         params.calt === undefined ? null : num(params.calt, 0)
       }
+      rigBearingAtDirZero={num(
+        params.dir0bearing,
+        RENDER_BEARING_AT_DIR_ZERO.husB,
+      )}
     />
   );
 }

@@ -15,6 +15,11 @@ parser=argparse.ArgumentParser(description=__doc__)
 parser.add_argument('--input',type=Path,required=True)
 parser.add_argument('--output-dir',type=Path,required=True)
 parser.add_argument('--render',action='store_true')
+# Output name and inspection radius are per building; the defaults are Hus B's.
+parser.add_argument('--name',default='husB-v2')
+parser.add_argument('--radius',type=float,default=48)
+parser.add_argument('--camera-height',type=float,default=35)
+parser.add_argument('--aim-height',type=float,default=10)
 args=parser.parse_args(sys.argv[sys.argv.index('--')+1:])
 args.output_dir.mkdir(parents=True,exist_ok=True)
 bpy.ops.wm.read_factory_settings(use_empty=True)
@@ -40,13 +45,15 @@ sun_object=bpy.data.objects.new('Sun',sun);scene.collection.objects.link(sun_obj
 sun_object.rotation_euler=(.6,-.5,-.7)
 camera=bpy.data.cameras.new('Inspection');cam=bpy.data.objects.new('Inspection',camera)
 scene.collection.objects.link(cam);scene.camera=cam;camera.lens=48
-target=Vector((0,0,10))
+target=Vector((0,0,args.aim_height))
 for index,angle in enumerate([35,125,215,305]):
     radians=math.radians(angle)
-    cam.location=(48*math.cos(radians),48*math.sin(radians),35)
+    cam.location=(args.radius*math.cos(radians),args.radius*math.sin(radians),
+                  args.camera_height)
     cam.rotation_euler=(target-cam.location).to_track_quat('-Z','Y').to_euler()
     if args.render:
         scene.render.filepath=str((args.output_dir/f'check-{index}.png').resolve())
         bpy.ops.render.render(write_still=True)
-bpy.ops.wm.save_as_mainfile(filepath=str((args.output_dir/'husB-v2.blend').resolve()))
-print('Editable Z-up source saved:',args.output_dir/'husB-v2.blend')
+blend=args.output_dir/f'{args.name}.blend'
+bpy.ops.wm.save_as_mainfile(filepath=str(blend.resolve()))
+print('Editable Z-up source saved:',blend)
