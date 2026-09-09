@@ -1,0 +1,287 @@
+{
+  "capturedAt": "2026-09-09T15:14:48.506Z",
+  "baseUrl": "http://localhost:3002",
+  "model": null,
+  "buildings": [
+    "husB",
+    "husC"
+  ],
+  "focus": "husC",
+  "expectedModels": 2,
+  "viewport": {
+    "width": 1920,
+    "height": 1080
+  },
+  "deviceScaleFactor": 1,
+  "placement": "from the demo registry, per building",
+  "orbitAltitude": 26.2,
+  "expectedNearAltitude": 28.2,
+  "dir0bearing": "default (Hus B, 222)",
+  "browser": "152.0.7977.84",
+  "settleMs": 6000,
+  "screenshotFormat": "jpeg",
+  "screenshotQuality": 90,
+  "views": [
+    {
+      "id": "site",
+      "url": "http://localhost:3002/demo/lillebytunet-3d?buildings=husB%2ChusC&focus=husC&cam=site",
+      "attachedMs": 489,
+      "modelResponses": [
+        {
+          "path": "/models/lillebytunet/husC-v1.glb",
+          "status": 200,
+          "bytes": 1239388,
+          "sha256": "109fab8f52de0d9476a7caa2ee69711e711ca3e9a6aba66dc7ff824eb37f36d9"
+        },
+        {
+          "path": "/models/lillebytunet/husB-v2.glb",
+          "status": 200,
+          "bytes": 1886792,
+          "sha256": "96137b9474e4fa52479aaa3564c992b3c20c12229d157bde69aa4b3e1f0c9544"
+        }
+      ],
+      "camera": {
+        "heading": 200,
+        "tilt": 55,
+        "range": 231,
+        "center": {
+          "lat": 63.441309000000004,
+          "lng": 10.440534,
+          "altitude": 26.2
+        }
+      },
+      "modelElementAttached": true,
+      "modelElements": [
+        {
+          "src": "http://localhost:3002/models/lillebytunet/husB-v2.glb",
+          "attached": true,
+          "position": {
+            "lat": 63.441359,
+            "lng": 10.440215
+          },
+          "heading": 110
+        },
+        {
+          "src": "http://localhost:3002/models/lillebytunet/husC-v1.glb",
+          "attached": true,
+          "position": {
+            "lat": 63.441259,
+            "lng": 10.440853
+          },
+          "heading": 112.4
+        }
+      ],
+      "statusText": "Model3DElement lagt til (2 av 2)"
+    },
+    {
+      "id": "n",
+      "url": "http://localhost:3002/demo/lillebytunet-3d?buildings=husB%2ChusC&focus=husC&cam=n",
+      "attachedMs": 144,
+      "modelResponses": [
+        {
+          "path": "/models/lillebytunet/husB-v2.glb",
+          "status": 200,
+          "bytes": 1886792,
+          "sha256": "96137b9474e4fa52479aaa3564c992b3c20c12229d157bde69aa4b3e1f0c9544"
+        },
+        {
+          "path": "/models/lillebytunet/husC-v1.glb",
+          "status": 200,
+          "bytes": 1239388,
+          "sha256": "109fab8f52de0d9476a7caa2ee69711e711ca3e9a6aba66dc7ff824eb37f36d9"
+        }
+      ],
+      "camera": {
+        "heading": 180,
+        "tilt": 45,
+        "range": 150,
+        "center": {
+          "lat": 63.441259,
+          "lng": 10.440853,
+          "altitude": 24.2
+        }
+      },
+      "modelElementAttached": true,
+      "modelElements": [
+        {
+          "src": "http://localhost:3002/models/lillebytunet/husB-v2.glb",
+          "attached": true,
+          "position": {
+            "lat": 63.441359,
+            "lng": 10.440215
+          },
+          "heading": 110
+        },
+        {
+          "src": "http://localhost:3002/models/lillebytunet/husC-v1.glb",
+          "attached": true,
+          "position": {
+            "lat": 63.441259,
+            "lng": 10.440853
+          },
+          "heading": 112.4
+        }
+      ],
+      "statusText": "Model3DElement lagt til (2 av 2)"
+    },
+    {
+      "id": "e",
+      "url": "http://localhost:3002/demo/lillebytunet-3d?buildings=husB%2ChusC&focus=husC&cam=e",
+      "attachedMs": 126,
+      "modelResponses": [
+        {
+          "path": "/models/lillebytunet/husB-v2.glb",
+          "status": 200,
+          "bytes": 1886792,
+          "sha256": "96137b9474e4fa52479aaa3564c992b3c20c12229d157bde69aa4b3e1f0c9544"
+        },
+        {
+          "path": "/models/lillebytunet/husC-v1.glb",
+          "status": 200,
+          "bytes": 1239388,
+          "sha256": "109fab8f52de0d9476a7caa2ee69711e711ca3e9a6aba66dc7ff824eb37f36d9"
+        }
+      ],
+      "camera": {
+        "heading": 270,
+        "tilt": 45,
+        "range": 150,
+        "center": {
+          "lat": 63.441259,
+          "lng": 10.440853,
+          "altitude": 24.2
+        }
+      },
+      "modelElementAttached": true,
+      "modelElements": [
+        {
+          "src": "http://localhost:3002/models/lillebytunet/husB-v2.glb",
+          "attached": true,
+          "position": {
+            "lat": 63.441359,
+            "lng": 10.440215
+          },
+          "heading": 110
+        },
+        {
+          "src": "http://localhost:3002/models/lillebytunet/husC-v1.glb",
+          "attached": true,
+          "position": {
+            "lat": 63.441259,
+            "lng": 10.440853
+          },
+          "heading": 112.4
+        }
+      ],
+      "statusText": "Model3DElement lagt til (2 av 2)"
+    },
+    {
+      "id": "s",
+      "url": "http://localhost:3002/demo/lillebytunet-3d?buildings=husB%2ChusC&focus=husC&cam=s",
+      "attachedMs": 149,
+      "modelResponses": [
+        {
+          "path": "/models/lillebytunet/husB-v2.glb",
+          "status": 200,
+          "bytes": 1886792,
+          "sha256": "96137b9474e4fa52479aaa3564c992b3c20c12229d157bde69aa4b3e1f0c9544"
+        },
+        {
+          "path": "/models/lillebytunet/husC-v1.glb",
+          "status": 200,
+          "bytes": 1239388,
+          "sha256": "109fab8f52de0d9476a7caa2ee69711e711ca3e9a6aba66dc7ff824eb37f36d9"
+        }
+      ],
+      "camera": {
+        "heading": 0,
+        "tilt": 45,
+        "range": 150,
+        "center": {
+          "lat": 63.441259,
+          "lng": 10.440853,
+          "altitude": 24.2
+        }
+      },
+      "modelElementAttached": true,
+      "modelElements": [
+        {
+          "src": "http://localhost:3002/models/lillebytunet/husB-v2.glb",
+          "attached": true,
+          "position": {
+            "lat": 63.441359,
+            "lng": 10.440215
+          },
+          "heading": 110
+        },
+        {
+          "src": "http://localhost:3002/models/lillebytunet/husC-v1.glb",
+          "attached": true,
+          "position": {
+            "lat": 63.441259,
+            "lng": 10.440853
+          },
+          "heading": 112.4
+        }
+      ],
+      "statusText": "Model3DElement lagt til (2 av 2)"
+    },
+    {
+      "id": "near",
+      "url": "http://localhost:3002/demo/lillebytunet-3d?buildings=husB%2ChusC&focus=husC&cam=near",
+      "attachedMs": 133,
+      "modelResponses": [
+        {
+          "path": "/models/lillebytunet/husC-v1.glb",
+          "status": 200,
+          "bytes": 1239388,
+          "sha256": "109fab8f52de0d9476a7caa2ee69711e711ca3e9a6aba66dc7ff824eb37f36d9"
+        },
+        {
+          "path": "/models/lillebytunet/husB-v2.glb",
+          "status": 200,
+          "bytes": 1886792,
+          "sha256": "96137b9474e4fa52479aaa3564c992b3c20c12229d157bde69aa4b3e1f0c9544"
+        }
+      ],
+      "camera": {
+        "heading": 25,
+        "tilt": 60,
+        "range": 65,
+        "center": {
+          "lat": 63.441259,
+          "lng": 10.440853,
+          "altitude": 28.2
+        }
+      },
+      "modelElementAttached": true,
+      "modelElements": [
+        {
+          "src": "http://localhost:3002/models/lillebytunet/husB-v2.glb",
+          "attached": true,
+          "position": {
+            "lat": 63.441359,
+            "lng": 10.440215
+          },
+          "heading": 110
+        },
+        {
+          "src": "http://localhost:3002/models/lillebytunet/husC-v1.glb",
+          "attached": true,
+          "position": {
+            "lat": 63.441259,
+            "lng": 10.440853
+          },
+          "heading": 112.4
+        }
+      ],
+      "statusText": "Model3DElement lagt til (2 av 2)"
+    }
+  ],
+  "errors": [],
+  "caveats": [
+    "Google phototiles and lighting can change between sessions.",
+    "Render-rig direction is approximate; FOV is not calibrated to original renders.",
+    "Model3DElement attachment and HTTP success do not confirm visually correct rendering."
+  ]
+}

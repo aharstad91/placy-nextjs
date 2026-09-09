@@ -56,6 +56,16 @@ Grensene er ærlige: kildebildene er ikke garantert de samme (API-øyeblikksbild
 
 Læring: `docs/solutions/workflow-issues/destruktiv-sletting-krever-eksplisitte-stier.md`.
 
+### Begge byggene i samme kart
+
+Demoen tok én `modelSrc` og lagde ett `Model3DElement`, så Hus B og Hus C kunne bare åpnes i to separate URL-er. **Nå står de i samme kart:** `?buildings=husB,husC&focus=husC`. Plasseringen ligger i et register (`lib/map/lillebytunet-buildings.ts`) med `georef_building.py`s egne tall, ikke i URL-en; de gamle enkeltmodell-parameterne virker uendret, som `capture-quality.mjs` og kjøreoppskriftene krever.
+
+Grunnen til at det er en kontroll og ikke en visning: **naboforholdet er en egen påstand.** Hvert bygg var kontrollert alene, og tre ting kunne derfor ikke prøves før nå — at byggene ikke skjærer i hverandre (åpningen måler ~9 m, som de publiserte målene tilsier), at begge balkongsidene vender mot SSV slik situasjonsplanen krever, og at høydeforholdet stemmer (25,75 mot 19,31 m). Alle tre holdt. `capture-quality.mjs` fikk `--buildings/--focus` og krever nå **én tilknyttet modell og ett 200-svar per bygg** i hver visning, så en visning der bare det ene bygget kom fram feiler kjøringen i stedet for å bli et bilde ingen ser feilen i.
+
+Sidegevinsten var å se Hus Bs takfeil ordentlig: ved siden av Hus Cs målte, mørke membran er det lyse taket ikke lenger et subtilt avvik. Det gjør beslutningen om å rette det mer presserende, men den står fortsatt åpen.
+
+Bevis i `docs/research/lillebytunet-3d/site/`, rapport i `07-flere-bygg-i-kartet.md`, og naboforholdet er nå del av kontrollpunkt 6 i arbeidsmåten.
+
 ### Åpent
 
 - **Hus A og D er ikke modellert**, og de to første punktene over må løses før de kan bli det.
@@ -63,7 +73,7 @@ Læring: `docs/solutions/workflow-issues/destruktiv-sletting-krever-eksplisitte-
 - **Gjenoppbyggingen er ikke kjørt.** Steg 9 — `.blend` fra GLB — kan gjøres uten noe av det som ble slettet.
 - **Retningsforskyvningen mot oversiktsserien har ikke noe skript**; den måles ad hoc med SIFT.
 - **Riggens avstand og siktehøyde er Hus Bs**, så render-visningene beskjærer et høyere bygg.
-- **Ingen visning har mer enn én modell i kartet samtidig.** Hus A er nærmeste nabo til Hus B, så det blir aktuelt.
+- **Terrenghøyden er målt ett sted.** `HUS_B_GROUND_MASL` brukes som siktepunkt for alle bygg; den flytter ikke modellene, som er `CLAMP_TO_GROUND`.
 
 ---
 

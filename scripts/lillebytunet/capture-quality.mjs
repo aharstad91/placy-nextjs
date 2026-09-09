@@ -7,6 +7,11 @@
  * Optional: --views n,near,render-0 --settle-ms 5000 --orbit
  * Per building: --lat --lng --heading --dir0bearing --orbit-altitude
  *   --expect-near-altitude is an assertion on the post-orbit reset, not a camera setting.
+ * Several delivered buildings at once, from the demo's registry, with the 'site' view
+ * available and every other view aimed at --focus:
+ *   --buildings husB,husC --focus husC --views site,n,near
+ *   In this mode --model/--lat/--lng/--heading are ignored, because the placement is the
+ *   registry's, and the run asserts one attached element and one 200 GLB per building.
  * A successful GLB response is recorded separately from element attachment and
  * visual evidence. Neither network success nor a screenshot proves correctness.
  */
@@ -30,9 +35,16 @@ const { values } = parseArgs({ options: {
   // preset's aim height; use ?calt= to move it. A wrong value here fails the run late.
   'expect-near-altitude': { type: 'string', default: '28.2' },
   'dir0bearing': { type: 'string' },
+  // Registry mode: ids from lib/map/lillebytunet-buildings.ts.
+  buildings: { type: 'string' }, focus: { type: 'string' },
 } });
-if (!values['base-url'] || !values.model || !values.output) {
-  throw new Error('--base-url, --model and --output are required; see script header.');
+const buildingIds = values.buildings
+  ? values.buildings.split(',').map(id => id.trim()).filter(Boolean) : [];
+if (!values['base-url'] || !values.output || (!values.model && !buildingIds.length)) {
+  throw new Error('--base-url, --output and one of --model/--buildings are required; see header.');
+}
+if (values.focus && !buildingIds.includes(values.focus)) {
+  throw new Error('--focus must name one of --buildings');
 }
 const settleMs = Number(values['settle-ms']);
 if (!Number.isFinite(settleMs) || settleMs < 1000) throw new Error('--settle-ms must be >=1000');
@@ -55,8 +67,17 @@ if (!Number.isFinite(orbitAltitude) || !Number.isFinite(expectedNearAltitude)) {
 }
 const viewIds = ['n', 'e', 's', 'w', 'mid', 'near',
   'render-0', 'render-24', 'render-36', 'render-48', 'render-72'];
-const selectedViews = values.views ? values.views.split(',') : viewIds;
-if (selectedViews.some(id => !viewIds.includes(id))) throw new Error('Unknown --views id');
+// The site view only exists when the demo has more than one model to frame. Asking for it
+// with fewer would silently capture the first preset instead, which reads as the site view.
+const siteAvailable = buildingIds.length > 1;
+const allViewIds = siteAvailable ? ['site', ...viewIds] : viewIds;
+const selectedViews = values.views ? values.views.split(',') : allViewIds;
+if (selectedViews.some(id => !allViewIds.includes(id))) {
+  throw new Error(siteAvailable ? 'Unknown --views id'
+    : "Unknown --views id ('site' needs --buildings with at least two ids)");
+}
+// One element and one successful GLB per building, asserted per view.
+const expectedModels = buildingIds.length || 1;
 const browser = await chromium.launch({ channel: 'chrome', headless: true });
 const context = await browser.newContext({ viewport, deviceScaleFactor: 1,
   ...(values.orbit ? { recordVideo: { dir: join(output, 'video'), size: viewport } } : {}),
@@ -68,7 +89,11 @@ page.on('console', message => {
   if (message.type() === 'error') errors.push({ type: 'console', message: message.text() });
 });
 const report = { capturedAt: new Date().toISOString(), baseUrl: values['base-url'],
-  model: values.model, viewport, deviceScaleFactor: 1, placement,
+  model: buildingIds.length ? null : values.model,
+  buildings: buildingIds.length ? buildingIds : null,
+  focus: buildingIds.length ? (values.focus ?? buildingIds[0]) : null,
+  expectedModels, viewport, deviceScaleFactor: 1,
+  placement: buildingIds.length ? 'from the demo registry, per building' : placement,
   orbitAltitude, expectedNearAltitude, dir0bearing: values.dir0bearing ?? 'default (Hus B, 222)',
   browser: browser.version(), settleMs, screenshotFormat: 'jpeg', screenshotQuality: 90, views: [], errors,
   caveats: ['Google phototiles and lighting can change between sessions.',
@@ -78,25 +103,41 @@ const report = { capturedAt: new Date().toISOString(), baseUrl: values['base-url
 try {
   for (const id of selectedViews) {
     const url = new URL('/demo/lillebytunet-3d', values['base-url']);
-    for (const [key, value] of Object.entries(placement)) url.searchParams.set(key, String(value));
-    url.searchParams.set('model', values.model);
+    if (buildingIds.length) {
+      url.searchParams.set('buildings', buildingIds.join(','));
+      if (values.focus) url.searchParams.set('focus', values.focus);
+    } else {
+      for (const [key, value] of Object.entries(placement)) {
+        url.searchParams.set(key, String(value));
+      }
+      url.searchParams.set('model', values.model);
+    }
     if (values.dir0bearing) url.searchParams.set('dir0bearing', values.dir0bearing);
     url.searchParams.set('cam', id.startsWith('render-') ? 'render' : id);
     if (id.startsWith('render-')) url.searchParams.set('dir', id.slice(7));
-    let modelResponse = null;
+    // Keyed by path: several models load in the same view, and a repeated path would
+    // otherwise hide that one of them never arrived.
+    const modelResponses = new Map();
     const onResponse = async response => {
-      if (new URL(response.url()).pathname !== values.model) return;
+      const path = new URL(response.url()).pathname;
+      if (!path.toLowerCase().endsWith('.glb')) return;
+      if (values.model && !buildingIds.length && path !== values.model) return;
       try {
         const body = await response.body();
-        modelResponse = { status: response.status(), bytes: body.length,
-          sha256: createHash('sha256').update(body).digest('hex') };
-      } catch (error) { modelResponse = { status: response.status(), error: error.message }; }
+        modelResponses.set(path, { path, status: response.status(), bytes: body.length,
+          sha256: createHash('sha256').update(body).digest('hex') });
+      } catch (error) {
+        modelResponses.set(path, { path, status: response.status(), error: error.message });
+      }
     };
     page.on('response', onResponse);
     const started = Date.now();
     await page.goto(url.href, { waitUntil: 'domcontentloaded', timeout: 60000 });
-    await page.waitForFunction(() => document.querySelector('gmp-model-3d')?.parentElement
-      ?.tagName === 'GMP-MAP-3D', null, { timeout: 60000 });
+    await page.waitForFunction(expected => {
+      const models = [...document.querySelectorAll('gmp-model-3d')];
+      return models.length === expected
+        && models.every(model => model.parentElement?.tagName === 'GMP-MAP-3D');
+    }, expectedModels, { timeout: 60000 });
     const attachedMs = Date.now() - started;
     // Map tiles need additional settling after model attachment. Record this
     // bounded wait explicitly rather than calling it a model-loaded event.
@@ -107,16 +148,27 @@ try {
       return { camera: { heading: map.heading, tilt: map.tilt, range: map.range,
         center: { lat: map.center.lat, lng: map.center.lng, altitude: map.center.altitude } },
       modelElementAttached: model.parentElement === map,
+      modelElements: [...document.querySelectorAll('gmp-model-3d')].map(element => ({
+        src: element.src,
+        attached: element.parentElement === map,
+        position: { lat: element.position.lat, lng: element.position.lng },
+        heading: element.orientation.heading,
+      })),
       statusText: document.querySelector('[data-testid="model-status"]')?.textContent };
     });
-    if (!modelResponse || modelResponse.status !== 200) {
-      throw new Error(`No successful model response for ${id}: ${JSON.stringify(modelResponse)}`);
+    const modelResponseList = [...modelResponses.values()];
+    const served = modelResponseList.filter(response => response.status === 200);
+    if (served.length !== expectedModels) {
+      throw new Error(`Expected ${expectedModels} served GLBs for ${id}, got `
+        + JSON.stringify(modelResponseList));
     }
     await page.screenshot({ path: join(output, `${id}.jpg`), quality: 90 });
     page.off('response', onResponse);
-    report.views.push({ id, url: url.href, attachedMs, modelResponse, ...observed });
+    report.views.push({ id, url: url.href, attachedMs,
+      modelResponses: modelResponseList, ...observed });
     await writeFile(join(output, 'capture.json'), JSON.stringify(report, null, 2) + '\n');
-    console.log(`Captured ${id}: GLB ${modelResponse.bytes} bytes, element attached in ${attachedMs}ms`);
+    console.log(`Captured ${id}: ${served.length} GLB(s), `
+      + `${served.map(response => response.bytes).join('+')} bytes, attached in ${attachedMs}ms`);
   }
   if (values.orbit) {
     const orbitFrames = [];

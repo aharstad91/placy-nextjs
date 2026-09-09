@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   APIProvider,
   GestureHandling,
@@ -11,24 +11,34 @@ import {
 import {
   HUS_B_GROUND_MASL,
   CAMERA_PRESETS,
+  siteCameraPreset,
+  siteExtent,
   type CameraPreset,
   renderRigCamera as rigCamera,
 } from "@/lib/map/lillebytunet-render-rig";
 
 /**
- * Isolert demo: én GLB-modell plassert med Model3DElement i Google Maps 3D,
- * på tomten til Lillebytunet.
+ * Isolert demo: én eller flere GLB-modeller plassert med Model3DElement i
+ * Google Maps 3D, på tomten til Lillebytunet.
  *
- * Formålet var å måle det Google ikke dokumenterer: hvilken vei modellens
+ * Formålet var først å måle det Google ikke dokumenterer: hvilken vei modellens
  * akser peker i kartet. Målingen er gjort — se
  * docs/research/lillebytunet-3d/02-kartintegrasjon.md. Motoren leser GLB-en som
  * +X mot øst, +Y mot nord og +Z opp, altså ikke glTF-ens egen +Y-opp-konvensjon.
  * Modeller må eksporteres Z-opp med bunnen i z = 0.
  *
+ * Siden tar nå en liste, ikke én modell, slik at de leverte byggene kan stå i
+ * samme kart samtidig. Det er den eneste måten å se om to bygg forholder seg
+ * riktig til hverandre — hvert bygg er kontrollert alene, men naboforholdet er
+ * en egen påstand som ingen enkeltmodell-kontroll kan avvise.
+ *
  * Siden er ikke en del av boardet og deler ingen tilstand med det.
  */
 
-export interface LillebytunetModelDemoProps {
+export interface PlacedModel {
+  /** Stabil nøkkel; brukes også som synlig navn i infotabellen. */
+  id: string;
+  label: string;
   /** GLB-sti, relativ til domenet. */
   modelSrc: string;
   lat: number;
@@ -39,6 +49,21 @@ export interface LillebytunetModelDemoProps {
   altitude: number;
   altitudeMode: google.maps.maps3d.AltitudeModeString;
   scale: number;
+  /** Fotavtrykk i meter. Brukes bare til å ramme inn flere bygg. */
+  footprintMeters: readonly [number, number];
+}
+
+export interface LillebytunetModelDemoProps {
+  /** Modellene som skal stå i kartet. Minst én. */
+  models: PlacedModel[];
+  /**
+   * Hvilket bygg kameraet forholder seg til.
+   *
+   * Alle vinkler unntatt «Begge bygg» sikter på dette bygget; «Begge bygg»
+   * sikter på midtpunktet. Render-riggen gjelder også bare det ene bygget,
+   * siden nullpunktet er per bygningsserie.
+   */
+  focusIndex: number;
   /** Scene 0–95 når render-kameraet er valgt, ellers `null`. */
   renderDir: number | null;
   /** Navngitt fast kameravinkel for repeterbar før/etter-kontroll. */
@@ -88,12 +113,15 @@ function CameraLayer({
 }
 
 /**
- * Legger GLB-en inn i den persistente Map3DElement-instansen.
+ * Legger én GLB inn i den persistente Map3DElement-instansen.
  *
  * Elementet gjenbrukes ved propendring og remountes ikke — samme
- * WebGL-forsiktige lifecycle som prosjektvolumene bruker i denne motoren.
+ * WebGL-forsiktige lifecycle som prosjektvolumene bruker i denne motoren. Én
+ * instans av dette laget per modell: hvert `Model3DElement` eier sin egen kilde,
+ * og et lag som byttet `src` på ett element ville vist ett bygg av gangen.
  */
 function ModelLayer({
+  id,
   modelSrc,
   lat,
   lng,
@@ -103,9 +131,16 @@ function ModelLayer({
   scale,
   onStatus,
 }: Pick<
-  LillebytunetModelDemoProps,
-  "modelSrc" | "lat" | "lng" | "heading" | "altitude" | "altitudeMode" | "scale"
-> & { onStatus: (status: string) => void }) {
+  PlacedModel,
+  | "id"
+  | "modelSrc"
+  | "lat"
+  | "lng"
+  | "heading"
+  | "altitude"
+  | "altitudeMode"
+  | "scale"
+> & { onStatus: (id: string, status: string) => void }) {
   const map3d = useMap3D("lillebytunet-demo");
   const modelRef = useRef<google.maps.maps3d.Model3DElement | null>(null);
 
@@ -121,7 +156,7 @@ function ModelLayer({
         if (cancelled) return;
 
         if (!lib.Model3DElement) {
-          onStatus("Model3DElement finnes ikke i denne API-versjonen");
+          onStatus(id, "Model3DElement finnes ikke i denne API-versjonen");
           return;
         }
 
@@ -140,12 +175,13 @@ function ModelLayer({
         if (model.parentNode && model.parentNode !== map3d) model.remove();
         if (!model.parentNode) map3d.append(model);
 
-        onStatus("Model3DElement lagt til");
+        onStatus(id, "lagt til");
       } catch (error) {
         if (!cancelled) {
-          const message = error instanceof Error ? error.message : String(error);
-          onStatus(`Feil: ${message}`);
-          console.warn("[LillebytunetModelDemo] modell feilet:", error);
+          const message =
+            error instanceof Error ? error.message : String(error);
+          onStatus(id, `feil: ${message}`);
+          console.warn(`[LillebytunetModelDemo] ${id} feilet:`, error);
         }
       }
     })();
@@ -155,6 +191,7 @@ function ModelLayer({
     };
   }, [
     map3d,
+    id,
     modelSrc,
     lat,
     lng,
@@ -177,25 +214,59 @@ function ModelLayer({
 }
 
 export function LillebytunetModelDemo({
+  models,
+  focusIndex,
   renderDir,
   cameraPresetId,
   aimAltitudeOverride,
   rigBearingAtDirZero,
-  ...model
 }: LillebytunetModelDemoProps) {
   const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
+  const focus = models[focusIndex] ?? models[0];
+  const extent = useMemo(
+    () => (models.length > 1 ? siteExtent(models) : null),
+    [models],
+  );
+  const site = useMemo(
+    () => (extent ? siteCameraPreset(extent) : null),
+    [extent],
+  );
+
   const renderCamera =
     renderDir === null ? null : renderPreset(renderDir, rigBearingAtDirZero);
+  const presets = useMemo(
+    () => [...(site ? [site] : []), ...CAMERA_PRESETS],
+    [site],
+  );
   const [camera, setCamera] = useState<CameraPreset>(
     renderCamera ??
-      CAMERA_PRESETS.find((preset) => preset.id === cameraPresetId) ??
-      CAMERA_PRESETS[0],
+      presets.find((preset) => preset.id === cameraPresetId) ??
+      presets[0],
   );
-  const [status, setStatus] = useState("Laster …");
-  const onStatus = useCallback((next: string) => setStatus(next), []);
+  const [statuses, setStatuses] = useState<Record<string, string>>({});
+  const onStatus = useCallback(
+    (id: string, next: string) =>
+      setStatuses((current) => ({ ...current, [id]: next })),
+    [],
+  );
 
+  // «Begge bygg» sikter på midtpunktet; alle andre vinkler på det valgte bygget,
+  // slik at før/etter-kontroller av ett bygg beholder samme ramme som før.
+  const target = camera.id === "site" && extent ? extent : focus;
   const aimAltitude =
     aimAltitudeOverride ?? HUS_B_GROUND_MASL + camera.aimHeightMeters;
+
+  const done = models.filter(
+    (model) => statuses[model.id] === "lagt til",
+  ).length;
+  const failed = models.filter((model) =>
+    statuses[model.id]?.startsWith("feil"),
+  );
+  const status = failed.length
+    ? `${failed.map((model) => `${model.label}: ${statuses[model.id]}`).join("; ")}`
+    : done === models.length
+      ? `Model3DElement lagt til (${done} av ${models.length})`
+      : `Laster … (${done} av ${models.length})`;
 
   if (!apiKey) {
     return (
@@ -207,9 +278,7 @@ export function LillebytunetModelDemo({
     );
   }
 
-  const chips = renderCamera
-    ? [renderCamera, ...CAMERA_PRESETS]
-    : CAMERA_PRESETS;
+  const chips = renderCamera ? [renderCamera, ...presets] : presets;
 
   return (
     <div className="relative h-dvh w-full">
@@ -219,18 +288,24 @@ export function LillebytunetModelDemo({
           className="h-full w-full"
           mode={MapMode.SATELLITE}
           gestureHandling={GestureHandling.GREEDY}
-          defaultCenter={{ lat: model.lat, lng: model.lng, altitude: aimAltitude }}
+          defaultCenter={{
+            lat: target.lat,
+            lng: target.lng,
+            altitude: aimAltitude,
+          }}
           defaultHeading={camera.heading}
           defaultTilt={camera.tilt}
           defaultRange={camera.range}
         >
           <CameraLayer
             camera={camera}
-            lat={model.lat}
-            lng={model.lng}
+            lat={target.lat}
+            lng={target.lng}
             aimAltitude={aimAltitude}
           />
-          <ModelLayer {...model} onStatus={onStatus} />
+          {models.map((model) => (
+            <ModelLayer key={model.id} {...model} onStatus={onStatus} />
+          ))}
         </Map3D>
       </APIProvider>
 
@@ -253,27 +328,35 @@ export function LillebytunetModelDemo({
         </div>
 
         <dl className="pointer-events-auto grid grid-cols-[auto_1fr] gap-x-3 gap-y-0.5 rounded-lg bg-white/90 p-3 font-mono text-[11px] leading-tight text-gray-800 shadow-sm">
-          <dt className="text-gray-500">modell</dt>
-          <dd className="break-all">{model.modelSrc}</dd>
-          <dt className="text-gray-500">posisjon</dt>
-          <dd>
-            {model.lat.toFixed(6)}, {model.lng.toFixed(6)}
-          </dd>
-          <dt className="text-gray-500">heading</dt>
-          <dd>{model.heading}°</dd>
-          <dt className="text-gray-500">altitude</dt>
-          <dd>
-            {model.altitude} m / {model.altitudeMode}
-          </dd>
-          <dt className="text-gray-500">scale</dt>
-          <dd>{model.scale}</dd>
+          {models.map((model) => (
+            <div key={model.id} className="col-span-2 grid grid-cols-subgrid">
+              <dt className="text-gray-500">{model.label}</dt>
+              <dd className="break-all">
+                {model.modelSrc}
+                <br />
+                {model.lat.toFixed(6)}, {model.lng.toFixed(6)} / heading{" "}
+                {model.heading}° / {model.altitude} m {model.altitudeMode} /
+                scale {model.scale}
+                {statuses[model.id] ? ` / ${statuses[model.id]}` : " / laster"}
+              </dd>
+            </div>
+          ))}
+          {extent ? (
+            <>
+              <dt className="text-gray-500">utstrekning</dt>
+              <dd>{extent.spanMeters.toFixed(1)} m diagonal</dd>
+            </>
+          ) : null}
           <dt className="text-gray-500">kameravalg</dt>
           <dd>
-            {camera.heading.toFixed(1)}° / tilt {camera.tilt.toFixed(1)}° /{" "}
-            {camera.range.toFixed(1)} m
+            {camera.label} — {camera.heading.toFixed(1)}° / tilt{" "}
+            {camera.tilt.toFixed(1)}° / {camera.range.toFixed(1)} m
           </dd>
           <dt className="text-gray-500">siktepunkt</dt>
-          <dd>{aimAltitude.toFixed(1)} m o.h.</dd>
+          <dd>
+            {target.lat.toFixed(6)}, {target.lng.toFixed(6)} /{" "}
+            {aimAltitude.toFixed(1)} m o.h.
+          </dd>
           <dt className="text-gray-500">status</dt>
           <dd data-testid="model-status">{status}</dd>
         </dl>

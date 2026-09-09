@@ -107,6 +107,16 @@ funn; det som er verdt å bære videre står under.
     `name` og `model_name` eksplisitt — `--config` defaulter også til Hus B
     (`build_quality.py:417`).
 
+11. **Naboforholdet er en egen påstand.** Hvert bygg var kontrollert alene, og demoen viste
+    én modell av gangen, så «Hus B og Hus C står riktig i forhold til hverandre» var aldri
+    prøvd. Nå gjør den det: `?buildings=husB,husC` setter begge i kartet fra registeret i
+    `lib/map/lillebytunet-buildings.ts`, og kontrollen bekreftet tre ting ingen
+    enkeltbygg-kontroll kunne avvise — byggene skjærer ikke i hverandre, balkongsidene
+    vender samme vei slik situasjonsplanen krever, og høydeforholdet stemmer. Den avslørte
+    også hvor grov Hus Bs lyse tak er: ved siden av Hus Cs målte, mørke membran er det
+    ikke lenger et subtilt avvik. Se
+    [flere bygg i kartet](../../research/lillebytunet-3d/07-flere-bygg-i-kartet.md).
+
 Et nytt kontrollverktøy erstatter et forbehold fra Hus B-runden:
 `model_overlay.py` rendrer den eksporterte GLB-en gjennom det eksakte kildekameraet, så
 kilde og modell kan sammenlignes uten synsfeltavvik. Det er hovedbeviset for silhuett og
@@ -200,7 +210,7 @@ scratchpad.**
 | 3. Okklusjonsbudsjett | `occlusion.py` per vannrett flate og per fasade bak utstikk, før teksturarbeid. | `occlusion.json` i repoet: flate, blikkvinkel, oppkanthøyde, skjult dybde, synlig andel og dom. Under 50 % synlig skal ikke samples. |
 | 4. Tak, terrasser, balkonger og utstikk | Skill tak/dekker fra parapeter, oppbygg, rekkverk og tomrom. Bygg dekktykkelse, underside, bakvegg, rekkverk og nødvendige skjermer. | `model_overlay.py` i det eksakte kildekameraet for minst fire retninger — dette er hovedbeviset, ikke Google: silhuett, etasjeantall og alle inntrekk sammenholdt med kilden, og `overlay.json` med `covered_fraction` per retning i repoet. Antall og rytme kontrollert. Skjulte deler angitt som anslag. Rett silhuettavvik før teksturen videreutvikles. |
 | 5. Teksturer og materialer | Velg kamera og utsnitt per flate. Håndter skjulte områder etter steg 3. Sammenlign materialvarianter i Google. | Alle flater/materialer gjennomgått; kilde, gjentakelse, estimator og anslag oppgitt per flate. Ingen avbildede rekkverk bak ny balkonggeometri. |
-| 6. Hele bygget i Google | Kontroller fire sider, mellomvinkel, nærvisning og relevante kilderetninger, samt kontinuerlig rotasjon. | Synlig modell, korrekt filhash, null console-feil, jevn vinkeldekning i rotasjonen, tabell over funn per visning. Har bygget en førmodell: identisk kamera og plassering i før/etter. Ellers: kilde, modell i samme kamera og Google side om side. |
+| 6. Hele bygget i Google | Kontroller fire sider, mellomvinkel, nærvisning og relevante kilderetninger, samt kontinuerlig rotasjon. Legg bygget inn i `LILLEBYTUNET_BUILDINGS` og kontroller det sammen med de andre leverte byggene. | Synlig modell, korrekt filhash, null console-feil, jevn vinkeldekning i rotasjonen, tabell over funn per visning. Har bygget en førmodell: identisk kamera og plassering i før/etter. Ellers: kilde, modell i samme kamera og Google side om side. Med naboer: `capture-quality.mjs --buildings <id-er>` — én tilknyttet modell og ett 200-svar per bygg i hver visning, og bilder som viser at byggene ikke skjærer i hverandre, at balkong- og inntrekkssidene vender som situasjonsplanen krever, og at høydeforholdet mellom dem stemmer. |
 | 7. Gjenbygging og sluttkontroll | Kjør kjeden i en tom utmappe fra de bevarte inputene. Gjennomfør en egen avsluttende vurdering av krav mot bilder. | Fungerende GLB og redigerbar kilde, kjøreoppskrift, målinger, bildebevis og konkrete restavvik. Oppgi hvilke steg gjenbyggingen faktisk dekker. Mekaniske prosjektsjekker ved kodeendringer. |
 
 For Lillebytunet finnes allerede seks bildeserier. Ikke last ned på nytt for å kompensere
@@ -282,8 +292,6 @@ Ting piloten identifiserte men ikke løste. De koster en omkjøring hver om de i
   bygg. Nullpunktet er parameterisert, avstanden ikke.
 - **Terrenghøyden er målt ett sted.** `HUS_B_GROUND_MASL = 16.2` brukes for alle bygg;
   Kartverket gir 16,53 m ved Hus B og 16,9 m ved Hus C.
-- **Ingen kontroll har hatt mer enn én modell i kartet samtidig.** Hus A er nærmeste nabo
-  til Hus B, så det blir aktuelt.
 - **Mobilkontrollen fra Hus B-runden er ikke et kontrollpunkt** og forsvant i overføringen.
 - **Variant-cache-feilen i innhentingsskriptet** er henvist til som kjent, men ikke
   beskrevet noe sted.
@@ -319,6 +327,7 @@ faktiske sti, slik at en ny samtale finner arbeidskravene.
 ## Relatert
 
 - [Hus C: pilot, kjøreoppskrift, nye kontrollverktøy og restavvik](../../research/lillebytunet-3d/05-hus-c.md).
+- [Flere bygg i samme kart: naboforholdet som eget kontrollpunkt](../../research/lillebytunet-3d/07-flere-bygg-i-kartet.md).
 - [Hus B: kildevalg, kommandokjede, før/etter og begrensninger](../../research/lillebytunet-3d/04-kvalitetsrunde.md).
 - [Plandokument til kartdata: uavhengige holdepunkter og transformrest](../data-import/plandokument-til-kartdata-20260907.md).
 - [Google-kamera: eierskap og faktisk bevegelse](../feature-implementations/google-maps-3d-intro-flythrough-20260603.md).

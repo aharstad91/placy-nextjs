@@ -12,8 +12,12 @@ Den delte koden er gjort byggagnostisk i samme runde, og Hus B er gjenbygd fra s
 uendrede konfigurasjon etter hver endring: alle tre GLB-varianter kom ut byte-identiske.
 Hus C hadde ingen tidligere modell, så dette første volumet er selv baselinen.
 
-[Åpne nærvisningen](http://localhost:3002/demo/lillebytunet-3d?model=/models/lillebytunet/husC-v1.glb&lat=63.441259&lng=10.440853&heading=112.4&cam=near).
-Demoens standardverdier er fortsatt Hus B; Hus C krever eksplisitte parametere.
+[Åpne nærvisningen](http://localhost:3002/demo/lillebytunet-3d?buildings=husC&cam=near), eller
+[begge byggene i samme kart](http://localhost:3002/demo/lillebytunet-3d?buildings=husB,husC&focus=husC).
+Plasseringen ligger nå i et register (`lib/map/lillebytunet-buildings.ts`), så `?buildings=`
+holder; de gamle `model`/`lat`/`lng`/`heading`-parameterne virker fortsatt for en modell som
+ikke er levert ennå. Naboforholdet er kontrollert for seg — se
+[flere bygg i kartet](07-flere-bygg-i-kartet.md).
 
 ![Kilde, modell i samme kamera, og modellen i Google](hus-c/compare/source-model-google-000.jpg)
 
@@ -419,6 +423,7 @@ denne rapporten er én: den byte-identiske reproduksjonen i
 
 ## Relatert
 
+- [Flere bygg i samme kart: Hus B og Hus C side om side](07-flere-bygg-i-kartet.md).
 - [Gjenoppbygging av datagrunnlaget](06-gjenoppbygging.md).
 - [Destruktiv sletting krever eksplisitte stier](../../solutions/workflow-issues/destruktiv-sletting-krever-eksplisitte-stier.md).
 - [Arbeidsmåte for neste bygg og agent](../../solutions/workflow-issues/render-til-byggmodell-krever-visuelle-akseptansekriterier.md)

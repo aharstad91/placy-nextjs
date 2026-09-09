@@ -114,6 +114,7 @@ export interface CameraPreset {
  * Google-kameraets `heading` er siktretningen, ikke der kameraet står. Skal
  * modellen ses fra nord, må kameraet se mot sør — derfor 180 på «fra nord».
  */
+// prettier-ignore
 export const CAMERA_PRESETS: CameraPreset[] = [
   { id: "n", label: "Fra nord", heading: 180, tilt: 45, range: 150, aimHeightMeters: 8 },
   { id: "e", label: "Fra øst", heading: 270, tilt: 45, range: 150, aimHeightMeters: 8 },
@@ -122,3 +123,72 @@ export const CAMERA_PRESETS: CameraPreset[] = [
   { id: "mid", label: "Mellomvinkel", heading: 70, tilt: 58, range: 100, aimHeightMeters: 8 },
   { id: "near", label: "Nærvisning", heading: 25, tilt: 60, range: 65, aimHeightMeters: 12 },
 ];
+
+/** Meter per breddegrad. Lengdegraden krymper med cos(bredde). */
+const METERS_PER_DEGREE_LAT = 111_320;
+
+export interface SiteExtent {
+  /** Midtpunktet mellom byggene. */
+  lat: number;
+  lng: number;
+  /** Diagonalen på det som skal være i bildet, i meter. */
+  spanMeters: number;
+}
+
+/**
+ * Rammer inn flere bygg: midtpunkt og utstrekning.
+ *
+ * Utstrekningen er ikke avstanden mellom byggsentrene, men boksen om sentrene
+ * utvidet med hvert byggs egen halve diagonal — ellers havner endene av det
+ * lengste bygget utenfor bildet så snart det står på kanten av raden.
+ */
+export function siteExtent(
+  buildings: readonly {
+    lat: number;
+    lng: number;
+    footprintMeters: readonly [number, number];
+  }[],
+): SiteExtent {
+  const lat = buildings.reduce((sum, b) => sum + b.lat, 0) / buildings.length;
+  const lng = buildings.reduce((sum, b) => sum + b.lng, 0) / buildings.length;
+  const metersPerDegreeLng =
+    METERS_PER_DEGREE_LAT * Math.cos((lat * Math.PI) / 180);
+  let north = 0;
+  let east = 0;
+  for (const building of buildings) {
+    const half =
+      Math.hypot(building.footprintMeters[0], building.footprintMeters[1]) / 2;
+    north = Math.max(
+      north,
+      Math.abs(building.lat - lat) * METERS_PER_DEGREE_LAT + half,
+    );
+    east = Math.max(
+      east,
+      Math.abs(building.lng - lng) * metersPerDegreeLng + half,
+    );
+  }
+  return { lat, lng, spanMeters: 2 * Math.hypot(north, east) };
+}
+
+/**
+ * Kameraet som viser hele raden.
+ *
+ * `range` er avstanden til siktepunktet, og faktoren under er målt mot de
+ * eksisterende faste vinklene: 150 m holder ett bygg på 32 m diagonal godt
+ * innenfor bildet, altså omtrent 4,7 ganger utstrekningen. Faktoren er satt
+ * lavere, 3,0, fordi raden er bredere enn den er høy og et kamera som ser på
+ * tvers av den ikke trenger like mye luft. Gulvet på 150 m gjør at to bygg
+ * aldri kommer nærmere enn ett bygg gjør alene.
+ */
+export function siteCameraPreset(extent: SiteExtent): CameraPreset {
+  return {
+    id: "site",
+    label: "Begge bygg",
+    // Raden går mot ØSØ, så et kamera som ser mot SSV treffer den på tvers og
+    // får balkongsidene mot seg.
+    heading: 200,
+    tilt: 55,
+    range: Math.max(150, Math.round(3 * extent.spanMeters)),
+    aimHeightMeters: 10,
+  };
+}
