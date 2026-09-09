@@ -16,6 +16,12 @@ Demoens standardverdier er fortsatt Hus B; Hus C krever eksplisitte parametere.
 
 ![Kilde, modell i samme kamera, og modellen i Google](hus-c/compare/source-model-google-000.jpg)
 
+Hus B og Hus C i samme Google-økt, samme fotofliser og lys, gir den direkte
+sammenligningen mot utgangspunktet: [husB-vs-husC-google.jpg](hus-c/compare/husB-vs-husC-google.jpg).
+Hus C leser tydeligere dybde i balkongsonen, fordi pussskivene på sidene erstatter Hus Bs
+tynne skjermer, og taket er mørkt der Hus Bs er for lyst. Hus B har rikere fasademateriale,
+fordi trekledningens flis har synlig struktur mens Hus Cs puss er nesten hvit og flat.
+
 ## Valg av pilotbygg
 
 Læringen sier at bygget skal velges etter en kildevurdering, ikke etter neste bokstav.
@@ -255,6 +261,19 @@ vise et mørkt nabotak øverst på veggen. Feilen lå i kontrollen, ikke i model
 oppdaget ved å sammenligne den genererte teksturfilen med hvordan den kom ut i renderen —
 et konkret eksempel på at også kontrollverktøyet må kontrolleres.
 
+## Funn i Hus B som piloten avdekket
+
+Den samme målingen på Hus B viser at **Hus Bs leverte takmembran er for lys**. Medianen av
+den mørke klyngen innenfor Hus Bs projiserte takpolygon er (0,34, 0,34, 0,38), samstemt
+innen 0,05 over åtte retninger; medianen i den leverte `roof_membrane.jpg` er
+(0,55, 0,53, 0,58). Det er samme feilmekanisme som på Hus C: utsnittet fra oversikt 090
+er en smøring, og et jevnt utsnitt ser reint ut nettopp fordi det ikke traff taket.
+
+Feilen er **ikke rettet her**, med hensikt. Hus B er regresjonsgrunnlaget som beviser at
+denne rundens refaktorering ikke endret noe, og en endring i den leverte modellen bør
+være et eget, bevisst valg. Rettelsen er ett felt: bytt `roof_sample` i
+`hus_b_quality.json` til `{"color": [0.34, 0.34, 0.38]}`, bygg om, og kontroller i Google.
+
 ## Hva metodeoverføringen viste
 
 Hus B-kjeden holdt, men **fire ledd var Hus B-spesifikke i koden, ikke i konfigurasjonen**,
@@ -300,6 +319,7 @@ Restavvik, ærlig oppgitt:
   `CLAMP_TO_GROUND` på skrånende terreng, samme oppførsel som Hus B, ikke et modellavvik.
 - **Stedfestingen mangler uavhengig kontroll**, som for Hus B: Kartverket har ikke
   fotavtrykk for byggene ennå.
+- **Hus Bs takmembran er fortsatt for lys**, se avsnittet over. Åpent, med kjent rettelse.
 
 For en mer troverdig nærmodell trengs det samme som for Hus B: reine fasadebilder uten
 okklusjon, materialkart, eller arkitektens 3D-/BIM-kilde. Høyere oppløsning av samme

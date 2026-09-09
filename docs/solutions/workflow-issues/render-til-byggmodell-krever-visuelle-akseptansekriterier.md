@@ -49,10 +49,15 @@ Fire funn endrer beskrivelsen under, og gjelder for Hus A og D:
    56 kandidatutsnitt og fikk et lyst tak, mens kilden viser mørk membran. Bruk en målt
    flatfarge — medianen av den mørke klyngen innenfor det projiserte takpolygonet — og
    oppgi det som måling, ikke tekstur.
-3. **Retningsforskyvningen mot oversiktsserien er per serie, ikke per prosjekt.** Hus B
+3. **Den samme målingen avdekket at Hus Bs eget tak er for lyst** — (0,55, 0,53, 0,58)
+   levert mot (0,34, 0,34, 0,38) målt. Når en ny kontroll finner en feil i det bygget
+   den ble validert mot, er det kontrollen som er bedre, ikke funnet som er feil. Rett
+   det som et eget valg, ikke stille i samme runde: baselinen er beviset på at
+   refaktoreringen var trygg.
+4. **Retningsforskyvningen mot oversiktsserien er per serie, ikke per prosjekt.** Hus B
    er −10 steg, Hus C er +2. Mål den med SIFT-treff mot alle 96 oversiktsbilder før
    registreringen; ellers feiler den eller blir dårlig.
-4. **Også kontrollverktøyet må kontrolleres.** Den nye rasterizeren speilet teksturene
+5. **Også kontrollverktøyet må kontrolleres.** Den nye rasterizeren speilet teksturene
    vertikalt (glTF-ens UV-origo er øverst til venstre), og «feilen» dukket opp som et
    mørkt nabotak øverst på en vegg. Sammenlign den genererte teksturfilen med hvordan
    den kommer ut i renderen før du tror på et funn.
