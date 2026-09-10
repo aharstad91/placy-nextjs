@@ -14,6 +14,81 @@
 
 ---
 
+## 2026-09-10 — Første avtalte kundepitch: Leangenbukta med Nora Reese, 22. september kl. 10
+
+**Milepæl:** Andreas har fått sin første konkrete mulighet til å pitche Placy til en potensiell kunde etter de nye e-postutsendelsene. Nora Reese, leder markedsføring hos Koteng Jenssen, inviterte til demonstrasjon og foreslo **22. september 2026 kl. 10 (uke 39, norsk tid)**. Andreas bekreftet tidspunktet på e-post 10. september kl. 09:09. **Tidspunkt avtalt; møtested og øvrige deltakere er ikke avklart.** Ingen kalenderinvitasjon opprettet i denne sesjonen.
+
+**Veien inn:** Leangenbukta-mailen gikk til Mari Østgaard Buaas og Jan Erik Fjeldseth 8. september. En separat Grilstad Marina-mail gikk til Marius Rennan 9. september kl. 09:52. Marius svarte kl. 11:05 og henviste direkte til markedsavdelingens leder på `nora@koteng.no`. Nora Reese ble identifisert gjennom hennes LinkedIn-profil som leder markedsføring hos Koteng Jenssen siden oktober 2024. Den parallelle henvendelsen til Marius førte dermed til en konkret ny kontakt og et møte; dette er ett observert utfall, ikke bevis for en generell effekt på svarprosent.
+
+**E-postforløp 10. september (fra tråden Andreas delte):**
+- **08:02:** Grilstad-mailen sendt til Nora, med åpningen «Marius Rennan ba meg ta kontakt med deg om dette.» Det innfelte bildet feilet hos mottaker: «Feil! Filnavn er ikke angitt.»
+- **08:19:** Nora ba om bildet på nytt og spurte om produktet har klikkbare punkter som i en 3D-modell, eller bare er et bilde.
+- **08:40:** Andreas sendte bildet på nytt og forklarte at kjøperen kan klikke på steder i et interaktivt kart med 3D-visning, lese mer og se gangruter med beregnet gangtid. Tilbød lokal demonstrasjon.
+- **08:59:** Nora svarte: «Det er nok ikke aktuelt på alle våre prosjekter, men eventuelt på Leangenbukta. Du kan gjerne komme innom og vise oss hvordan det fungerer?» Hun har ferie neste uke og foreslo 22. september kl. 10.
+- **09:09:** Andreas bekreftet tidspunktet, opplyste at Leangenbukta-demoen allerede var laget og at Mari hadde fått et eksempel omtrent samtidig med Marius-henvendelsen. Leangenbukta-bildet ble sendt med, og Andreas spurte hvor han skulle møte opp. Vedleggslisten viser `Screenshot 2026-09-08 at 11.54.38.png` (2,7 MB).
+
+**Kontakt:** Nora Reese · Leder Markedsføring, Koteng Jenssen · `nora@koteng.no` · 405 44 727 (fra signaturen hennes).
+
+**Hva kunden faktisk har sagt:** Interesse for å se løsningen og et mulig bruksområde på **Leangenbukta**. Dette er ikke en bestilling, pilotavtale eller interesse for hele porteføljen. Nora valgte selv Leangenbukta etter en presentasjon av Grilstad Marina. Hvorfor hun vurderer prosjektene ulikt, er foreløpig ukjent.
+
+**Utgangspunkt for pitchen:** Vis Leangenbukta-demoen. Bildet viser prosjektet, Cissi Klein videregående skole og gangrute med beregnet gangtid på 8 minutter. Leangenbuktas eksisterende illustrerte nabolagskart viser kategorier som handel, servering, buss og turmuligheter; demoen kan vise hvordan kjøperen går videre til konkrete steder, informasjon og ruter. Anerkjenn arbeidet de allerede har gjort. Et åpningsspørsmål til møtet: «Du nevnte at Leangenbukta kunne være aktuelt. Hva er det ved akkurat det prosjektet som gjør at du ser nytten der?»
+
+**Praktisk læring:** Kontroller bildefiler ved utsendelse. Nora mottok først en feiltekst i stedet for skjermbildet; det ble rettet i oppfølgingen. Et vanlig bildevedlegg gir mottakeren en separat fil å åpne.
+
+**Åpent:** Avklar møtested og hvem «oss» inkluderer. Legg møtet i kalender når praktiske detaljer er klare. Kvalitetssjekk den aktuelle Leangenbukta-demoen før møtet og forbered en kort demonstrasjon med utgangspunkt i Noras behov. Ingen pris er diskutert i tråden. HEM-svar og eventuell Fredensborg-utsendelse er ikke oppdatert av denne tråden.
+
+---
+
+## 2026-09-09 — Overvik/Fredensborg: skjermbilde og mailutkast klart; ny HEM-inngang vurderes
+
+**Status:** Overvik hos Fredensborg Bolig er prioritert som neste prospekt. Andreas leverte et skjermbilde, og komplett e-postutkast er skrevet. **Utsendelse til Fredensborg er ikke bekreftet.** Andreas opplyser også at HEM ennå ikke har svart på Wesselsløkka-mailen til Thomas Løbakk fra 8. september.
+
+**Mottaker og emne:** Petter Knut Nedregotten, regionssjef Trondheim, `petter.nedregotten@fredensborgbolig.no`. Emne: «Overvik – la boligkjøperne utforske nærområdet». Kontakt og rolle kontrollert mot [Fredensborgs ansattoversikt](https://fredensborgbolig.no/co/ansatte).
+
+**Materiell:** Skjermbildet viser Overvik, Ranheim skole og gangrute med beregnet gangtid på 16 minutter. Utkastet følger Grilstad-mailens rekkefølge: digital nabolagsguide og nytte først, deretter begrensningen ved tekst/bilder/statiske kart, konkret demo, plassering på overvik.no og forespørsel om en halvtime neste uke. Personlig inngang: «Jeg bor selv på Ranheim». Ingen pris eller pilotavtale tilbudt.
+
+**Demoavklaring:** Før skjermbildet kom, fant et lesekall ingen Overvik-prosjekt blant de 14 prosjektene i v2-databasen. Den tidligere antakelsen om at kun et nytt bilde manglet, ble derfor korrigert. Andreas leverte senere bildet; aktuell demo-URL og nåværende publiseringsstatus er ikke verifisert her. Skoleopplysningene er motstridende: Overviks nettside oppga Jakobsli, mens Andreas opplyser at skolegrensen er oppdatert. Ingen ny kretsverifisering ble gjort i denne sesjonen; e-postteksten omtaler kun Ranheim skole og gangruten dit.
+
+**Andre prospekter:** TUN32/Trym nedprioriteres foreløpig etter nyheter om rekonstruksjon i Ruta, som Trym Bygg ble fusjonert inn i. Dette er ikke en bekreftet konkurs i Trym Eiendom. Saupstad Torg/Rett Hjem ble vurdert, men nedprioritert da Andreas påpekte at EM1/HEM ser ut til å styre markedsføringen på deres prosjekter. Arbeidsprinsippet presiseres: finn den som faktisk styrer prosjektsiden og markedsføringen; utbygger er ikke automatisk riktig operativ mottaker.
+
+**Ny åpen tråd — Moholtpynten/Pynten:** Andreas vurderer en egen prosjekttilpasset mail til Petter Bang Møllersen mens svaret fra Thomas avventes. [Prosjektsiden](https://moholtpynten.no/) bekrefter Petter som prosjektleder og megler, `pm@hem.no`, med Bernt Skarsvaag og Ole Sundnes som øvrige kontakter. Siden krediterer Heimdal Eiendomsmegling og oppgir salgsstart sommer 2026. Dette gir en konkret prosjektinngang, men Petters beslutningsmyndighet over nettside/markedsbudsjett er ikke bekreftet. Ingen Moholtpynten-demo opprettet eller mail sendt i denne sesjonen.
+
+**Åpent:** Bekreft eventuell utsendelse og demo-URL for Overvik. Avvent HEM-svar. Ta stilling til Moholtpynten som separat inngang; ikke omtale den som en purring eller eskalering av Thomas-henvendelsen.
+
+---
+
+## 2026-09-09 — Skanska: mail sendt om Ranheim-skjemaet og Placy for Lillebytunet
+
+**Status:** Andreas bekreftet at e-posten er sendt til Thomas Borg Rasmussen (`thomas.rasmussen@skanska.no`). Emne: «Interesselisten for Ranheim Senter – kom registreringen gjennom?». Ingen svar eller møte bekreftet i denne sesjonen.
+
+**Inngangen:** Andreas bor like ved Ranheim Senter og forsøkte å melde seg på interesselisten, men fikk ingen synlig bekreftelse etter «Kontakt meg». Mailen ber Thomas bekrefte registreringen under Andreas Harstad / `andreas@aharstad.no`. Den deler også et mulig teknisk spor: innsendingen ser ut til å gå gjennom, men nettsiden får en feil ved behandling av svaret, slik at takkemeldingen uteblir. Andreas viste til Claudes undersøkelse dagen før; skjermbildet viste en JSON-parsingsfeil. Lagring av registreringen er ikke bekreftet i denne sesjonen, og forklaringen ble formulert som en mulighet.
+
+**Placy i samme mail:** Etter skjema-henvendelsen presenteres den digitale nabolagsguiden: kjøpere kan utforske steder og tilbud gjennom et interaktivt kart, med konkrete knagger for å vise hverdagen rundt boligen. Andreas opplyser at han har laget en demo for Lillebytunet og spør: «Er du riktig kontakt for dette, eller bør jeg ta det med Gro Elisabeth eller en av kollegene deres i Trondheim?» Ingen separat Placy-mail bekreftet sendt, og ingen pris eller pilotavtale tilbudt.
+
+**Kontaktavklaring:** [Ranheim Senter](https://bolig.skanska.no/prosjekter/ranheim-senter) oppgir Thomas som senior markedsansvarlig og prosjektkontakt. [Skanskas ansattoversikt](https://bolig.skanska.no/om-oss) oppgir Gro Elisabeth Skahjem som salgs- og markedssjef, Alexander Hammerhaug som prosjektsjef portefølje Trondheim og Solveig Djønne Haugli som prosjektleder i Trondheim. [Lillebytunets salgsside](https://bolig.skanska.no/prosjekter/lillebytunet) viser EM1-teamet. Thomas er en relevant inngang ut fra rollen, men hans markedsansvar for Lillebytunet er ikke bekreftet. Gro Elisabeths kontorsted er heller ikke bekreftet; formuleringen ble derfor justert før sending.
+
+**Åpent:** Avvent bekreftelse på interesseregistreringen og svar om riktig mottaker for Lillebytunet-demoen. Anbefalt neste steg er å bruke kontaktavklaringen før en separat Placy-mail.
+
+---
+
+## 2026-09-09 — Demo-invitasjon sendt til Marius Rennan for Grilstad Marina
+
+**Status:** Andreas bekreftet at e-posten er sendt. Ingen svar eller møte bekreftet i denne sesjonen.
+
+**Utsendelse:** Marius Rennan, salgsleder for Grilstad Marina (`marius@koteng.no`), som eneste mottaker. Emne: «Grilstad Marina – la boligkjøperne utforske nærområdet». Rollen og adressen ble kontrollert mot [prosjektets organisasjonsside](https://grilstadmarina.no/om-grilstadmarina/organisasjon/).
+
+**Begrunnelse:** En egen, prosjekttilpasset inngang til en kollega av Mari, som fikk Leangenbukta-mailen sammen med Jan Erik dagen før, omtrent 20 timer tidligere. Målet er å øke muligheten for at noen ser verdien og tar samtalen videre internt, uten å purre på Mari nå. Én mottaker gjør det tydelig hvem henvendelsen er til; økt svarprosent er en hypotese, ikke dokumentert effekt. Mailen nevner ikke Mari og fungerer også dersom kollegene deler henvendelsene med hverandre.
+
+**Budskap og rekkefølge:** Gårsdagens mal ble tilpasset Grilstad Marina. Avsnittene ble byttet: mailen åpner med den digitale nabolagsguiden og nytten i salgsarbeidet, fulgt av et kortere avsnitt om beliggenhet og begrensningen ved tekst, bilder og statiske kart. Deretter konkret demo, plassering og møteforespørsel.
+
+**Demo og plassering:** Innfelt 3D-skjermbilde med Grilstad Marina, popup for Grilstadporten og gangrute med beregnet gangtid på 8 minutter. Mailen sier at løsningen kan bygges inn direkte på grilstadmarina.no, slik at kjøperne kan utforske nærområdet uten å forlate prosjektsiden. Ingen løfter om automatisk oppdatering i denne mailen.
+
+**Møteforespørsel:** En halvtime neste uke, med tilbud om å komme innom på et tidspunkt som passer Marius. Ingen pris eller pilotavtale tilbudt.
+
+**Åpent:** Avvent svar fra Marius og fra gårsdagens mottakere, og avtal demonstrasjoner ved interesse. Ingen purring sendt eller kalenderavtale opprettet i denne sesjonen.
+
+---
+
 ## 2026-09-08 — Demo-invitasjoner sendt for Wesselsløkka og Leangenbukta
 
 **Status:** Andreas bekreftet at begge e-postene er sendt. Ingen svar eller møter bekreftet i denne sesjonen.
