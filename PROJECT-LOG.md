@@ -6,6 +6,40 @@
 
 ---
 
+## 2026-09-08 (kveld) — 3D OG SATELITT BLIR STANDARD, IKKE TILVALG
+
+**Kontekst:** kartlegging av Skanska som utbygger endte i Lillebytunet-boardet, som viste seg å stå på rent Mapbox-2D uten kartveksler i det hele tatt. Andreas: *«den mangler faktisk satelitt og 3d den. kan du sette provisjonerings default at det skal være med fremover?»*
+
+**Beslutningen som ble reversert.** `projects.has_3d_addon` gater satelitt- og 3D-visningen i board-kartet (`BoardMap.tsx` — `showViewToggle={has3dAddon}`). Kolonnen ble innført i 065 og deretter *bevisst* spesifisert i PRD 3 (r03.5 AC2) som et **betalt tilvalg** med default `false`: den var hardkodet `true`, og poenget med endringen var at et board uten kjøpt addon skulle deklarere `false` og ikke rendre 3D. Den produktbeslutningen gjelder ikke lenger. Satelitt og 3D er grunnleveranse på alle nye boards.
+
+**Defaulten lå fem steder, ikke ett.** Det er hele grunnen til at endringen er verdt en logg-entry — hver inngang til pipelinen hadde sin egen `false`:
+
+| Sted | Før | Etter |
+|---|---|---|
+| `scripts/provision-rapport.ts:61` | `has("--addon-3d")` — opt-in | `!has("--no-3d")` — opt-out |
+| `app/api/admin/provision/route.ts:47` | `z.boolean().default(false)` | `.default(true)` |
+| `lib/pipeline/create-report-project.ts:231` | `options.has3dAddon ?? false` | `?? true` |
+| `app/api/generation-requests/route.ts:211` | `has3dAddon: false` (self-serve) | `true` |
+| `app/api/admin/retry-request/route.ts:96` | `has3dAddon: false` | `true` |
+
+CLI-flagget er **snudd, ikke fjernet** — `--no-3d` finnes fortsatt for boards som bevisst skal være rene Mapbox-2D. Doc-kommentarene i `create-report-project.ts` sa «default false» og «Self-serve sender false»; de er skrevet om, ellers hadde koden løyet om seg selv.
+
+**Migrasjon `092_has_3d_addon_default_true.sql`** setter kolonne-defaulten i basen, slik at rader opprettet utenom pipelinen også får den. Kjørt og verifisert mot prod (`column_default = true`). Migrasjonen rører **bare defaulten** — eksisterende rader står urørt, med vilje.
+
+**Testen som låste den gamle defaulten** (`create-report-project.test.ts`, AC2) asserterte `has_3d_addon === false` for tomt input. Den er snudd til å assertere `true`, og det er lagt til en egen test for at `has3dAddon: false` fortsatt gir `false` — opt-outen må være dekket, ellers kan flagget råtne uten at noe ryker.
+
+**Lillebytunet ble skrudd på manuelt** (`UPDATE v2.projects … WHERE id = 'skanska_lillebytunet'`) og Next-cachen bustet via `/api/revalidate?tag=product:skanska_lillebytunet`. Uten cache-bustingen viste boardet fortsatt 2D-varianten selv etter at basen var endret — samme felle som er dokumentert fra før: gamle tall i nettleseren er Next-cachen, ikke pipelinen.
+
+**De åtte gamle boardene ble bevisst IKKE backfillet.** Fem av tretten hadde 3D fra før (Wesselsløkka, StasjonsKvartalet, Grilstad Marina, Leangenbukta, Strindfjordvegen, Teknostallen); resten står fortsatt av. Andreas: *«bare la de stå.»* Endringen gjelder framover, ikke bakover.
+
+**Åpent, ikke løst:** self-serve-meglerflyten drar nå Google-motoren på hvert board den lager. Det er en Google-kostnad på en gratis leadgen-flyt, og den er ikke vurdert opp mot volum. Hvis den skal tilbake på Mapbox er det én linje i `generation-requests/route.ts`.
+
+**Sett i forbifarten:** velkomstskjermen på Lillebytunet mangler hero-bilde — høyre halvdel er tom beige.
+
+**Verifisert:** 3 925 tester grønne (235 filer), `tsc --noEmit` rent, ESLint 0 errors, boardet lastet i Chrome med 0 konsollfeil i satelittvisning. Ikke committet.
+
+---
+
 ## 2026-09-08 — FRA OMRISS TIL MODELL: ETASJER, GRUNN, GATER OG EN TOMT SOM BLE RYDDET
 
 **Kontekst:** fortsettelse av samme arbeid i worktree `../placy-wesselslokka-building-masses`, gren `feat/wesselslokka-building-masses`. Forrige økt endte med 55 stadfestede volumer som alle sto på anslåtte 12–14 m, i rosa, oppå fotofliser av dagens Brøset. Fem runder til, nummerert videre fra de to i forrige entry.
@@ -9381,3 +9415,27 @@ NYE: `lib/board/reach.ts` + test, `lib/board/contour-label-placement.ts` + test,
 - **`isochrones_toggled` har ingen aggregeringsgren i `lib/insight/`** — hendelsen sendes, men innsiktsflaten viser den ikke. Nå mer relevant enn før: av-som-standard betyr at *om* folk slår den på er selve målingen.
 - Fire umergede grener står fortsatt (`feat/hotell-dashboard`, `feat/megler-self-serve`, `feat/prospekt-skanner`, `feat/story-opt-in`).
 - `086_postal_areas.sql` og `086_event_type_faq_opened.sql` deler prefiks — replay-rekkefølgen er tvetydig.
+
+## 2026-09-08 — Lillebytunet Hus B: teksturert 3D-modell fra boligvelger-renders, i Google 3D-kartet
+
+Teknisk prototype på branch `feat/lillebytunet-3d-model` (worktree `../placy-lillebytunet`, ikke pushet). Spørsmålet var om bildeserien i en eksisterende boligvelger kan bli en ekte, teksturert GLB som står på riktig sted i vårt Google Maps 3D-kart. Svar: ja, for ett bygg, med fire visuelle vurderinger underveis og resten som skript. Tre agenter: Opus på datainnhenting og kartintegrasjon, Fable på modellering/georef.
+
+### Funn som endrer hvordan vi bygger
+
+- **Boligvelgeren (Nordr/newbuilds «property-explorer») er et rent turntable.** 6 serier × 96 bilder à 1920×1080 WebP, 3,75°/steg, kamera i sirkel med fast høyde og 19,9° pitch. `direction 0` = kamera i sør som ser mot nord. Ingen kameradata i API-et, men COLMAP registrerte 96/96 med 0,4 px feil på begge seriene vi kjørte — renders er ideelt SfM-materiale.
+- **Enhetspolygonene i API-et er nøkkelen til segmentering.** Et 3D-punkt hører til Hus B hvis ≥ 50 % av observasjonene ligger i Hus B-polygonene. Ingen manuell masking.
+- **Google Maps 3D leser GLB som Z-opp** (+X øst, +Y nord), mot glTF-standarden. Målt med probe-boks. Bak rotasjonen inn i vertices.
+- **Google har ingen ambient-lys på Model3DElement:** flater som vender fra sola blir helt svarte. Løsning i kjerne-glTF: `emissiveTexture` = fasadetekstur, svart baseColor. Renders har lyset bakt inn uansett.
+- **Georef uten fotavtrykk:** de to eksisterende naboblokkene (Ståltaugen 1/2) finnes både i renderen og i OSM → 2D-likhetstransform med 1 m restfeil. Ga også uavhengig skala: Hus B 16,3 × 27,7 m mot modellens 16,1 × 27,7 (etasjehøyde-anslaget 3,1 m holdt innen 1 %). Agent 2s alternative metode (polygon-sinus + tomtepolygon) traff retning og øst-vest eksakt, men 20 m for langt sør — håndtegnet tomtegrense som skala er for svak.
+- **Hybriden vant:** boks + inntrukket toppetasje (22 trekanter) med homografi-projiserte fasadeteksturer fra ett frontalt kamera per fasade. 1,1 MB GLB, ingen utvidelser. Full tett fotogrammetri ble aldri nødvendig.
+
+### Filer
+
+`app/demo/lillebytunet-3d/`, `components/map/lillebytunet-model-demo.tsx`, `lib/map/lillebytunet-render-rig.ts`, `public/models/lillebytunet/husB.glb`, `scripts/lillebytunet/` (fetch + model-pipeline), `docs/research/lillebytunet-3d/` (01 data, 02 kart, 03 modell; screens/, compare/, model-check/). Rådata, COLMAP og `.blend` under `~/klienter/placy/lillebytunet/` (utenfor git).
+
+### Åpent
+
+- Hus Bs posisjon: 63.441359, 10.440215, heading 110 — to metoder spriker 20 m i nord–sør; avgjøres mot flyfoto/FKB når bygget står.
+- Tak-tekstur er uskarp (20° pitch gir 3× strekk). Balkonger er flate i teksturen, ikke geometri.
+- Neste test for automatiserbarhet: Hus A (L-form), C og D (8 etasjer) med samme pipeline.
+- Demo-kamera er hardt kutt; `flyCameraTo` overkjøres av vis.gl-props.

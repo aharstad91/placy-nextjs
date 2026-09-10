@@ -52,9 +52,10 @@ export interface ReportProjectOptions {
   /** Deklarert leveransenivå (1/2) — skrives i initial reportConfig.
    *  Utelatt → feltet utelates (nivå 1-default-semantikk). */
   reportTier?: ReportTier;
-  /** 3D-addon — eksplisitt pipeline-input (CLI `--addon-3d`, default false).
-   *  Ortogonalt render-flagg, UAVHENGIG av tier (ingen validator gater 3D mot
-   *  tier). Skrives til projects.has_3d_addon. Self-serve sender false. */
+  /** 3D-addon — pipeline-input, DEFAULT TRUE siden 2026-09-08 (CLI-opt-out er
+   *  `--no-3d`). Gater satelitt-/3D-visningen i board-kartet; uten den står
+   *  boardet på rent Mapbox-2D. Ortogonalt render-flagg, UAVHENGIG av tier
+   *  (ingen validator gater 3D mot tier). Skrives til projects.has_3d_addon. */
   has3dAddon?: boolean;
 }
 
@@ -224,9 +225,10 @@ export async function createReportProject(
       | "residential",
     venue_context: isNaering ? "urban" : "suburban",
     tags: [isNaering ? "Eiendom - Næring" : "Eiendom - Bolig"],
-    // 3D er ortogonalt render-flagg fra eksplisitt CLI-input (--addon-3d),
-    // IKKE hardkodet + uavhengig av tier (PRD 3 / r03.5 AC2). Default false.
-    has_3d_addon: options.has3dAddon ?? false,
+    // 3D er ortogonalt render-flagg, uavhengig av tier (PRD 3 / r03.5 AC2).
+    // Default snudd til TRUE 2026-09-08: satelitt og 3D skal være med på alle
+    // nye boards, og kalleren må sende false eksplisitt for å skru det av.
+    has_3d_addon: options.has3dAddon ?? true,
     discovery_circles: [
       { lat: options.lat, lng: options.lng, radiusMeters: discoveryRadius },
     ],

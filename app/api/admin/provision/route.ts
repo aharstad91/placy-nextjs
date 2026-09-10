@@ -43,7 +43,8 @@ const ProvisionRequestSchema = z.object({
     .regex(/^[a-z0-9-]+$/, "kunde-slug må være kebab-case"),
   profile: z.enum(["bolig", "naering"]).default("bolig"),
   reportTier: OptionalReportTierSchema,
-  has3dAddon: z.boolean().default(false),
+  // Default PÅ (2026-09-08): satelitt- og 3D-visningen skal være med på nye boards.
+  has3dAddon: z.boolean().default(true),
   allowUpdate: z.boolean().default(false),
   /** Fra adresse-autocomplete → kjernen hopper over geocoding. Uten →
    *  kjernen geocoder ikke-interaktivt (samme som CLI uten --confirm-coords). */

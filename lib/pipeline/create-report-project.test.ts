@@ -260,7 +260,7 @@ describe("createReportProject — Unit 1", () => {
     expect(findProductConfig(mockSupabase.inserts).reportConfig?.reportTier).toBe(2);
   });
 
-  it("AC2: has_3d_addon default false (ikke hardkodet true) — ortogonalt render-flagg", async () => {
+  it("AC2: has_3d_addon default TRUE (2026-09-08) — satelitt/3D med på nye boards", async () => {
     const mockSupabase = buildMockSupabase();
     (createServerClient as ReturnType<typeof vi.fn>).mockReturnValue(mockSupabase);
 
@@ -273,13 +273,29 @@ describe("createReportProject — Unit 1", () => {
     });
 
     const insert = findProjectInsert(mockSupabase.inserts);
-    expect(insert.has_3d_addon).toBe(false);
+    expect(insert.has_3d_addon).toBe(true);
     // v2 NOT-NULL-felt satt eksplisitt
     expect(insert.version).toBe(1);
     expect(insert.default_product).toBe("report");
   });
 
-  it("AC2: has3dAddon=true → has_3d_addon true (CLI --addon-3d)", async () => {
+  it("AC2: has3dAddon=false → has_3d_addon false (CLI --no-3d er opt-out)", async () => {
+    const mockSupabase = buildMockSupabase();
+    (createServerClient as ReturnType<typeof vi.fn>).mockReturnValue(mockSupabase);
+
+    await createReportProject({
+      name: "Addon Off",
+      address: "Addon Off, Trondheim",
+      lat: 63.4,
+      lng: 10.4,
+      customerSlug: "placy-demo",
+      has3dAddon: false,
+    });
+
+    expect(findProjectInsert(mockSupabase.inserts).has_3d_addon).toBe(false);
+  });
+
+  it("AC2: has3dAddon=true → has_3d_addon true (eksplisitt på)", async () => {
     const mockSupabase = buildMockSupabase();
     (createServerClient as ReturnType<typeof vi.fn>).mockReturnValue(mockSupabase);
 

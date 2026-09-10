@@ -58,7 +58,9 @@ function parseArgs() {
   const customer = get("--customer") ?? DEFAULT_CUSTOMER;
   const dryRun = has("--dry-run");
   const allowUpdate = has("--update");
-  const has3dAddon = has("--addon-3d");
+  // 3D/satelitt er default PÅ (2026-09-08). `--no-3d` er opt-out for boards
+  // som bevisst skal være rene Mapbox-2D.
+  const has3dAddon = !has("--no-3d");
   const confirmCoordsStr = get("--confirm-coords");
   const profileStr = get("--profile") ?? "bolig";
 

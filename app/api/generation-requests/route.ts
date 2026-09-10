@@ -208,7 +208,7 @@ export async function POST(request: NextRequest) {
         address,
         customer: customerSlug,
         profile: profile as ReportProfile,
-        has3dAddon: false,
+        has3dAddon: true,
         allowUpdate: false,
         confirmCoords: { lat, lng },
         placeName: address,

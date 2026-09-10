@@ -93,7 +93,7 @@ export async function POST(request: NextRequest) {
         address,
         customer,
         profile,
-        has3dAddon: false,
+        has3dAddon: true,
         // Retry kjører typisk mot et delvis opprettet prosjekt — tillat update.
         allowUpdate: true,
         ...(lat !== null && lng !== null
