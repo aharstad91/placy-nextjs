@@ -1,0 +1,73 @@
+{
+  "colmap": "colmap-c",
+  "series": "bygg-c",
+  "images": 96,
+  "points_total": 59944,
+  "points_building": 8751,
+  "orbit": {
+    "plane_residual_units": 0.0007660422312049584,
+    "orbit_radius_units": [
+      3.7440406848004515,
+      0.07757790600976255
+    ],
+    "pitch_down_deg": [
+      19.88651463993539,
+      0.003358916201430404
+    ],
+    "angular_step_deg": 3.751131885938071,
+    "camera_height_above_center_units": 2.185570879368696e-17
+  },
+  "footprint": {
+    "theta_deg": 72.5,
+    "area_units": 2.3742179988987724,
+    "lo": [
+      -0.6385435257512522,
+      -0.9455158873443714
+    ],
+    "hi": [
+      0.6170000096793387,
+      0.945472303745737
+    ],
+    "size_units": [
+      1.2555435354305908,
+      1.8909881910901083
+    ]
+  },
+  "height_units": {
+    "p1": -2.423237376875077,
+    "p50": -1.6588678074228198,
+    "p99": -0.5785777093854199,
+    "range": 1.844659667489657
+  },
+  "band_fraction": [
+    0.06,
+    0.55
+  ],
+  "z_peaks_units": [
+    -2.425606571202117,
+    -2.1385421796393445,
+    -1.9471659185974965,
+    -1.7079455922951865,
+    -1.4687252659928762,
+    -1.2295049396905662,
+    -1.0381286786487178,
+    -0.8945964828673321,
+    -0.798908352346408,
+    -0.6553761565650218
+  ],
+  "written": [
+    "/Users/andreasharstad/klienter/placy/lillebytunet/colmap-c/points.npy"
+  ],
+  "existing_frame_drift": 0.0,
+  "note": "points.npy is in the existing frame.npy, not the freshly fitted one; existing_frame_drift is how far the two frames differ",
+  "checks": [
+    "/Users/andreasharstad/Documents/placy-lillebytunet/docs/research/lillebytunet-3d/hus-c/model-check/box-000.jpg",
+    "/Users/andreasharstad/Documents/placy-lillebytunet/docs/research/lillebytunet-3d/hus-c/model-check/box-012.jpg",
+    "/Users/andreasharstad/Documents/placy-lillebytunet/docs/research/lillebytunet-3d/hus-c/model-check/box-024.jpg",
+    "/Users/andreasharstad/Documents/placy-lillebytunet/docs/research/lillebytunet-3d/hus-c/model-check/box-036.jpg",
+    "/Users/andreasharstad/Documents/placy-lillebytunet/docs/research/lillebytunet-3d/hus-c/model-check/box-048.jpg",
+    "/Users/andreasharstad/Documents/placy-lillebytunet/docs/research/lillebytunet-3d/hus-c/model-check/box-060.jpg",
+    "/Users/andreasharstad/Documents/placy-lillebytunet/docs/research/lillebytunet-3d/hus-c/model-check/box-072.jpg",
+    "/Users/andreasharstad/Documents/placy-lillebytunet/docs/research/lillebytunet-3d/hus-c/model-check/box-084.jpg"
+  ]
+}

@@ -1,0 +1,74 @@
+{
+  "capturedAt": "2026-09-09T07:58:25.004Z",
+  "baseUrl": "http://localhost:3002",
+  "model": "/models/lillebytunet/husB-pbr-final.glb",
+  "viewport": {
+    "width": 1920,
+    "height": 1080
+  },
+  "deviceScaleFactor": 1,
+  "placement": {
+    "lat": 63.441359,
+    "lng": 10.440215,
+    "heading": 115,
+    "alt": 0,
+    "altmode": "CLAMP_TO_GROUND",
+    "scale": 1
+  },
+  "browser": "152.0.7977.84",
+  "settleMs": 5000,
+  "screenshotFormat": "jpeg",
+  "screenshotQuality": 90,
+  "views": [
+    {
+      "id": "near",
+      "url": "http://localhost:3002/demo/lillebytunet-3d?lat=63.441359&lng=10.440215&heading=115&alt=0&altmode=CLAMP_TO_GROUND&scale=1&model=%2Fmodels%2Flillebytunet%2FhusB-pbr-final.glb&cam=near",
+      "attachedMs": 501,
+      "modelResponse": {
+        "status": 200,
+        "bytes": 1886100,
+        "sha256": "4cea9f2697b094020ff9c5a9b9097e2f71978e271896d8e516ee80017a27a717"
+      },
+      "camera": {
+        "heading": 25,
+        "tilt": 60,
+        "range": 65,
+        "center": {
+          "lat": 63.441359,
+          "lng": 10.440215,
+          "altitude": 28.2
+        }
+      },
+      "modelElementAttached": true,
+      "statusText": "Model3DElement lagt til"
+    },
+    {
+      "id": "render-72",
+      "url": "http://localhost:3002/demo/lillebytunet-3d?lat=63.441359&lng=10.440215&heading=115&alt=0&altmode=CLAMP_TO_GROUND&scale=1&model=%2Fmodels%2Flillebytunet%2FhusB-pbr-final.glb&cam=render&dir=72",
+      "attachedMs": 154,
+      "modelResponse": {
+        "status": 200,
+        "bytes": 1886100,
+        "sha256": "4cea9f2697b094020ff9c5a9b9097e2f71978e271896d8e516ee80017a27a717"
+      },
+      "camera": {
+        "heading": 132,
+        "tilt": 69.95768325510636,
+        "range": 49.604032094175565,
+        "center": {
+          "lat": 63.441359,
+          "lng": 10.440215,
+          "altitude": 24.2
+        }
+      },
+      "modelElementAttached": true,
+      "statusText": "Model3DElement lagt til"
+    }
+  ],
+  "errors": [],
+  "caveats": [
+    "Google phototiles and lighting can change between sessions.",
+    "Render-rig direction is approximate; FOV is not calibrated to original renders.",
+    "Model3DElement attachment and HTTP success do not confirm visually correct rendering."
+  ]
+}

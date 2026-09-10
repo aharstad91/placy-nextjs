@@ -1,0 +1,129 @@
+{
+  "convention": "overview = scale * building @ rotation + translation",
+  "scale": 0.36355281699320724,
+  "rotation": [
+    [
+      -0.5598737255558225,
+      -0.3070290459756791,
+      0.7695937735971546
+    ],
+    [
+      0.22700728521469693,
+      0.8364356838075614,
+      0.4988416976484954
+    ],
+    [
+      -0.7968745847946817,
+      0.4539917529874784,
+      -0.39860053227217357
+    ]
+  ],
+  "translation": [
+    -0.5459142900150473,
+    0.6273322132343029,
+    0.8811403912959369
+  ],
+  "pairs": [
+    {
+      "building": 0,
+      "overview": 2,
+      "correspondences": 134
+    },
+    {
+      "building": 12,
+      "overview": 14,
+      "correspondences": 226
+    },
+    {
+      "building": 24,
+      "overview": 26,
+      "correspondences": 141
+    },
+    {
+      "building": 36,
+      "overview": 38,
+      "correspondences": 46
+    },
+    {
+      "building": 48,
+      "overview": 50,
+      "correspondences": 35
+    },
+    {
+      "building": 60,
+      "overview": 62,
+      "correspondences": 3
+    },
+    {
+      "building": 72,
+      "overview": 74,
+      "correspondences": 44
+    },
+    {
+      "building": 84,
+      "overview": 86,
+      "correspondences": 134
+    }
+  ],
+  "inliers": 222,
+  "total": 763,
+  "median_meters": 0.09552823323478003,
+  "held_out": [
+    {
+      "building": 0,
+      "overview": 2,
+      "correspondences": 134,
+      "held_out": 56,
+      "median_pixels": 0.2090335606482244,
+      "p95_pixels": 0.7936119067491729
+    },
+    {
+      "building": 12,
+      "overview": 14,
+      "correspondences": 226,
+      "held_out": 68,
+      "median_pixels": 0.24352508107556814,
+      "p95_pixels": 1.011595768120572
+    },
+    {
+      "building": 24,
+      "overview": 26,
+      "correspondences": 141,
+      "held_out": 44,
+      "median_pixels": 0.19242942896605858,
+      "p95_pixels": 0.5118831090460075
+    },
+    {
+      "building": 36,
+      "overview": 38,
+      "correspondences": 46,
+      "held_out": 16,
+      "median_pixels": 0.14277933165760504,
+      "p95_pixels": 0.5191331255689056
+    },
+    {
+      "building": 48,
+      "overview": 50,
+      "correspondences": 35,
+      "held_out": 8,
+      "median_pixels": 0.7288117586567383,
+      "p95_pixels": 1.2091902232849903
+    },
+    {
+      "building": 72,
+      "overview": 74,
+      "correspondences": 44,
+      "held_out": 7,
+      "median_pixels": 0.5370565937370778,
+      "p95_pixels": 0.6776967782776131
+    },
+    {
+      "building": 84,
+      "overview": 86,
+      "correspondences": 134,
+      "held_out": 23,
+      "median_pixels": 0.2664423906713819,
+      "p95_pixels": 0.6816545500554743
+    }
+  ]
+}

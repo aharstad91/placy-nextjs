@@ -1,0 +1,18 @@
+{
+  "file": "public/models/lillebytunet/husB-v2.glb",
+  "bytes": 1886792,
+  "triangles": 20352,
+  "materials": 19,
+  "textures": 19,
+  "bounds_min": [
+    -7.682857036590576,
+    -14.487178802490234,
+    0.0
+  ],
+  "bounds_max": [
+    8.149642944335938,
+    14.821821212768555,
+    19.306800842285156
+  ],
+  "extensions": []
+}

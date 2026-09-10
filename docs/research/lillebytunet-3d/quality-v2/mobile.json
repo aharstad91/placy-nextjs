@@ -1,0 +1,17 @@
+{
+  "model": "http://localhost:3002/models/lillebytunet/husB-v2.glb",
+  "overflow": false,
+  "buttons": [
+    {
+      "text": "Nærvisning",
+      "x": 112.453125,
+      "width": 86.28125
+    }
+  ],
+  "reset": {
+    "heading": 25,
+    "range": 65,
+    "tilt": 60
+  },
+  "errors": []
+}

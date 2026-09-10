@@ -6,6 +6,77 @@
 
 ---
 
+## 2026-09-09 — HUS C BYGD OG KONTROLLERT, PIPELINEN GJORT BYGGAGNOSTISK, OG DATAMAPPA SLETTET VED ET UHELL
+
+**Kontekst:** worktree `../placy-lillebytunet`, gren `feat/lillebytunet-3d-model`. Oppdraget var «bygg neste bygg og valider at det er like bra som utgangspunkt», etter at Hus B-runden dagen før hadde etterlatt en dokumentert arbeidsmåte i `docs/solutions/workflow-issues/render-til-byggmodell-*`. Fire faser: bygg Hus C, revider dokumentene mot koden, rett funnene — og til slutt en destruktiv feil som må stå i loggen.
+
+### Hus C: `9b9b4e6`
+
+**Pilotbygget ble valgt på tre målinger, ikke på neste bokstav.** Antall enheter med polygon (rekkehuset har 7 mot blokkenes 24–41), byggets medianandel av bildet, og formklassifisering fra fire utsnitt. Hus C vant fordi det testet én ny akse — åtte etasjer og inntrekk i et hjørne — uten samtidig å teste ny balkongtopologi. Hus A har balkonger skåret **inn** i volumet og en sidefløy; Hus D har balkonger rundt flere fasader.
+
+Leveransen: `husC-v1.glb`, 16,08 × 24,89 × 25,75 m, 11 550 trekanter, 20 teksturer, ingen glTF-utvidelser. Kontrollert i 11 faste Google-kameraer, hele 18-sekunders rotasjonen (12 av 12 orbit-bilder jevnt fordelt, ingen hull), og mot kilden i det **eksakte** kildekameraet for 13 retninger. Stedfestet til 63.441259 / 10.440853 med heading 112,4°.
+
+**Den uavhengige bekreftelsen som betyr mest:** oversiktsserien måler Hus C til 25,7 m høy; modellen, bygget fra bygg-c-serien alene, måler 25,75 m. To kjeder som ikke deler noe, med 5 cm avvik.
+
+**Delt kode ble gjort byggagnostisk, og Hus B kom ut byte-identisk etterpå.** Ni filer endret: takoppbygg, pergola, flisstørrelse, gavlåpninger, materialfarger, flate-reparasjoner og per-nivå fasadevalg flyttet fra Python til konfigurasjon; `glb_mesh` fikk nodenavn og flisstørrelse som parametere; `check_glb` fikk målgrenser på CLI (Hus B-grensene avviste Hus Cs 25,75 m); `capture-quality.mjs` og render-riggen fikk plassering og nullpunkt. Alle tre Hus B-GLB-er ble SHA-256-sammenlignet etter hver endring. Det var den billigste garantien i hele runden.
+
+Tre nye byggagnostiske skript måtte skrives, fordi prototypene leste fra arbeidsmappa og bar Hus Bs egne arrays: `frame_fit.py`, `massing.py`, `georef_building.py`. To nye kontrollverktøy: `facade_grid.py` (rektifisert fasade med rutenett) og `model_overlay.py` (rendrer den eksporterte GLB-en gjennom kildekameraet — det fjerner Hus B-rundens forbehold om at original mot Google bare er en tilnærmet retningssammenligning).
+
+**Tre funn som gjelder Hus A og D.** Veggplanet kan ikke leses av punkthistogrammet — Hus Cs gavlvegg lå 64 cm fra den sterkeste toppen, som er omtrent én bin-bredde; det som avgjorde var å tilpasse vindusrytmen til etasjehøyden målt i 3D. Taket kan ikke samples i dette materialet: 7,5° blikkvinkel og 1,17 m parapet skjuler 9 m takflate fra hvert kamera, og et «reint» utsnitt er derfor et anti-signal. Og kontrollverktøyet må selv kontrolleres — den nye rasterizeren speilet teksturene vertikalt, og «feilen» dukket opp som et mørkt nabotak øverst på en vegg.
+
+### En feil i Hus B, funnet av piloten: `e7ed767`
+
+Samme takmåling på Hus B gir (0,34, 0,34, 0,38); den leverte teksturen har median (0,55, 0,53, 0,58) — omtrent 60 % for lys, samme mekanisme. **Ikke rettet, med hensikt:** Hus B er beviset på at refaktoreringen var trygg, og en endring i en levert modell bør være et eget valg. Rettelsen er ett felt i `hus_b_quality.json`.
+
+`occlusion.py`, som ble skrevet senere samme dag, forklarer hvorfor feilen ble subtil: Hus Bs tak er 55,8 % synlig, altså rett over 50 %-terskelen. Hus Cs er 37,5 %.
+
+### Revisjon av egne dokumenter: 27 bekreftede funn
+
+Seks uavhengige linser leste koden mot dokumentasjonen med adversariell verifisering per funn — 41 kontrollert, 27 bekreftet, 14 forkastet. Tre var blokkerende:
+
+1. **L-formen til Hus A treffer datamodellen, ikke bare byggeren.** Fotavtrykket er ett rotert rektangel hele veien, og ingen mekanisk sjekk fanger det, fordi en L har samme bounding box som rektangelet den forveksles med. Feilen ville dukket opp først i Google, etter at teksturer og balkonger var bygget på feil volum.
+2. **Innskårne balkonger feiler som `ValueError: Box dimensions must be positive`** — som leser som en skrivefeil i konfigurasjonen, ikke som «primitiven finnes ikke». Og fasaden kan ikke få hull: fronten er én ubrutt quad og `opening()` legger en flate 1 mm foran veggen.
+3. **`matplotlib` manglet i `requirements.txt`** mens begge rapportene sa at miljøet var pinnet der. Et nytt miljø ville stoppet på steg 2. Rettet.
+
+Resten er rettet i dokumentene og i koden: etasjehøyden har nå én kommando og ett tall (`massing.py --slab-beyond`, som gir 0,240 med spredning 0 for Hus C mot autokorrelasjonens 0,2368, som er kvantisert til histogram-bin); okklusjonsbudsjettet er et skript i stedet for en anekdote; estimatoren følger flatetypen (median for solid flate, mørkeste 15 % for gjennomskinnelig, mål farge for skrapet); `frame_fit.py` fikk `--write-points` så et levert bygg kan måles uten at `frame.npy` tilpasses på nytt og flytter modellen; og `--near-altitude` ble omdøpt til `--expect-near-altitude`, fordi den ikke flyttet kameraet — den flyttet bare påstanden skriptet sjekket, og feil verdi feilet kjøringen etter 18 sekunder.
+
+`CLAUDE.md` peker nå på modellkjeden. Den gjorde ikke det, så en ny sesjon fant ikke læringen.
+
+### Datamappa ble slettet: hva som er tapt og hvordan vi bygger den opp igjen
+
+**`~/klienter/placy/lillebytunet` er borte — 576 kildebilder, tre COLMAP-rekonstruksjoner, alle `.npy`-rammeverk, begge byggs `.blend` og teksturmapper, omtrent 1 GB.** Årsak: en `for`-løkke med `set -- $pair` satte ikke de posisjonelle variablene som antatt, så `rm -rf "$D/$2"` ble `rm -rf "$D/"`. Ingen Time Machine montert, ingen kopi.
+
+**Og kontrollen bestod.** Samme løkke sammenlignet `shasum`-utdata på begge sider; da filene var borte ble begge tomme strenger, og `[ "" = "" ]` er sant. Alle seks GLB-er ble meldt «IDENTISK» i samme sekund som grunnlaget forsvant. To feil på rad: en destruktiv kommando med en variabelsatt sti, og en kontroll som ikke kunne feile.
+
+Ingen leveranse er tapt. Begge modellene, alle skript, alle konfigurasjoner og hele bevismappa med registreringer, målinger og kontrollbilder ligger i git, og demoen svarte 200 på begge GLB-ene etterpå.
+
+**Gjenoppbygging er mulig, og den er planlagt:** `docs/research/lillebytunet-3d/06-gjenoppbygging.md`. Nøkkelen er at COLMAP-løsningen bare skiller seg fra den gamle med en global likhetstransform, og at rammeverket er utledet av kameraposisjonene i samme løsning — rotasjon og translasjon forsvinner altså av seg selv. Bare skalaen står igjen, og den er målbar, fordi orbit-radius (3,744 for C, 3,762 for B), pitch og vinkelsteg ble skrevet til JSON i repoet. Konfigurasjonens koordinater ganges med den faktoren, `scale_m_per_unit` deles på den. Akseptansetesten er ikke hashen, men den leverte GLB-en i git: en gjenoppbygd modell er god nok når punktene faller sammen med den.
+
+Grensene er ærlige: kildebildene er ikke garantert de samme (API-øyeblikksbildet var fra 8. september og enhetspolygonene følger salgsstatus), `.blend`-filene fra runden er tapt selv om nye kan bygges fra GLB-ene, og **den byte-identiske reproduksjonen som ble dokumentert i dag kan ikke demonstreres på nytt.**
+
+Læring: `docs/solutions/workflow-issues/destruktiv-sletting-krever-eksplisitte-stier.md`.
+
+### Begge byggene i samme kart
+
+Demoen tok én `modelSrc` og lagde ett `Model3DElement`, så Hus B og Hus C kunne bare åpnes i to separate URL-er. **Nå står de i samme kart:** `?buildings=husB,husC&focus=husC`. Plasseringen ligger i et register (`lib/map/lillebytunet-buildings.ts`) med `georef_building.py`s egne tall, ikke i URL-en; de gamle enkeltmodell-parameterne virker uendret, som `capture-quality.mjs` og kjøreoppskriftene krever.
+
+Grunnen til at det er en kontroll og ikke en visning: **naboforholdet er en egen påstand.** Hvert bygg var kontrollert alene, og tre ting kunne derfor ikke prøves før nå — at byggene ikke skjærer i hverandre (åpningen måler ~9 m, som de publiserte målene tilsier), at begge balkongsidene vender mot SSV slik situasjonsplanen krever, og at høydeforholdet stemmer (25,75 mot 19,31 m). Alle tre holdt. `capture-quality.mjs` fikk `--buildings/--focus` og krever nå **én tilknyttet modell og ett 200-svar per bygg** i hver visning, så en visning der bare det ene bygget kom fram feiler kjøringen i stedet for å bli et bilde ingen ser feilen i.
+
+Sidegevinsten var å se Hus Bs takfeil ordentlig: ved siden av Hus Cs målte, mørke membran er det lyse taket ikke lenger et subtilt avvik. Det gjør beslutningen om å rette det mer presserende, men den står fortsatt åpen.
+
+Bevis i `docs/research/lillebytunet-3d/site/`, rapport i `07-flere-bygg-i-kartet.md`, og naboforholdet er nå del av kontrollpunkt 6 i arbeidsmåten.
+
+### Åpent
+
+- **Hus A og D er ikke modellert**, og de to første punktene over må løses før de kan bli det.
+- **Hus Bs takfarge er kjent gal og ikke rettet.** Ett felt.
+- **Gjenoppbyggingen er ikke kjørt.** Steg 9 — `.blend` fra GLB — kan gjøres uten noe av det som ble slettet.
+- **Retningsforskyvningen mot oversiktsserien har ikke noe skript**; den måles ad hoc med SIFT.
+- **Riggens avstand og siktehøyde er Hus Bs**, så render-visningene beskjærer et høyere bygg.
+- **Terrenghøyden er målt ett sted.** `HUS_B_GROUND_MASL` brukes som siktepunkt for alle bygg; den flytter ikke modellene, som er `CLAMP_TO_GROUND`.
+
+---
+
 ## 2026-09-08 (kveld) — 3D OG SATELITT BLIR STANDARD, IKKE TILVALG
 
 **Kontekst:** kartlegging av Skanska som utbygger endte i Lillebytunet-boardet, som viste seg å stå på rent Mapbox-2D uten kartveksler i det hele tatt. Andreas: *«den mangler faktisk satelitt og 3d den. kan du sette provisjonerings default at det skal være med fremover?»*
@@ -9439,3 +9510,84 @@ Teknisk prototype på branch `feat/lillebytunet-3d-model` (worktree `../placy-li
 - Tak-tekstur er uskarp (20° pitch gir 3× strekk). Balkonger er flate i teksturen, ikke geometri.
 - Neste test for automatiserbarhet: Hus A (L-form), C og D (8 etasjer) med samme pipeline.
 - Demo-kamera er hardt kutt; `flyCameraTo` overkjøres av vis.gl-props.
+
+## 2026-09-09 — Lillebytunet Hus B: takterrasser, balkongdybde og etterprøvbar modellrunde
+
+Gjennomført kvalitetsplanen i eksisterende worktree `placy-lillebytunet`, branch
+`feat/lillebytunet-3d-model`. Ny `husB-v2.glb` er standard i demoen. Original `husB.glb`
+er bevart byte-identisk; modellkilder og gamle skript er arkivert lokalt under
+`~/klienter/placy/lillebytunet/quality-v2/baseline-94ccf12/`. Arbeidet lagres lokalt, uten push.
+
+### Hva gjennomgangen endret
+
+- **192 av 192 relevante kildebilder gjennomgått** (96 Hus B, 96 oversikt). To takinntrekk
+  gir 4/5/6 etasjer; prototypens ene inntrekk var feil. 12 forskjøvede balkonger på langsiden
+  og tre på enden er nå volum med dekk, underside, rekkverk, stolper og skjermer.
+- De separate COLMAP-modellene er registrert med 96 inlier-punktpar, medianrest 0,097 m
+  og p95 under 0,76 px på fire utelatte kamerapar. Taket bruker ren oversiktstekstur,
+  mens parapeter, to pergolaer og tre takoppbygg er separat geometri.
+- Projeksjon bak balkonger ga doble rekkverk; pikselfylling ga striper. Sluttmodellen
+  bruker ren kildekledning og gjentatte vindusutsnitt. Skjulte felt er anslått, og møbler
+  og planter er utelatt. Nærfasaden er derfor enklere enn originalrenderen. Naboskygge
+  på enden og små kilderester ved sokkelen består og er dokumentert per visning.
+- Tidligere påstander om «0 = sør» i begge serier, korrekt prototyp-silhuett og Googles
+  «null ambient» var for sterke. Rapport 03 er korrigert. Emissive, PBR og hybrid ble
+  sammenlignet i Google; hybrid er valgt, med liten synlig forskjell fra PBR på fasadene.
+- Kontrollert Map3D-kamera overstyrte faktisk rotasjon. Startverdier og engangsvalg av
+  kamera bevarer nå fri bevegelse; klikk på samme preset tilbakestiller kameraet.
+
+### Leveranse og kontroll
+
+Ny eksplisitt CLI-kjede i `scripts/lillebytunet/model/` erstatter fire gamle
+modell-/eksportskript. Parametere, kameravalg og materialkilder er dokumentert;
+`.blend`, teksturer og variant-GLB-er ligger i lokal `quality-v2/final/`.
+Modellen er 1 886 792 byte, 20 352 trekanter, 19 materialer/teksturer, uten utvidelser.
+Alle tre varianter ble gjenbygd byte-identisk i en tom utmappe. Ny kjøring av hele
+registrerings-/byggekjeden ga også identisk registrerings-JSON og alle tre GLB-er.
+
+**11 av 11 faste Google-visninger, 19 av 19 materialer og alle 12 vinkler i siste
+kontinuerlige rotasjon kontrollert.** Før/etter-kameraene er eksakt like i måle-JSON.
+Syv original/før/etter-ark viser forskjeller og FOV-forbehold. Mobil 390 × 844 viste
+modell og fungerende kameraknapper uten dokument-overflyt. Ingen registrerte nettleserfeil.
+Review av opptaksskriptet fant akkumulert skjermbildeforsinkelse; absolutte tidsfrister
+ga tolv jevnt fordelte vinkler ved ny Google-kjøring og korrekt reset etter omløpet.
+
+Sjekker: lint 0 feil (54 advarsler i uendrede filer), TypeScript og produksjonsbygg besto.
+Vitest besto **3924/3924 tester i 235/235 filer**. Første kjøring hadde én eksisterende
+provision-timeout; både separat testfil og full ny kjøring besto uten testendringer.
+Simplify rettet hardkodet kameravalg til parameterfilen og fjernet ubrukt forsøkskode.
+
+`ce-code-review` fullført, run `20260909-095556-8e83810e`, med uavhengig Claude-review:
+18 kildestier og GLB gjennomgått, åtte kandidater validert, ingen åpne kodefunn.
+To ikke-blokkerende kontrollbegrensninger er bevart i rapportens review-kvittering.
+
+Full rapport og reproduksjon:
+[`docs/research/lillebytunet-3d/04-kvalitetsrunde.md`](docs/research/lillebytunet-3d/04-kvalitetsrunde.md).
+Kamerabevis, materialkontroll og før/etter ligger i samme mappes `quality-v2/`.
+
+### Åpent
+
+Renere underlag bak balkonger, materialkart eller arkitektens modell trengs for mer
+troverdig nærvisning uten gjentatte vinduer. Geografisk usikkerhet rundt ±1,5 m består.
+Hus A/C/D, FKB-kontroll og innhentingsskriptets tidligere dokumenterte variant-cache-feil
+er ikke behandlet; ingen ny variant ble hentet. Utviklings-GLB-er og videofiler er
+arkivert utenfor git, ikke etterlatt som udokumenterte modeller i `public/`.
+
+## 2026-09-09 — Hus B-metoden dokumentert; Opus startet på videre modellarbeid
+
+Andreas bekreftet at Hus B-kvalitetsrunden ga et godt resultat. Arbeidsmåten er nå
+compounded i [arbeidsoppskriften for neste bygg og agent](docs/solutions/workflow-issues/render-til-byggmodell-krever-visuelle-akseptansekriterier.md).
+Den inneholder sju kontrollpunkter, seks grupper med Hus B-spesifikke forutsetninger
+som må undersøkes på nytt, og et ferdig oppdrag til neste agent. Alle 22 faktapåstander
+ble kontrollert mot kilder. Begrepslisten trengte ingen endringer.
+
+Et eldre overlay-notat anbefalte feilaktig `KHR_materials_unlit` for Google-modeller.
+Det er rettet mot Googles dokumenterte støtte og Hus Bs faktiske materialkontroll,
+sammen med to motstridende beskrivelser av lysmålingene og en YAML-feil.
+Dokumentasjonscommits: `1508e8e` og `6bf816e`, lagret lokalt uten push.
+
+**Status:** Andreas opplyser at Opus nå er i gang med videre modellarbeid. Anbefalingen
+er å bruke ett nytt bygg som pilot med samme kildegransking, Google-kontroll og
+gjenbygging før arbeidsmåten skaleres til resten. Hus B-mål, kameraer og koordinater
+skal ikke kopieres ukritisk. Resultatet fra Opus er ennå ikke vurdert i denne sesjonen;
+en bestemt modell eller effort-innstilling er ikke dokumentert som kvalitetsgaranti.

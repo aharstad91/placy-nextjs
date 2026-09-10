@@ -1,0 +1,110 @@
+{
+  "capturedAt": "2026-09-09T07:39:58.686Z",
+  "baseUrl": "http://localhost:3002",
+  "model": "/models/lillebytunet/husB.glb",
+  "viewport": {
+    "width": 1920,
+    "height": 1080
+  },
+  "deviceScaleFactor": 1,
+  "placement": {
+    "lat": 63.441359,
+    "lng": 10.440215,
+    "heading": 115,
+    "alt": 0,
+    "altmode": "CLAMP_TO_GROUND",
+    "scale": 1
+  },
+  "browser": "152.0.7977.84",
+  "settleMs": 8000,
+  "views": [
+    {
+      "id": "near",
+      "url": "http://localhost:3002/demo/lillebytunet-3d?lat=63.441359&lng=10.440215&heading=115&alt=0&altmode=CLAMP_TO_GROUND&scale=1&model=%2Fmodels%2Flillebytunet%2FhusB.glb&cam=near",
+      "attachedMs": 483,
+      "modelResponse": {
+        "status": 200,
+        "bytes": 1145312,
+        "sha256": "753c512e96b75f64617395788355033e180ac87a8e1c3de829426d72c6952e55"
+      },
+      "camera": {
+        "heading": 25,
+        "tilt": 60,
+        "range": 65,
+        "center": {
+          "lat": 63.441359,
+          "lng": 10.440215,
+          "altitude": 28.2
+        }
+      },
+      "modelElementAttached": true,
+      "statusText": "Model3DElement lagt til"
+    }
+  ],
+  "errors": [],
+  "caveats": [
+    "Google phototiles and lighting can change between sessions.",
+    "Render-rig direction is approximate; FOV is not calibrated to original renders.",
+    "Model3DElement attachment and HTTP success do not confirm visually correct rendering."
+  ],
+  "orbit": {
+    "durationMs": 18000,
+    "interpolation": "requestAnimationFrame",
+    "range": 80,
+    "tilt": 60,
+    "centerAltitude": 26.2,
+    "screenshots": [
+      {
+        "filename": "orbit-00.jpg",
+        "heading": 29.767999999910607
+      },
+      {
+        "filename": "orbit-01.jpg",
+        "heading": 61.7659999999106
+      },
+      {
+        "filename": "orbit-02.jpg",
+        "heading": 92.7659999999106
+      },
+      {
+        "filename": "orbit-03.jpg",
+        "heading": 123.76399999991058
+      },
+      {
+        "filename": "orbit-04.jpg",
+        "heading": 155.0979999999106
+      },
+      {
+        "filename": "orbit-05.jpg",
+        "heading": 186.4279999999106
+      },
+      {
+        "filename": "orbit-06.jpg",
+        "heading": 217.75999999991058
+      },
+      {
+        "filename": "orbit-07.jpg",
+        "heading": 248.75999999991058
+      },
+      {
+        "filename": "orbit-08.jpg",
+        "heading": 279.7579999999106
+      },
+      {
+        "filename": "orbit-09.jpg",
+        "heading": 311.0899999999106
+      },
+      {
+        "filename": "orbit-10.jpg",
+        "heading": 342.0879999999106
+      },
+      {
+        "filename": "orbit-11.jpg",
+        "heading": 0
+      }
+    ],
+    "video": "/Users/andreasharstad/klienter/placy/lillebytunet/quality-v2/google-before-orbit-video"
+  },
+  "screenshotFormat": "jpeg",
+  "screenshotQuality": 90
+}

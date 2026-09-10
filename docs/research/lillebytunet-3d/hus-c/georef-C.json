@@ -1,0 +1,21 @@
+{
+  "building": "C",
+  "lat": 63.44125918420962,
+  "lng": 10.440852696482288,
+  "heading_plus_y": 112.39839435996765,
+  "balcony_bearing": 202.39839435996765,
+  "size_m": [
+    15.90930013472454,
+    22.438002745110996
+  ],
+  "height_m": 25.71572858408741,
+  "top_storey_shift_units": 0.08986481953983276,
+  "scale_m_per_unit_overview": 35.114411953881444,
+  "second_block_residual_m": 1.170109616292638,
+  "rotation_from_axes_deg": [
+    7.0,
+    7.499999999999986
+  ],
+  "rotation_from_centres_deg": 5.445183079902947,
+  "anchor": "OpenStreetMap ways 1206556797 and 1206556798 (Staltaugen 1 and 2)"
+}

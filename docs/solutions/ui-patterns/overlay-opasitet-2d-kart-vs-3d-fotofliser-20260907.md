@@ -1,10 +1,11 @@
 ---
 name: Overlay-opasitet går motsatt vei i 2D-kart og 3D-fotofliser
-description: Samme lyse fyll som er riktig over Mapbox' vektorkart blir grumsete brunt over Googles fotorealistiske fliser, fordi bakgrunnen er lys og tegnet i den ene motoren og mørk og fotografert i den andre. For ekstruderte volumer snur regelen igjen — der skyggelegger Google flatene selv, og lavere dekkevne gjør dem mørkere, ikke lysere. Og en flate som er lysere enn underlaget forsvinner helt i 2D, uansett dekkevne: der må formen bæres av en kant.
+description: "Samme lyse fyll som er riktig over Mapbox' vektorkart blir grumsete brunt over Googles fotorealistiske fliser, fordi bakgrunnen er lys og tegnet i den ene motoren og mørk og fotografert i den andre. For ekstruderte volumer snur regelen igjen — der skyggelegger Google flatene selv, og lavere dekkevne gjør dem mørkere, ikke lysere. Og en flate som er lysere enn underlaget forsvinner helt i 2D, uansett dekkevne: der må formen bæres av en kant."
 type: ui-pattern
 problem_type: ui_bug
 module: components/map
 date: 2026-09-07
+last_updated: 2026-09-09
 tags: [mapbox, google-3d-tiles, photorealistic, opasitet, alpha, massing, volumer, palett, kartmotor, polygon3delement, skyggelegging, model3delement]
 ---
 
@@ -79,9 +80,9 @@ dyr, og her tar intuisjonen feil.
 
 Google skyggelegger sideflatene selv, etter hvilken vei de vender, og det lyset
 kan ikke settes. Målt på ett og samme kamera, med rent hvitt og full dekning,
-tegner motoren den samme flaten fra **122 til 247** i luminans. Hele spennet
-mellom svart og hvitt er altså brukt opp av motorens eget lys før fargen din får
-si noe. Et fyll som starter under hvitt blir bare gråere; over hvitt finnes ikke.
+tegner motoren den samme flaten fra **122 til 247** i luminans. Det er en betydelig
+forskjell i lyshet selv med samme fyllfarge. Et fyll som starter under hvitt blir
+bare gråere; over hvitt finnes ikke.
 
 Og dekkevnen redder deg ikke:
 
@@ -93,8 +94,8 @@ Og dekkevnen redder deg ikke:
 
 De mørke flatene lot seg nesten ikke lyse opp av å slippe det lyse gresset
 gjennom — 127 mot 109 — mens de lyse flatene tapte 42. **Lav dekkevne gjorde
-volumene jevnt over mørkere, ikke lysere**, selv om hver enkelt mørk flate ble
-en anelse lysere. Det er motsatt av hva den flate regelen over skulle tilsi, og
+volumene jevnt over mørkere, ikke lysere**, også på de mørke flatene i tabellen.
+Det er motsatt av hva den flate regelen over skulle tilsi, og
 grunnen er at skyggen ligger på materialet, ikke på komposisjonen.
 
 To utveier ble prøvd og forkastet:
@@ -105,10 +106,15 @@ To utveier ble prøvd og forkastet:
 - **Snu vindingen** på omrisset, i håp om at toppflatens normal pekte ned.
   Ingen forskjell.
 
-Vil man ha en jevnt hvit modell — den fysiske akrylmodellen på salgskontoret —
-må volumene tegnes som `Model3DElement` med en glTF der materialet er
-`KHR_materials_unlit`. Det er den eneste veien utenom motorens lys, og det er
-en egen jobb.
+En `Model3DElement`-modell gir egne glTF-materialer, men `KHR_materials_unlit`
+skal ikke brukes som løsning her. Google dokumenterer støtte for glTF-kjernens
+PBR-egenskaper og ingen utvidelser. Den tidligere anbefalingen om unlit-utvidelsen
+var derfor feil. [Google: Models](https://developers.google.com/maps/documentation/javascript/3d/models).
+
+Hus B-kvalitetsrunden sammenlignet emissive-, PBR- og hybridmaterialer uten utvidelser
+i faktisk Google-visning. Bruk slike støttede materialvalg som kandidater, og vurder
+resultatet i kartet. Forsøket beviser ikke at en vilkårlig modell blir jevnt hvit eller
+forklarer hele Googles lysmodell. Se [Hus B-rapportens materialkontroll](../../research/lillebytunet-3d/04-kvalitetsrunde.md).
 
 ## Når fargen er lysere enn underlaget, hjelper ingen dekkevne
 

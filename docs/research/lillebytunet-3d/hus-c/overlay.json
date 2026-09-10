@@ -1,0 +1,67 @@
+[
+  {
+    "direction": 0,
+    "covered_pixels": 408366,
+    "covered_fraction": 0.1969357638888889
+  },
+  {
+    "direction": 4,
+    "covered_pixels": 430474,
+    "covered_fraction": 0.20759741512345678
+  },
+  {
+    "direction": 16,
+    "covered_pixels": 424348,
+    "covered_fraction": 0.2046431327160494
+  },
+  {
+    "direction": 24,
+    "covered_pixels": 370008,
+    "covered_fraction": 0.1784375
+  },
+  {
+    "direction": 29,
+    "covered_pixels": 371597,
+    "covered_fraction": 0.179203800154321
+  },
+  {
+    "direction": 36,
+    "covered_pixels": 432599,
+    "covered_fraction": 0.20862220293209877
+  },
+  {
+    "direction": 41,
+    "covered_pixels": 438843,
+    "covered_fraction": 0.2116333912037037
+  },
+  {
+    "direction": 48,
+    "covered_pixels": 402542,
+    "covered_fraction": 0.19412712191358025
+  },
+  {
+    "direction": 53,
+    "covered_pixels": 434223,
+    "covered_fraction": 0.20940538194444444
+  },
+  {
+    "direction": 64,
+    "covered_pixels": 419753,
+    "covered_fraction": 0.2024271797839506
+  },
+  {
+    "direction": 72,
+    "covered_pixels": 326145,
+    "covered_fraction": 0.15728443287037036
+  },
+  {
+    "direction": 77,
+    "covered_pixels": 329226,
+    "covered_fraction": 0.15877025462962963
+  },
+  {
+    "direction": 90,
+    "covered_pixels": 421090,
+    "covered_fraction": 0.20307195216049384
+  }
+]
