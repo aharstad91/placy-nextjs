@@ -1,6 +1,6 @@
 # Lokal Nyhavna-demo: drift og kontroll
 
-Arbeidsflate: `/Users/andreasharstad/Documents/placy-voice-board`, gren `prototype/nyhavna-voice-board`. Demo-URL: <http://127.0.0.1:3101/eiendom/nyhavna-utvikling/nyhavna/leve>. Den separate samtaleprototypen på 3102 er ikke denne leveransen. Ingen offentlig utrulling eller delt databaseendring inngår.
+Arbeidsflate etter sammenslåing: `/Users/andreasharstad/Documents/placy`, gren `main`. Demo-URL: <http://127.0.0.1:3101/eiendom/nyhavna-utvikling/nyhavna/leve>. Samtaleprototype B er bevart på `/prototype/conversation`; dens opprinnelige tale-API krever lokal dev-server. Ingen offentlig utrulling eller delt databaseendring inngår.
 
 ## Start den fryste demoversjonen
 
@@ -11,7 +11,7 @@ npm run build
 npm run demo:nyhavna
 ```
 
-`demo:nyhavna` starter ett lokalt produksjonsbygg på 127.0.0.1:3101 med `PLACY_LOCAL_REALTIME_DEMO=1`. Ikke kjør to Node-prosesser mot denne arbeidsmappen. Hovedrepoets env-fil deles via den eksisterende lokale symlinken; ikke kopier nøkkel til klientkode eller dokumenter.
+`demo:nyhavna` starter ett lokalt produksjonsbygg på 127.0.0.1:3101 med `PLACY_LOCAL_REALTIME_DEMO=1`. Ikke kjør to Node-prosesser mot denne arbeidsmappen. Hovedrepoets eksisterende `.env.local` brukes; ikke kopier nøkkel til klientkode eller dokumenter.
 
 Åpne URL-en, kontroller kart, startforslag og kildekort. Velg Skriv eller Snakk. Ash beholdes; tekst og tale bruker samme Realtime-samtale, med mikrofon først ved talevalg. Bytt med Skriv/Snakk. **Ny samtale** starter uten forrige samtales historikk og tilbakestiller kartet. Se [generalprøven](rehearsal.md) for fysisk Mac-test og møteopplegg.
 

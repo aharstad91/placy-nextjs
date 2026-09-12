@@ -3,6 +3,8 @@
 Dato: 12. september 2026. Oppdragsgiver: Andreas. Mottaker: Claude.
 Status: produktbrief og foreslått gjennomføring, ikke implementert eller validert.
 
+**Oppdatert etter sammenslåing:** Tidligere worktrees er samlet i hovedrepoets `main`. Alle referansefiler nedenfor finnes nå der. Board-demoen ligger fortsatt på `/eiendom/nyhavna-utvikling/nyhavna/leve`, konsept B på `/prototype/conversation` med egen transport i `lib/realtime/conversation`. Gamle worktree-stier nedenfor er historikk; bruk hovedrepoet som kilde og opprett bare én ny worktree om den nye implementeringen trenger isolasjon. Briefen er bevart i Git.
+
 ## Oppdraget fra Andreas
 
 Utdyp konseptet og bygg en enkel prototype i eksisterende Next.js-miljø. Målet er å undersøke om en mobil opplevelse kan føles som å snakke med en lokalkjent digital boligguide, samtidig som relevante visuelle elementer dukker opp under samtalen. Andreas omtaler følelsen som en «digital megler»; produktets faktiske ansvar i denne prototypen er boligens beliggenhet og livet rundt den.
