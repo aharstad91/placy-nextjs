@@ -293,6 +293,35 @@ export function StoryTourProvider({ children }: { children: ReactNode }) {
     [engagement],
   );
 
+  /**
+   * Rammer inn stoppets steder — men BARE når stoppet bærer en kilde.
+   *
+   * Et vanlig tema flytter ikke kameraet ved stoppbytte, og det er med vilje:
+   * nabolaget ligger igjen som dempet tekstur, og vekten flytter seg i stedet
+   * for utsnittet. Den regelen gjelder fortsatt for boardets egne temaer.
+   *
+   * Et stopp som bærer noen ANDRES tekst og utvalg er et annet tilfelle. Det
+   * har typisk to til fire steder, tett samlet, og de tegnes i et kart som
+   * ellers viser over tusen punkter — målt på Nyhavna-boardet lå kundens fire
+   * kulturminner som fire pins blant 1 036, i et utsnitt på 1 600 m. Innholdet
+   * flaten nettopp presenterte som det viktigste, var ikke til å finne.
+   *
+   * Innrammingen løser det uten å ta noe bort: nabolaget blir stående rundt,
+   * det kommer bare nærmere. `fitCoordinates` er bygget nøyaktig for dette —
+   * den rammer et gitt sett i stedet for «alt som er synlig» (se `MapCameraApi`).
+   */
+  const frameSourcedStop = useCallback((next: BoardCategory | undefined) => {
+    if (!next?.editorial?.source) return;
+    const coords = next.pois.map((p) => p.coordinates);
+    if (coords.length === 0) return;
+    cameraRef.current?.fitCoordinates(coords, {
+      // Gulvet finnes fordi to steder femti meter fra hverandre ellers ville
+      // rammet inn en kvartalsdel — leseren mister da all stedsforståelse.
+      maxZoom: 16.5,
+      durationMs: 900,
+    });
+  }, []);
+
   const begin = useCallback(
     (at: number = 0) => {
       cancelPending();
@@ -304,8 +333,13 @@ export function StoryTourProvider({ children }: { children: ReactNode }) {
       // `stops[AREA_STEP]` er undefined, og emitStop er en no-op da: området er
       // ikke en kategori, og skal ikke telle som et kategori-åpning-signal.
       emitStop(stops[at]);
+      // Mobilen starter omvisningen PÅ første stopp (desktop starter på
+      // området), så et kildestopp kan bli åpnet uten at `goto` har kjørt.
+      // Uten denne sto kameraet igjen på åpningsutsnittet, 1 600 m over
+      // prosjektet, og de to kafeene lå som to prikker bak sheeten.
+      frameSourcedStop(stops[at]);
     },
-    [cancelPending, clearOpen, dispatch, emitStop, stops],
+    [cancelPending, clearOpen, dispatch, emitStop, frameSourcedStop, stops],
   );
 
   const end = useCallback(() => {
@@ -335,6 +369,7 @@ export function StoryTourProvider({ children }: { children: ReactNode }) {
       const apply = () => {
         setTour({ step: clamped, pane: "about" }); // stoppet begynner med spørsmålet
         emitStop(stops[clamped]);
+        frameSourcedStop(stops[clamped]);
       };
       // Område ↔ tema er et LAGBYTTE: det gamle toner ut først, så kommer det
       // nye (se STORY_LAYER_LEAVE_MS). Tema til tema er samme lag, og går rett.
@@ -352,7 +387,7 @@ export function StoryTourProvider({ children }: { children: ReactNode }) {
         toArea ? STORY_LAYER_LEAVE_BACK_MS : STORY_LAYER_LEAVE_MS,
       );
     },
-    [cancelPending, clearOpen, dispatch, emitStop, stops],
+    [cancelPending, clearOpen, dispatch, emitStop, frameSourcedStop, stops],
   );
 
   const showPane = useCallback((next: StoryPane) => {

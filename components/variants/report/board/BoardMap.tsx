@@ -30,6 +30,7 @@ import {
   MARKER_DOT_SIZE,
 } from "./BoardMarker";
 import { BoardContourLayer } from "./BoardContourLayer";
+import { BoardCuratedGeometryLayer } from "./BoardCuratedGeometryLayer";
 import { ProjectMassingLayer } from "@/components/map/project-massing-layer";
 import { useReach } from "./use-reach";
 import { useEngagement } from "@/lib/instrumentation/engagement-scope";
@@ -392,6 +393,12 @@ export function BoardMap({
   // hvilken kategori et anker presenteres som når det ligger i flere. Se dedupen
   // i `markerStates`.
   const storyStopId = story?.stop?.id != null ? String(story.stop.id) : null;
+  // Temaet leseren STÅR I: valgt kategori, ellers omvisningens stopp, ellers
+  // ingen (områdestoppet — oversikten). Ett begrep, to konsumenter: markørenes
+  // forrang ved dedupe under, og den kuraterte geometriens fremheving. Regnet de
+  // hver for seg, ville de før eller siden svart forskjellig på samme spørsmål.
+  const activeThemeId =
+    activeCategory?.id != null ? String(activeCategory.id) : storyStopId;
 
   const markerStates = useMemo(() => {
     const baseVisible = new Set<string>();
@@ -451,8 +458,7 @@ export function BoardMap({
     // valgt kategori, ellers omvisningens stopp. Kategorien avgjør både
     // farge/ikon og vekt, og et anker som også ligger i temaet du leser skal se
     // ut slik det gjør DER.
-    const preferred =
-      activeCategory?.id != null ? String(activeCategory.id) : storyStopId;
+    const preferred = activeThemeId;
     const slotById: Record<string, number> = {};
     const states: typeof all = [];
     for (const m of all) {
@@ -473,7 +479,7 @@ export function BoardMap({
     visiblePoiIds,
     collectionPoiIds,
     storyEmphasisOf,
-    storyStopId,
+    activeThemeId,
   ]);
 
   // Synlige POI-er for kamera-fit (tour-bounds). Inkluderer ikke fade-out-
@@ -1323,12 +1329,35 @@ export function BoardMap({
               {mapLoaded && projectMassing && (
                 <ProjectMassingLayer massing={projectMassing} />
               )}
+              {/* Kuratert geometri over byggene og under konturene: byggene er
+                  grunnrisset promenaden og aksen ligger I, mens konturene er en
+                  tynn prikkeramme som må kunne leses der den krysser en flate.
+                  Boards uten kuratert geometri monterer ikke laget i det hele
+                  tatt — kartet er da uendret. */}
+              {mapLoaded && data.curatedGeometry && data.curatedGeometry.length > 0 && (
+                <BoardCuratedGeometryLayer
+                  features={data.curatedGeometry}
+                  activeThemeId={activeThemeId}
+                />
+              )}
               <BoardContourLayer
                 mapRef={mapRef}
                 mapLoaded={mapLoaded}
                 insetLeftPx={mapPaddingLeft}
               />
-              <BoardPathLayer />
+              {/* `mapLoaded`-gaten er ikke pynt: uten den kaster Mapbox «Style is
+                  not done loading» i det laget monteres på en fersk instans.
+                  Reproen er en vanlig brukerhandling — åpne et sted mens
+                  Google-motoren står fremme, og bytt til «Kart». Da monteres
+                  Mapbox på nytt med `phase === "poi"` og rutedata alt i hånden,
+                  så laget rakk å rendre før stilen var lastet. Målt på
+                  /rapport-board 2026-09-11, altså uavhengig av kuratert geometri.
+
+                  Massing-laget over hadde gaten fra før; ruta, konturene og
+                  geometrien er de tre andre som tegner `Source`/`Layer`, og
+                  konturlaget gater internt. Markørene (`Marker`) trenger den
+                  ikke — de er DOM-overlegg og rører ikke stilen. */}
+              {mapLoaded && <BoardPathLayer />}
               <BoardPathMidpointMarker />
               <BoardPOILabel />
               {popupMode === "mini" && state.activePOIId && (

@@ -108,7 +108,7 @@ export interface BoardState {
  * feedback-loop-guard som PRD 9 avhenger av — portet VERBATIM, IKKE forenklet.
  * Eventuell forenkling avklares i Q7, ikke her.
  */
-export type SelectCategorySource = "scroll" | "rail" | "index" | "audio";
+export type SelectCategorySource = "scroll" | "rail" | "index" | "audio" | "voice";
 
 /**
  * Hvor et POI-åpne kom fra, når det har betydning for presentasjonen.
@@ -121,7 +121,7 @@ export type SelectCategorySource = "scroll" | "rail" | "index" | "audio";
  * egne ord åpner seg i raden, og en modal over den ville vært nøyaktig den
  * kompleksiteten omvisningen fjerner. Kartet flyr, flaten står.
  */
-export type OpenPOISource = "faq" | "story";
+export type OpenPOISource = "faq" | "story" | "voice";
 
 export type BoardAction =
   | {
@@ -187,7 +187,8 @@ export function boardReducer(
         action.source === "scroll" ||
         action.source === "rail" ||
         action.source === "index" ||
-        action.source === "audio";
+        action.source === "audio" ||
+        action.source === "voice";
       return {
         phase: stayInDefault ? "default" : "active",
         activeCategoryId: action.id,
@@ -221,7 +222,7 @@ export function boardReducer(
         // Kun tekst-referanser og omvisningens egne rader undertrykker
         // modalen. Et nytt trykk på selve punktet kommer uten kilde og åpner
         // den.
-        exploreSuppressed: action.source === "faq" || action.source === "story",
+        exploreSuppressed: action.source === "faq" || action.source === "story" || action.source === "voice",
       };
 
     case "BACK_TO_ACTIVE":

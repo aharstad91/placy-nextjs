@@ -28,6 +28,19 @@ export interface Category {
 
 // === POI (Point of Interest) ===
 
+/**
+ * Eksisterende tilbud vs. planlagt utvikling.
+ *
+ * Skillet er redaksjonelt, ikke teknisk: det avgjør hva vi har lov til å
+ * PÅSTÅ om et sted. Et board over et transformasjonsområde (Nyhavna,
+ * Bunkerkvartalet) bærer begge deler samtidig, og leseren må kunne se hvilket
+ * av dem hun ser på uten å lese teksten.
+ */
+export type DevelopmentStatus = "existing" | "planned";
+
+/** Hvor godt en koordinat er belagt. Se `POI.locationPrecision`. */
+export type LocationPrecision = "sourced" | "approximate";
+
 export interface POI {
   id: string;
   name: string;
@@ -50,6 +63,40 @@ export interface POI {
   localInsight?: string;
   storyPriority?: StoryPriority;
   editorialSources?: string[];
+
+  /**
+   * Står stedet der i dag, eller er det noe som skal komme?
+   *
+   * Finnes fordi et utviklingsområde er to kart i samme kart: tilbudet som
+   * finnes nå, og planen som er vedtatt eller varslet. Uten skillet leser en
+   * plan som et tilbud — og det er den ene feilen et områdekart ikke har lov
+   * til å gjøre. Utelatt = `existing`; et vanlig boligboard er utelukkende
+   * steder som finnes, og skal ikke merkes.
+   */
+  developmentStatus?: DevelopmentStatus;
+
+  /**
+   * Hvor godt koordinaten er belagt.
+   *
+   * `sourced` = hentet fra en navngitt kilde (OSM-objekt, adresse, Google).
+   * `approximate` = utledet av en tekstbeskrivelse («foran Fyringsbunkeren»)
+   * og skal SES som omtrentlig på flaten — ikke bare stå notert i koden.
+   * Utelatt = `sourced`.
+   */
+  locationPrecision?: LocationPrecision;
+
+  /**
+   * Forbeholdet som følger en omtrentlig plassering, i klartekst.
+   *
+   * Eget felt og ikke et avsnitt i `localInsight`, fordi de to er ulike slags
+   * utsagn: `localInsight` er redaksjonell tekst OM stedet, dette er en
+   * opplysning om KARTET. Lå de sammen, ville forbeholdet blitt lest som en
+   * del av beskrivelsen — og det er nettopp den sammenblandingen merket
+   * finnes for å hindre. Rendres bare når `locationPrecision` er
+   * `approximate`; en note uten flagget ville tatt forbehold om en koordinat
+   * som er belagt.
+   */
+  locationNote?: string;
 
   // Trust validation
   trustScore?: number;
@@ -712,6 +759,36 @@ export interface ReportThemeEditorial {
   /** Path (/public eller absolutt) til kuratert bilde øverst i panelet.
    *  Faller tilbake til kategori-illustrasjonen når utelatt. */
   image?: string;
+  /**
+   * Hvor teksten kommer fra, når den ikke er vår egen.
+   *
+   * Boardet har til nå bare hatt Placy-skrevet kurering, og da er kilden
+   * implisitt. Bærer temaet en annens ord — en utbyggers egen områdeside, en
+   * kommunes plandokument — må lenken ut stå ved teksten, både fordi det er
+   * riktig og fordi den er verdien: leseren skal kunne gå til originalen.
+   * Utelatt = vår egen tekst, ingen kildelinje.
+   */
+  source?: EditorialSource;
+  /**
+   * Steder kilden navngir, men som vi ikke kan plassere.
+   *
+   * Finnes fordi alternativene begge er verre: å utelate navnet (da mangler
+   * boardet noe kilden faktisk sier), eller å gjette koordinatet (da ser en
+   * gjetning ut som et faktum). Listen gjør fraværet synlig og etterprøvbart —
+   * og den er den korteste veien til å be kunden om dataene.
+   */
+  unplaced?: string[];
+}
+
+/**
+ * En navngitt kilde med lenke. `label` er det leseren ser («nyhavna.no»),
+ * `url` er originalsiden akkurat denne teksten er hentet fra — ikke forsiden.
+ */
+export interface EditorialSource {
+  label: string;
+  url: string;
+  /** Valgfri presisering, eks. «Park og promenade». */
+  page?: string;
 }
 
 export interface ReportThemeConfig {
@@ -790,6 +867,60 @@ export interface ProjectAssetFlags {
   pinThumbnail?: boolean;
 }
 
+/**
+ * Geometri boardet tegner ved siden av punktene: en dokumentert promenade som
+ * LINJE, et bygg eller uteareal som FLATE.
+ *
+ * Hvorfor dette ikke bare er flere POI-er: et forløp og en utstrekning er ikke
+ * et punkt. En promenade plassert som én pin sier «her er promenaden», som er
+ * usant på alt annet enn det ene punktet — leseren får aldri vite hvor den går
+ * eller hva den ligger inntil. Kartet skal representere innholdet, ikke tvinge
+ * alt inn i samme primitiv.
+ *
+ * Geometrien er motor-agnostisk og lagres én gang: Google-laget tegner den med
+ * `Polyline3DElement`/`Polygon3DElement`, Mapbox-laget med line-/fill-lag fra
+ * samme koordinater (samme todeling som rekkevidde-konturene, se
+ * `lib/board/contour-geometry.ts`).
+ */
+export interface CuratedGeometryFeature {
+  id: string;
+  /** Navnet slik det står i kilden. */
+  name: string;
+  /** `line` = forløp (promenade, akse). `area` = utstrekning (bygg, uteareal). */
+  kind: "line" | "area";
+  /** Temaet geometrien hører til — styrer farge og når den vises. */
+  themeId: string;
+  /**
+   * POI-IDen som representerer det samme stedet i lista, når det finnes ett.
+   * Klikk i kartet åpner da stedet i kolonnen som en hvilken som helst pin.
+   */
+  poiId?: string;
+  /** Eksisterende, planlagt — eller begge deler samtidig (en sti som finnes,
+   *  men som skal bli park). `mixed` er ikke en unnvikelse: det er kildens
+   *  faktiske påstand, og leseren skal få den som den er. */
+  status: DevelopmentStatus | "mixed";
+  /**
+   * Er FORLØPET/UTSTREKNINGEN belagt, eller er den vår tolkning?
+   *
+   * Løfter `POI.locationPrecision` til geometri. En vedtatt trasé finnes
+   * sjelden som åpne data mens planen er under arbeid, og da skal linja enten
+   * ikke tegnes eller tegnes som åpenbart omtrentlig. Den skal ALDRI tegnes
+   * presis uten belegg.
+   */
+  precision: LocationPrecision;
+  /** Hex-farge. Utelatt = temaets farge. */
+  color?: string;
+  /**
+   * `[lng, lat]`-par (GeoJSON-rekkefølge, som `contour-geometry`).
+   * `area` forutsetter en LUKKET ring (første og siste punkt like).
+   */
+  coordinates: [number, number][];
+  /** Hvor geometrien er hentet fra, i klartekst. Vises på flaten når
+   *  `precision` er `approximate`, slik at forbeholdet er synlig og ikke bare
+   *  dokumentert. */
+  sourceNote?: string;
+}
+
 export interface ReportConfig {
   /** Selected shared place_knowledge records; prose is assembled at render. */
   localActivityIds?: string[];
@@ -833,6 +964,9 @@ export interface ReportConfig {
   cta?: ReportCTA;
   mapStyle?: string;
   trails?: TrailCollection;
+  /** Linjer og flater boardet tegner ved siden av punktene. Tom/utelatt =
+   *  kartet tegner bare pins, som før. */
+  curatedGeometry?: CuratedGeometryFeature[];
   /** Tour-host-prat som spilles når brukeren starter guidet tur. Ikke en
    *  kategori — rendres som karaoke inni accordion under "Start guidet tur"-
    *  CTAen i SidebarHero. Auto-overgang til heroAudio (Nabolaget) når
@@ -905,6 +1039,7 @@ export interface ProjectTheme {
  * lib/supabase/v2-queries.ts (eneste datakilde etter cutover 2026-07-06).
  */
 export interface Project {
+  demoSnapshotId?: string;
   /** Server-resolved, source-backed activities selected by the board. */
   localActivities?: LocalActivity[];
   id: string;

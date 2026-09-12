@@ -244,6 +244,35 @@ describe("adaptBoardData", () => {
       });
     });
 
+    it("tråer kilde og ikke-plasserte navn videre til boardet", () => {
+      // Kildelinja og de ikke-plasserte navnene må nå HELT fram: boardet er
+      // flaten leseren står i, og en kreditering som stopper i rapport-laget
+      // krediterer ingen.
+      const theme = makeTheme("x", [makePOI("p1")], {
+        editorial: {
+          body: "Nyhavnas egne ord.",
+          highlightPoiIds: ["p1"],
+          source: { label: "nyhavna.no", url: "https://nyhavna.no/leve/" },
+          unplaced: ["Doratorget"],
+        },
+      });
+      const data = adaptBoardData(makeReportData([theme]));
+      expect(data.categories[0].editorial?.source).toEqual({
+        label: "nyhavna.no",
+        url: "https://nyhavna.no/leve/",
+      });
+      expect(data.categories[0].editorial?.unplaced).toEqual(["Doratorget"]);
+    });
+
+    it("generert fallback har verken kilde eller ikke-plasserte navn", () => {
+      // En deterministisk bridgeText har ingen annen forfatter enn oss, og
+      // ingenting er utelatt fra en kilde som ikke finnes.
+      const data = adaptBoardData(makeReportData([makeTheme("x", [makePOI("p1")])]));
+      expect(data.categories[0].editorial?.generated).toBe(true);
+      expect(data.categories[0].editorial?.source).toBeUndefined();
+      expect(data.categories[0].editorial?.unplaced).toBeUndefined();
+    });
+
     it("ignorerer highlightPoiIds som ikke finnes i kategorien", () => {
       const theme = makeTheme("x", [makePOI("p1")], {
         editorial: { body: "Tekst", highlightPoiIds: ["p1", "ukjent"] },

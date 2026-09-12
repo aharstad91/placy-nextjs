@@ -1,4 +1,5 @@
 import type {
+  CuratedGeometryFeature,
   Project,
   POI,
   Coordinates,
@@ -225,6 +226,7 @@ const PROJECT_3D_HEADINGS: Record<string, number> = {
 };
 
 export interface ReportData {
+  demoSnapshotId?: string;
   projectName: string;
   /** URL-slug, eks. "stasjonskvartalet". Brukes til å slå opp prosjekt-
    *  spesifikke ressurser (illustrasjoner, audio-stier, etc.). */
@@ -254,6 +256,9 @@ export interface ReportData {
   /** Rekkevidde-konturer (5/10/15 min per reisemåte), hentet build-time.
    *  Utelatt = kartet viser ingen konturer og av/på-valget skjules. */
   isochrones?: IsochroneSet;
+  /** Linjer og flater kartet tegner ved siden av punktene (promenade, akse,
+   *  bygg). Tom/utelatt = kartet tegner bare pins. */
+  curatedGeometry?: CuratedGeometryFeature[];
   label?: string;
   heroIntro?: string;
   heroImage?: string;
@@ -785,6 +790,7 @@ export function transformToReportData(project: Project, locale: Locale = "no"): 
     ?? interpolate(t(locale, getIntroKey(project.tags)), { name: project.name });
 
   return {
+    demoSnapshotId: project.demoSnapshotId,
     projectName: project.name,
     projectSlug: project.urlSlug,
     address: project.pois[0]?.address ?? "",
@@ -811,6 +817,7 @@ export function transformToReportData(project: Project, locale: Locale = "no"): 
     }),
     areaIntro: areaIntroFromCurated(rc?.globalFaq),
     isochrones,
+    curatedGeometry: rc?.curatedGeometry,
     label: rc?.label,
     heroIntro,
     heroImage: rc?.heroImage,

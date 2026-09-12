@@ -1,6 +1,7 @@
 "use client";
 
 import Image from "next/image";
+import { BoardVoiceAssistant } from "@/components/variants/report/board/voice/BoardVoiceAssistant";
 import { useEffect, useRef } from "react";
 import { Mail, Pause, Phone, Play, RotateCcw, User } from "lucide-react";
 import { useReels } from "./reels-state";
@@ -135,6 +136,7 @@ interface Props {
  */
 export function StoryColumn({ noBrokers = false }: { noBrokers?: boolean }) {
   const { available, on, begin } = useStoryTour();
+  const { data } = useBoard();
 
   useEffect(() => {
     if (available && !on) begin(AREA_STEP);
@@ -151,7 +153,8 @@ export function StoryColumn({ noBrokers = false }: { noBrokers?: boolean }) {
       >
         <StoryCard
           variant="column"
-          head={<StoryRail variant="flow" />}
+          keepHeadOnArea={data.projectSlug === "nyhavna"}
+          head={<><StoryRail variant="flow" />{data.projectSlug === "nyhavna" && <BoardVoiceAssistant />}</>}
           footer={!noBrokers ? <MeglerFooterCard /> : undefined}
         />
       </div>

@@ -2,13 +2,14 @@
 
 import { useMemo, useState } from "react";
 import Image from "next/image";
-import { Clock, Globe, Phone } from "lucide-react";
+import { BookOpen, Clock, Globe, Phone } from "lucide-react";
 import { GoogleRating } from "@/components/ui/GoogleRating";
 import { computeIsOpen } from "@/lib/hooks/useOpeningHours";
 import { cn } from "@/lib/utils";
 import { AnchorRegister } from "./AnchorRegister";
+import { PrecisionNote, SourceLink, StatusBadge, sourceHost } from "./SourcedContent";
 import type { BoardPOI } from "./board-data";
-import type { PoiGrounding } from "@/lib/types";
+import type { EditorialSource, PoiGrounding } from "@/lib/types";
 
 /**
  * Stedets innhold — ÉN blokk, uavhengig av flaten den står i (2026-08-28).
@@ -196,7 +197,8 @@ export function PoiGallery({
   );
 }
 
-/** Google-faktaene: vurdering, dagens åpningstid, telefon, nettside. */
+/** Google-faktaene: vurdering, dagens åpningstid, telefon, nettside — og
+ *  kilden, når teksten over er hentet et sted fra. */
 export function PoiFacts({ poi }: { poi: BoardPOI }) {
   const r = poi.raw;
   const weekdayText = r.openingHoursJson?.weekday_text;
@@ -216,7 +218,21 @@ export function PoiFacts({ poi }: { poi: BoardPOI }) {
     [weekdayText]
   );
 
-  const hasAnything = r.googleRating || today || r.googleWebsite || r.googlePhone;
+  // Kilden til teksten — IKKE stedets egen nettside. De to kan finnes samtidig
+  // (Dora Kaffebar har både Instagram og en omtale på nyhavna.no), og da må
+  // radene si hvem de er: «nettside» er stedets kanal, «Omtalt på» er der vi
+  // har teksten fra.
+  //
+  // Bare verdier som faktisk parser som URL slipper gjennom: `editorial_sources`
+  // er en gammel fritekst-kolonne i poolen, og en verdi som ikke er en lenke
+  // ville blitt en død `href`.
+  const sourceUrl = r.editorialSources?.[0];
+  const sourceLabel = sourceUrl ? sourceHost(sourceUrl) : null;
+  const source: EditorialSource | undefined =
+    sourceUrl && sourceLabel ? { label: sourceLabel, url: sourceUrl } : undefined;
+
+  const hasAnything =
+    r.googleRating || today || r.googleWebsite || r.googlePhone || source;
   if (!hasAnything) return null;
 
   return (
@@ -263,6 +279,14 @@ export function PoiFacts({ poi }: { poi: BoardPOI }) {
           >
             {r.googleWebsite.replace(/^https?:\/\/(www\.)?/, "").replace(/\/$/, "")}
           </a>
+        </div>
+      )}
+
+      {source && (
+        <div className="flex items-center gap-2 text-[13.5px] text-stone-600">
+          <BookOpen aria-hidden className="h-3.5 w-3.5 flex-none text-stone-400" />
+          <span className="flex-none text-stone-500">Omtalt på</span>
+          <SourceLink source={source} testId="poi-source-link" />
         </div>
       )}
     </div>
@@ -339,15 +363,23 @@ export function PoiAttribution({
  * `emptyText` er tomtilstanden, og kallstedet eier den: modalen sier det med
  * ord, sidebar-raden sier ingenting — der er en rad uten chevron allerede
  * beskjeden om at stedet ikke har mer å fortelle.
+ *
+ * `showStatus` er eid av kallstedet av samme grunn. «Planlagt» må stå der
+ * stedet ÅPNES fra kartet — modalen og anker-siden setter sin egen tittel og
+ * kan ikke rendre merket selv — men i omvisningens stedsliste bærer selve
+ * raden det allerede, og to like merker med tjue piksler mellom seg leser som
+ * en feil, ikke som en presisering.
  */
 export function PoiDetailBody({
   poi,
   galleryClassName,
   emptyText,
+  showStatus = true,
 }: {
   poi: BoardPOI;
   galleryClassName?: string;
   emptyText?: string;
+  showStatus?: boolean;
 }) {
   const narrative = poiNarrativeText(poi);
   const images = poi.raw.galleryImages ?? [];
@@ -355,6 +387,15 @@ export function PoiDetailBody({
 
   return (
     <>
+      {/* Merket står ØVERST, tettest på tittelen kallstedet har satt: at stedet
+          ikke er bygget ennå er en forutsetning for alt under, ikke en detalj
+          ved det. */}
+      {showStatus && poi.raw.developmentStatus === "planned" && (
+        <div className="mb-3">
+          <StatusBadge status={poi.raw.developmentStatus} />
+        </div>
+      )}
+
       {images.length > 0 && (
         <PoiGallery images={images} alt={poi.name} className={galleryClassName} />
       )}
@@ -367,6 +408,14 @@ export function PoiDetailBody({
            ligger der ville motsagt seg selv. */
         <p className="text-[15px] leading-[1.6] text-stone-500">{emptyText}</p>
       ) : null}
+
+      {/* Forbeholdet hører til TEKSTEN og ikke til fakta-lista: det sier hvor
+          godt vi vet hvor stedet ligger, og det er noe annet enn åpningstid og
+          telefonnummer. Gaten er `approximate` og ikke bare «har en note» — en
+          note uten flagget ville tatt forbehold om en koordinat som er belagt. */}
+      {poi.raw.locationPrecision === "approximate" && (
+        <PrecisionNote note={poi.raw.locationNote} />
+      )}
 
       <AnchorRegister poi={poi} />
 

@@ -1,6 +1,8 @@
 import type {
   BrokerInfo,
   Coordinates,
+  CuratedGeometryFeature,
+  EditorialSource,
   IsochroneSet,
   POI,
   ProjectAssetFlags,
@@ -133,6 +135,23 @@ export interface BoardCategoryEditorial {
   }[];
   /** true = syntetisert fallback (ikke strøk-kuratert). Utelates på kuratert. */
   generated?: true;
+  /**
+   * Hvem teksten er hentet fra, når den ikke er vår egen.
+   *
+   * Følger med HIT og ikke bare til rapport-laget fordi kildelinja må stå ved
+   * teksten den gjelder — boardet er flaten leseren faktisk står i. Utelatt =
+   * Placy-skrevet kurering, og da er kilden implisitt (se
+   * `ReportThemeEditorial.source`). Genererte fallbacks har den aldri: en
+   * deterministisk bridgeText har ingen annen forfatter enn oss.
+   */
+  source?: EditorialSource;
+  /**
+   * Stedene kilden navngir uten at vi kan plassere dem i kartet.
+   *
+   * Tråes med av samme grunn som `source`: fraværet skal være synlig der
+   * innholdet står, ikke bare i dataene.
+   */
+  unplaced?: string[];
 }
 
 export interface BoardCategory {
@@ -183,6 +202,7 @@ export interface BoardHome {
 }
 
 export interface BoardData {
+  demoSnapshotId?: string;
   /** URL-slug for prosjektet, eks. "stasjonskvartalet". Brukes til å slå opp
    *  prosjekt-spesifikke illustrasjoner og andre ressurser. */
   projectSlug?: string;
@@ -217,6 +237,9 @@ export interface BoardData {
   /** Rekkevidde-konturer (5/10/15 min per reisemåte), hentet build-time.
    *  Utelatt = kartet tegner ingen konturer og av/på-valget skjules. */
   isochrones?: IsochroneSet;
+  /** Linjer og flater kartet tegner ved siden av punktene. Begge kartmotorene
+   *  leser herfra, så de tegner samme geometri. Tom/utelatt = bare pins. */
+  curatedGeometry?: CuratedGeometryFeature[];
   /** Eksplisitt opt-in for audio-tour-CTA. Default false. */
   audioTourEnabled: boolean;
   /** Opt-in for prosjekt-spesifikke asset-filer (brand/illustrasjon/pin). */
@@ -329,6 +352,7 @@ export function adaptBoardData(report: ReportData): BoardData {
   }
 
   return {
+    demoSnapshotId: report.demoSnapshotId,
     projectSlug: report.projectSlug,
     home: {
       name: report.projectName,
@@ -355,6 +379,7 @@ export function adaptBoardData(report: ReportData): BoardData {
     globalFaq: report.globalFaq ?? [],
     areaIntro: report.areaIntro,
     isochrones: report.isochrones,
+    curatedGeometry: report.curatedGeometry,
     audioTourEnabled: report.audioTourEnabled === true,
     assets: report.assets,
     venueType: report.venueType ?? null,
@@ -532,6 +557,12 @@ function adaptCategory(theme: ReportTheme, center: Coordinates): BoardCategory {
       body: trimmedBody,
       image: theme.editorial.image,
       highlights,
+      // Kilde og ikke-plasserte navn følger den KURATERTE grenen alene.
+      // Gaten over står urørt: et tema uten brødtekst og uten resolvede
+      // highlights er ikke nivå-2-innhold, og en kildelinje under ingenting
+      // ville kreditert en tekst som ikke vises.
+      source: theme.editorial.source,
+      unplaced: theme.editorial.unplaced,
     };
   })();
 

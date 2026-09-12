@@ -108,6 +108,16 @@ const ProjectMassingLayer3D = dynamic(
   { ssr: false },
 );
 
+// Kuratert geometri — forløpene og utstrekningene et tema beskriver. Samme
+// grunn til lazy: laget bærer Google-importen og hører ikke hjemme i 2D-bundlen.
+const CuratedGeometryLayer3D = dynamic(
+  () =>
+    import("@/components/map/curated-geometry-layer-3d").then((mod) => ({
+      default: mod.CuratedGeometryLayer3D,
+    })),
+  { ssr: false },
+);
+
 interface Props {
   /**
    * Camera-state arvet fra Mapbox-modus ved toggle. Brukes som initial
@@ -249,6 +259,29 @@ export function BoardMap3D({
     [state.showContours, state.travelMode, data.isochrones],
   );
 
+  // Kuratert geometri, med temafargen lagt på de som ikke bærer sin egen.
+  // Fargen bor på kategorien og ikke på geometrien, slik at en promenade og
+  // pinnene i samme tema aldri kan komme i utakt — regelen om at kartfargen
+  // tilhører temaet gjelder også det som ikke er et punkt.
+  //
+  // `BoardCategory.id` ER tema-IDen (`adaptCategory` bærer `theme.id` rett
+  // gjennom), så oppslaget er direkte.
+  const curatedGeometry = useMemo(() => {
+    const features = data.curatedGeometry;
+    if (!features?.length) return [];
+    const colorByThemeId = new Map(
+      data.categories.map((category) => [
+        category.id as string,
+        category.color,
+      ]),
+    );
+    return features.map((feature) =>
+      feature.color
+        ? feature
+        : { ...feature, color: colorByThemeId.get(feature.themeId) },
+    );
+  }, [data.curatedGeometry, data.categories]);
+
   // Lokal state for map3d-instansen så RouteLayer3D rerenderer når den blir klar.
   const [map3dInstance, setMap3dInstance] = useState<Map3DInstance | null>(
     null,
@@ -362,6 +395,23 @@ export function BoardMap3D({
         : null,
     [story?.on, story?.stop, state.activePOIId],
   );
+
+  /**
+   * Temaet leseren står i, for den kuraterte geometrien.
+   *
+   * Omvisningen først, fordi den er flaten leseren faktisk navigerer i — og den
+   * setter med VILJE ikke `activeCategoryId` (et kategorivalg ville snevret
+   * markørsettet inn, se story-tour). Leser vi bare kategorien, står geometrien
+   * evig i nøytralvekt uten at noe sier fra.
+   *
+   * `story.stop` er null på områdestoppet, og det er riktig: da skal alt vises
+   * dempet. Kategorivalget er fallback for flatene som fortsatt bruker det
+   * (mobilens kategori-rutenett).
+   */
+  const curatedThemeId = story?.on
+    ? (story.stop?.id ?? null)
+    : (activeCategory?.id ?? null);
+
   const { markerPOIs, revealItems, revealWindowMs, hasVoiceOver, orbitRange } =
     useBoardMarkerSet({
       data,
@@ -929,6 +979,15 @@ export function BoardMap3D({
         massing={projectMassing}
       />
       <ContourLayer3D map3d={map3dInstance} rings={contourRings} />
+      {/* Geometrien monteres bare når boardet faktisk har noen — et vanlig
+          board skal ikke betale for en Google-import det ikke bruker. */}
+      {curatedGeometry.length > 0 && (
+        <CuratedGeometryLayer3D
+          map3d={map3dInstance}
+          features={curatedGeometry}
+          activeThemeId={curatedThemeId}
+        />
+      )}
       <RouteLayer3D map3d={map3dInstance} routeData={routeData} />
       {/* Tids-chipen. Lå tidligere som en inline-SVG inne i RouteLayer3D, men
           `Marker3DInteractiveElement` kan ikke bære et utvidbart panel — se
