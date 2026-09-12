@@ -2,6 +2,8 @@
 
 Forretnings- og produktstrategi for Placy. Lever på tvers av sesjoner — i motsetning til `docs/brainstorms/` som er for tekniske feature-brainstorms.
 
+**Aktivt bruktboligspor:** [Pilot, distribusjon og veien til gjentakende salg (11.09.2026)](2026-09-11-bruktbolig-spor.md). Oppdatert retning for arbeidet parallelt med nybygg; eldre EM1-/HEM-research er lenket derfra.
+
 ## Hva som hører hjemme her
 
 - **Sporvalg**: Hvilke spor vi forfølger (eiendom/Propr, events, hotell), hvordan de prioriteres mot hverandre, og når et spor parkeres eller pivoteres.

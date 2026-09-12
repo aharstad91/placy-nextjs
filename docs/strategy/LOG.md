@@ -14,6 +14,215 @@
 
 ---
 
+## 2026-09-11 — StasjonsKvartalet: Tonje følges opp mandag
+
+**Beslutning:** Vent til mandag 14.09 med ny mail til Tonje Folstad, tonje.folstad@dnbeiendom.no. Andreas bekrefter at boardet er nylig provisjonert. [E-postutkast](2026-09-11-tonje-dnb-epostutkast.md) er lagret; nytt skjermbilde må settes inn før sending. Demo-URL og bilde er ikke kontrollert i denne sesjonen.
+
+**Historikk/status:** Første mail 16.06 til Tonje, Kristian Dahl-Andersen og Tor-Kristian Gilstad, uten svar. Ny oppfølging går til Tonje alene. Ikke sendt eller automatisk planlagt. Trello beholdes i Forberedes med 14.09 som neste handling.
+
+---
+
+## 2026-09-11 — Bruktbolig aktivt parallelt med nybygg
+
+**Beslutning:** Bruktbolig er ønsket hovedmarked og arbeides med parallelt med nybyggdialogene. Eget [strategidokument](2026-09-11-bruktbolig-spor.md) samler retning, pilot, distribusjon og validering og oppdaterer tidligere prioritering fra august.
+
+**To innganger:** Kristian Sundland / EM1 Grilstadporten som varm kontakt for lokal betalt pilot, og Einar Ringen Jr. / HEM som prioritert vei til bruktbolig på egne nettsider. Andreas vurderer kortere beslutningsvei via Einar; ingen integrasjon er avtalt. Avventer fortsatt Petters svar før Einar-mailen.
+
+**Pilotforslag:** Ca. 50 boliger; første bolk 5–10 foreslått. Lenke, annonsebilder/QR og visning kan gi distribusjon før nettsideintegrasjon. 2 000 kr og 50 % rabatt er eksempler; pris, inntektsdeling, omfang og målekriterier må avtales. Ingen pilot eller møte med Kristian avtalt. Markedsanslaget på minst 85 % er ikke verifisert.
+
+**Neste:** Forbered bruktboligdemo og kort pilotopplegg til Kristian. Nytt [Kristian-kort](https://trello.com/c/4uCKEPir) opprettet i Forberedes, [Einar-kortet](https://trello.com/c/ibgaYT6i) oppdatert. Ingen nye utsendelser.
+
+---
+
+## 2026-09-11 — Nyhavna: andre demomøte bekreftet
+
+**Status:** Lene Fjellstad, markeds- og kommunikasjonssjef i Nyhavna Utvikling, svarte 11.09 kl. 11:23 at hun ønsker demonstrasjon og mer informasjon. Andreas har sendt bekreftelsen: onsdag 16.09 kl. 13 i Kobbes gate 2 på Nyhavna. Første henvendelse ble sendt 10.09 kl. 10:52. Dette er andre avtalte demomøte, etter Koteng; ingen bestilling eller pilot avtalt.
+
+**Neste:** Forbered demo med innsikt om hvordan folk kan oppdage og bruke Nyhavna i dag. Undersøk målgrupper, hva folk overser og hvordan Placy kan brukes i kommunikasjonen. Verifiser demo før møtet; produksjons-URL er fortsatt ikke bekreftet. Trello-kortet er flyttet til Møte avtalt, med 15.09 som intern forberedelsesdato.
+
+---
+
+## 2026-09-11 — Pitch: innsikt som kjøpsgrunn for bolig og næring
+
+**Retning:** Spiss moat 1 (lokal innsikt) salgsmessig før kommende pitcher. Placy skal vise hva steder og forbindelser betyr for menneskers hverdag. Bolig handler om livet rundt hjemmet; næring, først kontorutleie, om arbeidsdagen. Samme menneskelige utgangspunkt, men ulike beslutninger: husstanden velger bolig, mens bedriften velger lokaler på vegne av ansatte.
+
+**Uavklart:** Interesse for kart/demo er observert; en «must have»-effekt og betalingsvilje er ikke bevist. Hypotesen for kontorutleie er at innsikt kan hjelpe bedriften å vurdere og forankre lokalvalget internt. Dette må undersøkes med KLP, ikke presenteres som dokumentert effekt. Innsikten skal knytte steder til konkrete behov, som pendling, kundemøter eller ærender på vei hjem, og være faktabasert.
+
+**Pitchstruktur, ca. 30 minutter:** Kort introduksjon av innsikts-USP → ett konkret hverdagseksempel i demoen → spørsmål om kundens behov → utforsk faktisk bruk → avtal neste steg. Forbered to sterke innsiktseksempler, men bruk ett for å åpne samtalen. Demoen følger deretter kundens interesse.
+
+**Spørsmål etter eksemplet:** «Hva spør kjøperne deres om når det gjelder området?» og «Er det kvaliteter her dere opplever at kjøperne ikke oppdager eller forstår?» Undersøk hvor Placy kunne hjelpe i salgsprosessen, hvem som ville brukt det og hva som må på plass. For næring tilpasses spørsmålene til bedrifter og ansattes arbeidsdag.
+
+**Neste:** Forbered Leangenbukta-pitchen til Nora-møtet 22.09 med to innsiktseksempler og spørsmålene over. Formuler også en konkret kjøpsgrunn for kontorutleie før KLP-dialogen gjenopptas. Ved interesse: avklar mulig pilot, involverte og grunnlag for tilbud. Ingen pilot eller KLP-møte er avtalt. Koteng- og KLP-kortene i Trello er oppdatert; eksisterende datoer beholdt.
+
+---
+
+## 2026-09-11 — HEM: kontaktspørsmål sendt til Petter
+
+**Status:** Andreas har sendt det avklarte svaret til Petter Bang Møllersen: takker for vurderingen av Pynten og spør om Einar Ringen Jr. er riktig kontakt for en generell prat om løsningen og mulige bruksområder hos HEM.
+
+**Neste:** Avvent Petters svar og eventuell introduksjon før e-posten til Einar. Einar-utkastet er fortsatt ikke sendt. Pynten er fortsatt parkert; begge Trello-kort er oppdatert. Eksisterende 17.09 på Einar-kortet er intern statusgjennomgang, ikke sendedato.
+
+---
+
+## 2026-09-11 — Lund: e-post sendt til Malin
+
+**Status:** Andreas bekrefter utsendelse til Malin Male Pedersen (malin.pedersen@em1.no), emne «Lund – la boligkjøperne utforske nærområdet». Demo-bilde med Extra Ringvålveien og fem minutters gangtid er med som bilde og vedlegg. Mailen tilbyr møte neste uke, gjerne sammen med utbygger, og nevner lokal tilhørighet på Ranheim.
+
+**Neste:** Avvent svar. [Lund-kortet](https://trello.com/c/gmLD63P9) er flyttet til Kontaktet. 18.09 er satt som intern vurdering av oppfølging, ikke automatisk utsendelse.
+
+---
+
+## 2026-09-11 — Trello synkronisert med siste salgsbeslutninger
+
+**Gjennomført:** 35 av 35 kort på synlige lister gjennomgått mot kjent status. Fire eksisterende kort oppdatert, ett nytt opprettet; øvrige 31 hadde ingen nye avvik mot loggen. Historisk researcharkiv ikke gjennomgått på nytt.
+
+- **Pynten:** Flyttet til Parkert / avslått med Petters prosjektavslag. Gammel oppfølgingsfrist markert avsluttet; videre HEM-dialog ligger hos Einar.
+- **Einar:** Godkjent utkast registrert som ikke sendt. Direkte e-post og eventuell introduksjon gjenstår. 17.09 er intern gjennomgang, ikke sendedato.
+- **Skanska:** Neste handling flyttet til 14.09; Gro Elisabeth kontaktes om Lillebytunet hvis Thomas fortsatt ikke har svart.
+- **Lund:** [Nytt kort i Forberedes](https://trello.com/c/gmLD63P9), Malin som kontakt. Demo/bilde gjenstår å bekrefte, ikke sendt.
+- **Veiledning:** Fast regel om synkronisering ved strategilogging lagt inn på boardet og i CLAUDE.md.
+
+**Status:** Tidligere merknader om manglende Trello-oppdatering for Pynten/Einar, Skanska og Lund er nå håndtert. Endringene er bekreftet i Trello-responsene. Ingen e-post sendt.
+
+---
+
+## 2026-09-10 — Lund: demo under opprettelse, Malin første kontakt
+
+**Beslutning:** Andreas oppretter Placy-board for Lund på Heimdal. Første kontakt blir Malin Male Pedersen i EiendomsMegler 1 (malin.pedersen@em1.no, 911 64 806), som uttaler seg om lanseringen i [Bydelsnytt 8. september](https://bydelsnytt.no/2026/09/08/salgsstart-for-nytt-boligprosjekt-pa-lund-ved-heimdal/). Utbygger er I.K. Lykke Eiendom; utviklingsdirektør Torry Eilertsen er en mulig videre kontakt. Fordelingen av markedsbeslutninger mellom megler og utbygger er ikke avklart.
+
+**Vinkel:** Prosjektspesifikk demo viser marka, kollektivtransport og hverdagen uten bil. E-postutkastet åpner med omtalen av tomtevisningen, inkluderer et bilde fra demoen, foreslår innbygging på lundheimdal.no og tilbyr en halvtime neste uke. Lokal tilhørighet: Andreas bor på Ranheim og kan komme innom. Malin velges fordi hun er dokumentert involvert; et eventuelt prosjektavslag skal ikke tolkes som avslag fra hele EM1.
+
+**Status / neste:** Board under opprettelse, ikke bekreftet ferdig. Ta demobilde og ferdigstill e-posten før sending; ingen henvendelse sendt eller dato avtalt. Trello er ikke oppdatert i denne loggføringen. [Prosjektside](https://lundheimdal.no/).
+
+---
+
+## 2026-09-10 — Lillebytunet: Gro Elisabeth neste kontakt ved fortsatt stillhet
+
+**Beslutning:** Avvent svar fra Thomas Borg Rasmussen til mandag 14. september. Hvis han fortsatt ikke har svart, går vi videre til Gro Elisabeth hos Skanska med en egen Placy-mail og demo for Lillebytunet. Interesseregistreringen på Ranheim Senter og manglende svar fra Thomas trekkes ikke inn i denne henvendelsen.
+
+**Status:** Thomas har ikke svart på e-posten om interesseregistrering og Lillebytunet-demo. Ingen ny henvendelse sendt. Dette erstatter vurderingsdato 16. september for Skanska i pipeline-planen; Trello-datoen er ikke oppdatert i denne loggføringen.
+
+---
+
+## 2026-09-10 — Einar: e-postutkast klart, utsendelse avventes
+
+**Beslutning:** [Godkjent e-postutkast til Einar](2026-09-10-einar-hem-epostutkast.md) lagret. Bruktbolig og nybygg er inngangen; Mustasj og Vitec nevnes som kontekst for eksisterende publisering, uten å love ferdig integrasjon. Avslutningen tilbyr møte på Rosten. Andreas sender ikke i kveld; ingen utsendelsesdato avtalt.
+
+**Ny status hos HEM:** Petter Bang Møllersen svarte 11:48 at han ville diskutere internt, og 12:01 at Placy ikke passer for Pynten etter deres vurdering. Han mener det passer bedre der flere fasiliteter ligger enda nærmere. Dette er avslag for prosjektet, ikke et generelt avslag fra HEM. Hvem som deltok internt er ukjent. Tidligere plan om å avvente svar fra Petter er dermed utdatert.
+
+**Neste:** Avklart utkast til Petter spør om Einar er riktig kontakt for en generell samtale om løsningen og mulige bruksområder hos HEM. Utsendelse av dette svaret er heller ikke bekreftet. Tilpass Einar-åpningen ved eventuell introduksjon, og bekreft direkte e-postadresse før sending. Trello er ikke oppdatert med disse siste opplysningene.
+
+---
+
+## 2026-09-10 — StasjonsKvartalet: tidligere DNB-prosess bekreftet
+
+Andreas presiserte at det var en prosess med DNB Eiendomsmegling før sommeren, uten svar. Eksisterende [StasjonsKvartalet-kort](https://trello.com/c/khumYkSi) er omdøpt til «DNB Eiendomsmegling — StasjonsKvartalet» og flyttet fra Forberedes til Kontaktet. Neste handling: finn siste tråd og klargjør oppfølging; intern gjennomgang 14.09. Kontaktperson og siste kontaktdato må hentes fra tråden. Tidligere Adressa Studio-notat er bevart som sekundær kontekst. Ingen ny henvendelse sendt.
+
+---
+
+## 2026-09-10 — Trello ryddet til salgspipeline
+
+**Gjennomført:** På Andreas' forespørsel er [Demo Pipeline](https://trello.com/b/HA0cmZhp) organisert i åtte lister: Kandidater, Forberedes, Kontaktet, I dialog, Møte avtalt, Tilbud sendt, Vunnet, Parkert / avslått. Kortene har kort kontakt/status/neste handling. Kortdato betyr neste handling, ikke sendedato. Ingen automatisk utsendelse.
+
+**Dekning:** 35 av 35 eksisterende kort gjennomgått og oppdatert; fem nye opprettet (Wesselsløkka, Pynten, Einar/bruktbolig, Nyhavna, KLP). 40 kort verifisert etter endringen: 35 på synlige lister og fem historiske researchkort i arkivert Researcharkiv. Ingen kort slettet. [Originalbeskrivelser og plasseringer](archive/2026-09-10-trello-before-pipeline.json) bevart før opprydding.
+
+**Aktive dialoger:** Fire kontaktet (Skanska, Wesselsløkka, Pynten, Nyhavna), Fredensborg i dialog med Henning, Koteng/Leangenbukta med møte 22.09 kl. 10. Grilstad-henvisningen er samlet på Leangenbukta-kortet. Kalenderinvitasjonen med Nora og Lena er dokumentert; fysisk møtested fortsatt uavklart. Ingen tilbud eller salg bekreftet.
+
+**Datoer:** HEM-oppfølging 15./16.09 og vurdering av Einar 17.09 følger avtalt plan. Øvrige datoer er foreslåtte interne vurderingspunkter: KLP/Adressa-tråder 14.09, Skanska 16.09, Fredensborg/Nyhavna 17.09, Leangenbukta-forberedelse 21.09. Ingen automatiske påminnelser satt. Kortene oppdateres ved svar; generell salgsrutine og telefonløp skal fortsatt diskuteres.
+
+---
+
+## 2026-09-10 — HEM: Einar hovedkontakt; gi meglerne tid til intern introduksjon
+
+**Beslutning:** Einar Ringen Jr. prioriteres som vår viktigste kontakt hos HEM. Andreas opplyser at han styrer systemene; den strategiske muligheten er å få Placy inn i bruktbolig hos Heimdal, i tillegg til prosjektboliger. Wesselsløkka og Pynten kan være konkrete eksempler som åpner en bredere samtale. Ingen kjøpsbeslutning eller utrulling er avtalt.
+
+**Begrunnelse:** Thomas Løbakk og Petter Bang Møllersen kan bli interne ambassadører og introdusere Einar med utgangspunkt i nytten for salgsarbeidet. Thomas fikk mail 8. september og Petter 10. september. Vi gir dem til midten av neste uke før oppfølging, fremfor å kontakte Einar umiddelbart.
+
+**Avtalt fremgangsmåte:**
+- Klargjør henvendelsen til Einar mens svar avventes; utkastet er ikke laget som del av denne loggføringen.
+- **15.–16. september:** Følg opp Thomas og Petter dersom det fortsatt er stille. Spør om relevansen for prosjektet, med mulighet for en introduksjon til Einar.
+- **Mot slutten av uke 38, 17.–18. september:** Vurder direkte kontakt med Einar dersom ingen dialog har kommet i gang. Dette er et vurderingspunkt, ikke avtalt automatisk utsendelse.
+- Ved positivt svar fra en av meglerne: Tilpass neste steg og be om introduksjon da.
+
+**Status:** Aktiv plan. Ingen nye henvendelser sendt eller påminnelser opprettet. Stillhet hos meglerne skal ikke bli en varig sperre for kontakt med Einar. Dette konkretiserer punkt 3 i [diskusjonsrapporten](2026-09-10-salgsoppfolging-og-pipeline-rapport.md); en generell oppfølgingsrutine for alle prospekter er fortsatt ikke besluttet.
+
+---
+
+## 2026-09-10 — Salgsoppfølging dokumentert; HEMs markedsansvar bekreftet
+
+**Status:** Diskusjonsgrunnlag opprettet på Andreas' forespørsel. Seks temaer er dokumentert: e-postoppfølging, telefon, riktig kontakt, Trello-pipeline, næringseiendom og geografisk utvidelse. Bare punkt 3 er undersøkt nå; øvrige temaer og kontaktintervaller er ikke besluttet.
+
+**Funn:** [HEMs egen kontaktprofil](https://hem.no/kontakt/erj) bekrefter Einar Ringen Jr. som IT- og markedssjef i Administrasjon/Ledelsen. Han var allerede identifisert i augustresearchen. Direkte e-postadresse er skjermet i tilgjengelig nettlesertekst og ikke verifisert. Ingen ny henvendelse sendt.
+
+**Presisering:** Eldre aktørkart omtaler Einar som bekreftet kjøper. Rollen gjør ham relevant, men fullmakt over prosjektbudsjett og kjøp av Placy er ikke dokumentert. Avklar konkret ansvar for Wesselsløkka/Pynten; ikke utled innkjøpsmyndighet fra tittel eller nettsidefooter alene. Thomas og Petter er allerede kontaktet og avventer svar.
+
+**Detaljer og åpne spørsmål:** [Rapport til videre diskusjon](2026-09-10-salgsoppfolging-og-pipeline-rapport.md). Ingen Trello-omlegging gjort.
+
+---
+
+## 2026-09-10 — Fredensborg: Petter introduserte Henning Strand; digital demo tilbudt
+
+**Status:** Svar mottatt på Overvik-henvendelsen. Petter Knut Nedregotten satte markedsdirektør **Henning Strand**, `Henning.strand@fredensborgbolig.no`, på kopi. Andreas har svart Henning med Petter på kopi. **Avventer Henning; møte er ikke avtalt.** Dette oppdaterer tidligere status om at svar fra Petter avventes.
+
+**E-postforløp (fra trådene Andreas delte):**
+- **10:33:** Opprinnelig Overvik-mail sendt, ifølge den siterte e-postheaderen.
+- **11:10:** Petter svarte: «Spennende. Setter deg i dialog med vår markedsdirektør Henning på kopi. Du hører fra han dersom det er aktuelt med et møte.»
+- **11:16:** Andreas takket for raskt svar og introduksjonen, og skrev til Henning: «Jeg tar gjerne en kort gjennomgang digitalt på Google Meet eller Teams og viser hvordan dette kan brukes på Overvik eller andre relevante prosjekter.» Utsendelsen er bekreftet av Andreas.
+
+**Beslutning:** Behold Overvik som konkret demo og åpne for andre relevante prosjekter. Andreas opplyste at Henning sitter i Oslo; derfor tilbys digital gjennomgang. En egen Oslo-prototype ble vurdert, men ikke tilbudt. Eventuell ytterligere tilpasning avventes til kunden viser interesse eller peker på et annet prosjekt.
+
+**Betydning og åpent:** Den regionale kontakten har introdusert Placy direkte til markedsdirektøren. Dette er en ny kontakt og en mulighet for videre dialog, ikke en bekreftet møteinvitasjon eller kjøpsinteresse. Avvent svar fra Henning og fortsett arbeidet med øvrige prospekter. Ingen pris eller pilotavtale diskutert.
+
+---
+
+## 2026-09-10 — Nyhavna: demo-mail sendt til Lene Fjellstad
+
+**Status:** Andreas bekreftet at e-posten er sendt til **Lene Fjellstad**, leder marked og kommunikasjon i Nyhavna Utvikling, `lene.fjellstad@nyhavna.no`. Emne: «Nyhavna – la folk utforske bydelen». Rollen og adressen ble kontrollert mot [selskapets ansattside](https://nyhavna.no/om-selskapet/). Ingen svar eller møte bekreftet ennå.
+
+**Inngang og budskap:** Nyhavna løfter allerede frem lokale virksomheter, kultur og arrangementer på `nyhavna.no`. Demoen viser hvordan besøkende, folk som jobber i området og fremtidige beboere kan utforske konkrete steder gjennom et interaktivt kart. Vinklingen er å oppdage og bruke bydelen. Mailen foreslår innbygging på nettsiden og ber om en halvtime neste uke, med lokal avslutning om at Andreas bor på Ranheim og gjerne kommer innom. Ingen pris eller pilotavtale tilbudt.
+
+**Demo:** Andreas opplyste at boardet er ferdig og verifisert på `http://localhost:3001/eiendom/nyhavna-utvikling/nyhavna/rapport-board`. Planlagt produksjonsadresse: `https://placy.no/eiendom/nyhavna-utvikling/nyhavna/rapport-board`; publisering er ikke bekreftet i denne sesjonen. Utgangspunkt: 63.43980508893858, 10.41725655026434. Ingen demo-lenke i den viste mailen.
+
+**Materiell:** Endelig skjermbilde viser Nyhavna, BarBeintQ Restaurant og gangrute med beregnet gangtid på 9 minutter rundt havnebassenget. «Nybygg 2028» ble fjernet fra Nyhavna-markøren for å unngå å fremstille bydelen som ett boligprosjekt med bestemt ferdigstillelse. Bildet vises innfelt og som separat PNG-vedlegg, `nyhavna-1`, 1,43 MB, i mailklienten.
+
+**Åpent:** Avvent svar fra Lene og avtal demonstrasjon ved interesse. Bekreft publisering før produksjonslenken eventuelt deles. Pynten, Overvik og Nyhavna er nå alle bekreftet sendt 10. september.
+
+---
+
+## 2026-09-10 — Overvik sendt til Fredensborg; Brøset kartlagt som flere prosjektinnganger
+
+**Status:** Andreas bekreftet at Overvik-mailen er sendt til **Petter Knut Nedregotten**, regionssjef Trondheim i Fredensborg Bolig, `petter.nedregotten@fredensborgbolig.no`. Emne: «Overvik – la boligkjøperne utforske nærområdet». Ingen svar bekreftet ennå. Dette oppdaterer tidligere status «utkast klart, utsendelse ikke bekreftet».
+
+**Materiell og budskap:** Kortere mail uten avsnittet om beliggenhetens verdi og begrensningene ved statiske kart. Demoen viser Overvik, Ranheim skole og gangrute med beregnet gangtid på 16 minutter. Skjermbildet i mailklienten viste både innfelt bilde og ett vedlegg på 2,5 MB. Foreslår innbygging på `overvik.no` og en halvtime neste uke. Lokal formulering: «Jeg bor like ved Overvik og kommer gjerne innom dere på et tidspunkt som passer.» Ingen pris eller pilotavtale tilbudt.
+
+**Kontakt verifisert:** [Fredensborgs ansattoversikt](https://fredensborgbolig.no/co/ansatte) bekrefter Petters rolle og e-post. [Overvik](https://overvik.no/) oppgir at Fredensborg leder prosjektgjennomføringen. Petter er en relevant lokal inngang; hans konkrete myndighet over prosjektets markedsføring og nettside er ikke offentlig bekreftet.
+
+**Skoleopplysning – presisering:** Andreas presiserte at Ranheim skole er korrekt etter oppdatert skolegrense. Assistenten hadde snudd brukerens tidligere korrigering og beklaget dette. Skolekretsen er ikke uavhengig verifisert i denne sesjonen; eldre/motstridende tekst på Overviks nettside skal ikke behandles som en avklaring mot Andreas' opplysning.
+
+**Innsikt om Brøset:** [Brøset Utvikling](https://broset.no/fire-erfarne-utbyggere-star-bak-utbyggingen/) presenteres som fellesselskapet for Fredensborg Bolig, Heimdal Bolig, Trym Bolig og Byggteknikk Prosjekt. Området rommer separate boligprosjekter med egne utbyggere, prosjektsider og salgsteam:
+- **Wesselsløkka:** Heimdal Bolig og Byggteknikk Prosjekt er utbyggere, med Backe som entreprenør, ifølge [Backes pressemelding](https://kommunikasjon.ntb.no/pressemelding/18684716/backe-starter-bygging-av-ny-bydel-i-trondheim?lang=no&publisherId=17849149). [Prosjektsiden](https://www.wesselslokka.no/) oppgir HEM-teamet, inkludert Thomas Løbakk som megler og prosjektleder.
+- **Bo Brøset / Elvely:** Fredensborgs prosjekt med egen [prosjektside og EM1-team](https://bobroset.no/no/til-salgs). En mulig senere utvidelse av Fredensborg-samtalen.
+
+**Beslutning:** Fortsett konkrete prosjektinnganger til HEM og Fredensborg; send Overvik først som planlagt. Det er ikke dokumentert at Brøset Utvikling har samlet salgsansvar eller fullmakt til å kjøpe Placy for alle prosjektene. Fellesselskapet kan være relevant for en felles områdeguide, men ansvar for felles markedsføring, nettside og budsjett må avklares. Salgsansvar er ikke i seg selv bekreftelse på innkjøpsmyndighet.
+
+**Åpent:** Avvent svar fra Petter. Ved interesse kan Bo Brøset tas opp, og vi kan spørre hvem som styrer den felles profileringen av Brøset. Ingen henvendelse til Brøset Utvikling sendt.
+
+---
+
+## 2026-09-10 — Pynten: demo-mail sendt til Petter Bang Møllersen i HEM
+
+**Status:** Andreas bekreftet at e-posten er sendt til Petter Bang Møllersen, Heimdal Eiendomsmegling, `pm@hem.no`. Emne: «Pynten – la boligkjøperne utforske nærområdet». Ingen svar bekreftet ennå.
+
+**Materiell og budskap:** Mailen presenterer den digitale nabolagsguiden og en konkret demo for Pynten. Det innfelte skjermbildet viser Pynten, informasjon om Moholt Storsenter og gangrute med beregnet gangtid på 7 minutter. Løsningen foreslås bygget inn på `moholtpynten.no`. Mailen ber om en halvtime neste uke og avslutter med at Andreas bor på Ranheim og gjerne kommer innom. Ingen pris eller pilotavtale tilbudt. Separat bildevedlegg er ikke bekreftet.
+
+**Malendring:** Andreas ønsker fremover å utelate avsnittet om at beliggenhet er en stor del av kjøpesummen og at tekst, bilder og statiske kart begrenser utforskning. Mottakerne kjenner dette allerede; mailen går direkte fra produkt og nytte til konkret demo. Lokal tilhørighet nevnes i møteforespørselen på slutten.
+
+**Begrunnelse:** Pynten er en separat prosjektinngang til HEM mens svar fra Thomas Løbakk om Wesselsløkka avventes. Henvendelsen er ikke en purring på Thomas.
+
+**Åpent:** Avvent svar fra Petter og Thomas. Overvik-mailen til Petter Knut Nedregotten i Fredensborg er klar, men utsendelse er fortsatt ikke bekreftet.
+
+---
+
 ## 2026-09-10 — Første avtalte kundepitch: Leangenbukta med Nora Reese, 22. september kl. 10
 
 **Milepæl:** Andreas har fått sin første konkrete mulighet til å pitche Placy til en potensiell kunde etter de nye e-postutsendelsene. Nora Reese, leder markedsføring hos Koteng Jenssen, inviterte til demonstrasjon og foreslo **22. september 2026 kl. 10 (uke 39, norsk tid)**. Andreas bekreftet tidspunktet på e-post 10. september kl. 09:09. **Tidspunkt avtalt; møtested og øvrige deltakere er ikke avklart.** Ingen kalenderinvitasjon opprettet i denne sesjonen.

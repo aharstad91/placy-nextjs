@@ -31,6 +31,8 @@ Placy er en lokasjonsbasert plattform med tre produkter: **Explorer** (utforsk f
 
 Auto-prompten er *ja/nei*-spørsmål, ikke en åpen "vil du logge?". Bruker sier ja eller nei, og Claude handler.
 
+**Strategilogg og Trello holdes synkronisert (Andreas, 2026-09-11):** Når du loggfører i `docs/strategy/LOG.md`, oppdater også berørte kort i det reviderte **Demo Pipeline**-boardet (`HA0cmZhp`, ID `69dcb71daff7e8044a29680e`) med relevant status, neste handling og dato. Dette inngår i «loggfør» og krever ikke en ny bekreftelse. Hold kortene korte og konsise; ikke kopier hele logginnlegg. Generell strategi uten tilknytning til et salgskort trenger ikke eget kort. Hvis Trello ikke kan oppdateres, opplys om det og noter hva som gjenstår i loggen.
+
 ## Kjernekonsepter
 
 **POI (Point of Interest):** Fysiske steder med koordinater, kategori, og valgfri Google-data/redaksjonelt innhold. Delt på tvers av alle tre produkter.
@@ -252,4 +254,3 @@ Alle nye Trello-kort (utviklingsoppgaver, bugs, features) skal legges til her me
 | Demo Pipeline | `69dcb71daff7e8044a29680e` (short: `HA0cmZhp`) | Salgspipeline per boligprosjekt/kunde |
 
 URL: https://trello.com/b/onb3nsLD/utvikling
-

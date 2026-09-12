@@ -1,0 +1,17 @@
+import { chromium } from "playwright";
+const url = process.argv[2];
+const out = process.argv[3];
+const b = await chromium.launch();
+const p = await b.newPage({ viewport: { width: 1440, height: 1000 } });
+const errors = [];
+p.on("console", m => { if (m.type() === "error") errors.push(m.text()); });
+p.on("pageerror", e => errors.push("pageerror: " + e.message));
+const resp = await p.goto(url, { waitUntil: "networkidle", timeout: 90000 });
+console.log("status", resp?.status());
+await p.waitForTimeout(6000);
+await p.screenshot({ path: out, fullPage: false });
+const text = await p.evaluate(() => document.body.innerText.slice(0, 3000));
+console.log("--- SYNLIG TEKST ---\n" + text);
+console.log("--- KONSOLLFEIL (" + errors.length + ") ---");
+errors.slice(0, 25).forEach(e => console.log("  " + e));
+await b.close();

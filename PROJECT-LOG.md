@@ -6,6 +6,18 @@
 
 ---
 
+## 2026-09-11 — Nyhavna «Leve»-demo startet i separat Claude-sesjon
+
+**Status:** Andreas bekrefter at Claude har startet med overlevert prompt og `/goal`. Implementasjon, lokal URL og verifisering er ikke bekreftet ennå.
+
+**Oppdrag:** Bygg en separat møtedemo med Nyhavnas eget innhold fra https://nyhavna.no/leve/ og undersidene om servering, park/promenade og kunst/kultur. Vis et eksisterende tilbud (f.eks. Dora Kaffebar), Elvepromenaden og kulturaksen i Skippergata som geografisk utforskbart innhold. Bevar eksisterende Nyhavna-board. Kildebaserte beskrivelser, tydelig skille mellom eksisterende og planlagt, og ingen oppdiktede traseer eller grenser.
+
+**Ferdigkriterier overlevert:** Egen lokal URL, fungerende valg av de tre innholdstypene, kontrollerte plasseringer/kilder, visuell kontroll på desktop/mobil og relevante prosjektkontroller. Ingen push eller publisering. Ikke start overlappende implementasjon i denne sesjonen.
+
+**Åpent:** Hent Claudes leveranse og verifiser demoen før møtet med Lene Fjellstad 16.09 kl. 13. Nyhavna-kortet i Demo Pipeline oppdateres med under-arbeid-status; 15.09 beholdes som intern forberedelsesdato.
+
+---
+
 ## 2026-09-09 — HUS C BYGD OG KONTROLLERT, PIPELINEN GJORT BYGGAGNOSTISK, OG DATAMAPPA SLETTET VED ET UHELL
 
 **Kontekst:** worktree `../placy-lillebytunet`, gren `feat/lillebytunet-3d-model`. Oppdraget var «bygg neste bygg og valider at det er like bra som utgangspunkt», etter at Hus B-runden dagen før hadde etterlatt en dokumentert arbeidsmåte i `docs/solutions/workflow-issues/render-til-byggmodell-*`. Fire faser: bygg Hus C, revider dokumentene mot koden, rett funnene — og til slutt en destruktiv feil som må stå i loggen.
