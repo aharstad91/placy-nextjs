@@ -971,6 +971,9 @@ export function BoardMap3D({
           lat: data.home.coordinates.lat,
           lng: data.home.coordinates.lng,
           name: data.home.name,
+          // Undefined lar markøren bruke sin egen default; tom streng skrur
+          // undertittelen AV for boards som ikke er ett byggeprosjekt.
+          subtitle: data.home.pinSubtitle,
           imageSrc: getProjectPinThumbnail(data.projectSlug, data.assets),
         }}
       />

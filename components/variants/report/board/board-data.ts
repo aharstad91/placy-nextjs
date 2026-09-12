@@ -197,6 +197,9 @@ export interface BoardHome {
   district?: string;
   /** By, eks. "Trondheim". Vises etter district i subline. */
   city?: string;
+  /** Undertittel i 3D-prosjektmarkøren (fra reportConfig.pinSubtitle).
+   *  Tom streng = bare navnet; undefined = markørens egen default. */
+  pinSubtitle?: string;
   /** Hjem-spor for audio-tour — kun satt når både url og manus eksisterer. */
   audio?: BoardAudioTrack;
 }
@@ -363,6 +366,7 @@ export function adaptBoardData(report: ReportData): BoardData {
       // Bydel/by fra reportConfig (Supabase). Undefined → subline skjules.
       district: report.district,
       city: report.city,
+      pinSubtitle: report.pinSubtitle,
       audio: pickPlayableAudio(report.heroAudio),
     },
     categories,
