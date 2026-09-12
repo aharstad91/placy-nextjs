@@ -64,3 +64,4 @@ luffu-capture/
 # Prototype-miljøet (prototypes/) — genererte artefakter
 prototypes/_data/
 prototypes/_shared/env.js
+.backups/

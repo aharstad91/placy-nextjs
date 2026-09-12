@@ -799,6 +799,17 @@ export interface ReportConfig {
   district?: string;
   /** By, eks. "Trondheim". Vises etter district i subline. */
   city?: string;
+  /**
+   * Undertittel under prosjektnavnet i 3D-kartets prosjektmarkør, eks.
+   * "Nybygg 2028".
+   *
+   * Utelatt → markøren bruker sin egen default. Tom streng → markøren viser
+   * BARE navnet (og kollisjonsboksen krymper tilsvarende). Tomstrengen finnes
+   * fordi ikke alle boards er ett byggeprosjekt med én ferdigstillelse: et
+   * bydels- eller næringsboard som arver "Nybygg 2028" påstår et årstall det
+   * ikke har dekning for.
+   */
+  pinSubtitle?: string;
   /** Opt-in for prosjekt-spesifikke asset-filer (brand/illustrasjon/pin). */
   assets?: ProjectAssetFlags;
   /** Path (absolute or /public) til illustrasjon som vises i hero + summary. Optional. */

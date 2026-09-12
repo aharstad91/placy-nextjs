@@ -234,6 +234,9 @@ export interface ReportData {
   district?: string;
   /** By, eks. "Trondheim" (fra reportConfig). */
   city?: string;
+  /** Undertittel i 3D-prosjektmarkøren (fra reportConfig). Tom streng = ingen
+   *  undertittel; undefined = markørens egen default. */
+  pinSubtitle?: string;
   /** Opt-in for prosjekt-spesifikke asset-filer (brand/illustrasjon/pin). */
   assets?: ProjectAssetFlags;
   centerCoordinates: { lat: number; lng: number };
@@ -790,6 +793,7 @@ export function transformToReportData(project: Project, locale: Locale = "no"): 
     address: project.pois[0]?.address ?? "",
     district: rc?.district,
     city: rc?.city,
+    pinSubtitle: rc?.pinSubtitle,
     assets: rc?.assets,
     centerCoordinates: project.centerCoordinates,
     heroMetrics,

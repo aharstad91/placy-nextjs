@@ -1,7 +1,10 @@
 import { describe, it, expect, vi } from "vitest";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { ProjectSitePin } from "@/components/map/ProjectSitePin";
+import {
+  ProjectSitePin,
+  projectSitePinBlocker,
+} from "@/components/map/ProjectSitePin";
 
 /**
  * Regresjonsvakt for BOARDETS prosjektmarkør.
@@ -44,6 +47,35 @@ describe("ProjectSitePin med boardets props", () => {
     // at komponenten ikke kaster og at ingenting endrer seg.
     await userEvent.hover(pin);
     expect(pin.style.cursor).toBe("");
+  });
+});
+
+describe("ProjectSitePin uten undertittel", () => {
+  /**
+   * Tomstrengen er den EKSPLISITTE av-bryteren, og den må skille seg fra
+   * `undefined`: et board som ikke er ett byggeprosjekt (en bydel, et
+   * næringsbygg) skal ikke arve markørens «Nybygg 2028», som ville påstått et
+   * årstall det ikke har dekning for. `undefined` betyr fortsatt «bruk
+   * defaulten», så eksisterende nybygg-boards er urørt.
+   */
+  it("viser defaulten når subtitle er utelatt", () => {
+    render(<ProjectSitePin name="Wesselsløkka" />);
+    expect(screen.getByText("Nybygg 2028")).toBeTruthy();
+  });
+
+  it("viser bare navnet når subtitle er tom streng", () => {
+    render(<ProjectSitePin name="Nyhavna" subtitle="" />);
+    expect(screen.getByText("Nyhavna")).toBeTruthy();
+    expect(screen.queryByText("Nybygg 2028")).toBeNull();
+  });
+
+  it("krymper hindringsboksen tilsvarende", () => {
+    // Kollisjonskullingen reserverer plass etter teksten som faktisk tegnes —
+    // en tom undertittel som fortsatt okkuperte defaultens bredde ville skjult
+    // POI-er bak et tomrom.
+    const medDefault = projectSitePinBlocker("Nyhavna", undefined, 1);
+    const utenSub = projectSitePinBlocker("Nyhavna", "", 1);
+    expect(utenSub.halfWidth).toBeLessThan(medDefault.halfWidth);
   });
 });
 
