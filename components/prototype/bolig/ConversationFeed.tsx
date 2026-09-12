@@ -20,13 +20,23 @@ function groupByTurn(blocks: Block[]): { turn: number; blocks: Block[] }[] {
 }
 
 /**
- * Scrollbar feed av samtaleblokker. Følger bunnen automatisk mens brukeren er
- * der (også under strømmende svar); slutter å rykke feeden når brukeren har
- * scrollet opp for å lese eldre innhold, og viser i stedet "Nytt svar ↓".
+ * Scrollbar feed av samtaleblokker, lest OVENFRA per tur.
  *
- * Blokkene rendres per tur. Spørsmålet (user-blokken) ligger sticky i toppen
- * av sin tur, slik rapport-boardets mobilflate fester stoppets spørsmål: mens
- * svaret, kortene og kildene ruller forbi, står det synlig hva de svarer på.
+ * Når en ny tur begynner (trykk på tema, valg i kartet, nytt spørsmål med
+ * stemmen), stilles feeden slik at turens spørsmål står i toppen — og der blir
+ * den. Svaret, kortene og kildene fylles på nedenfor i leserekkefølge, og
+ * brukeren ruller selv videre. Tidligere fulgte feeden bunnen mens svaret
+ * strømmet, og hver kategori sendte deg til slutten av et langt svar som du så
+ * måtte rulle opp gjennom for å finne starten (Andreas, 2026-09-12: «da må en
+ * scrolle oppover hele tiden … det blir tungvindt»).
+ *
+ * Spørsmålet holdes i toppen mens turen fylles: første blokk i en ny tur er kort,
+ * så feeden rekker ikke å stilles helt til turens topp før resten har kommet.
+ * Derfor stilles den på nytt for hver blokk i turen, til brukeren selv tar i
+ * feeden (hjul, finger, peker) — da er det brukerens posisjon som gjelder.
+ *
+ * «Nytt svar ↓» vises bare når brukeren har rullet selv og innhold så har
+ * kommet til under det som er synlig.
  */
 export default function ConversationFeed({ session, fixture, onExpandMap }: {
   session: VoiceSession;
@@ -34,7 +44,9 @@ export default function ConversationFeed({ session, fixture, onExpandMap }: {
   onExpandMap: (placeIds: string[]) => void;
 }) {
   const scrollRef = useRef<HTMLDivElement>(null);
-  const stuckToBottom = useRef(true);
+  const shownTurn = useRef<number | null>(null);
+  /** Feeden følger turens topp til brukeren tar i den. */
+  const pinnedToTurn = useRef(false);
   const [hasNewReply, setHasNewReply] = useState(false);
   const turns = useMemo(() => groupByTurn(session.blocks), [session.blocks]);
 
@@ -43,33 +55,61 @@ export default function ConversationFeed({ session, fixture, onExpandMap }: {
     return window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth";
   }, []);
 
+  const scrollTo = useCallback((top: number, behavior: ScrollBehavior = scrollBehavior()) => {
+    const el = scrollRef.current;
+    if (!el) return;
+    if (typeof el.scrollTo === "function") el.scrollTo({ top, behavior });
+    else el.scrollTop = top;
+  }, [scrollBehavior]);
+
+  const turnTop = useCallback((turn: number) => {
+    const el = scrollRef.current;
+    if (!el) return 0;
+    const section = el.querySelector<HTMLElement>(`[data-turn="${turn}"]`);
+    return section ? Math.max(0, section.getBoundingClientRect().top - el.getBoundingClientRect().top + el.scrollTop) : el.scrollHeight;
+  }, []);
+
+  const release = useCallback(() => { pinnedToTurn.current = false; }, []);
+
   const scrollToBottom = useCallback(() => {
     const el = scrollRef.current;
     if (!el) return;
-    if (typeof el.scrollTo === "function") el.scrollTo({ top: el.scrollHeight, behavior: scrollBehavior() });
-    else el.scrollTop = el.scrollHeight;
-    stuckToBottom.current = true;
+    scrollTo(el.scrollHeight);
     setHasNewReply(false);
-  }, [scrollBehavior]);
+  }, [scrollTo]);
 
   const handleScroll = useCallback(() => {
     const el = scrollRef.current;
     if (!el) return;
     const distanceFromBottom = el.scrollHeight - el.scrollTop - el.clientHeight;
-    stuckToBottom.current = distanceFromBottom < NEAR_BOTTOM_PX;
-    if (stuckToBottom.current) setHasNewReply(false);
+    if (distanceFromBottom < NEAR_BOTTOM_PX) setHasNewReply(false);
   }, []);
 
   useEffect(() => {
-    if (stuckToBottom.current) scrollToBottom();
-    else setHasNewReply(true);
-  }, [session.blocks, scrollToBottom]);
+    const el = scrollRef.current;
+    const latest = session.blocks[session.blocks.length - 1];
+    if (!el || !latest) return;
+    if (shownTurn.current !== latest.turn) {
+      // Ny tur: still spørsmålet i toppen og hold det der mens turen fylles.
+      shownTurn.current = latest.turn;
+      pinnedToTurn.current = true;
+      scrollTo(turnTop(latest.turn));
+      setHasNewReply(false);
+      return;
+    }
+    if (pinnedToTurn.current) {
+      scrollTo(turnTop(latest.turn), "auto");
+      return;
+    }
+    const distanceFromBottom = el.scrollHeight - el.scrollTop - el.clientHeight;
+    if (distanceFromBottom > NEAR_BOTTOM_PX) setHasNewReply(true);
+  }, [session.blocks, scrollTo, turnTop]);
 
   return (
     <div className={styles.feedWrap}>
-      <div ref={scrollRef} className={styles.feedScroll} onScroll={handleScroll}>
+      <div ref={scrollRef} className={styles.feedScroll} onScroll={handleScroll} onWheel={release} onTouchStart={release} onPointerDown={release}>
         {turns.map((group) => (
-          <section key={group.turn} className={styles.turn} aria-label={`Tur ${group.turn}`}>
+          <section key={group.turn} data-turn={group.turn} className={styles.turn} aria-label={`Tur ${group.turn}`}>
             {group.blocks.map((block) => (
               <ConversationBlock key={block.id} block={block} fixture={fixture} session={session} onExpandMap={onExpandMap} />
             ))}
