@@ -6,6 +6,77 @@
 
 ---
 
+## 2026-09-11 — NYHAVNA-DEMO: KUNDENS EGET INNHOLD SOM ET LAG I BOARDET
+
+**Kontekst:** worktree `../placy-nyhavna-demo`, gren `feat/nyhavna-leve-demo`. Møte med Lene Fjellstad, leder for marked og kommunikasjon i Nyhavna Utvikling, onsdag 16. september. Oppdraget var en avgrenset møtedemo som viser at innholdet de alt har publisert på `nyhavna.no/leve` blir lettere å forstå og oppdage når det knyttes til stedene i kartet. Ingen kundebestilling, ingen integrasjon, ingenting pushet.
+
+**URL:** `http://localhost:3003/eiendom/nyhavna-utvikling/nyhavna/leve`. Den eksisterende demoen på `/rapport-board` er urørt og kontrollert som uendret.
+
+### Det som ble bygget
+
+**Demoen er det SAMME boardet, ikke et nytt.** Nyhavnas tre «Leve»-sider legger seg inn som de tre første temaene i omvisningen — Café og restauranter, Park og promenade, Kunst og kultur — foran boardets egne sju. Flettingen skjer i minnet på vei fra `getCachedReportProduct` til boardet (`lib/demo/nyhavna-leve/build.ts`), og **ingenting skrives til Supabase**. Det var et bevisst valg: `v2.pois` er en DELT pool uten prosjekt-lokal overstyring av POI-tekst, og en demo uten bestilling skal ikke legge rader der for å se bra ut på ett møte.
+
+**Kartet representerer innholdet i stedet for å tvinge alt inn som punkter.** Ny `CuratedGeometryFeature` på `ReportConfig` bærer linjer og flater, og to nye lag tegner dem med samme geometri på begge motorer — `components/map/curated-geometry-layer-3d.tsx` (Google `Polyline3DElement`/`Polygon3DElement`) og `components/variants/report/board/BoardCuratedGeometryLayer.tsx` (Mapbox line/fill). Samme todeling som rekkevidde-konturene. Elvepromenaden er en linje på 404 m, Kulturaksen i Skippergata en linje langs gata den er oppkalt etter, og Fyringsbunkeren og Dora 2 er sine faktiske bygningsomriss.
+
+**Eksisterende og planlagt holdes fra hverandre, i teksten OG i kartet.** `POI.developmentStatus` gir «Planlagt»-pille i stedsraden og i detaljen; geometrien skiller på opasitet (Google, som ikke har dash) og stiplet strek (Mapbox). Vektene er identiske tall i de to lagene, så samme forløp ikke ser ulikt belagt ut avhengig av hvilken motor som står fremme.
+
+**Kilden er synlig og klikkbar.** `ReportThemeEditorial.source` gir kildelinja under temaets prosa («Tekst og utvalg fra Kunst og kultur på nyhavna.no»), og `POI.editorialSources` — et felt som har ligget i basen siden 074b og **aldri blitt rendret** — gir raden «Omtalt på nyhavna.no» i stedsdetaljen. Den står ved siden av stedets egen nettside, ikke i stedet for: Dora Kaffebar har både Instagram og nyhavna.no.
+
+**Temaene med en kilde står i egen gruppe.** `StoryThemeGrid` deler rutenettet i «Fra nyhavna.no — Innholdet dere har publisert, plassert i kartet» og «Nabolaget rundt — Alt annet som ligger her, hentet og målt av Placy». Uten delingen så kundens innhold ut som sju til. Den løste også en navnekollisjon: Nyhavnas seksjon heter det samme som boardets «Servering» — nå står kildens eget navn, «Café og restauranter».
+
+### Tre funn som gjelder utover demoen
+
+**1. Et kildestopp må rammes inn, ellers drukner det.** Målt: Nyhavna-boardet har 1 432 punkter, og de fire kulturminnene lå som fire pins blant 1 036 synlige, i et utsnitt på 1 600 m. Innholdet flaten nettopp presenterte som det viktigste var ikke til å finne. `fitCoordinates` fantes alt i `MapCameraApi` og er dokumentert for nøyaktig dette, men `story-tour.goto` kalte den aldri. Den kalles nå — men BARE for stopp som bærer en kilde, fordi regelen om at et vanlig tema ikke flytter kameraet er en egen, dokumentert beslutning (nabolaget ligger igjen som tekstur, vekten flytter seg i stedet for utsnittet).
+
+Første forsøk var å fjerne nabolaget fra markørsettet for kildestopp. Det ble reversert: `use-board-marker-set.ts` dokumenterer at pins ALDRI skal forsvinne ved stoppbytte (Andreas, 2026-08-28). Innramming løser samme problem uten å bryte den.
+
+**2. En flate klemt til terrenget er usynlig under bygget som står på den.** Fyringsbunkerens og Dora 2s omriss lå korrekt i DOM-en med riktig fyll og strek, og var likevel helt borte i Satelitt — fotoflisenes eget bygningsmesh dekket dem. Samme geometri på Mapbox, som ikke har bygningsvolum, viste seg umiddelbart; det var bekreftelsen på at det var okklusjon og ikke data. Fikset med `drawsOccludedSegments = true`. Egenskapen finnes på BEGGE primitivene, og det er lett å tro noe annet fordi polygonen mangler `outerColor`/`outerWidth`. Egen regresjonstest, fordi feilen var usynlig i både test og DevTools.
+
+**3. `activeCategory?.id` er alltid null under omvisningen.** Omvisningen setter med vilje ikke `activeCategoryId` (et kategorivalg ville snevret markørsettet inn). Et lag som leser kategorien for å vite hvilket tema leseren står i, står derfor evig i nøytralvekt uten at noe sier fra. Temaet må leses fra `story.stop?.id`, med kategorivalget som fallback for mobilens rutenett.
+
+### En foreliggende feil funnet under kontrollen — og rettet
+
+**«Style is not done loading» krasjet boardet ved motorbytte med et sted åpent.** Reproen er en helt vanlig brukerhandling: åpne et sted mens Google-motoren står fremme, og bytt til «Kart». Da monteres Mapbox på nytt med `phase === "poi"` og rutedata alt i hånden, og `BoardPathLayer` rakk å rendre `Source`/`Layer` før stilen var lastet.
+
+**Feilen er IKKE ny.** Den ble først sett på demo-ruta, men er verifisert på uendret `/rapport-board` med samme sekvens — call stacken ender i `BoardEmbedGate`/`EiendomReportBoardPage`, ikke i demoens `LeveBoardGate`. `ProjectMassingLayer` hadde `mapLoaded`-gaten fra før og `BoardContourLayer` gater internt; ruta hadde den aldri, og mitt nye geometri-lag manglet den også.
+
+Rettet ved å gate begge på `mapLoaded` på monteringsstedet i `BoardMap`. Rettelsen ligger i demo-grenen, ikke i main — den bør plukkes ut derfra uavhengig av om demoen merges, fordi den treffer alle boards med 3D-addon. Kontrollert etter fiksen på BEGGE ruter: motorbytte med sted åpent rendrer kart, popup og kolonne uten feil-overlegg.
+
+### Presisjon: det som med vilje IKKE er tegnet
+
+**Doratorget har ingen pin.** Kilden navngir det i kulturaksen, men stedet finnes hverken i OpenStreetMap eller Kartverkets stedsnavnregister, det er ikke bygget, og de to lesningene vi fant av hvor det skal ligge spriker med flere hundre meter. Et punkt der ville vært en gjetning som så ut som et faktum. Doratorget står i stedet i `ReportThemeEditorial.unplaced`, som rendres som «Nevnt i kilden, men ikke plassert i kartet» — sammen med Kullkranparken, Jernbaneparken, Transittparken, Elveparken og allmenningene ved Ladehammerkaia, som alle er navngitt uten avgrensning.
+
+Den raden er den ærligste i boardet og den mest nyttige i et møte: den viser nøyaktig hvilke data som mangler for at resten av innholdet skal bli utforskbart.
+
+**Bunkerparken HAR en pin, merket omtrentlig.** Forskjellen fra Doratorget er at retningen er belagt — kilden sier «Bunkerparken foran Fyringsbunkeren» — så punktet ligger på bunkerens breddegrad, 25 m mot Skippergata, med forbeholdet som egen synlig linje (`POI.locationNote`, `POI.locationPrecision`).
+
+**Reisetidene er målte, ikke estimerte.** Demo-POI-ene finnes bare i minnet, så pipelinens precompute har aldri sett dem. Tallene er hentet fra Mapbox Directions Matrix med `scripts/nyhavna-leve-travel-times.ts` og bakt inn i `lib/demo/nyhavna-leve/travel-times.ts`. Boardets regel er at et minutt-tall aldri gjettes — alternativet hadde vært syv steder uten minutter.
+
+### Kontrollert
+
+- **`npm test`: 239 filer, 3 985 tester, alle grønne.** (En kjøring med dev-server og nettleser samtidig ga 2 timeouts i `provision`/`taxi-stands`; begge grønne alene — ren kontensjon, ikke regresjon.)
+- **`npx tsc --noEmit`: 0 feil. `npm run lint`: 0 errors.** Den ene advarselen i `story-tour.tsx` er verifisert pre-eksisterende (målt med `git stash`).
+- **`npm run build`: kompilerer.** `/eiendom/[customer]/[project]/leve` prerendres som SSG med nøyaktig én params-oppføring.
+- **Visuelt på desktop (1440×900) og mobil (390×844, iPhone-emulering) i nystartet Chrome:** alle tre innholdstypene valgt og utforsket, kildelenker, statusmerker, forbehold og «ikke plassert»-raden kontrollert på begge bredder. **0 console-feil.**
+- **Geometrien kontrollert på BEGGE kartmotorer** — Satelitt (Google) og Kart (Mapbox).
+- **Den eksisterende demoen kontrollert som uendret:** `/rapport-board` svarer 200, viser «Nabolaget · 7 temaer» med én «Temaer»-overskrift som før, og har 0 treff på samtlige nye demo-tekster.
+- **`editorial_sources` i poolen er tom:** `?editorial_sources=not.is.null` gir 0 rader, så den nye kildelinja endrer ingenting på eksisterende boards. (Agenten flagget dette som en mulig bivirkning — det er verifisert bort.)
+- 60 nye tester i fem filer, inkludert regresjonsvakter for de to usynlige feilene over.
+
+### Nytt i typene
+
+`DevelopmentStatus`, `LocationPrecision`, `EditorialSource`, `CuratedGeometryFeature`; `POI.developmentStatus` / `.locationPrecision` / `.locationNote`; `ReportThemeEditorial.source` / `.unplaced`; `ReportConfig.curatedGeometry`. Alle optional — et board uten dem rendrer nøyaktig som før, og det er testdekket.
+
+### Åpent
+
+- **Ikke pushet, ikke merget, ikke publisert.** Grenen `feat/nyhavna-leve-demo` ligger i worktreen.
+- **`mapLoaded`-fiksen bør ut av demo-grenen.** Den retter en feil som gjelder alle boards med 3D-addon, og fortjener å stå på egne bein i main.
+- **«Meglerens utvalg» står fortsatt på boards uten både megler og kilde.** Undertittelen leser nå avsenderen av dataene (`utvalg fra nyhavna.no`), men et board uten begge faller til megler-ordet. Et eget avsender-begrep på boardet hører i en produktrunde, ikke i en demo-gren.
+- **Kildelaget er hardkodet demo-innhold**, ikke CMS-integrasjon. Skal dette bli et produkt, er spørsmålet hvordan `curatedGeometry` og kilde-temaene provisjoneres — ikke om boardet kan rendre dem.
+- **Splash-copyen er boardets generiske** («Utforsk nærområdet på kartet»). Den kunne sagt noe om «Leve», men det er tekst, ikke mekanikk.
+
+---
+
 ## 2026-09-09 — HUS C BYGD OG KONTROLLERT, PIPELINEN GJORT BYGGAGNOSTISK, OG DATAMAPPA SLETTET VED ET UHELL
 
 **Kontekst:** worktree `../placy-lillebytunet`, gren `feat/lillebytunet-3d-model`. Oppdraget var «bygg neste bygg og valider at det er like bra som utgangspunkt», etter at Hus B-runden dagen før hadde etterlatt en dokumentert arbeidsmåte i `docs/solutions/workflow-issues/render-til-byggmodell-*`. Fire faser: bygg Hus C, revider dokumentene mot koden, rett funnene — og til slutt en destruktiv feil som må stå i loggen.

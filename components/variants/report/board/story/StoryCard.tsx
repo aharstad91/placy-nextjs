@@ -31,6 +31,7 @@ import {
 } from "../Disclosure";
 import { SIDEBAR_PROSE, SIDEBAR_SECTION_TITLE } from "../sidebar-style";
 import { PoiDetailBody, hasGoogleFacts, poiNarrativeText } from "../PoiDetail";
+import { SourceCredit, StatusBadge, UnplacedNote } from "../SourcedContent";
 import { findBoardPOI } from "../board-data";
 import { useViewportCategoryList } from "../neighbourhood/use-viewport-category-list";
 import { StoryTravelCell } from "./StoryTravelCell";
@@ -428,6 +429,11 @@ function AboutPane({
         </p>
       ))}
 
+      {/* Kilden står UNDER teksten, ikke over: rekkefølgen er leserens — først
+          hva som står, så hvem som har skrevet det. Utelates av komponenten
+          selv når teksten er vår egen, som den er på alle vanlige boards. */}
+      <SourceCredit source={category.editorial?.source} />
+
       <div className="mb-2 mt-5 flex items-center justify-between gap-2.5">
         <p className={cn("min-w-0", SIDEBAR_SECTION_TITLE)}>
           {storyPickTitle(category)}
@@ -470,6 +476,11 @@ function AboutPane({
           />
         )}
       </DisclosureList>
+
+      {/* Det kilden navngir uten at vi kan plassere det. Står rett UNDER lista
+          fordi det er den samme opptellingen: dette er resten av det kilden
+          sier, og grunnen til at det ikke har en rad. */}
+      <UnplacedNote names={category.editorial?.unplaced} />
 
       {withFaq && faqs.length > 0 && (
         <div data-testid="story-faq">
@@ -728,7 +739,15 @@ function PlaceRow({
           )}
         </span>
 
-        <span className={cn(DISCLOSURE_LABEL, "truncate")}>{poi.name}</span>
+        {/* Navnet og «Planlagt» deler ÉN boks, og det er BOKSEN som bærer
+            `flex-1`. Lå merket som et søsken etter navnet, ville navnets egen
+            `flex-1` dyttet det helt bort til minuttallet — samme grunn som
+            stjernen står i markørkolonnen og ikke etter navnet. Navnet
+            trunkeres som før; merket gjør det aldri. */}
+        <span className={cn(DISCLOSURE_LABEL, "flex items-center gap-1.5")}>
+          <span className="min-w-0 truncate">{poi.name}</span>
+          <StatusBadge status={poi.raw.developmentStatus} />
+        </span>
         {minutes !== undefined && (
           <span className="shrink-0 text-[14px] tabular-nums text-stone-600">
             {minutes} min
@@ -773,7 +792,12 @@ function PlaceRow({
           >
             {/* Bildestripa blør bare mot HØYRE: venstrekanten er innrykket som
                 flukter med navnet, og den skal stå. */}
-            <PoiDetailBody poi={poi} galleryClassName="-mr-3.5 pr-3.5" />
+            <PoiDetailBody
+              poi={poi}
+              galleryClassName="-mr-3.5 pr-3.5"
+              /* Raden over bærer merket allerede — se PoiDetailBody. */
+              showStatus={false}
+            />
             {live && (
               <div className={cn(narrative && "mt-2")}>
                 <POIRealtimeSection realtimeData={realtimeData} />
