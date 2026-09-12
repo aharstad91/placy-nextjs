@@ -4,9 +4,11 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { ArrowDown } from "lucide-react";
 import type { Block, BoligFixture, VoiceSession } from "@/lib/prototype/bolig/contract";
 import ConversationBlock from "@/components/prototype/bolig/ConversationBlocks";
+import StarterPrompts from "@/components/prototype/bolig/StarterPrompts";
 import styles from "@/components/prototype/bolig/bolig.module.css";
 
 const NEAR_BOTTOM_PX = 120;
+const IDLE_STATUSES = new Set(["idle", "connecting", "ended"]);
 
 /** Blokkene gruppert per tur, i rekkefølge. Turen er enheten spørsmålet fester seg til. */
 function groupByTurn(blocks: Block[]): { turn: number; blocks: Block[] }[] {
@@ -30,10 +32,13 @@ function groupByTurn(blocks: Block[]): { turn: number; blocks: Block[] }[] {
  * måtte rulle opp gjennom for å finne starten (Andreas, 2026-09-12: «da må en
  * scrolle oppover hele tiden … det blir tungvindt»).
  *
- * Spørsmålet holdes i toppen mens turen fylles: første blokk i en ny tur er kort,
- * så feeden rekker ikke å stilles helt til turens topp før resten har kommet.
- * Derfor stilles den på nytt for hver blokk i turen, til brukeren selv tar i
- * feeden (hjul, finger, peker) — da er det brukerens posisjon som gjelder.
+ * Én myk rulling, ingen hopp: hver tur etter den første er minst én skjerm høy
+ * (`.turn` i CSS), så turens topp kan rulles helt opp i samme øyeblikk som
+ * spørsmålet kommer — før svaret finnes. Uten det var turen for kort, feeden
+ * stanset halvveis, og hver ny blokk rykket den videre (Andreas, 2026-09-12:
+ * «svært viktig at vi har smooth transitions her, ingen hopp i ui»). Startmenyen
+ * ligger ETTER turene, så den nye turen tar dens plass uten at noe over flytter
+ * seg.
  *
  * «Nytt svar ↓» vises bare når brukeren har rullet selv og innhold så har
  * kommet til under det som er synlig.
@@ -49,16 +54,17 @@ export default function ConversationFeed({ session, fixture, onExpandMap }: {
   const pinnedToTurn = useRef(false);
   const [hasNewReply, setHasNewReply] = useState(false);
   const turns = useMemo(() => groupByTurn(session.blocks), [session.blocks]);
+  const beforeFirstQuestion = !session.blocks.some((b) => b.kind === "user");
 
   const scrollBehavior = useCallback((): ScrollBehavior => {
     if (typeof window === "undefined" || typeof window.matchMedia !== "function") return "smooth";
     return window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth";
   }, []);
 
-  const scrollTo = useCallback((top: number, behavior: ScrollBehavior = scrollBehavior()) => {
+  const scrollTo = useCallback((top: number) => {
     const el = scrollRef.current;
     if (!el) return;
-    if (typeof el.scrollTo === "function") el.scrollTo({ top, behavior });
+    if (typeof el.scrollTo === "function") el.scrollTo({ top, behavior: scrollBehavior() });
     else el.scrollTop = top;
   }, [scrollBehavior]);
 
@@ -97,10 +103,7 @@ export default function ConversationFeed({ session, fixture, onExpandMap }: {
       setHasNewReply(false);
       return;
     }
-    if (pinnedToTurn.current) {
-      scrollTo(turnTop(latest.turn), "auto");
-      return;
-    }
+    if (pinnedToTurn.current) return;
     const distanceFromBottom = el.scrollHeight - el.scrollTop - el.clientHeight;
     if (distanceFromBottom > NEAR_BOTTOM_PX) setHasNewReply(true);
   }, [session.blocks, scrollTo, turnTop]);
@@ -115,6 +118,7 @@ export default function ConversationFeed({ session, fixture, onExpandMap }: {
             ))}
           </section>
         ))}
+        {beforeFirstQuestion && <StarterPrompts disabled={IDLE_STATUSES.has(session.status)} onTap={session.tapCategory} />}
       </div>
       {hasNewReply && (
         <button type="button" className={styles.jumpButton} onClick={scrollToBottom}>

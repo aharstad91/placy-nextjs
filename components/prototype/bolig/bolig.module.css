@@ -24,7 +24,8 @@
 /* ---------- Samtalen ---------- */
 .feedWrap{flex:1;display:flex;flex-direction:column;min-height:0;position:relative}
 .feedScroll{flex:1;overflow-y:auto;overflow-x:hidden;padding:0 18px 18px;display:flex;flex-direction:column;gap:6px;scrollbar-width:thin;scrollbar-color:#dde2d7 transparent}
-.turn{display:flex;flex-direction:column;gap:16px;padding-bottom:10px}
+.turn{display:flex;flex-direction:column;gap:16px;padding-bottom:10px;flex-shrink:0}
+.turn:not(:first-child){min-height:100%}
 .turn:first-child .question{padding-top:14px}
 .jumpButton{position:absolute;bottom:14px;left:50%;transform:translateX(-50%);display:flex;align-items:center;gap:6px;background:var(--green);color:#fff;border:none;border-radius:20px;padding:9px 16px;font-size:12px;font-weight:600;box-shadow:0 6px 16px #0000002e}
 
@@ -37,6 +38,19 @@
 .guideName{display:block;font-size:10px;font-weight:700;letter-spacing:.4px;color:#738567;margin-bottom:6px}
 .answerText{font-size:15px;line-height:1.75;color:#3a4739;white-space:pre-wrap}
 .typingDot{display:inline-block;width:6px;height:6px;margin-left:4px;border-radius:50%;background:var(--accent);animation:pulse 1.1s ease-in-out infinite}
+
+/* ---------- Startmeny ---------- */
+.starter{display:flex;flex-direction:column;gap:10px;padding:8px 0 6px}
+.starterTitle{font-size:16px;font-weight:600;line-height:1.35;letter-spacing:-.01em;color:#1c1917}
+.starterList{display:flex;flex-direction:column;overflow:hidden;border-radius:16px;background:#fff;box-shadow:inset 0 0 0 1px #1c191712,0 1px 3px #1c19170f}
+.starterRow{display:flex;align-items:center;gap:12px;width:100%;padding:12px 12px 12px 14px;border:none;border-top:1px solid #1c19170d;background:transparent;text-align:left;transition:background .15s}
+.starterRow:first-child{border-top:none}
+.starterRow:active{background:#1c19170a}
+.starterRow:disabled{opacity:.5}
+.starterIcon{flex-shrink:0;display:flex;align-items:center;justify-content:center;width:32px;height:32px;border-radius:50%;color:#fff}
+.starterText{flex:1;min-width:0;font-size:14.5px;font-weight:500;line-height:1.35;letter-spacing:-.01em;color:#1c1917}
+.starterChevron{flex-shrink:0;color:#a8a29e}
+.starterNote{font-size:12px;color:#78716c;text-align:center}
 
 /* ---------- Steder ---------- */
 .blockPlaces{display:flex;flex-direction:column;gap:10px;min-width:0}
