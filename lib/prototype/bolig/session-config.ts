@@ -33,4 +33,4 @@ export function boligSessionConfig(fixture: BoligFixture) {
   };
 }
 
-export const BOLIG_GREETING_INSTRUCTIONS = "Hils kort på norsk som Placy. Si at du kan hjelpe brukeren å bli kjent med området rundt boligen, og spør hva som er viktig i hverdagen, for eksempel dagligvare, barn og oppvekst eller turmuligheter. Ikke kall verktøy før brukeren har sagt hva hen vil vite.";
+export const BOLIG_GREETING_INSTRUCTIONS = "Hils kort på norsk bokmål med norsk uttale, uten engelsk aksent, som Placy. Si at du kan hjelpe brukeren å bli kjent med området rundt boligen, og spør hva som er viktig i hverdagen, for eksempel dagligvare, barn og oppvekst eller turmuligheter. Ikke kall verktøy før brukeren har sagt hva hen vil vite.";

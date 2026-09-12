@@ -14,15 +14,19 @@ export interface TopicDefinition {
   label: string;
   /** Det brukerens trykk sier til samtalen (vises som brukerens tur). */
   tapPrompt: string;
+  /** Lucide-ikonnavn, oppløses via `getIcon` (samme sett som boardet). */
+  icon: string;
+  /** Temafarge — samme palett som rapport-boardets tema-rad. */
+  color: string;
 }
 
 export const TOPICS: TopicDefinition[] = [
-  { id: "dagligvare", label: "Dagligvare", tapPrompt: "Hva finnes av dagligvare i nærheten?" },
-  { id: "barn", label: "Barn og oppvekst", tapPrompt: "Hvordan er det for barn her?" },
-  { id: "natur", label: "Tur og natur", tapPrompt: "Hvor kan jeg gå tur?" },
-  { id: "kollektiv", label: "Kollektiv", tapPrompt: "Hvordan kommer jeg meg rundt uten bil?" },
-  { id: "mat", label: "Mat og kafé", tapPrompt: "Hvor kan vi spise eller ta en kaffe?" },
-  { id: "selger", label: "Selgeren forteller", tapPrompt: "Hva likte selgeren best med å bo her?" },
+  { id: "dagligvare", label: "Dagligvare", tapPrompt: "Hva finnes av dagligvare i nærheten?", icon: "ShoppingCart", color: "#22c55e" },
+  { id: "barn", label: "Oppvekst", tapPrompt: "Hvordan er det for barn her?", icon: "GraduationCap", color: "#f59e0b" },
+  { id: "natur", label: "Natur", tapPrompt: "Hvor kan jeg gå tur?", icon: "TreePine", color: "#22c68d" },
+  { id: "kollektiv", label: "Transport", tapPrompt: "Hvordan kommer jeg meg rundt uten bil?", icon: "Bus", color: "#3b82f6" },
+  { id: "mat", label: "Servering", tapPrompt: "Hvor kan vi spise eller ta en kaffe?", icon: "UtensilsCrossed", color: "#ef4444" },
+  { id: "selger", label: "Selgeren", tapPrompt: "Hva likte selgeren best med å bo her?", icon: "Home", color: "#1c1917" },
 ];
 
 export const TOPIC_IDS = TOPICS.map(t => t.id) as [TopicId, ...TopicId[]];
@@ -159,7 +163,7 @@ export type ToolResult =
 /* ---------- Blokker (det UI rendrer) ---------- */
 
 export type Block =
-  | { id: string; turn: number; kind: "user"; text: string }
+  | { id: string; turn: number; kind: "user"; text: string; topic?: TopicId }
   | { id: string; turn: number; kind: "answer"; text: string; done: boolean }
   | { id: string; turn: number; kind: "places"; placeIds: string[]; topic?: TopicId }
   | { id: string; turn: number; kind: "seller"; noteIds: string[] }

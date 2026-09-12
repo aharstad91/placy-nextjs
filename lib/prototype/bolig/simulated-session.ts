@@ -64,13 +64,13 @@ export function useSimulatedSession(fixture: BoligFixture): VoiceSession {
     }));
   }, [later]);
 
-  const respond = useCallback((userText: string | null, result: ToolResult, callId: string) => {
+  const respond = useCallback((userText: string | null, result: ToolResult, callId: string, topic?: TopicId) => {
     clearTimers();
     turn.current += 1;
     const myTurn = turn.current;
     setBlocks(previous => {
       const settled = previous.map(b => b.kind === "answer" && !b.done ? { ...b, done: true } : b);
-      return userText ? [...settled, { id: `sim-user-${myTurn}`, turn: myTurn, kind: "user", text: userText }] : settled;
+      return userText ? [...settled, { id: `sim-user-${myTurn}`, turn: myTurn, kind: "user", text: userText, topic }] : settled;
     });
     setStatus("thinking");
     later(600, () => speak(myTurn, scriptedAnswer(fixture, result), blocksFromToolResult(result, myTurn, callId)));
@@ -111,7 +111,7 @@ export function useSimulatedSession(fixture: BoligFixture): VoiceSession {
     setActiveTopic(topic);
     setSelectedPlaceId(null);
     const prompt = TOPICS.find(t => t.id === topic)?.tapPrompt ?? topic;
-    respond(prompt, topicResult(fixture, topic), `sim-topic-${topic}-${turn.current + 1}`);
+    respond(prompt, topicResult(fixture, topic), `sim-topic-${topic}-${turn.current + 1}`, topic);
   }, [fixture, respond]);
 
   const selectPlace = useCallback((placeId: string) => {

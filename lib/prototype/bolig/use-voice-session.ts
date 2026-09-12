@@ -132,7 +132,7 @@ export function useVoiceSession(fixture: BoligFixture): VoiceSession {
     const prompt = TOPICS.find(t => t.id === topic)?.tapPrompt ?? topic;
     if (!sendUserText(userActionMessage(fixture, { type: "category", topic }))) return;
     const turn = current.turn;
-    setBlocks(previous => [...previous, { id: `user-tap-${turn}`, turn, kind: "user", text: prompt }]);
+    setBlocks(previous => [...previous, { id: `user-tap-${turn}`, turn, kind: "user", text: prompt, topic }]);
   }, [fixture, sendUserText]);
 
   const selectPlace = useCallback((placeId: string) => {

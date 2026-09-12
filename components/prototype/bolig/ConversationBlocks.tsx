@@ -1,6 +1,8 @@
 "use client";
 
-import type { Block, BoligFixture, VoiceSession } from "@/lib/prototype/bolig/contract";
+import { MessageCircleQuestion } from "lucide-react";
+import { TOPICS, type Block, type BoligFixture, type VoiceSession } from "@/lib/prototype/bolig/contract";
+import { getIcon } from "@/lib/utils/map-icons";
 import { formatCheckedDate } from "@/lib/prototype/bolig/format";
 import PlaceCard from "@/components/prototype/bolig/PlaceCard";
 import MiniMap from "@/components/prototype/bolig/MiniMap";
@@ -14,8 +16,24 @@ export default function ConversationBlock({ block, fixture, session, onExpandMap
   onExpandMap: (placeIds: string[]) => void;
 }) {
   switch (block.kind) {
-    case "user":
-      return <div className={styles.userBubble}>{block.text}</div>;
+    case "user": {
+      // Spørsmålet er turens overskrift, ikke en boble: det står sticky i toppen
+      // av turen (se ConversationFeed) med temaets ikonsirkel når det kom fra
+      // temaraden, og en nøytral spørsmålssirkel når det ble sagt med stemmen.
+      const topic = block.topic ? TOPICS.find((t) => t.id === block.topic) : undefined;
+      const Icon = topic ? getIcon(topic.icon) : MessageCircleQuestion;
+      return (
+        <div className={styles.question}>
+          <span className={styles.questionIcon} style={{ backgroundColor: topic?.color ?? "#1c1917" }} aria-hidden="true">
+            <Icon size={15} strokeWidth={2.2} />
+          </span>
+          <span className={styles.questionBody}>
+            <span className={styles.questionLabel}>{topic ? topic.label : "Du spurte"}</span>
+            <span className={styles.questionText}>{block.text}</span>
+          </span>
+        </div>
+      );
+    }
 
     case "answer":
       return (

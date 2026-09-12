@@ -1,17 +1,32 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { ArrowDown } from "lucide-react";
-import type { BoligFixture, VoiceSession } from "@/lib/prototype/bolig/contract";
+import type { Block, BoligFixture, VoiceSession } from "@/lib/prototype/bolig/contract";
 import ConversationBlock from "@/components/prototype/bolig/ConversationBlocks";
 import styles from "@/components/prototype/bolig/bolig.module.css";
 
 const NEAR_BOTTOM_PX = 120;
 
+/** Blokkene gruppert per tur, i rekkefølge. Turen er enheten spørsmålet fester seg til. */
+function groupByTurn(blocks: Block[]): { turn: number; blocks: Block[] }[] {
+  const groups: { turn: number; blocks: Block[] }[] = [];
+  for (const block of blocks) {
+    const last = groups[groups.length - 1];
+    if (last && last.turn === block.turn) last.blocks.push(block);
+    else groups.push({ turn: block.turn, blocks: [block] });
+  }
+  return groups;
+}
+
 /**
  * Scrollbar feed av samtaleblokker. Følger bunnen automatisk mens brukeren er
  * der (også under strømmende svar); slutter å rykke feeden når brukeren har
  * scrollet opp for å lese eldre innhold, og viser i stedet "Nytt svar ↓".
+ *
+ * Blokkene rendres per tur. Spørsmålet (user-blokken) ligger sticky i toppen
+ * av sin tur, slik rapport-boardets mobilflate fester stoppets spørsmål: mens
+ * svaret, kortene og kildene ruller forbi, står det synlig hva de svarer på.
  */
 export default function ConversationFeed({ session, fixture, onExpandMap }: {
   session: VoiceSession;
@@ -21,6 +36,7 @@ export default function ConversationFeed({ session, fixture, onExpandMap }: {
   const scrollRef = useRef<HTMLDivElement>(null);
   const stuckToBottom = useRef(true);
   const [hasNewReply, setHasNewReply] = useState(false);
+  const turns = useMemo(() => groupByTurn(session.blocks), [session.blocks]);
 
   const scrollBehavior = useCallback((): ScrollBehavior => {
     if (typeof window === "undefined" || typeof window.matchMedia !== "function") return "smooth";
@@ -52,15 +68,13 @@ export default function ConversationFeed({ session, fixture, onExpandMap }: {
   return (
     <div className={styles.feedWrap}>
       <div ref={scrollRef} className={styles.feedScroll} onScroll={handleScroll}>
-        {session.blocks.map((block, index) => {
-          const previousTurn = session.blocks[index - 1]?.turn;
-          const turnStart = previousTurn !== undefined && previousTurn !== block.turn;
-          return (
-            <div key={block.id} className={turnStart ? styles.turnGap : undefined}>
-              <ConversationBlock block={block} fixture={fixture} session={session} onExpandMap={onExpandMap} />
-            </div>
-          );
-        })}
+        {turns.map((group) => (
+          <section key={group.turn} className={styles.turn} aria-label={`Tur ${group.turn}`}>
+            {group.blocks.map((block) => (
+              <ConversationBlock key={block.id} block={block} fixture={fixture} session={session} onExpandMap={onExpandMap} />
+            ))}
+          </section>
+        ))}
       </div>
       {hasNewReply && (
         <button type="button" className={styles.jumpButton} onClick={scrollToBottom}>

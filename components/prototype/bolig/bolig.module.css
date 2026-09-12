@@ -1,11 +1,12 @@
-.app{--paper:#fafbf6;--ink:#233d35;--muted:#7e877e;--line:#e6e7de;--accent:#88a85f;--green:#294c40;display:flex;flex-direction:column;min-height:100dvh;background:var(--paper);color:var(--ink);font-family:Arial,Helvetica,sans-serif;overflow-x:hidden;padding-top:env(safe-area-inset-top)}
+.app{--paper:#fafbf6;--ink:#233d35;--muted:#7e877e;--line:#e6e7de;--accent:#88a85f;--green:#294c40;display:flex;flex-direction:column;height:100dvh;height:100svh;overflow:hidden;background:var(--paper);color:var(--ink);font-family:Arial,Helvetica,sans-serif;overflow-x:hidden;padding-top:env(safe-area-inset-top)}
 .app button:focus-visible,.app a:focus-visible{outline:2px solid #71915b;outline-offset:3px}
 .app button{cursor:pointer}
 .app button:disabled{cursor:default}
+@supports(height:100dvh){.app{height:100dvh}}
 @media(min-width:600px){.app{max-width:480px;margin:0 auto;box-shadow:0 0 40px #0000000d}}
 
 /* ---------- Ankomst (landing) ---------- */
-.landing{display:flex;flex-direction:column;flex:1;position:relative;min-height:0}
+.landing{display:flex;flex-direction:column;flex:1;position:relative;min-height:0;overflow-y:auto}
 .simBadge{position:absolute;top:14px;left:50%;transform:translateX(-50%);z-index:5;background:#f5d949;color:#4a3d05;font-size:11px;font-weight:700;letter-spacing:.3px;padding:6px 14px;border-radius:20px;box-shadow:0 4px 10px #00000022}
 .landingImage{position:relative;width:100%;aspect-ratio:4/3;background:#e7ebdc;overflow:hidden;flex-shrink:0}
 .landingImage img{object-fit:cover}
@@ -22,11 +23,16 @@
 
 /* ---------- Samtalen ---------- */
 .feedWrap{flex:1;display:flex;flex-direction:column;min-height:0;position:relative}
-.feedScroll{flex:1;overflow-y:auto;overflow-x:hidden;padding:18px 18px 18px;display:flex;flex-direction:column;gap:16px;scrollbar-width:thin;scrollbar-color:#dde2d7 transparent}
-.turnGap{margin-top:6px}
+.feedScroll{flex:1;overflow-y:auto;overflow-x:hidden;padding:0 18px 18px;display:flex;flex-direction:column;gap:6px;scrollbar-width:thin;scrollbar-color:#dde2d7 transparent}
+.turn{display:flex;flex-direction:column;gap:16px;padding-bottom:10px}
+.turn:first-child .question{padding-top:14px}
 .jumpButton{position:absolute;bottom:14px;left:50%;transform:translateX(-50%);display:flex;align-items:center;gap:6px;background:var(--green);color:#fff;border:none;border-radius:20px;padding:9px 16px;font-size:12px;font-weight:600;box-shadow:0 6px 16px #0000002e}
 
-.userBubble{align-self:flex-end;max-width:85%;background:#eaf0e1;color:#39523a;border-radius:14px 14px 3px 14px;padding:12px 15px;font-size:14px;line-height:1.55}
+.question{position:sticky;top:0;z-index:3;display:flex;align-items:flex-start;gap:12px;margin:0 -18px;padding:12px 18px 12px;background:#fafbf6f7;backdrop-filter:blur(14px) saturate(1.6);-webkit-backdrop-filter:blur(14px) saturate(1.6);box-shadow:0 1px 0 #1c191714}
+.questionIcon{flex-shrink:0;display:flex;align-items:center;justify-content:center;width:30px;height:30px;border-radius:50%;color:#fff;margin-top:2px}
+.questionBody{display:flex;flex-direction:column;gap:2px;min-width:0}
+.questionLabel{font-size:11px;font-weight:600;letter-spacing:-.01em;color:#78716c}
+.questionText{font-size:17px;font-weight:600;line-height:1.35;letter-spacing:-.015em;color:#1c1917}
 .answerBlock{max-width:100%}
 .guideName{display:block;font-size:10px;font-weight:700;letter-spacing:.4px;color:#738567;margin-bottom:6px}
 .answerText{font-size:15px;line-height:1.75;color:#3a4739;white-space:pre-wrap}
@@ -89,18 +95,20 @@
 .systemNotice{font-size:10px;color:#a3ab97;text-align:center}
 
 /* ---------- Bunnpanel ---------- */
-.bottomPanel{border-top:1px solid var(--line);background:#fffefa;padding:12px 16px calc(14px + env(safe-area-inset-bottom));display:flex;flex-direction:column;gap:10px}
+.bottomPanel{flex-shrink:0;position:sticky;bottom:0;z-index:4;background:linear-gradient(to bottom,#fafbf600,#fafbf6f2 26px);padding:6px 14px calc(10px + env(safe-area-inset-bottom));display:flex;flex-direction:column;gap:8px}
 .statusBarStack{display:flex;flex-direction:column;gap:8px}
 .errorLine{font-size:12px;background:#fff1e7;border:1px solid #eadac9;color:#8e5539;border-radius:9px;padding:10px 12px}
 .noticeLine{font-size:10px;color:#c9a227;text-align:center}
 
-.categoryBar{display:flex;gap:7px;overflow-x:auto;scrollbar-width:none}
-.categoryBar::-webkit-scrollbar{display:none}
-.categoryChip{flex-shrink:0;border:1px solid #e0e5d6;border-radius:20px;padding:7px 12px;font-size:11px;color:#7a886c;background:#fafbf6}
-.categoryChip:disabled{opacity:.5}
-.categoryChipActive{background:#e7eedb;border-color:#c9d7b8;color:#47603a}
+.rail{display:flex;align-items:stretch;min-width:0;border-radius:22px;padding:4px;background:#fcfbfab8;box-shadow:inset 0 0 0 1px #1c191712,0 6px 22px #1c191721;backdrop-filter:blur(12px) saturate(1.7);-webkit-backdrop-filter:blur(12px) saturate(1.7)}
+.railTrack{display:flex;flex:1;min-width:0;gap:2px;overflow-x:auto;overflow-y:hidden;scrollbar-width:none;overscroll-behavior-x:contain;scroll-behavior:smooth;mask-image:linear-gradient(to right,#000 0,#000 calc(100% - 18px),transparent 100%);-webkit-mask-image:linear-gradient(to right,#000 0,#000 calc(100% - 18px),transparent 100%)}
+.railTrack::-webkit-scrollbar{display:none}
+.railChip{flex-shrink:0;display:flex;flex-direction:column;align-items:center;gap:3px;border:none;border-radius:18px;padding:6px 11px 7px;background:transparent;white-space:nowrap;font-size:11px;font-weight:600;letter-spacing:-.01em;color:#78716c;transition:color .2s,background .2s}
+.railChip:disabled{opacity:.5}
+.railChipActive{background:#fff;color:#1c1917;box-shadow:inset 0 0 0 1px #1c191712,0 1px 3px #1c19171a}
+.railIcon{display:flex;align-items:center;justify-content:center;width:20px;height:20px;border-radius:50%;color:#fff}
 
-.statusRow{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.statusRow{display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:0 4px}
 .statusIndicator{display:flex;align-items:center;gap:6px;font-size:11px;color:#5a6555;font-weight:600}
 .status-error .statusIndicator,.statusIndicator[data-status="error"]{color:#a5462c}
 .statusIndicator[data-status="ended"]{color:#8a9080}
