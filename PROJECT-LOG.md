@@ -9703,3 +9703,11 @@ Den raden er den ærligste i boardet og den mest nyttige i et møte: den viser n
 - **«Meglerens utvalg» står fortsatt på boards uten både megler og kilde.** Undertittelen leser nå avsenderen av dataene (`utvalg fra nyhavna.no`), men et board uten begge faller til megler-ordet. Et eget avsender-begrep på boardet hører i en produktrunde, ikke i en demo-gren.
 - **Kildelaget er hardkodet demo-innhold**, ikke CMS-integrasjon. Skal dette bli et produkt, er spørsmålet hvordan `curatedGeometry` og kilde-temaene provisjoneres — ikke om boardet kan rendre dem.
 - **Splash-copyen er boardets generiske** («Utforsk nærområdet på kartet»). Den kunne sagt noe om «Leve», men det er tekst, ikke mekanikk.
+
+## 2026-09-12 — Worktrees samlet i main og diskplass frigjort
+
+På Andreas' instruksjon er alle åtte ekstra worktrees samlet i main og fjernet. Ucommittet arbeid ble først bevart i egne Git-commits; alle disse commitene er bekreftet som forfedre av main. Den ferdig integrerte voice-board-versjonen ble beholdt ved overlapp med eldre Nyhavna-delarbeid. Lillebytunets markørendringer, områdefiler, opprinnelig Nyhavna-logg og travel-time-script er med. Samtaleprototype B er bevart på /prototype/conversation med egen transport/API; det opprinnelige API-et krever fortsatt lokalt utviklingsmiljø.
+
+Lokale kontekstfiler, sikkerhetskopier og eventuelle egne env-filer er bevart privat under .context/worktree-archive/ og ikke committet. Grenene er beholdt i Git. Kun hovedrepoets worktree står igjen. Ledig plass ble målt til omtrent 14 GiB ved avslutning, mot 1,8 GiB ved start. Nyhavna på port 3101 kjører nå fra hovedrepoets produksjonsbygg. Begge prototypesidene svarte HTTP 200, og boardets health-endepunkt bekreftet riktig snapshot og konfigurert serverkontroll. Ingen betalte API-tester eller push.
+
+Verifisering: 106 målrettede tester bestått, lint 0 feil / 55 advarsler, produksjonsbygg og typesjekk bestått. Full testsuite ble stoppet etter Andreas' beskjed om å avslutte, med 309 testfiler rapportert bestått og 0 feilmarkører på stoppunktet; dette er IKKE en fullført fullsuite. Ingen ny kontrollrunde startet. Åpent: fullsuite ferdigkjøring ved behov og tidligere dokumentert fysisk tale-/telefonprøve.

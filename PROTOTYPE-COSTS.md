@@ -1,5 +1,8 @@
 # Kostnadstiltak i Nyhavna Board — 2026-09-12
 
+> Samlet i `main` 12. september 2026. Bruk `/Users/andreasharstad/Documents/placy`; de tidligere worktree-mappene er fjernet etter bevaring i Git. Gjeldende startinstruksjon er `docs/research/nyhavna-leve-demo/runbook.md`. Konsept B er bevart på `/prototype/conversation` med sitt opprinnelige, separate API for lokalt utviklingsmiljø.
+
+
 Gjelder prototype/nyhavna-voice-board på http://127.0.0.1:3101/eiendom/nyhavna-utvikling/nyhavna/leve.
 
 Målet er samme inngang, stemme og kartstyring med mindre modellforbruk. Akseptanse: fungerende samtale og kartkommandoer, synlig estimat per sesjon, bevart kildegrunnlag og testet avslutning av inaktive forbindelser. Samtaleprototypen på 3102 er ikke endret.

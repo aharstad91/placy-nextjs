@@ -1,5 +1,8 @@
 # Prototype A — samtale i dagens Nyhavna-board
 
+> Samlet i `main` 12. september 2026. Bruk `/Users/andreasharstad/Documents/placy`; de tidligere worktree-mappene er fjernet etter bevaring i Git. Gjeldende startinstruksjon er `docs/research/nyhavna-leve-demo/runbook.md`. Konsept B er bevart på `/prototype/conversation` med sitt opprinnelige, separate API for lokalt utviklingsmiljø.
+
+
 Dato: 2026-09-12. Isolert gren: `prototype/nyhavna-voice-board`.
 
 ## Spørsmålet vi tester
