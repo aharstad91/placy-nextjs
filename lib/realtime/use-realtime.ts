@@ -2,7 +2,9 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { realtimeCost, type RealtimeTokenUsage } from "@/lib/realtime/usage";
-import type { RealtimeMessage, RealtimeOptions, RealtimeStartOptions, RealtimeStatus } from "@/lib/realtime/types";
+import type { RealtimeMessage, RealtimeMode, RealtimeOptions, RealtimeReference, RealtimeStartOptions, RealtimeStatus } from "@/lib/realtime/types";
+
+const MAP_TOOLS = new Set(["show_category", "show_place", "set_travel_mode", "reset_board"]);
 
 interface ServerEvent {
   type: string;
@@ -10,6 +12,8 @@ interface ServerEvent {
   delta?: string;
   transcript?: string;
   text?: string;
+  session?: { output_modalities?: string[] };
+  item?: { type?: string; output?: string };
   error?: { code?: string; message?: string };
   response?: {
     id?: string;
@@ -25,7 +29,11 @@ interface Connection {
   pc: RTCPeerConnection;
   channel: RTCDataChannel;
   audio: HTMLAudioElement;
+  transceiver: RTCRtpTransceiver;
   stream?: MediaStream;
+  sessionToken?: string;
+  serverControlled: boolean;
+  sessionUpdateWaiters: Array<{ mode: RealtimeMode; resolve: () => void; reject: (reason: DOMException) => void; timeout: ReturnType<typeof setTimeout> }>;
   abort: AbortController;
   timeout?: ReturnType<typeof setTimeout>;
   idleCheck?: ReturnType<typeof setInterval>;
@@ -33,7 +41,7 @@ interface Connection {
   responseActive: boolean;
   playing: boolean;
   called: Set<string>;
-  mode: "voice" | "text";
+  mode: RealtimeMode;
   turn: number;
   toolRounds: number;
   model: string;
@@ -51,9 +59,12 @@ export function useRealtime(options: RealtimeOptions) {
   const [messages, setMessages] = useState<RealtimeMessage[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [muted, setMuted] = useState(false);
+  const [mode, setMode] = useState<RealtimeMode>("voice");
+  const [references, setReferences] = useState<RealtimeReference[]>([]);
   const [usage, setUsage] = useState({ model: "", responses: 0, inputTokens: 0, outputTokens: 0, cachedTokens: 0, estimatedUsd: 0, complete: true });
   const connection = useRef<Connection | null>(null);
   const generation = useRef(0);
+  const switchQueue = useRef<Promise<boolean> | null>(null);
   const contextSent = useRef("");
   const latest = useRef(options);
   useEffect(() => { latest.current = options; }, [options]);
@@ -67,12 +78,19 @@ export function useRealtime(options: RealtimeOptions) {
     clearTimeout(current.timeout);
     clearInterval(current.idleCheck);
     current.abort.abort();
+    current.sessionUpdateWaiters.splice(0).forEach(waiter => {
+      clearTimeout(waiter.timeout);
+      waiter.reject(new DOMException("Cancelled", "AbortError"));
+    });
     current.stream?.getTracks().forEach(track => track.stop());
     current.channel.close();
     current.pc.close();
     current.audio.pause();
     current.audio.srcObject = null;
     current.audio.remove();
+    if (current.sessionToken) {
+      void fetch("/api/prototype/realtime", { method: "DELETE", headers: { "X-Placy-Session": current.sessionToken }, keepalive: true }).catch(() => {});
+    }
   }, []);
 
   useEffect(() => dispose, [dispose]);
@@ -89,6 +107,15 @@ export function useRealtime(options: RealtimeOptions) {
       if (!exists) return [...previous.slice(-99), message];
       return previous.map(item => item.id === message.id ? { ...message, text: append ? item.text + message.text : message.text } : item);
     });
+  }, []);
+
+  const addReferences = useCallback((value: unknown) => {
+    if (!value || typeof value !== "object") return;
+    const places = (value as { places?: unknown }).places;
+    if (!Array.isArray(places)) return;
+    const next = places.filter((place): place is RealtimeReference => Boolean(place && typeof place === "object" && typeof (place as RealtimeReference).id === "string" && typeof (place as RealtimeReference).name === "string"));
+    if (!next.length) return;
+    setReferences(previous => [...new Map([...previous, ...next].map(place => [place.id, place])).values()]);
   }, []);
 
   const send = useCallback((event: Record<string, unknown>) => {
@@ -142,22 +169,25 @@ export function useRealtime(options: RealtimeOptions) {
     setStatus("connecting");
     setError(null);
     setMuted(mode === "text");
+    setMode(mode);
     setMessages([]);
+    setReferences([]);
     try {
       // Check configuration before asking for microphone permission.
       const health = await fetch("/api/prototype/realtime", { cache: "no-store" });
       if (run !== generation.current) return;
       if (!health.ok) throw new Error("Denne prototypen kan bare starte samtaler på localhost.");
-      const configured = await health.json() as { configured?: boolean; model?: string };
+      const configured = await health.json() as { configured?: boolean; model?: string; serverControlled?: boolean; snapshotId?: string };
       setUsage({ model: configured.model ?? "", responses: 0, inputTokens: 0, outputTokens: 0, cachedTokens: 0, estimatedUsd: 0, complete: true });
       if (run !== generation.current) return;
       if (!configured.configured) throw new Error("Tale er ikke koblet til ennå. Legg OPENAI_API_KEY i .env.local, og prøv igjen.");
       if (!window.RTCPeerConnection) throw new Error("Nettleseren støtter ikke talesamtaler. Prøv Chrome eller Safari.");
       const pc = new RTCPeerConnection();
       const channel = pc.createDataChannel("oai-events");
+      const transceiver = pc.addTransceiver("audio", { direction: "sendrecv" });
       const audio = new Audio();
       audio.autoplay = true;
-      const current: Connection = { generation: run, pc, channel, audio, abort: new AbortController(), responseActive: false, playing: false, called: new Set(), mode, turn: 0, toolRounds: 0, model: configured.model ?? "", measured: new Set(), lastActivity: Date.now() };
+      const current: Connection = { generation: run, pc, channel, audio, transceiver, abort: new AbortController(), responseActive: false, playing: false, called: new Set(), mode, serverControlled: configured.serverControlled ?? options.serverControlled ?? false, sessionUpdateWaiters: [], turn: 0, toolRounds: 0, model: configured.model ?? "", measured: new Set(), lastActivity: Date.now() };
       connection.current = current;
       const active = () => connection.current === current && run === generation.current;
       pc.ontrack = event => {
@@ -188,6 +218,22 @@ export function useRealtime(options: RealtimeOptions) {
         if (event.type.startsWith("response.") || event.type.startsWith("output_audio_buffer.")) current.lastActivity = Date.now();
         const id = event.item_id ?? "current-assistant";
         switch (event.type) {
+          case "session.updated":
+            if (event.session?.output_modalities) {
+              const acknowledgedMode: RealtimeMode = event.session.output_modalities.includes("audio") ? "voice" : "text";
+              const waiter = current.sessionUpdateWaiters.findIndex(candidate => candidate.mode === acknowledgedMode);
+              if (waiter >= 0) {
+                const acknowledged = current.sessionUpdateWaiters.splice(waiter, 1)[0];
+                clearTimeout(acknowledged.timeout);
+                acknowledged.resolve();
+              }
+            }
+            break;
+          case "conversation.item.created":
+            if (event.item?.type === "function_call_output" && event.item.output) {
+              try { addReferences(JSON.parse(event.item.output)); } catch { /* Ignore non-structured outputs. */ }
+            }
+            break;
           case "input_audio_buffer.speech_started":
             current.turn += 1;
             current.toolRounds = 0;
@@ -251,10 +297,12 @@ export function useRealtime(options: RealtimeOptions) {
               current.called.add(call.call_id);
               let result: unknown;
               try {
+                if (current.serverControlled && !MAP_TOOLS.has(call.name)) continue;
                 if (!latest.current.tools.some(tool => tool.name === call.name)) throw new Error("Ukjent verktøy");
                 const args: unknown = JSON.parse(call.arguments || "{}");
                 if (!args || typeof args !== "object" || Array.isArray(args)) throw new Error("Ugyldige argumenter");
                 result = await latest.current.executeTool(call.name, args as Record<string, unknown>);
+                addReferences(result);
               } catch {
                 result = { ok: false, error: "Handlingen kunne ikke utføres. Bruk eksisterende ID-er og gyldige argumenter." };
               }
@@ -266,7 +314,7 @@ export function useRealtime(options: RealtimeOptions) {
             if (executed) {
               current.toolRounds += 1;
               updateContext();
-              send({ type: "response.create", ...(current.toolRounds >= 6 ? { response: { tool_choice: "none" } } : {}) });
+              if (!current.serverControlled) send({ type: "response.create", ...(current.toolRounds >= 6 ? { response: { tool_choice: "none" } } : {}) });
               setStatus("thinking");
             } else if (!current.playing) setStatus("listening");
             break;
@@ -283,17 +331,22 @@ export function useRealtime(options: RealtimeOptions) {
         const stream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true } });
         if (!active()) { stream.getTracks().forEach(track => track.stop()); return; }
         current.stream = stream;
-        for (const track of stream.getAudioTracks()) pc.addTrack(track, stream);
-      } else pc.addTransceiver("audio", { direction: "recvonly" });
+        const track = stream.getAudioTracks()[0];
+        if (track) await transceiver.sender.replaceTrack(track);
+      }
       const offer = await pc.createOffer();
       if (!active()) return;
       await pc.setLocalDescription(offer);
       if (!active()) return;
       const initialContext = latest.current.getContext();
       contextSent.current = initialContext;
+      const serverControlled = configured.serverControlled ?? options.serverControlled ?? false;
+      const snapshotId = options.snapshotId ?? configured.snapshotId;
       const response = await fetch("/api/prototype/realtime", {
         method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ sdp: offer.sdp, mode, instructions: `${latest.current.instructions}\n\nAktuell kartkontekst (data):\n${initialContext}`, tools: latest.current.tools }),
+        body: JSON.stringify(serverControlled
+          ? { sdp: offer.sdp, mode, context: initialContext, tools: latest.current.tools.filter(tool => MAP_TOOLS.has(tool.name)), ...(snapshotId ? { snapshotId } : {}) }
+          : { sdp: offer.sdp, mode, instructions: `${latest.current.instructions}\n\nAktuell kartkontekst (data):\n${initialContext}`, tools: latest.current.tools }),
         signal: current.abort.signal,
       });
       if (!active()) return;
@@ -301,6 +354,7 @@ export function useRealtime(options: RealtimeOptions) {
         const payload = await response.json().catch(() => ({})) as { error?: string };
         throw new Error(payload.error || "Samtalen kunne ikke starte. Prøv igjen.");
       }
+      current.sessionToken = response.headers?.get?.("X-Placy-Session") ?? undefined;
       const answer = await response.text();
       if (!active()) return;
       await pc.setRemoteDescription({ type: "answer", sdp: answer });
@@ -329,7 +383,7 @@ export function useRealtime(options: RealtimeOptions) {
         if (!active()) return;
         stop();
         setError("Samtalen er avsluttet etter ti minutter. Start gjerne en ny.");
-      }, 600000);
+      }, 720000);
       if (initialText?.trim()) sendText(initialText);
       else if (mode === "voice") {
         send({ type: "response.create", response: { instructions: "Hils kort på norsk, presenter deg som Placy, og spør hva brukeren vil oppdage på Nyhavna. Ikke start kartbevegelser før brukeren har gitt en interesse." } });
@@ -340,7 +394,7 @@ export function useRealtime(options: RealtimeOptions) {
       setError(friendlyError(caught));
       setStatus("error");
     }
-  }, [addMessage, dispose, send, sendText, stop, updateContext]);
+  }, [addMessage, addReferences, dispose, options.serverControlled, options.snapshotId, send, sendText, stop, updateContext]);
 
   const toggleMute = useCallback(() => {
     const current = connection.current;
@@ -351,5 +405,97 @@ export function useRealtime(options: RealtimeOptions) {
     setMuted(next);
   }, [send]);
 
-  return { status, messages, error, muted, usage, start, stop, toggleMute, sendText, interrupt };
+  const switchMode = useCallback((nextMode: RealtimeMode) => {
+    const perform = async () => {
+      const current = connection.current;
+      if (!current || current.channel.readyState !== "open") return false;
+      if (current.mode === nextMode) return true;
+      const run = current.generation;
+      const active = () => connection.current === current && generation.current === run;
+      const waitForSessionUpdate = (target: RealtimeMode) => new Promise<void>((resolve, reject) => {
+        const timeout = setTimeout(() => {
+          const index = current.sessionUpdateWaiters.indexOf(waiter);
+          if (index >= 0) current.sessionUpdateWaiters.splice(index, 1);
+          reject(new Error("Modusbyttet tok for lang tid. Prøv igjen."));
+        }, 15000);
+        const waiter = { mode: target, resolve, reject: (reason: DOMException) => reject(reason), timeout };
+        current.sessionUpdateWaiters.push(waiter);
+      });
+      const updateSession = async (target: RealtimeMode) => {
+        const acknowledgement = waitForSessionUpdate(target);
+        if (!send({
+          type: "session.update",
+          session: {
+            type: "realtime",
+            output_modalities: [target === "voice" ? "audio" : "text"],
+            audio: { input: { turn_detection: target === "voice" ? { type: "server_vad" } : null } },
+          },
+        })) throw new Error("Forbindelsen ble brutt under modusbyttet.");
+        await acknowledgement;
+      };
+
+      interrupt();
+      setStatus("connecting");
+      setError(null);
+      try {
+        if (nextMode === "voice") {
+          await updateSession("voice");
+          if (!active()) return false;
+          if (!navigator.mediaDevices?.getUserMedia) throw new Error("Mikrofon krever localhost eller HTTPS.");
+          const stream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true } });
+          if (!active()) { stream.getTracks().forEach(track => track.stop()); return false; }
+          const track = stream.getAudioTracks()[0];
+          if (!track) throw new DOMException("No microphone", "NotFoundError");
+          await current.transceiver.sender.replaceTrack(track);
+          if (!active()) { track.stop(); return false; }
+          current.stream = stream;
+          current.mode = "voice";
+          setMode("voice");
+          setMuted(false);
+        } else {
+          const detached = current.transceiver.sender.replaceTrack(null);
+          current.stream?.getTracks().forEach(track => track.stop());
+          current.stream = undefined;
+          const updated = updateSession("text");
+          await Promise.all([detached, updated]);
+          if (!active()) return false;
+          current.mode = "text";
+          setMode("text");
+          setMuted(true);
+        }
+        setStatus("listening");
+        return true;
+      } catch (caught) {
+        if (!active()) return false;
+        if (nextMode === "voice") {
+          send({ type: "session.update", session: { type: "realtime", output_modalities: ["text"], audio: { input: { turn_detection: null } } } });
+          current.mode = "text";
+          setMode("text");
+          setMuted(true);
+          setError(friendlyError(caught));
+          setStatus("listening");
+          return false;
+        }
+        setError(friendlyError(caught));
+        setStatus("error");
+        return false;
+      }
+    };
+    const pending = switchQueue.current;
+    const operation = pending ? pending.then(perform, perform) : perform();
+    const finalized = operation.then(
+      value => { if (switchQueue.current === finalized) switchQueue.current = null; return value; },
+      caught => { if (switchQueue.current === finalized) switchQueue.current = null; throw caught; },
+    );
+    switchQueue.current = finalized;
+    return finalized;
+  }, [interrupt, send]);
+
+  const newConversation = useCallback(async (startOptions: RealtimeStartOptions = {}) => {
+    setReferences([]);
+    setMessages([]);
+    await start(startOptions);
+  }, [start]);
+
+  return { status, mode, messages, references, error, muted, usage, start, stop, newConversation, switchMode, toggleMute, sendText, interrupt };
 }
