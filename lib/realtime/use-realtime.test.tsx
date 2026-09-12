@@ -28,8 +28,10 @@ class FakePeer {
   ontrack = null;
   onconnectionstatechange = null;
   createDataChannel = vi.fn(() => this.channel);
+  sender = { track: null as MediaStreamTrack | null, replaceTrack: vi.fn(async (track: MediaStreamTrack | null) => { this.sender.track = track; }) };
+  transceiver = { direction: "sendrecv", sender: this.sender };
   addTrack = vi.fn();
-  addTransceiver = vi.fn();
+  addTransceiver = vi.fn(() => this.transceiver);
   createOffer = vi.fn(async () => ({ type: "offer", sdp: "v=0\r\n" }));
   setLocalDescription = vi.fn(async () => {});
   setRemoteDescription = vi.fn(async () => {});
@@ -40,6 +42,7 @@ class FakePeer {
 function options(executeTool = vi.fn<RealtimeOptions["executeTool"]>(() => ({ ok: true }))): RealtimeOptions {
   return {
     instructions: "Test guide",
+    snapshotId: "snapshot-test",
     tools: [{ type: "function", name: "show_place", description: "Show a place", parameters: {} }],
     executeTool,
     getContext: () => "selected: home",
@@ -118,6 +121,174 @@ describe("Realtime lifecycle", () => {
     expect(peer.channel.close).toHaveBeenCalledOnce();
     expect(peer.channel.events()).toHaveLength(beforeUnmount);
   });
+
+  it("asks the server to end an identified session when stopped", async () => {
+    vi.mocked(fetch).mockImplementation(async (_url: unknown, init?: RequestInit) => init?.method === "POST"
+      ? { ok: true, headers: { get: () => "opaque-session" }, text: async () => "v=0\r\n" } as unknown as Response
+      : { ok: true, json: async () => ({ configured: true, model: "gpt-realtime-2.1-mini" }) } as Response);
+    const { result } = renderHook(() => useRealtime(options()));
+    await act(async () => { await result.current.start({ mode: "text" }); });
+    act(() => result.current.stop());
+    expect(fetch).toHaveBeenCalledWith("/api/prototype/realtime", expect.objectContaining({
+      method: "DELETE",
+      headers: { "X-Placy-Session": "opaque-session" },
+      keepalive: true,
+    }));
+  });
+});
+
+describe("server cleanup and manual takeover regressions", () => {
+  it("waits for DELETE before a new conversation can POST", async () => {
+    const cleanup = deferred<Response>();
+    vi.mocked(fetch).mockImplementation(async (_url: unknown, init?: RequestInit) => {
+      if (init?.method === "DELETE") return cleanup.promise;
+      if (init?.method === "POST") return { ok: true, headers: { get: () => "opaque" }, text: async () => "v=0" } as unknown as Response;
+      return { ok: true, json: async () => ({ configured: true }) } as Response;
+    });
+    const { result } = renderHook(() => useRealtime(options()));
+    await act(async () => { await result.current.start({ mode: "text" }); });
+    let restart!: Promise<void>;
+    await act(async () => { restart = result.current.newConversation({ mode: "text" }); });
+    expect(vi.mocked(fetch).mock.calls.filter(([, init]) => init?.method === "POST")).toHaveLength(1);
+    await act(async () => { cleanup.resolve({ ok: true } as Response); await restart; });
+    expect(vi.mocked(fetch).mock.calls.filter(([, init]) => init?.method === "POST")).toHaveLength(2);
+    expect(result.current.status).toBe("listening");
+  });
+  it("retries failed cleanup on an explicit start instead of keeping a sticky failure", async () => {
+    let cleanupOk = false;
+    vi.mocked(fetch).mockImplementation(async (_url: unknown, init?: RequestInit) => {
+      if (init?.method === "DELETE") return { ok: cleanupOk } as Response;
+      if (init?.method === "POST") return { ok: true, headers: { get: () => "opaque" }, text: async () => "v=0" } as unknown as Response;
+      return { ok: true, json: async () => ({ configured: true }) } as Response;
+    });
+    const { result } = renderHook(() => useRealtime(options()));
+    await act(async () => { await result.current.start({ mode: "text" }); });
+    await act(async () => { await result.current.newConversation({ mode: "text" }); });
+    expect(result.current.status).toBe("error");
+    cleanupOk = true;
+    await act(async () => { await result.current.start({ mode: "text" }); });
+    expect(result.current.status).toBe("listening");
+  });
+  it("never executes late map commands after manual map takeover", async () => {
+    const execute = vi.fn(() => ({ ok: true }));
+    const { result } = renderHook(() => useRealtime(options(execute)));
+    await act(async () => { await result.current.start({ mode: "text" }); });
+    const channel = FakePeer.instances[0].channel;
+    await act(async () => { await channel.emit({ type: "response.created", response: { id: "old" } }); });
+    act(() => result.current.interruptForMap());
+    const done = toolResponse();
+    await act(async () => { await channel.emit({ ...done, response: { ...done.response, id: "old" } }); });
+    expect(execute).not.toHaveBeenCalled();
+    expect(JSON.stringify(channel.events())).toContain("brukeren tar over kartet");
+  });
+});
+
+describe("Realtime mode switching", () => {
+  it("keeps one connection and waits for the voice session acknowledgement before attaching the microphone", async () => {
+    const track = { enabled: true, stop: vi.fn() } as unknown as MediaStreamTrack;
+    const stream = { getTracks: () => [track], getAudioTracks: () => [track] } as unknown as MediaStream;
+    const getUserMedia = vi.fn(async () => stream);
+    vi.stubGlobal("navigator", { mediaDevices: { getUserMedia } });
+    const { result } = renderHook(() => useRealtime(options()));
+    await act(async () => { await result.current.start({ mode: "text" }); });
+    const peer = FakePeer.instances[0];
+    expect(peer.addTransceiver).toHaveBeenCalledWith("audio", { direction: "sendrecv" });
+
+    let switching!: Promise<boolean>;
+    act(() => { switching = result.current.switchMode("voice"); });
+    expect(getUserMedia).not.toHaveBeenCalled();
+    expect(peer.sender.replaceTrack).not.toHaveBeenCalled();
+    expect(result.current.status).toBe("connecting");
+    await act(async () => {
+      await peer.channel.emit({ type: "session.updated", session: { output_modalities: ["audio"] } });
+      await switching;
+    });
+    expect(getUserMedia).toHaveBeenCalledOnce();
+    expect(peer.sender.replaceTrack).toHaveBeenCalledWith(track);
+    expect(result.current.mode).toBe("voice");
+    expect(FakePeer.instances).toHaveLength(1);
+  });
+
+  it("falls back to the same text conversation when microphone permission is denied", async () => {
+    vi.stubGlobal("navigator", { mediaDevices: { getUserMedia: vi.fn(async () => { throw new DOMException("Denied", "NotAllowedError"); }) } });
+    const { result } = renderHook(() => useRealtime(options()));
+    await act(async () => { await result.current.start({ mode: "text" }); });
+    act(() => result.current.sendText("Behold denne historikken"));
+    const peer = FakePeer.instances[0];
+    let switching!: Promise<boolean>;
+    act(() => { switching = result.current.switchMode("voice"); });
+    await act(async () => {
+      await peer.channel.emit({ type: "session.updated", session: { output_modalities: ["audio"] } });
+      expect(await switching).toBe(false);
+    });
+    expect(result.current.mode).toBe("text");
+    expect(result.current.messages.at(-1)?.text).toBe("Behold denne historikken");
+    expect(result.current.error).toContain("Mikrofonen er ikke tilgjengelig");
+    expect(FakePeer.instances).toHaveLength(1);
+    expect(peer.channel.events().filter(event => event.type === "session.update")).toHaveLength(2);
+  });
+
+  it("removes and stops the microphone when switching back to text without greeting again", async () => {
+    const track = { enabled: true, stop: vi.fn() } as unknown as MediaStreamTrack;
+    vi.stubGlobal("navigator", { mediaDevices: { getUserMedia: vi.fn(async () => ({ getTracks: () => [track], getAudioTracks: () => [track] })) } });
+    const { result } = renderHook(() => useRealtime(options()));
+    await act(async () => { await result.current.start({ mode: "text" }); });
+    const peer = FakePeer.instances[0];
+    let toVoice!: Promise<boolean>;
+    act(() => { toVoice = result.current.switchMode("voice"); });
+    await act(async () => { await peer.channel.emit({ type: "session.updated", session: { output_modalities: ["audio"] } }); await toVoice; });
+    let toText!: Promise<boolean>;
+    act(() => { toText = result.current.switchMode("text"); });
+    expect(peer.sender.replaceTrack).toHaveBeenLastCalledWith(null);
+    await act(async () => { await peer.channel.emit({ type: "session.updated", session: { output_modalities: ["text"] } }); await toText; });
+    expect(track.stop).toHaveBeenCalledOnce();
+    expect(result.current.mode).toBe("text");
+    expect(peer.channel.events().filter(event => event.type === "response.create")).toHaveLength(0);
+  });
+
+  it("serializes a double switch and ignores a late acknowledgement for the old mode", async () => {
+    const track = { enabled: true, stop: vi.fn() } as unknown as MediaStreamTrack;
+    vi.stubGlobal("navigator", { mediaDevices: { getUserMedia: vi.fn(async () => ({ getTracks: () => [track], getAudioTracks: () => [track] })) } });
+    const { result } = renderHook(() => useRealtime(options()));
+    await act(async () => { await result.current.start({ mode: "text" }); });
+    const channel = FakePeer.instances[0].channel;
+    let toVoice!: Promise<boolean>;
+    let backToText!: Promise<boolean>;
+    act(() => {
+      toVoice = result.current.switchMode("voice");
+      backToText = result.current.switchMode("text");
+    });
+    await act(async () => { await channel.emit({ type: "session.updated", session: { output_modalities: ["audio"] } }); await toVoice; });
+    let finished = false;
+    void backToText.then(() => { finished = true; });
+    await act(async () => { await channel.emit({ type: "session.updated", session: { output_modalities: ["audio"] } }); });
+    expect(finished).toBe(false);
+    await act(async () => { await channel.emit({ type: "session.updated", session: { output_modalities: ["text"] } }); await backToText; });
+    expect(result.current.mode).toBe("text");
+    expect(FakePeer.instances).toHaveLength(1);
+  });
+
+  it("cancels a pending mode acknowledgement immediately when stopped", async () => {
+    const { result } = renderHook(() => useRealtime(options()));
+    await act(async () => { await result.current.start({ mode: "text" }); });
+    let switching!: Promise<boolean>;
+    act(() => { switching = result.current.switchMode("voice"); });
+    act(() => result.current.stop());
+    await expect(switching).resolves.toBe(false);
+    expect(result.current.status).toBe("idle");
+  });
+
+  it("starts a new conversation explicitly and clears transcript and references", async () => {
+    const { result } = renderHook(() => useRealtime(options()));
+    await act(async () => { await result.current.start({ mode: "text" }); });
+    act(() => result.current.sendText("Old conversation"));
+    const first = FakePeer.instances[0];
+    await act(async () => { await result.current.newConversation({ mode: "text" }); });
+    expect(first.close).toHaveBeenCalledOnce();
+    expect(result.current.messages).toEqual([]);
+    expect(result.current.references).toEqual([]);
+    expect(FakePeer.instances).toHaveLength(2);
+  });
 });
 
 describe("Realtime response ownership", () => {
@@ -139,6 +310,39 @@ describe("Realtime response ownership", () => {
     await act(async () => { await result.current.start({ mode: "text" }); });
     await act(async () => { await FakePeer.instances[0].channel.emit(toolResponse("cancelled")); });
     expect(execute).not.toHaveBeenCalled();
+  });
+
+  it("lets the server own knowledge tools and response continuation", async () => {
+    const execute = vi.fn(() => ({ ok: true }));
+    const { result } = renderHook(() => useRealtime({ ...options(execute), serverControlled: true, snapshotId: "snapshot-1" }));
+    await act(async () => { await result.current.start({ mode: "text" }); });
+    const channel = FakePeer.instances[0].channel;
+    await act(async () => { await channel.emit({ type: "response.done", response: { status: "completed", output: [
+      { type: "function_call", name: "lookup_nyhavna", call_id: "knowledge-1", arguments: "{}" },
+    ] } }); });
+    expect(execute).not.toHaveBeenCalled();
+    expect(channel.events().filter(event => event.type === "response.create")).toHaveLength(0);
+    const post = vi.mocked(fetch).mock.calls.find(([, init]) => init?.method === "POST");
+    expect(JSON.parse(String(post?.[1]?.body))).toMatchObject({ snapshotId: "snapshot-1" });
+  });
+
+  it("returns map tool output but does not create the continuation when server-controlled", async () => {
+    const execute = vi.fn(() => ({ ok: true, selected: "poi-1" }));
+    const { result } = renderHook(() => useRealtime({ ...options(execute), serverControlled: true }));
+    await act(async () => { await result.current.start({ mode: "text" }); });
+    const channel = FakePeer.instances[0].channel;
+    await act(async () => { await channel.emit(toolResponse()); });
+    expect(execute).toHaveBeenCalledOnce();
+    expect(channel.events().map(event => event.type)).toContain("conversation.item.create");
+    expect(channel.events().filter(event => event.type === "response.create")).toHaveLength(0);
+  });
+
+  it("exposes structured place references returned by a map tool", async () => {
+    const execute = vi.fn(() => ({ places: [{ id: "poi-1", name: "Kafé", sources: [{ title: "Source", url: "https://example.com" }] }] }));
+    const { result } = renderHook(() => useRealtime(options(execute)));
+    await act(async () => { await result.current.start({ mode: "text" }); });
+    await act(async () => { await FakePeer.instances[0].channel.emit(toolResponse()); });
+    expect(result.current.references).toMatchObject([{ id: "poi-1", name: "Kafé", sources: [{ title: "Source", url: "https://example.com" }] }]);
   });
 
   it("does not resume an old tool response after the user asks a new question", async () => {
@@ -206,4 +410,19 @@ describe("Realtime cost controls", () => {
     expect(result.current.usage.responses).toBe(1);
     expect(result.current.usage.estimatedUsd).toBeCloseTo(0.00084, 8);
   });
+});
+
+it("stops acquired microphone tracks if attaching them fails", async () => {
+  const track = { stop: vi.fn(), enabled: true };
+  vi.stubGlobal("navigator", { mediaDevices: { getUserMedia: vi.fn(async () => ({ getTracks: () => [track], getAudioTracks: () => [track] })) } });
+  const { result } = renderHook(() => useRealtime(options()));
+  await act(async () => { await result.current.start({ mode: "text" }); });
+  const peer = FakePeer.instances[0];
+  peer.sender.replaceTrack.mockRejectedValueOnce(new Error("attach failed"));
+  let switching!: Promise<boolean>;
+  await act(async () => { switching = result.current.switchMode("voice"); });
+  await act(async () => { await peer.channel.emit({ type: "session.updated", session: { output_modalities: ["audio"] } }); await switching; });
+  expect(track.stop).toHaveBeenCalledOnce();
+  expect(result.current.mode).toBe("text");
+  expect(result.current.muted).toBe(true);
 });

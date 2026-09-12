@@ -65,3 +65,10 @@ Andreas valgte deretter Marin. Boardet på 3101 bruker nå `marin` for nye samta
 ### Stemmevalg: Ash
 
 Andreas ba deretter om Ash. Boardet på 3101 bruker nå `ash` for nye samtaler.
+
+
+## 12. september: serverstyrt demoversjon
+
+Den lokale Lene-demoen bruker nå et felles fryst datasett for board og agent, kildekontrollerte faktapakker og ren kartstatus fra klientverktøyene. Serveren eier tekstsvar og videreføring etter verktøykall. Begrensningene er én aktiv samtale, 60 starter/time, 12 minutter per samtale og to minutter uten aktivitet, med vern under tale/svar. Hangup og gjenoppretting skjer uavhengig av nettleseren. Dette er fortsatt ikke et eksakt dollarbudsjett.
+
+Tekst og Ash-tale deler forbindelse og kontekst ved modusbytte. Kunnskap hentes ved behov, og verktøyresultater inneholder kilder og konkrete usikkerheter. UI-estimat og serverens aggregerte forbrukslogg utelater separat inputtranskripsjon. Se [valideringsrapporten](docs/research/nyhavna-leve-demo/validation.md) for siste faktiske målinger og [runbooken](docs/research/nyhavna-leve-demo/runbook.md) for kjøring og gjenoppretting. Tallene fra de tidligere forsøkene over er historiske målinger, ikke en kontrollert før/etter-test av dette oppsettet.

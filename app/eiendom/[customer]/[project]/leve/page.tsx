@@ -1,17 +1,13 @@
 import { Suspense } from "react";
 import { notFound } from "next/navigation";
-import {
-  getCachedReportProduct,
-  getCachedProjectTranslations,
-} from "@/lib/supabase/cached-board-reads";
+import { getCachedProjectTranslations } from "@/lib/supabase/cached-board-reads";
 import { buildBoardMetadata } from "@/lib/seo/board-metadata";
 import { hexToHslChannels, pickContrastForeground } from "@/lib/theme-utils";
-import { getSchoolZone } from "@/lib/utils/school-zones";
 import {
   LEVE_CUSTOMER,
   LEVE_PROJECT,
-  buildLeveProject,
 } from "@/lib/demo/nyhavna-leve/build";
+import { getNyhavnaSnapshot } from "@/lib/demo/nyhavna-leve/snapshot";
 import LeveBoardGate from "./leve-board-gate";
 
 /**
@@ -44,30 +40,17 @@ export default async function NyhavnaLevePage({ params }: PageProps) {
   const { customer, project: projectSlug } = await params;
   if (customer !== LEVE_CUSTOMER || projectSlug !== LEVE_PROJECT) notFound();
 
-  const projectData = await getCachedReportProduct(customer, projectSlug);
-  if (!projectData) notFound();
+  const { project: leveProject } = await getNyhavnaSnapshot();
 
-  const leveProject = buildLeveProject(projectData);
-
-  // Samme server-side precompute som boardet: skolekrets-polygonene (700 kB)
-  // skal aldri inn i klient-bundlen.
-  const schoolZone = getSchoolZone(
-    leveProject.centerCoordinates.lat,
-    leveProject.centerCoordinates.lng,
-  );
-  const projectDataWithZone = { ...leveProject, schoolZone };
-
-  // Oversettelsene slås opp på det EKTE produktet — demo-temaene og
-  // demo-POI-ene finnes ikke i basen, og skal ikke slå opp der.
-  const poiIds = projectData.pois.map((p) => p.id);
-  const themeIds = (projectData.reportConfig?.themes || []).map((t) => t.id);
+  const poiIds = leveProject.pois.map((p) => p.id);
+  const themeIds = (leveProject.reportConfig?.themes || []).map((t) => t.id);
   const enTranslations = await getCachedProjectTranslations(
     customer,
     projectSlug,
     "en",
     poiIds,
     themeIds,
-    projectData.id,
+    leveProject.id,
   );
 
   const themeStyle: React.CSSProperties = {};
@@ -102,7 +85,7 @@ export default async function NyhavnaLevePage({ params }: PageProps) {
     <div style={themeStyle} className="min-h-screen bg-background text-foreground">
       <Suspense fallback={null}>
         <LeveBoardGate
-          project={projectDataWithZone}
+          project={leveProject}
           enTranslations={enTranslations}
         />
       </Suspense>
@@ -112,8 +95,10 @@ export default async function NyhavnaLevePage({ params }: PageProps) {
 
 export async function generateMetadata({ params }: PageProps) {
   const { customer, project: projectSlug } = await params;
-  const projectData = await getCachedReportProduct(customer, projectSlug);
-  if (!projectData) return { title: "Rapport ikke funnet" };
+  if (customer !== LEVE_CUSTOMER || projectSlug !== LEVE_PROJECT) {
+    return { title: "Rapport ikke funnet" };
+  }
+  const { project: projectData } = await getNyhavnaSnapshot();
 
   return buildBoardMetadata({
     project: projectData,

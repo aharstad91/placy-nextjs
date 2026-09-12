@@ -1039,6 +1039,7 @@ export interface ProjectTheme {
  * lib/supabase/v2-queries.ts (eneste datakilde etter cutover 2026-07-06).
  */
 export interface Project {
+  demoSnapshotId?: string;
   /** Server-resolved, source-backed activities selected by the board. */
   localActivities?: LocalActivity[];
   id: string;

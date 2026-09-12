@@ -20,7 +20,8 @@ export function realtimeSessionConfig(instructions: string, tools: RealtimeTool[
     tools,
     tool_choice: "auto",
     output_modalities: [mode === "text" ? "text" : "audio"],
-    max_output_tokens: 1200,
+    max_output_tokens: 700,
+    truncation: { type: "retention_ratio", retention_ratio: 0.7, token_limits: { post_instructions: 2500 } },
     audio: {
       input: {
         transcription: { model: "gpt-4o-mini-transcribe", language: "no" },

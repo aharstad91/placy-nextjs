@@ -9609,3 +9609,13 @@ Konkrete funn: områdeintroduksjon og kildekontrolldato er ikke koblet gjennom t
 Åpent: implementere og kontrollere enhetene, kjøre faktisk kildeinventar, måle norsk tale på Mac-en og gjennomføre generalprøve. Lenes møtetest og læringsnotater hører til onsdag og kan ikke regnes som utført nå.
 
 Planrunden avsluttet: to Sol-kartlegginger og separat dokumentkontroll med sammenheng, gjennomførbarhet og design. Tekniske presiseringer er innarbeidet uten endring av R1–R15: felles snapshot for board/agent, full adapterkjede, verktøyeierskap, serveropprydding, tidlig modusbytteprøve og skille mellom demoberedskap og læring etter møtet. Ingen gjenværende produktvalg blokkerer implementering. Sikkerhets- og adversarial-linser inngikk ikke i dokumentkontrollen; dette er ikke en full sikkerhetsreview.
+
+## 2026-09-12 — Kildekontrollert Nyhavna-demo med serverstyrt samtale
+
+Implementert lokalt i `placy-voice-board`: felles fryst snapshot for board og agent, kontrolloversikt over 1 324 POI-er og én Dora-sammenslåing, kuratert kunnskapsgrunnlag med 39 bekreftede / 11 uavklarte fakta, kildekort og avgrensning til Nyhavna. Tekst/tale deler samtale, Ash beholdes, brukerklikk avbryter agentens kartstyring, og serveren håndhever én aktiv samtale, 12 minutter, inaktivitet og opprydding ved feil.
+
+Full suite før siste avgrensede rate-limit-retting: 249 filer / 4 062 tester bestått med to arbeidere og 15 sekunders testtimeout. Etter rettingen: 58 fokuserte tester bestått; siste produksjonsbygg inkludert typesjekk bestått; lint 0 feil / 55 eksisterende advarsler. Kodegjennomgang og avgrenset tilleggskontroll dokumentert i docs/reviews/2026-09-12-nyhavna-demo-code-review.md.
+
+Reell nettleserprøve bekreftet kart/kilder, modusbytte med samme forbindelse, 429 ved konkurrerende start, tom ny samtale og faktisk server-hangup. Langtesten feilet mot prosjektets 40 000 tokens/minutt. Påfølgende retting begrenser kontekst og svar og gir høyst to kontrollerte retries med ventestatus. Andreas påpekte høyt sesjonsforbruk; videre betalte API-tester og agentoppgaver ble stoppet. Siste retting er derfor IKKE live-verifisert. Ingen garantert kostnadsbesparelse eller ferdig generalprøve hevdes.
+
+Se docs/research/nyhavna-leve-demo/validation.md, runbook.md og rehearsal.md. Åpent: kort live-bekreftelse av siste konfigurasjon, sammenhengende samtaler etter kontekstkutt, fysisk Mac/mikrofon/romlyd og uinnvidd prøvebruker før Lene-møtet. Lagres lokalt uten push; samtaleprototype 3102 og hovedrepoet er ikke endret.

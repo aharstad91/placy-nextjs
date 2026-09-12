@@ -4,14 +4,12 @@
  * ## Hva denne demoen påstår
  *
  * At innholdet Nyhavna Utvikling allerede har skrevet om bydelen blir lettere å
- * forstå og oppdage når det knyttes til stedene i kartet. Ingenting her er
- * nytt innhold: hver beskrivelse er Nyhavnas egen, gjengitt som sitat eller
- * tett sammendrag, med lenke til siden den står på.
+ * forstå og oppdage når det knyttes til stedene i kartet. Beskrivelsene er
+ * korte, kildebundne sammendrag med lenke til siden de bygger på.
  *
  * ## Tre regler som gjelder hver eneste rad under
  *
- * 1. **Kilden bærer teksten.** Vi omskriver ikke til vår egen stemme. Der vi
- *    forkorter, forkorter vi ved å kutte — ikke ved å formulere om.
+ * 1. **Kilden bærer faktaene.** Sammendragene tilfører ikke nye påstander.
  * 2. **Eksisterende og planlagt holdes fra hverandre.** `developmentStatus`
  *    er satt på hvert sted, og begrunnelsen står i kommentaren over det:
  *    presens i kilden = finnes, futurum = kommer. Der kilden sier begge deler
@@ -93,7 +91,7 @@ function poi(input: {
   /** Ikon per sted — underkategoriens jobb, jf. temafarge-regelen. */
   icon: string;
   address?: string;
-  /** Nyhavnas egne ord. Første avsnitt vises i lista, hele i drill-in. */
+  /** Kildebundet sammendrag. Første avsnitt vises i lista, hele i drill-in. */
   body: string;
   /** Ekstra avsnitt — typisk hva som er planlagt for stedet. */
   bodyMore?: string;
@@ -147,7 +145,7 @@ const DORA_KAFFEBAR = poi({
   // som baker … og brygger» — og sidens ingress sier «Allerede i dag finnes
   // det kafeer, restauranter og bryggeri her».
   status: "existing",
-  body: "Dora Kaffebar er en nabolagskafé i Kobbes gate 2 som baker brød og søtbakst og brygger håndverkskaffe til deg. En fin plass å stikke innom på ukedagene på dagtid.",
+  body: "Dora Kaffebar er en nabolagskafé i Kobbes gate 2 med brød, søtbakst og håndverkskaffe. Nyhavna omtaler den som et sted å besøke på ukedager på dagtid.",
   sourceUrl: NYHAVNA_SERVERING.url,
   website: "https://www.instagram.com/dorakaffe/",
 });
@@ -162,12 +160,11 @@ const MONKEY_BREW = poi({
   address: "Kobbes gate 10",
   categoryId: CATEGORY_SERVERING_ID,
   icon: "Wine",
-  // EKSISTERENDE: presens + konkret åpningstid i kilden («På torsdager og
-  // fredag har MonkeyBrew utsalg fra sine lokaler i Kobbes gate 10»).
+  // EKSISTERENDE: kilden omtaler bryggeriet og lokalene i presens. Den
+  // ukentlige utsalgstiden er utelatt fordi den ikke er bekreftet i en egen,
+  // oppdatert åpningstidskilde.
   status: "existing",
-  body: "Mikrobryggeriet MonkeyBrew lager fruktig og surt øl, og har bygget og brygget seg opp til å bli en anerkjent leverandør av håndverksbrygg både til byens utesteder, men også Vinmonopolet.",
-  bodyMore:
-    "På torsdager og fredag har MonkeyBrew utsalg fra sine lokaler i Kobbes gate 10, der du kan se på bryggeriet og også få kjøpt kult merch.",
+  body: "Monkey Brew er et mikrobryggeri i Kobbes gate 10. Nyhavna beskriver fruktig og surt håndverksøl levert til utesteder og Vinmonopolet.",
   sourceUrl: NYHAVNA_SERVERING.url,
   website: "https://monkeybrew.no/",
 });
@@ -190,9 +187,9 @@ const ELVEPROMENADEN = poi({
   // i dag gå, sykle eller bare nyte utsikten.» Oppgraderingen til park er
   // futurum og står i `bodyMore`, som flaten merker som planlagt.
   status: "existing",
-  body: "Elvepromenaden skal bli en grønn oase langs Nidelva, midt i byen! Her kan du allerede i dag gå, sykle eller bare nyte utsikten.",
+  body: "Elvepromenaden går langs Nidelva. Nyhavna opplyser at man allerede kan gå og sykle der, mens en grønn park er planlagt.",
   bodyMore:
-    "Nå skal den bli langt mer enn bare en sti – en levende park med benker, lekeapparater, kunst og små overraskelser underveis. Elvepromenaden vil knytte seg sømløst til Doraparken med sine serveringssteder og aktiviteter og parken ytterst på Transittkaia hvor små og store barn inviteres til utforsking og lek.",
+    "Planen omfatter benker, lekeapparater og kunst. Promenaden er også planlagt koblet til Doraparken og en park ytterst på Transittkaia.",
   sourceUrl: NYHAVNA_PARK.url,
   image: "/demo/nyhavna/elvepromenaden.jpg",
 });
@@ -209,13 +206,16 @@ const KULTURAKSEN = poi({
   lng: 10.417595,
   categoryId: CATEGORY_KULTUR_ID,
   icon: "Drama",
+  precision: "approximate",
+  precisionNote:
+    "Aksen er vist langs Skippergata mellom Fyringsbunkeren og Dora 2. Nyhavna navngir området, men oppgir ingen avgrensning.",
   // EKSISTERENDE som sted — de fire stedene ligger der i dag («Her ligger
   // Fyringsbunkeren, Dora2, Doratorget og Bunkerparken»). Kulturbruken er det
   // som er planlagt, og det står i teksten.
   status: "existing",
-  body: "Her ligger Fyringsbunkeren, Dora2, Doratorget og Bunkerparken som er godt egnet for kulturaktiviteter.",
+  body: "Nyhavna peker ut Kulturaksen i Skippergata som ett av tre prioriterte kulturelle tyngdepunkter. Fyringsbunkeren, Dora 2, Doratorget og Bunkerparken nevnes som del av aksen.",
   bodyMore:
-    "I tillegg kommer det store uteareal med både Doratorget samt Bunkerparken foran Fyringsbunkeren hvor det også kan tilrettelegges for kulturaktiviteter og kunst i offentlig rom.",
+    "Nyhavna beskriver utearealer ved Doratorget og Bunkerparken foran Fyringsbunkeren som aktuelle for kulturaktiviteter og kunst i offentlig rom.",
   sourceUrl: NYHAVNA_KULTUR.url,
 });
 
@@ -225,16 +225,15 @@ const FYRINGSBUNKEREN = poi({
   // Arealsentroide av OSM way 80560182 (bygningsomriss, military=bunker).
   lat: 63.43955,
   lng: 10.418695,
-  address: "Skippergata 10",
   categoryId: CATEGORY_KULTUR_ID,
   icon: "Landmark",
   // EKSISTERENDE: bygget står, og er ett av de tolv vernede byggene kilden
   // omtaler. At det «i hovedsak skal leies ut til kunst- og kulturaktører» er
   // planen, og den står i `bodyMore`.
   status: "existing",
-  body: "Ett av kulturminnene i kulturaksen. Nyhavna har i alt 12 vernede bygg bygd av okkupasjonsmakten under 2. verdenskrig. 11 av disse vil inngå i Nyhavna Utvikling sine planer, mens Dora1 er i privat eie.",
+  body: "Fyringsbunkeren ligger i Kulturaksen i Skippergata og omtales som egnet for kulturaktiviteter.",
   bodyMore:
-    "Kulturminnene er av stor historisk betydning, både nasjonalt og internasjonalt. De skal derfor renoveres, og i hovedsak leies ut til kunst- og kulturaktører.",
+    "Nyhavna planlegger kulturaktiviteter og kunst i offentlig rom i Bunkerparken foran Fyringsbunkeren.",
   sourceUrl: NYHAVNA_KULTUR.url,
 });
 
@@ -244,13 +243,12 @@ const DORA2 = poi({
   // Arealsentroide av OSM way 80560165 (bygningsomriss, submarine_pen).
   lat: 63.440482,
   lng: 10.416411,
-  address: "Skippergata 16",
   categoryId: CATEGORY_KULTUR_ID,
   icon: "Landmark",
   // EKSISTERENDE: bygget står. Kilden navngir det i presens som del av
   // kulturaksen.
   status: "existing",
-  body: "Ubåtbunkeren Dora2 er ett av de fire stedene Nyhavna peker ut i kulturaksen i Skippergata, og er godt egnet for kulturaktiviteter.",
+  body: "Dora 2 er ett av fire steder Nyhavna nevner i Kulturaksen i Skippergata, som omtales som egnet for kulturaktiviteter.",
   sourceUrl: NYHAVNA_KULTUR.url,
 });
 
@@ -284,7 +282,7 @@ const BUNKERPARKEN = poi({
   precision: "approximate",
   precisionNote:
     "Plassert omtrentlig foran Fyringsbunkeren, slik kilden beskriver den. Avgrensningen er ikke offentlig.",
-  body: "Uteareal foran Fyringsbunkeren, pekt ut som del av kulturaksen i Skippergata. Her kan det tilrettelegges for kulturaktiviteter og kunst i offentlig rom.",
+  body: "Bunkerparken omtales som et uteareal foran Fyringsbunkeren i Kulturaksen. Nyhavna planlegger tilrettelegging for kulturaktiviteter og kunst i offentlig rom.",
   sourceUrl: NYHAVNA_KULTUR.url,
 });
 
@@ -329,7 +327,7 @@ export const LEVE_THEMES: LeveTheme[] = [
     color: FARGE_SERVERING,
     categoryId: CATEGORY_SERVERING_ID,
     leadText: "Kafeer, restauranter og bryggeri på Nyhavna.",
-    body: "På Nyhavna kan ganen gå i land og nyte mat og drikke forankret i tradisjoner. Ofte får du det servert med en moderne vri som kan overraske. Allerede i dag finnes det kafeer, restauranter og bryggeri her, der innovasjon over fatene og et vennlig smil over glassene er rettesnor. Og flere vil snart komme!",
+    body: "Nyhavna beskriver et eksisterende tilbud av kafeer, restauranter og bryggeri, og opplyser at flere serveringssteder er planlagt.",
     source: NYHAVNA_SERVERING,
   },
   {
@@ -339,7 +337,7 @@ export const LEVE_THEMES: LeveTheme[] = [
     color: FARGE_PARK,
     categoryId: CATEGORY_PARK_ID,
     leadText: "Grønne områder og vannet innen rekkevidde.",
-    body: "På Nyhavna kommer parker og byrom som inviterer til liv, lek og fellesskap. Her er vannet alltid innen rekkevidde – midt i byen.\n\nFra den frodige Kullkranparken til de åpne allmenningene ved Ladehammerkaia får Nyhavna et grønt nettverk av både velstelte parker og mer naturpregede landskap.",
+    body: "Nyhavna planlegger parker og byrom nær vannet. Kullkranparken, allmenningene ved Ladehammerkaia, Jernbaneparken, Transittparken og Elveparken langs Transittkaia inngår i det beskrevne grønne nettverket.",
     source: NYHAVNA_PARK,
     ikkePlassert: [
       "Kullkranparken",
@@ -356,12 +354,12 @@ export const LEVE_THEMES: LeveTheme[] = [
     color: FARGE_KULTUR,
     categoryId: CATEGORY_KULTUR_ID,
     leadText: "Kulturminner, verksteder og kunst i offentlig rom.",
-    body: "Nyhavna satser tungt på kultur. Vi åpner områder der folk kan møte kunst i det offentlige rom, og vi setter i stand lokaler og øvingsrom der kunstnere og kulturaktører kan bruke sin kreativitet.\n\nKunst og kultur skal prege hele Nyhavna, men tre områder er pekt ut som kulturelle tyngdepunkter. Kulturaksen i Skippergata er ett av dem.",
+    body: "Nyhavna beskriver videre satsing på kunst i offentlig rom og lokaler for kunst- og kulturaktører. Kulturaksen i Skippergata, Kullkranpiren og sidens «Strandveikaka» er de tre prioriterte områdene som omtales.",
     source: NYHAVNA_KULTUR,
     ikkePlassert: [
       "Doratorget (navngitt i kulturaksen, men uten bekreftet plassering)",
       "Kullkranpiren",
-      "Strandveikaia",
+      "Strandveikaia (overskriften i kilden er skrevet «Strandveikaka»)",
     ],
   },
 ];

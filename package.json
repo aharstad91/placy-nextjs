@@ -15,7 +15,8 @@
     "proto:data": "NODE_OPTIONS=--conditions=react-server npx tsx scripts/export-proto-snapshot.ts",
     "validate:tier": "npx tsx scripts/validate-report-tier.ts",
     "generate:reels-posters": "node scripts/generate-reels-posters.mjs",
-    "prepare": "husky"
+    "prepare": "husky",
+    "demo:nyhavna": "PLACY_LOCAL_REALTIME_DEMO=1 next start --hostname 127.0.0.1 --port 3101"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",
@@ -57,7 +58,8 @@
     "typescript": "^5.9.3",
     "use-debounce": "^10.1.0",
     "zod": "^4.3.6",
-    "zustand": "^5.0.10"
+    "zustand": "^5.0.10",
+    "ws": "^8.21.0"
   },
   "devDependencies": {
     "@testing-library/jest-dom": "^6.9.1",
@@ -76,6 +78,7 @@
     "lint-staged": "^16.2.7",
     "pg": "^8.18.0",
     "tsx": "^4.21.0",
-    "vitest": "^3.2.4"
+    "vitest": "^3.2.4",
+    "@types/ws": "^8.18.1"
   }
 }

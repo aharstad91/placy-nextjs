@@ -226,6 +226,7 @@ const PROJECT_3D_HEADINGS: Record<string, number> = {
 };
 
 export interface ReportData {
+  demoSnapshotId?: string;
   projectName: string;
   /** URL-slug, eks. "stasjonskvartalet". Brukes til å slå opp prosjekt-
    *  spesifikke ressurser (illustrasjoner, audio-stier, etc.). */
@@ -789,6 +790,7 @@ export function transformToReportData(project: Project, locale: Locale = "no"): 
     ?? interpolate(t(locale, getIntroKey(project.tags)), { name: project.name });
 
   return {
+    demoSnapshotId: project.demoSnapshotId,
     projectName: project.name,
     projectSlug: project.urlSlug,
     address: project.pois[0]?.address ?? "",

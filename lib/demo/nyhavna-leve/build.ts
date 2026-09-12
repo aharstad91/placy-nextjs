@@ -25,8 +25,9 @@
  */
 
 import type { Project, ReportThemeConfig } from "@/lib/types";
-import { LEVE_CATEGORIES, LEVE_GEOMETRY, LEVE_POIS, LEVE_THEMES } from "./content";
-import { LEVE_TRAVEL_TIMES } from "./travel-times";
+import { LEVE_CATEGORIES, LEVE_GEOMETRY, LEVE_POIS, LEVE_THEMES, LEVE_INTRO } from "@/lib/demo/nyhavna-leve/content";
+import { LEVE_TRAVEL_TIMES } from "@/lib/demo/nyhavna-leve/travel-times";
+import { LEVE_POI_ALIASES } from "@/lib/demo/nyhavna-leve/poi-aliases";
 
 /** Kunden og prosjektet demoen gjelder. Alt annet avvises av ruta. */
 export const LEVE_CUSTOMER = "nyhavna-utvikling";
@@ -70,10 +71,11 @@ export function buildLeveProject(project: Project): Project {
     // Nyhavnas egne temaer først. Raden scroller, så de sju generiske står
     // uendret bak dem — poenget er at kundens innhold er overskriften, ikke at
     // nabolaget forsvinner.
-    pois: [...levePois, ...project.pois],
+    pois: [...levePois, ...project.pois.filter(p => !(p.id in LEVE_POI_ALIASES))],
     categories: [...LEVE_CATEGORIES, ...project.categories],
     reportConfig: {
       ...project.reportConfig,
+      heroIntro: LEVE_INTRO.body,
       themes: [...leveThemes, ...(project.reportConfig?.themes ?? [])],
       curatedGeometry: LEVE_GEOMETRY,
       // Boardet har ingen `district`, så områdestoppet het «Nabolaget». Bydelen

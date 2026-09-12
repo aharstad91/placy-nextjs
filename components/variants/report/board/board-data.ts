@@ -202,6 +202,7 @@ export interface BoardHome {
 }
 
 export interface BoardData {
+  demoSnapshotId?: string;
   /** URL-slug for prosjektet, eks. "stasjonskvartalet". Brukes til å slå opp
    *  prosjekt-spesifikke illustrasjoner og andre ressurser. */
   projectSlug?: string;
@@ -351,6 +352,7 @@ export function adaptBoardData(report: ReportData): BoardData {
   }
 
   return {
+    demoSnapshotId: report.demoSnapshotId,
     projectSlug: report.projectSlug,
     home: {
       name: report.projectName,

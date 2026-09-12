@@ -6,9 +6,8 @@
  * Ligger URL-ene spredt i innholdsfila, drifter de fra hverandre i det øyeblikk
  * noen retter én av dem.
  *
- * Hentet 2026-09-11. Sidene er Nyhavna Utviklings, og demoen gjengir deres ord
- * som sitat eller tett sammendrag med synlig kildehenvisning — den erstatter
- * dem ikke.
+ * Kontrollert på nytt 2026-09-12. Sidene er Nyhavna Utviklings, og demoen
+ * bruker korte sammendrag med synlig kildehenvisning.
  */
 
 import type { EditorialSource } from "@/lib/types";
@@ -18,6 +17,14 @@ export const NYHAVNA_LEVE: EditorialSource = {
   url: "https://nyhavna.no/leve/",
   page: "Opplev Nyhavna",
 };
+
+/** Stabile ID-er brukt av kunnskapsmanifestets feltvise kildehenvisninger. */
+export const NYHAVNA_SOURCE_IDS = {
+  leve: "nyhavna-leve",
+  servering: "nyhavna-servering",
+  park: "nyhavna-park-promenade",
+  kultur: "nyhavna-kunst-kultur",
+} as const;
 
 export const NYHAVNA_SERVERING: EditorialSource = {
   label: "nyhavna.no",
@@ -38,4 +45,5 @@ export const NYHAVNA_KULTUR: EditorialSource = {
 };
 
 /** Datoen sidene ble lest. Vises i demoens kildefotnote. */
-export const HENTET_DATO = "11. september 2026";
+export const HENTET_DATO = "12. september 2026";
+export const HENTET_DATO_ISO = "2026-09-12";
