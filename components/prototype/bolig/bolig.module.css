@@ -1,0 +1,126 @@
+.app{--paper:#fafbf6;--ink:#233d35;--muted:#7e877e;--line:#e6e7de;--accent:#88a85f;--green:#294c40;display:flex;flex-direction:column;min-height:100dvh;background:var(--paper);color:var(--ink);font-family:Arial,Helvetica,sans-serif;overflow-x:hidden;padding-top:env(safe-area-inset-top)}
+.app button:focus-visible,.app a:focus-visible{outline:2px solid #71915b;outline-offset:3px}
+.app button{cursor:pointer}
+.app button:disabled{cursor:default}
+@media(min-width:600px){.app{max-width:480px;margin:0 auto;box-shadow:0 0 40px #0000000d}}
+
+/* ---------- Ankomst (landing) ---------- */
+.landing{display:flex;flex-direction:column;flex:1;position:relative;min-height:0}
+.simBadge{position:absolute;top:14px;left:50%;transform:translateX(-50%);z-index:5;background:#f5d949;color:#4a3d05;font-size:11px;font-weight:700;letter-spacing:.3px;padding:6px 14px;border-radius:20px;box-shadow:0 4px 10px #00000022}
+.landingImage{position:relative;width:100%;aspect-ratio:4/3;background:#e7ebdc;overflow:hidden;flex-shrink:0}
+.landingImage img{object-fit:cover}
+.landingImageFallback{position:absolute;inset:0;background:linear-gradient(160deg,#dfe6d0,#c3d3ac)}
+.illustrationBadge{position:absolute;bottom:10px;left:10px;background:#ffffffee;font-size:10px;padding:4px 9px;border-radius:20px;color:#5a6a4c}
+.landingBody{flex:1;display:flex;flex-direction:column;padding:26px 22px calc(24px + env(safe-area-inset-bottom));gap:14px}
+.landingBody h1{font-size:26px;line-height:1.25;letter-spacing:-.5px;font-weight:600}
+.address{font-size:13px;color:var(--muted);display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.exampleBadge{font-size:10px;font-weight:700;color:#8e5539;background:#fdece0;border-radius:20px;padding:3px 9px;white-space:nowrap}
+.intro{font-size:14px;line-height:1.7;color:#4b574a}
+.startButton{display:flex;align-items:center;justify-content:center;margin-top:auto;background:var(--green);color:#fafbf4;border:none;border-radius:14px;padding:16px;font-size:15px;font-weight:600;box-shadow:0 8px 20px #294c4022}
+.startButton:hover{background:#365c4e}
+.startNote{text-align:center;font-size:11px;color:var(--muted)}
+
+/* ---------- Samtalen ---------- */
+.feedWrap{flex:1;display:flex;flex-direction:column;min-height:0;position:relative}
+.feedScroll{flex:1;overflow-y:auto;overflow-x:hidden;padding:18px 18px 18px;display:flex;flex-direction:column;gap:16px;scrollbar-width:thin;scrollbar-color:#dde2d7 transparent}
+.turnGap{margin-top:6px}
+.jumpButton{position:absolute;bottom:14px;left:50%;transform:translateX(-50%);display:flex;align-items:center;gap:6px;background:var(--green);color:#fff;border:none;border-radius:20px;padding:9px 16px;font-size:12px;font-weight:600;box-shadow:0 6px 16px #0000002e}
+
+.userBubble{align-self:flex-end;max-width:85%;background:#eaf0e1;color:#39523a;border-radius:14px 14px 3px 14px;padding:12px 15px;font-size:14px;line-height:1.55}
+.answerBlock{max-width:100%}
+.guideName{display:block;font-size:10px;font-weight:700;letter-spacing:.4px;color:#738567;margin-bottom:6px}
+.answerText{font-size:15px;line-height:1.75;color:#3a4739;white-space:pre-wrap}
+.typingDot{display:inline-block;width:6px;height:6px;margin-left:4px;border-radius:50%;background:var(--accent);animation:pulse 1.1s ease-in-out infinite}
+
+/* ---------- Steder ---------- */
+.blockPlaces{display:flex;flex-direction:column;gap:10px;min-width:0}
+.placeScroller{display:flex;gap:10px;overflow-x:auto;overflow-y:hidden;padding-bottom:4px;scrollbar-width:thin;scrollbar-color:#d5dec9 transparent}
+.placeCard{flex-shrink:0;width:196px;border:1px solid var(--line);border-radius:12px;background:#fffffb;text-align:left;overflow:hidden;transition:border-color .2s,box-shadow .2s}
+.placeCardSelected{border-color:#819c65;box-shadow:0 0 0 2px #819c6533}
+.placeCardMedia{position:relative;height:86px;background:#eef1e5}
+.placeCardMedia img{object-fit:cover}
+.placeCardFallback{position:absolute;inset:0;background:linear-gradient(160deg,#e5ead7,#cdd9b8)}
+.placeCardBody{padding:10px 12px 12px;display:flex;flex-direction:column;gap:5px}
+.placeCardHead{display:flex;align-items:flex-start;justify-content:space-between;gap:6px}
+.placeCardName{font-size:13px;font-weight:600;line-height:1.3}
+.placeCardKind{font-size:10px;color:var(--muted)}
+.placeCardWalk{display:flex;align-items:center;gap:4px;font-size:10px;color:#7a8a6b}
+.placeCardFact{font-size:11px;line-height:1.5;color:#5a6555;margin-top:2px;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
+.placeCardNote{font-size:10px;color:#a07b4b}
+
+.provenanceBadge{flex-shrink:0;font-size:9px;font-weight:700;letter-spacing:.3px;padding:3px 8px;border-radius:20px;white-space:nowrap}
+.provenanceBadge[data-provenance="documented"]{background:#e4f0dd;color:#3e6a2e}
+.provenanceBadge[data-provenance="seller"]{background:#f4ecd8;color:#8a6a1f}
+.provenanceBadge[data-provenance="example"]{background:#fdece0;color:#8e5539}
+.provenanceBadge[data-provenance="unknown"]{background:#eceef0;color:#5c6570}
+
+/* ---------- Minikart ---------- */
+.miniMap{position:relative;height:180px;border-radius:12px;overflow:hidden;border:1px solid var(--line)}
+.miniMapExpand{position:absolute;bottom:8px;right:8px;display:flex;align-items:center;gap:5px;background:#ffffffee;border-radius:20px;padding:5px 10px;font-size:10px;color:#4b5b41;pointer-events:none}
+.houseMarker{display:flex;align-items:center;justify-content:center;height:26px;width:26px;background:var(--green);color:#fff;border:2px solid #fff;border-radius:50%;box-shadow:0 2px 6px #0000002e}
+.miniMarker{display:block;height:10px;width:10px;background:var(--accent);border:2px solid #fff;border-radius:50%;box-shadow:0 2px 5px #0000002e}
+.mapLoading{height:100%;width:100%;display:flex;align-items:center;justify-content:center;background:#e9eddf;color:#809275;font-size:11px;text-align:center;padding:14px}
+
+/* ---------- Fullskjermkart ---------- */
+.fullscreenOverlay{position:fixed;inset:0;z-index:50;background:#0d1a14}
+.fullscreenClose{position:absolute;top:14px;right:14px;z-index:5;width:38px;height:38px;border:none;border-radius:50%;background:#ffffffee;color:var(--ink);display:flex;align-items:center;justify-content:center;box-shadow:0 4px 12px #00000033}
+.fullscreenMarker{display:flex;align-items:center;justify-content:center;height:30px;width:30px;border:3px solid #fff;border-radius:50%;background:var(--accent);color:#fff;box-shadow:0 3px 8px #00000030;padding:0;transition:transform .2s}
+.fullscreenMarkerSelected{background:var(--green);transform:scale(1.15)}
+.mapMissing{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:#fff;font-size:13px;padding:20px;text-align:center}
+
+/* ---------- Selger / ukjent / kilder / system ---------- */
+.blockSeller{border:1px solid #ece3c9;background:#faf6ea;border-radius:12px;padding:14px 16px;display:flex;flex-direction:column;gap:8px}
+.blockLabel{font-size:10px;font-weight:700;letter-spacing:.4px;color:#8a7a45}
+.sellerQuote{font-size:13px;line-height:1.6;color:#5b5030;font-style:italic}
+
+.blockUnknown{display:flex;flex-direction:column;gap:10px}
+.unknownItem{border:1px solid #e4e6e8;background:#f7f8f9;border-radius:12px;padding:14px 16px;display:flex;flex-direction:column;gap:6px}
+.unknownQuestion{font-size:11px;color:#6b7278;font-weight:600}
+.unknownAnswer{font-size:13px;line-height:1.6;color:#454b4f}
+.unknownLinks{display:flex;flex-wrap:wrap;gap:8px}
+.unknownLinks a{font-size:10px;color:#4b5fa0;text-decoration:underline;text-underline-offset:2px}
+
+.blockSources{display:flex;flex-direction:column;gap:6px}
+.sourceList{display:flex;flex-direction:column;gap:4px}
+.sourceItem{display:flex;flex-wrap:wrap;gap:6px;font-size:10px;color:#7d8674}
+.sourceItem a{color:#4b6b3c;text-decoration:underline;text-underline-offset:2px}
+.sourceChecked{color:#a3ab97}
+
+.systemNotice{font-size:10px;color:#a3ab97;text-align:center}
+
+/* ---------- Bunnpanel ---------- */
+.bottomPanel{border-top:1px solid var(--line);background:#fffefa;padding:12px 16px calc(14px + env(safe-area-inset-bottom));display:flex;flex-direction:column;gap:10px}
+.statusBarStack{display:flex;flex-direction:column;gap:8px}
+.errorLine{font-size:12px;background:#fff1e7;border:1px solid #eadac9;color:#8e5539;border-radius:9px;padding:10px 12px}
+.noticeLine{font-size:10px;color:#c9a227;text-align:center}
+
+.categoryBar{display:flex;gap:7px;overflow-x:auto;scrollbar-width:none}
+.categoryBar::-webkit-scrollbar{display:none}
+.categoryChip{flex-shrink:0;border:1px solid #e0e5d6;border-radius:20px;padding:7px 12px;font-size:11px;color:#7a886c;background:#fafbf6}
+.categoryChip:disabled{opacity:.5}
+.categoryChipActive{background:#e7eedb;border-color:#c9d7b8;color:#47603a}
+
+.statusRow{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.statusIndicator{display:flex;align-items:center;gap:6px;font-size:11px;color:#5a6555;font-weight:600}
+.status-error .statusIndicator,.statusIndicator[data-status="error"]{color:#a5462c}
+.statusIndicator[data-status="ended"]{color:#8a9080}
+.liveDot{width:7px;height:7px;border-radius:50%;background:#84a36a;box-shadow:0 0 0 3px #84a36a18}
+.thinkingDot{width:7px;height:7px;border-radius:50%;background:#c9a227;animation:pulse 1s infinite}
+.spinner{width:11px;height:11px;border:2px solid #d8ddce;border-top-color:#5a7c4f;border-radius:50%;animation:spin .7s linear infinite}
+.waveform{display:flex;align-items:center;gap:2px;height:12px}
+.waveform i{width:2px;height:6px;background:#688952;display:block;animation:wave .9s ease-in-out infinite}
+.waveform i:nth-child(2){animation-delay:.15s}
+.waveform i:nth-child(3){animation-delay:.3s}
+.usage{font-size:9px;color:#a3ab97}
+.statusControls{display:flex;align-items:center;gap:8px;margin-left:auto}
+.iconButton{display:flex;align-items:center;justify-content:center;width:34px;height:34px;border:none;border-radius:50%;background:#eef1e5;color:#4b5b41}
+.iconButton:disabled{opacity:.4}
+.iconButton[aria-pressed="true"]{background:#f4dccb;color:#8e5539}
+.stopButton{display:flex;align-items:center;gap:6px;background:var(--green);color:#fafbf4;border:none;border-radius:20px;padding:9px 16px;font-size:12px;font-weight:600}
+.stopButton:disabled{opacity:.4}
+.restartButton{display:flex;align-items:center;gap:6px;background:var(--accent);color:#243318;border:none;border-radius:20px;padding:9px 16px;font-size:12px;font-weight:600}
+
+@keyframes pulse{50%{opacity:.4;transform:scale(1.15)}}
+@keyframes spin{to{transform:rotate(360deg)}}
+@keyframes wave{50%{height:12px}}
+@media(prefers-reduced-motion:reduce){.app *{animation:none!important;transition:none!important;scroll-behavior:auto!important}}

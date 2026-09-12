@@ -6,7 +6,8 @@ import { realtimeCost, type RealtimeTokenUsage } from '@/lib/realtime/usage';
 import { realtimeModel } from '@/lib/realtime/session-config';
 import { RealtimeSupervisor } from '@/lib/realtime/server-session';
 
-const stateFile = () => join(process.cwd(), '.context', 'nyhavna-realtime-call.json');
+/** Én tilstandsfil per demo, så to lokale demoer i samme repo ikke rydder opp i hverandres samtaler. */
+const stateFile = (scope: string) => join(process.cwd(), '.context', `${scope}-realtime-call.json`);
 export async function hangup(callId: string) {
   if (!/^rtc_[a-zA-Z0-9_-]+$/.test(callId)) throw new Error('Invalid call identity');
   const response = await fetch(`https://api.openai.com/v1/realtime/calls/${callId}/hangup`, {
@@ -14,13 +15,16 @@ export async function hangup(callId: string) {
   });
   if (!response.ok && response.status !== 404) throw new Error('Samtalen kunne ikke avsluttes. Prøv igjen.');
 }
-const globals = globalThis as typeof globalThis & { nyhavnaSupervisor?: RealtimeSupervisor };
-export function getSupervisor() {
-  return globals.nyhavnaSupervisor ??= new RealtimeSupervisor({
+const globals = globalThis as typeof globalThis & { placySupervisors?: Map<string, RealtimeSupervisor> };
+export function getSupervisor(scope = 'nyhavna') {
+  globals.placySupervisors ??= new Map();
+  let supervisor = globals.placySupervisors.get(scope);
+  if (supervisor) return supervisor;
+  supervisor = new RealtimeSupervisor({
     stop: hangup,
     read: async () => {
       try {
-        const parsed = JSON.parse(await readFile(stateFile(), 'utf8'));
+        const parsed = JSON.parse(await readFile(stateFile(scope), 'utf8'));
         if (typeof parsed.callId !== 'string') throw new Error('Invalid session state');
         return parsed.callId;
       } catch (error) {
@@ -30,14 +34,15 @@ export function getSupervisor() {
     },
     save: async (callId) => {
       await mkdir(join(process.cwd(), '.context'), { recursive: true });
-      if (!callId) { await unlink(stateFile()).catch(error => { if (error.code !== 'ENOENT') throw error; }); return; }
-      const tmp = `${stateFile()}.tmp`;
+      if (!callId) { await unlink(stateFile(scope)).catch(error => { if (error.code !== 'ENOENT') throw error; }); return; }
+      const tmp = `${stateFile(scope)}.tmp`;
       await writeFile(tmp, JSON.stringify({ callId }), { mode: 0o600 });
-      await rename(tmp, stateFile());
+      await rename(tmp, stateFile(scope));
     },
   });
+  globals.placySupervisors.set(scope, supervisor);
+  return supervisor;
 }
-
 import { MAP_TOOLS, MAP_INTERRUPT_MARKER, SESSION_END_PREFIX, RATE_WAIT_PREFIX } from '@/lib/realtime/types';
 type ToolCall = { type: string; call_id?: string; name?: string; arguments?: string };
 interface RealtimeEvent {
@@ -46,8 +51,22 @@ interface RealtimeEvent {
   response?: { id?: string; usage?: RealtimeTokenUsage; status_details?: { error?: { code?: string; message?: string } }; status?: string; output?: ToolCall[] };
 }
 /** Server owns knowledge results and continuation; browser owns only reversible map commands. */
-export async function connectSideband(callId: string, token: string, execute: (name: string, args: Record<string, unknown>) => unknown) {
-  const supervisor = getSupervisor();
+export interface SidebandOptions {
+  /** Demo-navn; styrer supervisor og tilstandsfil. */
+  scope?: string;
+  /** Verktøy nettleseren eier (kart). Alt annet utføres på serveren. */
+  browserTools?: Set<string>;
+  /** Modell for kostnadsestimat. */
+  model?: string;
+  /** Maks ventetid før serveren avslutter en stille samtale. */
+  idleMs?: number;
+}
+export async function connectSideband(callId: string, token: string, execute: (name: string, args: Record<string, unknown>) => unknown, options: SidebandOptions = {}) {
+  const scope = options.scope ?? 'nyhavna';
+  const browserTools = options.browserTools ?? MAP_TOOLS;
+  const model = options.model ?? realtimeModel();
+  const idleMs = options.idleMs ?? 120000;
+  const supervisor = getSupervisor(scope);
   const socket = new WebSocket(`wss://api.openai.com/v1/realtime?call_id=${callId}`, {
     headers: { Authorization: `Bearer ${process.env.OPENAI_API_KEY}` },
   });
@@ -81,7 +100,7 @@ export async function connectSideband(callId: string, token: string, execute: (n
     if (reason === 'limit' || reason === 'idle') {
       send({ type: 'conversation.item.create', item: { type: 'message', role: 'system', content: [{ type: 'input_text', text: SESSION_END_PREFIX + reason }] } });
     }
-    process.stdout.write('nyhavna_realtime_usage ' + JSON.stringify({ ...usage, model: realtimeModel(), excludes: 'input transcription', endedAt: new Date().toISOString() }) + '\n');
+    process.stdout.write(`${scope}_realtime_usage ` + JSON.stringify({ ...usage, model, excludes: 'input transcription', endedAt: new Date().toISOString() }) + '\n');
     ended = true;
     clearInterval(idle);
     clearTimeout(retryTimer);
@@ -89,7 +108,7 @@ export async function connectSideband(callId: string, token: string, execute: (n
     socket.close();
   };
   const stop = (reason = 'connection') => { if (!ended) void supervisor.end(token, reason).catch(() => {}); };
-  const idle = setInterval(() => { if (!responding && !playing && !userSpeaking && Date.now() - lastActivity > 120000) stop("idle"); }, 10000);
+  const idle = setInterval(() => { if (!responding && !playing && !userSpeaking && Date.now() - lastActivity > idleMs) stop("idle"); }, 10000);
   idle.unref?.();
   supervisor.setCleanup(token, cleanup);
   socket.on('message', raw => {
@@ -130,7 +149,7 @@ export async function connectSideband(callId: string, token: string, execute: (n
     completed.add(response.id);
     if (response.usage) {
       usage.responses += 1; usage.inputTokens += response.usage.input_tokens; usage.outputTokens += response.usage.output_tokens;
-      const cost = realtimeCost(realtimeModel(), response.usage);
+      const cost = realtimeCost(model, response.usage);
       usage.estimatedUsd += cost ?? 0; usage.complete &&= cost !== null;
     }
     const responseTurn = responseTurns.get(response.id);
@@ -156,7 +175,7 @@ export async function connectSideband(callId: string, token: string, execute: (n
     if (!calls.length) return;
     pending = new Set(calls.map(c => c.call_id!).filter(id => !received.has(id)));
     for (const call of calls) {
-      if (MAP_TOOLS.has(call.name!)) continue;
+      if (browserTools.has(call.name!)) continue;
       let result: unknown;
       try {
         const args = JSON.parse(call.arguments || '{}');
