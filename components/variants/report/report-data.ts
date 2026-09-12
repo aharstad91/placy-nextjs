@@ -1,4 +1,5 @@
 import type {
+  CuratedGeometryFeature,
   Project,
   POI,
   Coordinates,
@@ -254,6 +255,9 @@ export interface ReportData {
   /** Rekkevidde-konturer (5/10/15 min per reisemåte), hentet build-time.
    *  Utelatt = kartet viser ingen konturer og av/på-valget skjules. */
   isochrones?: IsochroneSet;
+  /** Linjer og flater kartet tegner ved siden av punktene (promenade, akse,
+   *  bygg). Tom/utelatt = kartet tegner bare pins. */
+  curatedGeometry?: CuratedGeometryFeature[];
   label?: string;
   heroIntro?: string;
   heroImage?: string;
@@ -811,6 +815,7 @@ export function transformToReportData(project: Project, locale: Locale = "no"): 
     }),
     areaIntro: areaIntroFromCurated(rc?.globalFaq),
     isochrones,
+    curatedGeometry: rc?.curatedGeometry,
     label: rc?.label,
     heroIntro,
     heroImage: rc?.heroImage,

@@ -47,16 +47,52 @@ import { useStoryTour } from "./story-tour";
  *
  * Kortet beholder sin egen kantlinje og hvilende skygge i ro. Det er bare
  * SVARET på pekeren som er delt med spørsmålene.
+ *
+ * ## Temaer med en kilde står i egen gruppe (2026-09-11)
+ *
+ * Et board kan bære temaer som ikke er våre: en utbyggers egne områdesider, en
+ * kommunes plandokument. De kjennes på `editorial.source`, og de får sin egen
+ * overskrift med kildens navn over rutenettet sitt — resten samles under
+ * «Nabolaget rundt».
+ *
+ * Uten delingen ser kundens innhold ut som enda et par av boardets egne temaer,
+ * og da er hele poenget borte: leseren skal kjenne igjen teksten hun selv har
+ * skrevet. To temaer kan dessuten hete det samme (kundens «Servering» og
+ * boardets), og gruppa er det eneste som skiller dem fra hverandre.
+ *
+ * Boards uten kilde faller til nøyaktig den gamle formen — én «Temaer»-
+ * overskrift, ett rutenett.
  */
 export function StoryThemeGrid({ className = "" }: { className?: string }) {
   const { stops, goto } = useStoryTour();
   if (stops.length === 0) return null;
 
-  return (
-    <div data-testid="story-theme-grid" className={className}>
-      <h4 className={SIDEBAR_SECTION_TITLE}>Temaer</h4>
-      <div className="mt-2 grid grid-cols-2 gap-2">
-        {stops.map((c, n) => {
+  // Temaer som bærer noen ANDRES tekst og utvalg står for seg, med kilden som
+  // overskrift.
+  //
+  // Grunnen er gjenkjennelse. Legges kundens egne temaer inn i den samme lista
+  // som boardets sju, ser de ut som sju til — og da er hele poenget borte:
+  // leseren skal se at dette er innholdet HUN har skrevet, plassert i kartet.
+  // Overskriften gjør avsenderen synlig før hun trykker, ikke etter.
+  //
+  // Kollisjonen er også et navneproblem: et kundetema kan hete det samme som et
+  // av boardets («Servering»), og to like brikker i samme rutenett uten noe som
+  // skiller dem er en felle. Gruppa ER det som skiller dem.
+  const sourced = stops
+    .map((c, n) => ({ c, n }))
+    .filter(({ c }) => c.editorial?.source !== undefined);
+  const own = stops
+    .map((c, n) => ({ c, n }))
+    .filter(({ c }) => c.editorial?.source === undefined);
+
+  // Kildeetiketten hentes fra det første temaet som har en. Flere kilder i samme
+  // board er ikke et tilfelle vi har — ville det oppstått, skal gruppa deles per
+  // kilde, ikke få en samlet overskrift som skjuler at de er to.
+  const sourceLabel = sourced[0]?.c.editorial?.source?.label;
+
+  const renderGrid = (items: { c: (typeof stops)[number]; n: number }[]) => (
+    <div className="mt-2 grid grid-cols-2 gap-2">
+      {items.map(({ c, n }) => {
           const Icon = getIcon(c.icon);
           return (
             <button
@@ -89,7 +125,40 @@ export function StoryThemeGrid({ className = "" }: { className?: string }) {
             </button>
           );
         })}
+    </div>
+  );
+
+  // Ingen kilde i boardet → nøyaktig samme flate som før: én overskrift, ett
+  // rutenett. Alle eksisterende boards faller hit.
+  if (sourced.length === 0) {
+    return (
+      <div data-testid="story-theme-grid" className={className}>
+        <h4 className={SIDEBAR_SECTION_TITLE}>Temaer</h4>
+        {renderGrid(own)}
       </div>
+    );
+  }
+
+  return (
+    <div data-testid="story-theme-grid" className={className}>
+      <section data-testid="story-theme-group-sourced">
+        <h4 className={SIDEBAR_SECTION_TITLE}>
+          {sourceLabel ? `Fra ${sourceLabel}` : "Fra kilden"}
+        </h4>
+        <p className="mt-1 text-[13px] leading-[1.5] text-stone-500">
+          Innholdet dere har publisert, plassert i kartet.
+        </p>
+        {renderGrid(sourced)}
+      </section>
+      {own.length > 0 && (
+        <section className="mt-6" data-testid="story-theme-group-own">
+          <h4 className={SIDEBAR_SECTION_TITLE}>Nabolaget rundt</h4>
+          <p className="mt-1 text-[13px] leading-[1.5] text-stone-500">
+            Alt annet som ligger her, hentet og målt av Placy.
+          </p>
+          {renderGrid(own)}
+        </section>
+      )}
     </div>
   );
 }
