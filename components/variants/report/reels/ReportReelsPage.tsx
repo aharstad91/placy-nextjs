@@ -10,6 +10,7 @@ import {
 } from "react";
 import dynamic from "next/dynamic";
 import { MapPin } from "lucide-react";
+import { BoardVoiceAssistant } from "@/components/variants/report/board/voice/BoardVoiceAssistant";
 import { LocaleProvider, useLocale } from "@/lib/i18n/locale-context";
 import { applyTranslations } from "@/lib/i18n/apply-translations";
 import type { Project } from "@/lib/types";
@@ -659,8 +660,8 @@ function ResponsiveLayoutInner({
   // flaten over kart-peeken (z-index) så det inn-glidende slidet ikke klippes av
   // peek-sheeten. Play/pause + swipe-navigasjon eier ReelSwipeStack selv.
   const [isDragging, setIsDragging] = useState(false);
-  const [splashVisible, setSplashVisible] = useState(true);
-  const [boardRevealed, setBoardRevealed] = useState(false);
+  const [splashVisible, setSplashVisible] = useState(boardData.projectSlug !== "nyhavna");
+  const [boardRevealed, setBoardRevealed] = useState(boardData.projectSlug === "nyhavna");
   // Nabolagsflaten (mobil, boards uten VO): sheetens MÅLTE høyde i gjeldende
   // hvileposisjon. Driver kartets bottom-padding OG okklusjonen i det
   // publiserte viewport-rektangelet, så lista aldri teller punkter som ligger
@@ -1094,6 +1095,12 @@ function ResponsiveLayoutInner({
           </div>
         )}
       </div>
+
+      {boardData.projectSlug === "nyhavna" && boardRevealed && (
+        <div className="absolute left-3 right-14 top-0 z-[60] max-h-[60dvh] max-w-sm overflow-y-auto rounded-[20px]">
+          <BoardVoiceAssistant compact />
+        </div>
+      )}
 
       {/* Nabolagsflaten (R1/R3): kart øverst, fritt dragbar liste nederst, på
           boards uten spillbar VO — med kategoriside-push over samme kart.

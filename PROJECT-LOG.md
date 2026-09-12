@@ -9591,3 +9591,21 @@ er å bruke ett nytt bygg som pilot med samme kildegransking, Google-kontroll og
 gjenbygging før arbeidsmåten skaleres til resten. Hus B-mål, kameraer og koordinater
 skal ikke kopieres ukritisk. Resultatet fra Opus er ennå ikke vurdert i denne sesjonen;
 en bestemt modell eller effort-innstilling er ikke dokumentert som kvalitetsgaranti.
+
+## 2026-09-12 — Kostnadstiltak i lokal Nyhavna voice-board-prototype
+
+Andreas ba om å redusere forbruk med samme board-opplevelse på port 3101. I worktree `placy-voice-board` er Realtime-modellen endret til mini, kartkontekst flyttet fra instruksjonsendringer til nye kontekstmeldinger, stedsresultater komprimert med paginering og entydig finn/vis slått sammen som verktøyalternativ. Kilder, utviklingsstatus og stedsforbehold beholdes. Sesjonen avsluttes ved to minutters inaktivitet (pågående svar skjermes), og lange verktøykjeder begrenses. Brukeren ser estimert modellforbruk per sesjon, eksplisitt uten separat inputtranskripsjon.
+
+Tre reelle tekstspørsmål med kartstyring ga avrundet $0,0046 og ingen API-feil. Dette er ikke en sammenlignbar før/etter-måling mot tidligere oppgitt $0,23. Full testsuite 4012 tester og TypeScript bestått; lint har 0 feil / 54 eksisterende advarsler. Alle 8 tiltak er beskrevet i [PROTOTYPE-COSTS.md](PROTOTYPE-COSTS.md). Åpne tråder: norsk talekvalitet over flere samtaler, kontrollerte før/etter-kostnader, og serverstyrt budsjett før eventuell offentlig tilgjengelighet. Ingen push. Prototype 3102 og hovedrepoets kode er uendret av denne runden.
+
+Lydoppfølging: reell lydoutput og kartstyring med marin er verifisert, ca. $0,0148 for hilsen og ett skrevet spørsmål i stemmemodus. Simulert stille mikrofon; naturlig norsk lydinput gjenstår som eksplisitt brukstest. Første automatiske forsøk timet ut; nytt forsøk fullførte uten API-feil. Testforbindelsene er lukket.
+
+## 2026-09-12 — Nyhavna-demo: implementeringsplan og delegert kartlegging
+
+Andreas ba om videre teknisk planlegging og bruk av Sol-underagenter med hovedagent som orkestrator. To avgrensede lesegjennomganger dekket dataløp/kilder og Realtime/brukeropplevelse. Demoplanen er utvidet med sju arbeidspakker, filansvar, kravsporbarhet, kontrollscenarier og lokal driftsmodell: `docs/plans/2026-09-12-1916-feat-nyhavna-lene-demo-plan.md`. Dokumentgjennomgang følger før overlevering.
+
+Konkrete funn: områdeintroduksjon og kildekontrolldato er ikke koblet gjennom til agentens data; ikke-plasserte steder mangler direkte faktatilgang; full revisjon må omfatte ferdig adaptert BoardData, ikke bare de sju håndlagde demo-POI-ene. Modusbytte, serverstyrt stopp og lokal produksjonskjøring trenger egne endringer. Eksisterende klienttimer er ikke et serverstyrt pristak. Ingen produktkode endret eller betalte API-samtaler startet i planrunden; ingen push.
+
+Åpent: implementere og kontrollere enhetene, kjøre faktisk kildeinventar, måle norsk tale på Mac-en og gjennomføre generalprøve. Lenes møtetest og læringsnotater hører til onsdag og kan ikke regnes som utført nå.
+
+Planrunden avsluttet: to Sol-kartlegginger og separat dokumentkontroll med sammenheng, gjennomførbarhet og design. Tekniske presiseringer er innarbeidet uten endring av R1–R15: felles snapshot for board/agent, full adapterkjede, verktøyeierskap, serveropprydding, tidlig modusbytteprøve og skille mellom demoberedskap og læring etter møtet. Ingen gjenværende produktvalg blokkerer implementering. Sikkerhets- og adversarial-linser inngikk ikke i dokumentkontrollen; dette er ikke en full sikkerhetsreview.

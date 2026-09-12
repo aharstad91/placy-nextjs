@@ -2,6 +2,7 @@ import { describe, it, expect, vi, beforeAll, afterEach } from "vitest";
 import { render, cleanup, fireEvent, act } from "@testing-library/react";
 import { useEffect } from "react";
 import type { MapCameraApi, ViewportRect } from "@/lib/board/board-types";
+import type { DevelopmentStatus } from "@/lib/types";
 import type { BoardData, BoardPOI } from "../board-data";
 import { BoardProvider, useBoard } from "../board-state";
 import { NeighbourhoodSurface } from "../neighbourhood/NeighbourhoodSurface";
@@ -46,7 +47,15 @@ const FAR = { lat: 63.505, lng: 10.51 };
 
 function poi(
   id: string,
-  opts: { lat?: number; lng?: number; walk?: number; narrative?: string } = {},
+  opts: {
+    lat?: number;
+    lng?: number;
+    walk?: number;
+    narrative?: string;
+    /** Utviklingsområde-feltene. Utelatt = et helt vanlig sted, som på alle
+     *  boards utenom Nyhavna-demoen. */
+    status?: DevelopmentStatus;
+  } = {},
 ): BoardPOI {
   const coordinates = { lat: opts.lat ?? 63.43, lng: opts.lng ?? 10.4 };
   return {
@@ -67,6 +76,7 @@ function poi(
         color: "#c33",
       },
       travelTime: opts.walk === undefined ? undefined : { walk: opts.walk },
+      ...(opts.status ? { developmentStatus: opts.status } : {}),
       ...(opts.narrative
         ? { grounding: { curated: { narrative: opts.narrative } } }
         : {}),
@@ -211,10 +221,14 @@ function makeCamera() {
   };
 }
 
-function setup() {
+/** `patch` lar én test endre boardet uten at alle de andre må forholde seg til
+ *  endringen — brukes av kilde- og status-merkene, som er et avvik og ikke
+ *  normaltilstanden. */
+function setup(patch?: (d: BoardData) => BoardData) {
   const camera = makeCamera();
+  const base = boardData();
   const utils = render(
-    <BoardProvider data={boardData()}>
+    <BoardProvider data={patch ? patch(base) : base}>
       <StoryTourProvider>
         <Probe camera={camera as unknown as MapCameraApi} />
         <NeighbourhoodSurface onSurfaceHeightChange={vi.fn()} />
@@ -653,5 +667,91 @@ describe("svarfanen", () => {
     act(() => fireEvent.click(getByText("Spørsmål (1)")));
     expect(getByTestId("story-faq")).not.toBeNull();
     expect(getByText("Er det kafé i gangavstand?")).not.toBeNull();
+  });
+});
+
+/**
+ * Kilde- og status-merkene i stoppet (Nyhavna-demoen, 2026-09-11).
+ *
+ * Det som testes er SØMMEN, ikke merkene selv (de er dekket i
+ * SourcedContent.test.tsx): at kildelinja følger temateksten, at de
+ * ikke-plasserte navnene står under utvalget, og at «Planlagt» står ved navnet
+ * i raden — ikke ute ved minuttallet, som er dit `flex-1` sender alt som legges
+ * etter navnet.
+ *
+ * Den siste testen er den viktigste: et helt vanlig board skal rendre nøyaktig
+ * som før.
+ */
+describe("kilde- og statusmerkene", () => {
+  /** Boardet med Nyhavna-feltene på: lånt tekst, ett planlagt sted, og to
+   *  navn kilden nevner uten at vi kan plassere dem. */
+  const sourced = (d: BoardData): BoardData => ({
+    ...d,
+    categories: d.categories.map((c, i) =>
+      i > 0
+        ? c
+        : {
+            ...c,
+            editorial: {
+              ...c.editorial!,
+              source: {
+                label: "nyhavna.no",
+                url: "https://nyhavna.no/leve/",
+                page: "Opplev Nyhavna",
+              },
+              unplaced: ["Doratorget", "Kullkranparken"],
+            },
+            pois: [
+              poi("naer", { walk: 3, narrative: "Stedets egne ord.", status: "planned" }),
+              ...c.pois.slice(1),
+            ],
+          },
+    ),
+  });
+
+  it("krediterer kilden under temateksten", () => {
+    const { begin, getByTestId } = setup(sourced);
+    begin();
+    expect(getByTestId("source-credit").textContent).toBe(
+      "Tekst og utvalg fra Opplev Nyhavna på nyhavna.no",
+    );
+  });
+
+  it("navngir det kilden nevner uten at vi kan plassere det", () => {
+    const { begin, getByTestId } = setup(sourced);
+    begin();
+    expect(getByTestId("unplaced-note").textContent).toContain(
+      "Doratorget · Kullkranparken",
+    );
+  });
+
+  it("merker det planlagte stedet ved NAVNET, ikke ved minuttallet", () => {
+    const { begin, getByTestId } = setup(sourced);
+    begin();
+    const badge = getByTestId("status-planned");
+    const row = badge.closest('[data-testid="story-row"]');
+    expect(row?.getAttribute("data-poi")).toBe("naer");
+    // Merket deler boks med navnet. Lå det som et søsken i selve raden, ville
+    // navnets `flex-1` skjøvet det helt bort til «3 min».
+    expect(badge.parentElement?.textContent).toBe("naerPlanlagt");
+  });
+
+  it("gjentar ikke merket inne i utfoldingen", () => {
+    const { begin, getAllByTestId, getByTestId } = setup(sourced);
+    begin();
+    act(() => fireEvent.click(getAllByTestId("story-row")[0]));
+    expect(getByTestId("story-narrative").textContent).toContain(
+      "Stedets egne ord.",
+    );
+    expect(getAllByTestId("status-planned")).toHaveLength(1);
+  });
+
+  it("et vanlig board rendrer ingen av merkene", () => {
+    const { begin, queryByTestId } = setup();
+    begin();
+    expect(queryByTestId("source-credit")).toBeNull();
+    expect(queryByTestId("unplaced-note")).toBeNull();
+    expect(queryByTestId("status-planned")).toBeNull();
+    expect(queryByTestId("precision-note")).toBeNull();
   });
 });

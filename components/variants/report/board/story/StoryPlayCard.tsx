@@ -12,10 +12,44 @@ import { useStoryTour } from "./story-tour";
  *
  * Undertittelen sier hvor mange stopp, ikke hvor lang tid: en omvisning uten
  * lyd tar den tiden leseren gir den.
+ *
+ * ## «Meglerens utvalg» gjelder ikke alle boards (2026-09-11)
+ *
+ * Undertittelen navnga megleren fordi det er megleren som har valgt stedene på
+ * en boligrapport, og fordi utvalget er noe et MENNESKE har gjort — det er hele
+ * forskjellen fra en maskinsortert liste.
+ *
+ * Men boardet brukes nå også på flater uten megler: et områdekart for en
+ * utbygger, en butikkatalog, et strøkskart. Der er ordet direkte usant, og det
+ * er en sjelden slags feil — en påstand om HVEM som står bak innholdet.
+ * Nyhavna-demoen viste den: «10 stopp · meglerens utvalg» på et board eid av
+ * Nyhavna Utvikling, uten en megler i bildet.
+ *
+ * Avsenderen leses derfor av dataene: bærer stoppene en kilde
+ * (`editorial.source` — kundens egen tekst og utvalg), navngis kilden. Ellers
+ * står megleren, som før.
+ *
+ * Et board UTEN megler og UTEN kilde står fortsatt med «meglerens utvalg». Det
+ * er en kjent rest, ikke en forglemmelse: den krever et eget avsender-begrep på
+ * boardet, og det hører i en produktrunde — ikke i en demo-gren.
  */
 export function StoryPlayCard() {
   const { available, stops, begin } = useStoryTour();
   if (!available) return null;
+
+  // Første kilde blant stoppene. Flere kilder på ett board har vi ikke; oppstår
+  // det, er «kuratert utvalg» et ærligere svar enn å navngi én av dem.
+  const sources = new Set(
+    stops
+      .map((s) => s.editorial?.source?.label)
+      .filter((l): l is string => Boolean(l)),
+  );
+  const attribution =
+    sources.size === 1
+      ? `utvalg fra ${[...sources][0]}`
+      : sources.size > 1
+        ? "kuratert utvalg"
+        : "meglerens utvalg";
 
   return (
     <button
@@ -37,7 +71,7 @@ export function StoryPlayCard() {
           La nabolaget presentere seg
         </span>
         <span className="block text-[12px] text-white/60">
-          {stops.length} stopp · meglerens utvalg
+          {stops.length} stopp · {attribution}
         </span>
       </span>
       <ChevronRight size={18} aria-hidden className="shrink-0 opacity-50" />
