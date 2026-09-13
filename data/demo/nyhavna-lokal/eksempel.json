@@ -22,7 +22,7 @@
     {
       "id": "eksempelkafeen",
       "name": "Eksempelkafeen",
-      "categoryId": "leve-servering",
+      "categoryId": "mat-drikke",
       "coordinates": { "lat": 63.4398, "lng": 10.4172 },
       "address": "Eksempelgata 1",
       "placeType": "Kafé",
@@ -55,7 +55,7 @@
     {
       "id": "eksempelparken",
       "name": "Eksempelparken",
-      "categoryId": "leve-park",
+      "categoryId": "natur-friluftsliv",
       "coordinates": { "lat": 63.4405, "lng": 10.4185 },
       "status": "planned",
       "summary": "Park som er planlagt på området.",

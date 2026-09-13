@@ -130,6 +130,9 @@ export function buildLocalProject(dataset: LocalDataset): Project {
     pois,
     categories,
     venueType: "residential",
+    // Kartveksleren Kart / Satelitt / 3D. Boardet åpner i Satelitt når det
+    // ikke har innlest omvisning (`BoardMap`s egen regel).
+    has3dAddon: dataset.board.map3d,
     reportConfig: {
       themes: dataset.board.categories.map((c) => ({
         id: c.id,
@@ -141,6 +144,8 @@ export function buildLocalProject(dataset: LocalDataset): Project {
       ...(dataset.board.district ? { district: dataset.board.district } : {}),
       ...(dataset.board.city ? { city: dataset.board.city } : {}),
       ...(dataset.board.intro ? { heroIntro: dataset.board.intro } : {}),
+      // Alltid satt, også tom: utelatt felt gir markørens egen standardtekst.
+      pinSubtitle: dataset.board.pinSubtitle,
       hideBrokerCard: true,
     },
   };
@@ -215,6 +220,7 @@ export function buildLocalBoard(dataset: LocalDataset): BoardData {
     ...(dataset.board.intro ? { heroIntro: dataset.board.intro } : {}),
     ...(dataset.board.district ? { district: dataset.board.district } : {}),
     ...(dataset.board.city ? { city: dataset.board.city } : {}),
+    pinSubtitle: dataset.board.pinSubtitle,
   };
 
   return {

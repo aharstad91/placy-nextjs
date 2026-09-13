@@ -132,6 +132,27 @@ export const localBoardSchema = z
     /** Ingressen over kartet. Tom = boardets egen generiske tekst. */
     intro: z.string().max(4000).default(""),
     center: coordinates,
+    /**
+     * Satelitt- og 3D-motoren (Google) ved siden av Mapbox-vektorkartet.
+     *
+     * `true` gir kartveksleren Kart / Satelitt / 3D, og boardet åpner i
+     * Satelitt — rett ovenfra er den letteste orienteringen på et board uten
+     * innlest omvisning. `false` gir bare Mapbox.
+     *
+     * Ligger i datasettet og ikke i koden fordi det er en egenskap ved DETTE
+     * stedet: et område uten 3D-bygningsdata skal kunne slå det av uten at noen
+     * rører en kodefil.
+     */
+    map3d: z.boolean().default(true),
+    /**
+     * Undertittelen i kartets prosjektmarkør.
+     *
+     * Tom streng = bare navnet. Utelates den HER, ville markøren falt tilbake
+     * på sin egen standard («Nybygg 2028») — en påstand om byggeår som denne
+     * demoen ikke har dekning for, og som ville stått i kartet fra første
+     * sekund på et board som skal starte tomt.
+     */
+    pinSubtitle: z.string().max(80).default(""),
     /** Førstesetningen stemmen sier. Eies av datasettet, ikke av koden. */
     greeting: z.string().min(1).max(400),
     /**

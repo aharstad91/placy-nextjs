@@ -78,7 +78,7 @@ describe("tomt datagrunnlag", () => {
 
   it("åpner et tema uten steder, uten omtaler og uten kartdirektiv", async () => {
     const dataset = await emptyDataset();
-    const outcome = conversationFor(dataset).execute("open_theme", { theme_id: "leve-servering" });
+    const outcome = conversationFor(dataset).execute("open_theme", { theme_id: "mat-drikke" });
     const chapter = (outcome.result as { chapter: Record<string, unknown> }).chapter;
     expect(chapter.places).toEqual([]);
     expect(chapter.curated).toEqual([]);
@@ -113,7 +113,7 @@ describe("innhold som er lagt inn", () => {
     {
       id: "test-sted",
       name: "Test Sted",
-      categoryId: "leve-servering",
+      categoryId: "mat-drikke",
       coordinates: { lat: 63.44, lng: 10.42 },
       aliases: ["Testen"],
       summary: "Et sted lagt inn for å kontrollere stemmen.",
@@ -131,7 +131,7 @@ describe("innhold som er lagt inn", () => {
     {
       id: "tema-servering",
       title: "Servering i området",
-      categoryIds: ["leve-servering"],
+      categoryIds: ["mat-drikke"],
       status: "planned",
       text: "Flere spisesteder er planlagt.",
       keywords: ["servering", "spisested"],
@@ -163,7 +163,7 @@ describe("innhold som er lagt inn", () => {
   });
 
   it("fremhever stedet i kartet når temaet åpnes", async () => {
-    const outcome = conversationFor(await filled()).execute("open_theme", { theme_id: "leve-servering" });
+    const outcome = conversationFor(await filled()).execute("open_theme", { theme_id: "mat-drikke" });
     expect(outcome.directives).toEqual([{ name: "highlight_places", args: { poi_ids: ["test-sted"] } }]);
   });
 

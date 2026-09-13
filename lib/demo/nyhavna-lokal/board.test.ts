@@ -46,6 +46,13 @@ describe("tomt datasett", () => {
     expect(board.categories.every((c) => c.editorial === undefined)).toBe(true);
   });
 
+  it("slår på Satelitt og 3D når datasettet ber om det", async () => {
+    const dataset = await emptyDataset();
+    expect(buildLocalProject(dataset).has3dAddon).toBe(true);
+    const flat: LocalDataset = { ...dataset, board: { ...dataset.board, map3d: false } };
+    expect(buildLocalProject(flat).has3dAddon).toBe(false);
+  });
+
   it("merker boardet som demo, med datasett og hilsen", async () => {
     const dataset = await emptyDataset();
     const board = buildLocalBoard(dataset);
@@ -71,7 +78,7 @@ describe("et sted i datasettet", () => {
     {
       id: "test-sted",
       name: "Test Sted",
-      categoryId: "leve-servering",
+      categoryId: "mat-drikke",
       coordinates: { lat: 63.44, lng: 10.42 },
       address: "Testgata 1",
       placeType: "Kafé",
@@ -88,7 +95,7 @@ describe("et sted i datasettet", () => {
 
   it("havner i riktig tema, med koordinat, minutter og kilde", async () => {
     const board = buildLocalBoard(await withPlace());
-    const servering = board.categories.find((c) => String(c.id) === "leve-servering")!;
+    const servering = board.categories.find((c) => String(c.id) === "mat-drikke")!;
     expect(servering.pois.map((p) => p.name)).toEqual(["Test Sted"]);
     const poi = servering.pois[0];
     expect(poi.coordinates).toEqual({ lat: 63.44, lng: 10.42 });

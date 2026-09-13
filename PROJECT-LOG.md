@@ -14,7 +14,7 @@
 
 ### Hva som er bygd
 
-**Datasettet** ligger i `data/demo/nyhavna-lokal/`: `board.json` (identitet, kartutsnitt, hilsen, de ti kategoriene), `sources.json`, `places.json`, `topics.json` (temakunnskap) og `conversations.json` (samtaleeksempler). Alle innholdslister er tomme. `eksempel.json` dokumenterer formen og lastes aldri — en test validerer den mot skjemaene, så dokumentasjonen ikke kan drifte fra koden. Zod-skjemaer i `lib/demo/nyhavna-lokal/schema.ts`, laster med referansesjekk i `dataset.ts`.
+**Datasettet** ligger i `data/demo/nyhavna-lokal/`: `board.json` (identitet, kartutsnitt, hilsen, kategoriene), `sources.json`, `places.json`, `topics.json` (temakunnskap) og `conversations.json` (samtaleeksempler). Alle innholdslister er tomme. `eksempel.json` dokumenterer formen og lastes aldri — en test validerer den mot skjemaene, så dokumentasjonen ikke kan drifte fra koden. Zod-skjemaer i `lib/demo/nyhavna-lokal/schema.ts`, laster med referansesjekk i `dataset.ts`.
 
 **Samtaleeksemplene er skilt ut i egen fil OG egen laster.** `loadDataset` leser dem ikke; `voice.ts` importerer dem ikke; en test holder begge dørene lukket. En transkripsjon er hva noen sa, ikke hva som er sant.
 
@@ -24,7 +24,7 @@
 
 **Datagrunnlaget for stemmen velges av BOARDET,** ikke av URL eller env: `BoardData.demoDataset` (+ `demoGreeting`) følger med til `useLive` → `/api/prototype/live` → registeret i `lib/live/demos.ts`. `demoSnapshotId` er en innholdshash, så en fane som sto åpen mens JSON-en ble redigert får «last boardet på nytt» i stedet for en guide som er uenig med skjermen.
 
-**Tomtilstanden.** `transformToReportData`/`adaptBoardData` dropper kategorier uten steder — riktig for et provisjonert board, feil her. Derfor bygges BoardData direkte (samme presedens som `lib/event-board/event-board-data.ts`). Alle ti temaene står i raden, kan åpnes, og sier «Ingen steder er lagt inn i dette temaet ennå.» Rutenettet sier «Ingen steder ennå» i stedet for «0 steder», som leste som en feil i kartet.
+**Tomtilstanden.** `transformToReportData`/`adaptBoardData` dropper kategorier uten steder — riktig for et provisjonert board, feil her. Derfor bygges BoardData direkte (samme presedens som `lib/event-board/event-board-data.ts`). Alle temaene står i raden, kan åpnes, og sier «Ingen steder er lagt inn i dette temaet ennå.» Rutenettet sier «Ingen steder ennå» i stedet for «0 steder», som leste som en feil i kartet.
 
 **Stemmen får én ekstra regel** (`LOCAL_DEMO_INSTRUCTION`): mangler verktøyene et svar, si kort at det ikke er i materialet ennå — ikke fyll hullet med generell kunnskap, ikke gjett, ikke søk på nettet.
 
@@ -40,6 +40,14 @@
 **Ikke kontrollert:** selve stemmeopplevelsen. Modell, datagrunnlag og instruksjon er verifisert i kode og mot API-ets helsesjekk, men ingen samtale er ført — det må Andreas høre selv.
 
 **Kjent, pre-eksisterende:** `lib/realtime/nyhavna-knowledge.test.ts` feiler på ordtaket for stemmeinstruksen (319 ord mot grensen 300), etter `34844bb` som tunet tempo og væremåte. Bekreftet at den feiler også uten endringene her. Enten trimmes teksten eller heves grensen — begge deler er Andreas' valg.
+
+### Runde 2 samme dag: Satelitt/3D på, og tre kategorier ut
+
+**Kartveksleren Kart / Satelitt / 3D er slått på** (`"map3d": true` i `board.json` → `Project.has3dAddon`). Boardet åpner i Satelitt, som er `BoardMap`s egen regel for et board uten innlest omvisning. Flagget ligger i datasettet og ikke i koden: et område uten 3D-bygningsdata skal kunne slå det av uten at noen rører en kodefil. Kontrollert i Chrome — alle tre visningene, markør på Google-motoren med riktig temafarge, 0 console-feil.
+
+**`pinSubtitle: ""` lagt inn.** Uten feltet falt prosjektmarkøren tilbake på sin egen standard, «Nybygg 2028» — en påstand om byggeår som sto i kartet fra første sekund på et board som skal starte tomt.
+
+**De tre «Leve»-temaene er tatt ut** (Andreas): Café og restauranter, Park og promenade, Kunst og kultur. De er kildens egen inndeling av kildens eget innhold; denne demoen starter fra den generiske rammen. Igjen står de sju: Hverdag, Oppvekst, Servering, Natur, Transport, Trening, Opplevelser. Skal de tre inn senere, legges de til i `board.json` som vanlige kategorier.
 
 **Bruksanvisning:** `docs/research/nyhavna-lokal-demo/README.md`.
 

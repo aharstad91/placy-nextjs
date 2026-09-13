@@ -23,7 +23,7 @@ og deler ingen data med denne.
 
 | Fil | Rolle |
 |---|---|
-| `board.json` | Identitet, kartutsnitt, hilsen og KATEGORIENE. Ingen fakta. |
+| `board.json` | Identitet, kartutsnitt, kartmotor, hilsen og KATEGORIENE. Ingen fakta. |
 | `sources.json` | Kilderegisteret. Stabile ID-er alt annet peker på. |
 | `places.json` | Stedene — det som får markør i kartet. |
 | `topics.json` | Temakunnskap: fakta og sammenhenger uten ett bestemt sted. |
@@ -34,22 +34,41 @@ Skjemaene står i `lib/demo/nyhavna-lokal/schema.ts`, lasteren i `dataset.ts`.
 
 ## Kategoriene som er beholdt
 
-De ti temaene fra dagens Nyhavna-board, med samme ID, navn, ikon og farge:
+De sju generiske temaene fra Placy-boardet, med samme ID, navn, ikon og farge:
 
-`leve-servering` (Café og restauranter) · `leve-park` (Park og promenade) ·
-`leve-kultur` (Kunst og kultur) · `hverdagsliv` (Hverdag) ·
-`barn-oppvekst` (Oppvekst) · `mat-drikke` (Servering) ·
+`hverdagsliv` (Hverdag) · `barn-oppvekst` (Oppvekst) · `mat-drikke` (Servering) ·
 `natur-friluftsliv` (Natur) · `transport` (Transport) ·
 `trening-aktivitet` (Trening) · `opplevelser` (Opplevelser)
 
+Dagens Nyhavna-demo har i tillegg tre temaer bygd på Nyhavna Utviklings egne
+«Leve»-sider (Café og restauranter, Park og promenade, Kunst og kultur). De er
+IKKE med her (Andreas, 2026-09-13): de er kildens egen inndeling av kildens eget
+innhold, og denne demoen skal starte fra den generiske rammen. Skal de inn
+senere, legges de til i `board.json` som vanlige kategorier.
+
 ID-ene er med vilje de samme som i det eksisterende boardet: stemmens
-interesse-ordliste (`lib/realtime/tour-state.ts`) kjenner dem igjen, så «kaféer»
+interesse-ordliste (`lib/realtime/tour-state.ts`) kjenner dem igjen, så «mat»
 åpner riktig tema uten at noe må skrives om.
 
 Tomme kategorier er tilgjengelige. De står i temaraden, kan åpnes, og viser
 «Ingen steder er lagt inn i dette temaet ennå.»
 
 ---
+
+## Kartet: Kart / Satelitt / 3D
+
+`board.json` har `"map3d": true`. Det gir kartveksleren nederst med tre valg —
+**Kart** (Mapbox-vektorkart), **Satelitt** (Google, rett ovenfra) og **3D**
+(Google, skrå) — og boardet åpner i Satelitt, som er den letteste orienteringen
+på et board uten innlest omvisning. Markørene tegnes på begge motorene med samme
+farge og ikon.
+
+Sett `"map3d": false` for å bare ha Mapbox. Google-motoren krever
+`NEXT_PUBLIC_GOOGLE_MAPS_API_KEY` i `.env.local` (den samme dagens demo bruker).
+
+`"pinSubtitle": ""` gir prosjektmarkøren bare navnet. Utelates feltet, faller
+markøren tilbake på sin egen standardtekst («Nybygg 2028») — en påstand om
+byggeår demoen ikke har dekning for.
 
 ## Legge til et sted
 
@@ -59,7 +78,7 @@ I `places.json`:
 {
   "id": "dora-kaffebar",
   "name": "Dora Kaffebar",
-  "categoryId": "leve-servering",
+  "categoryId": "mat-drikke",
   "coordinates": { "lat": 63.4398, "lng": 10.4172 },
   "address": "Kobbes gate 2",
   "placeType": "Kafé",
@@ -100,7 +119,7 @@ I `topics.json`:
 {
   "id": "nyhavna-gronnstruktur",
   "title": "Parker og allmenninger",
-  "categoryIds": ["leve-park"],
+  "categoryIds": ["natur-friluftsliv"],
   "status": "planned",
   "text": "Nyhavna beskriver et planlagt nettverk av parker, byrom og allmenninger nær vannet.",
   "keywords": ["park", "allmenning", "grønt", "byrom"],
@@ -241,5 +260,4 @@ Simulert samtale uten mikrofon: legg på `?voicedev=1` og bruk `window.placyVoic
 - **Ingen Supabase.** Verken lesing eller skriving, for denne demoen.
 - **Ingen lyd, megler, oppsummering eller isokroner.** Datasettet bærer dem ikke,
   og et tomt board som later som det har dem er en løgn om datagrunnlaget.
-- **Ingen 3D.** Kartet er Mapbox. `has3dAddon` er ikke satt på dette prosjektet.
 - **Ingen CMS.** Filene redigeres for hånd eller av en agent. Det er meningen.
