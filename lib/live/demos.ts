@@ -4,7 +4,7 @@ import type { BoardData } from "@/components/variants/report/board/board-data";
 import { getNyhavnaSnapshot } from "@/lib/demo/nyhavna-leve/snapshot";
 import { buildLocalBoard, datasetId } from "@/lib/demo/nyhavna-lokal/board";
 import { loadDataset, LOCAL_DATASET_ID } from "@/lib/demo/nyhavna-lokal/dataset";
-import { buildVoiceDeps, LOCAL_DEMO_INSTRUCTION } from "@/lib/demo/nyhavna-lokal/voice";
+import { buildVoiceDeps, buildLocalInstructions } from "@/lib/demo/nyhavna-lokal/voice";
 import { createNyhavnaConversation, type NyhavnaConversation } from "@/lib/realtime/nyhavna-conversation";
 import { nyhavnaInstructions } from "@/lib/realtime/nyhavna-knowledge";
 import { nyhavnaProjectInfo } from "@/lib/realtime/nyhavna-project-info";
@@ -68,9 +68,7 @@ async function lokalDemo(): Promise<LiveDemo> {
     id: LOCAL_DATASET_ID,
     snapshotId: datasetId(dataset),
     board,
-    // Tilleggsregelen om et tomt datagrunnlag står SIST, nærmest samtalenotatet:
-    // det er den regelen som oftest avgjør svaret mens demoen fylles.
-    backendInstructions: `${nyhavnaInstructions(board, { projectInfoLabel: dataset.board.projectInfoLabel })}\n${LOCAL_DEMO_INSTRUCTION}`,
+    backendInstructions: buildLocalInstructions(dataset, board),
     createConversation: () => createNyhavnaConversation(board, deps),
   };
 }

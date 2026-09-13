@@ -229,7 +229,7 @@ export function createNyhavnaConversation(board: BoardData, deps: ConversationDe
           state = applyTourEvent(state, { type: "open_question", question: query }, themes);
           return { result: { matches: 0, results: [], note: "Ingen kildebelagt omtale i Nyhavnas eget innhold. Si kort at du ikke har grunnlag for det, uten å gjette." } };
         }
-        return { result: { matches: results.length, results, note: "Kildebelagte utsagn fra nyhavna.no. Behold status-ordene (planlagt, visjon, vedtatt) når du gjengir dem." } };
+        return { result: { matches: results.length, results, note: "Kildebelagte utsagn fra prosjektets datagrunnlag. Bruk kilden ved hvert resultat. Behold status-ordene (planlagt, visjon, vedtatt) når du gjengir dem." } };
       }
       default:
         return { result: knowledge(name, args) };

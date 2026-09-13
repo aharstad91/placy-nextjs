@@ -53,7 +53,7 @@ describe("lokalt Nyhavna-datasett", () => {
     // Kartet er geografisk bakgrunn i denne demoen — ingen steder, ingen
     // markører. FAQ-en er innholdet som ER lagt inn.
     expect(dataset.places).toEqual([]);
-    expect(dataset.topics).toEqual([]);
+    expect(dataset.topics.length).toBeGreaterThan(0);
   });
 
   it("har importert FAQ, og hvert importerte svar har en kilde", async () => {

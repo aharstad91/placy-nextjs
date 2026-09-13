@@ -187,4 +187,16 @@ describe("spørsmål og svar", () => {
     // Alt som ligger i faq.json havner på en flate — ingen stille bortfall.
     expect(shown).toBe(dataset.faqs.length);
   });
+
+  it("viser de kontrollerte oppvekstkildene med dato ved hvert svar", async () => {
+    const dataset = await loadDataset();
+    const board = buildLocalBoard(dataset);
+    const faq = board.categories.find((c) => c.id === "barn-oppvekst")!.editorial!.faq!;
+    expect(faq).toHaveLength(11);
+    for (const entry of faq) {
+      const original = dataset.faqs.find((f) => f.id === entry.id)!;
+      expect(entry.knowledgeSources?.map((s) => s.id)).toEqual(original.sourceIds);
+      expect(entry.knowledgeSources?.every((s) => s.url.startsWith("https://") && s.verifiedAt === "2026-09-13")).toBe(true);
+    }
+  });
 });

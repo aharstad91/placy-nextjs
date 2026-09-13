@@ -6,5 +6,277 @@
     "url": "http://localhost:3103/eiendom/nyhavna-utvikling/nyhavna/leve",
     "publisher": "Placy",
     "checkedAt": "2026-09-13"
+  },
+  {
+    "id": "v-plan",
+    "label": "Trondheim kommune",
+    "page": "Transittkaia – kommunens arkiverte høring",
+    "url": "https://www.trondheim.kommune.no/aktuelt/kunngjoring-arealplan/arkiv-planer-kunngjort/2026/Transittkaia-detaljregulering/",
+    "publisher": "Trondheim kommune",
+    "checkedAt": "2026-09-13"
+  },
+  {
+    "id": "v-planb",
+    "label": "Trondheim kommune",
+    "page": "Planbeskrivelse Transittkaia",
+    "url": "https://www.trondheim.kommune.no/globalassets/10-bilder-og-filer/10-byutvikling/byplankontoret/1b_offentlig-ettersyn/2026/transittkaia/2.-planbeskrivelse.pdf",
+    "publisher": "Trondheim kommune",
+    "checkedAt": "2026-09-13"
+  },
+  {
+    "id": "v-nyhavna",
+    "label": "Nyhavna Utvikling",
+    "page": "Utbyggers Transittkaia-side",
+    "url": "https://nyhavna.no/bo/transittkaia/",
+    "publisher": "Nyhavna Utvikling",
+    "checkedAt": "2026-09-13"
+  },
+  {
+    "id": "v-havn",
+    "label": "Trondheim kommune",
+    "page": "Kommunen om gradvis utvikling og fortsatt byhavn",
+    "url": "https://www.trondheim.kommune.no/aktuelt/nyhetssaker/2021/etablerer-felles-eiendomsselskap--for-a-utvikle-nyhavna-til-ny-bydel/",
+    "publisher": "Trondheim kommune",
+    "checkedAt": "2026-09-13"
+  },
+  {
+    "id": "v-barn-plan",
+    "label": "Trondheim kommune",
+    "page": "Barnas representants uttalelse om Transittkaia",
+    "url": "https://www.trondheim.kommune.no/globalassets/10-bilder-og-filer/10-byutvikling/byplankontoret/1b_offentlig-ettersyn/2026/transittkaia/53.-uttalelse-fra-barnas-reprentant.pdf",
+    "publisher": "Trondheim kommune",
+    "checkedAt": "2026-09-13"
+  },
+  {
+    "id": "v-ros",
+    "label": "Trondheim kommune",
+    "page": "ROS-analyse Transittkaia",
+    "url": "https://www.trondheim.kommune.no/globalassets/10-bilder-og-filer/10-byutvikling/byplankontoret/1b_offentlig-ettersyn/2026/transittkaia/40.-ros-analyse.pdf",
+    "publisher": "Trondheim kommune",
+    "checkedAt": "2026-09-13"
+  },
+  {
+    "id": "v-sykkel",
+    "label": "Statens vegvesen",
+    "page": "Vegvesenet: Lilleby skole–Nordtvedts gate",
+    "url": "https://www.vegvesen.no/vegprosjekter/prosjekt/lillebynordtvedtsgate/",
+    "publisher": "Statens vegvesen",
+    "checkedAt": "2026-09-13"
+  },
+  {
+    "id": "v-krets",
+    "label": "Trondheim kommune",
+    "page": "Kommunen: Finn din skolekrets",
+    "url": "https://www.trondheim.kommune.no/tema/skole/praktisk-informasjon-skole/finn-din-skolekrets/",
+    "publisher": "Trondheim kommune",
+    "checkedAt": "2026-09-13"
+  },
+  {
+    "id": "v-kapasitet",
+    "label": "Trondheim kommune",
+    "page": "Kommunen: forklaring av skolekapasitetskart",
+    "url": "https://www.trondheim.kommune.no/tema/bygg-kart-og-eiendom/kart/temakart/",
+    "publisher": "Trondheim kommune",
+    "checkedAt": "2026-09-13"
+  },
+  {
+    "id": "v-rosenborg",
+    "label": "Trondheim kommune",
+    "page": "Rosenborg skole",
+    "url": "https://www.trondheim.kommune.no/org/oppvekst/skoler/rosenborg-skole/",
+    "publisher": "Trondheim kommune",
+    "checkedAt": "2026-09-13"
+  },
+  {
+    "id": "v-bhg-reg",
+    "label": "Trondheim kommune",
+    "page": "Kommunens barnehageregister",
+    "url": "https://www.trondheim.kommune.no/tema/barnehage/praktisk-informasjon-foreldre-barnehage/barnehager-i-trondheim/",
+    "publisher": "Trondheim kommune",
+    "checkedAt": "2026-09-13"
+  },
+  {
+    "id": "v-bhg-n",
+    "label": "Trondheim kommune",
+    "page": "Nedre Elvehavn barnehage",
+    "url": "https://www.trondheim.kommune.no/org/oppvekst/barnehager/sentrum-bhgr/nedre-elvehavn-bhg/",
+    "publisher": "Trondheim kommune",
+    "checkedAt": "2026-09-13"
+  },
+  {
+    "id": "v-bhg-v",
+    "label": "Trondheim kommune",
+    "page": "Voldsminde barnehage",
+    "url": "https://www.trondheim.kommune.no/org/oppvekst/barnehager/sentrum-bhgr/voldsminde-bhg/",
+    "publisher": "Trondheim kommune",
+    "checkedAt": "2026-09-13"
+  },
+  {
+    "id": "v-bhg-opptak",
+    "label": "Trondheim kommune",
+    "page": "Kommunen: Barnehageplass",
+    "url": "https://www.trondheim.kommune.no/tema/barnehage/barnehageplass/",
+    "publisher": "Trondheim kommune",
+    "checkedAt": "2026-09-13"
+  },
+  {
+    "id": "v-skyss",
+    "label": "Trøndelag fylkeskommune",
+    "page": "Trøndelag: skoleskyss i grunnskolen",
+    "url": "https://www.trondelagfylke.no/en/vare-tjenester/samferdsel/Skoleskyss/skoleskyss---grunnskole/",
+    "publisher": "Trøndelag fylkeskommune",
+    "checkedAt": "2026-09-13"
+  },
+  {
+    "id": "v-skyss-reg",
+    "label": "Trøndelag fylkeskommune",
+    "page": "Retningslinjer for grunnskoleskyss",
+    "url": "https://www.trondelagfylke.no/contentassets/bd4a82788cb346598d2b5e12f17e3134/retningslinjer-for-skoleskyss-i-grunnskole_vedtatt-i-ft-100425.pdf",
+    "publisher": "Trøndelag fylkeskommune",
+    "checkedAt": "2026-09-13"
+  },
+  {
+    "id": "v-vgs-ts",
+    "label": "Trøndelag fylkeskommune",
+    "page": "Thora Storm videregående skole",
+    "url": "https://web.trondelagfylke.no/thora-storm-videregaende-skole/",
+    "publisher": "Trøndelag fylkeskommune",
+    "checkedAt": "2026-09-13"
+  },
+  {
+    "id": "v-vgs-tk",
+    "label": "Trøndelag fylkeskommune",
+    "page": "Trondheim Katedralskole",
+    "url": "https://web.trondelagfylke.no/trondheim-katedralskole/",
+    "publisher": "Trøndelag fylkeskommune",
+    "checkedAt": "2026-09-13"
+  },
+  {
+    "id": "v-inntak",
+    "label": "Trøndelag fylkeskommune",
+    "page": "Trøndelag: inntak",
+    "url": "https://www.trondelagfylke.no/inntak",
+    "publisher": "Trøndelag fylkeskommune",
+    "checkedAt": "2026-09-13"
+  },
+  {
+    "id": "v-helse",
+    "label": "Trondheim kommune",
+    "page": "Kommunen: Finn din helsestasjon",
+    "url": "https://www.trondheim.kommune.no/tema/helse-og-omsorg/helsetjenester/helsestasjon/helsestasjon-hovedsak/helsestasjonene/",
+    "publisher": "Trondheim kommune",
+    "checkedAt": "2026-09-13"
+  },
+  {
+    "id": "v-skolehelse",
+    "label": "Trondheim kommune",
+    "page": "Kommunen: Skolehelsetjenesten",
+    "url": "https://www.trondheim.kommune.no/tema/skole/trondheimsskolen/skolehelsetjenesten/",
+    "publisher": "Trondheim kommune",
+    "checkedAt": "2026-09-13"
+  },
+  {
+    "id": "v-park-s",
+    "label": "Trondheim kommune",
+    "page": "Strandveiparken",
+    "url": "https://www.trondheim.kommune.no/tema/kultur-og-fritid/park-og-mark/parker-og-byrom/strandveiparken/",
+    "publisher": "Trondheim kommune",
+    "checkedAt": "2026-09-13"
+  },
+  {
+    "id": "v-park-aapen",
+    "label": "Trondheim kommune",
+    "page": "Kommunens gjenåpningsartikkel",
+    "url": "https://trondheim.kommune.no/aktuelt/om-kommunen/annet/prosjekter-fra-a-a/omradesatsingene-i-trondheim/nytt-fra-omradesatsingene/nytt-fra-omradesatsingene/strandveiparken-er-apen--ventetiden-er-over2/",
+    "publisher": "Trondheim kommune",
+    "checkedAt": "2026-09-13"
+  },
+  {
+    "id": "v-park-l",
+    "label": "Trondheim kommune",
+    "page": "Lademoparken",
+    "url": "https://www.trondheim.kommune.no/tema/kultur-og-fritid/park-og-mark/parker-og-byrom/lademoparken/",
+    "publisher": "Trondheim kommune",
+    "checkedAt": "2026-09-13"
+  },
+  {
+    "id": "v-park-lade",
+    "label": "Trondheim kommune",
+    "page": "Ladeparken",
+    "url": "https://www.trondheim.kommune.no/tema/kultur-og-fritid/park-og-mark/parker-og-byrom/ladeparken/",
+    "publisher": "Trondheim kommune",
+    "checkedAt": "2026-09-13"
+  },
+  {
+    "id": "v-buran",
+    "label": "Trondheim kommune",
+    "page": "Buranbanen",
+    "url": "https://www.trondheim.kommune.no/tema/kultur-og-fritid/park-og-mark/parker-og-byrom/buranbanen/",
+    "publisher": "Trondheim kommune",
+    "checkedAt": "2026-09-13"
+  },
+  {
+    "id": "v-klubb",
+    "label": "Trondheim kommune",
+    "page": "Lade fritidsklubb",
+    "url": "https://www.trondheim.kommune.no/tema/kultur-og-fritid/aktivitetstilbudkulturtilbud/fritidsklubber/lade-fritidsklubb/",
+    "publisher": "Trondheim kommune",
+    "checkedAt": "2026-09-13"
+  },
+  {
+    "id": "v-motor",
+    "label": "Trondheim kommune",
+    "page": "Lade Motor",
+    "url": "https://www.trondheim.kommune.no/tema/kultur-og-fritid/aktivitetstilbudkulturtilbud/fritidsklubber/lade-motor/",
+    "publisher": "Trondheim kommune",
+    "checkedAt": "2026-09-13"
+  },
+  {
+    "id": "v-kultur",
+    "label": "Trondheim kommune",
+    "page": "Kommunen: kulturtilbud for barn",
+    "url": "https://www.trondheim.kommune.no/tema/kultur-og-fritid/aktivitetstilbudkulturtilbud/kulturbarn/kulturtilbudforbarn/",
+    "publisher": "Trondheim kommune",
+    "checkedAt": "2026-09-13"
+  },
+  {
+    "id": "v-bua",
+    "label": "Trondheim Røde Kors",
+    "page": "Røde Kors: BUA Lademoen",
+    "url": "https://www.rodekors.no/lokalforeninger/trondelag/trondheim/aktiviteter-og-kurs/sosialinkludering/bua/",
+    "publisher": "Trondheim Røde Kors",
+    "checkedAt": "2026-09-13"
+  },
+  {
+    "id": "v-bua-hist",
+    "label": "Trondheim Røde Kors",
+    "page": "Røde Kors: åpningen etter flytting",
+    "url": "https://www.rodekors.no/lokalforeninger/trondelag/trondheim/aktuelt/2026/apningsfest/",
+    "publisher": "Trondheim Røde Kors",
+    "checkedAt": "2026-09-13"
+  },
+  {
+    "id": "v-badeplass",
+    "label": "Trondheim kommune",
+    "page": "Kommunen: Strandveikaia badeplass",
+    "url": "https://www.trondheim.kommune.no/tema/kultur-og-fritid/park-og-mark/badeplasser/badeplasser-i-saltvann/strandveikaia-nyhavna/",
+    "publisher": "Trondheim kommune",
+    "checkedAt": "2026-09-13"
+  },
+  {
+    "id": "v-badevann",
+    "label": "Trondheim kommune",
+    "page": "Kommunen: badevannskvalitet",
+    "url": "https://www.trondheim.kommune.no/tema/klima-miljo-og-naring/skogbruk/badevannskvalitet/",
+    "publisher": "Trondheim kommune",
+    "checkedAt": "2026-09-13"
+  },
+  {
+    "id": "v-pirbadet",
+    "label": "Pirbadet",
+    "page": "Pirbadets egne priser",
+    "url": "https://www.pirbadet.no/priser/",
+    "publisher": "Pirbadet",
+    "checkedAt": "2026-09-13"
   }
 ]

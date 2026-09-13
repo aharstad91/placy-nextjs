@@ -172,84 +172,141 @@
     ]
   },
   {
-    "id": "krets",
+    "id": "oppvekst-naa-og-planlagt",
     "categoryId": "barn-oppvekst",
-    "question": "Hvilken skolekrets sogner boligen til?",
-    "answer": "Boligen sogner til Lilleby skole, med 1.–7. trinn og 211 elever. Ungdomstrinnet hører til Rosenborg skole, med 8.–10. trinn og 476 elever.",
-    "origin": "imported",
+    "question": "Hva finnes for barnefamilier i dag, og hva er planlagt på Nyhavna?",
+    "answer": "Rundt Nyhavna finnes allerede skoler, barnehager og parker. Strandveiparken har blant annet lek, ballspill og parkour. På Transittkaia er barnehage, nye byrom og elvepromenade foreslått. For familien er det viktig å skille dagens tilbud fra det som faktisk blir ferdig til innflytting.",
+    "origin": "local",
     "sourceIds": [
-      "nyhavna-leve-board"
-    ]
-  },
-  {
-    "id": "vgs-naerhet",
-    "categoryId": "barn-oppvekst",
-    "question": "Hvilke videregående skoler kan jeg nå med buss?",
-    "answer": "Bybroen videregående er raskest å komme til: 18 minutter med linje 71. Thora Storm videregående er nærmeste offentlige, 20 minutter.",
-    "origin": "imported",
-    "sourceIds": [
-      "nyhavna-leve-board"
-    ]
+      "v-park-s",
+      "v-plan",
+      "v-bhg-reg"
+    ],
+    "caveats": []
   },
   {
     "id": "barnehage-dekning",
     "categoryId": "barn-oppvekst",
-    "question": "Hvor mange barnehager ligger i gangavstand?",
-    "answer": "4 barnehager ligger innenfor 10 minutters gange, blant dem Aktiv åpen barnehage på 4 minutter og Svartlamon Kunst- og kulturbarnehage på 5 minutter.",
-    "origin": "imported",
+    "question": "Hvilke barnehager finnes i nærområdet, og hva bør vi vite om å få plass?",
+    "answer": "Svartlamon kunst- og kulturbarnehage, Lademoen, Nedre Elvehavn og Voldsminde er alternativer rundt området. Dere søker gjennom kommunens portal. Nærhet gir ikke garanti for plass i ønsket barnehage, så leveringsruten og opptaket bør vurderes sammen.",
+    "origin": "local",
     "sourceIds": [
-      "nyhavna-leve-board"
-    ]
+      "v-bhg-reg",
+      "v-bhg-opptak"
+    ],
+    "caveats": []
   },
   {
-    "id": "lekeplass",
+    "id": "krets",
     "categoryId": "barn-oppvekst",
-    "question": "Hvor er nærmeste lekeplass?",
-    "answer": "Lekeplass er nærmeste lekeplass, 5 minutter unna — og 4 til ligger innenfor 10 minutters gange.",
-    "origin": "imported",
+    "question": "Hvilke barneskoler og ungdomsskoler er aktuelle hvis vi flytter til Nyhavna?",
+    "answer": "Planmaterialet for Transittkaia peker på Lilleby barneskole og Rosenborg ungdomsskole. Det er derfor naturlig å undersøke disse først. Hvilken skole barnet faktisk sokner til, må sjekkes for boligadressen og tidspunktet dere flytter inn.",
+    "origin": "local",
     "sourceIds": [
-      "nyhavna-leve-board"
-    ]
-  },
-  {
-    "id": "oppvekst-fritid",
-    "categoryId": "barn-oppvekst",
-    "question": "Hva kan barna gjøre etter skoletid?",
-    "answer": "RAKE arbeidsfellesskap er fritidsklubben i området, 6 minutter til fots.",
-    "origin": "imported",
-    "sourceIds": [
-      "nyhavna-leve-board"
-    ]
-  },
-  {
-    "id": "helsestasjon",
-    "categoryId": "barn-oppvekst",
-    "question": "Hvor er nærmeste helsestasjon?",
-    "answer": "Nærmeste helsestasjon på kartet er Falkenborg helsestasjon, 31 minutter til fots eller 14 med sykkel.",
-    "origin": "imported",
-    "sourceIds": [
-      "nyhavna-leve-board"
-    ]
+      "v-planb",
+      "v-krets"
+    ],
+    "caveats": []
   },
   {
     "id": "skolevei",
     "categoryId": "barn-oppvekst",
-    "question": "Hvor lang er skoleveien til fots?",
-    "answer": "Skoleveien til Lilleby skole er 15 minutter til fots, og til Rosenborg skole, der ungdomstrinnet hører til, 19 minutter.",
-    "origin": "imported",
+    "question": "Hvordan er skoleveien til fots og på sykkel?",
+    "answer": "Vi må følge ruten fra den aktuelle boligen før vi kan beskrive skoleveien ordentlig. Kryssinger og anleggstrafikk er viktige å undersøke. Det er planlagt en ny gang- og sykkelforbindelse mellom Lilleby skole og Strandveien, men vi har ikke bekreftet at den er åpnet.",
+    "origin": "local",
     "sourceIds": [
-      "nyhavna-leve-board"
-    ]
+      "v-barn-plan",
+      "v-sykkel"
+    ],
+    "caveats": []
   },
   {
     "id": "skoleskyss",
     "categoryId": "barn-oppvekst",
-    "question": "Har barna rett på gratis skoleskyss?",
-    "answer": "Til Lilleby skole er det 1,3 kilometer langs gangveien, og 1,5 kilometer til Rosenborg skole. Gratis skoleskyss gjelder fra to kilometer for 1. trinn og fire kilometer fra 2. trinn.",
-    "origin": "imported",
+    "question": "Når kan barn på Nyhavna ha rett til gratis skoleskyss?",
+    "answer": "I grunnskolen er avstandsgrensen mer enn to kilometer på første trinn og mer enn fire kilometer på andre til tiende trinn. Særlig farlig eller vanskelig skolevei, eller behov knyttet til sykdom, skade eller nedsatt funksjonsevne, kan også gi rett ved kortere avstand. Barnets situasjon må vurderes konkret.",
+    "origin": "local",
     "sourceIds": [
-      "nyhavna-leve-board"
-    ]
+      "v-skyss"
+    ],
+    "caveats": []
+  },
+  {
+    "id": "vgs-naerhet",
+    "categoryId": "barn-oppvekst",
+    "question": "Hvilke videregående skoler finnes i nærheten, og hvordan kommer ungdommen seg dit?",
+    "answer": "Thora Storm og Trondheim Katedralskole er to alternativer i sentrum. Begge tilbyr studiespesialisering; Thora Storm har også blant annet helse- og oppvekstfag, mens Katedralskolen tilbyr musikk og medier og kommunikasjon. Programvalg og inntak avgjør hva som er aktuelt. Reiseruten fra boligen gjenstår å undersøke.",
+    "origin": "local",
+    "sourceIds": [
+      "v-vgs-ts",
+      "v-vgs-tk",
+      "v-inntak"
+    ],
+    "caveats": []
+  },
+  {
+    "id": "lekeplass",
+    "categoryId": "barn-oppvekst",
+    "question": "Hvor kan barna leke og være ute i nærområdet?",
+    "answer": "Strandveiparken har lekeområde, flerbruksbane og parkour. Lademoparken har lek for de minste, mens Ladeparken har blant annet vannlek og plass til ballspill. Det gir ulike muligheter etter alder og aktivitet; hvilken park som blir enklest å bruke i hverdagen, avhenger av boligen.",
+    "origin": "local",
+    "sourceIds": [
+      "v-park-s",
+      "v-park-l",
+      "v-park-lade"
+    ],
+    "caveats": []
+  },
+  {
+    "id": "oppvekst-fritid",
+    "categoryId": "barn-oppvekst",
+    "question": "Hvilke fritidsaktiviteter finnes i nærheten for barn og ungdom?",
+    "answer": "For barn på mellomtrinnet er Jubateateret på Lademoen et tilbud å undersøke. For ungdom finnes Lade fritidsklubb med blant annet gaming, og Lade Motor har et fast tilbud fra 13 år. BUA Lademoen låner ut sports- og friluftsutstyr gratis. Kursplasser og aktuelle terminer må sjekkes.",
+    "origin": "local",
+    "sourceIds": [
+      "v-kultur",
+      "v-klubb",
+      "v-motor",
+      "v-bua"
+    ],
+    "caveats": []
+  },
+  {
+    "id": "ungdom-moteplasser",
+    "categoryId": "barn-oppvekst",
+    "question": "Hvor kan ungdom møte venner uten å måtte kjøpe noe?",
+    "answer": "Lade fritidsklubb er gratis og har gaming, aktivitetsrom og mat på klubbkveldene. Ute kan Strandveiparken brukes til å møtes, spille ball eller prøve parkour. Klubb og park gir to ulike muligheter: et tilbud med voksne til stede, og et sted ungdom kan bruke på egen hånd.",
+    "origin": "local",
+    "sourceIds": [
+      "v-klubb",
+      "v-park-s"
+    ],
+    "caveats": []
+  },
+  {
+    "id": "helsestasjon",
+    "categoryId": "barn-oppvekst",
+    "question": "Hvilken helsestasjon er aktuell for familier på Nyhavna, og hvor ligger den?",
+    "answer": "Helsestasjon for småbarn bestemmes ut fra bostedsadressen, så vi må sjekke adressen før vi peker ut riktig sted. For barn i skolealder finnes skolehelsetjenesten på alle skolene i Trondheim. Den er gratis og kan kontaktes direkte av barn og foreldre.",
+    "origin": "local",
+    "sourceIds": [
+      "v-helse",
+      "v-skolehelse"
+    ],
+    "caveats": []
+  },
+  {
+    "id": "oppvekst-for-kjop",
+    "categoryId": "barn-oppvekst",
+    "question": "Hva bør vi som barnefamilie undersøke før vi kjøper på Nyhavna?",
+    "answer": "Begynn med hva som faktisk vil være tilgjengelig ved innflytting: skole, skolevei, uteområder og fritidstilbud. Be også om oversikt over byggearbeid rundt boligen og hvordan gangveier blir ivaretatt. Støy, utearealer og sikring mot vannet bør avklares for det konkrete bygget, ikke bare for bydelen samlet.",
+    "origin": "local",
+    "sourceIds": [
+      "v-barn-plan",
+      "v-ros",
+      "v-krets"
+    ],
+    "caveats": []
   },
   {
     "id": "spisesteder",

@@ -101,11 +101,17 @@ function toBoardPoi(poi: POI, categoryId: BoardCategoryId, fallback: { icon: str
  * var i boardet de kom fra — hvor teksten faktisk kommer fra står i
  * `faq.json`s `sourceIds`, ikke her.
  */
-const toFaqEntry = (entry: LocalFaq): FaqEntry => ({
+const toFaqEntry = (entry: LocalFaq, sources: LocalDataset["sources"]): FaqEntry => ({
   id: entry.id,
   question: entry.question,
   answer: entry.answer,
   source: entry.origin === "imported" ? "deterministic" : "curated",
+  ...(entry.origin === "local" ? {
+    knowledgeSources: entry.sourceIds.flatMap((id) => {
+      const source = sources.find((s) => s.id === id);
+      return source ? [{ id, name: `${source.label}: ${source.page}`, url: source.url, verifiedAt: source.checkedAt }] : [];
+    }),
+  } : {}),
 });
 
 /** Spørsmålene per tema, i filas egen rekkefølge. Nøkkel `""` = hele området. */
@@ -114,8 +120,8 @@ function faqByCategory(dataset: LocalDataset): Map<string, FaqEntry[]> {
   for (const entry of dataset.faqs) {
     const key = entry.categoryId ?? "";
     const bucket = byCategory.get(key);
-    if (bucket) bucket.push(toFaqEntry(entry));
-    else byCategory.set(key, [toFaqEntry(entry)]);
+    if (bucket) bucket.push(toFaqEntry(entry, dataset.sources));
+    else byCategory.set(key, [toFaqEntry(entry, dataset.sources)]);
   }
   return byCategory;
 }

@@ -1,1 +1,714 @@
-[]
+[
+  {
+    "id": "oppvekst-planer",
+    "title": "Dagens nærmiljø og foreslått utvikling på Transittkaia",
+    "categoryIds": [
+      "barn-oppvekst"
+    ],
+    "status": "planned",
+    "text": "Eksisterende tilbud i nærområdet må skilles fra foreslåtte nye tilbud på Transittkaia. Kommunens arkiverte høring beskriver boliger, barnehage, byrom og elvepromenade i fire planalternativer. Høringsfristen var 28. april 2026. Dette er planhistorikk, ikke en bekreftelse på siste vedtak eller ferdige tilbud.",
+    "keywords": [
+      "barn",
+      "familie",
+      "oppvekst",
+      "i dag",
+      "planlagt",
+      "Transittkaia",
+      "byrom",
+      "promenade"
+    ],
+    "sourceIds": [
+      "v-plan"
+    ],
+    "relatedPlaceIds": [],
+    "checkedAt": "2026-09-13",
+    "caveats": [
+      "Siste endelige vedtaksstatus er ikke avklart i materialet. Opplysningene gjelder Transittkaia, ikke automatisk hele Nyhavna."
+    ]
+  },
+  {
+    "id": "oppvekst-skoler",
+    "title": "Aktuelle skoler og skolekrets",
+    "categoryIds": [
+      "barn-oppvekst"
+    ],
+    "status": "existing",
+    "text": "Planbeskrivelsen for Transittkaia, revidert 30. januar 2026, side 21, peker på Lilleby barneskole og Rosenborg ungdomsskole. Dette er utgangspunkt for å undersøke skole for Transittkaia. Faktisk skolekrets må kontrolleres for boligadressen og innflyttingstidspunktet.",
+    "keywords": [
+      "skole",
+      "skoler",
+      "barneskole",
+      "ungdomsskole",
+      "Lilleby",
+      "Rosenborg",
+      "sokner",
+      "sogner",
+      "tiåring",
+      "fjortenåring"
+    ],
+    "sourceIds": [
+      "v-planb",
+      "v-krets"
+    ],
+    "relatedPlaceIds": [],
+    "checkedAt": "2026-09-13",
+    "caveats": [
+      "Ingen konkret boligadresse eller framtidig skoletildeling er avklart."
+    ]
+  },
+  {
+    "id": "oppvekst-parker",
+    "title": "Lek, ballspill og parkour i Strandveiparken",
+    "categoryIds": [
+      "barn-oppvekst"
+    ],
+    "status": "existing",
+    "text": "Strandveiparken har lekeområde, flerbruksbane og parkour. Kommunen oppgir at parken åpnet igjen 26. mai 2025 etter oppgraderingen. Den gamle opplysningen om at parken er stengt skal ikke brukes som dagens status.",
+    "keywords": [
+      "leke",
+      "lek",
+      "park",
+      "parker",
+      "ute",
+      "ball",
+      "parkour",
+      "Strandveiparken",
+      "venner"
+    ],
+    "sourceIds": [
+      "v-park-s",
+      "v-park-aapen"
+    ],
+    "relatedPlaceIds": [],
+    "checkedAt": "2026-09-13",
+    "caveats": [
+      "Ingen gang- eller sykkelavstand fra en bolig er målt."
+    ]
+  },
+  {
+    "id": "oppvekst-nye-skoler",
+    "title": "Ny skole: hva er bekreftet?",
+    "categoryIds": [
+      "barn-oppvekst"
+    ],
+    "status": "unresolved",
+    "text": "Planbeskrivelsen for Transittkaia fra januar 2026 omtaler uavklart plassering og planprosess for ny skole. Materialet vi har kontrollert bekrefter ingen åpningsdato for en ny skole på Nyhavna.",
+    "keywords": [
+      "ny skole",
+      "nye skoler",
+      "åpner",
+      "åpning",
+      "Smelteverket",
+      "fremtid",
+      "framtid"
+    ],
+    "sourceIds": [
+      "v-planb"
+    ],
+    "relatedPlaceIds": [],
+    "checkedAt": "2026-09-13",
+    "caveats": [
+      "Dette daterte dokumentet er ikke bevis for at ingen nyere beslutning finnes. Ikke lov kortere skolevei eller en bestemt åpning."
+    ]
+  },
+  {
+    "id": "oppvekst-kapasitet",
+    "title": "Skolekapasitet og barnets skoleplass er ulike spørsmål",
+    "categoryIds": [
+      "barn-oppvekst"
+    ],
+    "status": "existing",
+    "text": "Kommunens temakart om skolekapasitet brukes i vurdering av utbygging og byggesaker. Rød farge i dette kartet er ikke i seg selv et vedtak om at et bestemt barn må gå på en annen skole. Barnets skolekrets kontrolleres separat etter bostedsadresse.",
+    "keywords": [
+      "skolekapasitet",
+      "kapasitet",
+      "rødt",
+      "rød",
+      "skoleplass",
+      "fullt",
+      "plass"
+    ],
+    "sourceIds": [
+      "v-kapasitet",
+      "v-krets"
+    ],
+    "relatedPlaceIds": [],
+    "checkedAt": "2026-09-13",
+    "caveats": [
+      "Historiske elevtall, prognoser og kapasitetstall for Lilleby er holdt tilbake. Ingen skolekvalitet kan utledes av elevtall."
+    ]
+  },
+  {
+    "id": "oppvekst-barnehager",
+    "title": "Barnehager rundt Nyhavna",
+    "categoryIds": [
+      "barn-oppvekst"
+    ],
+    "status": "existing",
+    "text": "Kommunens register viser Svartlamon kunst- og kulturbarnehage, Lademoen, Nedre Elvehavn og Voldsminde som eksisterende alternativer i nærområdet. Nedre Elvehavn og Voldsminde inngår i Sentrum barnehager.",
+    "keywords": [
+      "barnehage",
+      "barnehager",
+      "småbarn",
+      "Svartlamon",
+      "Lademoen",
+      "Voldsminde",
+      "Nedre Elvehavn"
+    ],
+    "sourceIds": [
+      "v-bhg-reg",
+      "v-bhg-n",
+      "v-bhg-v"
+    ],
+    "relatedPlaceIds": [],
+    "checkedAt": "2026-09-13",
+    "caveats": [
+      "Ingen ledige plasser eller nærmeste-rangering er bekreftet."
+    ]
+  },
+  {
+    "id": "oppvekst-barnehageopptak",
+    "title": "Søknad og opptak til barnehage",
+    "categoryIds": [
+      "barn-oppvekst"
+    ],
+    "status": "existing",
+    "text": "Trondheim har felles søknadsportal for barnehageplass. Hovedopptaket har søknadsfrist 1. mars. Suppleringsopptak omfatter blant annet tilflyttere gjennom året. Rett til barnehageplass er ikke garanti for plass i den barnehagen familien ønsker.",
+    "keywords": [
+      "barnehageplass",
+      "søke",
+      "søknad",
+      "opptak",
+      "frist",
+      "flytte",
+      "tilflytter"
+    ],
+    "sourceIds": [
+      "v-bhg-opptak"
+    ],
+    "relatedPlaceIds": [],
+    "checkedAt": "2026-09-13",
+    "caveats": [
+      "Individuell rett og plass må avklares gjennom opptaket; en god leveringsrute er ikke målt her."
+    ]
+  },
+  {
+    "id": "oppvekst-ny-barnehage",
+    "title": "Foreslått barnehage på Transittkaia",
+    "categoryIds": [
+      "barn-oppvekst"
+    ],
+    "status": "planned",
+    "text": "Planforslagene for Transittkaia omfatter en barnehage. Planbeskrivelsens alternativer knytter den til ulike byggetrinn, blant annet første eller tredje trinn. Det finnes derfor ikke én bekreftet åpningsdato i dette materialet. Beskrivelsen av manglende ordinær barnehage i planområdet betyr ikke at hele Nyhavna og nærområdet er uten barnehager.",
+    "keywords": [
+      "ny barnehage",
+      "planlagt barnehage",
+      "byggetrinn",
+      "åpning",
+      "Transittkaia"
+    ],
+    "sourceIds": [
+      "v-planb",
+      "v-plan"
+    ],
+    "relatedPlaceIds": [],
+    "checkedAt": "2026-09-13",
+    "caveats": [
+      "Åpne tilbud er ikke det samme som ordinær barnehageplass. Ikke lov at barnehagen er klar ved familiens innflytting."
+    ]
+  },
+  {
+    "id": "oppvekst-skolevei",
+    "title": "Skolevei og planlagt gang- og sykkelforbindelse",
+    "categoryIds": [
+      "barn-oppvekst"
+    ],
+    "status": "planned",
+    "text": "Statens vegvesen beskriver en planlagt gang- og sykkelforbindelse mellom Lilleby skole og Strandveien i prosjektet Lilleby skole–Nordtvedts gate. Ved kildekontrollen står fasen som «bygging forberedes». Siden har motstridende anslag for åpning i 2027 og 2028.",
+    "keywords": [
+      "skolevei",
+      "gå",
+      "sykle",
+      "sykkel",
+      "gangvei",
+      "Lilleby",
+      "Strandveien",
+      "avstand",
+      "minutter",
+      "trygg"
+    ],
+    "sourceIds": [
+      "v-sykkel"
+    ],
+    "relatedPlaceIds": [],
+    "checkedAt": "2026-09-13",
+    "caveats": [
+      "Åpning og byggestart er ikke bekreftet. Ingen rute, gangtid eller sykkeltid fra en bolig er målt. Ikke velg ett av årstallene som sikkert."
+    ]
+  },
+  {
+    "id": "oppvekst-anleggsruter",
+    "title": "Skolevei i anleggsperioden",
+    "categoryIds": [
+      "barn-oppvekst"
+    ],
+    "status": "existing",
+    "text": "Barnas representants uttalelse til planarbeidet for Transittkaia fremhever behovet for trygg skolevei og hensyn til barn i anleggsperioden. For en konkret bolig bør gangruten undersøkes med kryssinger, anleggstrafikk og eventuelle midlertidige traseer.",
+    "keywords": [
+      "anleggstrafikk",
+      "kryssinger",
+      "trafikk",
+      "trygghet",
+      "skolevei",
+      "anleggsperiode"
+    ],
+    "sourceIds": [
+      "v-barn-plan"
+    ],
+    "relatedPlaceIds": [],
+    "checkedAt": "2026-09-13",
+    "caveats": [
+      "Uttalelsen er et innspill til planarbeidet, ikke en kontroll av dagens rute eller en garanti for sikkerhet ved innflytting."
+    ]
+  },
+  {
+    "id": "oppvekst-skoleskyss",
+    "title": "Gratis skoleskyss i grunnskolen",
+    "categoryIds": [
+      "barn-oppvekst"
+    ],
+    "status": "existing",
+    "text": "Trøndelags regler oppgir mer enn to kilometer på første trinn og mer enn fire kilometer på andre til tiende trinn som avstandsgrenser. Særlig farlig eller vanskelig skolevei, eller behov knyttet til sykdom, skade eller nedsatt funksjonsevne, kan også gi rett ved kortere avstand.",
+    "keywords": [
+      "skoleskyss",
+      "gratis buss",
+      "skyss",
+      "to kilometer",
+      "fire kilometer",
+      "første klasse"
+    ],
+    "sourceIds": [
+      "v-skyss",
+      "v-skyss-reg"
+    ],
+    "relatedPlaceIds": [],
+    "checkedAt": "2026-09-13",
+    "caveats": [
+      "Barnets situasjon vurderes individuelt. Ikke avgjør retten med demoens referansepunkt eller anslåtte reisetid. Valg av annen skole kan påvirke skyssretten."
+    ]
+  },
+  {
+    "id": "oppvekst-videregaende",
+    "title": "Videregående: Thora Storm og Trondheim Katedralskole",
+    "categoryIds": [
+      "barn-oppvekst"
+    ],
+    "status": "existing",
+    "text": "Thora Storm og Trondheim Katedralskole er to eksempler på videregående skoler i sentrum. Begge tilbyr studiespesialisering. Thora Storm har blant annet helse- og oppvekstfag; Katedralskolen tilbyr musikk og medier og kommunikasjon. Programvalg og fylkets inntak er relevant, ikke grunnskolens skolekrets.",
+    "keywords": [
+      "videregående",
+      "vgs",
+      "studiespesialisering",
+      "musikk",
+      "helsefag",
+      "Thora Storm",
+      "Katedralskole",
+      "inntak"
+    ],
+    "sourceIds": [
+      "v-vgs-ts",
+      "v-vgs-tk",
+      "v-inntak"
+    ],
+    "relatedPlaceIds": [],
+    "checkedAt": "2026-09-13",
+    "caveats": [
+      "Listen er ikke uttømmende. Ingen reiseruter eller reisetider er kontrollert. Ikke gi plassgaranti."
+    ]
+  },
+  {
+    "id": "oppvekst-flere-parker",
+    "title": "Lademoparken, Ladeparken og Buranbanen",
+    "categoryIds": [
+      "barn-oppvekst"
+    ],
+    "status": "existing",
+    "text": "Lademoparken har lek for de minste. Ladeparken har blant annet vannlek og plass til ballspill. Buranbanen er en aktivitetspark. Tilbudene kan gi flere alternativer etter barnas alder og interesser.",
+    "keywords": [
+      "småbarn",
+      "lekeplass",
+      "parker",
+      "Lademoparken",
+      "Ladeparken",
+      "Buranbanen",
+      "vannlek"
+    ],
+    "sourceIds": [
+      "v-park-l",
+      "v-park-lade",
+      "v-buran"
+    ],
+    "relatedPlaceIds": [],
+    "checkedAt": "2026-09-13",
+    "caveats": [
+      "Hvilket sted som er enklest i hverdagen avhenger av boligen. Ingen avstand er målt."
+    ]
+  },
+  {
+    "id": "oppvekst-jubateater",
+    "title": "Jubateater for mellomtrinnet på Lademoen",
+    "categoryIds": [
+      "barn-oppvekst"
+    ],
+    "status": "existing",
+    "text": "Kommunens kulturtilbud beskriver Jubateater på Lademoen for barn på 4.–7. trinn, i Østersunds gate 1. Det er et tilbud å undersøke for et barn på mellomtrinnet som liker teater.",
+    "keywords": [
+      "teater",
+      "Jubateater",
+      "tiåring",
+      "10 år",
+      "mellomtrinn",
+      "fritidsaktiviteter",
+      "kultur"
+    ],
+    "sourceIds": [
+      "v-kultur"
+    ],
+    "relatedPlaceIds": [],
+    "checkedAt": "2026-09-13",
+    "caveats": [
+      "Semester, ledige plasser, påmelding og pris er ikke kontrollert. Andre danse- og Tweenies-tilbud på oversiktssiden hører ikke automatisk til Lademoen."
+    ]
+  },
+  {
+    "id": "oppvekst-lade-klubb",
+    "title": "Lade fritidsklubb: gratis møteplass",
+    "categoryIds": [
+      "barn-oppvekst"
+    ],
+    "status": "existing",
+    "text": "Lade fritidsklubb er gratis og har gaming, aktivitetsrom, mat på klubbkveldene og voksne til stede. Den er et alternativ til kommersielle møteplasser for ungdom.",
+    "keywords": [
+      "Lade fritidsklubb",
+      "ungdom",
+      "venner",
+      "gratis",
+      "møteplass",
+      "gaming",
+      "fjortenåring",
+      "14 år",
+      "fritid"
+    ],
+    "sourceIds": [
+      "v-klubb"
+    ],
+    "relatedPlaceIds": [],
+    "checkedAt": "2026-09-13",
+    "caveats": [
+      "Nøyaktig besøksalder er ikke avklart. Kildesiden har motstridende ukedager for gaming; ikke oppgi en fast ukedag eller bekreft at et bestemt barn kan møte opp."
+    ]
+  },
+  {
+    "id": "oppvekst-lade-motor",
+    "title": "Lade Motor fra 13 år",
+    "categoryIds": [
+      "barn-oppvekst"
+    ],
+    "status": "existing",
+    "text": "Lade Motor har et tilbud fra 13 år. Det krever fast og forpliktende deltakelse, og er ikke et generelt drop-in-tilbud.",
+    "keywords": [
+      "Lade Motor",
+      "motor",
+      "13 år",
+      "14 år",
+      "ungdom",
+      "fritidsaktiviteter"
+    ],
+    "sourceIds": [
+      "v-motor"
+    ],
+    "relatedPlaceIds": [],
+    "checkedAt": "2026-09-13",
+    "caveats": [
+      "Aktuell rekruttering, ledige plasser og påmelding må avklares med tilbudet."
+    ]
+  },
+  {
+    "id": "oppvekst-bua",
+    "title": "BUA Lademoen: gratis utstyrslån",
+    "categoryIds": [
+      "barn-oppvekst"
+    ],
+    "status": "existing",
+    "text": "BUA Lademoen låner ut sports- og friluftsutstyr gratis i Innherredsveien 91. Røde Kors beskriver tilbudet. BUA Leangen flyttet og ble BUA Lademoen i 2026; et gammelt Leangen-navn i lenker betyr derfor ikke et annet nåværende tilbud.",
+    "keywords": [
+      "BUA",
+      "utstyr",
+      "låne",
+      "gratis",
+      "sport",
+      "friluft",
+      "fritidsaktiviteter"
+    ],
+    "sourceIds": [
+      "v-bua",
+      "v-bua-hist"
+    ],
+    "relatedPlaceIds": [],
+    "checkedAt": "2026-09-13",
+    "caveats": [
+      "BUA er utstyrslån, ikke ungdomsklubb. Åpningstider og tilgjengelig utstyr er ikke kontrollert."
+    ]
+  },
+  {
+    "id": "oppvekst-rosenborg-klubben",
+    "title": "Rosenborgs skoletilknyttede KLUBBEN",
+    "categoryIds": [
+      "barn-oppvekst"
+    ],
+    "status": "existing",
+    "text": "Rosenborg skole beskriver KLUBBEN som et tilbud primært for skolens elever. Det kan være relevant å undersøke dersom ungdommen skal gå der.",
+    "keywords": [
+      "Rosenborg",
+      "KLUBBEN",
+      "ungdom",
+      "venner",
+      "møteplasser"
+    ],
+    "sourceIds": [
+      "v-rosenborg"
+    ],
+    "relatedPlaceIds": [],
+    "checkedAt": "2026-09-13",
+    "caveats": [
+      "Gratisstatus og adgang for ungdom som ikke går på skolen er ikke bekreftet."
+    ]
+  },
+  {
+    "id": "oppvekst-helsestasjon",
+    "title": "Helsestasjon bestemmes av bostedsadresse",
+    "categoryIds": [
+      "barn-oppvekst"
+    ],
+    "status": "existing",
+    "text": "Trondheim kommune har adressebasert oppslag for å finne riktig helsestasjon. Familien må bruke den faktiske bostedsadressen for å få riktig kontor og adresse.",
+    "keywords": [
+      "helsestasjon",
+      "baby",
+      "småbarn",
+      "adresse",
+      "helse"
+    ],
+    "sourceIds": [
+      "v-helse"
+    ],
+    "relatedPlaceIds": [],
+    "checkedAt": "2026-09-13",
+    "caveats": [
+      "Materialet tildeler ikke én bestemt helsestasjon til hele Nyhavna."
+    ]
+  },
+  {
+    "id": "oppvekst-skolehelse",
+    "title": "Skolehelsetjenesten for barn og ungdom",
+    "categoryIds": [
+      "barn-oppvekst"
+    ],
+    "status": "existing",
+    "text": "Skolehelsetjenesten finnes på alle skolene i Trondheim, er gratis og kan kontaktes direkte av barn og foreldre uten henvisning. For familier med skolebarn er dette et relevant tilbud å kjenne til.",
+    "keywords": [
+      "skolehelsetjeneste",
+      "helsesykepleier",
+      "skolebarn",
+      "helse",
+      "ungdom"
+    ],
+    "sourceIds": [
+      "v-skolehelse"
+    ],
+    "relatedPlaceIds": [],
+    "checkedAt": "2026-09-13",
+    "caveats": []
+  },
+  {
+    "id": "oppvekst-innflytting",
+    "title": "Utbyggers anslag for Transittkaia",
+    "categoryIds": [
+      "barn-oppvekst"
+    ],
+    "status": "planned",
+    "text": "Nyhavna Utvikling oppgir på Transittkaia-siden et betinget anslag om byggestart i 2027 og innflytting i 2029, forutsatt plangodkjenning høsten 2026. Dette er utbyggers anslag, ikke en garantert tidsplan.",
+    "keywords": [
+      "innflytting",
+      "byggestart",
+      "2027",
+      "2029",
+      "ferdig",
+      "kjøpe",
+      "Transittkaia"
+    ],
+    "sourceIds": [
+      "v-nyhavna"
+    ],
+    "relatedPlaceIds": [],
+    "checkedAt": "2026-09-13",
+    "caveats": [
+      "Planforutsetningen og siste vedtaksstatus er ikke avklart. Ikke bruk anslaget som løfte for hele Nyhavna eller for ny skole/barnehage."
+    ]
+  },
+  {
+    "id": "oppvekst-etapper",
+    "title": "Etappevis utvikling og hverdagen ved innflytting",
+    "categoryIds": [
+      "barn-oppvekst"
+    ],
+    "status": "planned",
+    "text": "Kommunens omtale av omformingen fra 2021 beskriver en langsiktig utvikling av Nyhavna. Det støtter at bydelen utvikles etappevis. For familien må man undersøke hva som er ferdig ved innflytting og hvilke arbeider som fortsetter rundt den aktuelle boligen.",
+    "keywords": [
+      "utbygging",
+      "byggeperiode",
+      "etapper",
+      "hverdagen",
+      "familie",
+      "ferdig",
+      "kjøpe"
+    ],
+    "sourceIds": [
+      "v-havn",
+      "v-barn-plan"
+    ],
+    "relatedPlaceIds": [],
+    "checkedAt": "2026-09-13",
+    "caveats": [
+      "Ikke gi én varighet for anleggsarbeid ved en bestemt bolig. Overordnede planer er ikke ferdige tilbud."
+    ]
+  },
+  {
+    "id": "oppvekst-stoy-luft",
+    "title": "Støy og luftkvalitet: avgrenset ROS for Transittkaia",
+    "categoryIds": [
+      "barn-oppvekst"
+    ],
+    "status": "existing",
+    "text": "ROS-analysen for Transittkaia, datert 21. mars 2025, vurderer støy og luftkvalitet i planområdet og skiller mellom eksisterende situasjon og tiltak i fremtidig utbygging. Analysen beskriver også tiltak og vurderer prosjektet som gjennomførbart med oppfølging.",
+    "keywords": [
+      "støy",
+      "luft",
+      "luftkvalitet",
+      "miljø",
+      "trafikk",
+      "industri",
+      "kjøpe"
+    ],
+    "sourceIds": [
+      "v-ros"
+    ],
+    "relatedPlaceIds": [],
+    "checkedAt": "2026-09-13",
+    "caveats": [
+      "Dette er en avgrenset analyse, ikke målinger inne i fremtidige boliger eller dokumentasjon på forholdene i hele Nyhavna. Be om vurdering for konkret bygg og uteareal."
+    ]
+  },
+  {
+    "id": "oppvekst-grunn",
+    "title": "Forurenset grunn og oppfølging under bygging",
+    "categoryIds": [
+      "barn-oppvekst"
+    ],
+    "status": "existing",
+    "text": "ROS-analysen for Transittkaia omtaler forurensningsfunn og behov for håndtering og kontroll. Innledende undersøkelser fant ikke deponigass; videre oppfølging beskrives betinget. Analysen behandler også krigsetterlatenskaper som del av en avgrenset anleggsvurdering.",
+    "keywords": [
+      "grunn",
+      "forurensning",
+      "deponigass",
+      "bomber",
+      "miljø",
+      "bygging"
+    ],
+    "sourceIds": [
+      "v-ros"
+    ],
+    "relatedPlaceIds": [],
+    "checkedAt": "2026-09-13",
+    "caveats": [
+      "Ikke framstill dette som en generell fare for beboere eller som dokumentasjon på ferdig sanering. Oppfølging må vurderes for det konkrete bygget."
+    ]
+  },
+  {
+    "id": "oppvekst-kaikant",
+    "title": "Kaikanter, vann og fortsatt havnevirksomhet",
+    "categoryIds": [
+      "barn-oppvekst"
+    ],
+    "status": "planned",
+    "text": "ROS-analysen for Transittkaia legger fortsatt havnevirksomhet til grunn og beskriver sikringstiltak som kanter og redningsstiger. Ved boligkjøp bør familien undersøke hvordan utearealer, gangveier og overgangen til vannet faktisk blir sikret ved innflytting.",
+    "keywords": [
+      "kaikant",
+      "kaikanter",
+      "vannet",
+      "sjø",
+      "drukning",
+      "sikring",
+      "trygg",
+      "småbarn",
+      "havn"
+    ],
+    "sourceIds": [
+      "v-ros"
+    ],
+    "relatedPlaceIds": [],
+    "checkedAt": "2026-09-13",
+    "caveats": [
+      "Omtalte tiltak er ikke bevis på ferdig barnesikring. Unngå både garanti om trygghet og påstand om at alle tiltak mangler."
+    ]
+  },
+  {
+    "id": "oppvekst-bading",
+    "title": "Strandveikaia og bading",
+    "categoryIds": [
+      "barn-oppvekst"
+    ],
+    "status": "existing",
+    "text": "Kommunen beskriver Strandveikaia på Nyhavna som offentlig badeplass med badebrygge. Badestedets eksistens er ikke en vurdering av egnethet for et bestemt barn. Kommunens flerårige badevannsklassifisering er heller ikke dagens enkeltprøve eller et permanent badeforbud.",
+    "keywords": [
+      "bade",
+      "bading",
+      "badevann",
+      "badebrygge",
+      "Strandveikaia"
+    ],
+    "sourceIds": [
+      "v-badeplass",
+      "v-badevann"
+    ],
+    "relatedPlaceIds": [],
+    "checkedAt": "2026-09-13",
+    "caveats": [
+      "Dagens badevannsprøve, forhold og barnets ferdigheter er ikke vurdert."
+    ]
+  },
+  {
+    "id": "oppvekst-pirbadet",
+    "title": "Pirbadet som innendørs badealternativ",
+    "categoryIds": [
+      "barn-oppvekst"
+    ],
+    "status": "existing",
+    "text": "Pirbadet er et alternativ for innendørs bading. Prisopplysninger må kontrolleres hos Pirbadet og skille mellom kjøpskanaler og aldersgrupper.",
+    "keywords": [
+      "Pirbadet",
+      "svømme",
+      "svømming",
+      "bading",
+      "pris"
+    ],
+    "sourceIds": [
+      "v-pirbadet"
+    ],
+    "relatedPlaceIds": [],
+    "checkedAt": "2026-09-13",
+    "caveats": [
+      "Gamle priser fra researchrapporten er fjernet. Ingen reisetid eller aktuell billettpris gis her."
+    ]
+  }
+]

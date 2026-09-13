@@ -6,6 +6,28 @@
 
 ---
 
+## 2026-09-13 — Oppvekst klar for lokal lyttetest
+
+**URL:** http://localhost:3103/demo/nyhavna-lokal — last siden på nytt og start en ny samtale.
+
+Alle 11 avtalte oppvekst-FAQ er lagt inn: 8 eksisterende svar revidert med ID-ene bevart, 3 nye spørsmål tilføyd. Samtlige 48 FAQ utenfor Oppvekst er sammenlignet mot HEAD og beholdt uendret. De står i grensesnittet, men brukes ikke som kontrollert faktagrunnlag av den lokale stemmen. Servering-researchen er ikke importert.
+
+27 korte kunnskapsnotater og 34 primærkilder er lagt i `topics.json` og `sources.json`, basert på den tidligere kildekontrollen. Kortene skiller dagens tilbud fra planer, utbyggers anslag og uavklart status. De dekker blant annet skolekrets, skolevei, barnehager, fritid, helse og forhold ved innflytting. Ingen steder/pins eller Supabase-data er opprettet. De tre eksisterende, untracked researchfilene er bevart utenfor denne committen.
+
+`board.ts` kobler lokale FAQ-kilder til eksisterende `knowledgeSources`, slik at sidebaren viser lenke og kontrolldato. Den lokale backenden får en egen instruks: FAQ som førstesvar, `find_project_info` for dybde, korte svar med vesentlige forbehold og tilpasning til alder som faktisk er oppgitt. Det tidligere kravet om «samme svar, ingen tillegg» er ikke med i denne demoens instruks. Stemmens hilsen gir generelle innganger til hverdagsliv. Selve Live-stemmeinstruksen er uendret.
+
+**Verifisert:** 11 av 11 spørsmål og alle deres kildelenker finnes i sidens serverrespons. Samtaleverktøyet finner åtte testede oppfølgingsbehov med kilder og forbehold. Kildekoblingen til sidebaren ble først testet rødt og deretter grønt. API-helsesjekken returnerer konfigurert `gpt-live-1`, backend `gpt-5.6-terra`, stemme `cedar` og ny datasett-hash. HTTP 200 før og etter build.
+
+`npm run lint`: 0 feil, 54 eksisterende advarsler. `npx tsc --noEmit`: bestått. `npm run build`: bestått. `npm test`: 4 281 bestått, 1 pre-eksisterende feil i `lib/realtime/nyhavna-knowledge.test.ts:73` (stemmeinstruksen har 319 ord, grensen er 300). Begge filene som bærer denne feilen er byte-identiske med HEAD. Ingen testgrense er endret.
+
+**Kvalitetsgjennomgang:** ce-simplify-code: reuse-perspektiv fra agent, kvalitet/effektivitet gjennomgått lokalt fordi flere agentstarter ble avvist av kapasitetsgrensen; ingen forenklinger nødvendig. Code review: skipped (ce-code-review unavailable) — faktisk forsøk på mode:agent avsluttet uten receipt fordi nødvendige review-agenter ikke kunne startes. Hele endringsdiffen er derfor gjennomgått manuelt for kildeflyt, urevidert innhold, forbehold og eksisterende demo. Ingen uavklarte implementasjonsfunn.
+
+**Gjenstår som test, ikke bekreftet resultat:** ingen lydsamtale eller visuell nettlesertest er gjennomført av Codex. Nettleserverktøy var ikke tilgjengelig. Lydevalueringen må skille fakta-/verktøybruk fra naturlig taleflyt og avbrytelser. Se [tre samtaler å prøve](docs/research/nyhavna-lokal-demo/2026-09-13-oppvekst-lyttetest.md).
+
+**Åpne innholdshull:** konkret boligadresse og ruter, siste planvedtak/åpningsdatoer, klubbens besøksalder, aktuelle kurs-/barnehageplasser og bredere idrettstilbud. Agenten skal være tydelig på disse grensene. Ingen garantier om skoleplass, gangminutter eller tilbud ved innflytting.
+
+---
+
 ## 2026-09-13 — Ren Nyhavna-demo på lokale JSON-filer: tom ramme, klar til å fylles
 
 **URL:** `http://localhost:3103/demo/nyhavna-lokal`. Dagens demo på `/eiendom/nyhavna-utvikling/nyhavna/leve` er urørt og deler ingen data med den.

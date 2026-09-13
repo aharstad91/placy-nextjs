@@ -12,8 +12,8 @@
   },
   "map3d": true,
   "pinSubtitle": "",
-  "greeting": "Hei! Jeg kan fortelle om Nyhavna. Hva er viktigst for deg når du vurderer et nytt sted å bo?",
-  "projectInfoLabel": "nyhavna.no",
+  "greeting": "Hei! Her kan vi utforske hvordan hverdagen på Nyhavna kan bli – fra skole og fritid til spisesteder og livet i nabolaget. Hva er viktig for deg når du tenker på å bo her?",
+  "projectInfoLabel": "det kildekontrollerte materialet om Nyhavna",
   "categories": [
     {
       "id": "hverdagsliv",

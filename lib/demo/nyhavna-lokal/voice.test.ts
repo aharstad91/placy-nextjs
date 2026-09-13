@@ -3,7 +3,7 @@ import { readFile } from "node:fs/promises";
 import { join } from "node:path";
 import { buildLocalBoard } from "@/lib/demo/nyhavna-lokal/board";
 import { loadDataset, LOCAL_DATASET_DIR } from "@/lib/demo/nyhavna-lokal/dataset";
-import { buildVoiceDeps, LOCAL_DEMO_INSTRUCTION } from "@/lib/demo/nyhavna-lokal/voice";
+import { buildLocalInstructions, buildVoiceDeps, LOCAL_DEMO_INSTRUCTION } from "@/lib/demo/nyhavna-lokal/voice";
 import {
   localBoardSchema,
   localPlacesSchema,
@@ -196,6 +196,41 @@ describe("samtaleeksemplene", () => {
 });
 
 describe("spørsmål og svar er felles for sidebar og stemme", () => {
+  it("gir backenden kontrollerte FAQ og kilder uten ureviderte svar", async () => {
+    const dataset = await loadDataset();
+    const instructions = buildLocalInstructions(dataset, buildLocalBoard(dataset));
+    for (const faq of dataset.faqs) {
+      if (faq.origin === "local") {
+        expect(instructions).toContain(faq.answer);
+        for (const id of faq.sourceIds) expect(instructions).toContain(dataset.sources.find((s) => s.id === id)!.url);
+      } else {
+        expect(instructions).not.toContain(faq.answer);
+      }
+    }
+  });
+
+  it.each([
+    ["skolekrets Lilleby Rosenborg", "oppvekst-skoler", "boligadressen"],
+    ["skolevei sykkel", "oppvekst-skolevei", "Ingen rute"],
+    ["ny skole åpning", "oppvekst-nye-skoler", "ingen åpningsdato"],
+    ["Lade Motor", "oppvekst-lade-motor", "forpliktende"],
+    ["Lade fritidsklubb gaming", "oppvekst-lade-klubb", "besøksalder"],
+    ["barnehageplass opptak", "oppvekst-barnehageopptak", "ikke garanti"],
+    ["skoleskyss", "oppvekst-skoleskyss", "individuelt"],
+    ["helsestasjon", "oppvekst-helsestasjon", "bostedsadressen"],
+  ])("finner dybde og forbehold for %s gjennom samtaleverktøyet", async (query, id, text) => {
+    const dataset = await loadDataset();
+    const conversation = conversationFor(dataset);
+    conversation.execute("set_interests", { interests: ["barn på 10 og 14"], theme_ids: ["barn-oppvekst"] });
+    const info = conversation.execute("find_project_info", { query }).result as {
+      results: Array<{ id: string; text: string; source: { url: string } }>;
+    };
+    const found = info.results.find((t) => t.id === id);
+    expect(found?.text).toContain(text);
+    expect(found?.source.url).toMatch(/^https:\/\//);
+    expect(dataset.places).toEqual([]);
+  });
+
   it("gir stemmen nøyaktig de spørsmålene sidebaren viser", async () => {
     const dataset = await loadDataset();
     const board = buildLocalBoard(dataset);
