@@ -87,6 +87,19 @@ export function useVoiceSession(fixture: BoligFixture): VoiceSession {
 
   useEffect(() => dispose, [dispose]);
 
+  // Legg på når siden forlates (reload, lukket fane, bytte av app på telefonen).
+  // Unmount-effekten over kjører ikke ved en full navigasjon, og da sto samtalen
+  // igjen som «aktiv» hos serveren til inaktivitetsgrensen på to minutter slo
+  // inn – ny lasting ga «En samtale er allerede aktiv» (Andreas, 2026-09-13).
+  // `pagehide` er det eneste som fyrer pålitelig i iOS Safari; DELETE sendes
+  // med keepalive slik at den overlever at siden forsvinner.
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const onPageHide = () => { if (connection.current) stopRef.current(); };
+    window.addEventListener("pagehide", onPageHide);
+    return () => window.removeEventListener("pagehide", onPageHide);
+  }, []);
+
   const send = useCallback((event: Record<string, unknown>) => {
     const current = connection.current;
     if (current?.channel.readyState !== "open") return false;
@@ -101,6 +114,8 @@ export function useVoiceSession(fixture: BoligFixture): VoiceSession {
     setBlocks(previous => previous.map(b => b.kind === "answer" && !b.done ? { ...b, done: true } : b));
     setStatus(hadConnection ? "ended" : "idle");
   }, [dispose]);
+  const stopRef = useRef(stop);
+  stopRef.current = stop;
 
   const interrupt = useCallback(() => {
     const current = connection.current;
