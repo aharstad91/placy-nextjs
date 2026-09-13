@@ -7,7 +7,7 @@ import { useAudioTourStore } from "@/lib/stores/audio-tour-store";
 import { useLive } from "@/lib/live/use-live";
 import type { LiveMessage, LiveStatus } from "@/lib/live/types";
 import { boardToolTargets, executeBoardTool, type BoardToolResult } from "@/lib/realtime/board-tools";
-import { NYHAVNA_GREETING_INSTRUCTION } from "@/lib/realtime/nyhavna-greeting";
+import { greetingInstruction, NYHAVNA_GREETING_INSTRUCTION } from "@/lib/realtime/nyhavna-greeting";
 
 /**
  * Samtalen med guiden som ÉN tilstand for hele boardet (2026-09-13).
@@ -103,7 +103,11 @@ function BoardVoiceSession({ children }: { children: ReactNode }) {
   };
 
   const live = useLive({
-    greeting: NYHAVNA_GREETING_INSTRUCTION,
+    // Hilsenen og datagrunnlaget følger BOARDET, ikke koden: to demoer deler
+    // denne flaten med hvert sitt innhold, og guiden skal si stedets egen
+    // åpning og svare ut av stedets egne data.
+    greeting: data.demoGreeting ? greetingInstruction(data.demoGreeting) : NYHAVNA_GREETING_INSTRUCTION,
+    dataset: data.demoDataset,
     getContext: () => ({ selected_category_id: stopId ?? (state.activeCategoryId ? String(state.activeCategoryId) : null), selected_place_id: activePoiId, travel_mode: state.travelMode }),
     executeTool: runBoardTool,
     snapshotId: data.demoSnapshotId,

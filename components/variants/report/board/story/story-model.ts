@@ -58,7 +58,9 @@ export function areaSubline(
 ): string {
   const places = categories.reduce((n, c) => n + c.pois.length, 0);
   const themes = categories.length;
-  return `${places} steder · ${themes} ${themes === 1 ? "tema" : "temaer"}`;
+  // Entall på stedene også: et provisjonert board har alltid mange, men et
+  // board som fylles for hånd går gjennom 1.
+  return `${places} ${places === 1 ? "sted" : "steder"} · ${themes} ${themes === 1 ? "tema" : "temaer"}`;
 }
 
 /**

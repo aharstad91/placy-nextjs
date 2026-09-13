@@ -206,6 +206,25 @@ export interface BoardHome {
 
 export interface BoardData {
   demoSnapshotId?: string;
+  /**
+   * Hvilket demo-datasett stemmen skal snakke ut fra.
+   *
+   * `demoSnapshotId` sier HVILKEN VERSJON av innholdet flaten viser; dette sier
+   * hvilket innhold det er. To demoer kan stå på samme kode med hvert sitt
+   * datagrunnlag (det frosne Nyhavna-snapshotet og det lokale JSON-datasettet),
+   * og serveren må vite hvilket av dem samtalen gjelder — ellers ville guiden
+   * kunne svare med den andre demoens steder. Utelatt = demoens standard
+   * (`nyhavna-leve`).
+   */
+  demoDataset?: string;
+  /**
+   * Førstesetningen guiden sier. Utelatt = demoens standardhilsen.
+   *
+   * Hilsenen er INNHOLD, ikke kode: den navngir stedet og stiller spørsmålet
+   * omvisningen bygges av. Derfor eies den av datagrunnlaget og følger boardet
+   * hit, i stedet for at flaten importerer én bestemt demos hilsen.
+   */
+  demoGreeting?: string;
   /** URL-slug for prosjektet, eks. "stasjonskvartalet". Brukes til å slå opp
    *  prosjekt-spesifikke illustrasjoner og andre ressurser. */
   projectSlug?: string;

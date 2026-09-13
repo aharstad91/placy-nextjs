@@ -17,4 +17,15 @@
 export const NYHAVNA_GREETING_TEXT =
   "Hei! Jeg kan vise deg rundt på Nyhavna. Hva er viktigst for deg når du vurderer et nytt sted å bo?";
 
-export const NYHAVNA_GREETING_INSTRUCTION = `Begynn samtalen nå, uten å vente på brukeren. Si nøyaktig dette, på norsk: «${NYHAVNA_GREETING_TEXT}» Ikke nevn noe navn på deg selv. Vent så, og lytt. Ikke be backenden om hjelp før brukeren har svart.`;
+/**
+ * Hilsenen som instruksjon til stemmen.
+ *
+ * Teksten er et argument og ikke en konstant fordi hilsenen hører til
+ * DATASETTET: den lokale demoen oppgir sin i `board.json`. Reglene rundt den
+ * (start nå, si den ordrett, ikke nevn noe navn, vent) er kodens og skal være
+ * de samme uansett hvilket board som snakker.
+ */
+export const greetingInstruction = (text: string) =>
+  `Begynn samtalen nå, uten å vente på brukeren. Si nøyaktig dette, på norsk: «${text}» Ikke nevn noe navn på deg selv. Vent så, og lytt. Ikke be backenden om hjelp før brukeren har svart.`;
+
+export const NYHAVNA_GREETING_INSTRUCTION = greetingInstruction(NYHAVNA_GREETING_TEXT);

@@ -1,0 +1,117 @@
+{
+  "_om": [
+    "EKSEMPEL — lastes ALDRI av demoen. Lasteren leser bare board.json, sources.json,",
+    "places.json, topics.json og conversations.json ved navn; denne fila er dokumentasjon.",
+    "Kopier formen herfra når du legger inn ekte, kontrollert innhold. Navnene under er",
+    "oppdiktede med vilje, så de ikke kan forveksles med noe som finnes.",
+    "En test validerer denne fila mot skjemaene, så eksempelet ikke kan drifte fra koden."
+  ],
+
+  "sources": [
+    {
+      "id": "eksempel-kilde",
+      "label": "eksempel.no",
+      "page": "Om nabolaget",
+      "url": "https://eksempel.no/om-nabolaget/",
+      "publisher": "Eksempel AS",
+      "checkedAt": "2026-09-13"
+    }
+  ],
+
+  "places": [
+    {
+      "id": "eksempelkafeen",
+      "name": "Eksempelkafeen",
+      "categoryId": "leve-servering",
+      "coordinates": { "lat": 63.4398, "lng": 10.4172 },
+      "address": "Eksempelgata 1",
+      "placeType": "Kafé",
+      "icon": "Coffee",
+      "aliases": ["Eksempel kafe"],
+      "status": "existing",
+      "summary": "Nabolagskafé med bakst og kaffe.",
+      "travelTime": { "walk": 3, "bike": 2, "car": 2 },
+      "locationPrecision": "sourced",
+      "facts": [
+        {
+          "id": "eksempelkafeen-type",
+          "text": "Eksempelkafeen er en nabolagskafé.",
+          "sourceId": "eksempel-kilde",
+          "checkedAt": "2026-09-13",
+          "verification": "confirmed"
+        },
+        {
+          "id": "eksempelkafeen-apningstid",
+          "text": "Kilden omtaler besøk på dagtid, men oppgir ingen åpningstider.",
+          "sourceId": "eksempel-kilde",
+          "checkedAt": "2026-09-13",
+          "verification": "unresolved"
+        }
+      ],
+      "sourceIds": ["eksempel-kilde"],
+      "checkedAt": "2026-09-13",
+      "caveats": ["Åpningstider er ikke kontrollert."]
+    },
+    {
+      "id": "eksempelparken",
+      "name": "Eksempelparken",
+      "categoryId": "leve-park",
+      "coordinates": { "lat": 63.4405, "lng": 10.4185 },
+      "status": "planned",
+      "summary": "Park som er planlagt på området.",
+      "locationPrecision": "approximate",
+      "locationNote": "Plassert omtrentlig ut fra en tekstbeskrivelse i kilden.",
+      "facts": [],
+      "sourceIds": ["eksempel-kilde"],
+      "checkedAt": "2026-09-13",
+      "caveats": ["Parken er planlagt, ikke åpen i dag."]
+    }
+  ],
+
+  "topics": [
+    {
+      "id": "eksempel-hverdagen",
+      "title": "Hverdagen i nabolaget",
+      "categoryIds": ["hverdagsliv"],
+      "status": "existing",
+      "text": "Kilden beskriver dagligvare, apotek og lege innenfor kort gange.",
+      "keywords": ["hverdag", "dagligvare", "apotek", "lege"],
+      "sourceIds": ["eksempel-kilde"],
+      "relatedPlaceIds": ["eksempelkafeen"],
+      "checkedAt": "2026-09-13",
+      "caveats": []
+    },
+    {
+      "id": "eksempel-omradet",
+      "title": "Om området",
+      "categoryIds": [],
+      "status": "adopted-plan",
+      "text": "Kilden oppgir at en områdeplan er vedtatt for nabolaget.",
+      "keywords": ["plan", "område", "utvikling"],
+      "sourceIds": ["eksempel-kilde"],
+      "relatedPlaceIds": [],
+      "checkedAt": "2026-09-13",
+      "caveats": ["Planen er vedtatt, men ikke gjennomført."]
+    }
+  ],
+
+  "conversations": [
+    {
+      "id": "eksempel-samtale",
+      "recordedAt": "2026-09-13",
+      "topic": "barn og spisesteder",
+      "notes": "Testgrunnlag. Brukes til å finne ut hva demoen må kunne svare på — aldri som faktakilde.",
+      "transcript": [
+        { "speaker": "bruker", "text": "Er det noe sted å spise med barn her?" },
+        { "speaker": "guide", "text": "Jeg har ikke det i materialet ennå." }
+      ],
+      "questions": [
+        {
+          "id": "eksempel-sporsmal-barnevennlig",
+          "text": "Er det noe sted å spise med barn her?",
+          "expectation": "Navngi spisesteder med kilde, eller si ærlig at det ikke er lagt inn."
+        }
+      ]
+    }
+  ]
+}

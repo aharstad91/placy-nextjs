@@ -144,6 +144,17 @@ interface Props {
    */
   boardData?: BoardData;
   /**
+   * Hvilket skall boardet kjører i.
+   *
+   * Fram til 2026-09-13 var event-modus UTLEDET av at `boardData` kom inn som
+   * prop, fordi event-ruta var den eneste som bygde BoardData selv. Den lokale
+   * Nyhavna-demoen bygger den også (`lib/demo/nyhavna-lokal/board.ts`) og er et
+   * BOLIG-board — med utledningen ville den arvet event-chromet: programfilter,
+   * samlings-skuff og «Utforsk programmet» på splashen. Utelatt = utledning som
+   * før, så event-ruta er uendret.
+   */
+  boardMode?: "report" | "event";
+  /**
    * Unit 5: rehydrert "Min samling" fra en delt `?c=<slug>`-lenke (ruten kaller
    * `getCollectionBySlug` — eiendom-presedens). `undefined` når ingen delt lenke
    * eller ugyldig/utløpt slug (→ tom samling, ingen krasj). Kun event-modus.
@@ -184,6 +195,7 @@ function Inner({
   project,
   enTranslations = {},
   boardData: inputBoardData,
+  boardMode,
   collection,
   embed = false,
   fromEmbed = false,
@@ -191,9 +203,11 @@ function Inner({
 }: Props) {
   const { locale } = useLocale();
 
-  // D3: event-modus er signalert av at boardData kommer inn som input (event-
-  // rute). Da undertrykkes megler/eiendoms-chrome (footer + splash-copy).
-  const eventMode = inputBoardData !== undefined;
+  // D3: event-modus undertrykker megler/eiendoms-chrome (footer + splash-copy)
+  // og slår på programfilteret. `boardMode` avgjør når den er oppgitt; ellers
+  // utledes den av at boardData kom inn som input, slik event-ruta alltid har
+  // gjort det.
+  const eventMode = boardMode ? boardMode === "event" : inputBoardData !== undefined;
 
   const effectiveProject = useMemo(
     () => applyTranslations(project, locale, enTranslations),

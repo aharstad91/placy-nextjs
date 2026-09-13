@@ -6,6 +6,45 @@
 
 ---
 
+## 2026-09-13 — Ren Nyhavna-demo på lokale JSON-filer: tom ramme, klar til å fylles
+
+**URL:** `http://localhost:3103/demo/nyhavna-lokal`. Dagens demo på `/eiendom/nyhavna-utvikling/nyhavna/leve` er urørt og deler ingen data med den.
+
+**Hvorfor.** Andreas skal kjøre 2–3 naturlige samtaler med ChatGPT om Nyhavna (barn, spisesteder) og bruke transkripsjonene til å finne ut hva demoen faktisk må kunne svare på. Informasjonen hentes og kontrolleres deretter og legges inn for hånd. Denne runden bygger rammen det skal fylles i — ikke innholdet.
+
+### Hva som er bygd
+
+**Datasettet** ligger i `data/demo/nyhavna-lokal/`: `board.json` (identitet, kartutsnitt, hilsen, de ti kategoriene), `sources.json`, `places.json`, `topics.json` (temakunnskap) og `conversations.json` (samtaleeksempler). Alle innholdslister er tomme. `eksempel.json` dokumenterer formen og lastes aldri — en test validerer den mot skjemaene, så dokumentasjonen ikke kan drifte fra koden. Zod-skjemaer i `lib/demo/nyhavna-lokal/schema.ts`, laster med referansesjekk i `dataset.ts`.
+
+**Samtaleeksemplene er skilt ut i egen fil OG egen laster.** `loadDataset` leser dem ikke; `voice.ts` importerer dem ikke; en test holder begge dørene lukket. En transkripsjon er hva noen sa, ikke hva som er sant.
+
+**Tre ting i eksisterende kode ble parameterisert, ikke duplisert.** `createNyhavnaKnowledge`, `buildChapter` og `createNyhavnaConversation` tok sitt datagrunnlag fra en modul-import (det frosne snapshotet); nå kan det injiseres, med den gamle verdien som standard. Uten det ville samtale-orkestreringen måttet finnes i to utgaver, og de to demoene ville begynt å svare ulikt på samme spørsmål av grunner ingen kan se. Strukturtypene står i `lib/realtime/knowledge-base.ts`.
+
+**`ReportReelsPage` fikk `boardMode`.** Event-modus var UTLEDET av at `boardData` kom inn som prop, fordi event-ruta lenge var den eneste som bygde BoardData selv. Den lokale demoen gjør det også og er et bolig-board — med utledningen ville den arvet programfilter og samlings-skuff. Utelatt prop = utledning som før, så event-ruta er uendret.
+
+**Datagrunnlaget for stemmen velges av BOARDET,** ikke av URL eller env: `BoardData.demoDataset` (+ `demoGreeting`) følger med til `useLive` → `/api/prototype/live` → registeret i `lib/live/demos.ts`. `demoSnapshotId` er en innholdshash, så en fane som sto åpen mens JSON-en ble redigert får «last boardet på nytt» i stedet for en guide som er uenig med skjermen.
+
+**Tomtilstanden.** `transformToReportData`/`adaptBoardData` dropper kategorier uten steder — riktig for et provisjonert board, feil her. Derfor bygges BoardData direkte (samme presedens som `lib/event-board/event-board-data.ts`). Alle ti temaene står i raden, kan åpnes, og sier «Ingen steder er lagt inn i dette temaet ennå.» Rutenettet sier «Ingen steder ennå» i stedet for «0 steder», som leste som en feil i kartet.
+
+**Stemmen får én ekstra regel** (`LOCAL_DEMO_INSTRUCTION`): mangler verktøyene et svar, si kort at det ikke er i materialet ennå — ikke fyll hullet med generell kunnskap, ikke gjett, ikke søk på nettet.
+
+**Modellene demoen faktisk bruker:** stemme `gpt-live-1` (WebRTC, full duplex), backend `gpt-5.6-terra` via Responses. Verifisert mot den kjørende serveren, ikke antatt. Ruta nekter å starte på en modell som ikke er Live, og klienten nekter en server som ikke svarer `protocol: "live"`.
+
+### Kontrollert
+
+- 31 nye tester i `lib/demo/nyhavna-lokal/`. Hele suiten: 4 259 grønne. `tsc` 0 feil, `lint` 0 errors, `npm run build` OK (ruta er dynamisk, ikke prerendret).
+- Nettleser (Chrome, 1440×900 og 390×844): ti temaer med tomtilstand, tomt kart, 0 console-feil. Et midlertidig teststed ble lagt inn, viste seg i riktig tema med markør, ikon, reisetid og kilde — og er fjernet igjen, så leveransen starter tom.
+- Ingen steder, fakta eller kartmarkører fra den eksisterende demoen lekker inn (egen test mot navnene).
+- Dagens demo kontrollert etterpå: 1 059 steder, 10 temaer, 0 console-feil.
+
+**Ikke kontrollert:** selve stemmeopplevelsen. Modell, datagrunnlag og instruksjon er verifisert i kode og mot API-ets helsesjekk, men ingen samtale er ført — det må Andreas høre selv.
+
+**Kjent, pre-eksisterende:** `lib/realtime/nyhavna-knowledge.test.ts` feiler på ordtaket for stemmeinstruksen (319 ord mot grensen 300), etter `34844bb` som tunet tempo og væremåte. Bekreftet at den feiler også uten endringene her. Enten trimmes teksten eller heves grensen — begge deler er Andreas' valg.
+
+**Bruksanvisning:** `docs/research/nyhavna-lokal-demo/README.md`.
+
+---
+
 ## 2026-09-11 — Nyhavna «Leve»-demo startet i separat Claude-sesjon
 
 **Status:** Andreas bekrefter at Claude har startet med overlevert prompt og `/goal`. Implementasjon, lokal URL og verifisering er ikke bekreftet ennå.

@@ -7,28 +7,45 @@ import { getLiveSupervisor } from '@/lib/live/supervisor';
 import { LIVE_SESSION_ID } from '@/lib/live/hangup';
 import { NYHAVNA_VOICE_INSTRUCTIONS } from '@/lib/live/voice-instructions';
 import { localRequest } from '@/lib/live/local-request';
-import { getNyhavnaSnapshot } from '@/lib/demo/nyhavna-leve/snapshot';
-import { nyhavnaInstructions } from '@/lib/realtime/nyhavna-knowledge';
-import { createNyhavnaConversation, nyhavnaTools } from '@/lib/realtime/nyhavna-conversation';
-import { nyhavnaProjectInfo } from '@/lib/realtime/nyhavna-project-info';
+import { DEFAULT_LIVE_DATASET, isLiveDataset, loadLiveDemo, type LiveDemo } from '@/lib/live/demos';
+import { nyhavnaTools } from '@/lib/realtime/nyhavna-conversation';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
 // Ingen `mode`, ingen `context`, ingen `tools`: Live har ikke tekstmodus, og
 // instruksene kommer fra serveren.
-const bodySchema = z.object({ sdp: z.string().startsWith('v=0').max(32000), snapshotId: z.string().max(150) });
+// `dataset` velger datagrunnlaget (se lib/live/demos.ts). Utelatt = den frosne
+// Nyhavna-demoen, som er den eneste som fantes før 2026-09-13.
+const bodySchema = z.object({
+  sdp: z.string().startsWith('v=0').max(32000),
+  snapshotId: z.string().max(150),
+  dataset: z.string().max(60).optional(),
+});
+
+/** Datasettet forespørselen gjelder, eller null hvis den ba om et ukjent. */
+function requestedDataset(value: string | null | undefined) {
+  const id = value ?? DEFAULT_LIVE_DATASET;
+  return isLiveDataset(id) ? id : null;
+}
 
 
 export async function GET(request: NextRequest) {
   if (!localRequest(request)) return new NextResponse(null, { status: 404 });
+  const dataset = requestedDataset(request.nextUrl.searchParams.get('dataset'));
+  if (!dataset) return NextResponse.json({ error: 'Ukjent datasett.' }, { status: 400 });
   try {
-    const snapshot = await getNyhavnaSnapshot();
+    const demo = await loadLiveDemo(dataset);
     return NextResponse.json(
-      { configured: Boolean(process.env.OPENAI_API_KEY), voiceModel: liveModel(), voice: liveVoice(), backendModel: backendModel(), snapshotId: snapshot.snapshotId, protocol: 'live' },
+      { configured: Boolean(process.env.OPENAI_API_KEY), voiceModel: liveModel(), voice: liveVoice(), backendModel: backendModel(), dataset: demo.id, snapshotId: demo.snapshotId, protocol: 'live' },
       { headers: { 'Cache-Control': 'no-store' } },
     );
-  } catch { return NextResponse.json({ error: 'Demoens datagrunnlag kunne ikke lastes.' }, { status: 503 }); }
+  } catch (error) {
+    // Datasettets egne feilmeldinger peker på fil og felt; de er verdt å se i
+    // terminalen når demoen fylles med innhold.
+    console.error('live_dataset_load_failed', error);
+    return NextResponse.json({ error: 'Demoens datagrunnlag kunne ikke lastes.' }, { status: 503 });
+  }
 }
 
 export async function DELETE(request: NextRequest) {
@@ -56,13 +73,18 @@ export async function POST(request: NextRequest) {
   try { body = JSON.parse(raw); } catch { return NextResponse.json({ error: 'Ugyldig forespørsel.' }, { status: 400 }); }
   const parsed = bodySchema.safeParse(body);
   if (!parsed.success) return NextResponse.json({ error: 'Last boardet på nytt før du starter samtalen.' }, { status: 400 });
-  let snapshot: Awaited<ReturnType<typeof getNyhavnaSnapshot>>;
-  try { snapshot = await getNyhavnaSnapshot(); } catch { return NextResponse.json({ error: 'Demoens datagrunnlag kunne ikke lastes.' }, { status: 503 }); }
-  if (snapshot.snapshotId !== parsed.data.snapshotId) return NextResponse.json({ error: 'Datagrunnlaget er oppdatert. Last boardet på nytt.' }, { status: 409 });
+  const datasetId = requestedDataset(parsed.data.dataset);
+  if (!datasetId) return NextResponse.json({ error: 'Ukjent datasett. Last boardet på nytt.' }, { status: 400 });
+  let demo: LiveDemo;
+  try { demo = await loadLiveDemo(datasetId); } catch (error) {
+    console.error('live_dataset_load_failed', error);
+    return NextResponse.json({ error: 'Demoens datagrunnlag kunne ikke lastes.' }, { status: 503 });
+  }
+  if (demo.snapshotId !== parsed.data.snapshotId) return NextResponse.json({ error: 'Datagrunnlaget er oppdatert. Last boardet på nytt.' }, { status: 409 });
   const supervisor = getLiveSupervisor();
   let token: string;
   try { token = await supervisor.reserve(); } catch { return NextResponse.json({ error: 'En samtale er aktiv, eller serveren venter på opprydding. Avslutt samtalen og prøv igjen.' }, { status: 429 }); }
-  const backendInstructions = nyhavnaInstructions(snapshot.board);
+  const backendInstructions = demo.backendInstructions;
   let identityKnown = false;
   try {
     const session = liveSessionConfig(NYHAVNA_VOICE_INSTRUCTIONS, backendInstructions, nyhavnaTools);
@@ -79,7 +101,7 @@ export async function POST(request: NextRequest) {
     if (request.signal.aborted) { await supervisor.end(token); return new NextResponse(null, { status: 499 }); }
     // Samtaletilstanden lever like lenge som sesjonen: interesser, tema,
     // fremhevede steder og returpunkt ligger her, ikke i modellens historikk.
-    const conversation = createNyhavnaConversation(snapshot.board, { projectInfo: nyhavnaProjectInfo });
+    const conversation = demo.createConversation();
     await connectLiveSideband(created.sessionId, token, conversation, { backendInstructions });
     if (request.signal.aborted) { await supervisor.end(token); return new NextResponse(null, { status: 499 }); }
     return NextResponse.json({ sdp: created.sdp, sessionId: created.sessionId }, { headers: { 'Cache-Control': 'no-store', 'X-Placy-Session': token } });

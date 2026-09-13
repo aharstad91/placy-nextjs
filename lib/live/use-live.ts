@@ -48,6 +48,11 @@ export interface LiveOptions {
   executeTool: (name: string, args: Record<string, unknown>) => unknown | Promise<unknown>;
   getContext: () => LiveBoardState;
   snapshotId?: string;
+  /**
+   * Hvilket datagrunnlag guiden skal snakke ut fra (`lib/live/demos.ts`).
+   * Utelatt = serverens standard, den frosne Nyhavna-demoen.
+   */
+  dataset?: string;
   /** Hilsenen, formulert som en instruksjon til stemmen (`session.instructions.append`). */
   greeting: string;
 }
@@ -207,7 +212,8 @@ export function useLive(options: LiveOptions) {
       if (!cleaned) throw new Error("Forrige samtale kunne ikke avsluttes. Vent på serverens opprydding før du prøver igjen.");
 
       // Sjekk oppsettet før vi ber om mikrofontillatelse.
-      const health = await fetch("/api/prototype/live", { cache: "no-store" });
+      const dataset = latestOptions.current.dataset;
+      const health = await fetch(`/api/prototype/live${dataset ? `?dataset=${encodeURIComponent(dataset)}` : ""}`, { cache: "no-store" });
       if (run !== generation.current) return;
       if (!health.ok) throw new Error("Denne prototypen kan bare starte samtaler på localhost.");
       const configured = await health.json() as { configured?: boolean; protocol?: string; snapshotId?: string };
@@ -418,7 +424,7 @@ export function useLive(options: LiveOptions) {
       const response = await fetch("/api/prototype/live", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ sdp: pc.localDescription?.sdp ?? offer.sdp, snapshotId }),
+        body: JSON.stringify({ sdp: pc.localDescription?.sdp ?? offer.sdp, snapshotId, ...(dataset ? { dataset } : {}) }),
         signal: current.abort.signal,
       });
       if (!active()) return;

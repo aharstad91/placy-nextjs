@@ -119,7 +119,12 @@ export function StoryThemeGrid({ className = "" }: { className?: string }) {
                   {c.label}
                 </span>
                 <span className="block text-[12px] font-medium leading-[1.3] tabular-nums text-stone-500">
-                  {c.pois.length} {c.pois.length === 1 ? "sted" : "steder"}
+                  {/* «0 steder» leses som en feil i kartet. «Ingen ennå» sier
+                      det rammen faktisk er: temaet står klart, innholdet er
+                      ikke skrevet. */}
+                  {c.pois.length === 0
+                    ? "Ingen steder ennå"
+                    : `${c.pois.length} ${c.pois.length === 1 ? "sted" : "steder"}`}
                 </span>
               </span>
             </button>

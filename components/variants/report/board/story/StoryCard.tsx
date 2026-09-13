@@ -92,6 +92,16 @@ import {
  * boksen rekker. Med boksen på plass forsvant det festede spørsmålet opp forbi
  * flatens overkant så snart wrapperens egen høyde hadde rullet ut.
  */
+/**
+ * Tomtilstanden for et tema uten steder.
+ *
+ * Rammen først, innholdet etterpå: en demo bygges ved at kategoriene står klare
+ * og fylles med kontrollert innhold. Et tomt tema er derfor en TILSTAND, ikke en
+ * feil — og setningen sier nettopp det, i stedet for å be leseren gjøre noe
+ * («zoom ut», «prøv igjen») som ikke ville hjulpet.
+ */
+const EMPTY_CATEGORY_NOTE = "Ingen steder er lagt inn i dette temaet ennå.";
+
 export function StoryCard({
   variant = "sheet",
   head,
@@ -462,29 +472,45 @@ function AboutPane({
           Snarveien skiller seg fra en stedsrad på ÉN ting: pilen til høyre der
           stedene har en chevron. Chevron = folder seg ut her, pil = tar deg et
           annet sted. */}
-      <DisclosureList as="ul">
-        {picks.map((poi) => (
-          <PlaceRow key={poi.id} poi={poi} category={category} mark="chip" />
-        ))}
-        <ShortcutRow
-          color={category.color}
-          Icon={MapPin}
-          title="Steder i nærheten"
-          sub={`${category.pois.length} i alt`}
-          testId="story-places-row"
-          onClick={() => showPane("places")}
-        />
-        {faqShortcut && (
-          <ShortcutRow
-            color={category.color}
-            Icon={MessageCircleQuestion}
-            title="Spørsmål og svar"
-            sub={`${faqs.length} svar`}
-            testId="story-faq-row"
-            onClick={() => showPane("faq")}
-          />
-        )}
-      </DisclosureList>
+      {category.pois.length === 0 && (
+        /* Tomtilstanden: temaet FINNES, det har bare ikke fått innhold ennå.
+           Den står der lista ville stått, i samme boks som resten, så rammen
+           leses som ferdig og innholdet som det som mangler — ikke motsatt. */
+        <p
+          data-testid="story-empty-category"
+          className="px-0.5 pb-0.5 pt-1.5 text-[14px] leading-[1.5] text-stone-500"
+        >
+          {EMPTY_CATEGORY_NOTE}
+        </p>
+      )}
+
+      {(category.pois.length > 0 || faqShortcut) && (
+        <DisclosureList as="ul">
+          {picks.map((poi) => (
+            <PlaceRow key={poi.id} poi={poi} category={category} mark="chip" />
+          ))}
+          {category.pois.length > 0 && (
+            <ShortcutRow
+              color={category.color}
+              Icon={MapPin}
+              title="Steder i nærheten"
+              sub={`${category.pois.length} i alt`}
+              testId="story-places-row"
+              onClick={() => showPane("places")}
+            />
+          )}
+          {faqShortcut && (
+            <ShortcutRow
+              color={category.color}
+              Icon={MessageCircleQuestion}
+              title="Spørsmål og svar"
+              sub={`${faqs.length} svar`}
+              testId="story-faq-row"
+              onClick={() => showPane("faq")}
+            />
+          )}
+        </DisclosureList>
+      )}
 
       {/* Det kilden navngir uten at vi kan plassere det. Står rett UNDER lista
           fordi det er den samme opptellingen: dette er resten av det kilden
@@ -570,8 +596,13 @@ function PlacesPane({
           ))}
         </DisclosureList>
       ) : (
+        /* To ulike tomheter, to ulike setninger. «Ikke i utsnittet» ber leseren
+           zoome ut; på et tema uten ETT eneste sted ville det sendt hen på en
+           jakt etter noe som ikke finnes. */
         <p className="px-0.5 pb-0.5 pt-1.5 text-[14px] leading-[1.5] text-stone-500">
-          Ingen av kategoriens steder er i utsnittet.
+          {category.pois.length === 0
+            ? EMPTY_CATEGORY_NOTE
+            : "Ingen av kategoriens steder er i utsnittet."}
         </p>
       )}
 

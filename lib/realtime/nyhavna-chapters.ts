@@ -26,6 +26,34 @@ const KNOWLEDGE_THEME_BY_CATEGORY: Record<string, KnowledgeTheme[]> = {
   "leve-kultur": ["art-and-culture"],
 };
 
+/** De kildekontrollerte omtalene et kapittel skal bære, slik kapittelet vil ha dem. */
+export type CuratedEntry = ChapterPack["curated"][number];
+
+/**
+ * Hvilke omtaler som hører til en kategori.
+ *
+ * Injisert og ikke importert, av samme grunn som kunnskapsverktøyene: to demoer
+ * bygger kapitler av de samme komponentene med hvert sitt innhold. Standarden er
+ * det frosne Nyhavna-snapshotets kobling (kategori → kildens temanøkler); den
+ * lokale demoen sender sin egen, bygd av JSON-datasettet.
+ */
+export type CuratedProvider = (categoryId: string) => CuratedEntry[];
+
+export const NYHAVNA_CURATED: CuratedProvider = (categoryId) => {
+  const knowledgeThemes = KNOWLEDGE_THEME_BY_CATEGORY[categoryId] ?? [];
+  if (!knowledgeThemes.length) return [];
+  return nyhavnaKnowledge.entities
+    .filter((e) => e.themes.some((t) => knowledgeThemes.includes(t)))
+    .map((e) => ({
+      id: e.id, name: e.name, map_poi_id: e.mapPoiId, status: e.status, summary: e.summary,
+      facts: e.facts.filter((f) => f.verification === "confirmed").slice(0, 3).map((f) => f.text),
+      uncertainties: e.facts.filter((f) => f.verification === "unresolved").map((f) => f.text),
+    }));
+};
+
+/** Ingen kildekontrollerte omtaler — et datagrunnlag som ikke har dem ennå. */
+export const NO_CURATED: CuratedProvider = () => [];
+
 const FAQ_LINK = /\[([^\]]+)\]\((poi|category):([^)]+)\)/g;
 
 export interface SpokenFaq {
@@ -125,6 +153,7 @@ export function buildChapter(
   category: BoardCategory,
   travelMode: TravelMode,
   projectInfo: ProjectInfoProvider = NO_PROJECT_INFO,
+  curatedFor: CuratedProvider = NYHAVNA_CURATED,
 ): ChapterPack {
   const highlights = category.editorial?.highlights ?? [];
   const pickPool: BoardPOI[] = highlights.length
@@ -141,14 +170,7 @@ export function buildChapter(
       location_precision: p.raw.locationPrecision ?? "unknown",
       location_note: p.raw.locationNote,
     }));
-  const knowledgeThemes = KNOWLEDGE_THEME_BY_CATEGORY[String(category.id)] ?? [];
-  const curated = nyhavnaKnowledge.entities
-    .filter((e) => e.themes.some((t) => knowledgeThemes.includes(t)))
-    .map((e) => ({
-      id: e.id, name: e.name, map_poi_id: e.mapPoiId, status: e.status, summary: e.summary,
-      facts: e.facts.filter((f) => f.verification === "confirmed").slice(0, 3).map((f) => f.text),
-      uncertainties: e.facts.filter((f) => f.verification === "unresolved").map((f) => f.text),
-    }));
+  const curated = curatedFor(String(category.id));
   const intro = category.editorial?.intro ?? firstSentences(category.editorial?.body ?? category.body ?? category.lead, 2) ?? category.lead;
   return {
     theme_id: String(category.id),

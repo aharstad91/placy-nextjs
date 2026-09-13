@@ -1,7 +1,7 @@
 import type { BoardData, BoardPOI } from "@/components/variants/report/board/board-data";
-import { buildChapter, chapterSummary, NO_PROJECT_INFO, type ChapterPack, type ProjectInfoProvider } from "@/lib/realtime/nyhavna-chapters";
+import { buildChapter, chapterSummary, NO_PROJECT_INFO, NYHAVNA_CURATED, type ChapterPack, type CuratedProvider, type ProjectInfoProvider } from "@/lib/realtime/nyhavna-chapters";
 import { nyhavnaMapTools } from "@/lib/realtime/map-tools";
-import { createNyhavnaKnowledge, nyhavnaKnowledgeTools } from "@/lib/realtime/nyhavna-knowledge";
+import { createNyhavnaKnowledge, nyhavnaKnowledgeTools, type KnowledgeOptions } from "@/lib/realtime/nyhavna-knowledge";
 import {
   applyTourEvent, defaultTourOrder, initialTourState, nextThemes, themesForInterests, tourNote,
   type HighlightedPlace, type TourState, type TourTheme,
@@ -94,6 +94,15 @@ export interface NyhavnaConversation {
 export interface ConversationDeps {
   projectInfo?: ProjectInfoProvider;
   travelMode?: TravelMode;
+  /**
+   * Kildekontrollert kunnskap og stedssøk. Utelatt = det frosne
+   * Nyhavna-snapshotets. Den lokale demoen sender sitt eget JSON-datasett, og
+   * et tomt datasett gir en guide uten fakta — som er meningen før innholdet
+   * er lagt inn.
+   */
+  knowledge?: KnowledgeOptions;
+  /** Omtalene kapitlene bærer. Utelatt = Nyhavna-snapshotets kobling. */
+  curatedFor?: CuratedProvider;
 }
 
 const strings = (value: unknown, max = 10): string[] =>
@@ -117,7 +126,7 @@ const autoHighlights = (pack: ChapterPack): HighlightedPlace[] =>
 export function createNyhavnaConversation(board: BoardData, deps: ConversationDeps = {}): NyhavnaConversation {
   const projectInfo = deps.projectInfo ?? NO_PROJECT_INFO;
   const travelMode = deps.travelMode ?? "walk";
-  const knowledge = createNyhavnaKnowledge(board);
+  const knowledge = createNyhavnaKnowledge(board, deps.knowledge);
   const pois = new Map<string, BoardPOI>(board.categories.flatMap((c) => c.pois).map((p) => [String(p.id), p]));
   const themes: (TourTheme & { sourced: boolean })[] = board.categories.map((c) => ({
     id: String(c.id), name: c.label, sourced: Boolean(c.editorial?.source),
@@ -135,7 +144,7 @@ export function createNyhavnaConversation(board: BoardData, deps: ConversationDe
     if (!pack) {
       const category = board.categories.find((c) => String(c.id) === themeId);
       if (!category) throw new Error(`Ukjent tema: ${themeId}`);
-      pack = buildChapter(board, category, travelMode, projectInfo);
+      pack = buildChapter(board, category, travelMode, projectInfo, deps.curatedFor ?? NYHAVNA_CURATED);
       chapters.set(themeId, pack);
     }
     const fresh = pack.project_info.filter((p) => !sentProjectInfo.has(p.id));

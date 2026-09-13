@@ -1,5 +1,6 @@
 import { LEVE_POI_ALIASES } from '@/lib/demo/nyhavna-leve/poi-aliases';
 import { nyhavnaKnowledge } from '@/lib/demo/nyhavna-leve/knowledge';
+import type { KnowledgeBase } from '@/lib/realtime/knowledge-base';
 import type { BoardData, BoardPOI } from '@/components/variants/report/board/board-data';
 import type { FaqEntry } from '@/lib/generators/faq-generator';
 import { boardPoisById, spokenFaq } from '@/lib/realtime/nyhavna-chapters';
@@ -14,7 +15,21 @@ export const nyhavnaKnowledgeTools: RealtimeTool[] = [
   { type: 'function', name: 'get_board_facts', description: 'Kort kildekontrollert introduksjon til Nyhavna og temaene.', parameters: schema({}) },
 ];
 const normalize = (s: string) => s.toLocaleLowerCase('nb').normalize('NFKD').replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9æøå]/g, '');
-const themes: Record<string, string[]> = { kaffe: ['cafe-and-restaurants'], kafe: ['cafe-and-restaurants'], cafe: ['cafe-and-restaurants'], mat: ['cafe-and-restaurants'], restaurant: ['cafe-and-restaurants'], middag: ['cafe-and-restaurants'], kultur: ['art-and-culture'], kunst: ['art-and-culture'], park: ['parks'], tur: ['parks', 'promenade'], promenade: ['promenade'] };
+/**
+ * Ordboka som løfter et temaspørsmål («kaffe») til kildens egne temanøkler.
+ * Standarden er `knowledge.ts` sine fire; et annet datasett har andre nøkler og
+ * sender sin egen (`KnowledgeOptions.themeWords`).
+ */
+const DEFAULT_THEME_WORDS: Record<string, string[]> = { kaffe: ['cafe-and-restaurants'], kafe: ['cafe-and-restaurants'], cafe: ['cafe-and-restaurants'], mat: ['cafe-and-restaurants'], restaurant: ['cafe-and-restaurants'], middag: ['cafe-and-restaurants'], kultur: ['art-and-culture'], kunst: ['art-and-culture'], park: ['parks'], tur: ['parks', 'promenade'], promenade: ['promenade'] };
+
+export interface KnowledgeOptions {
+  /** Kildekontrollert kunnskap. Standard: det frosne Nyhavna-snapshotets. */
+  knowledge?: KnowledgeBase;
+  /** Kart-ID-er som skal slås sammen til én identitet før oppslag. */
+  poiAliases?: Record<string, string>;
+  /** Søkeord → kildens temanøkler. Se `DEFAULT_THEME_WORDS`. */
+  themeWords?: Record<string, string[]>;
+}
 
 /** Registerdata om et sted uten kildekontrollert omtale: det boardet selv viser, og ikke mer. */
 const REGISTER_BASIS = 'Boardets register: navn, type, adresse og lagret reisetid. Ikke redaksjonelt kontrollerte fakta. Ikke legg til åpningstider, priser, kvalitet eller tilbud.';
@@ -28,10 +43,21 @@ const packRegister = (poi: BoardPOI, travelMode: 'walk' | 'bike' | 'car' = 'walk
   note: REGISTER_BASIS,
 });
 
-export function createNyhavnaKnowledge(board: BoardData) {
+/**
+ * Kunnskapsverktøyene for ETT datagrunnlag.
+ *
+ * `knowledge` er injisert og ikke importert, fordi to demoer deler disse
+ * verktøyene med hvert sitt innhold: det frosne Nyhavna-snapshotet (standard)
+ * og det lokale JSON-datasettet. Et tomt grunnlag gir tomme svar — som er
+ * nettopp det den lokale demoen skal gjøre før innholdet er lagt inn.
+ */
+export function createNyhavnaKnowledge(board: BoardData, options: KnowledgeOptions = {}) {
+  const knowledge = options.knowledge ?? nyhavnaKnowledge;
+  const poiAliases = options.poiAliases ?? LEVE_POI_ALIASES;
+  const themes = options.themeWords ?? DEFAULT_THEME_WORDS;
   const pois = new Map(board.categories.flatMap(c => c.pois).map(p => [String(p.id), p]));
-  const all = [nyhavnaKnowledge.area, ...nyhavnaKnowledge.entities];
-  const curatedMapIds = new Set(nyhavnaKnowledge.entities.map(e => e.mapPoiId).filter((id): id is string => id !== null));
+  const all = [knowledge.area, ...knowledge.entities];
+  const curatedMapIds = new Set(knowledge.entities.map(e => e.mapPoiId).filter((id): id is string => id !== null));
   const pack = (entity: typeof all[number], detail: boolean) => {
     const facts = entity.facts.filter(f => f.verification === 'confirmed').slice(0, detail ? 8 : 2);
     const relations = detail ? entity.relations.filter(r => r.verification === 'confirmed').slice(0, 6) : [];
@@ -44,7 +70,7 @@ export function createNyhavnaKnowledge(board: BoardData) {
       status: entity.status, has_map_location: Boolean(poi),
       location_precision: poi?.raw.locationPrecision ?? 'unknown', location_note: poi?.raw.locationNote,
       facts: facts.map(f => ({ text: f.text, source_id: f.sourceId, checked_at: f.checkedAt })),
-      sources: nyhavnaKnowledge.sources.filter(s => sourceIds.has(s.id)).map(s => ({ id: s.id, label: s.label, page: s.page, url: s.url, checked_at: s.checkedAt })),
+      sources: knowledge.sources.filter(s => sourceIds.has(s.id)).map(s => ({ id: s.id, label: s.label, page: s.page, url: s.url, checked_at: s.checkedAt })),
       related: detail ? relations.map(r => ({ relation: r.type, id: r.targetEntityId, name: all.find(e => e.id === r.targetEntityId)?.name, source_id: r.sourceId })) : undefined,
       travel_minutes_from_board_origin: poi?.raw.travelTime ?? null,
       note: 'Kun bekreftede fakta i demoens utvalg. Manglende informasjon betyr ikke at tilbudet ikke finnes.',
@@ -62,9 +88,9 @@ export function createNyhavnaKnowledge(board: BoardData) {
     return { matches: matches.length, places: matches.slice(offset, offset + 6), next_offset: offset + 6 < matches.length ? offset + 6 : null, ...extra };
   };
   return (name: string, args: Record<string, unknown>): unknown => {
-    if (name === 'get_board_facts') return { ...pack(nyhavnaKnowledge.area, true), categories: board.categories.map(c => ({ id: String(c.id), name: c.label })) };
+    if (name === 'get_board_facts') return { ...pack(knowledge.area, true), categories: board.categories.map(c => ({ id: String(c.id), name: c.label })) };
     if (name === 'get_place_facts') {
-      const id = typeof args.poi_id === 'string' ? LEVE_POI_ALIASES[args.poi_id] ?? args.poi_id : '';
+      const id = typeof args.poi_id === 'string' ? poiAliases[args.poi_id] ?? args.poi_id : '';
       const entity = all.find(e => e.id === id || (e.mapPoiId !== null && e.mapPoiId === id));
       if (entity) return pack(entity, true);
       const poi = pois.get(id);
@@ -75,7 +101,7 @@ export function createNyhavnaKnowledge(board: BoardData) {
     const q = normalize(query);
     const requestedThemes = Object.entries(themes).filter(([word]) => q.includes(word)).flatMap(([, ids]) => ids);
     const coffeeOnly = /kaffe|kafe|cafe|coffee/.test(q);
-    const ranked = nyhavnaKnowledge.entities.filter(e => !coffeeOnly || e.facts.some(f => f.verification === "confirmed" && /kaffe|kafe|cafe/i.test(normalize(f.text)))).map(e => {
+    const ranked = knowledge.entities.filter(e => !coffeeOnly || e.facts.some(f => f.verification === "confirmed" && /kaffe|kafe|cafe/i.test(normalize(f.text)))).map(e => {
       const names = [e.name, ...e.aliases].map(normalize);
       const exact = names.some(n => n === q);
       const partial = q.length > 1 && names.some(n => n.includes(q) || q.includes(n));
@@ -131,8 +157,19 @@ Behold skillet mellom dagens tilbud, planlagt utvikling, vedtatt plan og visjon 
 «Det andre stedet», «den første» og lignende tolkes mot rekkefølgen i samtalenotatets fremheving (linjen «Referanser»), ikke som «et annet sted» eller et annet tema; er referansen fortsatt uklar, spør kort. Bruk reset_board for oversikten.
 SAMTALENOTAT: Notatet med interesser, tema, fremheving og returpunkt står SIST i denne instruksjonen og oppdateres av serveren når tilstanden endres. Det nyeste notatet gjelder.`;
 
+export interface InstructionOptions {
+  /**
+   * Navnet stemmen bruker om temakunnskapen den kan søke i (`find_project_info`).
+   * Ligger her fordi kilden er datasettets, ikke kodens: den lokale demoen
+   * oppgir sin egen i `board.json`.
+   */
+  projectInfoLabel?: string;
+}
+
 /** Hele instruksjonen for én samtale: reglene, temaene og spørsmålskatalogen fra boardet. */
-export function nyhavnaInstructions(board: BoardData): string {
-  const categories = board.categories.map(c => ({ id: String(c.id), name: c.label, source: c.editorial?.source ? 'nyhavna.no' : undefined }));
-  return `${NYHAVNA_INSTRUCTIONS}\nBoardets temaer (data; tema-ID → navn, «source» = temaet bærer Nyhavnas eget innhold): ${JSON.stringify(categories)}\nSPØRSMÅL OG SVAR (data, per tema):\n${nyhavnaFaqCatalog(board)}`;
+export function nyhavnaInstructions(board: BoardData, options: InstructionOptions = {}): string {
+  const label = options.projectInfoLabel ?? 'nyhavna.no';
+  const categories = board.categories.map(c => ({ id: String(c.id), name: c.label, source: c.editorial?.source ? c.editorial.source.label : undefined }));
+  const rules = label === 'nyhavna.no' ? NYHAVNA_INSTRUCTIONS : NYHAVNA_INSTRUCTIONS.split('nyhavna.no').join(label);
+  return `${rules}\nBoardets temaer (data; tema-ID → navn, «source» = temaet bærer kundens eget innhold): ${JSON.stringify(categories)}\nSPØRSMÅL OG SVAR (data, per tema):\n${nyhavnaFaqCatalog(board)}`;
 }
