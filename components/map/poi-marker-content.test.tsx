@@ -361,3 +361,70 @@ describe("PoiMarkerContent — styrke er ikke form", () => {
     expect(host(container).style.transition).toContain("opacity 500ms");
   });
 });
+
+describe("PoiMarkerContent — omtalte steder", () => {
+  const ring = (c: HTMLElement) =>
+    c.querySelector("[data-poi-highlight-ring]") as HTMLElement | null;
+  const badge = (c: HTMLElement) =>
+    c.querySelector('[data-poi-badge="highlight"]') as HTMLElement | null;
+
+  it("tegner rekkefølgetallet", () => {
+    const { container } = render(
+      <PoiMarkerContent {...base} highlightIndex={2} />,
+    );
+    expect(badge(container)!.textContent).toBe("2");
+  });
+
+  it("tegner verken ring eller tall uten propen", () => {
+    const { container } = render(<PoiMarkerContent {...base} />);
+    expect(ring(container)).toBeNull();
+    expect(badge(container)).toBeNull();
+  });
+
+  it("tallet står til VENSTRE, så kjøpesenter-merket beholder høyre hjørne", () => {
+    const { container } = render(
+      <PoiMarkerContent {...base} anchor highlightIndex={1} />,
+    );
+    expect(badge(container)!.style.left).toBe("-5px");
+    expect(badge(container)!.style.top).toBe("-5px");
+    const anchorBadge = container.querySelector(
+      '[data-poi-badge="anchor"]',
+    ) as HTMLElement;
+    expect(anchorBadge.textContent).toBe("+");
+  });
+
+  it("ringen ligger utenpå disc-en, med hvit luft imellom", () => {
+    const { container } = render(
+      <PoiMarkerContent {...base} highlightIndex={1} />,
+    );
+    // 32 px disc + 2 px hvit luft + 2,5 px ring på hver side (border-box).
+    expect(ring(container)!.style.width).toBe(`${PIN_SIZE + 9}px`);
+    expect(ring(container)!.style.boxShadow).toContain("inset");
+  });
+
+  it("ringen følger en nedskalert disc, ikke boksen", () => {
+    const { container } = render(
+      <PoiMarkerContent {...base} pinFactor={0.5} highlightIndex={1} />,
+    );
+    expect(ring(container)!.style.width).toBe(`${PIN_SIZE / 2 + 9}px`);
+  });
+
+  it("boksen holder seg kvadratisk også med ring og tall", () => {
+    // Samme ankertest som resten av fila: vokser boksen, vandrer markøren bort
+    // fra punktet sitt.
+    const { container } = render(
+      <PoiMarkerContent {...base} label="Sirkus Shopping" highlightIndex={3} />,
+    );
+    const el = host(container);
+    expect(el.style.width).toBe(`${PIN_SIZE}px`);
+    expect(el.style.height).toBe(`${PIN_SIZE}px`);
+  });
+
+  it("prikk-greina har verken ring eller tall — en omtalt markør er aldri prikk", () => {
+    const { container } = render(
+      <PoiMarkerContent {...base} compact highlightIndex={1} />,
+    );
+    expect(ring(container)).toBeNull();
+    expect(badge(container)).toBeNull();
+  });
+});

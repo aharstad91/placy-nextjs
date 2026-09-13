@@ -3,7 +3,9 @@ import { NextRequest } from 'next/server';
 const mocks = vi.hoisted(() => ({ reserve: vi.fn(), attach: vi.fn(), end: vi.fn(), connect: vi.fn(), blockUnknown: vi.fn() }));
 vi.mock('@/lib/realtime/sideband', () => ({ getSupervisor: () => mocks, connectSideband: mocks.connect }));
 vi.mock('@/lib/demo/nyhavna-leve/snapshot', () => ({ getNyhavnaSnapshot: async () => ({ snapshotId: 'snapshot-test', project: {}, board: { categories: [] } }) }));
-vi.mock('@/lib/realtime/nyhavna-knowledge', () => ({ createNyhavnaKnowledge: () => () => ({}), nyhavnaInstructions: () => 'trusted-server-instructions', nyhavnaTools: [] }));
+vi.mock('@/lib/realtime/nyhavna-knowledge', () => ({ nyhavnaInstructions: () => 'trusted-server-instructions' }));
+vi.mock('@/lib/realtime/nyhavna-conversation', () => ({ createNyhavnaConversation: () => ({ execute: () => ({}), observeBrowserResult: () => {}, noteIfChanged: () => null }), nyhavnaTools: [] }));
+vi.mock('@/lib/realtime/nyhavna-project-info', () => ({ nyhavnaProjectInfo: { forTheme: () => [], search: () => [] } }));
 import { GET, POST, DELETE } from '@/app/api/prototype/realtime/route';
 const key = 'test-secret-must-remain-server-side';
 function request(url = 'http://localhost:3101/api/prototype/realtime', origin?: string, extra: Record<string, unknown> = {}) {
@@ -26,6 +28,7 @@ describe('local server-controlled Realtime', () => {
     expect(form.get('session')).not.toContain(key);
     expect(mocks.attach).toHaveBeenCalledWith('session-token', 'rtc_test');
     expect(mocks.connect).toHaveBeenCalledOnce();
+    expect(mocks.connect.mock.calls[0][3]).toMatchObject({ observe: expect.any(Function), note: expect.any(Function) });
     expect(response.headers.get('X-Placy-Session')).toBe('session-token');
     expect(await response.text()).not.toContain(key);
   });

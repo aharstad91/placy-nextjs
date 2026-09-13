@@ -377,6 +377,40 @@ describe("Realtime response ownership", () => {
 });
 
 
+describe("Realtime early map execution", () => {
+  it("runs a server-controlled map call as soon as its item is done, once, and skips it at response.done", async () => {
+    const executeTool = vi.fn(() => ({ ok: true, shown: "A" }));
+    const { result } = renderHook(() => useRealtime({ ...options(executeTool), serverControlled: true }));
+    await act(async () => { await result.current.start({ mode: "text" }); });
+    const channel = FakePeer.instances[0].channel;
+    await act(async () => { await channel.emit({ type: "response.created", response: { id: "r1" } }); });
+    await act(async () => { await channel.emit({ type: "response.output_item.done", response_id: "r1", item: { type: "function_call", name: "show_place", call_id: "call-early", arguments: '{"poi_id":"a"}' } }); });
+    expect(executeTool).toHaveBeenCalledOnce();
+    expect(channel.events().filter(event => event.type === "conversation.item.create" && (event.item as { call_id?: string }).call_id === "call-early")).toHaveLength(1);
+    await act(async () => { await channel.emit({ type: "response.done", response: { id: "r1", status: "completed", output: [{ type: "function_call", name: "show_place", call_id: "call-early", arguments: '{"poi_id":"a"}' }] } }); });
+    expect(executeTool).toHaveBeenCalledOnce();
+    expect(channel.events().filter(event => event.type === "response.create")).toHaveLength(0);
+  });
+  it("does not run an early map call from a response that belongs to an interrupted turn", async () => {
+    const executeTool = vi.fn(() => ({ ok: true }));
+    const { result } = renderHook(() => useRealtime({ ...options(executeTool), serverControlled: true }));
+    await act(async () => { await result.current.start({ mode: "text" }); });
+    const channel = FakePeer.instances[0].channel;
+    await act(async () => { await channel.emit({ type: "response.created", response: { id: "old" } }); });
+    act(() => { result.current.interruptForMap(); });
+    await act(async () => { await channel.emit({ type: "response.output_item.done", response_id: "old", item: { type: "function_call", name: "show_place", call_id: "late", arguments: "{}" } }); });
+    expect(executeTool).not.toHaveBeenCalled();
+  });
+  it("greets without naming itself when no greeting is given", async () => {
+    vi.stubGlobal("navigator", { mediaDevices: { getUserMedia: vi.fn(async () => ({ getAudioTracks: () => [{ stop: vi.fn(), enabled: true }], getTracks: () => [{ stop: vi.fn() }] })) } });
+    const { result } = renderHook(() => useRealtime({ ...options(), serverControlled: true }));
+    await act(async () => { await result.current.start({ mode: "voice" }); });
+    const greeting = FakePeer.instances[0].channel.events().find(event => event.type === "response.create") as { response?: { instructions?: string } } | undefined;
+    expect(greeting?.response?.instructions).toBeTruthy();
+    expect(greeting?.response?.instructions).not.toMatch(/Placy/);
+  });
+});
+
 describe("Realtime cost controls", () => {
   it("closes an idle connection after two minutes but lets an active answer finish", async () => {
     vi.useFakeTimers();

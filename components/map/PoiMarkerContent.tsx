@@ -164,7 +164,25 @@ export interface PoiMarkerContentProps {
    * som at kartet blinket.
    */
   opacity?: number;
+  /**
+   * Punktet er OMTALT akkurat nå, og dette er plassen i rekken (1-basert).
+   * Utelatt = ikke omtalt, og markøren er uendret.
+   *
+   * Tegner to ting: en mørk ring med hvit luft utenpå disc-en, og
+   * rekkefølgetallet øverst til VENSTRE. Venstre fordi høyre hjørne er opptatt
+   * av kjøpesenter-merket og turnummeret — de sier noe om STEDET, mens dette
+   * sier noe om samtalen, og en boligkjøper skal kunne se begge deler samtidig.
+   *
+   * Ringen er nesten-svart og ikke kategorifargen, av samme grunn: «vi snakker
+   * om denne» er en påstand om samtalen, ikke om temaet. Kategorifargen står
+   * allerede i disc-en under. 2D-markøren (`BoardMarker.highlightIndex`) tegner
+   * det samme med de samme tallene.
+   */
+  highlightIndex?: number;
 }
+
+/** Mørk nok til å lese over satellittfoto uansett kategorifarge under. */
+const HIGHLIGHT_RING_COLOR = "#1c1917";
 
 export function PoiMarkerContent({
   color,
@@ -178,6 +196,7 @@ export function PoiMarkerContent({
   scale = 1,
   opacity = 1,
   pinFactor = 1,
+  highlightIndex,
 }: PoiMarkerContentProps) {
   // Prikken OG den nedskalerte pinnen beholder markørens fulle
   // {@link PIN_SIZE}-boks, så ankeret ikke flytter seg. Bare det tegnede
@@ -233,6 +252,33 @@ export function PoiMarkerContent({
         />
       ) : (
         <>
+          {/* Omtalt-ring. Luften mellom ringen og disc-en er en `inset`-skygge
+              og ikke et element til: ringen skal ligge UTENPÅ disc-en med hvitt
+              imellom, og et ekstra element per markør er et mount til i et sett
+              på flere hundre. Skalerer med `disc`, så en nedskalert kontekst-
+              pinne som blir omtalt får ringen sin tett inntil skiva. */}
+          {highlightIndex !== undefined && (
+            <span
+              data-poi-highlight-ring=""
+              style={{
+                position: "absolute",
+                left: "50%",
+                top: "50%",
+                // disc + 2 px hvit luft + 2,5 px ring på hver side. Med
+                // border-box er den ytre diameteren disc + 9, og den hvite
+                // inset-skyggen lander da nøyaktig på disc-kanten.
+                width: disc + 9,
+                height: disc + 9,
+                marginLeft: -(disc + 9) / 2,
+                marginTop: -(disc + 9) / 2,
+                borderRadius: "50%",
+                border: `2.5px solid ${HIGHLIGHT_RING_COLOR}`,
+                boxShadow: "inset 0 0 0 2px #ffffff",
+                boxSizing: "border-box",
+                transition: grow,
+              }}
+            />
+          )}
           <span
             style={{
               position: "absolute",
@@ -280,6 +326,36 @@ export function PoiMarkerContent({
             </span>
           )}
         </>
+      )}
+
+      {/* Rekkefølgetallet for et OMTALT sted. Øverst til VENSTRE, så det kan stå
+          samtidig med kjøpesenter-merket og turnummeret i høyre hjørne — de
+          sier noe om stedet, dette sier noe om samtalen. Ligger UTENFOR
+          compact-greina, men gated på den: en omtalt markør tegnes aldri som
+          prikk (se `use-3d-marker-declutter`), og et løst tall svevende over en
+          14 px prikk ville vært verre enn ingenting om noen likevel ba om det.
+          2D-markøren plasserer det samme tallet likt. */}
+      {highlightIndex !== undefined && !compact && (
+        <span
+          data-poi-badge="highlight"
+          style={{
+            position: "absolute",
+            top: discInset - 5,
+            left: discInset - 5,
+            minWidth: 16,
+            height: 16,
+            padding: "0 3px",
+            borderRadius: 999,
+            background: "#ffffff",
+            border: `1.5px solid ${HIGHLIGHT_RING_COLOR}`,
+            color: HIGHLIGHT_RING_COLOR,
+            font: "700 10px/16px system-ui, -apple-system, sans-serif",
+            textAlign: "center",
+            boxSizing: "border-box",
+          }}
+        >
+          {highlightIndex}
+        </span>
       )}
 
       {label && (

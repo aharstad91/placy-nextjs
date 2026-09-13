@@ -46,7 +46,8 @@ export interface RealtimeStartOptions {
   initialText?: string;
 }
 
-export const MAP_TOOLS = new Set(["show_category", "show_place", "set_travel_mode", "reset_board"]);
+/** Verktøyene NETTLESEREN utfører. Definisjonene ligger i `map-tools.ts`; navnene her er gaten begge sider sjekker mot. */
+export const MAP_TOOLS = new Set(["show_category", "show_place", "set_travel_mode", "reset_board", "highlight_places", "clear_highlights"]);
 
 export const MAP_INTERRUPT_MARKER = "Placy: brukeren tar over kartet; avbryt tidligere kartkommandoer.";
 

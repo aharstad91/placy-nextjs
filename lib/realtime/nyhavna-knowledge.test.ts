@@ -2,6 +2,8 @@ import { describe, expect, it } from 'vitest';
 import { getNyhavnaSnapshot } from '@/lib/demo/nyhavna-leve/snapshot';
 import { nyhavnaKnowledge } from '@/lib/demo/nyhavna-leve/knowledge';
 import { createNyhavnaKnowledge, NYHAVNA_INSTRUCTIONS, nyhavnaFaqCatalog, nyhavnaInstructions } from '@/lib/realtime/nyhavna-knowledge';
+import { NYHAVNA_GREETING_INSTRUCTION, NYHAVNA_GREETING_TEXT } from '@/lib/realtime/nyhavna-greeting';
+import { REALTIME_GROUNDING } from '@/lib/realtime/session-config';
 
 describe('server knowledge boundary', () => {
   it('resolves every curated alias and keeps all packets bounded and sourced', async () => {
@@ -54,7 +56,7 @@ describe('server knowledge boundary', () => {
     const catalog = nyhavnaFaqCatalog(board);
     const entries = [...(board.globalFaq ?? []), ...board.categories.flatMap(c => c.editorial?.faq ?? [])];
     expect(entries.length).toBeGreaterThan(40);
-    for (const entry of entries) expect(catalog).toContain(`- ${entry.question} → `);
+    for (const entry of entries) expect(catalog).toContain(`- (${entry.id}) ${entry.question} → `);
     expect(catalog).not.toMatch(/\]\((poi|category):/);
     expect(catalog).toContain('| vis: REMA 1000 SOLSIDEN=google-');
     expect(catalog).toContain('| kategori: transport');
@@ -62,7 +64,18 @@ describe('server knowledge boundary', () => {
     const instructions = nyhavnaInstructions(board);
     expect(instructions).toContain(NYHAVNA_INSTRUCTIONS);
     expect(instructions).toContain(catalog);
-    expect(instructions.split(/\s+/).length).toBeLessThan(3200);
+    expect(instructions.split(/\s+/).length).toBeLessThan(3400);
+  });
+  it('holder språk og uttale hver for seg, uten merkenavn i tale, og med én åpen hilsen', () => {
+    const spoken = `${REALTIME_GROUNDING}\n${NYHAVNA_INSTRUCTIONS}\n${NYHAVNA_GREETING_INSTRUCTION}`;
+    expect(spoken).not.toMatch(/Placy/);
+    expect(NYHAVNA_INSTRUCTIONS).toMatch(/^SPRÅK:/m);
+    expect(NYHAVNA_INSTRUCTIONS).toMatch(/^UTTALE OG STEMME:/m);
+    // Positiv beskrivelse: ingen liste over dialekter/språk å unngå.
+    expect(NYHAVNA_INSTRUCTIONS).not.toMatch(/svensk|dansk|engelsk aksent/i);
+    expect(NYHAVNA_GREETING_TEXT).toBe('Hei! Jeg kan vise deg rundt på Nyhavna. Hva er viktigst for deg når du vurderer et nytt sted å bo?');
+    expect((NYHAVNA_GREETING_TEXT.match(/\?/g) ?? []).length).toBe(1);
+    for (const tool of ['set_interests', 'open_theme', 'note_detour', 'return_to_tour', 'highlight_places', 'show_place', 'find_project_info']) expect(NYHAVNA_INSTRUCTIONS).toContain(tool);
   });
   it('paginates all records without duplicates and preserves unknown locations', async () => {
     const execute = createNyhavnaKnowledge((await getNyhavnaSnapshot()).board);

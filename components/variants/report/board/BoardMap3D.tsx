@@ -412,6 +412,34 @@ export function BoardMap3D({
     ? (story.stop?.id ?? null)
     : (activeCategory?.id ?? null);
 
+  /**
+   * De OMTALTE stedene, i tre former fordi tre konsumenter trenger hver sin.
+   *
+   * Lista går inn i markørsett-seleksjonen (rekkefølgen bevares og stedene
+   * mountes uansett gren), settet inn i kullingen (oppslag per markør), og
+   * Recordet inn i kartlaget (rekkefølgetallet som tegnes). Alle tre utledes av
+   * SAMME felt, så de kan ikke svare ulikt på «er dette stedet omtalt».
+   *
+   * `state.highlightedPoiIds` er referanse-stabil mellom identiske grupper
+   * (reduceren returnerer samme state-objekt), så memoene fyrer bare på et
+   * faktisk nytt svar.
+   */
+  const highlightedPoiIds = useMemo<readonly string[]>(
+    () => state.highlightedPoiIds.map(String),
+    [state.highlightedPoiIds],
+  );
+  const highlightedIdSet = useMemo(
+    () => new Set(highlightedPoiIds),
+    [highlightedPoiIds],
+  );
+  const highlightIndexes = useMemo(() => {
+    const out: Record<string, number> = {};
+    highlightedPoiIds.forEach((id, i) => {
+      out[id] = i + 1;
+    });
+    return out;
+  }, [highlightedPoiIds]);
+
   const { markerPOIs, revealItems, revealWindowMs, hasVoiceOver, orbitRange } =
     useBoardMarkerSet({
       data,
@@ -427,6 +455,7 @@ export function BoardMap3D({
       isHomeBeat,
       isOutroBeat,
       basicIntroActive,
+      highlightedPoiIds,
     });
 
   // Reveal-kaskaden (blobs + legend-pins som animeres inn):
@@ -825,11 +854,21 @@ export function BoardMap3D({
     const openId = state.activePOIId ? String(state.activePOIId) : null;
     const texture = new Set<string>();
     for (const poi of markerPOIs) {
+      // Det punktet du har ÅPNET er aldri kontekst, og et OMTALT sted er det
+      // heller ikke: sier assistenten navnet under et annet stopp, er det
+      // stedet du skal finne igjen — ikke et av hundre dempede naboer.
       if (scene.has(poi.id) || poi.id === openId) continue;
+      if (highlightedIdSet.has(poi.id)) continue;
       texture.add(poi.id);
     }
     return texture;
-  }, [markerPOIs, state.activePOIId, story?.on, story?.stop]);
+  }, [
+    markerPOIs,
+    state.activePOIId,
+    story?.on,
+    story?.stop,
+    highlightedIdSet,
+  ]);
 
   // ── Markør-utglisning + labels ────────────────────────────────────────────
   // 3D-halvdelen av 2D-kartets zoom-baserte markør-logikk: hvilke pins som
@@ -845,6 +884,7 @@ export function BoardMap3D({
     activePOIId: state.activePOIId,
     textureIds: storyTextureIds,
     dotIds: reach.outsideIds,
+    highlightedIds: highlightedIdSet,
     // Mini-popupen viser navnet — da skal ikke pinnen vise det også.
     suppressActiveLabel: popupMode === "mini",
     enabled: !compactMarkers && markerPOIs.length > 0,
@@ -960,6 +1000,7 @@ export function BoardMap3D({
         // (hooken folder `dotIds` inn der), dempingen herfra.
         fadedMarkerIds={reach.outsideIds}
         fadedOpacity={REACH_OUTSIDE_OPACITY}
+        highlightIndexes={highlightIndexes}
         revealItems={revealItems}
         showReveal={showReveal}
         animateReveal={!reducedMotion}

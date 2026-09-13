@@ -2,7 +2,9 @@ import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { realtimeModel, realtimeSessionConfig } from '@/lib/realtime/session-config';
 import { getNyhavnaSnapshot } from '@/lib/demo/nyhavna-leve/snapshot';
-import { createNyhavnaKnowledge, nyhavnaInstructions, nyhavnaTools } from '@/lib/realtime/nyhavna-knowledge';
+import { nyhavnaInstructions } from '@/lib/realtime/nyhavna-knowledge';
+import { createNyhavnaConversation, nyhavnaTools } from '@/lib/realtime/nyhavna-conversation';
+import { nyhavnaProjectInfo } from '@/lib/realtime/nyhavna-project-info';
 import { connectSideband, getSupervisor } from '@/lib/realtime/sideband';
 
 export const runtime = 'nodejs';
@@ -67,7 +69,10 @@ export async function POST(request: NextRequest) {
     identityKnown = true;
     await supervisor.attach(token, callId);
     if (request.signal.aborted) { await supervisor.end(token); return new NextResponse(null, { status: 499 }); }
-    await connectSideband(callId, token, createNyhavnaKnowledge(snapshot.board));
+    // Samtaletilstanden lever like lenge som kallet: interesser, tema, fremhevede
+    // steder og returpunkt ligger her, ikke i modellens historikk.
+    const conversation = createNyhavnaConversation(snapshot.board, { projectInfo: nyhavnaProjectInfo });
+    await connectSideband(callId, token, conversation.execute, { observe: conversation.observeBrowserResult, note: conversation.noteIfChanged, onUserText: conversation.interceptUserMessage });
     const answer = await upstream.text();
     if (request.signal.aborted) { await supervisor.end(token); return new NextResponse(null, { status: 499 }); }
     return new NextResponse(answer, { headers: { 'Content-Type': 'application/sdp', 'Cache-Control': 'no-store', 'X-Placy-Session': token } });

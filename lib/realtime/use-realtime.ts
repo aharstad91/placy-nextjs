@@ -9,11 +9,12 @@ import { MAP_TOOLS, MAP_INTERRUPT_MARKER, SESSION_END_PREFIX, RATE_WAIT_PREFIX }
 interface ServerEvent {
   type: string;
   item_id?: string;
+  response_id?: string;
   delta?: string;
   transcript?: string;
   text?: string;
   session?: { output_modalities?: string[] };
-  item?: { role?: string; content?: Array<{ text?: string }>; id?: string; call_id?: string; type?: string; output?: string };
+  item?: { role?: string; content?: Array<{ text?: string }>; id?: string; call_id?: string; type?: string; output?: string; name?: string; arguments?: string };
   error?: { code?: string; message?: string };
   response?: {
     id?: string;
@@ -251,7 +252,40 @@ export function useRealtime(options: RealtimeOptions) {
         try { event = JSON.parse(message.data) as ServerEvent; } catch { return; }
         if (event.type.startsWith("response.") || event.type.startsWith("output_audio_buffer.")) current.lastActivity = Date.now();
         const id = event.item_id ?? "current-assistant";
+        // Ett kall utføres ÉN gang, uansett om det kommer tidlig (output_item.done)
+        // eller sent (response.done). Svaret sendes bare hvis turen fortsatt er
+        // brukerens samme tur – et avbrudd eller manuelt klikk gjør det foreldet.
+        const executeCall = async (call: { call_id: string; name: string; arguments?: string }, turn: number): Promise<boolean> => {
+          if (current.called.has(call.call_id)) return false;
+          current.called.add(call.call_id);
+          let result: unknown;
+          try {
+            if (current.serverControlled && !MAP_TOOLS.has(call.name)) return false;
+            if (!latest.current.tools.some(tool => tool.name === call.name)) throw new Error("Ukjent verktøy");
+            const args: unknown = JSON.parse(call.arguments || "{}");
+            if (!args || typeof args !== "object" || Array.isArray(args)) throw new Error("Ugyldige argumenter");
+            result = await latest.current.executeTool(call.name, args as Record<string, unknown>);
+            addReferences(result);
+          } catch {
+            result = { ok: false, error: "Handlingen kunne ikke utføres. Bruk eksisterende ID-er og gyldige argumenter." };
+          }
+          if (!active() || current.turn !== turn) return false;
+          send({ type: "conversation.item.create", item: { type: "function_call_output", call_id: call.call_id, output: JSON.stringify(result ?? { ok: true }) } });
+          return true;
+        };
         switch (event.type) {
+          case "response.output_item.done": {
+            // Tidlig utførelse av kartkommandoer (serverstyrt): kallet er ferdig
+            // generert lenge før lyden i samme svar er ferdig spilt, og stedene
+            // skal stå i kartet NÅR forklaringen begynner, ikke etter den.
+            // Serveren venter uansett på kartsvaret før den fortsetter.
+            const item = event.item;
+            if (!current.serverControlled || item?.type !== "function_call" || !item.call_id || !item.name || !MAP_TOOLS.has(item.name)) break;
+            const responseTurn = event.response_id ? current.responseTurns.get(event.response_id) : undefined;
+            if (responseTurn !== undefined && responseTurn !== current.turn) break;
+            await executeCall({ call_id: item.call_id, name: item.name, arguments: item.arguments }, current.turn);
+            break;
+          }
           case "session.updated":
             if (event.session?.output_modalities) {
               const acknowledgedMode: RealtimeMode = event.session.output_modalities.includes("audio") ? "voice" : "text";
@@ -343,22 +377,8 @@ export function useRealtime(options: RealtimeOptions) {
             let executed = false;
             for (const call of calls) {
               if (!active() || current.turn !== turn) return;
-              if (!call.call_id || !call.name || current.called.has(call.call_id)) continue;
-              current.called.add(call.call_id);
-              let result: unknown;
-              try {
-                if (current.serverControlled && !MAP_TOOLS.has(call.name)) continue;
-                if (!latest.current.tools.some(tool => tool.name === call.name)) throw new Error("Ukjent verktøy");
-                const args: unknown = JSON.parse(call.arguments || "{}");
-                if (!args || typeof args !== "object" || Array.isArray(args)) throw new Error("Ugyldige argumenter");
-                result = await latest.current.executeTool(call.name, args as Record<string, unknown>);
-                addReferences(result);
-              } catch {
-                result = { ok: false, error: "Handlingen kunne ikke utføres. Bruk eksisterende ID-er og gyldige argumenter." };
-              }
-              if (!active() || current.turn !== turn) return;
-              send({ type: "conversation.item.create", item: { type: "function_call_output", call_id: call.call_id, output: JSON.stringify(result ?? { ok: true }) } });
-              executed = true;
+              if (!call.call_id || !call.name) continue;
+              if (await executeCall({ call_id: call.call_id, name: call.name, arguments: call.arguments }, turn)) executed = true;
             }
             if (!active() || current.turn !== turn) return;
             if (executed) {
@@ -437,7 +457,7 @@ export function useRealtime(options: RealtimeOptions) {
       }, 720000);
       if (initialText?.trim()) sendText(initialText);
       else if (mode === "voice") {
-        send({ type: "response.create", response: { instructions: latest.current.greeting ?? "Hils kort på norsk, standard østnorsk talemål, uten engelsk aksent. Presenter deg som Placy og si at brukeren kan spørre om nabolaget. Ikke kall verktøy før brukeren har spurt." } });
+        send({ type: "response.create", response: { instructions: latest.current.greeting ?? "Hils kort på norsk, med samme stemme og uttale som resten av samtalen, uten å nevne noe navn på deg selv, og si at brukeren kan spørre om nabolaget. Ikke kall verktøy før brukeren har spurt." } });
       }
     } catch (caught) {
       if (run !== generation.current) return;

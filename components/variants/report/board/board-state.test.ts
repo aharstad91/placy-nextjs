@@ -36,6 +36,7 @@ describe("boardReducer", () => {
         travelMode: "walk",
         showContours: false,
         exploreSuppressed: false,
+        highlightedPoiIds: [],
       });
     });
 
@@ -49,6 +50,7 @@ describe("boardReducer", () => {
         travelMode: "walk",
         showContours: false,
         exploreSuppressed: false,
+        highlightedPoiIds: [],
       };
       const next = boardReducer(start, { type: "SELECT_CATEGORY", id: CAT_B });
       expect(next).toEqual({
@@ -60,6 +62,7 @@ describe("boardReducer", () => {
         travelMode: "walk",
         showContours: false,
         exploreSuppressed: false,
+        highlightedPoiIds: [],
       });
     });
 
@@ -114,6 +117,7 @@ describe("boardReducer", () => {
         travelMode: "walk",
         showContours: false,
         exploreSuppressed: false,
+        highlightedPoiIds: [],
       };
       const next = boardReducer(start, { type: "OPEN_POI", id: POI_1 });
       expect(next).toEqual({
@@ -125,6 +129,7 @@ describe("boardReducer", () => {
         travelMode: "walk",
         showContours: false,
         exploreSuppressed: false,
+        highlightedPoiIds: [],
       });
     });
 
@@ -138,6 +143,7 @@ describe("boardReducer", () => {
         travelMode: "walk",
         showContours: false,
         exploreSuppressed: false,
+        highlightedPoiIds: [],
       };
       const next = boardReducer(start, { type: "OPEN_POI", id: POI_2 });
       expect(next).toEqual({
@@ -149,6 +155,7 @@ describe("boardReducer", () => {
         travelMode: "walk",
         showContours: false,
         exploreSuppressed: false,
+        highlightedPoiIds: [],
       });
     });
 
@@ -169,6 +176,7 @@ describe("boardReducer", () => {
         travelMode: "walk",
         showContours: false,
         exploreSuppressed: false,
+        highlightedPoiIds: [],
       });
     });
 
@@ -190,6 +198,7 @@ describe("boardReducer", () => {
         travelMode: "walk",
         showContours: false,
         exploreSuppressed: false,
+        highlightedPoiIds: [],
       });
     });
 
@@ -203,6 +212,7 @@ describe("boardReducer", () => {
         travelMode: "walk",
         showContours: false,
         exploreSuppressed: false,
+        highlightedPoiIds: [],
       };
       const next = boardReducer(start, { type: "OPEN_POI", id: POI_1 });
       expect(next.activeCategoryId).toBe(CAT_B);
@@ -220,6 +230,7 @@ describe("boardReducer", () => {
         travelMode: "walk",
         showContours: false,
         exploreSuppressed: false,
+        highlightedPoiIds: [],
       };
       const next = boardReducer(start, { type: "OPEN_POI", id: POI_2 });
       expect(next.activeCategoryId).toBe(CAT_A);
@@ -243,6 +254,7 @@ describe("boardReducer", () => {
         travelMode: "walk",
         showContours: false,
         exploreSuppressed: false,
+        highlightedPoiIds: [],
       };
       const next = boardReducer(start, { type: "BACK_TO_ACTIVE" });
       expect(next).toEqual({
@@ -254,6 +266,7 @@ describe("boardReducer", () => {
         travelMode: "walk",
         showContours: false,
         exploreSuppressed: false,
+        highlightedPoiIds: [],
       });
     });
 
@@ -277,6 +290,7 @@ describe("boardReducer", () => {
         travelMode: "walk",
         showContours: false,
         exploreSuppressed: false,
+        highlightedPoiIds: [],
       };
       const next = boardReducer(start, { type: "BACK_TO_DEFAULT" });
       expect(next).toEqual({
@@ -288,6 +302,7 @@ describe("boardReducer", () => {
         travelMode: "walk",
         showContours: false,
         exploreSuppressed: false,
+        highlightedPoiIds: [],
       });
     });
 
@@ -301,6 +316,7 @@ describe("boardReducer", () => {
         travelMode: "walk",
         showContours: false,
         exploreSuppressed: false,
+        highlightedPoiIds: [],
       };
       const next = boardReducer(start, { type: "BACK_TO_DEFAULT" });
       expect(next.phase).toBe("default");
@@ -320,6 +336,7 @@ describe("boardReducer", () => {
         travelMode: "walk",
         showContours: false,
         exploreSuppressed: false,
+        highlightedPoiIds: [],
       };
       const next = boardReducer(start, { type: "RESET_TO_DEFAULT" });
       expect(next).toEqual(initialBoardState);
@@ -531,5 +548,160 @@ describe("rekkevidde-konturer: av/på overlever navigasjon (AE7)", () => {
       state = boardReducer(state, action);
     }
     expect(state.showContours).toBe(true);
+  });
+});
+
+/**
+ * Fremhevede steder — de OMTALTE punktene, som er en egen markørtilstand ved
+ * siden av den åpne POI-en (`activePOIId`). Reglene her er hele kontrakten
+ * talesamtalen dispatcher mot.
+ */
+describe("fremhevede steder (HIGHLIGHT_POIS / CLEAR_HIGHLIGHTS)", () => {
+  const POI_3 = "poi-3" as BoardPOIId;
+
+  it("er tomt ved oppstart — kartet begynner uten at noe er omtalt", () => {
+    expect(initialBoardState.highlightedPoiIds).toEqual([]);
+  });
+
+  it("setter listen i den rekkefølgen stedene ble nevnt", () => {
+    const next = boardReducer(initialBoardState, {
+      type: "HIGHLIGHT_POIS",
+      ids: [POI_2, POI_1, POI_3],
+    });
+    expect(next.highlightedPoiIds).toEqual([POI_2, POI_1, POI_3]);
+  });
+
+  it("ERSTATTER hele settet — et nytt svar er en ny gruppe, ikke et tillegg", () => {
+    const first = boardReducer(initialBoardState, {
+      type: "HIGHLIGHT_POIS",
+      ids: [POI_1, POI_2],
+    });
+    const second = boardReducer(first, {
+      type: "HIGHLIGHT_POIS",
+      ids: [POI_3],
+    });
+    expect(second.highlightedPoiIds).toEqual([POI_3]);
+  });
+
+  it("fjerner dubletter og beholder første forekomst — én markør, ett tall", () => {
+    const next = boardReducer(initialBoardState, {
+      type: "HIGHLIGHT_POIS",
+      ids: [POI_2, POI_1, POI_2, POI_3, POI_1],
+    });
+    expect(next.highlightedPoiIds).toEqual([POI_2, POI_1, POI_3]);
+  });
+
+  it("identisk liste gir SAMME state-objekt (ingen re-render av ~1 000 markører)", () => {
+    const first = boardReducer(initialBoardState, {
+      type: "HIGHLIGHT_POIS",
+      ids: [POI_1, POI_2],
+    });
+    expect(
+      boardReducer(first, { type: "HIGHLIGHT_POIS", ids: [POI_1, POI_2] }),
+    ).toBe(first);
+    // Dedupen skjer FØR sammenligningen: samme gruppe skrevet med en dublett er
+    // fortsatt samme gruppe.
+    expect(
+      boardReducer(first, {
+        type: "HIGHLIGHT_POIS",
+        ids: [POI_1, POI_1, POI_2],
+      }),
+    ).toBe(first);
+  });
+
+  it("rekkefølgen er innhold — samme ids i ny rekkefølge er en ny gruppe", () => {
+    const first = boardReducer(initialBoardState, {
+      type: "HIGHLIGHT_POIS",
+      ids: [POI_1, POI_2],
+    });
+    const swapped = boardReducer(first, {
+      type: "HIGHLIGHT_POIS",
+      ids: [POI_2, POI_1],
+    });
+    expect(swapped).not.toBe(first);
+    expect(swapped.highlightedPoiIds).toEqual([POI_2, POI_1]);
+  });
+
+  it("CLEAR_HIGHLIGHTS tømmer settet", () => {
+    const on = boardReducer(initialBoardState, {
+      type: "HIGHLIGHT_POIS",
+      ids: [POI_1, POI_2],
+    });
+    expect(
+      boardReducer(on, { type: "CLEAR_HIGHLIGHTS" }).highlightedPoiIds,
+    ).toEqual([]);
+  });
+
+  it("CLEAR_HIGHLIGHTS på et tomt sett er no-op (samme referanse)", () => {
+    expect(boardReducer(initialBoardState, { type: "CLEAR_HIGHLIGHTS" })).toBe(
+      initialBoardState,
+    );
+  });
+
+  it("HIGHLIGHT_POIS rører BARE listen — fase, kategori og POI står", () => {
+    const start: BoardState = {
+      ...initialBoardState,
+      phase: "poi",
+      activeCategoryId: CAT_A,
+      activePOIId: POI_1,
+      exploreOpen: true,
+      travelMode: "bike",
+      showContours: true,
+      exploreSuppressed: true,
+    };
+    const after = boardReducer(start, {
+      type: "HIGHLIGHT_POIS",
+      ids: [POI_2],
+    });
+    expect({ ...after, highlightedPoiIds: start.highlightedPoiIds }).toEqual(
+      start,
+    );
+  });
+
+  // INGEN navigasjons-action rører settet: fremhevingen tilhører det som ble
+  // SAGT, ikke hvor leseren står. Trykker hun på ett av de omtalte stedene,
+  // skal de to andre bli stående.
+  it.each([
+    ["SELECT_CATEGORY", { type: "SELECT_CATEGORY", id: CAT_B }],
+    ["OPEN_POI", { type: "OPEN_POI", id: POI_3 }],
+    ["BACK_TO_ACTIVE", { type: "BACK_TO_ACTIVE" }],
+    ["BACK_TO_DEFAULT", { type: "BACK_TO_DEFAULT" }],
+    ["RESET_TO_DEFAULT", { type: "RESET_TO_DEFAULT" }],
+    ["START_INTRO", { type: "START_INTRO" }],
+    ["END_INTRO", { type: "END_INTRO" }],
+    ["OPEN_EXPLORE", { type: "OPEN_EXPLORE" }],
+    ["CLOSE_EXPLORE", { type: "CLOSE_EXPLORE" }],
+    ["SET_TRAVEL_MODE", { type: "SET_TRAVEL_MODE", mode: "bike" }],
+    ["TOGGLE_CONTOURS", { type: "TOGGLE_CONTOURS" }],
+  ] as [string, BoardAction][])("%s bærer settet videre", (_navn, action) => {
+    const start: BoardState = {
+      ...initialBoardState,
+      phase: "poi",
+      activeCategoryId: CAT_A,
+      activePOIId: POI_1,
+      highlightedPoiIds: [POI_1, POI_2],
+    };
+    expect(boardReducer(start, action).highlightedPoiIds).toEqual([
+      POI_1,
+      POI_2,
+    ]);
+  });
+
+  it("overlever en full navigasjons-runde, som reisemodus og konturvalget", () => {
+    let state = boardReducer(initialBoardState, {
+      type: "HIGHLIGHT_POIS",
+      ids: [POI_1, POI_2],
+    });
+    for (const action of [
+      { type: "SELECT_CATEGORY", id: CAT_A },
+      { type: "OPEN_POI", id: POI_1 },
+      { type: "BACK_TO_ACTIVE" },
+      { type: "BACK_TO_DEFAULT" },
+      { type: "SELECT_CATEGORY", id: CAT_B },
+      { type: "RESET_TO_DEFAULT" },
+    ] as BoardAction[]) {
+      state = boardReducer(state, action);
+    }
+    expect(state.highlightedPoiIds).toEqual([POI_1, POI_2]);
   });
 });

@@ -400,6 +400,22 @@ export function BoardMap({
   const activeThemeId =
     activeCategory?.id != null ? String(activeCategory.id) : storyStopId;
 
+  /**
+   * De OMTALTE stedene, som id → plass i rekken (1-basert).
+   *
+   * Leses fra `state` og ikke fra `markerStates`, fordi `markerStates`
+   * deduplikerer POI-er over kategorier: et anker som ligger i tre temaer har
+   * bare ÉN markør, og oppslaget må derfor gå på POI-id alene.
+   *
+   * Regnes som `Map` én gang og ikke som `indexOf` per markør: settet er rundt
+   * tusen markører, og løkka kjøres i hver render av kartet.
+   */
+  const highlightIndexById = useMemo(() => {
+    const out = new globalThis.Map<string, number>();
+    state.highlightedPoiIds.forEach((id, i) => out.set(String(id), i + 1));
+    return out;
+  }, [state.highlightedPoiIds]);
+
   const markerStates = useMemo(() => {
     const baseVisible = new Set<string>();
     if (!activeCategory) {
@@ -444,7 +460,12 @@ export function BoardMap({
         // Delt derivasjon (marker-style): samme ikon/farge som listeradene for
         // dette stedet bruker. Endres den her, endres den overalt.
         ...poiVisualIdentity(p.raw, cat),
-        isVisible: visibleIds.has(p.id),
+        // Et OMTALT sted er alltid synlig. Filtrene over svarer på «hva ser
+        // leseren etter», og et svar fra assistenten kan godt peke utenfor det:
+        // på en kategori hun ikke står i, på et sub-tema hun har skrudd av,
+        // eller på et sted utenfor kartutsnittet mobilen scoper til. Sto det
+        // ikke på kartet, ville kameraet flydd til et tomt punkt.
+        isVisible: visibleIds.has(p.id) || highlightIndexById.has(p.id),
         // null utenfor omvisningen — markøren rendres da uendret.
         emphasis: storyEmphasisOf?.(String(p.id), String(cat.id)) ?? null,
         // Unit 5: event-board "Min samling"-highlight. Lagrede POIer får en egen
@@ -480,6 +501,7 @@ export function BoardMap({
     collectionPoiIds,
     storyEmphasisOf,
     activeThemeId,
+    highlightIndexById,
   ]);
 
   // Synlige POI-er for kamera-fit (tour-bounds). Inkluderer ikke fade-out-
@@ -578,16 +600,22 @@ export function BoardMap({
     const pinCandidates: PinCandidate[] = [];
     for (const { poi, emphasis, x, y, onscreen } of projected) {
       if (!onscreen) continue;
+      const highlighted = highlightIndexById.has(poi.id);
       // Utenfor rekkevidde er punktet ALT en prikk (`BoardMarker.outOfReach`).
       // Da har det ingen skive å slåss om plassen med, og skal ikke kunne
-      // demotere en nabo som fortsatt tegnes som pin.
-      if (reachOutsideIds.has(poi.id)) continue;
+      // demotere en nabo som fortsatt tegnes som pin. Omtalte steder er unntatt
+      // rekkevidde-prikken (se `BoardMarker.highlightIndex`), så de har en
+      // skive og hører hjemme i konkurransen.
+      if (reachOutsideIds.has(poi.id) && !highlighted) continue;
       pinCandidates.push({
         id: poi.id,
         x,
         y,
         priority:
-          state.activePOIId === poi.id || poi.isAnchor === true
+          // Et omtalt sted eier plassen sin på linje med det åpne og med
+          // ankeret: blir det en prikk, kan ikke leseren finne det assistenten
+          // nettopp snakket om.
+          state.activePOIId === poi.id || poi.isAnchor === true || highlighted
             ? Number.POSITIVE_INFINITY
             : (poi.raw.googleRating ?? 0) +
               (emphasis !== null && emphasis !== "texture"
@@ -623,10 +651,14 @@ export function BoardMap({
     const candidates: LabelCandidate[] = [];
     const obstacles: LabelObstacle[] = [];
     for (const { poi, x, y } of projected) {
+      const highlighted = highlightIndexById.has(poi.id);
       // «Er dette tegnet som en prikk?» — to grunner gir samme form:
       // utglisningen tok plassen, eller punktet ligger utenfor rekkevidden.
+      // Et omtalt sted er ingen av delene: det tegnes alltid som full skive, og
+      // reserverer derfor full plass og får alltid en label.
       const isDemoted =
-        nextDemoted.has(poi.id) || reachOutsideIds.has(poi.id);
+        !highlighted &&
+        (nextDemoted.has(poi.id) || reachOutsideIds.has(poi.id));
       // Markørene tegnes alltid — tekst under en nabo-pin er like uleselig som
       // tekst under tekst. Egen sirkel blokkerer aldri egen label (labelen
       // starter utenfor sirkelkanten). Demoterte reserverer bare prikkas
@@ -646,7 +678,7 @@ export function BoardMap({
         y,
         name: poi.name,
         priority:
-          state.activePOIId === poi.id
+          state.activePOIId === poi.id || highlighted
             ? Number.POSITIVE_INFINITY
             : (poi.raw.googleRating ?? 0),
       });
@@ -669,6 +701,7 @@ export function BoardMap({
     state.activePOIId,
     data.home.coordinates,
     reachOutsideIds,
+    highlightIndexById,
   ]);
 
   useEffect(() => {
@@ -1286,6 +1319,8 @@ export function BoardMap({
                 ({ poi, color, icon, isVisible, inCollection, emphasis }) => {
                   const isActive = state.activePOIId === poi.id;
                   const outOfReach = reach.outsideIds.has(poi.id);
+                  const highlightIndex = highlightIndexById.get(poi.id);
+                  const highlighted = highlightIndex !== undefined;
                   // R10c: når mini-popup viser POI-navn, undertrykk inline-label
                   // for aktiv markør så vi ikke får dobbel-navn-rendering.
                   // Kollisjonskulling: en label uten plassering på label-tieren
@@ -1297,8 +1332,11 @@ export function BoardMap({
                     // Omvisningen navngir bare det du faktisk har åpnet. De tre
                     // stedene ligger minutter fra hverandre — tre labels samtidig
                     // ble uleselig grøt, og navnene står allerede i flaten.
-                    (emphasis !== null && !isActive) ||
+                    // Omtalte steder er unntaket: der ER navnet poenget — det
+                    // er ordet assistenten sa, og det du leter etter på kartet.
+                    (emphasis !== null && !isActive && !highlighted) ||
                     (!isActive &&
+                      !highlighted &&
                       zoomTier === "icon+label" &&
                       placement === undefined);
                   return (
@@ -1316,6 +1354,7 @@ export function BoardMap({
                       demoted={demotedPinIds.has(poi.id)}
                       emphasis={emphasis}
                       outOfReach={outOfReach}
+                      highlightIndex={highlightIndex}
                       // Samme vei inn som 3D-pinnene: punkt + måling + flatens
                       // oppfølging. Se `useMapPinClick`.
                       onClick={() => handlePinClick(String(poi.id))}

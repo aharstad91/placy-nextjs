@@ -91,6 +91,7 @@ const BASE_STATE: BoardState = {
   travelMode: "walk",
   showContours: false,
   exploreSuppressed: false,
+  highlightedPoiIds: [],
 };
 
 beforeEach(() => {

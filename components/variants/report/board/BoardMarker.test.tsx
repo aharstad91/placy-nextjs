@@ -206,3 +206,138 @@ describe("BoardMarker — utenfor rekkevidde", () => {
     );
   });
 });
+
+describe("BoardMarker — omtalte steder", () => {
+  /** Ytre container bærer markørens samlede styrke (emphasis × rekkevidde). */
+  function shellOpacity(container: HTMLElement) {
+    return (container.querySelector('[data-testid="marker"] > div') as HTMLElement)
+      .style.opacity;
+  }
+  function discOpacities(container: HTMLElement) {
+    const layers = [...container.querySelectorAll("div > div")] as HTMLElement[];
+    const dot = layers.find((el) => el.style.width === `${MARKER_DOT_SIZE}px`);
+    const circle = layers.find(
+      (el) => el.style.borderRadius === "50%" && el !== dot,
+    );
+    return { dot: dot?.style.opacity, circle: circle?.style.opacity };
+  }
+  const badge = (c: HTMLElement) =>
+    c.querySelector('[data-poi-badge="highlight"]') as HTMLElement | null;
+  const labelText = (c: HTMLElement) =>
+    c.querySelector('[data-testid="marker"] span[aria-hidden="true"]:last-of-type');
+
+  it("tegner rekkefølgetallet", () => {
+    const { container } = renderMarker({ highlightIndex: 2 });
+    expect(badge(container)!.textContent).toBe("2");
+  });
+
+  it("tegner ingen merke uten propen", () => {
+    expect(badge(renderMarker().container)).toBeNull();
+  });
+
+  it("merket står til VENSTRE — kjøpesenter-merket eier høyre hjørne", () => {
+    const { container } = renderMarker({
+      highlightIndex: 1,
+      poi: { isAnchor: true },
+    });
+    expect(badge(container)!.style.left).toBe("-6px");
+    // Begge påstandene står samtidig: «vi snakker om denne» OG «det er mer inni».
+    expect(container.querySelector('[data-poi-badge="anchor"]')).toBeTruthy();
+  });
+
+  it("tegner ringen med hvit luft inn mot skiva", () => {
+    const { container } = renderMarker({ highlightIndex: 1 });
+    const ring = container.querySelector(
+      "[data-poi-highlight-ring]",
+    ) as HTMLElement | null;
+    expect(ring).toBeTruthy();
+    expect(ring!.style.borderWidth).toBe("2.5px");
+    expect(ring!.style.boxShadow).toContain("inset");
+    // Ringen ligger UTENPÅ skiva, ikke oppå den: 38 px skive + 2 px hvit luft
+    // på hver side gir en padding-boks på 42, og kanten legger seg utenpå den.
+    expect(ring!.style.width).toBe("42px");
+  });
+
+  it("faller ALDRI til prikk — verken fra utglisning eller rekkevidde", () => {
+    for (const props of [{ demoted: true }, { outOfReach: true }]) {
+      const { container } = renderMarker({ ...props, highlightIndex: 1 });
+      expect(discOpacities(container)).toEqual({ dot: "0", circle: "1" });
+      cleanup();
+    }
+  });
+
+  it("dempes ikke av rekkevidde — et sted noen nettopp nevnte er ikke avskrudd", () => {
+    const { container } = renderMarker({ outOfReach: true, highlightIndex: 1 });
+    expect(shellOpacity(container)).toBe("1");
+  });
+
+  it("dempes ikke som omvisningens kontekst", () => {
+    const { container } = renderMarker({
+      emphasis: "texture",
+      highlightIndex: 1,
+    });
+    expect(shellOpacity(container)).toBe("1");
+  });
+
+  it("viser navnet også på ikon-tier, der ingen andre markører har det", () => {
+    const uten = renderMarker({ zoomTier: "icon" });
+    expect((labelText(uten.container) as HTMLElement).style.opacity).toBe("0");
+    cleanup();
+    const med = renderMarker({ zoomTier: "icon", highlightIndex: 1 });
+    expect((labelText(med.container) as HTMLElement).style.opacity).toBe("1");
+    expect(labelText(med.container)!.textContent).toBe("Valentinlyst Senter");
+  });
+
+  it("respekterer fortsatt suppressLabel (mini-popupen viser navnet)", () => {
+    const { container } = renderMarker({
+      highlightIndex: 1,
+      suppressLabel: true,
+    });
+    expect((labelText(container) as HTMLElement).style.opacity).toBe("0");
+  });
+
+  it("legger seg over nabolaget, men under det åpne punktet", () => {
+    const marker = (c: HTMLElement) =>
+      (c.querySelector('[data-testid="marker"]') as HTMLElement) ?? null;
+    // Mapbox-mocken rendrer ikke `style` på verten, så vi leser propen via
+    // markørens egen container-størrelse i stedet: 38 px = omtalt vekt, 32 px =
+    // vanlig, 44 px = åpent punkt.
+    const vanlig = renderMarker();
+    expect(
+      (marker(vanlig.container)!.firstElementChild as HTMLElement).style.width,
+    ).toBe("32px");
+    cleanup();
+    const omtalt = renderMarker({ highlightIndex: 1 });
+    expect(
+      (marker(omtalt.container)!.firstElementChild as HTMLElement).style.width,
+    ).toBe("38px");
+    cleanup();
+    const åpen = renderMarker({ highlightIndex: 1, isActive: true });
+    expect(
+      (marker(åpen.container)!.firstElementChild as HTMLElement).style.width,
+    ).toBe("44px");
+  });
+
+  it("reagerer på at en NY gruppe kommer inn etter mount", () => {
+    /* Samme hvitliste-felle som `outOfReach`: `React.memo`-sammenligneren må
+       nevne propen, ellers skriver assistentens neste svar en ny liste i state
+       uten at én eneste markør endrer seg på skjermen. */
+    const props = {
+      color: "#7c3aed",
+      icon: "Storefront",
+      isActive: false,
+      isVisible: true,
+      zoomTier: "icon" as const,
+      suppressLabel: false,
+      labelSide: "right" as const,
+      onClick: () => {},
+      poi: poi(),
+    };
+    const { container, rerender } = render(<BoardMarker {...props} />);
+    expect(badge(container)).toBeNull();
+    rerender(<BoardMarker {...props} highlightIndex={3} />);
+    expect(badge(container)!.textContent).toBe("3");
+    rerender(<BoardMarker {...props} highlightIndex={1} />);
+    expect(badge(container)!.textContent).toBe("1");
+  });
+});

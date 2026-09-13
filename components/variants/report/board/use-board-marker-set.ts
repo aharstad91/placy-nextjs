@@ -160,6 +160,40 @@ export interface MarkerSelectionInput {
   hasVoiceOver: boolean;
   overviewPOIs: POI[];
   allPOIs: POI[];
+  /**
+   * De OMTALTE stedene (`BoardState.highlightedPoiIds`), i rekkefølge.
+   *
+   * De MÅ mountes uansett hvilken gren som ellers velges: assistenten kan peke
+   * på et sted i en kategori som ikke spiller, eller utenfor ankersettet. Er
+   * markøren ikke mountet, flyr kameraet til et tomt punkt på kartet.
+   *
+   * Unntaket er capture/fly/establishing, som gir et helt rent kart — der eier
+   * opptaket flaten, og ingen samtale kjører.
+   */
+  highlightedPoiIds: readonly string[];
+}
+
+/**
+ * Legger de omtalte stedene inn i et markørsett de ellers ikke ville vært i.
+ * Beholder rekkefølgen fra grenen og dedupliserer på id, så et sted som alt står
+ * på kartet ikke mountes to ganger (React-nøkkel-kollisjon — se `dedupeById`).
+ */
+function withHighlighted(
+  selected: POI[],
+  highlightedPoiIds: readonly string[],
+  allPOIs: POI[],
+): POI[] {
+  if (highlightedPoiIds.length === 0) return selected;
+  const present = new Set(selected.map((p) => p.id));
+  const extra: POI[] = [];
+  for (const id of highlightedPoiIds) {
+    if (present.has(id)) continue;
+    const poi = allPOIs.find((p) => p.id === id);
+    if (!poi) continue;
+    present.add(id);
+    extra.push(poi);
+  }
+  return extra.length === 0 ? selected : [...selected, ...extra];
 }
 
 /**
@@ -168,12 +202,26 @@ export interface MarkerSelectionInput {
  * kategoriens POI-er (sub-filtrert). Ellers: det kuraterte ankersettet.
  * Capture/establishing gir et helt rent kart (`[]`) — reveal-kaskaden eier
  * markørene da.
+ *
+ * OVER alle grenene ligger de omtalte stedene: de mountes uansett hvilken gren
+ * som velges (se `highlightedPoiIds`), bortsett fra på det rene kartet.
  */
 export function selectMarkerPOIs(input: MarkerSelectionInput): POI[] {
+  // Capture (?film=1 / ?fly=1) + establishing-shot: helt rent kart, ingen
+  // statiske pins (reveal-kaskaden eier markørene under establishing). Gaten
+  // står HER og ikke i grenvalget under, så den også stenger for de omtalte
+  // stedene — et opptak skal ikke ha en samtales markører i seg.
+  if (input.filmMode || input.flyMode || input.establishingMode) return [];
+  return withHighlighted(
+    selectBranchPOIs(input),
+    input.highlightedPoiIds,
+    input.allPOIs,
+  );
+}
+
+/** Grenvalget alene — se `selectMarkerPOIs`, som er inngangen. */
+function selectBranchPOIs(input: MarkerSelectionInput): POI[] {
   const {
-    filmMode,
-    flyMode,
-    establishingMode,
     activeCategory,
     storyStop,
     statePhase,
@@ -186,9 +234,6 @@ export function selectMarkerPOIs(input: MarkerSelectionInput): POI[] {
     overviewPOIs,
     allPOIs,
   } = input;
-  // Capture (?film=1 / ?fly=1) + establishing-shot: helt rent kart, ingen
-  // statiske pins (reveal-kaskaden eier markørene under establishing).
-  if (filmMode || flyMode || establishingMode) return [];
   // Omvisningen eier kartet mens den kjører — også over et kategori-valg, som
   // den selv nullstiller når den starter.
   if (storyStop) {
@@ -323,6 +368,8 @@ export interface UseBoardMarkerSetParams {
   isHomeBeat: boolean;
   isOutroBeat: boolean;
   basicIntroActive: boolean;
+  /** Se `MarkerSelectionInput.highlightedPoiIds`. */
+  highlightedPoiIds: readonly string[];
 }
 
 export interface BoardMarkerSet {
@@ -354,6 +401,7 @@ export function useBoardMarkerSet({
   isHomeBeat,
   isOutroBeat,
   basicIntroActive,
+  highlightedPoiIds,
 }: UseBoardMarkerSetParams): BoardMarkerSet {
   const hasVoiceOver = useMemo(
     () => computeHasVoiceOver(data),
@@ -414,8 +462,10 @@ export function useBoardMarkerSet({
         hasVoiceOver,
         overviewPOIs,
         allPOIs,
+        highlightedPoiIds,
       }),
     [
+      highlightedPoiIds,
       filmMode,
       flyMode,
       establishingMode,

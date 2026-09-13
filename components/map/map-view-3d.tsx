@@ -217,6 +217,20 @@ export interface MapView3DProps {
   fadedMarkerIds?: ReadonlySet<string>;
   /** Styrken `fadedMarkerIds` tegnes med. Vinner over `dimmedOpacity`. 1 = av. */
   fadedOpacity?: number;
+  /**
+   * poi.id → plass i rekken (1-basert) for de OMTALTE stedene.
+   *
+   * Fjerde akse ved siden av de tre over, og den svarer på et fjerde spørsmål:
+   * «dette er stedene noen snakker om nå». Utslaget er å BLI SETT — ring,
+   * rekkefølgetall og navn (se `PoiMarkerContent.highlightIndex`) — og markøren
+   * er fritatt både demping (`dimmedMarkerIds`/`fadedMarkerIds`) og prikk-form:
+   * en dempet prikk er ikke til å kjenne igjen fra et navn som nettopp ble sagt.
+   *
+   * Samme Record-form som `markerLabels`, og av samme grunn: oppslaget skjer i
+   * render-løkken og sendes videre som en PRIMITIV, ellers ville et ferskt
+   * objekt per markør defeatet memo.
+   */
+  highlightIndexes?: Record<string, number>;
 }
 
 /**
@@ -271,6 +285,7 @@ const Marker3DItem = memo(function Marker3DItem({
   zIndex,
   opacity,
   pinFactor,
+  highlightIndex,
 }: {
   poi: POI;
   /** Kartinstansen markøren appendes til. */
@@ -297,6 +312,8 @@ const Marker3DItem = memo(function Marker3DItem({
   opacity?: number;
   /** Markørens tegnede størrelse, 1 = full. Se `dimmedPinScale` på MapView3D. */
   pinFactor?: number;
+  /** Plass i rekken for et OMTALT sted. Se `highlightIndexes` på MapView3D. */
+  highlightIndex?: number;
 }) {
   return (
     <DomMarker3D
@@ -331,6 +348,7 @@ const Marker3DItem = memo(function Marker3DItem({
         scale={scale}
         opacity={opacity}
         pinFactor={pinFactor}
+        highlightIndex={highlightIndex}
       />
     </DomMarker3D>
   );
@@ -423,6 +441,7 @@ function Map3DInner({
   dimmedPinScale = 1,
   fadedMarkerIds,
   fadedOpacity = 1,
+  highlightIndexes,
 }: MapView3DProps) {
   // freeMode dropper alle camera-låser så brukeren får standard Google Maps
   // 3D-feel. Andre kontekster (overview, modal) beholder dagens lock for
@@ -550,9 +569,17 @@ function Map3DInner({
           // Oppslagene gjøres HER og sendes videre som primitiver — se
           // `markerLabels`-doc: et objekt per markør ville defeatet memo.
           const placement = markerLabels?.[poi.id];
-          const compact = compactMarkers || (demotedMarkerIds?.has(poi.id) ?? false);
-          const dimmed = dimmedMarkerIds?.has(poi.id) ?? false;
-          const faded = fadedMarkerIds?.has(poi.id) ?? false;
+          const highlightIndex = highlightIndexes?.[poi.id];
+          // Et OMTALT sted vinner over alle tre dempings-aksene: full skive,
+          // full styrke, aldri prikk. Uten fritaket kunne assistenten pekt på
+          // et sted som i samme sekund ble tegnet som en blass prikk fordi det
+          // lå utenfor rekkevidden eller utenfor stoppets kategori.
+          const highlighted = highlightIndex !== undefined;
+          const compact =
+            !highlighted &&
+            (compactMarkers || (demotedMarkerIds?.has(poi.id) ?? false));
+          const dimmed = !highlighted && (dimmedMarkerIds?.has(poi.id) ?? false);
+          const faded = !highlighted && (fadedMarkerIds?.has(poi.id) ?? false);
           // Blassest vinner: er punktet både kontekst i omvisningen OG utenfor
           // rekkevidde, er det det svakeste av de to som gjelder.
           const opacity = faded
@@ -574,6 +601,7 @@ function Map3DInner({
               scale={markerScale}
               opacity={opacity}
               pinFactor={pinFactor}
+              highlightIndex={highlightIndex}
             />
           );
         })}

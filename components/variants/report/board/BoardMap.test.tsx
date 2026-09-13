@@ -214,6 +214,7 @@ function setBoard(
       activeCategoryId: null,
       activePOIId: null,
       showContours: false,
+      highlightedPoiIds: [],
       ...stateOverrides,
     },
     data,

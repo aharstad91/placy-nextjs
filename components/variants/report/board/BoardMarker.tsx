@@ -107,6 +107,21 @@ interface Props {
    * Samme regel som `demoted`.
    */
   outOfReach?: boolean;
+  /**
+   * Punktet er OMTALT akkurat nå, og dette er plassen i rekken (1-basert).
+   * Utelatt = ikke omtalt, og markøren er uendret.
+   *
+   * Egen akse ved siden av `isActive`, fordi den svarer på et annet spørsmål:
+   * den aktive er stedet leseren har åpnet, disse er stedene noen snakker om —
+   * og det kan være flere av dem samtidig. Se `BoardState.highlightedPoiIds`.
+   *
+   * Utslaget er å BLI SETT: full skive (38 px, som omvisningens navngitte),
+   * en mørk ring med hvit luft rundt, rekkefølgetallet øverst til venstre, og
+   * navnet synlig uansett zoom-tier. Et omtalt sted faller ALDRI til prikk —
+   * verken fra utglisningen eller fra rekkevidde — for en prikk kan du ikke
+   * kjenne igjen ut fra det som ble sagt.
+   */
+  highlightIndex?: number;
   onClick: () => void;
 }
 
@@ -123,8 +138,10 @@ function BoardMarkerImpl({
   demoted = false,
   emphasis = null,
   outOfReach = false,
+  highlightIndex,
   onClick,
 }: Props) {
+  const isHighlighted = highlightIndex !== undefined;
   const Icon = getFilledIcon(poi.raw.category.icon || icon);
   const circle = markerCircleStyle(color);
   // Lysere border (~50% hvit-blanding) demper rammen så ikonet får primær
@@ -136,26 +153,37 @@ function BoardMarkerImpl({
   // samme måte som et punkt under dot-tieren er det, og R10 løfter det tilbake
   // hvis brukeren åpner det. `BoardMap` gir aldri aktiv POI eller et anker
   // `demoted` (de har Infinity-prioritet), så dette er bare et sikkerhetsnett.
+  //
+  // Et OMTALT sted er unntatt begge: assistenten sa navnet, og et navnløst
+  // punkt kan leseren ikke kjenne igjen. Rekkevidde-dempingen er tatt bort av
+  // samme grunn (se `reachOpacity`) — 45 % leser som «avskrudd», og et sted
+  // noen nettopp snakket om skal ikke se avskrudd ut. Samme fritak som den
+  // åpne POI-en alt har.
   const crowdedTier: BoardZoomTier =
-    demoted || outOfReach ? "dot" : zoomTier;
+    (demoted || outOfReach) && !isHighlighted ? "dot" : zoomTier;
 
   // R10: aktiv markør på `dot`-tier promoteres visuelt til `icon`-tier-størrelse
-  // så label har et anker å stå ved siden av.
+  // så label har et anker å stå ved siden av. Omtalte steder løftes av samme
+  // grunn: ringen og rekkefølgetallet trenger en skive å ligge rundt.
   const effectiveTier: BoardZoomTier =
-    isActive && crowdedTier === "dot" ? "icon" : crowdedTier;
+    (isActive || isHighlighted) && crowdedTier === "dot" ? "icon" : crowdedTier;
 
   const showDot = effectiveTier === "dot";
   const showIconCircle = !showDot;
   const showLabel =
-    (effectiveTier === "icon+label" || isActive) && !suppressLabel;
+    (effectiveTier === "icon+label" || isActive || isHighlighted) &&
+    !suppressLabel;
 
   // Container-størrelse styres av isActive (uavhengig av tier). Aktiv = 44 px
   // (matcher dagens `w-11 h-11`), inaktiv = 32 px (matcher `w-8 h-8`). Dot og
   // IconCircle er absolute-sentrert i samme container, så tap-koordinaten flytter
   // seg ikke når R10-promotion skjer.
+  // Omtalte steder tegnes med samme vekt som omvisningens navngitte (38): de er
+  // det kartet handler om akkurat nå, men de er ikke åpnet — 44 er forbeholdt
+  // punktet leseren faktisk står i.
   const containerSize = isActive
     ? 44
-    : emphasis === "named"
+    : isHighlighted || emphasis === "named"
       ? 38
       : Math.round(
           MARKER_CIRCLE_SIZE *
@@ -175,14 +203,19 @@ function BoardMarkerImpl({
   // beholder ikon, farge og navn (`STORY_EMPHASIS_PIN_SCALE`). Opacityen er bare
   // et hint om dybde ved siden av — se doccen i story-model for hvorfor den
   // ikke kan bære skillet alene (2026-08-28).
-  const emphasisOpacity = emphasis ? STORY_EMPHASIS_OPACITY[emphasis] : 1;
+  //
+  // Et omtalt sted er aldri kontekst: nevner assistenten en barnehage under et
+  // mat-stopp, er barnehagen det du skal finne igjen.
+  const emphasisOpacity =
+    emphasis && !isHighlighted ? STORY_EMPHASIS_OPACITY[emphasis] : 1;
 
   // Rekkevidde legger seg OPPÅ omvisningens vekting i stedet for å erstatte
   // den: begge kan være på samtidig (omvisningen kjører, leseren slår på
   // rekkevidde), og et punkt som både er kontekst og utenfor rekkevidde er
   // svakere enn hvert av dem alene. `effectiveTier` over har alt fritatt den
   // åpne POI-en fra prikk-formen; her fritas den fra dempingen.
-  const reachOpacity = outOfReach && !isActive ? REACH_OUTSIDE_OPACITY : 1;
+  const reachOpacity =
+    outOfReach && !isActive && !isHighlighted ? REACH_OUTSIDE_OPACITY : 1;
 
   return (
     <Marker
@@ -197,7 +230,9 @@ function BoardMarkerImpl({
       }}
       style={{
         cursor: isVisible ? "pointer" : "default",
-        zIndex: isActive ? 5 : 1,
+        // Omtalte steder legger seg over nabolaget, men UNDER det åpne punktet:
+        // popupen og rutelinja hører til det ene stedet leseren står i.
+        zIndex: isActive ? 5 : isHighlighted ? 4 : 1,
         pointerEvents: isVisible ? "auto" : "none",
       }}
     >
@@ -238,6 +273,41 @@ function BoardMarkerImpl({
               borderRadius: "50%",
               border: "2.5px solid #0ea5e9",
               boxShadow: "0 0 0 2px rgba(255,255,255,0.9)",
+              pointerEvents: "none",
+              opacity: isVisible ? 1 : 0,
+              transition: "opacity 200ms ease-out",
+            }}
+          />
+        )}
+
+        {/* Omtalt-ring. Mørk kontur med 2 px hvit luft inn mot skiva, tegnet
+            som `inset`-skygge i stedet for et ekstra element — luften må ligge
+            MELLOM ringen og ikon-sirkelen, og en andre ring-div ville vært et
+            mount til per markør i et sett på rundt tusen.
+
+            Fargen er nesten-svart og ikke kategorifargen med vilje: ringen sier
+            «denne snakker vi om», og det er en påstand om samtalen, ikke om
+            hvilket tema stedet hører til. Kategorifargen står allerede i skiva
+            under. Nesten-svart er dessuten det eneste som leser trygt over det
+            lyse karttemaet uansett hvilken kategorifarge den omkranser. */}
+        {isHighlighted && (
+          <div
+            aria-hidden
+            data-poi-highlight-ring=""
+            style={{
+              position: "absolute",
+              left: "50%",
+              top: "50%",
+              transform: "translate(-50%, -50%)",
+              // containerSize + 2 px hvit luft + 2,5 px ring på hver side. Uten
+              // border-box legger kanten seg utenpå bredden, så den ytre
+              // diameteren blir containerSize + 9 og den hvite inset-skyggen
+              // lander nøyaktig på ikon-sirkelens kant.
+              width: containerSize + 4,
+              height: containerSize + 4,
+              borderRadius: "50%",
+              border: "2.5px solid #1c1917",
+              boxShadow: "inset 0 0 0 2px #ffffff",
               pointerEvents: "none",
               opacity: isVisible ? 1 : 0,
               transition: "opacity 200ms ease-out",
@@ -344,6 +414,41 @@ function BoardMarkerImpl({
           )}
         </div>
 
+        {/* Rekkefølgetallet. Øverst til VENSTRE, mens kjøpesenter-merket står
+            øverst til høyre — de to er ulike påstander og må kunne stå samtidig
+            (et omtalt kjøpesenter skal fortsatt si at det er mer inni).
+
+            Ligger UTENFOR ikon-sirkelen, ikke inni som `+`-merket: sirkelen
+            fader og krymper med tieren, og tallet skal stå så lenge stedet er
+            omtalt. Google-motoren bruker samme plassering av samme grunn (se
+            `PoiMarkerContent.highlightIndex`). */}
+        {isHighlighted && (
+          <span
+            aria-hidden="true"
+            data-poi-badge="highlight"
+            style={{
+              position: "absolute",
+              top: -6,
+              left: -6,
+              minWidth: 16,
+              height: 16,
+              padding: "0 3px",
+              borderRadius: 999,
+              background: "#ffffff",
+              border: "1.5px solid #1c1917",
+              color: "#1c1917",
+              font: "700 10px/16px system-ui, -apple-system, sans-serif",
+              textAlign: "center",
+              boxSizing: "border-box",
+              pointerEvents: "none",
+              opacity: isVisible ? 1 : 0,
+              transition: "opacity 200ms ease-out",
+            }}
+          >
+            {highlightIndex}
+          </span>
+        )}
+
         {/* Label — absolute inntil container, side styrt av labelSide
             (kollisjons-flipping). `pointer-events: none` + `aria-hidden`
             så ikon-sirkelen er eneste klikk-target og skjermlesere ikke
@@ -411,5 +516,9 @@ export const BoardMarker = React.memo(
     // rører aldri skjermen: uten denne linja slo rekkevidde på konturene og
     // bildeteksten, mens alle 973 markørene sto igjen som fulle pins (målt i
     // nettleseren 2026-09-07 — 0 dempede av 973).
-    prev.outOfReach === next.outOfReach,
+    prev.outOfReach === next.outOfReach &&
+    // Samme regel, samme felle: uten denne linja ville et nytt svar fra
+    // assistenten skrevet en ny liste i state uten at én eneste markør endret
+    // seg på skjermen.
+    prev.highlightIndex === next.highlightIndex,
 );

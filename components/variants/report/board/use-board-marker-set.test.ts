@@ -192,6 +192,7 @@ describe("selectMarkerPOIs", () => {
     hasVoiceOver: true,
     overviewPOIs: over,
     allPOIs: all,
+    highlightedPoiIds: [],
   };
 
   /* Stoppet eier scenen, men nabolaget blir stående (2026-08-28). Uten
@@ -450,6 +451,77 @@ describe("selectMarkerPOIs", () => {
 
   it("audio-tier idle / megler → ankersettet (overviewPOIs)", () => {
     expect(selectMarkerPOIs(base).map((p) => p.id)).toEqual(["ov1", "ov2"]);
+  });
+
+  /**
+   * De OMTALTE stedene. Assistenten peker på steder som ikke nødvendigvis er i
+   * grenen som gjelder — en annen kategori, utenfor ankersettet, et sted lista
+   * aldri viste. Er markøren ikke mountet, flyr kameraet til et tomt punkt.
+   */
+  describe("fremhevede steder", () => {
+    it("mounter et omtalt sted som ligger UTENFOR den valgte kategorien", () => {
+      expect(
+        selectMarkerPOIs({
+          ...base,
+          activeCategory: activeCat,
+          highlightedPoiIds: ["a3"],
+        }).map((p) => p.id),
+      ).toEqual(["p1", "p2", "a3"]);
+    });
+
+    it("mounter omtalte steder som ikke er i ankersettet", () => {
+      expect(
+        selectMarkerPOIs({ ...base, highlightedPoiIds: ["a1", "a3"] }).map(
+          (p) => p.id,
+        ),
+      ).toEqual(["ov1", "ov2", "a1", "a3"]);
+    });
+
+    it("dupliserer ikke et sted som alt står på kartet", () => {
+      expect(
+        selectMarkerPOIs({ ...base, highlightedPoiIds: ["ov2", "a1"] }).map(
+          (p) => p.id,
+        ),
+      ).toEqual(["ov1", "ov2", "a1"]);
+    });
+
+    it("hopper over en id som ikke finnes i nabolaget", () => {
+      expect(
+        selectMarkerPOIs({ ...base, highlightedPoiIds: ["finnes-ikke"] }).map(
+          (p) => p.id,
+        ),
+      ).toEqual(["ov1", "ov2"]);
+    });
+
+    it("legger seg på omvisningens sett uten å fortrenge stoppet", () => {
+      const stop = cat({ pois: [poi("s1")] });
+      expect(
+        selectMarkerPOIs({
+          ...base,
+          storyStop: { category: stop, activePoiId: null },
+          highlightedPoiIds: ["a2"],
+        }).map((p) => p.id),
+      ).toEqual(["s1", "ov1", "ov2", "a2"]);
+    });
+
+    it("mounter dem også på velkommen-beaten, der kartet ellers er tomt", () => {
+      expect(
+        selectMarkerPOIs({
+          ...base,
+          isWelcomeBeat: true,
+          highlightedPoiIds: ["a1"],
+        }).map((p) => p.id),
+      ).toEqual(["a1"]);
+    });
+
+    it.each(["filmMode", "flyMode", "establishingMode"] as const)(
+      "%s holder kartet rent — et opptak har ingen samtale i seg",
+      (mode) => {
+        expect(
+          selectMarkerPOIs({ ...base, [mode]: true, highlightedPoiIds: ["a1"] }),
+        ).toEqual([]);
+      },
+    );
   });
 });
 

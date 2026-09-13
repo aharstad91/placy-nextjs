@@ -64,6 +64,7 @@ interface Props {
   suppressActiveLabel: boolean;
   textureIds?: ReadonlySet<string> | undefined;
   dotIds?: ReadonlySet<string> | undefined;
+  highlightedIds?: ReadonlySet<string> | undefined;
 }
 
 function setup(
@@ -85,6 +86,7 @@ function setup(
         activePOIId: props.activePOIId,
         textureIds: props.textureIds,
         dotIds: props.dotIds,
+        highlightedIds: props.highlightedIds,
         enabled: props.enabled,
         suppressActiveLabel: props.suppressActiveLabel,
       }),
@@ -96,6 +98,7 @@ function setup(
         suppressActiveLabel: overrides.suppressActiveLabel ?? false,
         textureIds: overrides.textureIds,
         dotIds: overrides.dotIds,
+        highlightedIds: overrides.highlightedIds,
       },
     },
   );
@@ -310,6 +313,7 @@ describe("useMarker3DDeclutter — når den skal tie", () => {
         suppressActiveLabel: false,
         textureIds: undefined,
         dotIds: undefined,
+        highlightedIds: undefined,
       });
     });
     expect(result.current.labels).toEqual({});
@@ -382,6 +386,7 @@ describe("useMarker3DDeclutter — ro-signalet", () => {
         suppressActiveLabel: false,
         textureIds: undefined,
         dotIds: undefined,
+        highlightedIds: undefined,
       });
     });
     for (let i = 0; i < 5; i++) {
@@ -476,6 +481,7 @@ describe("useMarker3DDeclutter — omvisningens tekstur", () => {
         suppressActiveLabel: false,
         textureIds: new Set(["a"]),
         dotIds: undefined,
+        highlightedIds: undefined,
       });
     });
     settle();
@@ -548,10 +554,131 @@ describe("useMarker3DDeclutter — punkter utenfor rekkevidde", () => {
         suppressActiveLabel: false,
         dotIds: new Set(["b"]),
         textureIds: undefined,
+        highlightedIds: undefined,
       });
     });
     settle();
     expect(result.current.labels["b"]).toBeUndefined();
     expect(result.current.demotedIds.has("b")).toBe(true);
+  });
+});
+
+/**
+ * De OMTALTE stedene. Assistenten sa navnet; er markøren en navnløs prikk i
+ * klynga, kan ikke leseren kjenne den igjen fra det som ble sagt. Fritakene
+ * speiler 2D-markørens (`BoardMarker.highlightIndex`) — én regel, to motorer.
+ */
+describe("useMarker3DDeclutter — omtalte steder", () => {
+  // Samme klynge som utglisnings-testene: fem steder innenfor ~30 px, der
+  // «blomster» har best rating og normalt vinner plassen alene.
+  const cluster = [
+    poi("apotek", 100, 100, 4.1),
+    poi("nille", 112, 104, 3.4),
+    poi("mall", 96, 116, 4.5),
+    poi("blomster", 118, 92, 4.9),
+    poi("marina", 106, 110, 2.8),
+  ];
+
+  it("demoteres aldri i en klynge, uansett rating", () => {
+    const { result } = setup(makeMap(900), cluster, {
+      highlightedIds: new Set(["marina"]),
+    });
+    settle();
+    expect(result.current.demotedIds.has("marina")).toBe(false);
+  });
+
+  it("beholder navnet sitt der naboene mister sitt", () => {
+    const { result } = setup(makeMap(900), cluster, {
+      highlightedIds: new Set(["marina"]),
+    });
+    settle();
+    expect(result.current.labels.marina?.text).toBe("marina");
+  });
+
+  it("er ikke prikk selv om rekkevidde sier det", () => {
+    const { result } = setup(
+      makeMap(900),
+      [poi("nær", 100, 100, 4), poi("fjern", 600, 600, 5)],
+      {
+        dotIds: new Set(["fjern"]),
+        highlightedIds: new Set(["fjern"]),
+      },
+    );
+    settle();
+    expect(result.current.demotedIds.has("fjern")).toBe(false);
+    expect(result.current.labels["fjern"]?.text).toBe("fjern");
+  });
+
+  it("regnes ikke som omvisningens kontekst", () => {
+    // Kontekst viker for scenen. Er stedet omtalt, er det scenen akkurat nå, og
+    // det skal vinne plassen fra et kontekst-punkt med bedre rating.
+    const { result } = setup(
+      makeMap(900),
+      [poi("omtalt", 300, 300, 2), poi("kontekst", 305, 305, 5)],
+      {
+        textureIds: new Set(["omtalt"]),
+        highlightedIds: new Set(["omtalt"]),
+      },
+    );
+    settle();
+    expect(result.current.demotedIds.has("omtalt")).toBe(false);
+  });
+
+  it("bærer navnet også på ikon-tieren, der ingen andre har navn", () => {
+    // range 3000 → tier "icon": alle beholder skiva, ingen får label.
+    const { result } = setup(
+      makeMap(3000),
+      [poi("a", 100, 100, 4), poi("b", 600, 600, 5)],
+      { highlightedIds: new Set(["b"]) },
+    );
+    settle();
+    expect(result.current.labels["a"]).toBeUndefined();
+    expect(result.current.labels["b"]?.text).toBe("b");
+  });
+
+  it("overlever prikk-tieren — det er da leseren trenger å se hvor de ligger", () => {
+    // range 15000 → tier "dot": alt blir prikker, bortsett fra de omtalte.
+    const { result } = setup(
+      makeMap(15000),
+      [poi("a", 100, 100, 4), poi("b", 600, 600, 5)],
+      { highlightedIds: new Set(["b"]) },
+    );
+    settle();
+    expect(result.current.demotedIds.has("a")).toBe(true);
+    expect(result.current.demotedIds.has("b")).toBe(false);
+    expect(result.current.labels["b"]?.text).toBe("b");
+  });
+
+  it("mini-popupen undertrykker bare det ÅPNE punktets navn", () => {
+    const { result } = setup(makeMap(900), cluster, {
+      activePOIId: "marina",
+      suppressActiveLabel: true,
+      highlightedIds: new Set(["marina", "nille"]),
+    });
+    settle();
+    expect(result.current.labels.marina).toBeUndefined();
+    expect(result.current.labels.nille?.text).toBe("nille");
+  });
+
+  it("regner på nytt når gruppen endrer seg, selv om markørsettet er likt", () => {
+    // Et nytt svar fra assistenten rører verken markørsettet eller kameraet.
+    // Uten egen nøkkel ville fritakene blitt stående på forrige gruppe.
+    const { result, rerender } = setup(makeMap(900), cluster);
+    settle();
+    expect(result.current.demotedIds.has("marina")).toBe(true);
+    act(() => {
+      rerender({
+        pois: cluster,
+        activePOIId: null,
+        enabled: true,
+        suppressActiveLabel: false,
+        textureIds: undefined,
+        dotIds: undefined,
+        highlightedIds: new Set(["marina"]),
+      });
+    });
+    settle();
+    expect(result.current.demotedIds.has("marina")).toBe(false);
+    expect(result.current.labels.marina?.text).toBe("marina");
   });
 });

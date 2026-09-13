@@ -4,7 +4,7 @@ Arbeidsflate etter sammenslåing: `/Users/andreasharstad/Documents/placy`, gren 
 
 ## Start den fryste demoversjonen
 
-Avslutt samtalen med **Avslutt** før serveren stoppes. Kjør fra arbeidsmappen:
+Avslutt samtalen med **Stopp** før serveren stoppes. Kjør fra arbeidsmappen:
 
 ```sh
 npm run build
@@ -13,7 +13,21 @@ npm run demo:nyhavna
 
 `demo:nyhavna` starter ett lokalt produksjonsbygg på 127.0.0.1:3101 med `PLACY_LOCAL_REALTIME_DEMO=1`. Ikke kjør to Node-prosesser mot denne arbeidsmappen. Hovedrepoets eksisterende `.env.local` brukes; ikke kopier nøkkel til klientkode eller dokumenter.
 
-Åpne URL-en, kontroller kart, startforslag og kildekort. Velg Skriv eller Snakk. Ash beholdes; tekst og tale bruker samme Realtime-samtale, med mikrofon først ved talevalg. Bytt med Skriv/Snakk. **Ny samtale** starter uten forrige samtales historikk og tilbakestiller kartet. Se [generalprøven](rehearsal.md) for fysisk Mac-test og møteopplegg.
+Åpne URL-en, kontroller kart og kildekort. Samtalen er én mikrofon/stopp-knapp under fanene i omvisningen (og på mobilens nabolagsliste). Stemmen er **marin**, modellen leses fra `OPENAI_BOARD_REALTIME_MODEL` (mini under bygging; kontroller med `curl -s http://127.0.0.1:3101/api/prototype/realtime`). Det finnes ingen tekstmodus i boardet. **Stopp** legger på hos serveren og fjerner fremhevingen i kartet; neste start er en ny samtale med tom brukerprofil. Se [generalprøven](rehearsal.md) for fysisk Mac-test og møteopplegg, og [lyttetesten](lyttetest.md) for stemmestabilitet.
+
+## Samtalens gang (2026-09-13)
+
+Hilsenen er kort, uten merkenavn, og stiller ETT åpent spørsmål («Hva er viktigst for deg når du vurderer et nytt sted å bo?»). Svaret går til `set_interests` på serveren, som lager en personlig temarekkefølge (Nyhavnas egne temaer fra nyhavna.no først når de treffer interessen) og åpner første kapittel; guiden sier hva dere begynner med og fremhever 2–3 steder samtidig (`highlight_places`, nummererte markører, ingen detaljkort). Katalogspørsmål besvares fra spørsmålskatalogen i instruksjonen og vises i samme svar. Trykk på et tema eller sted i kartet meldes til guiden som en kort brukermelding med ID; serveren åpner kapittelet eller slår opp stedets fakta FØR modellen svarer, så trykket koster én modellrunde, ikke to. Når kartet har åpnet et sted (`show_place`), følger stedets fakta med kartsvaret, og når modellen bare innledet («Klart, la oss se …») før et kartkall, får den ordet igjen med rekkefølgen den skal svare i – mini-modellen gjør begge deler ofte, og uten dette ble brukeren stående uten svar. Avstikker (`note_detour`) og retur (`return_to_tour`) holder hovedtråden. Prosjektinnhold fra nyhavna.no hentes per spørsmål (`find_project_info`, se `site-coverage.md`).
+
+Tilstanden (interesser, tema nå/neste, gjennomgått, fremhevet i rekkefølge, returpunkt, åpne spørsmål) ligger på serveren per samtale (`lib/realtime/tour-state.ts`) og sendes til modellen som et kompakt samtalenotat når den endres. Den avhenger ikke av modellens historikk.
+
+### Simulert samtale uten mikrofon
+
+Åpne demoen med `?voicedev=1`. Da ligger `window.placyVoice` på siden: `start()`, `say("Jeg er opptatt av kaféer")` (sender teksten som brukertur – modellen svarer med tale), `tool("highlight_places", { poi_ids: ["leve-dora-kaffebar", "leve-monkey-brew"] })` (kjører kartkommandoen lokalt uten modell), `messages()`, `status()`, `stop()`. Bare på den lokale demoen; `say` koster som en vanlig tur. Les `window.placyVoice` på nytt for hver avlesning (objektet byttes ved hver render). Chromes falske mikrofon (`--use-fake-device-for-media-stream`) sender en tone som taledeteksjonen tolker som tale; overstyr `navigator.mediaDevices.getUserMedia` med en stille strøm før `start()` når du simulerer.
+
+### Tidsmåling per tur
+
+Serveren skriver én logglinje `nyhavna_realtime_turn {...}` når en brukertur er avgjort: millisekunder fra brukerens input var ferdig til første lyd (`first_audio_ms`), de første ordene og når de kom (`first_words`, `first_words_ms` – en innledning som «la meg se» er ikke et svar), første kartkall med argumenter og når kartet bekreftet (`first_map_call*`, `map_ok_ms`), og hver modellrunde med innhold, status/feil og tokens (`rounds`). `end` sier om turen ble ferdig, avbrutt, kansellert eller feilet. Målt 2026-09-13 på mini uten takgrense: første ord 0,6–2,5 s, kartendring 1,4–4,8 s, siste runde ferdig 4,7–9,6 s; se worklogen for tallene.
 
 ## Dataversjon og kilder
 
@@ -33,13 +47,15 @@ NODE_OPTIONS=--conditions=react-server npx tsx scripts/nyhavna-refresh-curated.t
 
 Serveren tillater én aktiv samtale, høyst 60 starter per rullerende time og maksimalt 12 minutter per samtale. To minutter uten aktivitet avslutter samtalen, med vern mens et svar genereres eller spilles. Serveren eier kunnskapsverktøyene og videreføring etter verktøykall; klienten utfører kun reversible kartkommandoer. Maksimalt svar er 700 output-tokens, og verktøyrunder begrenses.
 
-Modellens eldre samtalekontekst kuttes ved 2 500 tokens etter instruksjonene, med 70 prosent beholdt ved kutt. Synlig historikk beholdes, men modellen husker ikke nødvendigvis eldre preferanser. Gjeldende kartvalg og seks nylige stedsreferanser sendes på nytt. Ved midlertidig API-bruksgrense vises ventestatus og serveren prøver høyst to ganger; nytt spørsmål eller avbrudd avbryter ventingen.
+Automatisk trimming av samtalen er avslått (`truncation: "disabled"`, 2026-09-13) – en hypotese om at trimming bidrar til dialektdrift, ikke et verifisert funn. Konsekvens: en lang samtale koster mer per svar og kan nå API-ets kontekstgrense; sesjonen er uansett begrenset til 12 minutter. Gjeldende kartvalg sendes på nytt ved hver tur, og samtalenotatet når tilstanden endres. Ved midlertidig API-bruksgrense vises ventestatus og serveren prøver høyst tre ganger med API-ets oppgitte ventetid; nytt spørsmål eller avbrudd avbryter ventingen.
+
+**Takgrensen er den reelle flaskehalsen (målt 2026-09-13).** OpenAI-organisasjonen har 40 000 tokens per minutt for `gpt-realtime-2.1-mini` (feilmeldingen: «Limit 40000»). Én modellrunde koster 8 000–16 000 inndata-tokens (instruksjon med katalog ≈ 6 000, verktøy ≈ 1 500, pluss historikk som vokser ~1 000 per tema), og bufrede tokens teller fullt mot grensen. En tur bruker 1–3 runder, så grensen nås fra tredje–fjerde tur i rask rekkefølge, og da venter brukeren 10–45 s eller får ikke svar. Det er dette som ga «30–40 s per tur», ikke modellen. Tiltak i rekkefølge: (1) høyere bruksnivå/tier på OpenAI-prosjektet før møtet (Andreas – sjekk grensen under Settings → Limits), (2) færre runder og mindre pakker (gjort: trykk forhåndsutføres, kapitlene bærer spørsmåls-ID-er i stedet for hele spørsmål/svar, prosjektinnhold sendes én gang, kortere verktøytekster), (3) korte kart-ID-er i stedet for UUID/Google-ID-er (≈ 18 % av katalogtegnene, mer i tokens – ikke gjort).
 
 Dette er tekniske bruksgrenser, ikke et garantert dollarbudsjett. UI viser et etterskuddsvis estimat. Separat transkripsjon inngår ikke fullt ut. Serveren logger `nyhavna_realtime_usage` med aggregerte tokens og estimert kostnad når samtalen avsluttes; ingen samtaletekst eller nøkkel inngår i denne logglinjen. Sammenlign faktisk OpenAI-bruk med samme oppgave og modalitet. Tekstprøver kan ikke brukes som prisanslag for tale.
 
 ## Avbrudd og gjenoppretting
 
-- Avvist mikrofon: fortsett med tekst. Kartet er tilgjengelig selv om samtalen ikke kan starte.
+- Avvist mikrofon: samtalen kan ikke starte (boardet har ingen tekstmodus), men kartet og omvisningen er tilgjengelige som før.
 - Nettbrudd: samtalen viser feil; bruk kartet mens forbindelsen gjenopprettes. Avslutt/ny samtale rydder lokalt og ber serveren henge opp.
 - Stale dataversjon: last siden på nytt. Ikke fjern versjonskontrollen.
 - Aktiv samtale i annen fane: avslutt den først. En slik avvisning skal ikke opprette et nytt betalt kall.

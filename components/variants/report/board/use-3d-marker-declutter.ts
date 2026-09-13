@@ -256,6 +256,19 @@ export interface UseMarker3DDeclutterParams {
    */
   dotIds?: ReadonlySet<string>;
   /**
+   * De OMTALTE stedene (`BoardState.highlightedPoiIds`).
+   *
+   * Speiler fritaket 2D-markøren har (`BoardMarker.highlightIndex`): de eier
+   * plassen sin på linje med det åpne punktet og ankeret, de er aldri prikk —
+   * heller ikke når rekkevidde ville gjort dem til det — og de får ALLTID
+   * navnet sitt tegnet, uansett kamera-avstand. Assistenten sa navnet; står det
+   * ikke på kartet, kan ikke leseren finne stedet igjen.
+   *
+   * De regnes heller aldri som omvisningens kontekst: er stedet omtalt, er det
+   * scenen akkurat nå.
+   */
+  highlightedIds?: ReadonlySet<string>;
+  /**
    * Av når markørene uansett ikke er fulle ikon-pins: `compactMarkers` tegner
    * alt som prikker, og capture/intro-modusene mounter ingen markører i det
    * hele tatt. Da skal hooken tie helt.
@@ -323,6 +336,7 @@ export function useMarker3DDeclutter({
   activePOIId,
   textureIds,
   dotIds,
+  highlightedIds,
   enabled,
   suppressActiveLabel = false,
   visibleLeftPx = 0,
@@ -341,6 +355,7 @@ export function useMarker3DDeclutter({
     activePOIId,
     textureIds,
     dotIds,
+    highlightedIds,
     enabled,
     suppressActiveLabel,
     visibleLeftPx,
@@ -354,6 +369,7 @@ export function useMarker3DDeclutter({
     activePOIId,
     textureIds,
     dotIds,
+    highlightedIds,
     enabled,
     suppressActiveLabel,
     visibleLeftPx,
@@ -370,6 +386,7 @@ export function useMarker3DDeclutter({
       activePOIId: activeId,
       textureIds: texture,
       dotIds: dots,
+      highlightedIds: highlighted,
       enabled: on,
       suppressActiveLabel: hideActiveLabel,
       visibleLeftPx: windowLeft,
@@ -427,12 +444,28 @@ export function useMarker3DDeclutter({
 
     const zIndexes = depthOrder(projected, activeId);
 
+    const isHighlighted = (poi: POI) => highlighted?.has(poi.id) ?? false;
+
     // Prikk-tier: kameraet er så langt ute at ikonene uansett ikke er lesbare.
     // Alt demoteres, ingen labels — samme svar som 2D gir under zoom 13.
+    //
+    // Unntaket er de omtalte stedene. De er få (et svar peker på tre–fire), og
+    // det er nettopp når kameraet står langt ute at leseren trenger å se HVOR
+    // de ligger. Uten fritaket forsvant hele gruppen i prikke-teppet i det
+    // kameraet rammet den inn. Ingen kollisjonsregning her — settet er for lite
+    // til å kollidere med seg selv, og resten av kartet er prikker uten navn.
     if (tier === "dot") {
+      const labels: Record<string, LabelPlacement> = {};
+      for (const { poi } of projected) {
+        if (!isHighlighted(poi)) continue;
+        if (hideActiveLabel && poi.id === activeId) continue;
+        labels[poi.id] = { text: poi.name, side: "right" };
+      }
       const next: Marker3DDeclutter = {
-        labels: {},
-        demotedIds: new Set(items.map((p) => p.id)),
+        labels,
+        demotedIds: new Set(
+          items.filter((p) => !isHighlighted(p)).map((p) => p.id),
+        ),
         zIndexes,
         // Prikk-tieren ligger langt under vekst-rampen — men vi leser den av
         // funksjonen likevel, i stedet for å hardkode 1 her.
@@ -479,16 +512,23 @@ export function useMarker3DDeclutter({
     // gjort en barnehage til prikk under et barne-stopp. Boosten ligger over
     // Google-ratingens 0–5-skala, så rangeringen INNENFOR hvert lag er
     // fortsatt ratingens.
-    const isTexture = (poi: POI) => texture?.has(poi.id) ?? false;
+    //
+    // Et OMTALT sted (`highlightedIds`) er den tredje slike: assistenten sa
+    // navnet, og et navnløst punkt kan leseren ikke kjenne igjen. Det regnes
+    // heller aldri som kontekst — er stedet omtalt, er det scenen akkurat nå.
+    const isTexture = (poi: POI) =>
+      (texture?.has(poi.id) ?? false) && !isHighlighted(poi);
     const priorityOf = (poi: POI) =>
-      poi.id === activeId || isAnchorPOI(poi)
+      poi.id === activeId || isAnchorPOI(poi) || isHighlighted(poi)
         ? Number.POSITIVE_INFINITY
         : (poi.googleRating ?? 0) + (isTexture(poi) ? 0 : SCENE_PRIORITY_BOOST);
 
     // Punktene som alt ER prikker (utenfor rekkevidde) står utenfor
     // konkurransen — se `dotIds`. De kommer inn igjen i `demotedIds` under, så
-    // markørlaget bare har ett sett å lese.
-    const isDot = (poi: POI) => dots?.has(poi.id) ?? false;
+    // markørlaget bare har ett sett å lese. Omtalte steder er unntatt
+    // rekkevidde-prikken (samme fritak som 2D-markøren har), så de blir i
+    // konkurransen og beholder skiva si.
+    const isDot = (poi: POI) => (dots?.has(poi.id) ?? false) && !isHighlighted(poi);
     const pinCandidates: PinCandidate[] = projected
       .filter(({ poi }) => !isDot(poi))
       .map(({ poi, x, y }) => ({
@@ -558,6 +598,18 @@ export function useMarker3DDeclutter({
       }
     }
 
+    // De omtalte stedene bærer navnet sitt uansett tier og uansett kollisjon.
+    // To grunner: på `icon`-tieren har INGEN markør navn, og Infinity-prioritet
+    // gir første valg i kullingen, ikke en garanti — en hindring
+    // (prosjekt-chipen) kan fortsatt spise begge sidene. Et navn som overlapper
+    // litt er til å lese; et navn som mangler er stedet borte, og da hjelper
+    // det ikke at assistenten nettopp sa det.
+    for (const { poi } of projected) {
+      if (!isHighlighted(poi) || labels[poi.id]) continue;
+      if (hideActiveLabel && poi.id === activeId) continue;
+      labels[poi.id] = { text: poi.name, side: "right" };
+    }
+
     const next: Marker3DDeclutter = { labels, demotedIds, zIndexes, pinScale };
     setResult((prev) => (sameResult(prev, next) ? prev : next));
   }, [map3d]);
@@ -622,6 +674,17 @@ export function useMarker3DDeclutter({
     [dotIds],
   );
 
+  /**
+   * Og for de omtalte stedene, av nøyaktig samme grunn: et nytt svar fra
+   * assistenten peker på nye punkter uten å røre verken markørsettet (de er
+   * typisk alt mountet) eller kameraet. Uten nøkkelen ville fritakene — skiva,
+   * navnet, plassreservasjonen — blitt stående på forrige gruppe.
+   */
+  const highlightKey = useMemo(
+    () => (highlightedIds ? [...highlightedIds].sort().join(",") : ""),
+    [highlightedIds],
+  );
+
   // Datasett-timeren. Egen fra kamera-timeren, se doc-blokken.
   useEffect(() => {
     if (!map3d || !enabled) return;
@@ -633,6 +696,7 @@ export function useMarker3DDeclutter({
     poisKey,
     textureKey,
     dotKey,
+    highlightKey,
     activePOIId,
     suppressActiveLabel,
   ]);

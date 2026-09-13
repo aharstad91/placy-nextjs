@@ -93,6 +93,26 @@ export interface BoardState {
    * av all annen navigasjon.
    */
   exploreSuppressed: boolean;
+  /**
+   * Stedene som er OMTALT akkurat nå — flere samtidig, i den rekkefølgen de ble
+   * nevnt. Fremhevingen er en egen markørtilstand ved siden av `activePOIId`, og
+   * de to svarer på hvert sitt spørsmål: den aktive er stedet leseren har ÅPNET
+   * (popup, rutelinje, kamerafly), mens disse er stedene noen SNAKKER om.
+   *
+   * Talesamtalen er den første konsumenten: assistenten peker på tre-fire steder
+   * i ett svar, og alle skal kunne sees samtidig uten at noen av dem åpnes eller
+   * velges. Hadde vi uttrykt det med `activePOIId`, kunne bare ett sted vært
+   * fremhevet, og hvert nytt sted ville slått opp en popup over kartet.
+   *
+   * Rekkefølgen er innholdet: markørene bærer rekkefølgetallet sitt (1, 2, 3),
+   * så et sted som nevnes som «det tredje» er til å finne igjen på kartet.
+   *
+   * MOTSATT AV `exploreSuppressed`: INGEN navigasjons-action nullstiller feltet.
+   * Fremhevingen tilhører det som ble SAGT, ikke hvor leseren står — trykker hun
+   * på et av de omtalte stedene, skal ikke de andre forsvinne under henne. Bare
+   * `HIGHLIGHT_POIS` og `CLEAR_HIGHLIGHTS` skriver det. Se `resetNavigation`.
+   */
+  highlightedPoiIds: BoardPOIId[];
 }
 
 /**
@@ -143,7 +163,17 @@ export type BoardAction =
   | { type: "OPEN_EXPLORE" }
   | { type: "CLOSE_EXPLORE" }
   | { type: "SET_TRAVEL_MODE"; mode: TravelMode }
-  | { type: "TOGGLE_CONTOURS" };
+  | { type: "TOGGLE_CONTOURS" }
+  /**
+   * ERSTATTER hele settet av omtalte steder — den er ikke additiv. Et nytt svar
+   * fra assistenten er en ny gruppe, og ville de forrige stedene blitt liggende,
+   * hadde kartet samlet opp alt som noen gang ble nevnt.
+   *
+   * Rekkefølgen i `ids` er den som tegnes som 1, 2, 3. Dubletter fjernes med
+   * første forekomst beholdt, så en id ikke kan bære to tall.
+   */
+  | { type: "HIGHLIGHT_POIS"; ids: BoardPOIId[] }
+  | { type: "CLEAR_HIGHLIGHTS" };
 
 export const initialBoardState: BoardState = {
   phase: "default",
@@ -154,6 +184,7 @@ export const initialBoardState: BoardState = {
   travelMode: "walk",
   showContours: false,
   exploreSuppressed: false,
+  highlightedPoiIds: [],
 };
 
 /**
@@ -164,13 +195,22 @@ export const initialBoardState: BoardState = {
  * leseren, midt i en sesjon der hun bevisst hadde slått på sykkel. Går man via
  * denne, er regelen «navigasjon rører ikke leserens perspektiv» uttrykt på ett
  * sted — den gjelder både reisemåten og rekkevidde-konturene.
+ *
+ * De omtalte stedene følger samme regel av sin egen grunn: de tilhører det som
+ * ble SAGT, ikke hvor leseren står. Se `BoardState.highlightedPoiIds`.
  */
 function resetNavigation(state: BoardState): BoardState {
   return {
     ...initialBoardState,
     travelMode: state.travelMode,
     showContours: state.showContours,
+    highlightedPoiIds: state.highlightedPoiIds,
   };
+}
+
+/** Samme liste? Rekkefølgen teller — den ER rekkefølgetallene på markørene. */
+function sameHighlights(a: readonly BoardPOIId[], b: readonly BoardPOIId[]) {
+  return a.length === b.length && a.every((id, i) => id === b[i]);
 }
 
 export function boardReducer(
@@ -201,6 +241,9 @@ export function boardReducer(
         // Samme regel: leserens perspektiv følger med gjennom navigasjonen.
         showContours: state.showContours,
         exploreSuppressed: false,
+        // Og samme regel for de omtalte stedene: et kategori-valg er ikke et
+        // svar på det som ble sagt, så det skal ikke viske ut hva som ble sagt.
+        highlightedPoiIds: state.highlightedPoiIds,
       };
     }
 
@@ -223,6 +266,9 @@ export function boardReducer(
         // modalen. Et nytt trykk på selve punktet kommer uten kilde og åpner
         // den.
         exploreSuppressed: action.source === "faq" || action.source === "story" || action.source === "voice",
+        // Trykker leseren på ett av de omtalte stedene, skal de andre bli
+        // stående — gruppen er ett svar, ikke tre løsrevne punkter.
+        highlightedPoiIds: state.highlightedPoiIds,
       };
 
     case "BACK_TO_ACTIVE":
@@ -278,6 +324,30 @@ export function boardReducer(
       // Samme kontrakt som modusbyttet: rører BARE visningsvalget. Konturene
       // er en ramme rundt hele boardet, ikke noe som hører til ett punkt.
       return { ...state, showContours: !state.showContours };
+
+    case "HIGHLIGHT_POIS": {
+      // Dubletter fjernes med FØRSTE forekomst beholdt: nevnes samme sted to
+      // ganger i ett svar, er det stedets første plass i rekken som gjelder —
+      // ellers ville én markør båret to rekkefølgetall.
+      const seen = new Set<BoardPOIId>();
+      const ids: BoardPOIId[] = [];
+      for (const id of action.ids) {
+        if (seen.has(id)) continue;
+        seen.add(id);
+        ids.push(id);
+      }
+      // Samme gruppe om igjen (assistenten nevner de samme stedene i neste
+      // setning) skal ikke re-rendre ~1 000 markører. Identisk liste = identisk
+      // state-objekt.
+      if (sameHighlights(ids, state.highlightedPoiIds)) return state;
+      return { ...state, highlightedPoiIds: ids };
+    }
+
+    case "CLEAR_HIGHLIGHTS":
+      // Samme dedup-begrunnelse som over, i tom form: er det ingenting å
+      // fjerne, skal ingenting re-rendres.
+      if (state.highlightedPoiIds.length === 0) return state;
+      return { ...state, highlightedPoiIds: [] };
 
     default:
       return state;
