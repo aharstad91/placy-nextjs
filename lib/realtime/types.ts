@@ -37,6 +37,8 @@ export interface RealtimeOptions {
   getContext: () => string;
   serverControlled?: boolean;
   snapshotId?: string;
+  /** Instruksjon for åpningshilsenen i talemodus. Utelatt → standardhilsen. */
+  greeting?: string;
 }
 
 export interface RealtimeStartOptions {

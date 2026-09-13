@@ -96,14 +96,15 @@ export function StoryCard({
   variant = "sheet",
   head,
   footer,
-  keepHeadOnArea = false,
+  assistant,
 }: {
   /** `column` = desktop-kolonnen (to faner, festet hode), `sheet` = mobil. */
   variant?: "sheet" | "column";
   /** Transporten, festet sammen med spørsmålet. Kun desktop. */
   head?: ReactNode;
-  /** Prototypens samtale må være montert også på områdeoversikten. */
-  keepHeadOnArea?: boolean;
+  /** Samtalen med Placy: én knapp under fanene, montert utenfor lagbyttet så
+   *  samtalen overlever område ↔ tema. Bare på boards som har den. */
+  assistant?: ReactNode;
   /** Sist i seksjonen, inne i samme sticky-kontekst. Kun desktop. */
   footer?: ReactNode;
 }) {
@@ -172,7 +173,7 @@ export function StoryCard({
         {/* Transporten står IKKE på områdestoppet (2026-09-05): der er du ikke
             inne i rekkefølgen ennå, og temaene ligger som rutenett i innholdet
             (`StoryThemeGrid`). Raden kommer inn når et tema er valgt. */}
-        {head && (!onArea || keepHeadOnArea) && <div className="mb-4">{head}</div>}
+        {head && !onArea && <div className="mb-4">{head}</div>}
         {!head && (
           <div className="sticky top-0 z-[3] flex h-0 justify-end">
             <button
@@ -243,6 +244,11 @@ export function StoryCard({
             </div>
           )}
         </div>
+
+        {/* Samtalen ligger UTENFOR det nøklede laget over: nøkkelen monterer
+            overskrift og faner på nytt ved område ↔ tema, og en samtale som
+            ble montert på nytt ville lagt på. */}
+        {assistant && <div className="mt-3.5">{assistant}</div>}
       </div>
 
       {/* Fanene bytter enkelt: den inaktive tas ut av layouten. Flaten står

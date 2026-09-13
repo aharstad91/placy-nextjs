@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { BoardVoiceAssistant } from "@/components/variants/report/board/voice/BoardVoiceAssistant";
+import { BoardVoiceControl } from "@/components/variants/report/board/voice/BoardVoiceControl";
 import { useEffect, useRef } from "react";
 import { Mail, Pause, Phone, Play, RotateCcw, User } from "lucide-react";
 import { useReels } from "./reels-state";
@@ -153,8 +153,8 @@ export function StoryColumn({ noBrokers = false }: { noBrokers?: boolean }) {
       >
         <StoryCard
           variant="column"
-          keepHeadOnArea={data.projectSlug === "nyhavna"}
-          head={<><StoryRail variant="flow" />{data.projectSlug === "nyhavna" && <BoardVoiceAssistant />}</>}
+          head={<StoryRail variant="flow" />}
+          assistant={data.demoSnapshotId ? <BoardVoiceControl /> : undefined}
           footer={!noBrokers ? <MeglerFooterCard /> : undefined}
         />
       </div>

@@ -437,7 +437,7 @@ export function useRealtime(options: RealtimeOptions) {
       }, 720000);
       if (initialText?.trim()) sendText(initialText);
       else if (mode === "voice") {
-        send({ type: "response.create", response: { instructions: "Hils kort på norsk, presenter deg som Placy, og spør hva brukeren vil oppdage på Nyhavna. Ikke start kartbevegelser før brukeren har gitt en interesse." } });
+        send({ type: "response.create", response: { instructions: latest.current.greeting ?? "Hils kort på norsk, standard østnorsk talemål, uten engelsk aksent. Presenter deg som Placy og si at brukeren kan spørre om nabolaget. Ikke kall verktøy før brukeren har spurt." } });
       }
     } catch (caught) {
       if (run !== generation.current) return;

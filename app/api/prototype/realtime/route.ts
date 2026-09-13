@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { realtimeModel, realtimeSessionConfig } from '@/lib/realtime/session-config';
 import { getNyhavnaSnapshot } from '@/lib/demo/nyhavna-leve/snapshot';
-import { createNyhavnaKnowledge, NYHAVNA_INSTRUCTIONS, nyhavnaTools } from '@/lib/realtime/nyhavna-knowledge';
+import { createNyhavnaKnowledge, nyhavnaInstructions, nyhavnaTools } from '@/lib/realtime/nyhavna-knowledge';
 import { connectSideband, getSupervisor } from '@/lib/realtime/sideband';
 
 export const runtime = 'nodejs';
@@ -45,7 +45,7 @@ export async function POST(request: NextRequest) {
   let token: string;
   try { token = await supervisor.reserve(); } catch { return NextResponse.json({ error: 'En samtale er aktiv, eller serveren venter på opprydding. Avslutt samtalen og prøv igjen.' }, { status: 429 }); }
   const { sdp, mode } = parsed.data;
-  const instructions = `${NYHAVNA_INSTRUCTIONS}\nBoardets kategorier (data): ${JSON.stringify(snapshot.board.categories.map(c => ({ id: String(c.id), name: c.label })))}`;
+  const instructions = nyhavnaInstructions(snapshot.board);
   const form = new FormData();
   form.set('sdp', sdp);
   form.set('session', JSON.stringify(realtimeSessionConfig(instructions, nyhavnaTools, mode)));

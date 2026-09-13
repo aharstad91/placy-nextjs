@@ -12,6 +12,7 @@ import { FAQSection } from "../FAQSection";
 import { useNeighbourhoodList } from "./use-neighbourhood-list";
 import { TravelModeHeaderControl } from "./TravelModeHeaderControl";
 import { StoryCard } from "../story/StoryCard";
+import { BoardVoiceControl } from "../voice/BoardVoiceControl";
 import { StoryDeck } from "../story/StoryRail";
 import { StoryPlayCard } from "../story/StoryPlayCard";
 import { useStoryTour } from "../story/story-tour";
@@ -128,7 +129,9 @@ export function NeighbourhoodSurface({
           onHeightChange={onSurfaceHeightChange}
           contentRestKey="story"
         >
-          <StoryCard />
+          <StoryCard
+            assistant={data.demoSnapshotId ? <BoardVoiceControl /> : undefined}
+          />
         </NeighbourhoodSheet>
         <StoryDeck />
       </>
@@ -183,6 +186,15 @@ function NeighbourhoodList({
       {/* Inngangen til omvisningen, over indeksen: tettheten møter deg først,
           men den som ikke selv begynner å zoome og trykke skal ha en vei inn. */}
       <StoryPlayCard />
+
+      {/* Samtalen er tilgjengelig FØR omvisningen er begynt: den som lander
+          kaldt fra en annonse skal kunne spørre med én gang. Samme forbindelse
+          som knappen inne i omvisningen (se board-voice.tsx). */}
+      {data.demoSnapshotId && (
+        <div className="mb-3 px-1">
+          <BoardVoiceControl />
+        </div>
+      )}
 
       {!hintDismissed && (
         <p

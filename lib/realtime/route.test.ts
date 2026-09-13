@@ -3,7 +3,7 @@ import { NextRequest } from 'next/server';
 const mocks = vi.hoisted(() => ({ reserve: vi.fn(), attach: vi.fn(), end: vi.fn(), connect: vi.fn(), blockUnknown: vi.fn() }));
 vi.mock('@/lib/realtime/sideband', () => ({ getSupervisor: () => mocks, connectSideband: mocks.connect }));
 vi.mock('@/lib/demo/nyhavna-leve/snapshot', () => ({ getNyhavnaSnapshot: async () => ({ snapshotId: 'snapshot-test', project: {}, board: { categories: [] } }) }));
-vi.mock('@/lib/realtime/nyhavna-knowledge', () => ({ createNyhavnaKnowledge: () => () => ({}), NYHAVNA_INSTRUCTIONS: 'trusted-server-instructions', nyhavnaTools: [] }));
+vi.mock('@/lib/realtime/nyhavna-knowledge', () => ({ createNyhavnaKnowledge: () => () => ({}), nyhavnaInstructions: () => 'trusted-server-instructions', nyhavnaTools: [] }));
 import { GET, POST, DELETE } from '@/app/api/prototype/realtime/route';
 const key = 'test-secret-must-remain-server-side';
 function request(url = 'http://localhost:3101/api/prototype/realtime', origin?: string, extra: Record<string, unknown> = {}) {

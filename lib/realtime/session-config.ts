@@ -21,7 +21,10 @@ export function realtimeSessionConfig(instructions: string, tools: RealtimeTool[
     tool_choice: "auto",
     output_modalities: [mode === "text" ? "text" : "audio"],
     max_output_tokens: 700,
-    truncation: { type: "retention_ratio", retention_ratio: 0.7, token_limits: { post_instructions: 2500 } },
+    // Ingen trimming av samtalen: når modellens egne tidligere svar trimmes bort,
+    // mister den lydbildet den skal speile, og stemmen driver i aksent og dialekt
+    // fra svar til svar. Instruksjonene og katalogen ligger fast og caches.
+    truncation: "disabled",
     audio: {
       input: {
         transcription: { model: "gpt-4o-mini-transcribe", language: "no" },
@@ -29,7 +32,7 @@ export function realtimeSessionConfig(instructions: string, tools: RealtimeTool[
           type: "semantic_vad", eagerness: "medium", interrupt_response: true, create_response: true,
         },
       },
-      output: { voice: "ash" },
+      output: { voice: "marin" },
     },
   };
 }

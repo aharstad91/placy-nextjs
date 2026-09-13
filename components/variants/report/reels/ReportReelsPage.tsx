@@ -10,7 +10,6 @@ import {
 } from "react";
 import dynamic from "next/dynamic";
 import { MapPin } from "lucide-react";
-import { BoardVoiceAssistant } from "@/components/variants/report/board/voice/BoardVoiceAssistant";
 import { LocaleProvider, useLocale } from "@/lib/i18n/locale-context";
 import { applyTranslations } from "@/lib/i18n/apply-translations";
 import type { Project } from "@/lib/types";
@@ -34,6 +33,7 @@ import { BoardCollectionDrawer } from "../board/event/BoardCollectionDrawer";
 import { EventMobileSheet } from "../board/event/EventMobileSheet";
 import { NeighbourhoodSurface } from "../board/neighbourhood/NeighbourhoodSurface";
 import { StoryTourProvider } from "../board/story/story-tour";
+import { BoardVoiceProvider } from "../board/voice/board-voice";
 import { useKompassSelections } from "@/lib/kompass-store";
 import {
   EngagementProvider,
@@ -342,24 +342,28 @@ function Inner({
             kart-komponentene fordi begge er montert samtidig ved 3D-addon —
             se POIExploreModalHost for hele begrunnelsen. */}
             <POIExploreModalHost />
-            <ReelsAudioShell>
-              {/* Voiceover-orchestration: lazy søsken (egen chunk), kjører hooken
+            {/* Samtalen med Placy: én forbindelse for hele boardet, uansett
+            hvor mange knapper som styrer den. Se board-voice.tsx. */}
+            <BoardVoiceProvider>
+              <ReelsAudioShell>
+                {/* Voiceover-orchestration: lazy søsken (egen chunk), kjører hooken
               uten å forsinke layout-treet. Erstatter den gamle wrapper-formen. */}
-              <ReelsAudioOrchestrator />
-              <ResponsiveLayout
-                boardData={boardData}
-                has3dAddon={has3dAddon}
-                eventMode={eventMode}
-                hideBrokerCard={
-                  effectiveProject.reportConfig?.hideBrokerCard === true
-                }
-                eventFilter={eventMode ? eventFilter : null}
-                collection={eventMode ? collectionApi : null}
-                onOpenCollection={() => setCollectionDrawerOpen(true)}
-                embed={embed}
-                fromEmbed={fromEmbed}
-              />
-            </ReelsAudioShell>
+                <ReelsAudioOrchestrator />
+                <ResponsiveLayout
+                  boardData={boardData}
+                  has3dAddon={has3dAddon}
+                  eventMode={eventMode}
+                  hideBrokerCard={
+                    effectiveProject.reportConfig?.hideBrokerCard === true
+                  }
+                  eventFilter={eventMode ? eventFilter : null}
+                  collection={eventMode ? collectionApi : null}
+                  onOpenCollection={() => setCollectionDrawerOpen(true)}
+                  embed={embed}
+                  fromEmbed={fromEmbed}
+                />
+              </ReelsAudioShell>
+            </BoardVoiceProvider>
           </StoryTourProvider>
           {eventMode && (
             <BoardCollectionDrawer
@@ -660,8 +664,12 @@ function ResponsiveLayoutInner({
   // flaten over kart-peeken (z-index) så det inn-glidende slidet ikke klippes av
   // peek-sheeten. Play/pause + swipe-navigasjon eier ReelSwipeStack selv.
   const [isDragging, setIsDragging] = useState(false);
-  const [splashVisible, setSplashVisible] = useState(boardData.projectSlug !== "nyhavna");
-  const [boardRevealed, setBoardRevealed] = useState(boardData.projectSlug === "nyhavna");
+  const [splashVisible, setSplashVisible] = useState(
+    boardData.projectSlug !== "nyhavna",
+  );
+  const [boardRevealed, setBoardRevealed] = useState(
+    boardData.projectSlug === "nyhavna",
+  );
   // Nabolagsflaten (mobil, boards uten VO): sheetens MÅLTE høyde i gjeldende
   // hvileposisjon. Driver kartets bottom-padding OG okklusjonen i det
   // publiserte viewport-rektangelet, så lista aldri teller punkter som ligger
@@ -1095,12 +1103,6 @@ function ResponsiveLayoutInner({
           </div>
         )}
       </div>
-
-      {boardData.projectSlug === "nyhavna" && boardRevealed && (
-        <div className="absolute left-3 right-14 top-0 z-[60] max-h-[60dvh] max-w-sm overflow-y-auto rounded-[20px]">
-          <BoardVoiceAssistant compact />
-        </div>
-      )}
 
       {/* Nabolagsflaten (R1/R3): kart øverst, fritt dragbar liste nederst, på
           boards uten spillbar VO — med kategoriside-push over samme kart.
