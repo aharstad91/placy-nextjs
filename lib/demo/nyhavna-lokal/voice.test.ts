@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { readFile } from "node:fs/promises";
 import { join } from "node:path";
 import { buildLocalBoard } from "@/lib/demo/nyhavna-lokal/board";
-import { LOCAL_DATASET_DIR } from "@/lib/demo/nyhavna-lokal/dataset";
+import { loadDataset, LOCAL_DATASET_DIR } from "@/lib/demo/nyhavna-lokal/dataset";
 import { buildVoiceDeps, LOCAL_DEMO_INSTRUCTION } from "@/lib/demo/nyhavna-lokal/voice";
 import {
   localBoardSchema,
@@ -12,7 +12,7 @@ import {
   type LocalDataset,
 } from "@/lib/demo/nyhavna-lokal/schema";
 import { createNyhavnaConversation } from "@/lib/realtime/nyhavna-conversation";
-import { nyhavnaInstructions } from "@/lib/realtime/nyhavna-knowledge";
+import { nyhavnaFaqCatalog, nyhavnaInstructions } from "@/lib/realtime/nyhavna-knowledge";
 
 /**
  * Stemmens grunnlag skal være DATASETTET, og ingenting annet.
@@ -45,6 +45,7 @@ const emptyDataset = async (): Promise<LocalDataset> => ({
   sources: [],
   places: [],
   topics: [],
+  faqs: [],
 });
 
 const conversationFor = (dataset: LocalDataset) =>
@@ -191,5 +192,30 @@ describe("samtaleeksemplene", () => {
     const board = buildLocalBoard(dataset);
     const payload = `${nyhavnaInstructions(board)}${LOCAL_DEMO_INSTRUCTION}${JSON.stringify(buildVoiceDeps(dataset).knowledge)}`;
     expect(payload).not.toContain(utterance);
+  });
+});
+
+describe("spørsmål og svar er felles for sidebar og stemme", () => {
+  it("gir stemmen nøyaktig de spørsmålene sidebaren viser", async () => {
+    const dataset = await loadDataset();
+    const board = buildLocalBoard(dataset);
+    const catalog = nyhavnaFaqCatalog(board);
+    for (const entry of dataset.faqs) {
+      // ID-en er kontrakten mellom flaten og `answered_faq_ids`.
+      expect(catalog).toContain(`(${entry.id})`);
+      expect(catalog).toContain(entry.question);
+    }
+  });
+
+  it("sier til modellen at kartet er tomt, så den ikke lover markører", async () => {
+    expect(LOCAL_DEMO_INSTRUCTION).toContain("ingen steder i kartet");
+    expect(LOCAL_DEMO_INSTRUCTION).toContain("highlight_places");
+  });
+
+  it("gir ingen kart-ID-er til katalogsvarene, siden ingen steder finnes", async () => {
+    const board = buildLocalBoard(await loadDataset());
+    // «vis:» er kart-ID-ene modellen ville brukt til å fremheve. Ingen steder i
+    // datasettet = ingen slike referanser, uansett hvilke navn svarene nevner.
+    expect(nyhavnaFaqCatalog(board)).not.toContain("vis:");
   });
 });

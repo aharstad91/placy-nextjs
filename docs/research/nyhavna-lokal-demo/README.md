@@ -1,8 +1,12 @@
 # Nyhavna lokal demo — bruksanvisning
 
 En ren Placy-demo for Nyhavna som henter ALT faginnhold fra lokale JSON-filer.
-Den starter tom: hvert sted, hvert fakta og hver kilde som dukker opp, har noen
-lagt inn med vilje.
+Ingenting dukker opp av seg selv: hvert sted, hvert fakta, hvert spørsmål og
+hver kilde har noen lagt inn med vilje.
+
+Første innhold er de 56 spørsmålene og svarene fra Leve-varianten av
+Nyhavna-boardet, importert 2026-09-13. Steder og temakunnskap er fortsatt
+tomme — se «Hva demoen har i dag» under.
 
 **URL:** `http://localhost:3103/demo/nyhavna-lokal`
 (porten er den dev-serveren faktisk kjører på — sjekk med `git worktree list` og
@@ -27,6 +31,7 @@ og deler ingen data med denne.
 | `sources.json` | Kilderegisteret. Stabile ID-er alt annet peker på. |
 | `places.json` | Stedene — det som får markør i kartet. |
 | `topics.json` | Temakunnskap: fakta og sammenhenger uten ett bestemt sted. |
+| `faq.json` | Spørsmål og svar, per tema eller for hele området. |
 | `conversations.json` | Samtaleeksempler. **Testgrunnlag, aldri faktakilde.** |
 | `eksempel.json` | Dokumentasjon. Lastes ALDRI av demoen. |
 
@@ -51,7 +56,8 @@ interesse-ordliste (`lib/realtime/tour-state.ts`) kjenner dem igjen, så «mat»
 åpner riktig tema uten at noe må skrives om.
 
 Tomme kategorier er tilgjengelige. De står i temaraden, kan åpnes, og viser
-«Ingen steder er lagt inn i dette temaet ennå.»
+«Ingen steder er lagt inn i dette temaet ennå.» — sammen med temaets spørsmål og
+svar, som ikke trenger et eneste sted for å kunne leses.
 
 ---
 
@@ -69,6 +75,76 @@ Sett `"map3d": false` for å bare ha Mapbox. Google-motoren krever
 `"pinSubtitle": ""` gir prosjektmarkøren bare navnet. Utelates feltet, faller
 markøren tilbake på sin egen standardtekst («Nybygg 2028») — en påstand om
 byggeår demoen ikke har dekning for.
+
+---
+
+## Hva demoen har i dag
+
+| Innhold | Status |
+|---|---|
+| Kategorier | 7, alle med innhold i sidebaren |
+| Spørsmål og svar | 56 (8 for hele området + 48 fordelt på temaene) |
+| Steder | 0 — kartet er geografisk bakgrunn, uten markører |
+| Temakunnskap | 0 |
+
+Fordelingen av de 48 temaspørsmålene: Hverdag 10, Transport 9, Oppvekst 8,
+Trening 7, Servering 6, Natur 4, Opplevelser 4.
+
+## Spørsmål og svar
+
+Ett innhold, to flater. `faq.json` blir både det venstre sidefeltet viser
+(`FAQSection`) og spørsmålskatalogen stemmen får i instruksjonen
+(`nyhavnaFaqCatalog`). Det er ikke to kopier som må holdes i takt — det er den
+samme lista lest to ganger, og en test holder de to identiske.
+
+Et spørsmål uten `categoryId` hører til hele området og står på områdestoppet
+(det første stoppet, med navnet på strøket). Med `categoryId` står det under det
+temaet — også når temaet ikke har ett eneste sted.
+
+```json
+{
+  "id": "hvor-er-naermeste-apotek",
+  "categoryId": "hverdagsliv",
+  "question": "Hvor er nærmeste apotek?",
+  "answer": "Det står ikke i materialet ennå. Se [Hverdag](category:hverdagsliv) for det som er lagt inn.",
+  "origin": "local",
+  "sourceIds": ["nyhavna-leve-board"],
+  "caveats": []
+}
+```
+
+- **Rekkefølgen i fila er rekkefølgen på flaten.** Ingen sortering skjer.
+- `origin: "imported"` betyr at svaret er hentet ferdig fra et annet board og
+  gjengitt som det sto — det er IKKE etterkontrollert her. Lasteren krever da
+  minst én `sourceId`, så det alltid står hvor teksten kommer fra.
+  `origin: "local"` er et svar noen har skrevet for denne demoen.
+- `[tekst](category:id)` i svaret gjør kategorien klikkbar i sidebaren og
+  oppgis til stemmen. Peker den på en kategori som ikke finnes, stopper
+  lasteren — en lenke som aldri kan klikkes er en skrivefeil.
+- `caveats` følger svaret som forbehold, på samme måte som for steder og temaer.
+
+### Om importen fra Leve-boardet
+
+Svarene er hentet fra `/eiendom/nyhavna-utvikling/nyhavna/leve` slik de STÅR
+der, med samme ordlyd, samme tema og samme rekkefølge. De er generert
+deterministisk av det boardets 1 400+ steder — reisetider, åpningstider og
+opptellinger kommer derfra.
+
+To ting følger av det, og begge er med vilje:
+
+1. **Stedslenkene er skrelt bort.** Svarene bar `[navn](poi:google-ChIJ…)`, som
+   peker på stedene i det ANDRE boardet. De finnes ikke her, ville aldri kunnet
+   klikkes, og ville vært støy i en fil som skal redigeres for hånd. Selve
+   ordlyden er uendret: lenketeksten står igjen som vanlig tekst.
+2. **Flere svar snakker om et kart denne demoen ikke har** («91 steder på kartet
+   ligger innenfor ti minutter», «Dromedar Kaffebar … 10 minutter til fots»).
+   Tallene er sanne om Nyhavna og om Leve-boardet, men denne demoen har ingen
+   markører å vise dem på. Derfor har guiden en egen regel om nettopp det (se
+   «Stemmen»), og derfor er ingen kart-ID-er med i katalogen den får.
+
+Kildeposten `nyhavna-leve-board` i `sources.json` er selve importsporet: den
+sier hvor svarene er hentet fra og når. Den sier IKKE at innholdet er
+faktakontrollert på nytt — det er det ikke.
 
 ## Legge til et sted
 
@@ -171,6 +247,7 @@ plassering uten flagget ville tatt forbehold om et koordinat som er belagt.
 - `place.coordinates` → markøren. Steder uten koordinat finnes ikke i formatet;
   noe kilden navngir uten at det kan plasseres, hører hjemme i kategoriens
   `unplaced` i `board.json` og får aldri markør.
+- `faq.categoryId` → temaet spørsmålet står under. Uten feltet: områdestoppet.
 - Kart, board og stemme leser det SAMME datasettet. Stemmens kartverktøy
   validerer i tillegg hver ID mot boardet, så en markør på et sted som ikke
   finnes er umulig.
@@ -222,6 +299,7 @@ places.json har ugyldige data:
 ```
 Datasettet i data/demo/nyhavna-lokal/ har brutte referanser:
   • places.json → «dora-kaffebar»: ukjent categoryId «servering» (mangler i board.json).
+  • faq.json → «hvor-er-apoteket»: origin er "imported", men sourceIds er tom — oppgi hvor svaret er hentet fra.
 ```
 
 Feilen vises i nettleseren og i terminalen. Den skal gjøre det — en demo som
@@ -245,9 +323,20 @@ Datagrunnlaget velges av boardet (`BoardData.demoDataset`), ikke av URL-en:
 denne demoen sender `nyhavna-lokal`, den eksisterende sender ingenting og får
 `nyhavna-leve`. Registeret står i `lib/live/demos.ts`.
 
-Guiden får en ekstra regel i denne demoen (`LOCAL_DEMO_INSTRUCTION`): mangler
-verktøyene et svar, skal den si kort at den ikke har det i materialet ennå — ikke
-fylle hullet med generell kunnskap, ikke gjette, ikke søke på nettet.
+Guiden får to ekstra regler i denne demoen (`LOCAL_DEMO_INSTRUCTION`):
+
+1. Mangler verktøyene et svar, skal den si kort at den ikke har det i materialet
+   ennå — ikke fylle hullet med generell kunnskap, ikke gjette, ikke søke på
+   nettet.
+2. Kartet er tomt. Den skal ikke kalle `highlight_places` eller `show_place`,
+   ikke love å vise eller markere noe, og ikke si «her ser du». Katalogsvarene
+   navngir steder og oppgir minutter fra det andre boardet; navn, tall og
+   forbehold gjengis som de står, men stedene påstås ikke å ligge i DETTE
+   kartet.
+
+Spørsmålene stemmen kan svare med er nøyaktig de sidebaren viser: begge leser
+`faq.json`. Katalogen står i den faste delen av instruksjonen, så et
+katalogspørsmål kan besvares i én runde.
 
 Simulert samtale uten mikrofon: legg på `?voicedev=1` og bruk `window.placyVoice`
 (`start()`, `say()`, `tool()`, `messages()`, `status()`, `stop()`).
@@ -258,6 +347,10 @@ Simulert samtale uten mikrofon: legg på `?voicedev=1` og bruk `window.placyVoic
 
 - **Lokalt bare.** Ruta svarer 404 i produksjonsbygg.
 - **Ingen Supabase.** Verken lesing eller skriving, for denne demoen.
+- **Ingen steder i kartet.** Importen tok med spørsmål og svar, ikke steder.
+  Svar som navngir et sted kan leses og sies, men stedet har ingen markør — og
+  flere svar oppgir tall (avstander, opptellinger) som gjelder Leve-boardets
+  kart, ikke dette.
 - **Ingen lyd, megler, oppsummering eller isokroner.** Datasettet bærer dem ikke,
   og et tomt board som later som det har dem er en løgn om datagrunnlaget.
 - **Ingen CMS.** Filene redigeres for hånd eller av en agent. Det er meningen.

@@ -1,0 +1,554 @@
+[
+  {
+    "id": "til-byen",
+    "question": "Hvordan kommer jeg meg til byen?",
+    "answer": "Til Trondheim S tar det 8 minutter med linje 20. Se [Transport](category:transport) for holdeplassene i nabolaget.",
+    "origin": "imported",
+    "sourceIds": [
+      "nyhavna-leve-board"
+    ]
+  },
+  {
+    "id": "gangavstand",
+    "question": "Hva finnes innen ti minutters gange?",
+    "answer": "91 steder på kartet ligger innenfor ti minutter til fots. 23 av dem ligger innenfor fem.",
+    "origin": "imported",
+    "sourceIds": [
+      "nyhavna-leve-board"
+    ]
+  },
+  {
+    "id": "uten-bil",
+    "question": "Hvilke ærender kan jeg gjøre til fots?",
+    "answer": "Hverdagsærendene er i gangavstand: dagligvare, apotek, post, bank, frisør, bakeri, treningssenter, barnehage og bysykkel ligger alle innenfor 10 minutter til fots.",
+    "origin": "imported",
+    "sourceIds": [
+      "nyhavna-leve-board"
+    ]
+  },
+  {
+    "id": "tjenester-samme-sted",
+    "question": "Hvor kan jeg samle flere ærender på én tur?",
+    "answer": "Nærmeste sted på kartet som samler flere ærender er Solsiden kjøpesenter, 11 minutter til fots eller 6 med sykkel, med dagligvare, apotek, bank, frisør og bakeri. Byhaven samler apotek og frisør, 21 minutter til fots eller 11 med sykkel.",
+    "origin": "imported",
+    "sourceIds": [
+      "nyhavna-leve-board"
+    ]
+  },
+  {
+    "id": "apent-sent",
+    "question": "Er noe åpent sent på kvelden?",
+    "answer": "Feel24 Treningssenter | Buran og Vitusapotek Solsiden har åpent til midnatt på hverdager.",
+    "origin": "imported",
+    "sourceIds": [
+      "nyhavna-leve-board"
+    ]
+  },
+  {
+    "id": "regnvaersdag",
+    "question": "Hva finnes innendørs i nærheten?",
+    "answer": "TRONDHEIM KICKBOXING KLUBB er nærmeste treningssenter, 4 minutter til fots, og KNM Ula S300 nærmeste museum, 5 minutter til fots.",
+    "origin": "imported",
+    "sourceIds": [
+      "nyhavna-leve-board"
+    ]
+  },
+  {
+    "id": "naermest",
+    "question": "Hva ligger nærmest boligen?",
+    "answer": "Bunkerparken, Charge365 Charging Station og Dora 2 ligger alle ett minutt unna.",
+    "origin": "imported",
+    "sourceIds": [
+      "nyhavna-leve-board"
+    ]
+  },
+  {
+    "id": "mest-av",
+    "question": "Hva er det mest av i nabolaget?",
+    "answer": "[Hverdag](category:hverdagsliv) er størst, med 291 steder. [Oppvekst](category:barn-oppvekst) følger med 189 steder.",
+    "origin": "imported",
+    "sourceIds": [
+      "nyhavna-leve-board"
+    ]
+  },
+  {
+    "id": "hverdagshandel",
+    "categoryId": "hverdagsliv",
+    "question": "Hvor gjør jeg hverdagshandelen?",
+    "answer": "REMA 1000 SOLSIDEN er nærmest, 6 minutter til fots. Asia-Tropican Food ligger 8 minutter unna.",
+    "origin": "imported",
+    "sourceIds": [
+      "nyhavna-leve-board"
+    ]
+  },
+  {
+    "id": "apotek",
+    "categoryId": "hverdagsliv",
+    "question": "Hvor er nærmeste apotek?",
+    "answer": "Apotek 1 Solsiden ligger 10 minutter unna.",
+    "origin": "imported",
+    "sourceIds": [
+      "nyhavna-leve-board"
+    ]
+  },
+  {
+    "id": "tannlege",
+    "categoryId": "hverdagsliv",
+    "question": "Finnes det tannlege i nærheten?",
+    "answer": "Nærmeste tannlege er Ty tannklinikk, 10 minutter til fots.",
+    "origin": "imported",
+    "sourceIds": [
+      "nyhavna-leve-board"
+    ]
+  },
+  {
+    "id": "kjopesenter",
+    "categoryId": "hverdagsliv",
+    "question": "Hvor er nærmeste kjøpesenter?",
+    "answer": "Olavskvartalet er nærmeste kjøpesenter, 16 minutter til fots. For større handel er Byhaven alternativet, 21 minutter unna.",
+    "origin": "imported",
+    "sourceIds": [
+      "nyhavna-leve-board"
+    ]
+  },
+  {
+    "id": "pakker-post",
+    "categoryId": "hverdagsliv",
+    "question": "Hvor er nærmeste Post i butikk?",
+    "answer": "Solsiden Post i Butikk har Post i butikk, 7 minutter til fots. Lademoen Post i Butikk er alternativet, 9 minutter unna.",
+    "origin": "imported",
+    "sourceIds": [
+      "nyhavna-leve-board"
+    ]
+  },
+  {
+    "id": "dagligvare-lengst-apent",
+    "categoryId": "hverdagsliv",
+    "question": "Hvor sent kan jeg handle mat på hverdager?",
+    "answer": "REMA 1000 SOLSIDEN og Asia-Tropican Food holder åpent til 23 på hverdager, 6 minutter og 8 minutter til fots.",
+    "origin": "imported",
+    "sourceIds": [
+      "nyhavna-leve-board"
+    ]
+  },
+  {
+    "id": "dagligvare-sondag",
+    "categoryId": "hverdagsliv",
+    "question": "Hvor kan jeg handle dagligvarer på søndag?",
+    "answer": "På søndag holder Asia-Tropican Food åpent 12–23, 8 minutter til fots. Bunnpris Rosendal har åpent 10–22, 13 minutter unna.",
+    "origin": "imported",
+    "sourceIds": [
+      "nyhavna-leve-board"
+    ]
+  },
+  {
+    "id": "vinmonopol",
+    "categoryId": "hverdagsliv",
+    "question": "Hvor er nærmeste Vinmonopol?",
+    "answer": "Vinmonopolet i Solsiden kjøpesenter er nærmeste Vinmonopol, 10 minutter til fots, med åpent 10–18 på hverdager.",
+    "origin": "imported",
+    "sourceIds": [
+      "nyhavna-leve-board"
+    ]
+  },
+  {
+    "id": "legevakt-sykehus",
+    "categoryId": "hverdagsliv",
+    "question": "Hvor er nærmeste legevakt?",
+    "answer": "Trondheim Interkommunale Legevakt er nærmeste legevakt, 34 minutter til fots eller 11 med bil.",
+    "origin": "imported",
+    "sourceIds": [
+      "nyhavna-leve-board"
+    ]
+  },
+  {
+    "id": "legesenter",
+    "categoryId": "hverdagsliv",
+    "question": "Hvor er nærmeste legesenter?",
+    "answer": "Møllenberg legesenter er nærmeste legesenter, 10 minutter til fots. Lege Trondheim - Aleris Medisinske Senter ligger 10 minutter unna.",
+    "origin": "imported",
+    "sourceIds": [
+      "nyhavna-leve-board"
+    ]
+  },
+  {
+    "id": "krets",
+    "categoryId": "barn-oppvekst",
+    "question": "Hvilken skolekrets sogner boligen til?",
+    "answer": "Boligen sogner til Lilleby skole, med 1.–7. trinn og 211 elever. Ungdomstrinnet hører til Rosenborg skole, med 8.–10. trinn og 476 elever.",
+    "origin": "imported",
+    "sourceIds": [
+      "nyhavna-leve-board"
+    ]
+  },
+  {
+    "id": "vgs-naerhet",
+    "categoryId": "barn-oppvekst",
+    "question": "Hvilke videregående skoler kan jeg nå med buss?",
+    "answer": "Bybroen videregående er raskest å komme til: 18 minutter med linje 71. Thora Storm videregående er nærmeste offentlige, 20 minutter.",
+    "origin": "imported",
+    "sourceIds": [
+      "nyhavna-leve-board"
+    ]
+  },
+  {
+    "id": "barnehage-dekning",
+    "categoryId": "barn-oppvekst",
+    "question": "Hvor mange barnehager ligger i gangavstand?",
+    "answer": "4 barnehager ligger innenfor 10 minutters gange, blant dem Aktiv åpen barnehage på 4 minutter og Svartlamon Kunst- og kulturbarnehage på 5 minutter.",
+    "origin": "imported",
+    "sourceIds": [
+      "nyhavna-leve-board"
+    ]
+  },
+  {
+    "id": "lekeplass",
+    "categoryId": "barn-oppvekst",
+    "question": "Hvor er nærmeste lekeplass?",
+    "answer": "Lekeplass er nærmeste lekeplass, 5 minutter unna — og 4 til ligger innenfor 10 minutters gange.",
+    "origin": "imported",
+    "sourceIds": [
+      "nyhavna-leve-board"
+    ]
+  },
+  {
+    "id": "oppvekst-fritid",
+    "categoryId": "barn-oppvekst",
+    "question": "Hva kan barna gjøre etter skoletid?",
+    "answer": "RAKE arbeidsfellesskap er fritidsklubben i området, 6 minutter til fots.",
+    "origin": "imported",
+    "sourceIds": [
+      "nyhavna-leve-board"
+    ]
+  },
+  {
+    "id": "helsestasjon",
+    "categoryId": "barn-oppvekst",
+    "question": "Hvor er nærmeste helsestasjon?",
+    "answer": "Nærmeste helsestasjon på kartet er Falkenborg helsestasjon, 31 minutter til fots eller 14 med sykkel.",
+    "origin": "imported",
+    "sourceIds": [
+      "nyhavna-leve-board"
+    ]
+  },
+  {
+    "id": "skolevei",
+    "categoryId": "barn-oppvekst",
+    "question": "Hvor lang er skoleveien til fots?",
+    "answer": "Skoleveien til Lilleby skole er 15 minutter til fots, og til Rosenborg skole, der ungdomstrinnet hører til, 19 minutter.",
+    "origin": "imported",
+    "sourceIds": [
+      "nyhavna-leve-board"
+    ]
+  },
+  {
+    "id": "skoleskyss",
+    "categoryId": "barn-oppvekst",
+    "question": "Har barna rett på gratis skoleskyss?",
+    "answer": "Til Lilleby skole er det 1,3 kilometer langs gangveien, og 1,5 kilometer til Rosenborg skole. Gratis skoleskyss gjelder fra to kilometer for 1. trinn og fire kilometer fra 2. trinn.",
+    "origin": "imported",
+    "sourceIds": [
+      "nyhavna-leve-board"
+    ]
+  },
+  {
+    "id": "spisesteder",
+    "categoryId": "mat-drikke",
+    "question": "Kan jeg spise ute uten å dra til byen?",
+    "answer": "Ja — 44 spisesteder ligger innenfor 15 minutters gange, blant dem Ramp Pub & Spiseri og Ladejarlen.",
+    "origin": "imported",
+    "sourceIds": [
+      "nyhavna-leve-board"
+    ]
+  },
+  {
+    "id": "kafe",
+    "categoryId": "mat-drikke",
+    "question": "Hvor er nærmeste kafé?",
+    "answer": "Dromedar Kaffebar i Solsiden kjøpesenter ligger 10 minutter til fots, med åpent 07.30–18 på hverdager.",
+    "origin": "imported",
+    "sourceIds": [
+      "nyhavna-leve-board"
+    ]
+  },
+  {
+    "id": "bakeri",
+    "categoryId": "mat-drikke",
+    "question": "Finnes det bakeri?",
+    "answer": "Brød&Sånt Buran baker i nabolaget, 9 minutter unna.",
+    "origin": "imported",
+    "sourceIds": [
+      "nyhavna-leve-board"
+    ]
+  },
+  {
+    "id": "uteliv",
+    "categoryId": "mat-drikke",
+    "question": "Hvor er nærmeste pub eller bar?",
+    "answer": "Nærmeste pub eller bar på kartet er Mellomveien, 11 minutter til fots.",
+    "origin": "imported",
+    "sourceIds": [
+      "nyhavna-leve-board"
+    ]
+  },
+  {
+    "id": "sondagsapent",
+    "categoryId": "mat-drikke",
+    "question": "Hvilke spisesteder er åpne på søndag?",
+    "answer": "På søndager holder Ramp Pub & Spiseri (13–23) og Sabrura Solsiden (13–22) åpent, og 24 til.",
+    "origin": "imported",
+    "sourceIds": [
+      "nyhavna-leve-board"
+    ]
+  },
+  {
+    "id": "pizza",
+    "categoryId": "mat-drikke",
+    "question": "Hvor er nærmeste pizzasted?",
+    "answer": "Pizzabakeren Lade er nærmeste pizzasted, 11 minutter til fots. Smile pizza & grill ligger 17 minutter unna til fots, eller 9 med sykkel.",
+    "origin": "imported",
+    "sourceIds": [
+      "nyhavna-leve-board"
+    ]
+  },
+  {
+    "id": "gronntomrade",
+    "categoryId": "natur-friluftsliv",
+    "question": "Hvor er nærmeste park eller grøntområde?",
+    "answer": "Strandveiparken er nærmeste grøntområde, 6 minutter til fots.",
+    "origin": "imported",
+    "sourceIds": [
+      "nyhavna-leve-board"
+    ]
+  },
+  {
+    "id": "bading",
+    "categoryId": "natur-friluftsliv",
+    "question": "Kan jeg bade i nærheten?",
+    "answer": "Strandveikaia er nærmeste badeplass, 9 minutter til fots. Korsvika og Sjøtrappa er alternativene.",
+    "origin": "imported",
+    "sourceIds": [
+      "nyhavna-leve-board"
+    ]
+  },
+  {
+    "id": "batliv",
+    "categoryId": "natur-friluftsliv",
+    "question": "Er det båtplass eller marina i nærheten?",
+    "answer": "Green Harbor i Solsiden kjøpesenter ligger 8 minutter unna, og Nedre Elvehavn Marina 13 minutter.",
+    "origin": "imported",
+    "sourceIds": [
+      "nyhavna-leve-board"
+    ]
+  },
+  {
+    "id": "hund",
+    "categoryId": "natur-friluftsliv",
+    "question": "Hvor er nærmeste hundepark?",
+    "answer": "Nærmeste hundepark på kartet er Lade Hundepark (kommunal), 29 minutter til fots eller 12 med sykkel. Brøset Hundepark ligger 42 minutter unna til fots, eller 10 med bil.",
+    "origin": "imported",
+    "sourceIds": [
+      "nyhavna-leve-board"
+    ]
+  },
+  {
+    "id": "naermeste-holdeplass",
+    "categoryId": "transport",
+    "question": "Hvor er nærmeste holdeplass?",
+    "answer": "Dora ligger 250 meter fra boligen. Losgata er 350 meter unna.",
+    "origin": "imported",
+    "sourceIds": [
+      "nyhavna-leve-board"
+    ]
+  },
+  {
+    "id": "linjer",
+    "categoryId": "transport",
+    "question": "Hvor går linjene fra nærmeste holdeplass?",
+    "answer": "Fra Dora går linje 20 og 71 mot Melhus via City Syd E6 og linje 20 mot Grillstad via Ladeham.-Strindh. Lademoen stasjon gir i tillegg linje R70.",
+    "origin": "imported",
+    "sourceIds": [
+      "nyhavna-leve-board"
+    ]
+  },
+  {
+    "id": "til-sentrum",
+    "categoryId": "transport",
+    "question": "Hvor lang tid tar det til sentrum?",
+    "answer": "Til Trondheim S tar det 8 minutter med linje 20.",
+    "origin": "imported",
+    "sourceIds": [
+      "nyhavna-leve-board"
+    ]
+  },
+  {
+    "id": "frekvens",
+    "categoryId": "transport",
+    "question": "Hvor ofte er det avganger på hverdager?",
+    "answer": "Mellom 07 og 09 på hverdager går det 18 avganger mot Melhus via City Syd E6 fra Dora, og 10 avganger mellom 19 og 21.",
+    "origin": "imported",
+    "sourceIds": [
+      "nyhavna-leve-board"
+    ]
+  },
+  {
+    "id": "til-arbeidsplassene",
+    "categoryId": "transport",
+    "question": "Hvor lang tid tar det til de store arbeidsplassene?",
+    "answer": "Reisen til St. Olavs hospital tar 29 minutter med linje 20, til NTNU Gløshaugen 25 minutter med linje 20 og 3 og til Sluppen 42 minutter med linje 20.",
+    "origin": "imported",
+    "sourceIds": [
+      "nyhavna-leve-board"
+    ]
+  },
+  {
+    "id": "siste-buss",
+    "categoryId": "transport",
+    "question": "Når går siste avgang hjem fra sentrum?",
+    "answer": "Siste avgang fra Trondheim S til Brattøra går 02.36 med linje 116, også natt til lørdag og søndag.",
+    "origin": "imported",
+    "sourceIds": [
+      "nyhavna-leve-board"
+    ]
+  },
+  {
+    "id": "tog",
+    "categoryId": "transport",
+    "question": "Hvor er nærmeste togstasjon?",
+    "answer": "Lademoen stasjon ligger 5 minutter til fots, og Lilleby stasjon 13 minutter.",
+    "origin": "imported",
+    "sourceIds": [
+      "nyhavna-leve-board"
+    ]
+  },
+  {
+    "id": "lading",
+    "categoryId": "transport",
+    "question": "Hvor finnes offentlig elbillading i nærheten?",
+    "answer": "Charge365 Charging Station har offentlig lading, ett minutt til fots.",
+    "origin": "imported",
+    "sourceIds": [
+      "nyhavna-leve-board"
+    ]
+  },
+  {
+    "id": "bysykkel",
+    "categoryId": "transport",
+    "question": "Finnes det bysykkel her?",
+    "answer": "Trondheim Bysykkel: Dora I har bysykkelstativ, 3 minutter unna.",
+    "origin": "imported",
+    "sourceIds": [
+      "nyhavna-leve-board"
+    ]
+  },
+  {
+    "id": "treningssenter",
+    "categoryId": "trening-aktivitet",
+    "question": "Hvor er nærmeste treningssenter?",
+    "answer": "TRONDHEIM KICKBOXING KLUBB ligger 4 minutter unna. MMA Trondheim BJJ er alternativet, 4 minutter til fots.",
+    "origin": "imported",
+    "sourceIds": [
+      "nyhavna-leve-board"
+    ]
+  },
+  {
+    "id": "trene-tidlig-sent",
+    "categoryId": "trening-aktivitet",
+    "question": "Kan jeg trene før jobb eller sent på kvelden?",
+    "answer": "Lilleby Treningssenter er døgnåpent på hverdager.",
+    "origin": "imported",
+    "sourceIds": [
+      "nyhavna-leve-board"
+    ]
+  },
+  {
+    "id": "treningspark",
+    "categoryId": "trening-aktivitet",
+    "question": "Er det utendørs treningspark?",
+    "answer": "Nærmeste utendørs treningspark på kartet er Trimpark på Øya, 39 minutter til fots.",
+    "origin": "imported",
+    "sourceIds": [
+      "nyhavna-leve-board"
+    ]
+  },
+  {
+    "id": "padel-tennis",
+    "categoryId": "trening-aktivitet",
+    "question": "Hvor kan jeg spille padel, tennis eller squash?",
+    "answer": "Nyhavna padel har padel, 8 minutter til fots. Lade tennisbaner har tennis, 29 minutter til fots eller 14 med sykkel.",
+    "origin": "imported",
+    "sourceIds": [
+      "nyhavna-leve-board"
+    ]
+  },
+  {
+    "id": "is-skoyter",
+    "categoryId": "trening-aktivitet",
+    "question": "Hvor er nærmeste ishall eller skøytebane?",
+    "answer": "Nærmeste skøytebane på kartet er Lade tennisbaner, 29 minutter til fots eller 14 med sykkel. Øya tennishall ligger 41 minutter unna til fots, eller 14 med bil.",
+    "origin": "imported",
+    "sourceIds": [
+      "nyhavna-leve-board"
+    ]
+  },
+  {
+    "id": "spesialtrening",
+    "categoryId": "trening-aktivitet",
+    "question": "Finnes det yoga, kampsport eller klatring her?",
+    "answer": "CrossFit Trondheim tilbyr crossfit, 4 minutter til fots. Trondheim Buldresenter tilbyr klatring, 12 minutter til fots eller 5 med sykkel.",
+    "origin": "imported",
+    "sourceIds": [
+      "nyhavna-leve-board"
+    ]
+  },
+  {
+    "id": "idrettsanlegg",
+    "categoryId": "trening-aktivitet",
+    "question": "Hvor finnes baner og idrettshaller i nærheten?",
+    "answer": "Nyhavna padel er nærmeste idrettsanlegg, 8 minutter til fots. Ute-hallen er nærmeste idrettshall, 16 minutter til fots eller 7 med sykkel.",
+    "origin": "imported",
+    "sourceIds": [
+      "nyhavna-leve-board"
+    ]
+  },
+  {
+    "id": "bibliotek",
+    "categoryId": "opplevelser",
+    "question": "Hvor er nærmeste bibliotek?",
+    "answer": "Nærmeste folkebibliotek på kartet er Trondheim folkebibliotek Hovedbiblioteket, 21 minutter til fots eller 11 med sykkel.",
+    "origin": "imported",
+    "sourceIds": [
+      "nyhavna-leve-board"
+    ]
+  },
+  {
+    "id": "kino",
+    "categoryId": "opplevelser",
+    "question": "Hvor er nærmeste kino?",
+    "answer": "Nærmeste kino på kartet er Trondheim Filmklubb i Olavskvartalet, 16 minutter til fots eller 10 med sykkel. Trondheim Kino Nova ligger 18 minutter unna til fots, eller 10 med sykkel.",
+    "origin": "imported",
+    "sourceIds": [
+      "nyhavna-leve-board"
+    ]
+  },
+  {
+    "id": "kirke",
+    "categoryId": "opplevelser",
+    "question": "Hvor er nærmeste kirke eller menighetshus?",
+    "answer": "Christian Schytte i Solsiden kjøpesenter er nærmeste kirke, 10 minutter til fots. Lademoen kirke ligger 12 minutter unna til fots, eller 7 med sykkel.",
+    "origin": "imported",
+    "sourceIds": [
+      "nyhavna-leve-board"
+    ]
+  },
+  {
+    "id": "museum",
+    "categoryId": "opplevelser",
+    "question": "Hvor er nærmeste museum?",
+    "answer": "KNM Ula S300 er nærmeste museum, 5 minutter til fots. Håkon Bleken senter ligger 9 minutter unna.",
+    "origin": "imported",
+    "sourceIds": [
+      "nyhavna-leve-board"
+    ]
+  }
+]

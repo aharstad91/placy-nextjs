@@ -10,12 +10,13 @@
  * lesbart format med akkurat de feltene innholdet faktisk trenger — og en
  * adapter (`board.ts`) som oversetter til boardets typer.
  *
- * ## Fire filer, fire roller
+ * ## Filene og rollene deres
  *
  * - `board.json`        — identitet, kartutsnitt og KATEGORIENE. Ingen fakta.
  * - `sources.json`      — kilderegisteret. Stabile ID-er alt annet peker på.
  * - `places.json`       — stedene: det som får en markør i kartet.
  * - `topics.json`       — temakunnskap: fakta og sammenhenger uten ett sted.
+ * - `faq.json`          — spørsmål og svar, per tema eller for hele området.
  * - `conversations.json`— samtaleeksempler. TESTGRUNNLAG, ikke faktakilde.
  *
  * Samtaleeksemplene er skilt ut i egen fil og egen laster (`loadConversations`)
@@ -229,6 +230,52 @@ export const localTopicSchema = z
 export type LocalTopic = z.infer<typeof localTopicSchema>;
 
 /**
+ * Ett spørsmål med svar, slik venstre sidebar viser det og stemmen siterer det.
+ *
+ * ## Hvorfor FAQ er sitt eget format og ikke en `topic`
+ *
+ * Temakunnskap er en påstand om stedet; en FAQ er en påstand PLUS spørsmålet
+ * den svarer på, og boardet har allerede en flate som rendrer akkurat det
+ * paret (`FAQSection`). Å presse spørsmålet inn i en `title` ville gjort
+ * gjenbruken tilfeldig — her er koblingen eksplisitt: `faq.json` blir
+ * `BoardCategory.editorial.faq` og `BoardData.globalFaq`, og de to er også det
+ * stemmens spørsmålskatalog bygges av (`nyhavnaFaqCatalog`). Ett innhold, to
+ * flater.
+ *
+ * ## `origin` er provenienshullet, ikke pynt
+ *
+ * `"imported"` betyr at svaret er hentet ferdig fra et annet board og gjengitt
+ * som det sto. Det er IKKE etterkontrollert her, og det er derfor et importert
+ * svar må ha minst én `sourceId` (håndhevet i `dataset.ts`): kilden skal si
+ * hvor teksten kommer fra, ikke at noen har verifisert den på nytt.
+ *
+ * ## Rekkefølge og plassering
+ *
+ * Rekkefølgen i fila ER rekkefølgen på flaten. `categoryId` utelatt betyr at
+ * spørsmålet gjelder hele området og havner i den generelle seksjonen på
+ * områdestoppet, ikke under et tema.
+ */
+export const localFaqSchema = z
+  .object({
+    id: stableId,
+    /** Temaet spørsmålet står under. Utelatt = generell seksjon for hele området. */
+    categoryId: stableId.optional(),
+    question: z.string().min(1).max(300),
+    /**
+     * Svaret. Kan bære `[tekst](category:id)` — kategorien blir klikkbar i
+     * sidebaren og oppgis til stemmen. Peker lenken på en kategori som ikke
+     * finnes, stopper lasteren.
+     */
+    answer: z.string().min(1).max(4000),
+    /** `imported` = gjengitt fra et annet board, ikke etterkontrollert her. */
+    origin: z.enum(["imported", "local"]).default("local"),
+    sourceIds: z.array(stableId).max(20).default([]),
+    caveats: z.array(z.string().min(1).max(400)).max(20).default([]),
+  })
+  .strict();
+export type LocalFaq = z.infer<typeof localFaqSchema>;
+
+/**
  * Et samtaleeksempel: en ekte eller planlagt samtale, brukt til å finne ut hva
  * demoen MÅ kunne svare på.
  *
@@ -275,6 +322,7 @@ export type LocalConversation = z.infer<typeof localConversationSchema>;
 export const localSourcesSchema = z.array(localSourceSchema).max(200);
 export const localPlacesSchema = z.array(localPlaceSchema).max(500);
 export const localTopicsSchema = z.array(localTopicSchema).max(500);
+export const localFaqsSchema = z.array(localFaqSchema).max(500);
 export const localConversationsSchema = z.array(localConversationSchema).max(100);
 
 /** Datasettet slik resten av koden ser det. Samtaleeksemplene er IKKE med. */
@@ -283,4 +331,5 @@ export interface LocalDataset {
   sources: LocalSource[];
   places: LocalPlace[];
   topics: LocalTopic[];
+  faqs: LocalFaq[];
 }

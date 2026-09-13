@@ -6,6 +6,7 @@ import type { ZodType } from "zod";
 import {
   localBoardSchema,
   localConversationsSchema,
+  localFaqsSchema,
   localPlacesSchema,
   localSourcesSchema,
   localTopicsSchema,
@@ -50,6 +51,7 @@ const FILES = {
   sources: "sources.json",
   places: "places.json",
   topics: "topics.json",
+  faq: "faq.json",
   conversations: "conversations.json",
 } as const;
 
@@ -67,7 +69,7 @@ async function readJson(directory: string, file: string): Promise<unknown> {
     raw = await readFile(path, "utf8");
   } catch {
     throw new LocalDatasetError(
-      `Fant ikke ${path}. Demoen trenger alle fem filene i ${LOCAL_DATASET_DIR}/ — se docs/research/nyhavna-lokal-demo/README.md.`,
+      `Fant ikke ${path}. Demoen trenger alle seks filene i ${LOCAL_DATASET_DIR}/ — se docs/research/nyhavna-lokal-demo/README.md.`,
     );
   }
   try {
@@ -158,6 +160,26 @@ export function assertReferences(dataset: LocalDataset): void {
     source(owner, topic.sourceIds);
   }
 
+  dupe(FILES.faq, dataset.faqs.map((f) => f.id));
+  for (const entry of dataset.faqs) {
+    const owner = `${FILES.faq} → «${entry.id}»`;
+    if (entry.categoryId && !categoryIds.has(entry.categoryId)) {
+      problems.push(`${owner}: ukjent categoryId «${entry.categoryId}» (mangler i ${FILES.board}). Utelat feltet hvis spørsmålet gjelder hele området.`);
+    }
+    source(owner, entry.sourceIds);
+    // Et importert svar uten kilde ville vært en påstand uten opphav: teksten
+    // er skrevet et annet sted, og da må det stå hvor.
+    if (entry.origin === "imported" && entry.sourceIds.length === 0) {
+      problems.push(`${owner}: origin er "imported", men sourceIds er tom — oppgi hvor svaret er hentet fra.`);
+    }
+    // Kategorilenker i svaret: degraderer til ren tekst på flaten, men en
+    // lenke som aldri kan klikkes er en skrivefeil, ikke en variant.
+    for (const match of entry.answer.matchAll(/\[[^\]]+\]\(category:([^)]+)\)/g)) {
+      const id = match[1].trim();
+      if (!categoryIds.has(id)) problems.push(`${owner}: svaret lenker til ukjent kategori «${id}» (mangler i ${FILES.board}).`);
+    }
+  }
+
   if (problems.length) {
     throw new LocalDatasetError(
       `Datasettet i ${LOCAL_DATASET_DIR}/ har brutte referanser:\n${problems.map((p) => `  • ${p}`).join("\n")}`,
@@ -173,17 +195,19 @@ export function assertReferences(dataset: LocalDataset): void {
  * `loadConversations` når du faktisk vil lese dem.
  */
 export async function loadDataset(directory = LOCAL_DATASET_DIR): Promise<LocalDataset> {
-  const [board, sources, places, topics] = await Promise.all([
+  const [board, sources, places, topics, faqs] = await Promise.all([
     readJson(directory, FILES.board),
     readJson(directory, FILES.sources),
     readJson(directory, FILES.places),
     readJson(directory, FILES.topics),
+    readJson(directory, FILES.faq),
   ]);
   const dataset: LocalDataset = {
     board: parse(localBoardSchema, board, FILES.board),
     sources: parse(localSourcesSchema, sources, FILES.sources),
     places: parse(localPlacesSchema, places, FILES.places),
     topics: parse(localTopicsSchema, topics, FILES.topics),
+    faqs: parse(localFaqsSchema, faqs, FILES.faq),
   };
   assertReferences(dataset);
   return dataset;

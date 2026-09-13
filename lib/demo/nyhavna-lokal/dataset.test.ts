@@ -13,6 +13,7 @@ import {
   localBoardSchema,
   localConversationsSchema,
   localPlacesSchema,
+  localFaqsSchema,
   localSourcesSchema,
   localTopicsSchema,
   type LocalDataset,
@@ -24,13 +25,14 @@ import {
  * forståelig feil, og samtaleeksemplene ligger utenfor faktagrunnlaget.
  */
 
-const JSON_FILES = ["board.json", "sources.json", "places.json", "topics.json", "conversations.json"];
+const JSON_FILES = ["board.json", "sources.json", "places.json", "topics.json", "faq.json", "conversations.json"];
 
 async function fixture(dataset: {
   board?: unknown;
   sources?: unknown;
   places?: unknown;
   topics?: unknown;
+  faq?: unknown;
   conversations?: unknown;
 }) {
   const dir = await mkdtemp(join(tmpdir(), "placy-lokal-"));
@@ -39,22 +41,39 @@ async function fixture(dataset: {
   await writeFile(join(dir, "sources.json"), JSON.stringify(dataset.sources ?? []));
   await writeFile(join(dir, "places.json"), JSON.stringify(dataset.places ?? []));
   await writeFile(join(dir, "topics.json"), JSON.stringify(dataset.topics ?? []));
+  await writeFile(join(dir, "faq.json"), JSON.stringify(dataset.faq ?? []));
   await writeFile(join(dir, "conversations.json"), JSON.stringify(dataset.conversations ?? []));
   return dir;
 }
 
 describe("lokalt Nyhavna-datasett", () => {
-  it("leveres tomt: kategoriene står, innholdslistene er tomme", async () => {
+  it("leveres uten steder: kategoriene står, stedslista er tom", async () => {
     const dataset = await loadDataset();
     expect(dataset.board.categories.length).toBeGreaterThan(0);
+    // Kartet er geografisk bakgrunn i denne demoen — ingen steder, ingen
+    // markører. FAQ-en er innholdet som ER lagt inn.
     expect(dataset.places).toEqual([]);
     expect(dataset.topics).toEqual([]);
-    expect(dataset.sources).toEqual([]);
+  });
+
+  it("har importert FAQ, og hvert importerte svar har en kilde", async () => {
+    const dataset = await loadDataset();
+    expect(dataset.faqs.length).toBeGreaterThan(0);
+    const known = new Set(dataset.sources.map((s) => s.id));
+    for (const entry of dataset.faqs.filter((f) => f.origin === "imported")) {
+      expect(entry.sourceIds.length).toBeGreaterThan(0);
+      for (const id of entry.sourceIds) expect(known.has(id)).toBe(true);
+    }
+    // Spørsmål uten tema hører til området, resten til en kategori som finnes.
+    const categoryIds = new Set(dataset.board.categories.map((c) => c.id));
+    for (const entry of dataset.faqs) {
+      if (entry.categoryId) expect(categoryIds.has(entry.categoryId)).toBe(true);
+    }
   });
 
   it("laster ikke samtaleeksempler som en del av datasettet", async () => {
     const dataset = await loadDataset();
-    expect(Object.keys(dataset).sort()).toEqual(["board", "places", "sources", "topics"]);
+    expect(Object.keys(dataset).sort()).toEqual(["board", "faqs", "places", "sources", "topics"]);
     // Eksemplene finnes, men bare bak sin egen laster.
     await expect(loadConversations()).resolves.toEqual([]);
   });
@@ -91,6 +110,7 @@ describe("referansesjekken", () => {
     sources: [],
     places: [],
     topics: [],
+    faqs: [],
     ...overrides,
   });
   const place = (overrides: Record<string, unknown> = {}) =>
@@ -125,6 +145,27 @@ describe("referansesjekken", () => {
     expect(() => assertReferences(base({ topics }))).toThrow(/ukjent relatedPlaceId «borte»/);
   });
 
+  it("fanger et spørsmål som peker på en kategori som ikke finnes", () => {
+    const faqs = localFaqsSchema.parse([
+      { id: "sp-a", categoryId: "finnes-ikke", question: "Q?", answer: "A." },
+    ]);
+    expect(() => assertReferences(base({ faqs }))).toThrow(/faq\.json[\s\S]*finnes-ikke/);
+  });
+
+  it("fanger en kategorilenke i et svar som ikke kan klikkes", () => {
+    const faqs = localFaqsSchema.parse([
+      { id: "sp-b", question: "Q?", answer: "Se [Noe](category:finnes-ikke)." },
+    ]);
+    expect(() => assertReferences(base({ faqs }))).toThrow(/ukjent kategori/);
+  });
+
+  it("krever kilde på et importert svar", () => {
+    const faqs = localFaqsSchema.parse([
+      { id: "sp-c", question: "Q?", answer: "A.", origin: "imported" },
+    ]);
+    expect(() => assertReferences(base({ faqs }))).toThrow(/sourceIds er tom/);
+  });
+
   it("godtar et helt datasett som henger sammen", () => {
     const sources = localSourcesSchema.parse([
       { id: "kilde-a", label: "eksempel.no", page: "Side", url: "https://eksempel.no/side/", publisher: "Eksempel", checkedAt: "2026-09-13" },
@@ -143,21 +184,23 @@ describe("eksempelfila", () => {
     const sources = localSourcesSchema.parse(raw.sources);
     const places = localPlacesSchema.parse(raw.places);
     const topics = localTopicsSchema.parse(raw.topics);
+    const faqs = localFaqsSchema.parse(raw.faq);
     localConversationsSchema.parse(raw.conversations);
     const dataset: LocalDataset = {
       board: localBoardSchema.parse(JSON.parse(await readFile(join(LOCAL_DATASET_DIR, "board.json"), "utf8"))),
       sources,
       places,
       topics,
+      faqs,
     };
     expect(() => assertReferences(dataset)).not.toThrow();
   });
 
-  it("lastes ikke av demoen: lasteren leser bare de fem navngitte filene", async () => {
+  it("lastes ikke av demoen: lasteren leser bare de seks navngitte filene", async () => {
     const dir = await fixture({});
     await writeFile(join(dir, "eksempel.json"), JSON.stringify({ places: "tull" }));
     const dataset = await loadDataset(dir);
     expect(dataset.places).toEqual([]);
-    expect(JSON_FILES).toHaveLength(5);
+    expect(JSON_FILES).toHaveLength(6);
   });
 });

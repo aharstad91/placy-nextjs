@@ -1,1 +1,10 @@
-[]
+[
+  {
+    "id": "nyhavna-leve-board",
+    "label": "Nyhavna-boardet",
+    "page": "Spørsmål og svar på Leve-varianten",
+    "url": "http://localhost:3103/eiendom/nyhavna-utvikling/nyhavna/leve",
+    "publisher": "Placy",
+    "checkedAt": "2026-09-13"
+  }
+]

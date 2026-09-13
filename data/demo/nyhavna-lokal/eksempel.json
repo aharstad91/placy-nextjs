@@ -1,12 +1,11 @@
 {
   "_om": [
     "EKSEMPEL — lastes ALDRI av demoen. Lasteren leser bare board.json, sources.json,",
-    "places.json, topics.json og conversations.json ved navn; denne fila er dokumentasjon.",
+    "places.json, topics.json, faq.json og conversations.json ved navn; denne fila er dokumentasjon.",
     "Kopier formen herfra når du legger inn ekte, kontrollert innhold. Navnene under er",
     "oppdiktede med vilje, så de ikke kan forveksles med noe som finnes.",
     "En test validerer denne fila mot skjemaene, så eksempelet ikke kan drifte fra koden."
   ],
-
   "sources": [
     {
       "id": "eksempel-kilde",
@@ -17,20 +16,28 @@
       "checkedAt": "2026-09-13"
     }
   ],
-
   "places": [
     {
       "id": "eksempelkafeen",
       "name": "Eksempelkafeen",
       "categoryId": "mat-drikke",
-      "coordinates": { "lat": 63.4398, "lng": 10.4172 },
+      "coordinates": {
+        "lat": 63.4398,
+        "lng": 10.4172
+      },
       "address": "Eksempelgata 1",
       "placeType": "Kafé",
       "icon": "Coffee",
-      "aliases": ["Eksempel kafe"],
+      "aliases": [
+        "Eksempel kafe"
+      ],
       "status": "existing",
       "summary": "Nabolagskafé med bakst og kaffe.",
-      "travelTime": { "walk": 3, "bike": 2, "car": 2 },
+      "travelTime": {
+        "walk": 3,
+        "bike": 2,
+        "car": 2
+      },
       "locationPrecision": "sourced",
       "facts": [
         {
@@ -48,36 +55,57 @@
           "verification": "unresolved"
         }
       ],
-      "sourceIds": ["eksempel-kilde"],
+      "sourceIds": [
+        "eksempel-kilde"
+      ],
       "checkedAt": "2026-09-13",
-      "caveats": ["Åpningstider er ikke kontrollert."]
+      "caveats": [
+        "Åpningstider er ikke kontrollert."
+      ]
     },
     {
       "id": "eksempelparken",
       "name": "Eksempelparken",
       "categoryId": "natur-friluftsliv",
-      "coordinates": { "lat": 63.4405, "lng": 10.4185 },
+      "coordinates": {
+        "lat": 63.4405,
+        "lng": 10.4185
+      },
       "status": "planned",
       "summary": "Park som er planlagt på området.",
       "locationPrecision": "approximate",
       "locationNote": "Plassert omtrentlig ut fra en tekstbeskrivelse i kilden.",
       "facts": [],
-      "sourceIds": ["eksempel-kilde"],
+      "sourceIds": [
+        "eksempel-kilde"
+      ],
       "checkedAt": "2026-09-13",
-      "caveats": ["Parken er planlagt, ikke åpen i dag."]
+      "caveats": [
+        "Parken er planlagt, ikke åpen i dag."
+      ]
     }
   ],
-
   "topics": [
     {
       "id": "eksempel-hverdagen",
       "title": "Hverdagen i nabolaget",
-      "categoryIds": ["hverdagsliv"],
+      "categoryIds": [
+        "hverdagsliv"
+      ],
       "status": "existing",
       "text": "Kilden beskriver dagligvare, apotek og lege innenfor kort gange.",
-      "keywords": ["hverdag", "dagligvare", "apotek", "lege"],
-      "sourceIds": ["eksempel-kilde"],
-      "relatedPlaceIds": ["eksempelkafeen"],
+      "keywords": [
+        "hverdag",
+        "dagligvare",
+        "apotek",
+        "lege"
+      ],
+      "sourceIds": [
+        "eksempel-kilde"
+      ],
+      "relatedPlaceIds": [
+        "eksempelkafeen"
+      ],
       "checkedAt": "2026-09-13",
       "caveats": []
     },
@@ -87,14 +115,46 @@
       "categoryIds": [],
       "status": "adopted-plan",
       "text": "Kilden oppgir at en områdeplan er vedtatt for nabolaget.",
-      "keywords": ["plan", "område", "utvikling"],
-      "sourceIds": ["eksempel-kilde"],
+      "keywords": [
+        "plan",
+        "område",
+        "utvikling"
+      ],
+      "sourceIds": [
+        "eksempel-kilde"
+      ],
       "relatedPlaceIds": [],
       "checkedAt": "2026-09-13",
-      "caveats": ["Planen er vedtatt, men ikke gjennomført."]
+      "caveats": [
+        "Planen er vedtatt, men ikke gjennomført."
+      ]
     }
   ],
-
+  "faq": [
+    {
+      "id": "eksempel-sporsmal-dagligvare",
+      "categoryId": "mat-drikke",
+      "question": "Hvor er nærmeste dagligvare?",
+      "answer": "Kilden navngir ingen dagligvare i området. Se [Servering](category:mat-drikke) for spisestedene som er lagt inn.",
+      "origin": "local",
+      "sourceIds": [
+        "eksempel-kilde"
+      ],
+      "caveats": [
+        "Dagligvare er ikke kontrollert for dette området."
+      ]
+    },
+    {
+      "id": "eksempel-sporsmal-omradet",
+      "question": "Hva slags område er dette?",
+      "answer": "Kilden beskriver et nabolag under utvikling, med dagligvare, apotek og lege innenfor kort gange.",
+      "origin": "imported",
+      "sourceIds": [
+        "eksempel-kilde"
+      ],
+      "caveats": []
+    }
+  ],
   "conversations": [
     {
       "id": "eksempel-samtale",
@@ -102,8 +162,14 @@
       "topic": "barn og spisesteder",
       "notes": "Testgrunnlag. Brukes til å finne ut hva demoen må kunne svare på — aldri som faktakilde.",
       "transcript": [
-        { "speaker": "bruker", "text": "Er det noe sted å spise med barn her?" },
-        { "speaker": "guide", "text": "Jeg har ikke det i materialet ennå." }
+        {
+          "speaker": "bruker",
+          "text": "Er det noe sted å spise med barn her?"
+        },
+        {
+          "speaker": "guide",
+          "text": "Jeg har ikke det i materialet ennå."
+        }
       ],
       "questions": [
         {

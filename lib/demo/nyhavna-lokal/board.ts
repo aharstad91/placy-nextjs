@@ -8,9 +8,10 @@ import type {
   BoardPOIId,
 } from "@/components/variants/report/board/board-data";
 import { poiVisualIdentity } from "@/components/variants/report/board/marker-style";
+import type { FaqEntry } from "@/lib/generators/faq-generator";
 import type { Category, POI, Project } from "@/lib/types";
 import { LOCAL_DATASET_ID } from "@/lib/demo/nyhavna-lokal/dataset";
-import type { LocalCategory, LocalDataset, LocalPlace } from "@/lib/demo/nyhavna-lokal/schema";
+import type { LocalCategory, LocalDataset, LocalFaq, LocalPlace } from "@/lib/demo/nyhavna-lokal/schema";
 
 /**
  * Adapteren: lokalt datasett → boardets egne typer (2026-09-13).
@@ -93,6 +94,33 @@ function toBoardPoi(poi: POI, categoryId: BoardCategoryId, fallback: { icon: str
 }
 
 /**
+ * Ett lokalt spørsmål → boardets `FaqEntry`.
+ *
+ * `source` er boardets INTERNE sporbarhetsfelt og rendres aldri; det er ikke
+ * kildehenvisningen. Importerte svar merkes `deterministic` fordi det er det de
+ * var i boardet de kom fra — hvor teksten faktisk kommer fra står i
+ * `faq.json`s `sourceIds`, ikke her.
+ */
+const toFaqEntry = (entry: LocalFaq): FaqEntry => ({
+  id: entry.id,
+  question: entry.question,
+  answer: entry.answer,
+  source: entry.origin === "imported" ? "deterministic" : "curated",
+});
+
+/** Spørsmålene per tema, i filas egen rekkefølge. Nøkkel `""` = hele området. */
+function faqByCategory(dataset: LocalDataset): Map<string, FaqEntry[]> {
+  const byCategory = new Map<string, FaqEntry[]>();
+  for (const entry of dataset.faqs) {
+    const key = entry.categoryId ?? "";
+    const bucket = byCategory.get(key);
+    if (bucket) bucket.push(toFaqEntry(entry));
+    else byCategory.set(key, [toFaqEntry(entry)]);
+  }
+  return byCategory;
+}
+
+/**
  * Innholds-hashen datasettet identifiseres med.
  *
  * Stemmen sender den med når en samtale startes, og serveren avviser en samtale
@@ -168,6 +196,7 @@ export function buildLocalBoard(dataset: LocalDataset): BoardData {
   }
 
   const sourceById = new Map(dataset.sources.map((s) => [s.id, s]));
+  const faqs = faqByCategory(dataset);
 
   const categories: BoardCategory[] = dataset.board.categories.map((category) => {
     const categoryId = category.id as BoardCategoryId;
@@ -183,7 +212,10 @@ export function buildLocalBoard(dataset: LocalDataset): BoardData {
       )
       .map((poi) => toBoardPoi(poi, categoryId, fallback));
     const source = category.sourceId ? sourceById.get(category.sourceId) : undefined;
-    const hasEditorial = Boolean(category.body || category.unplaced.length || source);
+    const faq = faqs.get(category.id) ?? [];
+    // Spørsmålene alene er nok til at temaet har en `editorial`: de rendres
+    // uavhengig av om temaet har steder, og det er nettopp poenget her.
+    const hasEditorial = Boolean(category.body || category.unplaced.length || source || faq.length);
     return {
       id: categoryId,
       label: category.name,
@@ -207,6 +239,7 @@ export function buildLocalBoard(dataset: LocalDataset): BoardData {
               })),
               ...(source ? { source: { label: source.label, page: source.page, url: source.url } } : {}),
               ...(category.unplaced.length ? { unplaced: category.unplaced } : {}),
+              ...(faq.length ? { faq } : {}),
             },
           }
         : {}),
@@ -231,9 +264,8 @@ export function buildLocalBoard(dataset: LocalDataset): BoardData {
     home,
     categories,
     poisById: new Map(project.pois.map((poi) => [poi.id.toLowerCase(), poi])),
-    // Ingen FAQ, ingen områdetekst, ingen lyd: datasettet bærer dem ikke ennå,
-    // og et board som later som er verre enn et tomt.
-    globalFaq: [],
+    // Spørsmålene uten tema: de som gjelder hele området, vist på områdestoppet.
+    globalFaq: faqs.get("") ?? [],
     audioTourEnabled: false,
     venueType: "residential",
   };

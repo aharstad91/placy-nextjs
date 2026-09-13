@@ -49,6 +49,24 @@
 
 **De tre «Leve»-temaene er tatt ut** (Andreas): Café og restauranter, Park og promenade, Kunst og kultur. De er kildens egen inndeling av kildens eget innhold; denne demoen starter fra den generiske rammen. Igjen står de sju: Hverdag, Oppvekst, Servering, Natur, Transport, Trening, Opplevelser. Skal de tre inn senere, legges de til i `board.json` som vanlige kategorier.
 
+### Runde 3 samme dag: FAQ-en fra Leve-boardet importert som demoens første innhold
+
+**56 spørsmål og svar er hentet fra `/eiendom/nyhavna-utvikling/nyhavna/leve` og lagt i `data/demo/nyhavna-lokal/faq.json`** — 8 for hele området, 48 fordelt på de sju temaene (Hverdag 10, Transport 9, Oppvekst 8, Trening 7, Servering 6, Natur 4, Opplevelser 4). Ordlyd, tematilhørighet og rekkefølge er kildens. Ingen nye spørsmål og ingen nye svar er skrevet.
+
+**Uttrekket ble gjort programmatisk, ikke ved å lese skjermen:** `adaptBoardData(transformToReportData(snapshot.project))` kjørt mot `data/demo/nyhavna-snapshot.json` gir nøyaktig de `FaqEntry`-ene ruta rendrer. Originalboardet er urørt — importen leste en fil, den skrev ingen.
+
+**Ett innhold, to flater.** `faq.json` blir både `BoardCategory.editorial.faq` / `BoardData.globalFaq` (det venstre sidefeltet, `FAQSection`) og spørsmålskatalogen stemmen får i instruksjonen (`nyhavnaFaqCatalog`). Ingen ny komponent, ingen andre kopi å holde i takt: begge leser den samme lista, og en test holder dem identiske. FAQ-en rendres uavhengig av om temaet har steder — det var allerede slik boardet virket, og det er derfor et tomt tema nå har innhold å lese.
+
+**`origin` er provenienshullet.** `"imported"` sier at svaret er gjengitt fra et annet board og IKKE etterkontrollert her; lasteren krever da minst én `sourceId`. Kildeposten `nyhavna-leve-board` er selve importsporet — hvor og når, ikke «verifisert på nytt».
+
+**To bevisste avvik fra rå kopi.** (1) `[navn](poi:google-ChIJ…)`-lenkene er skrelt til ren tekst: de peker på det andre boardets steder, ville aldri kunnet klikkes her, og ville vært støy i en fil som redigeres for hånd. Den leste ordlyden er uendret. (2) Kategorilenkene er beholdt og valideres nå av lasteren — en lenke til en kategori som ikke finnes er en skrivefeil, ikke en variant.
+
+**Kartet er fortsatt tomt, og guiden vet det.** `LOCAL_DEMO_INSTRUCTION` har fått en egen kartregel: ikke kall `highlight_places`/`show_place`, ikke lov å vise eller markere noe, ikke si «her ser du». Katalogen den får inneholder null kart-ID-er (ingen `vis:`-referanser), og en test holder det slik. Hilsenen er samtidig endret fra «Jeg kan vise deg rundt på Nyhavna» til «Jeg kan fortelle om Nyhavna» — den gamle lovet et kart demoen ikke har.
+
+**Åpen sak Andreas må vite om:** flere importerte svar beskriver Leve-boardets kart, ikke dette («91 steder på kartet ligger innenfor ti minutter», «Dromedar Kaffebar … 10 minutter til fots»). Tallene er sanne om Nyhavna og om det boardet. De er beholdt fordi oppdraget var å importere det som faktisk står der; skal de skrives om, er det en innholdsbeslutning.
+
+**Kontrollert:** 40 tester i `lib/demo/nyhavna-lokal/` (7 nye om FAQ), `tsc` 0 feil, lint 0 errors, 4 271 tester grønne (den ene som feiler er ordtellingen på stemmeinstruksen, fra 34844bb). I Chrome: områdestoppet viser de 8 generelle spørsmålene, Servering viser sine 6 SAMMEN med «Ingen steder er lagt inn i dette temaet ennå», åpne/lukke av et svar virker (0 → 62 px → 0), 0 kartmarkører, 0 console-feil. Leve-boardet svarer fortsatt 200. Stemmens datatilgang er verifisert mekanisk; selve lyttetesten står igjen til Andreas.
+
 **Bruksanvisning:** `docs/research/nyhavna-lokal-demo/README.md`.
 
 ---

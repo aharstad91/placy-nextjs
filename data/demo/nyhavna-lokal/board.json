@@ -6,18 +6,70 @@
   "district": "Nyhavna",
   "city": "Trondheim",
   "intro": "",
-  "center": { "lat": 63.43980508893858, "lng": 10.41725655026434 },
+  "center": {
+    "lat": 63.43980508893858,
+    "lng": 10.41725655026434
+  },
   "map3d": true,
   "pinSubtitle": "",
-  "greeting": "Hei! Jeg kan vise deg rundt på Nyhavna. Hva er viktigst for deg når du vurderer et nytt sted å bo?",
+  "greeting": "Hei! Jeg kan fortelle om Nyhavna. Hva er viktigst for deg når du vurderer et nytt sted å bo?",
   "projectInfoLabel": "nyhavna.no",
   "categories": [
-    { "id": "hverdagsliv", "name": "Hverdag", "icon": "ShoppingCart", "color": "#36d16f", "lead": "", "body": "" },
-    { "id": "barn-oppvekst", "name": "Oppvekst", "icon": "GraduationCap", "color": "#f8ae17", "lead": "", "body": "" },
-    { "id": "mat-drikke", "name": "Servering", "icon": "UtensilsCrossed", "color": "#f35a5a", "lead": "", "body": "" },
-    { "id": "natur-friluftsliv", "name": "Natur", "icon": "Trees", "color": "#22c68d", "lead": "", "body": "" },
-    { "id": "transport", "name": "Transport", "icon": "Bus", "color": "#4d93f8", "lead": "", "body": "" },
-    { "id": "trening-aktivitet", "name": "Trening", "icon": "Dumbbell", "color": "#f05da7", "lead": "", "body": "" },
-    { "id": "opplevelser", "name": "Opplevelser", "icon": "Film", "color": "#a06cf5", "lead": "", "body": "" }
+    {
+      "id": "hverdagsliv",
+      "name": "Hverdag",
+      "icon": "ShoppingCart",
+      "color": "#36d16f",
+      "lead": "",
+      "body": ""
+    },
+    {
+      "id": "barn-oppvekst",
+      "name": "Oppvekst",
+      "icon": "GraduationCap",
+      "color": "#f8ae17",
+      "lead": "",
+      "body": ""
+    },
+    {
+      "id": "mat-drikke",
+      "name": "Servering",
+      "icon": "UtensilsCrossed",
+      "color": "#f35a5a",
+      "lead": "",
+      "body": ""
+    },
+    {
+      "id": "natur-friluftsliv",
+      "name": "Natur",
+      "icon": "Trees",
+      "color": "#22c68d",
+      "lead": "",
+      "body": ""
+    },
+    {
+      "id": "transport",
+      "name": "Transport",
+      "icon": "Bus",
+      "color": "#4d93f8",
+      "lead": "",
+      "body": ""
+    },
+    {
+      "id": "trening-aktivitet",
+      "name": "Trening",
+      "icon": "Dumbbell",
+      "color": "#f05da7",
+      "lead": "",
+      "body": ""
+    },
+    {
+      "id": "opplevelser",
+      "name": "Opplevelser",
+      "icon": "Film",
+      "color": "#a06cf5",
+      "lead": "",
+      "body": ""
+    }
   ]
 }

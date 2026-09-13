@@ -2,9 +2,10 @@ import { describe, expect, it } from "vitest";
 import { readFile } from "node:fs/promises";
 import { join } from "node:path";
 import { buildLocalBoard, buildLocalProject, datasetId } from "@/lib/demo/nyhavna-lokal/board";
-import { LOCAL_DATASET_DIR } from "@/lib/demo/nyhavna-lokal/dataset";
+import { loadDataset, LOCAL_DATASET_DIR } from "@/lib/demo/nyhavna-lokal/dataset";
 import {
   localBoardSchema,
+  localFaqsSchema,
   localPlacesSchema,
   localSourcesSchema,
   type LocalDataset,
@@ -24,6 +25,7 @@ const emptyDataset = async (): Promise<LocalDataset> => ({
   sources: [],
   places: [],
   topics: [],
+  faqs: [],
 });
 
 describe("tomt datasett", () => {
@@ -119,5 +121,70 @@ describe("et sted i datasettet", () => {
     const planned = localPlacesSchema.parse([{ ...places[0], id: "plan-sted", status: "planned" }]);
     const board = buildLocalBoard({ ...(await withPlace()), places: planned });
     expect(board.categories.flatMap((c) => c.pois)[0].raw.developmentStatus).toBe("planned");
+  });
+});
+
+describe("spørsmål og svar", () => {
+  const faqs = localFaqsSchema.parse([
+    {
+      id: "hele-omradet",
+      question: "Hva slags område er dette?",
+      answer: "Et område under utvikling.",
+      origin: "imported",
+      sourceIds: ["kilde-a"],
+    },
+    {
+      id: "hvor-spise",
+      categoryId: "mat-drikke",
+      question: "Hvor kan jeg spise?",
+      answer: "Se [Servering](category:mat-drikke).",
+      origin: "imported",
+      sourceIds: ["kilde-a"],
+    },
+    {
+      id: "spise-sent",
+      categoryId: "mat-drikke",
+      question: "Er noe åpent sent?",
+      answer: "Det står ikke i materialet.",
+      origin: "local",
+    },
+  ]);
+
+  const withFaq = async (): Promise<LocalDataset> => ({
+    ...(await emptyDataset()),
+    sources: localSourcesSchema.parse([
+      { id: "kilde-a", label: "eksempel.no", page: "Side", url: "https://eksempel.no/side/", publisher: "Eksempel", checkedAt: "2026-09-13" },
+    ]),
+    faqs,
+  });
+
+  it("legger spørsmål uten tema i den globale seksjonen, resten under sitt tema", async () => {
+    const board = buildLocalBoard(await withFaq());
+    expect(board.globalFaq?.map((e) => e.id)).toEqual(["hele-omradet"]);
+    const servering = board.categories.find((c) => String(c.id) === "mat-drikke")!;
+    // Rekkefølgen i fila er rekkefølgen på flaten.
+    expect(servering.editorial?.faq?.map((e) => e.id)).toEqual(["hvor-spise", "spise-sent"]);
+    expect(servering.editorial?.faq?.[0].question).toBe("Hvor kan jeg spise?");
+  });
+
+  it("viser spørsmålene selv om temaet ikke har ett eneste sted", async () => {
+    const board = buildLocalBoard(await withFaq());
+    const servering = board.categories.find((c) => String(c.id) === "mat-drikke")!;
+    expect(servering.pois).toEqual([]);
+    expect(servering.editorial?.faq?.length).toBe(2);
+  });
+
+  it("lar temaer uten spørsmål stå urørt, uten oppdiktet innhold", async () => {
+    const board = buildLocalBoard(await withFaq());
+    const transport = board.categories.find((c) => String(c.id) === "transport")!;
+    expect(transport.editorial).toBeUndefined();
+  });
+
+  it("gir det ekte datasettet spørsmål i sidebaren", async () => {
+    const dataset = await loadDataset();
+    const board = buildLocalBoard(dataset);
+    const shown = (board.globalFaq?.length ?? 0) + board.categories.reduce((n, c) => n + (c.editorial?.faq?.length ?? 0), 0);
+    // Alt som ligger i faq.json havner på en flate — ingen stille bortfall.
+    expect(shown).toBe(dataset.faqs.length);
   });
 });
