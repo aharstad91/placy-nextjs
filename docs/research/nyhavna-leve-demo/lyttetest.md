@@ -14,7 +14,7 @@ Historikk: variantene under ble laget for `gpt-realtime-2.1-mini`. Fra 2026-09-1
 |---|---|---|
 | Stemmemodell | `gpt-live-1` (`OPENAI_BOARD_LIVE_MODEL`) | GET `/api/prototype/live` viser `voiceModel` |
 | Backend | `gpt-5.6-terra` (`OPENAI_BOARD_BACKEND_MODEL`, effort `OPENAI_BOARD_BACKEND_EFFORT`, standard `low`) | samme svar, `backendModel` |
-| Stemme | `marin` | `lib/live/session-config.ts` |
+| Stemme | `vesper` (`OPENAI_BOARD_LIVE_VOICE`; Realtime-stemmene er lagt bort) | GET `/api/prototype/live` viser `voice` |
 | Stemmeinstruks | kort, norsk | `lib/live/voice-instructions.ts` |
 | Sesjonsgrenser | én aktiv samtale, 12 min, 2 min inaktivitet | `app/api/prototype/live/route.ts`, `lib/live/sideband.ts` |
 

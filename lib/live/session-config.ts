@@ -12,6 +12,12 @@ const EFFORTS = new Set(["none", "minimal", "low", "medium", "high", "xhigh"]);
 
 export const liveModel = () => process.env.OPENAI_BOARD_LIVE_MODEL || "gpt-live-1";
 export const backendModel = () => process.env.OPENAI_BOARD_BACKEND_MODEL || "gpt-5.6-terra";
+/**
+ * Stemmevalget leses fra env så en lyttetest kan bytte stemme med omstart, ikke
+ * nytt bygg. Standard `vesper` (Andreas, 2026-09-13): Realtime-stemmene er lagt
+ * bort sammen med Realtime-API-et; lyttetesten avgjør om vesper holder norsk.
+ */
+export const liveVoice = () => process.env.OPENAI_BOARD_LIVE_VOICE || "vesper";
 
 export function backendEffort(): string {
   const effort = process.env.OPENAI_BOARD_BACKEND_EFFORT || "low";
@@ -28,7 +34,7 @@ export function liveSessionConfig(voiceInstructions: string, backendInstructions
   return {
     model,
     instructions: voiceInstructions,
-    audio: { output: { voice: "marin" } },
+    audio: { output: { voice: liveVoice() } },
     delegation: {
       type: "responses",
       responses: {

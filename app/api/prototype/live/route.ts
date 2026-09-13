@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
-import { backendModel, liveModel, liveSessionConfig } from '@/lib/live/session-config';
+import { backendModel, liveModel, liveSessionConfig, liveVoice } from '@/lib/live/session-config';
 import { createLiveSession, LiveSessionError } from '@/lib/live/create-session';
 import { connectLiveSideband } from '@/lib/live/sideband';
 import { getLiveSupervisor } from '@/lib/live/supervisor';
@@ -25,7 +25,7 @@ export async function GET(request: NextRequest) {
   try {
     const snapshot = await getNyhavnaSnapshot();
     return NextResponse.json(
-      { configured: Boolean(process.env.OPENAI_API_KEY), voiceModel: liveModel(), backendModel: backendModel(), snapshotId: snapshot.snapshotId, protocol: 'live' },
+      { configured: Boolean(process.env.OPENAI_API_KEY), voiceModel: liveModel(), voice: liveVoice(), backendModel: backendModel(), snapshotId: snapshot.snapshotId, protocol: 'live' },
       { headers: { 'Cache-Control': 'no-store' } },
     );
   } catch { return NextResponse.json({ error: 'Demoens datagrunnlag kunne ikke lastes.' }, { status: 503 }); }

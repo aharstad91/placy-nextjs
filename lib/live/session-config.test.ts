@@ -6,7 +6,7 @@ afterEach(() => vi.unstubAllEnvs());
 describe('live session configuration', () => {
   it('delegates to the Responses backend and carries no Realtime-only fields', () => {
     const session = liveSessionConfig('kort stemmeinstruks', 'lang backendinstruks', []) as Record<string, unknown>;
-    expect(session).toMatchObject({ model: 'gpt-live-1', instructions: 'kort stemmeinstruks', audio: { output: { voice: 'marin' } } });
+    expect(session).toMatchObject({ model: 'gpt-live-1', instructions: 'kort stemmeinstruks', audio: { output: { voice: 'vesper' } } });
     expect(session.delegation).toMatchObject({ type: 'responses', responses: { model: 'gpt-5.6-terra', instructions: 'lang backendinstruks', tool_choice: 'auto', parallel_tool_calls: true, reasoning: { effort: 'low' } } });
     for (const field of ['type', 'turn_detection', 'transcription', 'truncation', 'output_modalities']) expect(session).not.toHaveProperty(field);
     expect(session.audio).not.toHaveProperty('format');
