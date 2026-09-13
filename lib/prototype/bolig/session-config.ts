@@ -21,16 +21,20 @@ export function boligSessionConfig(fixture: BoligFixture) {
     tool_choice: "auto",
     output_modalities: ["audio"],
     max_output_tokens: 600,
-    truncation: { type: "retention_ratio", retention_ratio: 0.7, token_limits: { post_instructions: 2500 } },
+    // Ingen trimming av samtalen. Modellen speiler sin egen tidligere uttale;
+    // da tidligere svar ble kastet etter 2 500 tokens, valgte den tonefall på
+    // nytt for hvert svar og «skiftet dialekt» (Andreas, 2026-09-13). Sesjonen
+    // er uansett begrenset til 12 minutter av RealtimeSupervisor.
+    truncation: "disabled",
     audio: {
       input: {
         transcription: { model: "gpt-4o-mini-transcribe", language: "no" },
         turn_detection: { type: "semantic_vad", eagerness: "medium", interrupt_response: true, create_response: true },
       },
-      // Ash beholdes fra forrige løp; stemmevalg er ikke eksperimentet her.
-      output: { voice: "ash" },
+      // Marin: de nyeste stemmene (marin/cedar) er jevnest på ikke-engelske språk.
+      output: { voice: "marin" },
     },
   };
 }
 
-export const BOLIG_GREETING_INSTRUCTIONS = "Hils kort på norsk bokmål med norsk uttale, uten engelsk aksent, som Placy. Si at du kan hjelpe brukeren å bli kjent med området rundt boligen, og spør hva som er viktig i hverdagen, for eksempel dagligvare, barn og oppvekst eller turmuligheter. Ikke kall verktøy før brukeren har sagt hva hen vil vite.";
+export const BOLIG_GREETING_INSTRUCTIONS = "Hils kort på norsk, standard østnorsk talemål, uten engelsk aksent, som Placy. Si at du kan hjelpe brukeren å bli kjent med området rundt boligen, og spør hva som er viktig i hverdagen, for eksempel dagligvare, barn og oppvekst eller turmuligheter. Ikke kall verktøy før brukeren har sagt hva hen vil vite.";
