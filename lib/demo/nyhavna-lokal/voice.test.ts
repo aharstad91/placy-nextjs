@@ -231,6 +231,49 @@ describe("spørsmål og svar er felles for sidebar og stemme", () => {
     expect(dataset.places).toEqual([]);
   });
 
+  it.each([
+    ["Dora Kaffebar", "servering-dora-kaffe", "Kobbes gate 2"],
+    ["Ladejarlen barnepizza", "servering-ladejarlen-barn", "under 12"],
+    ["HAVET søndag", "servering-havet-tider", "motstridende"],
+    ["Snurr kaffe frokost", "servering-snurr", "espresso"],
+    ["Una vegansk pizza", "servering-una", "Vegana"],
+    ["Olivia barnemeny", "servering-barnemeny-uavklart", "ikke"],
+    ["Transittkaia nye restauranter", "servering-planer", "planforslag"],
+    ["Sabrura glutenfri", "servering-sabrura", "25"],
+    ["Dora pizza nuggets", "servering-bowling-mat", "135"],
+    ["familiebowling", "servering-bowling-familie", "Mat kjøpes separat"],
+    ["BarbeintQ Heim", "servering-havet", "bordbestilling"],
+    ["Heim aldersgrense", "servering-havet-alder", "20-årsgrense"],
+    ["Ramp kikert", "servering-ramp", "storfe"],
+    ["Ladejarlen rabatt", "servering-ladejarlen-mat", "ti prosent"],
+    ["Ladejarlen vaffelbuffet", "servering-ladejarlen-tid", "pause"],
+    ["Dahls kjøkken", "servering-dahls", "21.30"],
+    ["Dahls falafelburger", "servering-dahls-meny", "melk og egg"],
+    ["BistroBar mandag", "servering-bistro", "Ladebekken 24A"],
+    ["BistroBar kveite", "servering-bistro-mat", "395"],
+    ["Sabrura hentetider", "servering-sabrura-tid", "én time før"],
+    ["Egon pizzabuffet", "servering-egon", "TMV-kaia 21"],
+    ["Godt Brød bakeri", "servering-godtbrod", "06.30"],
+    ["Dromedar", "servering-dromedar", "07.30"],
+    ["Rosendal forestilling", "servering-rosendal", "én time før"],
+    ["lekeland bistro", "servering-leos", "Ladebekken 6"],
+    ["BarbeintQ chili", "servering-havet-mat", "cheddar"],
+    ["Rosendal Adasi", "servering-rosendal-mat", "laktose"],
+    ["Rosendal heis", "servering-rosendal-adkomst", "rampe"],
+    ["Monkey Brew", "servering-monkey", "torsdag"],
+  ])("finner serveringsdybde for %s uten kartsteder", async (query, id, text) => {
+    const dataset = await loadDataset();
+    const conversation = conversationFor(dataset);
+    conversation.execute("set_interests", { interests: ["spisesteder"], theme_ids: ["mat-drikke"] });
+    const info = conversation.execute("find_project_info", { query }).result as {
+      results: Array<{ id: string; text: string; source: { url: string } }>;
+    };
+    const found = info.results.find((topic) => topic.id === id);
+    expect(found?.text).toContain(text);
+    expect(found?.source.url).toMatch(/^https:\/\//);
+    expect(dataset.places).toEqual([]);
+  });
+
   it("gir stemmen nøyaktig de spørsmålene sidebaren viser", async () => {
     const dataset = await loadDataset();
     const board = buildLocalBoard(dataset);

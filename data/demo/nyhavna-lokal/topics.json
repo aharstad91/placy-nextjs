@@ -710,5 +710,733 @@
     "caveats": [
       "Gamle priser fra researchrapporten er fjernet. Ingen reisetid eller aktuell billettpris gis her."
     ]
+  },
+  {
+    "id": "servering-dora-kaffe",
+    "title": "Dora Kaffebar og byggets interne tilbud",
+    "categoryIds": [
+      "mat-drikke"
+    ],
+    "status": "existing",
+    "text": "Dora Eiendom beskriver en offentlig tilgjengelig kafé i første etasje i Kobbes gate 2. Den følger byggets åpningstider. Byggets personalrestaurant og takterrasser skal ikke presenteres som offentlige spisesteder.",
+    "keywords": [
+      "Dora Kaffebar",
+      "kaffe",
+      "frokost",
+      "lunsj",
+      "kantine",
+      "Kobbes"
+    ],
+    "sourceIds": [
+      "s-dora"
+    ],
+    "relatedPlaceIds": [],
+    "checkedAt": "2026-09-13",
+    "caveats": [
+      "Eksakte kafétider og menypriser er ikke bekreftet i denne kildekontrollen."
+    ]
+  },
+  {
+    "id": "servering-bowling-mat",
+    "title": "Pizza og enkel mat hos Dora 1",
+    "categoryIds": [
+      "mat-drikke"
+    ],
+    "status": "existing",
+    "text": "Dora 1 har pizza fra 135 kroner for 30 cm og 229 for 40 cm, hamburger til 98 og seks nuggets til 69. Menyen har vegetarpizza og glutenfri 30-centimeters bunn.",
+    "keywords": [
+      "Dora 1",
+      "pizza",
+      "burger",
+      "nuggets",
+      "billig",
+      "pris",
+      "glutenfri"
+    ],
+    "sourceIds": [
+      "s-bowling-mat"
+    ],
+    "relatedPlaceIds": [],
+    "checkedAt": "2026-09-13",
+    "caveats": [
+      "Menypriser kontrollert 13. september 2026, kan endres. Glutenfri bunn er ikke dokumentasjon på allergitrygg tilberedning."
+    ]
+  },
+  {
+    "id": "servering-bowling-familie",
+    "title": "Familiebowling på Dora 1",
+    "categoryIds": [
+      "mat-drikke"
+    ],
+    "status": "existing",
+    "text": "Dora 1 i Kobbes gate 6 tilbyr familiebowling med to serier, skoleie og én slush, kaffe eller te for 150 kroner per person. Mat kjøpes separat. Det finnes barnegjerde og stativ for de minste.",
+    "keywords": [
+      "Dora 1",
+      "familiebowling",
+      "bowling",
+      "barn",
+      "aktivitet"
+    ],
+    "sourceIds": [
+      "s-bowling-pris",
+      "s-bowling"
+    ],
+    "relatedPlaceIds": [],
+    "checkedAt": "2026-09-13",
+    "caveats": [
+      "Pris kontrollert 13. september 2026. Ikke lov ledig bane eller bruk tilbudet som generell aldersgodkjenning."
+    ]
+  },
+  {
+    "id": "servering-havet",
+    "title": "BarbeintQ og Heim på HAVET",
+    "categoryIds": [
+      "mat-drikke"
+    ],
+    "status": "existing",
+    "text": "HAVET i Strandveien 104 har restauranten BarbeintQ og baren Heim, i tillegg til badstu og kulturprogram. BarbeintQ har egen bordbestilling.",
+    "keywords": [
+      "HAVET",
+      "BarbeintQ",
+      "Heim",
+      "middag",
+      "badstu",
+      "uten bade"
+    ],
+    "sourceIds": [
+      "s-havet",
+      "s-havet-faq"
+    ],
+    "relatedPlaceIds": [],
+    "checkedAt": "2026-09-13",
+    "caveats": [
+      "Mattilbud og bar er ulike tilbud; åpning og aldersvilkår må skilles."
+    ]
+  },
+  {
+    "id": "servering-havet-tider",
+    "title": "Motstridende søndagsåpning på HAVET",
+    "categoryIds": [
+      "mat-drikke"
+    ],
+    "status": "unresolved",
+    "text": "HAVETs egne sider gir motstridende opplysninger om søndagsåpning for kjøkkenet: serveringssiden oppgir stengt, mens forsiden oppgir søndag 15–20. Søndagsmat er derfor uavklart.",
+    "keywords": [
+      "HAVET søndag",
+      "BarbeintQ",
+      "åpningstider",
+      "søndagsmat",
+      "kjøkken"
+    ],
+    "sourceIds": [
+      "s-havet",
+      "s-havet-hjem"
+    ],
+    "relatedPlaceIds": [],
+    "checkedAt": "2026-09-13",
+    "caveats": [
+      "Kontakt HAVET før et søndagsbesøk; ikke velg én av tidene som sikker."
+    ]
+  },
+  {
+    "id": "servering-havet-alder",
+    "title": "Aldersgrenser på HAVET",
+    "categoryIds": [
+      "mat-drikke"
+    ],
+    "status": "existing",
+    "text": "HAVETs FAQ oppgir fredag–lørdag 18-årsgrense i Ardna fra 16 og på ARK-flåtene fra 18, og 20-årsgrense i Heim bar og restaurant fra 21.",
+    "keywords": [
+      "HAVET aldersgrense",
+      "Heim",
+      "Ardna",
+      "ARK",
+      "ungdom",
+      "20 år"
+    ],
+    "sourceIds": [
+      "s-havet-faq"
+    ],
+    "relatedPlaceIds": [],
+    "checkedAt": "2026-09-13",
+    "caveats": [
+      "Kontrollert 13. september 2026. Arrangementer kan ha egne vilkår; vergeordning er ikke automatisk adgang."
+    ]
+  },
+  {
+    "id": "servering-ramp",
+    "title": "Ramp på Svartlamon",
+    "categoryIds": [
+      "mat-drikke"
+    ],
+    "status": "existing",
+    "text": "Svartlamons virksomhetsoversikt beskriver Ramp som et spisested med burgere av blant annet storfe, lam og kikerter. Det gir et alternativ i nabolaget rundt Nyhavna.",
+    "keywords": [
+      "Ramp",
+      "Svartlamon",
+      "pub",
+      "burger",
+      "kikert",
+      "uteliv"
+    ],
+    "sourceIds": [
+      "s-svartlamon"
+    ],
+    "relatedPlaceIds": [],
+    "checkedAt": "2026-09-13",
+    "caveats": [
+      "Aktuelle menypriser og kjøkkentider er ikke tilstrekkelig bekreftet. Oversiktens kjøkkentid må ikke brukes som sikker besøksinformasjon."
+    ]
+  },
+  {
+    "id": "servering-ladejarlen-barn",
+    "title": "Barnepizza på Ladejarlen",
+    "categoryIds": [
+      "mat-drikke"
+    ],
+    "status": "existing",
+    "text": "Ladejarlens pizzameny oppgir barnepizza til 155 kroner for barn under 12 år. Dette er en barnepris, ikke fra-pris for voksenpizza.",
+    "keywords": [
+      "Ladejarlen barnepizza",
+      "barnemeny",
+      "12 år",
+      "familie",
+      "barnepris"
+    ],
+    "sourceIds": [
+      "s-ladejarlen-pizza"
+    ],
+    "relatedPlaceIds": [],
+    "checkedAt": "2026-09-13",
+    "caveats": [
+      "Pris kontrollert 13. september 2026. En 14-åring omfattes ikke av vilkåret under 12."
+    ]
+  },
+  {
+    "id": "servering-ladejarlen-mat",
+    "title": "Ladejarlen: takeaway og veganske tilpasninger",
+    "categoryIds": [
+      "mat-drikke"
+    ],
+    "status": "existing",
+    "text": "Ladejarlen oppgir ti prosent rabatt på selvhentet takeaway og at flere retter kan tilpasses vegetarisk eller vegansk. To egne menysider viser ulike priser på enkelte pizzaer.",
+    "keywords": [
+      "Ladejarlen",
+      "takeaway",
+      "hente",
+      "rabatt",
+      "vegansk",
+      "vegetar",
+      "pizza"
+    ],
+    "sourceIds": [
+      "s-ladejarlen",
+      "s-ladejarlen-pizza"
+    ],
+    "relatedPlaceIds": [],
+    "checkedAt": "2026-09-13",
+    "caveats": [
+      "Bekreft bestillingspris og tilpasning. Leveringsdekning til en konkret bolig er ikke kontrollert."
+    ]
+  },
+  {
+    "id": "servering-ladejarlen-tid",
+    "title": "Ladejarlen: kjøkkentider og kafépause",
+    "categoryIds": [
+      "mat-drikke"
+    ],
+    "status": "existing",
+    "text": "Ladejarlen varsler midlertidig redusert åpning. Kjøkkentidene på siden er mandag–lørdag 16–23 og søndag 14–22. Den separate kaféen er bare åpen for arrangementer og lukkede selskap; vaffelbuffeten er satt på pause.",
+    "keywords": [
+      "Ladejarlen",
+      "sent",
+      "kjøkkentid",
+      "søndag",
+      "kafé",
+      "vaffelbuffet"
+    ],
+    "sourceIds": [
+      "s-ladejarlen-tid",
+      "s-ladejarlen-kafe"
+    ],
+    "relatedPlaceIds": [],
+    "checkedAt": "2026-09-13",
+    "caveats": [
+      "Kontrollert 13. september 2026. Midlertidige tider kan endres raskt; ikke presenter kaféen som et ordinært dagtilbud."
+    ]
+  },
+  {
+    "id": "servering-dahls",
+    "title": "E.C. Dahls: middag og pubmat",
+    "categoryIds": [
+      "mat-drikke"
+    ],
+    "status": "existing",
+    "text": "E.C. Dahls Pub og Kjøkken ligger i Strandveien 71. Egen side oppgir tirsdag–lørdag 17–00.30, med kjøkken til 21.30. Konsertdager kan ha andre tider.",
+    "keywords": [
+      "E.C. Dahls",
+      "Dahls",
+      "pub",
+      "kjøkken",
+      "åpningstid",
+      "kveld"
+    ],
+    "sourceIds": [
+      "s-dahls"
+    ],
+    "relatedPlaceIds": [],
+    "checkedAt": "2026-09-13",
+    "caveats": [
+      "Kontrollert 13. september 2026. Barens stengetid er ikke tidspunkt for siste matbestilling."
+    ]
+  },
+  {
+    "id": "servering-dahls-meny",
+    "title": "E.C. Dahls: priseksempler og vegetar",
+    "categoryIds": [
+      "mat-drikke"
+    ],
+    "status": "existing",
+    "text": "Menyen fra 11. august 2026 har cheeseburger til 315 kroner, falafelburger til 255 og entrecôte til 545. Falafelburgeren er merket med melk og egg og skal ikke anbefales som vegansk uten tilpasning.",
+    "keywords": [
+      "Dahls",
+      "pris",
+      "falafelburger",
+      "cheeseburger",
+      "entrecôte",
+      "vegan"
+    ],
+    "sourceIds": [
+      "s-dahls-meny"
+    ],
+    "relatedPlaceIds": [],
+    "checkedAt": "2026-09-13",
+    "caveats": [
+      "Kontrollert 13. september 2026. Ingen separat barnemeny er funnet i denne PDF-en; det beviser ikke at stedet mangler barnetilbud."
+    ]
+  },
+  {
+    "id": "servering-snurr",
+    "title": "Snurr Nyhavna: frokost, kaffe og helg",
+    "categoryIds": [
+      "mat-drikke"
+    ],
+    "status": "existing",
+    "text": "Snurr Nyhavna ligger i Ladebekken 24D. Egen side oppgir hverdager 08–17 og helg 10–16. Espresso koster 35 kroner, stor vanlig kaffe 49, og Tomat & avokado er merket vegansk og koster 159.",
+    "keywords": [
+      "Snurr",
+      "kaffe",
+      "espresso",
+      "frokost",
+      "bakeri",
+      "brød",
+      "søndag",
+      "Ladebekken"
+    ],
+    "sourceIds": [
+      "s-snurr"
+    ],
+    "relatedPlaceIds": [],
+    "checkedAt": "2026-09-13",
+    "caveats": [
+      "Kontrollert 13. september 2026. Kaffe fra 35 betyr espresso; ikke bruk det som pris for en stor kaffe. Ingen gangrute fra boligen er målt."
+    ]
+  },
+  {
+    "id": "servering-bistro",
+    "title": "Nyhavna BistroBar ligger i Ladebekken",
+    "categoryIds": [
+      "mat-drikke"
+    ],
+    "status": "existing",
+    "text": "Nyhavna BistroBar ligger i Ladebekken 24A. Egen side oppgir mandag 16–20.30 med bare pizzameny, tirsdag–lørdag 16–22.30. Søndagstid er ikke oppgitt. Navnet betyr ikke at stedet ligger ved Dora.",
+    "keywords": [
+      "Nyhavna BistroBar",
+      "bistro",
+      "Ladebekken",
+      "mandag",
+      "pizza",
+      "søndag"
+    ],
+    "sourceIds": [
+      "s-bistro"
+    ],
+    "relatedPlaceIds": [],
+    "checkedAt": "2026-09-13",
+    "caveats": [
+      "Kontrollert 13. september 2026. Mandagens pizzautvalg og åpningsåret er ikke bekreftet; ikke kall stedet nyest."
+    ]
+  },
+  {
+    "id": "servering-bistro-mat",
+    "title": "Middag på Nyhavna BistroBar",
+    "categoryIds": [
+      "mat-drikke"
+    ],
+    "status": "existing",
+    "text": "BistroBars meny har fish and chips og bakt spisskål til 285 kroner, andelår til 345, kveite til 395 og entrecôte til 550.",
+    "keywords": [
+      "BistroBar",
+      "pris",
+      "spisskål",
+      "vegetar",
+      "middag",
+      "kveite"
+    ],
+    "sourceIds": [
+      "s-bistro-meny"
+    ],
+    "relatedPlaceIds": [],
+    "checkedAt": "2026-09-13",
+    "caveats": [
+      "Prisene er kontrollert 13. september 2026 og kan endres. Vegetarisk rett er ikke automatisk vegansk."
+    ]
+  },
+  {
+    "id": "servering-sabrura",
+    "title": "Sabrura: buffet, barn og glutenfritt",
+    "categoryIds": [
+      "mat-drikke"
+    ],
+    "status": "existing",
+    "text": "Sabrura oppgir gratis buffet for barn opptil 6 år sammen med en spisende voksen og glutenfri buffet fra kjøkkenet mot 25 kroner ekstra. Ordinær bordtid er to timer, med lokale variasjoner.",
+    "keywords": [
+      "Sabrura",
+      "sushi",
+      "buffet",
+      "barn",
+      "gratis",
+      "glutenfri",
+      "allergi"
+    ],
+    "sourceIds": [
+      "s-sabrura"
+    ],
+    "relatedPlaceIds": [],
+    "checkedAt": "2026-09-13",
+    "caveats": [
+      "Fast voksenpris på 229 kroner for både lunsj og middag er ikke bekreftet for Solsiden. Allergibehov må avklares direkte."
+    ]
+  },
+  {
+    "id": "servering-sabrura-tid",
+    "title": "Sabrura Solsiden: restaurant og takeaway",
+    "categoryIds": [
+      "mat-drikke"
+    ],
+    "status": "existing",
+    "text": "Sabrura Solsiden i Bassengbakken 2 oppgir mandag–torsdag og søndag 13–22, fredag 13–23 og lørdag 12–23. Takeaway avsluttes én time før restauranten.",
+    "keywords": [
+      "Sabrura",
+      "søndag",
+      "takeaway",
+      "hente",
+      "åpningstid",
+      "Bassengbakken"
+    ],
+    "sourceIds": [
+      "s-sabrura-solsiden"
+    ],
+    "relatedPlaceIds": [],
+    "checkedAt": "2026-09-13",
+    "caveats": [
+      "Kontrollert 13. september 2026. Ordinære åpningstider er ikke bekreftelse på åpent akkurat nå."
+    ]
+  },
+  {
+    "id": "servering-egon",
+    "title": "Egon Solsiden: pizzabuffet og takeaway",
+    "categoryIds": [
+      "mat-drikke"
+    ],
+    "status": "existing",
+    "text": "Egon Solsidens egen side beskriver pizzabuffet, burgere og takeaway på TMV-kaia 21.",
+    "keywords": [
+      "Egon",
+      "pizzabuffet",
+      "familie",
+      "barn",
+      "takeaway",
+      "Solsiden"
+    ],
+    "sourceIds": [
+      "s-egon"
+    ],
+    "relatedPlaceIds": [],
+    "checkedAt": "2026-09-13",
+    "caveats": [
+      "Rapportens kjedepriser og aldersvilkår er ikke bekreftet for denne avdelingen og gis ikke som lokale priser."
+    ]
+  },
+  {
+    "id": "servering-barnemeny-uavklart",
+    "title": "Barnemeny hos Olivia og Una er ikke avklart",
+    "categoryIds": [
+      "mat-drikke"
+    ],
+    "status": "unresolved",
+    "text": "Det er ikke funnet egen barneseksjon i den kontrollerte Una-menyen eller Olivia-filen merket Solsiden sommer 2026. Dette beviser ikke at stedene mangler barnemeny. Olivia-filen nevner også Ramsalt i teksten, så stedstilknytningen trenger avklaring.",
+    "keywords": [
+      "Olivia barnemeny",
+      "Una barnemeny",
+      "barn",
+      "bambini"
+    ],
+    "sourceIds": [
+      "s-olivia",
+      "s-una"
+    ],
+    "relatedPlaceIds": [],
+    "checkedAt": "2026-09-13",
+    "caveats": [
+      "Google-attributter eller en generell kjedemeny gir ikke sikker dokumentasjon for en konkret avdeling."
+    ]
+  },
+  {
+    "id": "servering-una",
+    "title": "Una Solsiden: pizza og vegansk alternativ",
+    "categoryIds": [
+      "mat-drikke"
+    ],
+    "status": "existing",
+    "text": "Una ligger i Beddingen 14 på Solsiden. Menyen har Vegana-pizza til 238 kroner og Margherita til 202.",
+    "keywords": [
+      "Una",
+      "vegansk pizza",
+      "Vegana",
+      "Margherita",
+      "Solsiden",
+      "pris"
+    ],
+    "sourceIds": [
+      "s-una"
+    ],
+    "relatedPlaceIds": [],
+    "checkedAt": "2026-09-13",
+    "caveats": [
+      "Priser kontrollert 13. september 2026. Allergenmerking beskriver innhold, ikke garanti for tilberedning uten krysskontakt."
+    ]
+  },
+  {
+    "id": "servering-godtbrod",
+    "title": "Godt Brød Solsiden: bakeri og helg",
+    "categoryIds": [
+      "mat-drikke"
+    ],
+    "status": "existing",
+    "text": "Godt Brød i Beddingen 10 oppgir hverdager 06.30–21 og lørdag–søndag 08–18. Det er et bakerialternativ for tidlig kaffe og helgebakst.",
+    "keywords": [
+      "Godt Brød",
+      "bakeri",
+      "brød",
+      "frokost",
+      "tidlig",
+      "søndag"
+    ],
+    "sourceIds": [
+      "s-godtbrod"
+    ],
+    "relatedPlaceIds": [],
+    "checkedAt": "2026-09-13",
+    "caveats": [
+      "Tider kontrollert 13. september 2026. Ingen konkrete menypriser eller rangering som nærmeste bakeri er bekreftet."
+    ]
+  },
+  {
+    "id": "servering-dromedar",
+    "title": "Dromedar Kaffebar Solsiden",
+    "categoryIds": [
+      "mat-drikke"
+    ],
+    "status": "existing",
+    "text": "Dromedar i Beddingen 10 oppgir hverdager 07.30–18, lørdag 10–17 og søndag 11–17.",
+    "keywords": [
+      "Dromedar",
+      "kaffebar",
+      "kaffe",
+      "Solsiden",
+      "søndag"
+    ],
+    "sourceIds": [
+      "s-dromedar"
+    ],
+    "relatedPlaceIds": [],
+    "checkedAt": "2026-09-13",
+    "caveats": [
+      "Kontrollert 13. september 2026. Gangtid fra en konkret bolig er ikke målt."
+    ]
+  },
+  {
+    "id": "servering-rosendal",
+    "title": "Rosendal Kafé og teaterbesøk",
+    "categoryIds": [
+      "mat-drikke"
+    ],
+    "status": "existing",
+    "text": "Rosendal Teater har kafé med matservering i tilknytning til forestillingene. Siden oppgir at kaféen åpner én time før forestilling.",
+    "keywords": [
+      "Rosendal",
+      "teater",
+      "kafé",
+      "aktivitet",
+      "mat"
+    ],
+    "sourceIds": [
+      "s-rosendal"
+    ],
+    "relatedPlaceIds": [],
+    "checkedAt": "2026-09-13",
+    "caveats": [
+      "Sjekk forestilling og kjøkkentid for besøksdagen; forestillingsåpning er ikke automatisk utvidet kjøkkentid."
+    ]
+  },
+  {
+    "id": "servering-leos",
+    "title": "Leo’s Lekeland med bistro",
+    "categoryIds": [
+      "mat-drikke"
+    ],
+    "status": "existing",
+    "text": "Leo’s Lekeland i Ladebekken 6 har bistro for barn og voksne.",
+    "keywords": [
+      "Leo",
+      "Leos",
+      "lekeland",
+      "bistro",
+      "aktivitet",
+      "barn"
+    ],
+    "sourceIds": [
+      "s-leos"
+    ],
+    "relatedPlaceIds": [],
+    "checkedAt": "2026-09-13",
+    "caveats": [
+      "Aktuell billettpris, bistropris og egnethet for barnets alder er ikke kontrollert. Ikke anta at bistroen kan besøkes uten lekelandbillett."
+    ]
+  },
+  {
+    "id": "servering-planer",
+    "title": "Servering i planforslaget for Transittkaia",
+    "categoryIds": [
+      "mat-drikke"
+    ],
+    "status": "planned",
+    "text": "Utbygger beskriver servering og andre publikumstilbud på bakkeplan i planforslaget for Transittkaia. Utbyggingen er etappevis og påvirkes av marked og rekkefølgekrav.",
+    "keywords": [
+      "Transittkaia",
+      "nye restauranter",
+      "planforslag",
+      "fremtid",
+      "innflytting",
+      "servering"
+    ],
+    "sourceIds": [
+      "v-nyhavna",
+      "v-plan"
+    ],
+    "relatedPlaceIds": [],
+    "checkedAt": "2026-09-13",
+    "caveats": [
+      "Kontrollerte sider gir ikke bekreftede restaurantaktører eller åpningsdatoer for de planlagte lokalene. Siste planvedtak er ikke fastslått her."
+    ]
+  },
+  {
+    "id": "servering-havet-mat",
+    "title": "BarbeintQ: priseksempler og vegansk forbehold",
+    "categoryIds": [
+      "mat-drikke"
+    ],
+    "status": "existing",
+    "text": "HAVETs menybilde merket sommer 2026 viser cheeseburger til 225 kroner og veggie tostada til 179. Chili sin carne til 259 omtales som vegansk, men er også oppført med rømme, cheddar og melk.",
+    "keywords": [
+      "HAVET",
+      "BarbeintQ",
+      "pris",
+      "burger",
+      "vegan",
+      "chili"
+    ],
+    "sourceIds": [
+      "s-havet-meny"
+    ],
+    "relatedPlaceIds": [],
+    "checkedAt": "2026-09-13",
+    "caveats": [
+      "Bildet ble kontrollert 13. september 2026. Avklar vegansk servering uten tilbehøret; sesongmenyen kan være erstattet."
+    ]
+  },
+  {
+    "id": "servering-rosendal-mat",
+    "title": "Rosendal Kafé: konkrete priseksempler",
+    "categoryIds": [
+      "mat-drikke"
+    ],
+    "status": "existing",
+    "text": "Rosendal Kafés publiserte meny har gruyère-toast til 129 kroner, Adasi med linser og kikerter til 149 og kjøttgryte til 279. Adasi er oppført med laktose.",
+    "keywords": [
+      "Rosendal",
+      "pris",
+      "toast",
+      "suppe",
+      "Adasi",
+      "vegan"
+    ],
+    "sourceIds": [
+      "s-rosendal-meny"
+    ],
+    "relatedPlaceIds": [],
+    "checkedAt": "2026-09-13",
+    "caveats": [
+      "Kontrollert 13. september 2026; menyens gyldighetsperiode er ikke datofestet. Ikke anbefal Adasi som vegansk uten avklaring."
+    ]
+  },
+  {
+    "id": "servering-rosendal-adkomst",
+    "title": "Rosendal: rampe og heis til kaféen",
+    "categoryIds": [
+      "mat-drikke"
+    ],
+    "status": "existing",
+    "text": "Rosendal beskriver rampe ved nybyggets inngang, heis til kaféen og tilgjengelig toalett med stellerom i kjelleren.",
+    "keywords": [
+      "Rosendal",
+      "rullestol",
+      "trinnfri",
+      "heis",
+      "tilgjengelighet",
+      "barnevogn"
+    ],
+    "sourceIds": [
+      "s-rosendal-adkomst"
+    ],
+    "relatedPlaceIds": [],
+    "checkedAt": "2026-09-13",
+    "caveats": [
+      "Dette beskriver Rosendal, ikke tilgjengeligheten hos andre spisesteder. Aktuell drift av heisen er ikke kontrollert."
+    ]
+  },
+  {
+    "id": "servering-monkey",
+    "title": "Monkey Brew: bryggeri og utsalg",
+    "categoryIds": [
+      "mat-drikke"
+    ],
+    "status": "existing",
+    "text": "Nyhavna Utvikling omtaler Monkey Brew som håndverksbryggeri i Kobbes gate 10, med utsalg torsdag og fredag.",
+    "keywords": [
+      "Monkey Brew",
+      "bryggeri",
+      "øl",
+      "utsalg"
+    ],
+    "sourceIds": [
+      "s-nyhavna"
+    ],
+    "relatedPlaceIds": [],
+    "checkedAt": "2026-09-13",
+    "caveats": [
+      "Eksakte klokkeslett og aktuell matservering er ikke kontrollert. Ikke presenter et bryggeriutsalg som en vanlig restaurant."
+    ]
   }
 ]

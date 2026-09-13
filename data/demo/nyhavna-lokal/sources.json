@@ -278,5 +278,245 @@
     "url": "https://www.pirbadet.no/priser/",
     "publisher": "Pirbadet",
     "checkedAt": "2026-09-13"
+  },
+  {
+    "id": "s-dora",
+    "label": "Dora Eiendom",
+    "page": "Kobbes gate 2 – kafé og personalrestaurant",
+    "url": "https://dora.no/eiendommer/nyhavna-en/",
+    "publisher": "Dora Eiendom",
+    "checkedAt": "2026-09-13"
+  },
+  {
+    "id": "s-nyhavna",
+    "label": "Nyhavna Utvikling",
+    "page": "Café og restauranter",
+    "url": "https://nyhavna.no/leve/cafe-og-restauranter/",
+    "publisher": "Nyhavna Utvikling",
+    "checkedAt": "2026-09-13"
+  },
+  {
+    "id": "s-bowling",
+    "label": "Dora 1",
+    "page": "Bowling og aktiviteter",
+    "url": "https://dora1.no/",
+    "publisher": "Dora 1",
+    "checkedAt": "2026-09-13"
+  },
+  {
+    "id": "s-bowling-mat",
+    "label": "Dora 1",
+    "page": "Mat- og pizzameny",
+    "url": "https://dora1.no/meny",
+    "publisher": "Dora 1",
+    "checkedAt": "2026-09-13"
+  },
+  {
+    "id": "s-bowling-pris",
+    "label": "Dora 1",
+    "page": "Priser på bowling",
+    "url": "https://dora1.no/priser",
+    "publisher": "Dora 1",
+    "checkedAt": "2026-09-13"
+  },
+  {
+    "id": "s-havet",
+    "label": "HAVET Arena",
+    "page": "Restaurant BarbeintQ",
+    "url": "https://www.havetarena.no/servering",
+    "publisher": "HAVET Arena",
+    "checkedAt": "2026-09-13"
+  },
+  {
+    "id": "s-havet-faq",
+    "label": "HAVET Arena",
+    "page": "Spørsmål, tider og aldersgrenser",
+    "url": "https://www.havetarena.no/faq",
+    "publisher": "HAVET Arena",
+    "checkedAt": "2026-09-13"
+  },
+  {
+    "id": "s-havet-hjem",
+    "label": "HAVET Arena",
+    "page": "Forside med kjøkkentider",
+    "url": "https://www.havetarena.no/",
+    "publisher": "HAVET Arena",
+    "checkedAt": "2026-09-13"
+  },
+  {
+    "id": "s-svartlamon",
+    "label": "Svartlamon",
+    "page": "Virksomheter i nabolaget",
+    "url": "https://svartlamon.org/virksomheter/",
+    "publisher": "Svartlamon",
+    "checkedAt": "2026-09-13"
+  },
+  {
+    "id": "s-ladejarlen",
+    "label": "Ladejarlen",
+    "page": "Matmeny",
+    "url": "https://www.ladejarlen.com/meny",
+    "publisher": "Ladejarlen",
+    "checkedAt": "2026-09-13"
+  },
+  {
+    "id": "s-ladejarlen-pizza",
+    "label": "Ladejarlen",
+    "page": "Pizzameny",
+    "url": "https://www.ladejarlen.com/pizzameny",
+    "publisher": "Ladejarlen",
+    "checkedAt": "2026-09-13"
+  },
+  {
+    "id": "s-ladejarlen-tid",
+    "label": "Ladejarlen",
+    "page": "Åpningstider og midlertidige endringer",
+    "url": "https://www.ladejarlen.com/pningstider",
+    "publisher": "Ladejarlen",
+    "checkedAt": "2026-09-13"
+  },
+  {
+    "id": "s-ladejarlen-kafe",
+    "label": "Ladejarlen",
+    "page": "Kafé – arrangementer og pause i ordinært tilbud",
+    "url": "https://www.ladejarlen.com/kafe",
+    "publisher": "Ladejarlen",
+    "checkedAt": "2026-09-13"
+  },
+  {
+    "id": "s-dahls",
+    "label": "E.C. Dahls",
+    "page": "Pub og Kjøkken",
+    "url": "https://ecdahls.no/pub-kjokken/",
+    "publisher": "E.C. Dahls",
+    "checkedAt": "2026-09-13"
+  },
+  {
+    "id": "s-dahls-meny",
+    "label": "E.C. Dahls",
+    "page": "Restaurantmeny fra 11. august 2026",
+    "url": "https://ecdahls.no/wp-content/uploads/2026/08/1.1-Meny-Restaurant-Host-2026-fra-11.-August-.pdf",
+    "publisher": "E.C. Dahls",
+    "checkedAt": "2026-09-13"
+  },
+  {
+    "id": "s-snurr",
+    "label": "Snurr Håndverksbakeri",
+    "page": "Snurr Nyhavna – kafé og meny",
+    "url": "https://snurrbakeri.no/snurr-nyhavna",
+    "publisher": "Snurr Håndverksbakeri",
+    "checkedAt": "2026-09-13"
+  },
+  {
+    "id": "s-bistro",
+    "label": "Nyhavna BistroBar",
+    "page": "Adresse og åpningstider",
+    "url": "https://www.nyhavnabistrobar.no/",
+    "publisher": "Nyhavna BistroBar",
+    "checkedAt": "2026-09-13"
+  },
+  {
+    "id": "s-bistro-meny",
+    "label": "Nyhavna BistroBar",
+    "page": "Matmeny",
+    "url": "https://www.nyhavnabistrobar.no/our-menu",
+    "publisher": "Nyhavna BistroBar",
+    "checkedAt": "2026-09-13"
+  },
+  {
+    "id": "s-sabrura",
+    "label": "Sabrura",
+    "page": "Sushibuffet og vilkår",
+    "url": "https://www.sabrurasushi.no/sushibuffet/",
+    "publisher": "Sabrura",
+    "checkedAt": "2026-09-13"
+  },
+  {
+    "id": "s-sabrura-solsiden",
+    "label": "Sabrura",
+    "page": "Solsiden – adresse og restaurant/takeaway-tider",
+    "url": "https://www.sabrurasushi.no/restauranter/midt-norge/sabrura-solsiden/",
+    "publisher": "Sabrura",
+    "checkedAt": "2026-09-13"
+  },
+  {
+    "id": "s-egon",
+    "label": "Egon",
+    "page": "Solsiden – restaurant og pizzabuffet",
+    "url": "https://egon.no/restauranter/troendelag/egon-solsiden",
+    "publisher": "Egon",
+    "checkedAt": "2026-09-13"
+  },
+  {
+    "id": "s-olivia",
+    "label": "Olivia",
+    "page": "Solsiden-fil: sommermeny 2026, med stedsavvik i teksten",
+    "url": "https://oliviarestauranter.no/wp-content/uploads/2020/10/SOL-NO-mat-web-sommer26.pdf",
+    "publisher": "Olivia",
+    "checkedAt": "2026-09-13"
+  },
+  {
+    "id": "s-una",
+    "label": "Una Solsiden",
+    "page": "Meny og adresse",
+    "url": "https://unapizzeria.no/meny/",
+    "publisher": "Una Solsiden",
+    "checkedAt": "2026-09-13"
+  },
+  {
+    "id": "s-godtbrod",
+    "label": "Godt Brød",
+    "page": "Solsiden – adresse og åpningstider",
+    "url": "https://www.godtbrod.no/godt-brod-bakerier/godt-brod-solsiden",
+    "publisher": "Godt Brød",
+    "checkedAt": "2026-09-13"
+  },
+  {
+    "id": "s-dromedar",
+    "label": "Dromedar",
+    "page": "Solsiden – adresse og åpningstider",
+    "url": "https://dromedar.no/kaffebarer/solsiden/",
+    "publisher": "Dromedar",
+    "checkedAt": "2026-09-13"
+  },
+  {
+    "id": "s-rosendal",
+    "label": "Rosendal Teater",
+    "page": "Rosendal Kafé",
+    "url": "https://rosendalteater.no/rosendal-kafe",
+    "publisher": "Rosendal Teater",
+    "checkedAt": "2026-09-13"
+  },
+  {
+    "id": "s-leos",
+    "label": "Leo’s Lekeland",
+    "page": "Trondheim – lekeland og bistro",
+    "url": "https://www.leoslekeland.no/vare-lekeland/trondheim",
+    "publisher": "Leo’s Lekeland",
+    "checkedAt": "2026-09-13"
+  },
+  {
+    "id": "s-havet-meny",
+    "label": "HAVET Arena",
+    "page": "BarbeintQ – menybilde sommer 2026",
+    "url": "https://images.squarespace-cdn.com/content/v1/607057d7ab8eb21ff50947ed/628b887b-1092-4370-831a-f122047f52ab/Menyen_2026_sommer2.jpg",
+    "publisher": "HAVET Arena",
+    "checkedAt": "2026-09-13"
+  },
+  {
+    "id": "s-rosendal-meny",
+    "label": "Rosendal Teater",
+    "page": "Kafémeny – mat og drikke",
+    "url": "https://rosendalteater.no/uploads/images/Menu-RK.pdf",
+    "publisher": "Rosendal Teater",
+    "checkedAt": "2026-09-13"
+  },
+  {
+    "id": "s-rosendal-adkomst",
+    "label": "Rosendal Teater",
+    "page": "Tilgjengelighet og fasiliteter",
+    "url": "https://rosendalteater.no/tilgjengelighet/fasiliteter",
+    "publisher": "Rosendal Teater",
+    "checkedAt": "2026-09-13"
   }
 ]

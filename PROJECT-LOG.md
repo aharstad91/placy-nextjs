@@ -6,6 +6,24 @@
 
 ---
 
+## 2026-09-13 — Servering kuratert og koblet til lokal samtaledemo
+
+**Resultat:** `http://localhost:3103/demo/nyhavna-lokal` har nå 14 reviderte serverings-FAQ-er og 29 søkbare kunnskapsnotater. Alle 6 tidligere serverings-ID-er er bevart. 30 kilder er lagt til; plankildene fra oppvekstarbeidet gjenbrukes. Totalt i datasettet: 67 FAQ-er (25 kuraterte, 42 fortsatt importerte), 56 notater og 65 kilder. Sidebar og stemme bruker eksisterende lokale adaptere; ingen produktkode, modellinnstilling, kartsted eller Supabase-data er endret.
+
+**Full dekning:** Rapporten inneholder 66 faktaoppføringer, ikke oppgavetekstens 40. Alle 66 er vurdert: 23 faktakjerner bekreftet, 27 revidert og 16 holdt tilbake. Alle 14 rapport-FAQ-er og alle 34 stedsoppføringer er gjennomgått; P-30 samler seks virksomheter. Hele kilde- og hull-listen er vurdert. [Revisjon og mapping](docs/research/nyhavna-lokal-demo/2026-09-13-servering-faq-mapping.md) dokumenterer beslutning per ID, kildestatus og lyttetest. Den opprinnelige rapporten er bevart uendret som lokalt researchgrunnlag.
+
+**Innhold som måtte korrigeres:** HAVETs søndag er motstridende også mellom egne sider. Menybildene gir faktisk priser, og Rosendal har både lesbar pris-PDF og konkret adkomstbeskrivelse. Ladejarlens laveste pizzapris er barnepris. Snurrs laveste kaffepris gjelder espresso. Melk/egg og tilbehør gjør at vegetar ikke automatisk er vegan. BistroBars søndag er ikke oppgitt, heller enn bekreftet stengt. Manglende barneseksjon i en meny er ikke dokumentasjon på at barnetilbud mangler. Utbyggers planbeskrivelse er ikke kommunalt vedtak eller restaurantåpning.
+
+**Bevis:** 8 nye integrasjonsscenarier via den faktiske samtaleorkestreringen feilet først på manglende notater, deretter bestod de med kilde og nødvendig forbehold. Dekningen ble deretter utvidet til alle 29 nye notater; alle 82 tester i `lib/demo/nyhavna-lokal` består. Sammenligning mot HEAD bekrefter uendrede 53 FAQ-er utenfor servering, samtlige 27 eksisterende notater og 35 eksisterende kilder. `places.json` er fortsatt tom. HTTP 200 før/etter build; alle 14 nye spørsmål og deres 24 distinkte kilde-URL-er finnes i SSR. API-helsen viser konfigurert `gpt-live-1` med ny datasett-hash.
+
+**Mekaniske sjekker:** Fullsuite-resultatet nedenfor er før de siste 21 ekstra søketilfellene; de inngår i den etterfølgende grønne 82-testers kjøringen. `npm run lint`: 0 feil, 54 eksisterende advarsler. `npx tsc --noEmit`: bestått. `npm run build`: bestått. `npm test`: 4 289 bestått og én kjent feil i `lib/realtime/nyhavna-knowledge.test.ts:73` (319 ord mot grense 300). Testfilen og stemmeinstruksen er byte-identiske med HEAD. Byggets eneste genererte endring i `next-env.d.ts` er kontrollert og tilbakeført. Ingen testgrense endret.
+
+**Kvalitetsgjennomgang:** `Code review: skipped (ce-code-review unavailable)` — det faktiske review-forsøket samlet reviewerfunn, men avsluttet med `status: failed` fordi merge/report-steget ikke fikk påkrevd artifact-format. Ingen fullført review-receipt foreligger. Manuell full diffkontroll er derfor gjennomført. Reviewens påstand om feil i Ladejarlens URL ble avvist etter HTTP 200 og kontroll av selve åpningstidsteksten: `/pningstider` er nettstedets faktiske sti. Forslaget om bredere søketest er tatt inn: alle 29 notater testes med relevante spørsmål gjennom samtaleverktøyet. Faste antallstester er utelatt: dagens inventar og bevaring er kontrollert direkte, mens antall skal kunne endres ved videre kuratering. Ingen berettigede implementasjonsfunn står igjen. Simplify-terskelen er ikke nådd: endringen er innholdsdata og et lite testløp; de ekstra radene er testtilfeller.
+
+**Åpent:** faktisk lydflyt/avbrytelser og visuell nettleserinteraksjon er ikke testet; nettleserverktøy er ikke tilgjengelig. Menypriser/åpningstider er daterte oppslag, ikke sanntid. Eksakte gangruter, nattmat, enkelte barnetilbud og Google-baserte tilgjengelighetsattributter holdes tilbake. API-endepunkter i rårapporten er ikke lagrede rute-/stedssvar. Ingen produksjonsutrulling eller push.
+
+---
+
 ## 2026-09-13 — Oppvekst klar for lokal lyttetest
 
 **URL:** http://localhost:3103/demo/nyhavna-lokal — last siden på nytt og start en ny samtale.
