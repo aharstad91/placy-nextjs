@@ -8,16 +8,17 @@ for at Andreas kan kjøre den på under 15 minutter; agenten har ikke lyttet.
 
 ## Faste innstillinger (endres ikke mellom variantene)
 
+Historikk: variantene under ble laget for `gpt-realtime-2.1-mini`. Fra 2026-09-13 kjører demoen på GPT-Live (se seksjonen «Live-1» nederst); Realtime-feltene «trimming», «inputtranskripsjon» og «turdeteksjon» finnes ikke lenger i konfigurasjonen.
+
 | Felt | Verdi | Hvor |
 |---|---|---|
-| Modell | `gpt-realtime-2.1-mini` (`OPENAI_BOARD_REALTIME_MODEL` i `.env.local`) | GET `/api/prototype/realtime` viser `model` |
-| Stemme | `marin` | `lib/realtime/session-config.ts` |
-| Trimming | `truncation: "disabled"` | samme fil |
-| Inputtranskripsjon | `gpt-4o-mini-transcribe`, `language: "no"` | samme fil |
-| Turdeteksjon | `semantic_vad`, `eagerness: medium` | samme fil |
-| Sesjonsgrenser | én aktiv samtale, 12 min, 2 min inaktivitet | `route.ts`, `sideband.ts` |
+| Stemmemodell | `gpt-live-1` (`OPENAI_BOARD_LIVE_MODEL`) | GET `/api/prototype/live` viser `voiceModel` |
+| Backend | `gpt-5.6-terra` (`OPENAI_BOARD_BACKEND_MODEL`, effort `OPENAI_BOARD_BACKEND_EFFORT`, standard `low`) | samme svar, `backendModel` |
+| Stemme | `marin` | `lib/live/session-config.ts` |
+| Stemmeinstruks | kort, norsk | `lib/live/voice-instructions.ts` |
+| Sesjonsgrenser | én aktiv samtale, 12 min, 2 min inaktivitet | `app/api/prototype/live/route.ts`, `lib/live/sideband.ts` |
 
-Kontrollér før start: `curl -s http://127.0.0.1:3101/api/prototype/realtime` skal svare `"model":"gpt-realtime-2.1-mini"`. Serveren må være startet etter `npm run build` (se runbook.md).
+Kontrollér før start: `curl -s http://127.0.0.1:3101/api/prototype/live` skal svare `"protocol":"live"` og `"voiceModel":"gpt-live-1"`. Serveren må være startet etter `npm run build` (se runbook.md).
 
 ## Variantene
 
@@ -77,9 +78,43 @@ Etter hver variant: noter målt kostnad fra serverloggen (`estimatedUsd`, `respo
 - Vedvarer drift i alle varianter: dokumentér det som åpen begrensning. Neste avgrensede sammenligning er én variabel til – for eksempel stemmen `cedar` med identiske innstillinger – før dyrere endringer (fullmodell, annen leverandør). Ikke bytt automatisk.
 - Kommentaren om at historikktrimming forårsaker drift er en hypotese. Trimming er avslått i alle variantene her, så testen sier ingenting om den.
 
+## Live-1, 2026-09-13
+
+Etter migrasjonen til GPT-Live er det to modeller: stemmen (`gpt-live-1`) og en
+Responses-backend. Denne sekvensen tester samspillet dem imellom – ikke bare
+uttalen. Den tar under ti minutter og kjøres i ÉN samtale. Agenten kan ikke
+høre lyd: naturlighet og uttale er uverifisert til Andreas har lyttet.
+
+Før start: `curl -s http://127.0.0.1:3101/api/prototype/live` skal svare
+`"protocol":"live"` og et `voiceModel` som begynner på `gpt-live`. Serveren må
+være startet etter `npm run build` (se runbook.md).
+
+| # | Du sier / gjør | Hva som skal observeres |
+|---|---|---|
+| 0 | Start samtalen | Hilsenen kommer av seg selv, på norsk, uten merkenavn, og guiden venter etterpå |
+| 1 | «Hvordan er det å bo på Nyhavna? Vi har barn.» | Delegering; kartet fremhever tre steder FØR eller mens svaret kommer; ingen gjetting mens den venter |
+| 2 | «Hvordan er skoleveien?» | Katalogsvar med samme navn, tall og forbehold; stedene fremhevet |
+| 3 | «Hva med ungdomsskolen?» | Oppfølging på samme tema; ingen ny omvisning |
+| 4 | «Vent, jeg mente å sykle.» | Korrigering av FORRIGE forespørsel, ikke et nytt spørsmål; reisetidene byttes til sykkel |
+| 5 | «Vis meg det andre stedet.» | Sted nummer to i kartets rekkefølge, ikke «et annet sted» |
+| 6 | «Hvilke kilder bygger det på?» | Kilder nevnt i klartekst, ingen URL-er lest opp |
+| A | Pause midt i en setning (ti sekunder) | Guiden venter; høyst et lite lyttesignal («mhm»), ingen ny tur |
+| B | Avbryt guiden midt i tale | Talen stopper straks; guiden lytter; svaret gjenopptas ikke ordrett |
+| C | Korriger mens et oppslag pågår («nei, forresten – kaféer») | Den gamle forespørselen forlates (`end:"superseded"` i loggen), kartet flyttes ikke etter det gamle svaret |
+
+Registrer per rad: kom det småord mens du tenkte, sa guiden kort at den
+sjekket, endret kartet seg før eller etter svaret, og gjettet den noe den ikke
+hadde fått fra backenden. Serverloggen gir `nyhavna_live_turn` per delegering
+(ventetid og runder) og `nyhavna_live_usage` ved Stopp.
+
+Merk at variantene A/B/C lenger oppe i dokumentet er Realtime-varianter. De
+faste innstillingene i tabellen øverst (trimming, turdeteksjon,
+inputtranskripsjon) finnes ikke i Live og gjelder ikke denne sekvensen.
+
 ## Status
 
 | Dato | Hvem lyttet | Variant(er) | Resultat |
 |---|---|---|---|
 | 2026-09-13 | ingen – protokoll levert av agenten, ingen lydvurdering gjort | – | **Utestet.** Stemmekravet står åpent til Andreas har lyttet. |
 | 2026-09-13 (kl. 10:40) | ingen – agenten tok opp lyden, men kan ikke vurdere den | A (standard) | **Lytteprøve klar, ikke vurdert.** 7 min opptak av én hel simulert samtale (hilsen, «kaféer og kunst», «det andre stedet», temaklikk Oppvekst, skolekrets, avbrudd om bussen, retur, pris) med mini + marin, tekstinput via `?voicedev=1` (replikkene er skrevet, ikke sagt – så opptaket viser guidens stemme, ikke gjenkjenning): `.context/nyhavna-lytteprove-2026-09-13.m4a` (ikke i git). Effektiv konfigurasjon i ny sesjon bekreftet: modell mini, stemme marin, `truncation: "disabled"`, semantic_vad medium. Variant B og C er ikke kjørt. Transkripsjonen viser slang («Konge», «Kjempegrei») og ett engelsk ord i tidligere kjøring («ready»); om dialekten holder kan bare ører avgjøre. |
+| 2026-09-13 (kl. 17:50) | ingen – agenten kjørte sekvensen med syntetisk mikrofon (TTS-replikker via `play()`), kan ikke høre | Live-1 (gpt-live-1 + gpt-5.6-terra, marin) | **Flyten verifisert, stemmen uvurdert.** Rad 0–6 gikk som beskrevet: hilsen ordrett, «Mhm»/«Jeg sjekker» 0,1–0,5 s etter delegering, kart 1,2–3,3 s, svar 2,9–5,7 s; sykkel-korrigeringen byttet reisemåte og tidene; «det andre stedet» = nummer to i kartet (Rosenborg skole); kilder besvart uten URL. A (pause 2 s midt i setningen): guiden sa «Bare et øyeblikk» og svarte på hele spørsmålet. B: «Stopp!» alene stoppet talen innen ~1 s («Stoppet nå»); et lengre avbrudd («Stopp. Hva med kaféer i nærheten?») ble transkribert men guiden fullførte svaret og fulgte ikke opp – **åpent, må prøves med ekte mikrofon**. C (korrigering mens oppslag pågår): guiden sa «Mhm, jeg forstår» men verken svarte på det gamle eller delegerte det nye – **åpent**. Uttale, dialekt og naturlighet: ikke vurdert. |

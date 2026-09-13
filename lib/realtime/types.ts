@@ -1,5 +1,4 @@
 export type RealtimeStatus = "idle" | "connecting" | "listening" | "thinking" | "speaking" | "error";
-export type RealtimeMode = "voice" | "text";
 
 export interface RealtimeMessage {
   id: string;
@@ -28,22 +27,6 @@ export interface RealtimeReference {
   id: string;
   name: string;
   sources?: RealtimeReferenceSource[];
-}
-
-export interface RealtimeOptions {
-  instructions: string;
-  tools: RealtimeTool[];
-  executeTool: (name: string, args: Record<string, unknown>) => unknown | Promise<unknown>;
-  getContext: () => string;
-  serverControlled?: boolean;
-  snapshotId?: string;
-  /** Instruksjon for åpningshilsenen i talemodus. Utelatt → standardhilsen. */
-  greeting?: string;
-}
-
-export interface RealtimeStartOptions {
-  mode?: RealtimeMode;
-  initialText?: string;
 }
 
 /** Verktøyene NETTLESEREN utfører. Definisjonene ligger i `map-tools.ts`; navnene her er gaten begge sider sjekker mot. */

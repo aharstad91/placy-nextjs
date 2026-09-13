@@ -1,23 +1,33 @@
-import type { BoardData } from "@/components/variants/report/board/board-data";
+import type { BoardData, BoardPOI } from "@/components/variants/report/board/board-data";
 import { buildChapter, chapterSummary, NO_PROJECT_INFO, type ChapterPack, type ProjectInfoProvider } from "@/lib/realtime/nyhavna-chapters";
 import { nyhavnaMapTools } from "@/lib/realtime/map-tools";
 import { createNyhavnaKnowledge, nyhavnaKnowledgeTools } from "@/lib/realtime/nyhavna-knowledge";
 import {
   applyTourEvent, defaultTourOrder, initialTourState, nextThemes, themesForInterests, tourNote,
-  type TourState, type TourTheme,
+  type HighlightedPlace, type TourState, type TourTheme,
 } from "@/lib/realtime/tour-state";
 import type { RealtimeTool } from "@/lib/realtime/types";
+import type { MapDirective, ToolOutcome } from "@/lib/live/types";
 import type { TravelMode } from "@/lib/types";
 
 /**
- * Samtalen som ÉN serverside-enhet per Realtime-kall (2026-09-13).
+ * Samtalen som ÉN serverside-enhet per Live-sesjon (2026-09-13).
  *
  * Binder sammen tre ting sideband-et trenger: kunnskapsverktøyene (uendret fra
  * `nyhavna-knowledge.ts`), omvisningens tilstand (`tour-state.ts`) og
- * kapitlene (`nyhavna-chapters.ts`). Modellen kaller verktøy; her valideres
- * ID-ene og tilstanden oppdateres deterministisk. Nettleserens kartsvar
- * (fremheving, åpnet sted) observeres også, så det som faktisk står i kartet
- * er det notatet sier står der – aldri det modellen HADDE tenkt å vise.
+ * kapitlene (`nyhavna-chapters.ts`). Responses-backenden foreslår verktøykall;
+ * her valideres ID-ene og tilstanden oppdateres deterministisk.
+ *
+ * To ting er nytt med Live. (1) Kartet styres av SERVEREN: `execute` kan
+ * returnere kartdirektiver ved siden av verktøyresultatet, så en temainngang
+ * fremhever stedene sine uten å vente på at backenden ber om det. (2) Stemmen
+ * og backenden er to modeller: `noteIfChanged` går til backendens instruksjon,
+ * `mapContextIfChanged` er den korte karttilstanden stemmen får som stille
+ * kontekst, og `onMapSelection` er teksten stemmen skal si når brukeren trykker
+ * i kartet i stedet for å snakke.
+ *
+ * Nettleserens kartsvar observeres fortsatt, så det notatet sier står i kartet
+ * er det som faktisk står der – aldri det modellen HADDE tenkt å vise.
  */
 
 const schema = (properties: Record<string, unknown>, required: string[] = []) => ({
@@ -55,21 +65,28 @@ export const nyhavnaTourTools: RealtimeTool[] = [
   },
 ];
 
-/** Alle verktøyene modellen får: kunnskap og omvisning (server) + kart (nettleser). */
+/** Alle verktøyene backenden får: kunnskap og omvisning (server) + kart (nettleser). */
 export const nyhavnaTools: RealtimeTool[] = [...nyhavnaKnowledgeTools, ...nyhavnaTourTools, ...nyhavnaMapTools];
 
+/** Karttilstanden nettleseren melder inn mellom turene. */
+export interface BoardState {
+  selected_category_id: string | null;
+  selected_place_id: string | null;
+  travel_mode: string;
+}
+
 export interface NyhavnaConversation {
-  execute: (name: string, args: Record<string, unknown>) => unknown;
-  /** Nettleserens kartsvar – kalles av sideband-et når et function_call_output for et kartverktøy kommer inn, med det modellen sa i samme svar. En returnert tekst er data modellen skal fortsette med. */
-  observeBrowserResult: (name: string, args: Record<string, unknown>, output: unknown, spoken?: string) => string | void;
-  /** Notatet hvis tilstanden har endret seg siden sist det ble hentet, ellers null. */
+  /** Utfør et server-verktøy: resultatet til backenden, og kartdirektiver serveren selv utløser. */
+  execute: (name: string, args: Record<string, unknown>) => ToolOutcome;
+  /** Nettleserens kartsvar – speiler kartets faktiske tilstand inn i omvisningen. */
+  observeBrowserResult: (name: string, args: Record<string, unknown>, output: unknown) => void;
+  /** Notatet hvis tilstanden har endret seg siden sist det ble hentet, ellers null. Legges SIST i backendens instruksjon. */
   noteIfChanged: () => string | null;
-  /**
-   * Brukerens egne trykk i kartet kommer som tekstmeldinger med ID (fra
-   * `board-voice.tsx`). Tema: kapittelet åpnes her og legges ved, så modellen
-   * slipper å kalle open_theme. Sted: faktaene legges ved. Annet: null.
-   */
-  interceptUserMessage: (text: string) => string | null;
+  /** Én til to linjer karttilstand til STEMMEN (stille kontekst), bare når den har endret seg. */
+  mapContextIfChanged: () => string | null;
+  /** Brukerens eget trykk i kartet: hva stemmen skal si, og hva kartet skal gjøre. Ukjent ID → null. */
+  onMapSelection: (kind: "theme" | "place", id: string) => { commentary: string; directives: Array<Pick<MapDirective, "name" | "args">> } | null;
+  setBoardState: (state: BoardState) => void;
   readonly state: () => TourState;
   readonly themes: TourTheme[];
 }
@@ -82,33 +99,33 @@ export interface ConversationDeps {
 const strings = (value: unknown, max = 10): string[] =>
   Array.isArray(value) ? value.filter((v): v is string => typeof v === "string").slice(0, max) : [];
 
-const fold = (s: string) => s.toLocaleLowerCase("nb").normalize("NFKD").replace(/[\u0300-\u036f]/g, "");
-/**
- * Var det modellen sa i samme svar som kartkallet et svar, eller bare en
- * innledning («Klart, la oss se på …»)? Mini-modellen innleder ofte før
- * verktøyet og sier så ingenting mer hvis den ikke får ordet igjen (målt
- * 2026-09-13). Et svar nevner minst ett av stedene den fremhevet, eller er
- * langt nok til å ha sagt noe.
- */
-export function spokenAnswers(spoken: string, placeNames: readonly string[]): boolean {
-  const text = fold(spoken);
-  if (text.length >= 160) return true;
-  return placeNames.some((name) => {
-    const head = fold(name).split(/[^a-z0-9æøå]+/).filter((w) => w.length > 2)[0];
-    return Boolean(head) && text.includes(head);
-  });
-}
+/** «1 A; 2 B; 3 C» – samme nummerering som notatets «Referanser», så «det andre stedet» peker likt overalt. */
+const ordered = (places: readonly HighlightedPlace[]): string =>
+  places.map((p, i) => `${i + 1} ${p.name}`).join("; ");
+
+/** Første setninger av en tekst, kuttet på setningsslutt – introen skal være kort nok til å sies. */
+const firstSentences = (text: string, max: number): string => {
+  const full = text.replace(/\s+/g, " ").trim();
+  const sentences = full.match(/[^.!?]+[.!?]+(\s|$)/g);
+  return !sentences || sentences.length <= max ? full : sentences.slice(0, max).join("").trim();
+};
+
+/** Kapittelets tre første steder – de serveren fremhever selv ved temainngang. */
+const autoHighlights = (pack: ChapterPack): HighlightedPlace[] =>
+  pack.places.filter((p) => p.id).slice(0, 3).map((p) => ({ id: p.id, name: p.name }));
 
 export function createNyhavnaConversation(board: BoardData, deps: ConversationDeps = {}): NyhavnaConversation {
   const projectInfo = deps.projectInfo ?? NO_PROJECT_INFO;
   const travelMode = deps.travelMode ?? "walk";
   const knowledge = createNyhavnaKnowledge(board);
+  const pois = new Map<string, BoardPOI>(board.categories.flatMap((c) => c.pois).map((p) => [String(p.id), p]));
   const themes: (TourTheme & { sourced: boolean })[] = board.categories.map((c) => ({
     id: String(c.id), name: c.label, sourced: Boolean(c.editorial?.source),
   }));
   const themeIds = new Set(themes.map((t) => t.id));
   let state = initialTourState(themes);
   let notedRevision = 0;
+  let boardState: BoardState = { selected_category_id: null, selected_place_id: null, travel_mode: travelMode };
   const chapters = new Map<string, ChapterPack>();
   // Prosjektinnhold som alt er lagt ved i samtalen: flere temaer peker på de
   // samme postene fra nyhavna.no, og hver gjentakelse koster ~450 tokens per runde.
@@ -128,47 +145,72 @@ export function createNyhavnaConversation(board: BoardData, deps: ConversationDe
   const named = (ids: readonly string[]) => ids.map((id) => ({ theme_id: id, name: themes.find((t) => t.id === id)?.name ?? id }));
   const plan = () => ({ current: state.currentThemeId ? named([state.currentThemeId])[0] : null, next: named(nextThemes(state)) });
 
-  const execute = (name: string, args: Record<string, unknown>): unknown => {
+  /**
+   * Serveren fremhever kapittelets tre første steder SELV ved temainngang.
+   * Backenden slipper en ekstra runde bare for å be om kartet, og brukeren ser
+   * stedene i samme øyeblikk som guiden begynner å fortelle. Tilstanden settes
+   * optimistisk; nettleserens svar bekrefter (og korrigerer) den etterpå.
+   */
+  const openMapFor = (pack: ChapterPack): { directives: Array<Pick<MapDirective, "name" | "args">>; instruction: string | null } => {
+    const places = autoHighlights(pack);
+    if (!places.length) return { directives: [], instruction: null };
+    state = applyTourEvent(state, { type: "highlight", places }, themes);
+    return {
+      directives: [{ name: "highlight_places", args: { poi_ids: places.map((p) => p.id) } }],
+      instruction: `Kartet fremhever nå ${ordered(places)} – omtal dem i denne rekkefølgen. Ikke kall highlight_places for disse.`,
+    };
+  };
+
+  const execute = (name: string, args: Record<string, unknown>): ToolOutcome => {
     switch (name) {
       case "set_interests": {
         const interests = strings(args.interests, 6);
         const requested = strings(args.theme_ids, 10).filter((id) => themeIds.has(id));
-        // Modellens valg og ordboka slås sammen, og Nyhavnas egne temaer (kilde
+        // Backendens valg og ordboka slås sammen, og Nyhavnas egne temaer (kilde
         // nyhavna.no) går først når de treffer interessen: «kaféer» skal åpne
-        // Nyhavnas «Café og restauranter», ikke boardets generelle «Servering»
-        // (mini valgte det generelle temaet i to av to målte samtaler 2026-09-13).
+        // Nyhavnas «Café og restauranter», ikke boardets generelle «Servering».
         const union = [...new Set([...requested, ...themesForInterests(interests, themes)])];
         const inferred = [...union.filter((id) => themes.find((t) => t.id === id)?.sourced), ...union.filter((id) => !themes.find((t) => t.id === id)?.sourced)];
         const order = inferred.length ? inferred : defaultTourOrder(themes);
         state = applyTourEvent(state, { type: "set_interests", interests, themeIds: order }, themes);
         const first = nextThemes(state, 1)[0] ?? state.themeOrder[0];
-        // Første tema åpnes med én gang så modellen kan begynne å vise noe i
+        // Første tema åpnes med én gang så guiden kan begynne å vise noe i
         // samme åndedrag som den sier hva dere begynner med.
         if (first && state.currentThemeId !== first) state = applyTourEvent(state, { type: "open_theme", themeId: first }, themes);
+        const pack = state.currentThemeId ? chapter(state.currentThemeId) : null;
+        const map = pack ? openMapFor(pack) : { directives: [], instruction: null };
         return {
-          ok: true,
-          interests: state.interests,
-          general_tour: inferred.length === 0,
-          plan: plan(),
-          chapter: state.currentThemeId ? chapter(state.currentThemeId) : null,
-          instruction: "Si kort hva dere begynner med, fremhev 2–3 av kapittelets steder med highlight_places i samme svar, og begynn å fortelle. Ikke still et nytt intervjuspørsmål.",
+          result: {
+            ok: true,
+            interests: state.interests,
+            general_tour: inferred.length === 0,
+            plan: plan(),
+            chapter: pack,
+            instruction: `Si kort hva dere begynner med, og begynn å fortelle. Ikke still et nytt intervjuspørsmål.${map.instruction ? ` ${map.instruction}` : ""}`,
+          },
+          directives: map.directives,
         };
       }
       case "open_theme": {
         const themeId = typeof args.theme_id === "string" ? args.theme_id : "";
-        if (!themeIds.has(themeId)) return { error: "Ukjent tema-ID. Bruk en ID fra boardets kategorier.", themes: named(state.themeOrder) };
+        if (!themeIds.has(themeId)) return { result: { error: "Ukjent tema-ID. Bruk en ID fra boardets kategorier.", themes: named(state.themeOrder) } };
         state = applyTourEvent(state, { type: "open_theme", themeId }, themes);
-        return { ok: true, plan: plan(), chapter: chapter(themeId) };
+        const pack = chapter(themeId);
+        const map = openMapFor(pack);
+        return {
+          result: { ok: true, plan: plan(), chapter: pack, ...(map.instruction ? { instruction: map.instruction } : {}) },
+          directives: map.directives,
+        };
       }
       case "note_detour": {
-        if (!state.currentThemeId) return { ok: false, note: "Ingen omvisning å komme tilbake til ennå – svar på spørsmålet direkte." };
+        if (!state.currentThemeId) return { result: { ok: false, note: "Ingen omvisning å komme tilbake til ennå – svar på spørsmålet direkte." } };
         state = applyTourEvent(state, { type: "note_detour", about: typeof args.about === "string" ? args.about : "" }, themes);
-        return { ok: true, return_to: state.detour ? named([state.detour.returnThemeId])[0] : null };
+        return { result: { ok: true, return_to: state.detour ? named([state.detour.returnThemeId])[0] : null } };
       }
       case "return_to_tour": {
-        if (!state.detour) return { ok: false, note: "Ingen avstikker registrert.", plan: plan() };
+        if (!state.detour) return { result: { ok: false, note: "Ingen avstikker registrert.", plan: plan() } };
         state = applyTourEvent(state, { type: "return_to_tour" }, themes);
-        return { ok: true, plan: plan(), chapter: state.currentThemeId ? chapterSummary(chapter(state.currentThemeId)) : null };
+        return { result: { ok: true, plan: plan(), chapter: state.currentThemeId ? chapterSummary(chapter(state.currentThemeId)) : null } };
       }
       case "find_project_info": {
         const query = typeof args.query === "string" ? args.query.slice(0, 200) : "";
@@ -176,37 +218,25 @@ export function createNyhavnaConversation(board: BoardData, deps: ConversationDe
         const results = projectInfo.search(query, themeId ? [themeId, "nyhavna"] : ["nyhavna"], 4);
         if (!results.length) {
           state = applyTourEvent(state, { type: "open_question", question: query }, themes);
-          return { matches: 0, results: [], note: "Ingen kildebelagt omtale i Nyhavnas eget innhold. Si kort at du ikke har grunnlag for det, uten å gjette." };
+          return { result: { matches: 0, results: [], note: "Ingen kildebelagt omtale i Nyhavnas eget innhold. Si kort at du ikke har grunnlag for det, uten å gjette." } };
         }
-        return { matches: results.length, results, note: "Kildebelagte utsagn fra nyhavna.no. Behold status-ordene (planlagt, visjon, vedtatt) når du gjengir dem." };
+        return { result: { matches: results.length, results, note: "Kildebelagte utsagn fra nyhavna.no. Behold status-ordene (planlagt, visjon, vedtatt) når du gjengir dem." } };
       }
       default:
-        return knowledge(name, args);
+        return { result: knowledge(name, args) };
     }
   };
 
-  const observeBrowserResult = (name: string, args: Record<string, unknown>, output: unknown, spoken = ""): string | void => {
+  const observeBrowserResult = (name: string, args: Record<string, unknown>, output: unknown): void => {
     const payload = output && typeof output === "object" ? (output as Record<string, unknown>) : {};
     if (typeof payload.error === "string") return;
     const answered = strings(args.answered_faq_ids, 4);
     if (answered.length) state = applyTourEvent(state, { type: "faq_answered", faqIds: answered }, themes);
-    if (name === "show_place" && typeof payload.poi_id === "string") {
-      // Brukeren ville vite mer om ETT sted: faktaene følger med kartsvaret, så
-      // modellen slipper en egen oppslagsrunde – og aldri står igjen med bare
-      // «la oss se nærmere på det» (målt 2026-09-13: stedet ble åpnet, ingenting sagt).
-      const facts = knowledge("get_place_facts", { poi_id: payload.poi_id });
-      return `Kartet har åpnet stedet. Fakta om stedet (data): ${JSON.stringify(facts)}\nFortell om stedet ut fra dette i én til tre setninger, uten å gjenta det du alt har sagt. Mangler grunnlag, si det kort.`;
-    }
     if (name === "highlight_places" && Array.isArray(payload.highlighted)) {
       const places = payload.highlighted
-        .filter((p): p is { id: string; name: string } => Boolean(p) && typeof p === "object" && typeof (p as { id?: unknown }).id === "string")
+        .filter((p): p is { id: string; name?: unknown } => Boolean(p) && typeof p === "object" && typeof (p as { id?: unknown }).id === "string")
         .map((p) => ({ id: p.id, name: typeof p.name === "string" ? p.name : p.id }));
       state = applyTourEvent(state, { type: "highlight", places }, themes);
-      // Sa modellen bare en innledning før kartkallet, får den ordet igjen med
-      // rekkefølgen den skal svare i – ellers ble brukeren stående uten svar.
-      if (spoken.trim() && places.length && !spokenAnswers(spoken, places.map((p) => p.name))) {
-        return `Kartet har fremhevet: ${places.map((p, i) => `${i + 1} ${p.name}`).join("; ")}. Det du sa var bare en innledning. Gi nå selve svaret om disse stedene i én til tre setninger, i denne rekkefølgen, uten ny innledning.`;
-      }
     } else if (name === "clear_highlights" || name === "reset_board") {
       state = applyTourEvent(state, { type: "clear_highlights" }, themes);
     }
@@ -218,21 +248,59 @@ export function createNyhavnaConversation(board: BoardData, deps: ConversationDe
     return tourNote(state, themes);
   };
 
-  const interceptUserMessage = (text: string): string | null => {
-    const theme = /\(tema-ID ([^)\s]+)\)/.exec(text)?.[1];
-    if (theme && themeIds.has(theme)) {
-      state = applyTourEvent(state, { type: "open_theme", themeId: theme }, themes);
-      return `Brukeren valgte temaet i kartet; det er åpnet. Kapittel (data): ${JSON.stringify({ plan: plan(), chapter: chapter(theme) })}\nFortell kort om temaet og fremhev 2–3 av stedene med highlight_places i samme svar. Ikke kall open_theme for dette.`;
-    }
-    const poiId = /\(kart-ID ([^)\s]+)\)/.exec(text)?.[1];
-    if (poiId) {
-      const facts = knowledge("get_place_facts", { poi_id: poiId });
-      if (facts && typeof facts === "object" && !("error" in facts)) {
-        return `Brukeren trykket på stedet i kartet; det er alt åpnet der. Fakta om stedet (data): ${JSON.stringify(facts)}\nSi én kort setning om stedet ut fra dette, og fortsett omvisningen. Ikke kall show_place for dette.`;
-      }
-    }
-    return null;
+  const mapContext = (): string => {
+    const lines: string[] = [
+      state.highlighted.length ? `Kartet viser nå: ${ordered(state.highlighted)}.` : "Kartet viser ingen fremheving nå.",
+    ];
+    const theme = boardState.selected_category_id ? themes.find((t) => t.id === boardState.selected_category_id)?.name : null;
+    if (theme) lines.push(`Tema i kartet: ${theme}.`);
+    const place = boardState.selected_place_id ? pois.get(boardState.selected_place_id)?.name : null;
+    if (place) lines.push(`Åpnet sted: ${place}.`);
+    if (boardState.travel_mode !== "walk") lines.push(`Reisemåte i kartet: ${boardState.travel_mode}.`);
+    return lines.join(" ");
+  };
+  // Stemmen skal ikke få den samme karttilstanden om igjen: det er stille
+  // kontekst, ikke en beskjed. Utgangspunktet er «ingenting er vist», så første
+  // melding kommer først når kartet faktisk viser noe.
+  let sentMapContext = mapContext();
+  const mapContextIfChanged = () => {
+    const text = mapContext();
+    if (text === sentMapContext) return null;
+    sentMapContext = text;
+    return text;
   };
 
-  return { execute, observeBrowserResult, noteIfChanged, interceptUserMessage, state: () => state, themes };
+  const onMapSelection: NyhavnaConversation["onMapSelection"] = (kind, id) => {
+    if (kind === "theme") {
+      if (!themeIds.has(id)) return null;
+      state = applyTourEvent(state, { type: "open_theme", themeId: id }, themes);
+      const pack = chapter(id);
+      const map = openMapFor(pack);
+      const shown = map.directives.length ? ` Kartet fremhever nå ${ordered(state.highlighted)}.` : "";
+      return {
+        commentary: `Brukeren valgte temaet «${pack.name}» i kartet.${shown} Fortell kort om temaet: ${firstSentences(pack.intro, 2)} Ikke still spørsmål tilbake.`,
+        directives: map.directives,
+      };
+    }
+    const facts = knowledge("get_place_facts", { poi_id: id }) as Record<string, unknown>;
+    if (!facts || typeof facts !== "object" || "error" in facts) return null;
+    const name = typeof facts.name === "string" ? facts.name : id;
+    const texts = Array.isArray(facts.facts)
+      ? facts.facts.filter((f): f is { text: string } => Boolean(f) && typeof (f as { text?: unknown }).text === "string").slice(0, 3).map((f) => f.text)
+      : [];
+    const caveat = typeof facts.status_note === "string" ? ` ${facts.status_note}` : "";
+    // Registerdata er ikke redaksjonelt kontrollert: guiden skal si hva den har,
+    // ikke fylle hullene med generell kunnskap.
+    const basis = texts.length
+      ? `Bekreftede fakta: ${texts.join(" ")}`
+      : `Du har bare registerdata om stedet (navn, type, adresse og lagret reisetid), ingen kontrollerte fakta. Si kort hva det er, og at du ikke har mer om det.`;
+    return {
+      commentary: `Brukeren trykket på «${name}» i kartet, og stedet er alt åpnet der. ${basis}${caveat} Fortell kort om stedet ut fra dette. Ikke still spørsmål tilbake.`,
+      directives: [],
+    };
+  };
+
+  const setBoardState = (next: BoardState) => { boardState = next; };
+
+  return { execute, observeBrowserResult, noteIfChanged, mapContextIfChanged, onMapSelection, setBoardState, state: () => state, themes };
 }

@@ -151,6 +151,12 @@ export function applyTourEvent(
         .filter((p) => p && typeof p.id === "string" && p.id && !seen.has(p.id) && seen.add(p.id))
         .map((p) => ({ id: p.id, name: clean(p.name, 60) || p.id }))
         .slice(0, 6);
+      // Serveren fremhever optimistisk og nettleseren bekrefter samme
+      // rekkefølge like etter. Identisk fremheving er ikke en endring: bumpet
+      // ville sendt et likelydende notat til backenden én gang til.
+      const same = places.length === state.highlighted.length
+        && places.every((p, i) => p.id === state.highlighted[i].id && p.name === state.highlighted[i].name);
+      if (same) return state;
       return bump({ ...state, highlighted: places });
     }
     case "clear_highlights":

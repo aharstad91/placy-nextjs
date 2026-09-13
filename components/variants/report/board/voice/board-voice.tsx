@@ -1,15 +1,13 @@
 "use client";
 
 import { createContext, useContext, useEffect, useMemo, useRef, type ReactNode } from "react";
-import { findBoardPOI } from "@/components/variants/report/board/board-data";
 import { useBoard } from "@/components/variants/report/board/board-state";
 import { AREA_STEP, useStoryTour } from "@/components/variants/report/board/story/story-tour";
 import { useAudioTourStore } from "@/lib/stores/audio-tour-store";
+import { useLive } from "@/lib/live/use-live";
+import type { LiveMessage, LiveStatus } from "@/lib/live/types";
 import { boardToolTargets, executeBoardTool, type BoardToolResult } from "@/lib/realtime/board-tools";
-import { nyhavnaMapTools } from "@/lib/realtime/map-tools";
 import { NYHAVNA_GREETING_INSTRUCTION } from "@/lib/realtime/nyhavna-greeting";
-import { useRealtime } from "@/lib/realtime/use-realtime";
-import type { RealtimeMessage, RealtimeStatus } from "@/lib/realtime/types";
 
 /**
  * Samtalen med guiden som ÉN tilstand for hele boardet (2026-09-13).
@@ -23,17 +21,21 @@ import type { RealtimeMessage, RealtimeStatus } from "@/lib/realtime/types";
  * Bare boards med et frosset datagrunnlag (`demoSnapshotId`) har samtale;
  * andre boards får ingen kontekst, og kontrollen rendrer ingenting.
  *
- * ## Brukerens trykk er også samtale
+ * ## Brukerens trykk er kontekst, ikke en brukertur
  *
  * Omvisningen er personlig: brukeren kan snakke, men også trykke på et tema
- * eller et sted. Et slikt trykk meldes til guiden som en kort brukermelding
- * («Jeg valgte temaet …»), så turen bygges videre derfra i stedet for at
- * stemmen fortsetter på et tema brukeren nettopp forlot. Assistentens EGNE
- * kartendringer (via verktøy) meldes ikke tilbake – ellers hadde den svart på
- * seg selv. `voiceNav` er skillet.
+ * eller et sted. På Live går et slikt trykk til SERVEREN som kontekst
+ * (`sendContext`), ikke som en simulert brukerytring. Serveren eier
+ * omvisningstilstanden, fremhever kapittelets steder selv og gir stemmen en
+ * kort kommentar – i stedet for at nettleseren dikter opp en setning brukeren
+ * aldri sa. Assistentens EGNE kartendringer meldes ikke tilbake; ellers hadde
+ * den svart på seg selv. `voiceNav` er skillet.
+ *
+ * Kartklikk avbryter heller ikke stemmen lenger: Live er full duplex og stopper
+ * selv når brukeren begynner å snakke.
  */
 export interface BoardVoice {
-  status: RealtimeStatus;
+  status: LiveStatus;
   /** Tilkobling eller samtale i gang: knappen viser stopp. */
   running: boolean;
   connecting: boolean;
@@ -41,7 +43,7 @@ export interface BoardVoice {
   error: string | null;
   /** Guidens siste setning, for å kunne følge med når lyden er lav. */
   latest: string | null;
-  /** Spill/stopp. Starter alltid tale, aldri tekst. */
+  /** Spill/stopp. */
   toggle: () => void;
 }
 
@@ -57,7 +59,7 @@ export function BoardVoiceProvider({ children }: { children: ReactNode }) {
   return <BoardVoiceSession>{children}</BoardVoiceSession>;
 }
 
-/** Trykk her avbryter ikke guiden; alt annet på siden er «brukeren tar over kartet». */
+/** Kontrollens egen rot, slik at tester og styling kan finne den. */
 export const BOARD_VOICE_TESTID = "board-voice";
 
 /** URL-flagg som legger et lite styringsobjekt på `window` for simulerte samtaler (lokal demo). */
@@ -68,8 +70,10 @@ interface VoiceDevHook {
   say: (text: string) => void;
   /** Kjør en kartkommando lokalt, uten modell. */
   tool: (name: string, args: Record<string, unknown>) => BoardToolResult;
-  status: () => RealtimeStatus;
-  messages: () => RealtimeMessage[];
+  /** Spill en lydfil INN i samtalen som mikrofon, så hele Live-banen kan testes med ekte tale. */
+  play: (url: string) => Promise<void>;
+  status: () => LiveStatus;
+  messages: () => LiveMessage[];
   start: () => void;
   stop: () => void;
 }
@@ -98,31 +102,26 @@ function BoardVoiceSession({ children }: { children: ReactNode }) {
     return result;
   };
 
-  const realtime = useRealtime({
-    instructions: "",
-    tools: nyhavnaMapTools,
+  const live = useLive({
     greeting: NYHAVNA_GREETING_INSTRUCTION,
-    getContext: () => JSON.stringify({ selected_category_id: stopId ?? state.activeCategoryId, selected_place_id: state.activePOIId, travel_mode: state.travelMode }),
+    getContext: () => ({ selected_category_id: stopId ?? (state.activeCategoryId ? String(state.activeCategoryId) : null), selected_place_id: activePoiId, travel_mode: state.travelMode }),
     executeTool: runBoardTool,
-    serverControlled: true,
     snapshotId: data.demoSnapshotId,
   });
-  const { status, notice, error, messages, start, stop, interruptForMap, sendText } = realtime;
+  const { status, notice, error, messages, latest, start, stop, sendContext, sendText, replaceMicrophoneTrack } = live;
   const connecting = status === "connecting";
   const connected = !["idle", "error", "connecting"].includes(status);
   const running = connected || connecting;
-  const latest = messages.filter((message) => message.role === "assistant").at(-1)?.text ?? null;
 
+  // Karttilstanden er stille kontekst: serveren skal vite hva brukeren ser på
+  // uten at stemmen sier noe om det. Hooken dedupliserer uendret tilstand.
   useEffect(() => {
     if (!connected) return;
-    const manualClick = (event: MouseEvent) => {
-      if (event.target instanceof Element && !event.target.closest(`[data-testid="${BOARD_VOICE_TESTID}"]`)) interruptForMap();
-    };
-    document.addEventListener("click", manualClick, true);
-    return () => document.removeEventListener("click", manualClick, true);
-  }, [connected, interruptForMap]);
+    sendContext({ kind: "state", selected_category_id: stopId ?? (state.activeCategoryId ? String(state.activeCategoryId) : null), selected_place_id: activePoiId, travel_mode: state.travelMode });
+  }, [connected, sendContext, stopId, state.activeCategoryId, activePoiId, state.travelMode]);
 
-  // Brukeren valgte et tema i raden/rutenettet: guiden følger med dit.
+  // Brukeren valgte et tema i raden/rutenettet: serveren åpner kapittelet,
+  // fremhever stedene og gir stemmen en kommentar.
   const prevStop = useRef(stopId);
   useEffect(() => {
     if (prevStop.current === stopId) return;
@@ -130,11 +129,8 @@ function BoardVoiceSession({ children }: { children: ReactNode }) {
     if (!stopId) return;
     if (voiceNav.current.categoryIds.delete(stopId)) return;
     if (!connected) return;
-    // Tema-ID-en står i meldingen så guiden kan kalle open_theme uten å slå
-    // den opp – mini-modellen sa «jeg åpner temaet» uten å gjøre det da
-    // meldingen bare bar navnet (målt 2026-09-13).
-    sendText(`Jeg valgte temaet «${story.stop?.label ?? stopId}» i kartet (tema-ID ${stopId}). Fortsett omvisningen derfra.`);
-  }, [stopId, connected, sendText, story.stop?.label]);
+    sendContext({ kind: "theme", id: stopId, label: story.stop?.label });
+  }, [stopId, connected, sendContext, story.stop?.label]);
 
   // Brukeren trykket på et sted (pinne eller rad): én kort kommentar, så videre.
   const prevPoi = useRef(activePoiId);
@@ -144,9 +140,8 @@ function BoardVoiceSession({ children }: { children: ReactNode }) {
     if (!activePoiId) return;
     if (voiceNav.current.poiIds.delete(activePoiId)) return;
     if (!connected) return;
-    const poi = findBoardPOI(data.categories, activePoiId);
-    if (poi) sendText(`Jeg trykket på «${poi.name}» i kartet (kart-ID ${activePoiId}). Si én kort setning om stedet hvis du har grunnlag, og fortsett.`);
-  }, [activePoiId, connected, data.categories, sendText]);
+    sendContext({ kind: "place", id: activePoiId });
+  }, [activePoiId, connected, sendContext]);
 
   const value = useMemo<BoardVoice>(() => ({
     status, running, connecting, notice, error, latest,
@@ -162,7 +157,7 @@ function BoardVoiceSession({ children }: { children: ReactNode }) {
       dispatch({ type: "END_INTRO" });
       // Ny samtale, tom profil – også i kartet.
       dispatch({ type: "CLEAR_HIGHLIGHTS" });
-      void start({ mode: "voice" });
+      void start();
     },
   }), [status, running, connecting, notice, error, latest, stop, start, pauseTour, dispatch]);
 
@@ -174,6 +169,26 @@ function BoardVoiceSession({ children }: { children: ReactNode }) {
     host.placyVoice = {
       say: sendText,
       tool: runBoardTool,
+      // Lydklippet sendes som mikrofonspor, ikke som tekst: da går hele veien
+      // gjennom Live – lytting, avbrudd og transkripsjon – slik en ekte
+      // stemme ville gjort det.
+      play: async (url: string) => {
+        const context = new AudioContext();
+        try {
+          const clip = await context.decodeAudioData(await (await fetch(url)).arrayBuffer());
+          const destination = context.createMediaStreamDestination();
+          const source = context.createBufferSource();
+          source.buffer = clip;
+          source.connect(destination);
+          const track = destination.stream.getAudioTracks()[0] ?? null;
+          await replaceMicrophoneTrack(track);
+          await new Promise<void>((resolve) => { source.onended = () => resolve(); source.start(); });
+          await replaceMicrophoneTrack(null);
+          track?.stop();
+        } finally {
+          await context.close();
+        }
+      },
       status: () => status,
       messages: () => messages,
       start: () => value.toggle(),

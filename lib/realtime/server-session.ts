@@ -63,6 +63,10 @@ export class RealtimeSupervisor {
     this.active.timer = setTimeout(() => { void this.end(token, "limit").catch(() => {}); }, this.io.maxMs ?? 720000);
     this.active.timer.unref?.();
   }
+  /** Er dette tokenet den samtalen som kjører nå? Rutene bruker det som gate på SSE og kartsvar. */
+  isActive(token: string): boolean {
+    return this.active?.token === token;
+  }
   setCleanup(token: string, cleanup: (reason: string) => void) {
     if (this.active?.token === token) this.active.cleanup = cleanup;
     else cleanup("connection");

@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { getNyhavnaSnapshot } from "@/lib/demo/nyhavna-leve/snapshot";
 import { buildChapter, chapterSummary, spokenFaq, type ProjectInfoProvider } from "@/lib/realtime/nyhavna-chapters";
-import { createNyhavnaConversation, nyhavnaTools, spokenAnswers } from "@/lib/realtime/nyhavna-conversation";
+import { createNyhavnaConversation, nyhavnaTools } from "@/lib/realtime/nyhavna-conversation";
 import { MAP_TOOLS } from "@/lib/realtime/types";
 
 const fakeProjectInfo: ProjectInfoProvider = {
@@ -54,18 +54,38 @@ describe("Nyhavna-samtalen på serveren", () => {
     const { board } = await getNyhavnaSnapshot();
     const family = createNyhavnaConversation(board);
     const foodie = createNyhavnaConversation(board);
-    const a = family.execute("set_interests", { interests: ["barn og skole"], theme_ids: ["barn-oppvekst"] }) as { ok: boolean; chapter: { theme_id: string }; plan: { next: Array<{ theme_id: string }> } };
-    const b = foodie.execute("set_interests", { interests: ["kafeer og kaffe"] }) as { ok: boolean; chapter: { theme_id: string } };
+    const a = family.execute("set_interests", { interests: ["barn og skole"], theme_ids: ["barn-oppvekst"] }).result as { ok: boolean; chapter: { theme_id: string }; plan: { next: Array<{ theme_id: string }> } };
+    const b = foodie.execute("set_interests", { interests: ["kafeer og kaffe"] }).result as { chapter: { theme_id: string } };
     expect(a.chapter.theme_id).toBe("barn-oppvekst");
     expect(b.chapter.theme_id).toBe("leve-servering");
     expect(a.plan.next.map((t) => t.theme_id)).not.toContain("barn-oppvekst");
-    // Modellen valgte boardets generelle tema: Nyhavnas eget tema for samme interesse går først.
-    const c = createNyhavnaConversation(board).execute("set_interests", { interests: ["kaféer og kunst"], theme_ids: ["mat-drikke", "opplevelser"] }) as { chapter: { theme_id: string }; plan: { next: Array<{ theme_id: string }> } };
+    // Backenden valgte boardets generelle tema: Nyhavnas eget tema for samme interesse går først.
+    const c = createNyhavnaConversation(board).execute("set_interests", { interests: ["kaféer og kunst"], theme_ids: ["mat-drikke", "opplevelser"] }).result as { chapter: { theme_id: string }; plan: { next: Array<{ theme_id: string }> } };
     expect(c.chapter.theme_id).toBe("leve-servering");
     expect(c.plan.next.map((t) => t.theme_id).slice(0, 3)).toEqual(["leve-kultur", "mat-drikke", "opplevelser"]);
-    const general = createNyhavnaConversation(board).execute("set_interests", { interests: [], theme_ids: [] }) as { general_tour: boolean; chapter: { theme_id: string } };
+    const general = createNyhavnaConversation(board).execute("set_interests", { interests: [], theme_ids: [] }).result as { general_tour: boolean; chapter: { theme_id: string } };
     expect(general.general_tour).toBe(true);
     expect(general.chapter.theme_id).toBe("leve-servering");
+  });
+
+  it("temainngang fremhever kapittelets tre første steder selv, og forteller backenden rekkefølgen", async () => {
+    const { board } = await getNyhavnaSnapshot();
+    const conversation = createNyhavnaConversation(board);
+    const opened = conversation.execute("set_interests", { interests: ["kultur"], theme_ids: ["leve-kultur"] });
+    const chapter = (opened.result as { chapter: { places: Array<{ id: string; name: string }> }; instruction: string }).chapter;
+    const expected = chapter.places.slice(0, 3).map((p) => p.id);
+    expect(opened.directives).toEqual([{ name: "highlight_places", args: { poi_ids: expected } }]);
+    expect((opened.result as { instruction: string }).instruction).toContain("Ikke kall highlight_places for disse");
+    expect((opened.result as { instruction: string }).instruction).toContain(`1 ${chapter.places[0].name}`);
+    // Tilstanden settes optimistisk, i samme rekkefølge som direktivet.
+    expect(conversation.state().highlighted.map((p) => p.id)).toEqual(expected);
+    // Nettleserens bekreftelse med identisk rekkefølge er ikke en ny endring.
+    conversation.noteIfChanged();
+    conversation.observeBrowserResult("highlight_places", { poi_ids: expected }, { ok: true, highlighted: chapter.places.slice(0, 3).map((p, i) => ({ ord: i + 1, id: p.id, name: p.name })) });
+    expect(conversation.noteIfChanged()).toBeNull();
+    const next = conversation.execute("open_theme", { theme_id: "transport" });
+    expect(next.directives?.[0]?.name).toBe("highlight_places");
+    expect(conversation.state().highlighted.map((p) => p.id)).not.toEqual(expected);
   });
 
   it("noterer bare når tilstanden endres, og speiler kartets faktiske fremheving i rekkefølge", async () => {
@@ -76,7 +96,7 @@ describe("Nyhavna-samtalen på serveren", () => {
     const first = conversation.noteIfChanged();
     expect(first).toContain("Tema nå: Kunst og kultur (leve-kultur)");
     expect(conversation.noteIfChanged()).toBeNull();
-    // Nettleseren bekrefter fremheving – i sin rekkefølge, ikke modellens ønske.
+    // Nettleseren bekrefter fremheving – i sin rekkefølge, ikke backendens ønske.
     conversation.observeBrowserResult("highlight_places", { poi_ids: ["leve-dora2", "leve-fyringsbunkeren"], answered_faq_ids: ["kulturaksen"] }, { ok: true, highlighted: [{ ord: 1, id: "leve-fyringsbunkeren", name: "Fyringsbunkeren" }, { ord: 2, id: "leve-dora2", name: "Dora 2" }] });
     const second = conversation.noteIfChanged();
     expect(second).toContain("1 Fyringsbunkeren (leve-fyringsbunkeren); 2 Dora 2 (leve-dora2)");
@@ -86,56 +106,65 @@ describe("Nyhavna-samtalen på serveren", () => {
     expect(conversation.noteIfChanged()).toBeNull();
     conversation.observeBrowserResult("reset_board", {}, { ok: true, shown: "Hele nabolaget" });
     expect(conversation.noteIfChanged()).toContain("Fremhevet i kartet: ingen.");
-    // Et åpnet sted gir modellen faktaene å fortsette med – ingen egen oppslagsrunde.
-    const followUp = conversation.observeBrowserResult("show_place", { poi_id: "leve-dora2" }, { ok: true, shown: "Dora 2", poi_id: "leve-dora2" });
-    expect(followUp).toContain("Kartet har åpnet stedet.");
-    expect(followUp).toContain('"name":"Dora 2"');
-    expect(followUp).toMatch(/"facts":\[\{"text":/);
-    expect(conversation.observeBrowserResult("show_place", { poi_id: "x" }, { error: "Ukjent sted." })).toBeUndefined();
-    expect(conversation.observeBrowserResult("highlight_places", { poi_ids: ["leve-dora2"] }, { ok: true, highlighted: [{ ord: 1, id: "leve-dora2", name: "Dora 2" }] })).toBeUndefined();
-    // Bare en innledning før kartkallet: modellen får ordet igjen med rekkefølgen. Et svar som nevner stedet: ingen ny runde.
-    const highlighted = { ok: true, highlighted: [{ ord: 1, id: "leve-dora2", name: "Dora 2" }, { ord: 2, id: "leve-fyringsbunkeren", name: "Fyringsbunkeren" }] };
-    expect(conversation.observeBrowserResult("highlight_places", { poi_ids: [] }, highlighted, "Klart, la oss se på hvilken skolekrets som gjelder. Jeg sier frem hovedpunktene.")).toContain("Kartet har fremhevet: 1 Dora 2; 2 Fyringsbunkeren. Det du sa var bare en innledning.");
-    expect(conversation.observeBrowserResult("highlight_places", { poi_ids: [] }, highlighted, "Dora 2 er den gamle ubåtbunkeren, ti minutter å gå.")).toBeUndefined();
-    expect(conversation.observeBrowserResult("highlight_places", { poi_ids: [] }, highlighted, "")).toBeUndefined();
-    expect(spokenAnswers("Vi begynner med kaféene: Dromedar ligger nærmest.", ["Dromedar Kaffebar Solsiden"])).toBe(true);
-    expect(spokenAnswers("Flott, la oss sette deg inn i planen for Nyhavna.", ["Lilleby skole"])).toBe(false);
+    // Et åpnet sted er ren kartstatus: ingen tekst tilbake herfra.
+    expect(conversation.observeBrowserResult("show_place", { poi_id: "leve-dora2" }, { ok: true, shown: "Dora 2", poi_id: "leve-dora2" })).toBeUndefined();
   });
 
-  it("et trykk på tema eller sted i kartet legger ved kapittel eller fakta uten verktøyrunde, og prosjektinnhold sendes én gang", async () => {
+  it("karttilstanden sendes til stemmen bare når den har endret seg", async () => {
+    const { board } = await getNyhavnaSnapshot();
+    const conversation = createNyhavnaConversation(board);
+    expect(conversation.mapContextIfChanged()).toBeNull();
+    conversation.execute("set_interests", { interests: ["kultur"], theme_ids: ["leve-kultur"] });
+    const shown = conversation.mapContextIfChanged();
+    expect(shown).toContain("Kartet viser nå: 1 ");
+    expect(conversation.mapContextIfChanged()).toBeNull();
+    conversation.setBoardState({ selected_category_id: "transport", selected_place_id: "leve-dora2", travel_mode: "bike" });
+    const withBoard = conversation.mapContextIfChanged();
+    expect(withBoard).toContain("Tema i kartet: Transport.");
+    expect(withBoard).toContain("Åpnet sted: Dora 2.");
+    expect(withBoard).toContain("Reisemåte i kartet: bike.");
+    expect(conversation.mapContextIfChanged()).toBeNull();
+  });
+
+  it("et trykk på tema eller sted i kartet gir stemmen en kort replikk, og kartet direktivene", async () => {
     const { board } = await getNyhavnaSnapshot();
     const conversation = createNyhavnaConversation(board, { projectInfo: fakeProjectInfo });
-    const attached = conversation.interceptUserMessage("Jeg valgte temaet «Park og promenade» i kartet (tema-ID leve-park). Fortsett omvisningen derfra.");
-    expect(attached).toContain("Kapittel (data):");
-    expect(attached).toContain('"theme_id":"leve-park"');
-    expect(attached).toContain('"id":"site-park"');
+    const theme = conversation.onMapSelection("theme", "leve-park")!;
+    expect(theme.commentary).toContain("Brukeren valgte temaet «Park og promenade» i kartet.");
+    expect(theme.commentary).toContain("Kartet fremhever nå 1 ");
+    expect(theme.commentary).toContain("Ikke still spørsmål tilbake.");
+    expect(theme.commentary.split(/\s+/).length).toBeLessThan(130);
+    expect(theme.directives[0]?.name).toBe("highlight_places");
     expect(conversation.state().currentThemeId).toBe("leve-park");
     expect(conversation.noteIfChanged()).toContain("Tema nå: Park og promenade (leve-park)");
     // Samme prosjektpost legges ikke ved igjen.
-    const again = conversation.execute("open_theme", { theme_id: "leve-park" }) as { chapter: { project_info: unknown[] } };
+    const again = conversation.execute("open_theme", { theme_id: "leve-park" }).result as { chapter: { project_info: unknown[] } };
     expect(again.chapter.project_info).toEqual([]);
-    const place = conversation.interceptUserMessage("Jeg trykket på «Dora 2» i kartet (kart-ID leve-dora2). Si én kort setning om stedet hvis du har grunnlag, og fortsett.");
-    expect(place).toContain("Fakta om stedet (data):");
-    expect(place).toContain('"name":"Dora 2"');
-    expect(conversation.interceptUserMessage("Jeg valgte temaet «X» i kartet (tema-ID finnes-ikke).")).toBeNull();
-    expect(conversation.interceptUserMessage("Jeg trykket på «Y» i kartet (kart-ID finnes-ikke).")).toBeNull();
-    expect(conversation.interceptUserMessage("Hva koster leilighetene?")).toBeNull();
+    const place = conversation.onMapSelection("place", "leve-dora2")!;
+    expect(place.commentary).toContain("Brukeren trykket på «Dora 2» i kartet");
+    expect(place.commentary).toContain("Bekreftede fakta:");
+    expect(place.directives).toEqual([]);
+    // Registerdata er ikke kontrollerte fakta, og guiden skal si nettopp det.
+    const register = conversation.onMapSelection("place", String(board.categories.flatMap((c) => c.pois).find((p) => String(p.id).startsWith("google-"))!.id))!;
+    expect(register.commentary).toContain("bare registerdata");
+    expect(conversation.onMapSelection("theme", "finnes-ikke")).toBeNull();
+    expect(conversation.onMapSelection("place", "finnes-ikke")).toBeNull();
   });
 
   it("avstikker og retur gir sammendrag, ikke hele kapittelet; ukjent tema avvises", async () => {
     const { board } = await getNyhavnaSnapshot();
     const conversation = createNyhavnaConversation(board);
-    expect(conversation.execute("note_detour", { about: "x" })).toMatchObject({ ok: false });
+    expect(conversation.execute("note_detour", { about: "x" }).result).toMatchObject({ ok: false });
     conversation.execute("set_interests", { interests: ["buss"], theme_ids: ["transport", "hverdagsliv"] });
-    expect(conversation.execute("note_detour", { about: "Solsiden" })).toEqual({ ok: true, return_to: { theme_id: "transport", name: "Transport" } });
-    const back = conversation.execute("return_to_tour", {}) as { ok: boolean; chapter: { theme_id: string }; plan: { next: Array<{ theme_id: string }> } };
+    expect(conversation.execute("note_detour", { about: "Solsiden" }).result).toEqual({ ok: true, return_to: { theme_id: "transport", name: "Transport" } });
+    const back = conversation.execute("return_to_tour", {}).result as { ok: boolean; chapter: { theme_id: string }; plan: { next: Array<{ theme_id: string }> } };
     expect(back.ok).toBe(true);
     expect(back.chapter.theme_id).toBe("transport");
     expect(back.chapter).not.toHaveProperty("curated");
     expect(back.plan.next[0]?.theme_id).toBe("hverdagsliv");
-    expect(conversation.execute("return_to_tour", {})).toMatchObject({ ok: false });
-    expect(conversation.execute("open_theme", { theme_id: "finnes-ikke" })).toHaveProperty("error");
-    const opened = conversation.execute("open_theme", { theme_id: "hverdagsliv" }) as { chapter: { theme_id: string; faq_ids: unknown[] } };
+    expect(conversation.execute("return_to_tour", {}).result).toMatchObject({ ok: false });
+    expect(conversation.execute("open_theme", { theme_id: "finnes-ikke" }).result).toHaveProperty("error");
+    const opened = conversation.execute("open_theme", { theme_id: "hverdagsliv" }).result as { chapter: { theme_id: string; faq_ids: unknown[] } };
     expect(opened.chapter.theme_id).toBe("hverdagsliv");
     expect(opened.chapter.faq_ids.length).toBeGreaterThan(5);
     expect(conversation.state().coveredThemeIds).toEqual(["transport"]);
@@ -144,13 +173,13 @@ describe("Nyhavna-samtalen på serveren", () => {
   it("prosjektinnhold hentes per spørsmål, og manglende grunnlag registreres uten oppdiktet svar", async () => {
     const { board } = await getNyhavnaSnapshot();
     const conversation = createNyhavnaConversation(board, { projectInfo: fakeProjectInfo });
-    expect(conversation.execute("find_project_info", { query: "hva er visjonen" })).toMatchObject({ matches: 1, results: [{ id: "site-vision", status: "visjon" }] });
-    const missing = conversation.execute("find_project_info", { query: "når er alt ferdig" }) as { matches: number; note: string };
+    expect(conversation.execute("find_project_info", { query: "hva er visjonen" }).result).toMatchObject({ matches: 1, results: [{ id: "site-vision", status: "visjon" }] });
+    const missing = conversation.execute("find_project_info", { query: "når er alt ferdig" }).result as { matches: number; note: string };
     expect(missing.matches).toBe(0);
     expect(missing.note).toMatch(/ikke har grunnlag/);
     expect(conversation.noteIfChanged()).toContain("Uten grunnlag i kildene: når er alt ferdig");
-    // Kunnskapsverktøyene går fortsatt gjennom.
-    expect(conversation.execute("find_places", { query: "Dora Kaffebar" })).toMatchObject({ places: [{ id: "dora-kaffebar" }] });
-    expect(conversation.execute("ukjent", {})).toHaveProperty("error");
+    // Kunnskapsverktøyene går fortsatt gjennom, pakket i result.
+    expect(conversation.execute("find_places", { query: "Dora Kaffebar" }).result).toMatchObject({ places: [{ id: "dora-kaffebar" }] });
+    expect(conversation.execute("ukjent", {}).result).toHaveProperty("error");
   });
 });

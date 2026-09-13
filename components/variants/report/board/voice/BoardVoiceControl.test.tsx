@@ -13,8 +13,9 @@ const begin = vi.fn();
 const pause = vi.fn();
 const start = vi.fn();
 const stop = vi.fn();
-const interrupt = vi.fn();
+const sendContext = vi.fn();
 const sendText = vi.fn();
+const replaceMicrophoneTrack = vi.fn();
 
 const poi = {
   id: "dora-kaffebar",
@@ -38,7 +39,7 @@ const data = {
 
 let boardState: Record<string, unknown> = {};
 let storyStop: typeof category | null = null;
-let realtime: Record<string, unknown>;
+let live: Record<string, unknown>;
 let capturedOptions: Record<string, unknown> | undefined;
 
 vi.mock("@/components/variants/report/board/board-state", () => ({
@@ -54,15 +55,21 @@ vi.mock("@/components/variants/report/board/story/story-tour", () => ({
   useStoryTour: () => ({ stop: storyStop, begin }),
 }));
 vi.mock("@/lib/stores/audio-tour-store", () => ({ useAudioTourStore: () => pause }));
-vi.mock("@/lib/realtime/use-realtime", () => ({
-  useRealtime: (options: Record<string, unknown>) => {
+vi.mock("@/lib/live/use-live", () => ({
+  useLive: (options: Record<string, unknown>) => {
     capturedOptions = options;
-    return realtime;
+    return live;
   },
 }));
 
-function resetRealtime(overrides: Record<string, unknown> = {}) {
-  realtime = { status: "idle", mode: "voice", messages: [], references: [], error: null, notice: null, muted: false, start, stop, interrupt, interruptForMap: interrupt, sendText, ...overrides };
+function resetLive(overrides: Record<string, unknown> = {}) {
+  const messages = (overrides.messages as Array<{ role: string; text: string }> | undefined) ?? [];
+  live = {
+    status: "idle", messages, error: null, notice: null,
+    latest: messages.filter(message => message.role === "assistant").at(-1)?.text ?? null,
+    usage: { voiceSeconds: 0, estimatedUsd: 0 },
+    start, stop, sendContext, sendText, replaceMicrophoneTrack, ...overrides,
+  };
 }
 
 afterEach(() => {
@@ -71,10 +78,10 @@ afterEach(() => {
   capturedOptions = undefined;
   boardState = {};
   storyStop = null;
-  resetRealtime();
+  resetLive();
 });
 
-resetRealtime();
+resetLive();
 
 describe("BoardVoiceControl", () => {
   it("er én knapp som starter tale med den navnløse hilsenen, og tømmer fremhevingen ved ny samtale", () => {
@@ -85,13 +92,13 @@ describe("BoardVoiceControl", () => {
     expect(pause).toHaveBeenCalledWith("manual");
     expect(dispatch).toHaveBeenCalledWith({ type: "END_INTRO" });
     expect(dispatch).toHaveBeenCalledWith({ type: "CLEAR_HIGHLIGHTS" });
-    expect(start).toHaveBeenCalledWith({ mode: "voice" });
-    expect(capturedOptions).toMatchObject({ serverControlled: true, snapshotId: "nyhavna-snapshot-v1", greeting: NYHAVNA_GREETING_INSTRUCTION });
+    expect(start).toHaveBeenCalledOnce();
+    expect(capturedOptions).toMatchObject({ snapshotId: "nyhavna-snapshot-v1", greeting: NYHAVNA_GREETING_INSTRUCTION });
     expect(String(capturedOptions?.greeting)).not.toMatch(/Placy/);
   });
 
   it("viser stopp og guidens siste setning mens samtalen går, og stopper og rydder kartet på trykk", () => {
-    resetRealtime({ status: "speaking", messages: [{ id: "u1", role: "user", text: "Hvor handler jeg?" }, { id: "a1", role: "assistant", text: "REMA 1000 Solsiden er nærmest, seks minutter til fots." }] });
+    resetLive({ status: "speaking", messages: [{ id: "u1", role: "user", text: "Hvor handler jeg?" }, { id: "a1", role: "assistant", text: "REMA 1000 Solsiden er nærmest, seks minutter til fots." }] });
     mount();
     expect(screen.getByRole("status")).toHaveTextContent("Placy svarer");
     expect(screen.getByTestId("board-voice-latest")).toHaveTextContent("REMA 1000 Solsiden er nærmest");
@@ -101,22 +108,22 @@ describe("BoardVoiceControl", () => {
     expect(start).not.toHaveBeenCalled();
   });
 
-  it("avbryter guiden når brukeren tar over kartet, men ikke ved trykk i kontrollen", () => {
-    resetRealtime({ status: "listening" });
+  it("avbryter ikke guiden ved kartklikk – Live stopper selv når brukeren snakker", () => {
+    resetLive({ status: "listening" });
     mount();
-    fireEvent.click(screen.getByRole("status"));
-    expect(interrupt).not.toHaveBeenCalled();
+    sendContext.mockClear();
     fireEvent.click(document.body);
-    expect(interrupt).toHaveBeenCalledOnce();
+    expect(sendContext).not.toHaveBeenCalled();
+    expect(stop).not.toHaveBeenCalled();
   });
 
   it("viser feilen i stedet for siste setning, og lar knappen starte på nytt", () => {
-    resetRealtime({ status: "error", error: "Forbindelsen ble brutt.", messages: [{ id: "a1", role: "assistant", text: "Hei!" }] });
+    resetLive({ status: "error", error: "Forbindelsen ble brutt.", messages: [{ id: "a1", role: "assistant", text: "Hei!" }] });
     mount();
     expect(screen.getByRole("alert")).toHaveTextContent("Forbindelsen ble brutt.");
     expect(screen.queryByTestId("board-voice-latest")).toBeNull();
     fireEvent.click(screen.getByRole("button", { name: "Start samtale med Placy" }));
-    expect(start).toHaveBeenCalledWith({ mode: "voice" });
+    expect(start).toHaveBeenCalledOnce();
   });
 
   it("rendrer ingenting uten samtalekontekst, så andre boards er urørt", () => {
@@ -139,30 +146,32 @@ describe("BoardVoiceControl", () => {
     expect(executeTool("find_places", { query: "kaffe" })).toEqual({ error: "Ukjent kartkommando." });
   });
 
-  it("melder brukerens egne tema- og stedstrykk til guiden, men ikke guidens egne kartendringer", () => {
-    resetRealtime({ status: "listening" });
+  it("melder brukerens egne tema- og stedstrykk som kontekst, men ikke guidens egne kartendringer", () => {
+    resetLive({ status: "listening" });
     const view = mount();
-    // Brukeren velger et tema i raden.
+    // Brukeren velger et tema i raden: serveren åpner kapittelet, ikke en
+    // oppdiktet brukerytring i nettleseren.
     storyStop = category;
     act(() => { view.rerender(<BoardVoiceProvider><BoardVoiceControl /></BoardVoiceProvider>); });
-    expect(sendText).toHaveBeenCalledWith("Jeg valgte temaet «Kafé og servering» i kartet (tema-ID mat). Fortsett omvisningen derfra.");
+    expect(sendContext).toHaveBeenCalledWith({ kind: "theme", id: "mat", label: "Kafé og servering" });
+    expect(sendText).not.toHaveBeenCalled();
     // Brukeren trykker på et sted.
     boardState = { activePOIId: brew.id };
     act(() => { view.rerender(<BoardVoiceProvider><BoardVoiceControl /></BoardVoiceProvider>); });
-    expect(sendText).toHaveBeenCalledWith("Jeg trykket på «Monkey Brew» i kartet (kart-ID monkey-brew). Si én kort setning om stedet hvis du har grunnlag, og fortsett.");
-    sendText.mockClear();
+    expect(sendContext).toHaveBeenCalledWith({ kind: "place", id: brew.id });
+    sendContext.mockClear();
     // Guiden åpner et sted selv: endringen meldes ikke tilbake.
     const executeTool = capturedOptions?.executeTool as (name: string, args: Record<string, unknown>) => Record<string, unknown>;
     executeTool("show_place", { poi_id: poi.id });
     boardState = { activePOIId: poi.id };
     act(() => { view.rerender(<BoardVoiceProvider><BoardVoiceControl /></BoardVoiceProvider>); });
-    expect(sendText).not.toHaveBeenCalled();
+    expect(sendContext.mock.calls.filter(([message]) => message.kind === "place")).toHaveLength(0);
   });
 
   it("melder ikke trykk når samtalen ikke er i gang", () => {
     const view = mount();
     storyStop = category;
     act(() => { view.rerender(<BoardVoiceProvider><BoardVoiceControl /></BoardVoiceProvider>); });
-    expect(sendText).not.toHaveBeenCalled();
+    expect(sendContext).not.toHaveBeenCalled();
   });
 });

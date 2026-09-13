@@ -65,3 +65,4 @@ luffu-capture/
 prototypes/_data/
 prototypes/_shared/env.js
 .backups/
+public/dev/

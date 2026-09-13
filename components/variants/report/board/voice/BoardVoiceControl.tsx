@@ -2,7 +2,7 @@
 
 import { LoaderCircle, Mic, Square } from "lucide-react";
 import { BOARD_VOICE_TESTID, useBoardVoice } from "@/components/variants/report/board/voice/board-voice";
-import type { RealtimeStatus } from "@/lib/realtime/types";
+import type { LiveStatus } from "@/lib/live/types";
 import { cn } from "@/lib/utils";
 
 /**
@@ -27,7 +27,7 @@ import { cn } from "@/lib/utils";
  *
  * Selve samtalen bor i `BoardVoiceProvider`; denne kan stå flere steder.
  */
-const statusLabels: Record<RealtimeStatus, string> = {
+const statusLabels: Record<LiveStatus, string> = {
   idle: "Snakk med Placy om nabolaget",
   connecting: "Kobler til …",
   listening: "Lytter. Spør om nabolaget",

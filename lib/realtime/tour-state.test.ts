@@ -71,6 +71,12 @@ describe("omvisningens tilstand", () => {
     expect(state.highlighted.map((p) => p.id)).toEqual(["a", "b", "c", "d", "e", "f"]);
     expect(tourNote(state, themes)).toContain("1 A (a); 2 B (b); 3 C (c)");
     expect(tourNote(state, themes)).toContain("Referanser: «det første stedet» = A; «det andre stedet» = B; «det tredje stedet» = C");
+    // Nettleseren bekrefter serverens optimistiske fremheving: identisk
+    // rekkefølge er ikke en endring, og skal ikke gi et nytt notat.
+    const confirmed = applyTourEvent(state, { type: "highlight", places: state.highlighted }, themes);
+    expect(confirmed).toBe(state);
+    const reordered = applyTourEvent(state, { type: "highlight", places: [{ id: "b", name: "B" }, { id: "a", name: "A" }] }, themes);
+    expect(reordered.revision).toBe(state.revision + 1);
     const cleared = applyTourEvent(state, { type: "clear_highlights" }, themes);
     expect(cleared.highlighted).toEqual([]);
     expect(applyTourEvent(cleared, { type: "clear_highlights" }, themes)).toBe(cleared);

@@ -14,6 +14,15 @@ describe('server session supervision', () => {
     expect(stop).toHaveBeenCalledWith('rtc_test');
     await expect(supervisor.reserve()).resolves.toBeTruthy();
   });
+  it('reports only the running session as active, so routes can gate on the token', async () => {
+    const supervisor = new RealtimeSupervisor({ stop: async () => {}, save: async () => {}, read: async () => null });
+    expect(supervisor.isActive('anything')).toBe(false);
+    const token = await supervisor.reserve();
+    expect(supervisor.isActive(token)).toBe(true);
+    expect(supervisor.isActive('other')).toBe(false);
+    await supervisor.end(token);
+    expect(supervisor.isActive(token)).toBe(false);
+  });
   it('ends upstream at the deadline without browser participation', async () => {
     vi.useFakeTimers();
     const stop = vi.fn(async () => {});
