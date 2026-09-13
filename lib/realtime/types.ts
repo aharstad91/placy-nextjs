@@ -1,32 +1,8 @@
-export type RealtimeStatus = "idle" | "connecting" | "listening" | "thinking" | "speaking" | "error";
-
-export interface RealtimeMessage {
-  id: string;
-  role: "user" | "assistant" | "tool";
-  text: string;
-}
-
 export interface RealtimeTool {
   type: "function";
   name: string;
   description: string;
   parameters: Record<string, unknown>;
-}
-
-export interface RealtimeReferenceSource {
-  id?: string;
-  title?: string;
-  label?: string;
-  page?: string;
-  checkedAt?: string;
-  url?: string;
-}
-
-export interface RealtimeReference {
-  mapPoiId?: string | null;
-  id: string;
-  name: string;
-  sources?: RealtimeReferenceSource[];
 }
 
 /** Verktøyene NETTLESEREN utfører. Definisjonene ligger i `map-tools.ts`; navnene her er gaten begge sider sjekker mot. */
