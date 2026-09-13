@@ -42,6 +42,8 @@ interface Connection {
   lastActivity: number;
   responseActive: boolean;
   playing: boolean;
+  greetingLocked: boolean;
+  microphoneMuted: boolean;
   called: Set<string>;
   mode: RealtimeMode;
   turn: number;
@@ -50,6 +52,12 @@ interface Connection {
   measured: Set<string>;
   referenced: Set<string>;
   responseTurns: Map<string, number>;
+}
+
+function releaseGreeting(current: Connection) {
+  if (!current.greetingLocked) return;
+  current.greetingLocked = false;
+  current.stream?.getAudioTracks().forEach(track => { track.enabled = !current.microphoneMuted; });
 }
 
 function friendlyError(error: unknown) {
@@ -165,6 +173,7 @@ export function useRealtime(options: RealtimeOptions) {
     if (current.playing) send({ type: "output_audio_buffer.clear" });
     current.responseActive = false;
     current.playing = false;
+    releaseGreeting(current);
     setStatus("listening");
   }, [send]);
 
@@ -222,14 +231,17 @@ export function useRealtime(options: RealtimeOptions) {
       const transceiver = pc.addTransceiver("audio", { direction: "sendrecv" });
       const audio = new Audio();
       audio.autoplay = true;
-      const current: Connection = { generation: run, pc, channel, audio, transceiver, abort: new AbortController(), responseActive: false, playing: false, called: new Set(), mode, serverControlled: configured.serverControlled ?? options.serverControlled ?? false, sessionUpdateWaiters: [], turn: 0, toolRounds: 0, model: configured.model ?? "", measured: new Set(), referenced: new Set(), responseTurns: new Map(), lastActivity: Date.now() };
+      const current: Connection = { generation: run, pc, channel, audio, transceiver, abort: new AbortController(), responseActive: false, playing: false, greetingLocked: mode === "voice" && !initialText?.trim(), microphoneMuted: mode === "text", called: new Set(), mode, serverControlled: configured.serverControlled ?? options.serverControlled ?? false, sessionUpdateWaiters: [], turn: 0, toolRounds: 0, model: configured.model ?? "", measured: new Set(), referenced: new Set(), responseTurns: new Map(), lastActivity: Date.now() };
       connection.current = current;
       const active = () => connection.current === current && run === generation.current;
       pc.ontrack = event => {
         if (!active()) return;
         audio.srcObject = event.streams[0] ?? new MediaStream([event.track]);
         void audio.play().catch(() => {
-          if (active()) setError("Nettleseren stoppet lydavspillingen. Start samtalen på nytt, eller bruk tekst.");
+          if (active()) {
+            releaseGreeting(current);
+            setError("Nettleseren stoppet lydavspillingen. Start samtalen på nytt, eller bruk tekst.");
+          }
         });
       };
       pc.onconnectionstatechange = () => {
@@ -339,6 +351,7 @@ export function useRealtime(options: RealtimeOptions) {
             break;
           case "output_audio_buffer.stopped":
           case "output_audio_buffer.cleared":
+            releaseGreeting(current);
             current.playing = false;
             setStatus(current.responseActive ? "thinking" : "listening");
             break;
@@ -362,6 +375,7 @@ export function useRealtime(options: RealtimeOptions) {
             if (response?.id) current.responseTurns.delete(response.id);
             if (responseTurn !== undefined && responseTurn !== current.turn) break;
             current.responseActive = false;
+            if (response?.status && (response.status !== "completed" || response.output?.length === 0)) releaseGreeting(current);
             if (event.response?.status === "failed") {
               setNotice(null);
               setError(response?.status_details?.error?.code === "rate_limit_exceeded" ? "Samtaletjenesten nådde en midlertidig bruksgrense. Vent litt før du spør igjen." : "Placy klarte ikke å svare. Prøv å spørre på nytt.");
@@ -391,6 +405,7 @@ export function useRealtime(options: RealtimeOptions) {
           }
           case "error":
             if (event.error?.code === "response_cancel_not_active") break;
+            releaseGreeting(current);
             setError("Noe avbrøt svaret. Prøv igjen, eller start en ny samtale.");
             if (!current.playing) setStatus("listening");
             break;
@@ -402,7 +417,12 @@ export function useRealtime(options: RealtimeOptions) {
         if (!active()) { stream.getTracks().forEach(track => track.stop()); return; }
         current.stream = stream;
         const track = stream.getAudioTracks()[0];
-        if (track) await transceiver.sender.replaceTrack(track);
+        if (track) {
+          // Send silence even during setup: VAD must not hear startup noise or
+          // speaker echo until the greeting has actually finished playing.
+          track.enabled = !current.greetingLocked;
+          await transceiver.sender.replaceTrack(track);
+        }
       }
       const offer = await pc.createOffer();
       if (!active()) return;
@@ -470,8 +490,9 @@ export function useRealtime(options: RealtimeOptions) {
   const toggleMute = useCallback(() => {
     const current = connection.current;
     if (!current?.stream) return;
-    const next = current.stream.getAudioTracks().some(track => track.enabled);
-    current.stream.getAudioTracks().forEach(track => { track.enabled = !next; });
+    const next = !current.microphoneMuted;
+    current.microphoneMuted = next;
+    current.stream.getAudioTracks().forEach(track => { track.enabled = !next && !current.greetingLocked; });
     if (next) send({ type: "input_audio_buffer.clear" });
     setMuted(next);
   }, [send]);
@@ -520,6 +541,7 @@ export function useRealtime(options: RealtimeOptions) {
           if (!track) throw new DOMException("No microphone", "NotFoundError");
           await current.transceiver.sender.replaceTrack(track);
           if (!active()) { track.stop(); return false; }
+          current.microphoneMuted = false;
           current.mode = "voice";
           setMode("voice");
           setMuted(false);
@@ -530,6 +552,7 @@ export function useRealtime(options: RealtimeOptions) {
           const updated = updateSession("text");
           await Promise.all([detached, updated]);
           if (!active()) return false;
+          current.microphoneMuted = true;
           current.mode = "text";
           setMode("text");
           setMuted(true);
@@ -543,6 +566,7 @@ export function useRealtime(options: RealtimeOptions) {
           current.stream = undefined;
           void current.transceiver.sender.replaceTrack(null).catch(() => {});
           send({ type: "session.update", session: { type: "realtime", output_modalities: ["text"], audio: { input: { turn_detection: null } } } });
+          current.microphoneMuted = true;
           current.mode = "text";
           setMode("text");
           setMuted(true);

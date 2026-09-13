@@ -183,6 +183,91 @@ describe("server cleanup and manual takeover regressions", () => {
   });
 });
 
+describe("uninterrupted voice greeting", () => {
+  function microphone() {
+    const track = { enabled: true, stop: vi.fn() } as unknown as MediaStreamTrack;
+    vi.stubGlobal("navigator", { mediaDevices: { getUserMedia: vi.fn(async () => ({ getTracks: () => [track], getAudioTracks: () => [track] })) } });
+    return track;
+  }
+
+  it("sends silence from connection setup until greeting playback ends, then allows speech", async () => {
+    const track = microphone();
+    const { result } = renderHook(() => useRealtime(options()));
+    await act(async () => { await result.current.start(); });
+    const peer = FakePeer.instances[0];
+    expect(peer.sender.track).toBe(track);
+    expect(track.enabled).toBe(false);
+    await act(async () => {
+      await peer.channel.emit({ type: "response.created", response: { id: "greeting" } });
+      await peer.channel.emit({ type: "output_audio_buffer.started", response_id: "greeting" });
+      await peer.channel.emit({ type: "response.done", response: { id: "greeting", status: "completed" } });
+    });
+    // Generation finishes before the listener hears the last words.
+    expect(track.enabled).toBe(false);
+    expect(result.current.status).toBe("speaking");
+    await act(async () => { await peer.channel.emit({ type: "output_audio_buffer.stopped", response_id: "greeting" }); });
+    expect(track.enabled).toBe(true);
+    await act(async () => { await peer.channel.emit({ type: "input_audio_buffer.speech_started" }); });
+    expect(result.current.status).toBe("listening");
+  });
+
+  it("respects manual mute and cannot unmute the microphone during the greeting", async () => {
+    const track = microphone();
+    const { result } = renderHook(() => useRealtime(options()));
+    await act(async () => { await result.current.start(); });
+    act(() => result.current.toggleMute());
+    expect(result.current.muted).toBe(true);
+    act(() => result.current.toggleMute());
+    expect(result.current.muted).toBe(false);
+    expect(track.enabled).toBe(false);
+    act(() => result.current.toggleMute());
+    await act(async () => { await FakePeer.instances[0].channel.emit({ type: "output_audio_buffer.stopped" }); });
+    expect(track.enabled).toBe(false);
+    expect(result.current.muted).toBe(true);
+    act(() => result.current.toggleMute());
+    expect(track.enabled).toBe(true);
+  });
+
+  it.each(["failed", "cancelled", "incomplete"])("unlocks the microphone if the greeting is %s", async status => {
+    const track = microphone();
+    const { result } = renderHook(() => useRealtime(options()));
+    await act(async () => { await result.current.start(); });
+    expect(track.enabled).toBe(false);
+    await act(async () => { await FakePeer.instances[0].channel.emit({ type: "response.done", response: { status } }); });
+    expect(track.enabled).toBe(true);
+  });
+
+  it.each([
+    { type: "error", error: { code: "server_error" } },
+    { type: "response.done", response: { status: "completed", output: [] } },
+  ])("unlocks on an error or an empty greeting: %j", async event => {
+    const track = microphone();
+    const { result } = renderHook(() => useRealtime(options()));
+    await act(async () => { await result.current.start(); });
+    expect(track.enabled).toBe(false);
+    await act(async () => { await FakePeer.instances[0].channel.emit(event); });
+    expect(track.enabled).toBe(true);
+  });
+
+  it("allows deliberate text takeover and stops all media on Stop", async () => {
+    const track = microphone();
+    const { result } = renderHook(() => useRealtime(options()));
+    await act(async () => { await result.current.start(); });
+    act(() => result.current.sendText("Vis meg kultur"));
+    expect(track.enabled).toBe(true);
+    act(() => result.current.stop());
+    expect(track.stop).toHaveBeenCalledOnce();
+    expect(result.current.status).toBe("idle");
+  });
+
+  it("does not lock a voice session that starts with a user question instead of a greeting", async () => {
+    const track = microphone();
+    const { result } = renderHook(() => useRealtime(options()));
+    await act(async () => { await result.current.start({ initialText: "Hva finnes her?" }); });
+    expect(track.enabled).toBe(true);
+  });
+});
+
 describe("Realtime mode switching", () => {
   it("keeps one connection and waits for the voice session acknowledgement before attaching the microphone", async () => {
     const track = { enabled: true, stop: vi.fn() } as unknown as MediaStreamTrack;
