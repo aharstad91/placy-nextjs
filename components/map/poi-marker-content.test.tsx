@@ -1,7 +1,12 @@
 import { describe, it, expect, afterEach } from "vitest";
 import { render, cleanup } from "@testing-library/react";
 import type { Icon as PhosphorIcon } from "@phosphor-icons/react";
-import { PoiMarkerContent, PIN_SIZE, DOT_SIZE } from "./PoiMarkerContent";
+import {
+  PoiMarkerContent,
+  PIN_SIZE,
+  DOT_SIZE,
+  SELECTED_DISC_FACTOR,
+} from "./PoiMarkerContent";
 import {
   LABEL_FONT_SIZE,
   LABEL_GAP_X,
@@ -426,5 +431,73 @@ describe("PoiMarkerContent — omtalte steder", () => {
     );
     expect(ring(container)).toBeNull();
     expect(badge(container)).toBeNull();
+  });
+});
+
+/**
+ * Valgt sted under panel-policyen (2026-09-15). Ingen popup på kartet, så
+ * pinnen bærer valget: større disc i samme boks, ring i kategorifargen,
+ * navnet stående og tyngre. Aldri prikk.
+ */
+describe("PoiMarkerContent — valgt sted (detaljpanelet)", () => {
+  const ring = (c: HTMLElement) =>
+    c.querySelector("[data-poi-selected-ring]") as HTMLElement | null;
+  const disc = (c: HTMLElement) =>
+    [...host(c).querySelectorAll("span")].find(
+      (el) => el.style.borderRadius === "50%" && el.style.border.startsWith("2px"),
+    ) as HTMLElement;
+  const selectedDisc = Math.round(PIN_SIZE * SELECTED_DISC_FACTOR);
+
+  it("tegner ringen i kategorifargen med hvit luft utenpå den STØRRE disc-en", () => {
+    const { container } = render(
+      <PoiMarkerContent {...base} selected label="Dora" />,
+    );
+    const r = ring(container)!;
+    expect(r).toBeTruthy();
+    expect(r.style.width).toBe(`${selectedDisc + 12}px`);
+    expect(r.style.border).toBe("3px solid rgb(0, 170, 119)");
+    expect(r.style.boxShadow).toContain("inset 0 0 0 3px");
+    expect(r.style.pointerEvents).toBe("none");
+  });
+
+  it("disc-en vokser, men boksen står — ankeret flytter seg ikke", () => {
+    const { container } = render(<PoiMarkerContent {...base} selected />);
+    expect(disc(container).style.width).toBe(`${selectedDisc}px`);
+    expect(host(container).style.width).toBe(`${PIN_SIZE}px`);
+    expect(host(container).style.height).toBe(`${PIN_SIZE}px`);
+  });
+
+  it("beholder navnet og tegner det tyngre", () => {
+    const { container } = render(
+      <PoiMarkerContent {...base} selected label="Dora" />,
+    );
+    expect(label(container)!.textContent).toBe("Dora");
+    expect(label(container)!.style.fontWeight).toBe("700");
+  });
+
+  it("er ikke prikk: full disc og ikon selv når compact bes om", () => {
+    // `map-view-3d` fritar det valgte fra compact; her måles bare at den
+    // fulle greina tegner ring når den får `selected`.
+    const { container } = render(<PoiMarkerContent {...base} selected />);
+    expect(container.querySelector('[data-testid="picon"]')).toBeTruthy();
+    expect(disc(container).style.width).not.toBe(`${DOT_SIZE}px`);
+  });
+
+  it("uten propen er ingenting endret", () => {
+    const { container } = render(<PoiMarkerContent {...base} label="Dora" />);
+    expect(ring(container)).toBeNull();
+    expect(disc(container).style.width).toBe(`${PIN_SIZE}px`);
+    expect(label(container)!.style.fontWeight).toBe("600");
+  });
+
+  it("kan stå samtidig med omtalt-ringen, og ligger utenpå den", () => {
+    const { container } = render(
+      <PoiMarkerContent {...base} selected highlightIndex={1} />,
+    );
+    const hl = container.querySelector("[data-poi-highlight-ring]") as HTMLElement;
+    expect(hl).toBeTruthy();
+    expect(parseFloat(ring(container)!.style.width)).toBeGreaterThan(
+      parseFloat(hl.style.width),
+    );
   });
 });

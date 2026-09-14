@@ -682,3 +682,45 @@ describe("useMarker3DDeclutter — omtalte steder", () => {
     expect(result.current.labels.marina?.text).toBe("marina");
   });
 });
+
+/**
+ * Det ÅPNE punktet får samme garanti som de omtalte (2026-09-15): navn på alle
+ * tiere og aldri prikk. Under panel-policyen er det ingen popup på kartet, så
+ * pinnen og navnet er det eneste som peker stedet ut — og 2D-markøren har
+ * alltid gjort det slik.
+ */
+describe("useMarker3DDeclutter — det åpne punktet", () => {
+  it("bærer navnet på ikon-tieren, der ingen andre har navn", () => {
+    const { result } = setup(
+      makeMap(3000),
+      [poi("a", 100, 100, 4), poi("b", 600, 600, 5)],
+      { activePOIId: "b" },
+    );
+    settle();
+    expect(result.current.labels["a"]).toBeUndefined();
+    expect(result.current.labels["b"]?.text).toBe("b");
+  });
+
+  it("overlever prikk-tieren med skive og navn", () => {
+    const { result } = setup(
+      makeMap(15000),
+      [poi("a", 100, 100, 4), poi("b", 600, 600, 5)],
+      { activePOIId: "b" },
+    );
+    settle();
+    expect(result.current.demotedIds.has("a")).toBe(true);
+    expect(result.current.demotedIds.has("b")).toBe(false);
+    expect(result.current.labels["b"]?.text).toBe("b");
+  });
+
+  it("mini-popupen undertrykker fortsatt navnet, men ikke skiva", () => {
+    const { result } = setup(
+      makeMap(3000),
+      [poi("a", 100, 100, 4), poi("b", 600, 600, 5)],
+      { activePOIId: "b", suppressActiveLabel: true },
+    );
+    settle();
+    expect(result.current.labels["b"]).toBeUndefined();
+    expect(result.current.demotedIds.has("b")).toBe(false);
+  });
+});

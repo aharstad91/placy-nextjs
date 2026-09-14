@@ -162,6 +162,14 @@ interface Props {
    */
   layout?: "floating" | "framed";
   /**
+   * Desktop-policy for stedene (2026-09-15): `true` = alle steder åpner ETT
+   * felles detaljpanel over kolonnen, uten kartpopup, stedsfane eller
+   * utfolding i raden. Sendes fra demo-grensen (den lokale Nyhavna-demoen) og
+   * bæres av `BoardProvider`; komponentene leser den via `useDesktopPlacePanel`,
+   * som også legger 1024-grensen på. Mobil er uendret. Default `false`.
+   */
+  placePanel?: boolean;
+  /**
    * Unit 5: rehydrert "Min samling" fra en delt `?c=<slug>`-lenke (ruten kaller
    * `getCollectionBySlug` — eiendom-presedens). `undefined` når ingen delt lenke
    * eller ugyldig/utløpt slug (→ tom samling, ingen krasj). Kun event-modus.
@@ -204,6 +212,7 @@ function Inner({
   boardData: inputBoardData,
   boardMode,
   layout = "floating",
+  placePanel = false,
   collection,
   embed = false,
   fromEmbed = false,
@@ -356,6 +365,7 @@ function Inner({
           data={boardData}
           visiblePoiIds={visiblePoiIds}
           collectionPoiIds={collectionPoiIds}
+          placePanel={placePanel}
         >
           <StoryTourProvider>
             <BoardReelsSync />

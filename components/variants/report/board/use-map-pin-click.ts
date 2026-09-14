@@ -4,6 +4,7 @@ import { useCallback, useRef } from "react";
 import { useEngagement } from "@/lib/instrumentation/engagement-scope";
 import { useBoard } from "./board-state";
 import { useStoryTourOptional } from "./story/story-tour";
+import { useDesktopPlacePanel } from "./use-popup-mode";
 
 /**
  * Trykk på en kartmarkør — ÉN vei inn, uansett motor (2026-08-28).
@@ -26,6 +27,14 @@ import { useStoryTourOptional } from "./story/story-tour";
  * og drille sidebaren inn (2026-08-13). Kategori-oppslaget her er til målingen —
  * og til omvisningen, som selv avgjør hvilket stopp punktet vises i.
  *
+ * ## Ett panel for alle steder (desktop-policy, 2026-09-15)
+ *
+ * Med `useDesktopPlacePanel()` sann er trykket ÉN handling: `OPEN_POI` med
+ * `detail: true` velger punktet og åpner detaljflaten over kolonnen i samme
+ * dispatch. Flaten følger ikke etter (`revealFromMap` kalles ikke) — det finnes
+ * ingen fane eller rad å scrolle fram bak et panel som dekker dem. Kameraet
+ * står stille som før.
+ *
  * ## Hvorfor callbacken er referanse-stabil
  *
  * Den ligger i `Marker3DItems`' memo-props, så en fersk identitet per render
@@ -37,22 +46,23 @@ export function useMapPinClick(): (poiId: string) => void {
   const { data, dispatch } = useBoard();
   const story = useStoryTourOptional();
   const engagement = useEngagement();
+  const placePanel = useDesktopPlacePanel();
 
-  const latest = useRef({ data, dispatch, engagement, story });
-  latest.current = { data, dispatch, engagement, story };
+  const latest = useRef({ data, dispatch, engagement, story, placePanel });
+  latest.current = { data, dispatch, engagement, story, placePanel };
 
   return useCallback((poiId: string) => {
-    const { data, dispatch, engagement, story } = latest.current;
+    const { data, dispatch, engagement, story, placePanel } = latest.current;
     const id = String(poiId);
     for (const cat of data.categories) {
       const found = cat.pois.find((p) => String(p.id) === id);
       if (!found) continue;
-      dispatch({ type: "OPEN_POI", id: found.id });
+      dispatch({ type: "OPEN_POI", id: found.id, detail: placePanel });
       engagement.emit("poi_clicked", {
         poiId: String(found.id),
         payload: { category_id: cat.id },
       });
-      story?.revealFromMap(id);
+      if (!placePanel) story?.revealFromMap(id);
       return;
     }
   }, []);

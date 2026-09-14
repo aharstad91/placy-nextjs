@@ -26,6 +26,7 @@ import { StoryCard } from "../board/story/StoryCard";
 import { StoryRail } from "../board/story/StoryRail";
 import { AREA_STEP, useStoryTour } from "../board/story/story-tour";
 import { StoryPoiPanel } from "../board/story/StoryPoiPanel";
+import { useDesktopPlacePanel } from "../board/use-popup-mode";
 import { EventFilterPanel } from "../board/event/EventFilterPanel";
 import type { EventBoardFilterResult } from "@/lib/event-board/useEventBoardFilter";
 import type { BoardCollectionApi } from "@/lib/event-board/use-board-collection";
@@ -142,7 +143,13 @@ interface Props {
  */
 export function StoryColumn({ noBrokers = false }: { noBrokers?: boolean }) {
   const { available, on, begin } = useStoryTour();
-  const { data } = useBoard();
+  const { data, state } = useBoard();
+  const placePanel = useDesktopPlacePanel();
+  // Panelet står over oversikten. Da skal oversikten ikke kunne tabbes inn i
+  // (R12) — men BARE under panel-policyen: ankerpanelet på andre boards har
+  // vist oversikten som lesbar bakgrunn uten å gjøre den inert, og den flyten
+  // skal stå som den er.
+  const covered = placePanel && state.exploreOpen && state.activePOIId !== null;
 
   useEffect(() => {
     if (available && !on) begin(AREA_STEP);
@@ -153,19 +160,29 @@ export function StoryColumn({ noBrokers = false }: { noBrokers?: boolean }) {
   // stripen så man innholdet gli forbi over det.
   return (
     <>
-      <div
-        data-testid="story-sidebar"
-        className="flex min-h-0 flex-1 flex-col overflow-y-auto px-6 pb-10 pt-0 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
-      >
-        <StoryCard
-          variant="column"
-          head={<StoryRail variant="flow" />}
-          // Kortet kommer ETTER innholdet og skyves til bunnen når innholdet er
-          // kort (områdestoppet i en demo med lite tekst, 2026-09-14). Det er
-          // ikke festet: ruller du i et langt tema, kommer det til slutt, som
-          // en avslutning og ikke som en stripe som spiser av lesearealet.
-          footer={!noBrokers ? <div className="mt-auto"><MeglerFooterCard /></div> : undefined}
-        />
+      {/* Oversikten og stedets side deler ÉN boks (2026-09-15): panelet ligger
+          `absolute inset-0` i den, og dekker dermed oversikten — ikke logoen
+          over og ikke samtalen under. Slik holder Anja seg tilgjengelig med
+          panelet åpent (R11), og laget lukkes uten at samtalen restartes.
+          Oversikten beholder scroll-posisjon og stopp bak laget. */}
+      <div className="relative flex min-h-0 flex-1 flex-col">
+        <div
+          data-testid="story-sidebar"
+          inert={covered}
+          aria-hidden={covered || undefined}
+          className="flex min-h-0 flex-1 flex-col overflow-y-auto px-6 pb-10 pt-0 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+        >
+          <StoryCard
+            variant="column"
+            head={<StoryRail variant="flow" />}
+            // Kortet kommer ETTER innholdet og skyves til bunnen når innholdet er
+            // kort (områdestoppet i en demo med lite tekst, 2026-09-14). Det er
+            // ikke festet: ruller du i et langt tema, kommer det til slutt, som
+            // en avslutning og ikke som en stripe som spiser av lesearealet.
+            footer={!noBrokers ? <div className="mt-auto"><MeglerFooterCard /></div> : undefined}
+          />
+        </div>
+        <StoryPoiPanel />
       </div>
       {/* Samtalen med guiden: en kompakt inngang NEDERST i panelet, utenfor
           scroll-boksen (2026-09-14). Den lå som et stort kort under fanene og
@@ -178,11 +195,6 @@ export function StoryColumn({ noBrokers = false }: { noBrokers?: boolean }) {
           <BoardVoiceControl />
         </div>
       )}
-      {/* Stedets egen side, som et lag OVER omvisningen. Ligger her og ikke
-          inne i scroll-boksen: den skal dekke hele kolonnen (også logoen) og
-          ikke rulle med innholdet bak seg. `<aside>` under er `relative`, så
-          `inset-0` treffer panelets egen boks. */}
-      <StoryPoiPanel />
     </>
   );
 }

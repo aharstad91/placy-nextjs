@@ -11,6 +11,7 @@ import {
   type LabelSide,
 } from "@/lib/board/label-collision";
 import { PROJECT_PIN_DISC } from "./ProjectSitePin";
+import { prefersReducedMotion } from "@/lib/board/prefers-reduced-motion";
 
 /**
  * Innholdet i en POI-markør: disc + ikon + navn, som HTML og CSS.
@@ -194,10 +195,34 @@ export interface PoiMarkerContentProps {
    */
   highlightIndex?: number;
   narrationFocus?: "current" | "other";
+  /**
+   * Stedet er VALGT og vises i detaljpanelet over kolonnen (2026-09-15).
+   * Utelatt/false = uendret markør.
+   *
+   * Under panel-policyen (`useDesktopPlacePanel`) finnes ingen popup på
+   * kartet, så pinnen må si «dette er stedet du leser om» selv: disc-en
+   * vokser ({@link SELECTED_DISC_FACTOR}) mens boksen står, den får en ring i
+   * KATEGORIFARGEN med hvit luft inn mot skiva, og navnet tegnes tyngre.
+   * Kategorifargen og ikke nesten-svart som omtalt-ringen: valget er en
+   * påstand om stedet du står i, ikke om samtalen, og de to skal kunne stå
+   * samtidig og skilles fra hverandre. 2D-markøren (`BoardMarker.selected`)
+   * tegner det samme med de samme tallene.
+   *
+   * Ingen puls: én overgang på 180 ms, så står den. Google tegner ikke alltid
+   * mellomframes for DOM-markører, så det er SLUTTILSTANDEN som må være
+   * riktig — overgangen er en bonus der den vises.
+   */
+  selected?: boolean;
 }
 
 /** Mørk nok til å lese over satellittfoto uansett kategorifarge under. */
 const HIGHLIGHT_RING_COLOR = "#1c1917";
+/**
+ * Hvor mye disc-en vokser når stedet er VALGT (2026-09-15). Samme sprang som
+ * 2D-markøren tar fra 32 til 44 px når den åpnes — og som der er det BOKSEN
+ * som står stille og innholdet som vokser, så ankeret ikke flytter seg.
+ */
+export const SELECTED_DISC_FACTOR = 1.25;
 
 export function PoiMarkerContent({
   color,
@@ -214,6 +239,7 @@ export function PoiMarkerContent({
   pinFactor = 1,
   highlightIndex,
   narrationFocus,
+  selected = false,
 }: PoiMarkerContentProps) {
   // Prikken OG den nedskalerte pinnen beholder markørens fulle
   // {@link PIN_SIZE}-boks, så ankeret ikke flytter seg. Bare det tegnede
@@ -221,7 +247,9 @@ export function PoiMarkerContent({
   // Bildepinner (delområdene) tegnes like store som prosjektpinnen: de er
   // objekter i samme klasse som utgangspunktet, ikke steder rundt det.
   const pin = Math.round((imageSrc ? IMAGE_PIN_SIZE : PIN_SIZE) * scale);
-  const disc = Math.round(pin * pinFactor);
+  // Valgt sted: disc-en vokser, boksen står (se `selected`). `discInset` blir
+  // da negativ, og label-avstanden under regnes fortsatt fra disc-kanten.
+  const disc = Math.round(pin * pinFactor * (selected ? SELECTED_DISC_FACTOR : 1));
   /** Luften mellom boksens kant og disc-ens, når disc-en er nedskalert. */
   const discInset = (pin - disc) / 2;
   const dot = Math.round(DOT_SIZE * scale * pinFactor);
@@ -231,6 +259,11 @@ export function PoiMarkerContent({
   // boksen og typografien.
   const grow =
     "width 180ms ease-out, height 180ms ease-out, opacity 500ms ease-out";
+  // Valgt-ringen svarer på et klikk og skal kjennes som én bevegelse — og
+  // stå stille når leseren har bedt om mindre bevegelse.
+  const selectedRingTransition = prefersReducedMotion()
+    ? "none"
+    : "opacity 180ms ease-out, width 180ms ease-out, height 180ms ease-out";
 
   // Et eksplisitt tall vinner over `+`. Nummererte markører er turrekkefølge
   // (Guide), og den rekkefølgen er en påstand vi ikke skal overskrive.
@@ -277,6 +310,33 @@ export function PoiMarkerContent({
               imellom, og et ekstra element per markør er et mount til i et sett
               på flere hundre. Skalerer med `disc`, så en nedskalert kontekst-
               pinne som blir omtalt får ringen sin tett inntil skiva. */}
+          {/* Valgt-ring (2026-09-15). Samme teknikk som omtalt-ringen under,
+              men i kategorifargen og litt tykkere: 3 px ring, 3 px hvit luft.
+              Ligger utenpå omtalt-ringen når begge er på (disc + 12 mot
+              disc + 9), så den tynne mørke står innenfor den fargede. Ett
+              element i SAMME markør — en egen markørtype ville remountet
+              verten (se spøkelses-teksturen i `map-view-3d`). */}
+          {selected && (
+            <span
+              aria-hidden="true"
+              data-poi-selected-ring=""
+              style={{
+                position: "absolute",
+                left: "50%",
+                top: "50%",
+                width: disc + 12,
+                height: disc + 12,
+                marginLeft: -(disc + 12) / 2,
+                marginTop: -(disc + 12) / 2,
+                borderRadius: "50%",
+                border: `3px solid ${color}`,
+                boxShadow: "inset 0 0 0 3px #ffffff",
+                boxSizing: "border-box",
+                pointerEvents: "none",
+                transition: selectedRingTransition,
+              }}
+            />
+          )}
           {highlightIndex !== undefined && (
             <span
               data-poi-highlight-ring=""
@@ -405,7 +465,9 @@ export function PoiMarkerContent({
             overflow: "hidden",
             fontSize: LABEL_FONT_SIZE * scale,
             lineHeight: `${LABEL_LINE_H * scale}px`,
-            fontWeight: 600,
+            // Valgt sted leses tyngre: navnet er eneste tekst på kartet som
+            // sier hvilket sted panelet handler om.
+            fontWeight: selected ? 700 : 600,
             fontFamily: "system-ui, -apple-system, Helvetica Neue, sans-serif",
             color: LABEL_FILL,
             textShadow: LABEL_TEXT_SHADOW,

@@ -30,6 +30,13 @@ export interface BoardToolEnvironment {
   followHighlightCategory?: boolean;
   /** Validated local reveals may contain more than the default six places. */
   highlightLimit?: number;
+  /**
+   * Desktop-policyen «ett panel for alle steder» (2026-09-15): `show_place`
+   * åpner da stedets detaljflate i samme dispatch som punktet velges
+   * (`OPEN_POI` med `detail`). `highlight_places` er upåvirket — en
+   * gruppefremheving åpner aldri et panel.
+   */
+  placePanel?: boolean;
 }
 
 export interface HighlightedPlaceStatus {
@@ -84,7 +91,7 @@ export function executeBoardTool(name: string, args: Record<string, unknown>, en
       // Stoppet følger stedets tema så flaten og kartet forteller det samme;
       // fremhevingen står (ingen navigasjons-action rører den).
       if (env.onCategory) env.onCategory(data.categories.findIndex((c) => c.id === poi.categoryId));
-      dispatch({ type: "OPEN_POI", id: poi.id, source: "voice" });
+      dispatch({ type: "OPEN_POI", id: poi.id, source: "voice", detail: env.placePanel === true });
       mapCamera?.flyToPoint(poi.coordinates, { minZoom: 16, durationMs: 1100 });
       return { ok: true, shown: poi.name, poi_id: String(poi.id) };
     }

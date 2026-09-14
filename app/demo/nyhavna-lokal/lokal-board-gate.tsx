@@ -17,6 +17,12 @@ type Props = Pick<ComponentProps<typeof ReportReelsPage>, "project" | "boardData
  * i Nyhavnas kremfarge (2026-09-14). Rammen gir plass til et topplinje-felt
  * senere uten å endre kartets matte.
  *
+ * `placePanel`: på desktop åpner alle steder ETT felles detaljpanel over
+ * kolonnen — ingen kartpopup, ingen stedsfane, ingen utfolding i raden
+ * (2026-09-15). Kartet og Anja er hovedinngangene; «Verdt å merke seg» består.
+ * Mobil er uendret. Policyen sendes herfra og ikke fra en slug-sjekk, så andre
+ * boards beholder flyten sin.
+ *
  * Ingen `?embed`/`?from`/`?src` her: demoen er lokal og deles ikke som lenke,
  * og uten dem slipper ruta `useSearchParams`.
  */
@@ -37,5 +43,5 @@ export default function LokalBoardGate({ project, boardData }: Props) {
     ...project,
     reportConfig: { ...project.reportConfig, hideBrokerCard: false },
   }), [project]);
-  return <ReportReelsPage project={brandedProject} boardData={brandedBoard} boardMode="report" layout="framed" />;
+  return <ReportReelsPage project={brandedProject} boardData={brandedBoard} boardMode="report" layout="framed" placePanel />;
 }

@@ -19,6 +19,7 @@ import {
 } from "./story/story-model";
 import { REACH_OUTSIDE_OPACITY } from "@/lib/board/reach";
 import { PROJECT_PIN_DISC } from "@/components/map/ProjectSitePin";
+import { prefersReducedMotion } from "@/lib/board/prefers-reduced-motion";
 
 /**
  * Ikon-sirkelens diameter for en INAKTIV markør, i px.
@@ -124,6 +125,23 @@ interface Props {
    */
   highlightIndex?: number;
   narrationFocus?: "current" | "other";
+  /**
+   * Punktet er VALGT og vises i det felles detaljpanelet over kolonnen
+   * (2026-09-15). Utelatt/false = uendret markør.
+   *
+   * Under panel-policyen (`useDesktopPlacePanel`) finnes ingen popup på
+   * kartet lenger, så det er markøren selv som må si «dette er stedet du
+   * leser om»: skiva er alt 44 px når aktiv (formendringen), og i tillegg får
+   * den en ring i KATEGORIFARGEN med hvit luft inn mot skiva, og navnet
+   * tegnes tyngre. Kategorifargen, ikke nesten-svart som omtalt-ringen: valget
+   * er en påstand om stedet du står i, ikke om samtalen, og de to må kunne
+   * skilles fra hverandre når begge er på samtidig.
+   *
+   * Har bare virkning sammen med `isActive` — `BoardMap` sender den aldri
+   * ellers, men gaten står her også så en løs prop ikke tegner en ring rundt
+   * et sted som ikke er åpnet.
+   */
+  selected?: boolean;
   onClick: () => void;
 }
 
@@ -142,9 +160,17 @@ function BoardMarkerImpl({
   outOfReach = false,
   highlightIndex,
   narrationFocus,
+  selected = false,
   onClick,
 }: Props) {
   const isHighlighted = highlightIndex !== undefined;
+  const isSelected = selected && isActive;
+  // Valgt-ringen er den ene overgangen her som svarer på et klikk og skal
+  // kjennes som en bevegelse — og dermed den ene som skal stå stille når
+  // leseren har bedt om mindre bevegelse.
+  const selectedRingTransition = prefersReducedMotion()
+    ? "none"
+    : "opacity 180ms ease-out, transform 180ms ease-out";
   const Icon = getFilledIcon(poi.raw.category.icon || icon);
   // Bilde i skiva i stedet for ikon — samme regel som `PoiMarkerContent.imageSrc`.
   const imageSrc = poi.raw.markerImage;
@@ -323,6 +349,42 @@ function BoardMarkerImpl({
           />
         )}
 
+        {/* Valgt-ring (2026-09-15). Samme teknikk som omtalt-ringen over —
+            border + `inset`-skygge for den hvite luften, ett element — men i
+            KATEGORIFARGEN og litt tykkere (3 px ring, 3 px luft). Ligger
+            utenpå den omtalt-ringen når begge er på: 44 px skive + 6 luft +
+            6 ring = 56 mot omtalt-ringens 53, så den mørke tynne ringen står
+            innenfor den fargede.
+
+            Ingen puls og ingen løkke: ringen fader inn én gang på 180 ms og
+            blir stående så lenge stedet er valgt. Rendres i SAMME
+            markørelement — en egen markørtype ville byttet nøkkel og
+            remountet verten (se google-maps-3d-marker-template-swap-
+            spokelser-20260823). */}
+        {isSelected && (
+          <div
+            aria-hidden
+            data-poi-selected-ring=""
+            style={{
+              position: "absolute",
+              left: "50%",
+              top: "50%",
+              transform: "translate(-50%, -50%)",
+              // containerSize + 3 px hvit luft på hver side; 3 px kant legges
+              // utenpå med border-box, så ytre diameter er containerSize + 12.
+              width: containerSize + 6,
+              height: containerSize + 6,
+              borderRadius: "50%",
+              border: `3px solid ${circle.borderColor}`,
+              boxShadow: "inset 0 0 0 3px #ffffff",
+              boxSizing: "border-box",
+              pointerEvents: "none",
+              opacity: isVisible ? 1 : 0,
+              transition: selectedRingTransition,
+            }}
+          />
+        )}
+
         {/* Dot — absolute centered. Vises ved effectiveTier="dot" (kun
             inaktive markører ved lav zoom). Tap-koordinat = container-senter
             (samme som IconCircle), så promotion til icon flytter ikke
@@ -481,7 +543,9 @@ function BoardMarkerImpl({
             top: "50%",
             transform: "translateY(-50%)",
             fontSize: LABEL_FONT_SIZE,
-            fontWeight: 600,
+            // Valgt sted leses tyngre: navnet er nå eneste tekst på kartet som
+            // sier hvilket sted panelet handler om.
+            fontWeight: isSelected ? 700 : 600,
             lineHeight: 1.2,
             color: "#1c1917",
             // Hard kontur, ikke glød: den myke halo-en la en dis rundt hver
@@ -535,5 +599,8 @@ export const BoardMarker = React.memo(
     // assistenten skrevet en ny liste i state uten at én eneste markør endret
     // seg på skjermen.
     prev.highlightIndex === next.highlightIndex &&
-    prev.narrationFocus === next.narrationFocus,
+    prev.narrationFocus === next.narrationFocus &&
+    // Samme hvitliste-felle: uten denne ville et valg i panelet aldri nådd
+    // ringen på kartet (2026-09-15).
+    prev.selected === next.selected,
 );

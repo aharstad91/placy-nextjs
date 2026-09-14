@@ -2,6 +2,7 @@
 
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode, type RefObject } from "react";
 import { useBoard } from "@/components/variants/report/board/board-state";
+import { useDesktopPlacePanel } from "@/components/variants/report/board/use-popup-mode";
 import { AREA_STEP, useStoryTour } from "@/components/variants/report/board/story/story-tour";
 import { useAudioTourStore } from "@/lib/stores/audio-tour-store";
 import { revealAfterCamera } from "@/lib/demo/nyhavna-lokal/reveal-transition";
@@ -103,6 +104,8 @@ function BoardVoiceSession({ children }: { children: ReactNode }) {
   const { data, state, dispatch, mapCamera, reserveData, revealedPlaceIds, revealPlaces } = useBoard();
   const story = useStoryTour();
   const pauseTour = useAudioTourStore((s) => s.pause);
+  // Stemmens `show_place` følger samme desktop-policy som kart og rader.
+  const placePanel = useDesktopPlacePanel();
 
   // Kart-ID-ene assistentens siste verktøykall førte til. Effektene under
   // konsumerer dem, så en endring guiden selv laget ikke meldes tilbake som
@@ -146,6 +149,7 @@ function BoardVoiceSession({ children }: { children: ReactNode }) {
     const result = executeBoardTool(revealing ? "highlight_places" : name, revealing ? { ...args, poi_ids: ids } : args, {
       data: toolData, state, dispatch, mapCamera: revealing ? null : mapCamera,
       followHighlightCategory: localDemo,
+      placePanel,
       highlightLimit: revealing ? ids.length : undefined,
       onCategory: (index) => { if (!revealing && (String(data.categories[index]?.id) !== stopId || activePoiId)) story.begin(index); },
       onReset: () => story.begin(AREA_STEP),
@@ -160,7 +164,7 @@ function BoardVoiceSession({ children }: { children: ReactNode }) {
     for (const id of targets.categoryIds) if (id !== stopId) voiceNav.current.categoryIds.add(id);
     for (const id of targets.poiIds) if (id !== activePoiId) voiceNav.current.poiIds.add(id);
     return result;
-  }, [data, state, dispatch, mapCamera, story, localDemo, stopId, activePoiId, revealPlaces, reserveData, revealedPlaceIds]);
+  }, [data, state, dispatch, mapCamera, story, localDemo, stopId, activePoiId, revealPlaces, reserveData, revealedPlaceIds, placePanel]);
 
   const live = useLive({
     // Hilsenen og datagrunnlaget følger BOARDET, ikke koden: to demoer deler

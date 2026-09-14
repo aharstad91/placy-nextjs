@@ -232,6 +232,19 @@ export interface MapView3DProps {
    */
   highlightIndexes?: Record<string, number>;
   narrationPoiId?: string | null;
+  /**
+   * Id-en til det VALGTE stedet — det som vises i detaljpanelet over kolonnen
+   * (2026-09-15). Null/utelatt = ingen markør er valgt.
+   *
+   * Femte akse, og den svarer på «hvilket sted leser du om nå». Under
+   * panel-policyen finnes ingen popup på kartet, så pinnen må bære valget
+   * selv: større skive, ring i kategorifargen og navnet stående (se
+   * `PoiMarkerContent.selected`). Samme fritak som `highlightIndexes`: en
+   * valgt pinne er aldri prikk, dempet eller blass. Z-rekkefølgen er alt
+   * håndtert — kullingen gir det åpne punktet `Z_ACTIVE` (100 000), og det
+   * valgte ER det åpne.
+   */
+  selectedPoiId?: string | null;
 }
 
 /**
@@ -288,6 +301,7 @@ const Marker3DItem = memo(function Marker3DItem({
   pinFactor,
   highlightIndex,
   narrationFocus,
+  selected,
 }: {
   poi: POI;
   /** Kartinstansen markøren appendes til. */
@@ -317,6 +331,8 @@ const Marker3DItem = memo(function Marker3DItem({
   /** Plass i rekken for et OMTALT sted. Se `highlightIndexes` på MapView3D. */
   highlightIndex?: number;
   narrationFocus?: "current" | "other";
+  /** Stedet er VALGT og vises i detaljpanelet. Se `selectedPoiId` på MapView3D. */
+  selected?: boolean;
 }) {
   return (
     <DomMarker3D
@@ -354,6 +370,7 @@ const Marker3DItem = memo(function Marker3DItem({
         pinFactor={pinFactor}
         narrationFocus={narrationFocus}
         highlightIndex={highlightIndex}
+        selected={selected}
       />
     </DomMarker3D>
   );
@@ -448,6 +465,7 @@ function Map3DInner({
   fadedOpacity = 1,
   highlightIndexes,
   narrationPoiId,
+  selectedPoiId = null,
 }: MapView3DProps) {
   // freeMode dropper alle camera-låser så brukeren får standard Google Maps
   // 3D-feel. Andre kontekster (overview, modal) beholder dagens lock for
@@ -581,11 +599,15 @@ function Map3DInner({
           // et sted som i samme sekund ble tegnet som en blass prikk fordi det
           // lå utenfor rekkevidden eller utenfor stoppets kategori.
           const highlighted = highlightIndex !== undefined;
+          // Det VALGTE stedet har samme fritak: det er stedet panelet handler
+          // om, og en prikk eller en blass skive kan ikke bære det.
+          const selected = selectedPoiId === poi.id;
+          const prominent = highlighted || selected;
           const compact =
-            !highlighted &&
+            !prominent &&
             (compactMarkers || (demotedMarkerIds?.has(poi.id) ?? false));
-          const dimmed = !highlighted && (dimmedMarkerIds?.has(poi.id) ?? false);
-          const faded = !highlighted && (fadedMarkerIds?.has(poi.id) ?? false);
+          const dimmed = !prominent && (dimmedMarkerIds?.has(poi.id) ?? false);
+          const faded = !prominent && (fadedMarkerIds?.has(poi.id) ?? false);
           // Blassest vinner: er punktet både kontekst i omvisningen OG utenfor
           // rekkevidde, er det det svakeste av de to som gjelder.
           const opacity = faded
@@ -609,6 +631,7 @@ function Map3DInner({
               pinFactor={pinFactor}
               narrationFocus={narrationPoiId ? (narrationPoiId === poi.id ? "current" : "other") : undefined}
               highlightIndex={highlightIndex}
+              selected={selected}
             />
           );
         })}

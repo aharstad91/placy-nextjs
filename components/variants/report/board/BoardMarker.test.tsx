@@ -348,3 +348,98 @@ it("exposes current speech focus and its label without opening the place", () =>
   expect(container.querySelector('[data-narration-focus="current"]')).not.toBeNull();
   expect(container.querySelector('[data-poi-label]')?.textContent).toContain("Valentinlyst Senter");
 });
+
+/**
+ * Valgt sted under panel-policyen (2026-09-15). Popupen er borte fra kartet,
+ * så markøren må bære valget selv: ring i kategorifargen, tyngre navn.
+ */
+describe("BoardMarker — valgt sted (detaljpanelet)", () => {
+  const ring = (c: HTMLElement) =>
+    c.querySelector("[data-poi-selected-ring]") as HTMLElement | null;
+  const labelEl = (c: HTMLElement) =>
+    c.querySelector("[data-poi-label]") as HTMLElement;
+
+  it("tegner ringen i KATEGORIFARGEN med hvit luft, og viser navnet", () => {
+    const { container } = renderMarker({
+      isActive: true,
+      selected: true,
+      color: "#0ea5e9",
+    });
+    const r = ring(container);
+    expect(r).toBeTruthy();
+    // 44 px aktiv skive + 3 px hvit luft på hver side = 50; 3 px kant utenpå.
+    expect(r!.style.width).toBe("50px");
+    expect(r!.style.borderWidth).toBe("3px");
+    expect(r!.style.borderColor).toBe("rgb(14, 165, 233)");
+    expect(r!.style.boxShadow).toContain("inset 0 0 0 3px");
+    expect(r!.style.pointerEvents).toBe("none");
+    expect(r!.getAttribute("aria-hidden")).toBe("true");
+    expect(labelEl(container).style.opacity).toBe("1");
+    expect(labelEl(container).style.fontWeight).toBe("700");
+  });
+
+  it("skilles fra omtalt-ringen — begge kan stå samtidig", () => {
+    const { container } = renderMarker({
+      isActive: true,
+      selected: true,
+      highlightIndex: 2,
+    });
+    expect(ring(container)).toBeTruthy();
+    expect(container.querySelector("[data-poi-highlight-ring]")).toBeTruthy();
+    // Den fargede ringen ligger UTENPÅ den mørke: 50 mot 48.
+    expect(ring(container)!.style.width).toBe("50px");
+    expect(
+      (container.querySelector("[data-poi-highlight-ring]") as HTMLElement).style.width,
+    ).toBe("48px");
+  });
+
+  it("ingen ring uten `selected` — også når markøren er aktiv", () => {
+    const { container } = renderMarker({ isActive: true });
+    expect(ring(container)).toBeNull();
+    expect(labelEl(container).style.fontWeight).toBe("600");
+  });
+
+  it("ingen ring når `selected` står uten `isActive` — en løs prop tegner ingenting", () => {
+    const { container } = renderMarker({ selected: true });
+    expect(ring(container)).toBeNull();
+  });
+
+  it("ingen puls: én overgang, ingen animasjon i løkke", () => {
+    const { container } = renderMarker({ isActive: true, selected: true });
+    const r = ring(container)!;
+    expect(r.style.animation).toBe("");
+    expect(r.style.transition).toContain("180ms");
+  });
+
+  it("står stille når leseren har bedt om mindre bevegelse", () => {
+    const original = window.matchMedia;
+    window.matchMedia = ((q: string) =>
+      ({ matches: q.includes("reduce"), media: q }) as MediaQueryList) as typeof window.matchMedia;
+    try {
+      const { container } = renderMarker({ isActive: true, selected: true });
+      expect(ring(container)!.style.transition).toBe("none");
+    } finally {
+      window.matchMedia = original;
+    }
+  });
+
+  it("memo-sammenligneren reagerer på `selected`", () => {
+    const props = {
+      color: "#7c3aed",
+      icon: "Storefront",
+      isActive: true,
+      isVisible: true,
+      zoomTier: "icon" as const,
+      suppressLabel: false,
+      labelSide: "right" as const,
+      onClick: () => {},
+      poi: poi(),
+    };
+    const { container, rerender } = render(<BoardMarker {...props} />);
+    expect(ring(container)).toBeNull();
+    rerender(<BoardMarker {...props} selected />);
+    expect(ring(container)).toBeTruthy();
+    rerender(<BoardMarker {...props} selected={false} />);
+    expect(ring(container)).toBeNull();
+  });
+});

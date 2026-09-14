@@ -158,6 +158,16 @@ export type BoardAction =
       id: BoardPOIId;
       categoryId?: BoardCategoryId;
       source?: OpenPOISource;
+      /**
+       * Åpne stedets DETALJFLATE i samme gest som punktet velges (2026-09-15).
+       *
+       * Finnes for desktop-flyten der alle steder har én felles side over
+       * kolonnen (`placePanel` på BoardProvider): der er «velg punktet» og
+       * «vis stedet» samme handling, og to dispatcher etter hverandre
+       * (`OPEN_POI` + `OPEN_EXPLORE`) ga en frame der laget var stengt. Utelatt
+       * = som før: punktet åpnes, detaljlaget forblir lukket.
+       */
+      detail?: boolean;
     }
   | { type: "BACK_TO_ACTIVE" }
   | { type: "BACK_TO_DEFAULT" }
@@ -259,12 +269,24 @@ export function boardReducer(
     // men kategorien nullstilles ALDRI — nivå-2-panelet en highlight-chip ble
     // klikket fra ville da lukket seg under brukeren.
     case "OPEN_POI":
+      // Samme sted en gang til, med detaljflaten alt åpen, er en stabil no-op:
+      // panelet skal ikke blinke eller scrolle til toppen fordi leseren trykket
+      // på markøren hun alt står i.
+      if (
+        action.detail === true &&
+        state.exploreOpen &&
+        state.phase === "poi" &&
+        state.activePOIId === action.id &&
+        (action.categoryId === undefined || action.categoryId === state.activeCategoryId)
+      ) {
+        return state;
+      }
       return {
         phase: "poi",
         activeCategoryId: action.categoryId ?? state.activeCategoryId,
         activePOIId: action.id,
         introPlaying: false,
-        exploreOpen: false,
+        exploreOpen: action.detail === true,
         travelMode: state.travelMode,
         showContours: state.showContours,
         // Kun tekst-referanser og omvisningens egne rader undertrykker
@@ -451,6 +473,14 @@ interface BoardContextValue {
    * collection-highlight. Container-nivå state, derivert fra `collection-store`.
    */
   collectionPoiIds?: Set<string>;
+  /**
+   * Presentasjonspolicy for stedene på DESKTOP (≥1024 px), satt av
+   * demo-/layoutgrensen (2026-09-15): `true` = alle steder åpner samme
+   * detaljpanel over kolonnen, uten kartpopup, stedsfane eller utfolding i
+   * raden. `false` (default) = dagens flyt. Gjelder aldri mobil; les den via
+   * {@link useDesktopPlacePanel}, som legger bredden på.
+   */
+  placePanel: boolean;
 }
 
 const BoardContext = createContext<BoardContextValue | null>(null);
@@ -459,6 +489,7 @@ export function BoardProvider({
   data: suppliedData,
   visiblePoiIds,
   collectionPoiIds,
+  placePanel = false,
   children,
 }: {
   data: BoardData;
@@ -466,6 +497,8 @@ export function BoardProvider({
   visiblePoiIds?: Set<string>;
   /** Se `BoardContextValue.collectionPoiIds`. */
   collectionPoiIds?: Set<string>;
+  /** Se `BoardContextValue.placePanel`. */
+  placePanel?: boolean;
   children: ReactNode;
 }) {
   const [revealedPlaceIds, setRevealedPlaceIds] = useState<ReadonlySet<string>>(new Set());
@@ -558,6 +591,7 @@ export function BoardProvider({
         state,
         dispatch,
         data,
+        placePanel,
         subFilter,
         reserveData: suppliedData, revealedPlaceIds, revealPlaces,
         visiblePoiIds: effectiveVisiblePoiIds,

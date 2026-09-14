@@ -93,3 +93,8 @@
   --voice-ink-2: #4a5068;
   --voice-radius: 6px;
 }
+
+/* Stedets side over kolonnen: tittelen er en overskrift på hvitt kort, ikke en del av kolonnens kremflate. */
+.nyhavna-board [data-testid="story-poi-panel"] h2 {
+  background: transparent;
+}

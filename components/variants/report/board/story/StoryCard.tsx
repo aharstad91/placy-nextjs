@@ -36,6 +36,7 @@ import { findBoardPOI } from "../board-data";
 import { useViewportCategoryList } from "../neighbourhood/use-viewport-category-list";
 import { StoryTravelCell } from "./StoryTravelCell";
 import { StoryThemeGrid } from "./StoryThemeGrid";
+import { useDesktopPlacePanel } from "../use-popup-mode";
 import { useStoryTour, type StoryPane } from "./story-tour";
 import {
   areaLabel,
@@ -85,6 +86,17 @@ import {
  * vei (`footer`) og ligger derfor INNE i seksjonen: lå det som en søsken etter
  * den, ville hodet sluppet festet i det man rullet ned i kortet.
  *
+ * ## Ett panel for alle steder (desktop-policy, 2026-09-15)
+ *
+ * Med `useDesktopPlacePanel()` sann har kolonnen INGEN faner: stedslista er
+ * borte, og hvert sted — kuratert knagg, kartpunkt, stemmens `show_place` —
+ * åpner samme detaljflate over kolonnen (`StoryPoiPanel`). Det som står igjen
+ * i «Om området» er prosaen, kilden, «Verdt å merke seg» som klikkbare
+ * innganger, det kilden ikke kunne plassere, og spørsmålene. Snarveien «Steder
+ * i nærheten / N i alt» pekte på lista og faller bort med den. Kartet og
+ * samtalen er inngangene til resten av stedene — et bevisst produktvalg
+ * (Andreas, 2026-09-14), ikke en liste som flyttet.
+ *
  * Mobil fester bare spørsmålet. Der er flaten kortere, og en festet blokk på
  * 75 px ville spist en femtedel av lesearealet. Wrapperen må derfor være
  * `display: contents` på mobil — en wrapper med egen boks blir sticky-elementets
@@ -122,6 +134,7 @@ export function StoryCard({
   const { data } = useBoard();
   const { stop, onArea, leaving, pane, showPane, end, picks, stops } =
     useStoryTour();
+  const placePanel = useDesktopPlacePanel();
   // Kategoriens steder slik KARTUTSNITTET avgrenser dem. Hentes her, ikke i
   // fanen: tallet i faneetiketten og lista i fanen må være samme sannhet.
   const list = useViewportCategoryList(stop);
@@ -129,12 +142,18 @@ export function StoryCard({
   if (!stop && !onArea) return null;
 
   const column = variant === "column";
+  // Panel-policyen gjelder bare kolonnen: én svarform, ingen fanerad.
+  const panelMode = column && placePanel;
   const faqs = stop?.editorial?.faq ?? [];
   // Desktop har ingen svar-FANE: svarene står i «Om området». Står `pane` på
   // "faq" (satt på mobil, eller ved en bredde-endring), leses den som "about"
   // her framfor å vise en tom flate.
   const faqTab = !column && faqs.length > 0;
-  const activePane: StoryPane = pane === "faq" && !faqTab ? "about" : pane;
+  const activePane: StoryPane = panelMode
+    ? "about"
+    : pane === "faq" && !faqTab
+      ? "about"
+      : pane;
   const visibleRows = placesInView(list);
 
   const tab = (id: StoryPane, label: string) => (
@@ -252,7 +271,7 @@ export function StoryCard({
             >
               {areaSubline(stops)}
             </p>
-          ) : (
+          ) : panelMode ? null : (
             /* Segmentert kontroll: svar på samme spørsmål. Den valgte brikken
              løftes med hvitt og skygge; det er den bevegelsen som viser at et
              trykk på et av snarveis-kortene i «Om området» gjorde noe. */
@@ -294,6 +313,7 @@ export function StoryCard({
                 picks={picks}
                 /* Desktop: svarene står her, ikke bak en fane. */
                 withFaq={column}
+                panelMode={panelMode}
               />
             )}
             {activePane === "places" && (
@@ -439,12 +459,16 @@ function AboutPane({
   category,
   picks,
   withFaq,
+  panelMode = false,
 }: {
   category: BoardCategory;
   picks: BoardPOI[];
   /** Desktop: svarene rendres HER (under utvalget) i stedet for i en tredje
    *  fane, og snarveis-kortet til dem forsvinner. */
   withFaq: boolean;
+  /** Panel-policyen: ingen stedsliste å peke på, så snarveien «Steder i
+   *  nærheten» faller bort, og utvalgets rader åpner panelet. */
+  panelMode?: boolean;
 }) {
   const { showPane } = useStoryTour();
   const faqs = category.editorial?.faq ?? [];
@@ -497,12 +521,19 @@ function AboutPane({
         </p>
       )}
 
-      {(category.pois.length > 0 || faqShortcut) && (
+      {((category.pois.length > 0 && (!panelMode || picks.length > 0)) ||
+        faqShortcut) && (
         <DisclosureList as="ul">
           {picks.map((poi) => (
-            <PlaceRow key={poi.id} poi={poi} category={category} mark="chip" />
+            <PlaceRow
+              key={poi.id}
+              poi={poi}
+              category={category}
+              mark="chip"
+              panelMode={panelMode}
+            />
           ))}
-          {category.pois.length > 0 && (
+          {category.pois.length > 0 && !panelMode && (
             <ShortcutRow
               color={category.color}
               Icon={MapPin}
@@ -667,20 +698,28 @@ function PlaceRow({
   poi,
   category,
   mark,
+  panelMode = false,
 }: {
   poi: BoardPOI;
   category: BoardCategory;
   mark: "chip" | "star" | "dot";
+  /** Panel-policyen (2026-09-15): raden er en INNGANG til stedets side over
+   *  kolonnen, ikke en utfolding. Samme form som ankerraden alltid har hatt —
+   *  pil mot høyre — for nå går alle steder den veien. */
+  panelMode?: boolean;
 }) {
   const { state, dispatch } = useBoard();
   const { isPlaceOpen, togglePlace, showPlace, focusPoiId } = useStoryTour();
   const minutes = storyMinutes(poi, state.travelMode);
   const narrative = poiNarrativeText(poi);
-  const open = isPlaceOpen(String(poi.id));
+  // Under panel-policyen er «åpen» = stedet som står i panelet.
+  const open = panelMode
+    ? state.activePOIId === poi.id && state.exploreOpen
+    : isPlaceOpen(String(poi.id));
   /* Ankeret folder seg ikke ut her — det åpner sin egen side over kolonnen.
      Se `StoryPoiPanel` for hvorfor grensen går ved «inneholder andre steder»
-     og ikke ved tekstmengde. */
-  const anchor = poi.isAnchor === true;
+     og ikke ved tekstmengde. Under panel-policyen gjelder det ALLE steder. */
+  const anchor = panelMode || poi.isAnchor === true;
   const identity = mark === "chip" ? storyPickIdentity(poi, category) : null;
   const ChipIcon = identity ? getIcon(identity.icon) : null;
   const isTransport = !!(
@@ -744,6 +783,12 @@ function PlaceRow({
             togglePlace(poi);
             return;
           }
+          // Panel-policyen: `showPlace` åpner punkt OG panel i én dispatch
+          // (`OPEN_POI` med `detail`), så et andre trykk er en stabil no-op.
+          if (panelMode) {
+            showPlace(poi);
+            return;
+          }
           // To dispatcher i samme handler, i denne rekkefølgen: `showPlace`
           // åpner punktet med `source: "story"` (som undertrykker utforsk), og
           // OPEN_EXPLORE slår det på igjen. Rekkefølgen er hele poenget —
@@ -753,7 +798,9 @@ function PlaceRow({
         }}
         aria-current={open}
         aria-expanded={expandable ? open : undefined}
-        aria-haspopup={anchor ? "dialog" : undefined}
+        // Panelet er en region, ikke en dialog: ingen fokusfelle, kartet og
+        // samtalen står åpne ved siden av.
+        aria-haspopup={anchor && !panelMode ? "dialog" : undefined}
         className={cn(
           DISCLOSURE_ROW,
           "items-center",

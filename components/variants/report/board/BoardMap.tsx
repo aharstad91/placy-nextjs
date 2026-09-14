@@ -48,7 +48,7 @@ import type { Map3DInstance } from "@/components/map/map-view-3d";
 import type { TravelMode } from "@/lib/types";
 import type { CameraSnapshot } from "@/lib/board/board-types";
 import type { FlyCapableMap } from "./board-3d-camera-director";
-import { useBoardPopupMode } from "./use-popup-mode";
+import { useBoardPopupMode, useDesktopPlacePanel } from "./use-popup-mode";
 import {
   useAudioTourPhase,
   useCurrentTrack,
@@ -253,6 +253,11 @@ export function BoardMap({
   const reachOutsideIds = reach.outsideIds;
   const engagement = useEngagement();
   const popupMode = useBoardPopupMode();
+  // Detaljpanelet over kolonnen eier stedsflaten på desktop for boards som
+  // har bedt om det (2026-09-15). Da finnes ingen popup på kartet, og det
+  // valgte punktet må vise valget selv — se `BoardMarker.selected`. Falsk på
+  // alle andre boards og på mobil, så de er uendret.
+  const placePanel = useDesktopPlacePanel();
   const mapRef = useRef<MapRef>(null);
   const [mapLoaded, setMapLoaded] = useState(false);
 
@@ -1336,6 +1341,10 @@ export function BoardMap({
                 // `closest("gmp-marker-3d-interactive")`-gaten i BoardMap3D.
                 const target = e.originalEvent.target as HTMLElement | null;
                 if (target?.closest("[data-travel-chip]")) return;
+                // Under panel-policyen står valget til leseren velger noe
+                // annet eller lukker panelet selv (R7, 2026-09-15): et klikk
+                // på tomt kart mens man panorerer skal ikke tømme panelet.
+                if (placePanel) return;
                 if (state.activePOIId) dispatch({ type: "BACK_TO_DEFAULT" });
               }}
             >
@@ -1358,7 +1367,9 @@ export function BoardMap({
                   // aldri — Infinity-prioritet gir den alltid en plass).
                   const placement = labelPlacements.get(poi.id);
                   const suppressLabel =
-                    (popupMode === "mini" && isActive) ||
+                    // Bare når popupen FAKTISK vises: under panel-policyen er
+                    // det ingen popup, og navnet må stå ved markøren.
+                    (popupMode === "mini" && isActive && !placePanel) ||
                     // Omvisningen navngir bare det du faktisk har åpnet. De tre
                     // stedene ligger minutter fra hverandre — tre labels samtidig
                     // ble uleselig grøt, og navnene står allerede i flaten.
@@ -1386,6 +1397,9 @@ export function BoardMap({
                       outOfReach={outOfReach}
                       narrationFocus={state.narrationPoiId ? (state.narrationPoiId === poi.id ? "current" : "other") : undefined}
                       highlightIndex={highlightIndex}
+                      // Valget vises av markøren selv når panelet eier
+                      // stedsflaten (ingen popup). Se `BoardMarker.selected`.
+                      selected={placePanel && isActive}
                       // Samme vei inn som 3D-pinnene: punkt + måling + flatens
                       // oppfølging. Se `useMapPinClick`.
                       onClick={() => handlePinClick(String(poi.id))}
@@ -1431,7 +1445,9 @@ export function BoardMap({
               {mapLoaded && <BoardPathLayer />}
               <BoardPathMidpointMarker />
               <BoardPOILabel />
-              {popupMode === "mini" && state.activePOIId && (
+              {/* Popupen viker for detaljpanelet under panel-policyen — to
+                  stedsflater samtidig ville sagt det samme to steder. */}
+              {popupMode === "mini" && !placePanel && state.activePOIId && (
                 <BoardPOIMiniPopup />
               )}
             </Map>

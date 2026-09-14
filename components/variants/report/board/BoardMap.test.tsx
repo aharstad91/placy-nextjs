@@ -41,6 +41,10 @@ const h = vi.hoisted(() => {
     // Zoom-tieren utglisningen og labelene henger på. `icon` er default
     // fordi det er tieren boardet åpner i.
     zoomTier: "icon" as "dot" | "icon" | "icon+label",
+    // Popup-modus og panel-policyen (2026-09-15). Panelet er av som default,
+    // så resten av suiten måler boardet slik alle andre boards har det.
+    popupMode: "sheet" as "sheet" | "mini",
+    placePanel: false,
     emit: vi.fn(),
     captured: {
       controls: [] as Record<string, unknown>[],
@@ -163,12 +167,17 @@ vi.mock("./board-route", () => ({
   useBoardRoute: () => ({ data: null, error: null }),
 }));
 vi.mock("./BoardPOILabel", () => ({ BoardPOILabel: () => null }));
-vi.mock("./BoardPOIMiniPopup", () => ({ BoardPOIMiniPopup: () => null }));
+vi.mock("./BoardPOIMiniPopup", () => ({
+  BoardPOIMiniPopup: () => <div data-testid="mini-popup" />,
+}));
 vi.mock("./use-board-zoom-tier", () => ({
   useBoardZoomTier: () => h.zoomTier,
   useContourLabelsVisible: () => true,
 }));
-vi.mock("./use-popup-mode", () => ({ useBoardPopupMode: () => "label" }));
+vi.mock("./use-popup-mode", () => ({
+  useBoardPopupMode: () => h.popupMode,
+  useDesktopPlacePanel: () => h.placePanel,
+}));
 vi.mock("@/lib/instrumentation/engagement-scope", () => ({
   useEngagement: () => ({ emit: h.emit }),
 }));
@@ -241,6 +250,8 @@ beforeEach(() => {
   h.captured.markers = [];
   h.mapbox.instance = makeMapInstance();
   h.zoomTier = "icon";
+  h.popupMode = "sheet";
+  h.placePanel = false;
   h.tour.phase = "idle";
   h.tour.currentTrack = null;
   h.emit.mockClear();
@@ -978,7 +989,7 @@ describe("markørsynlighet — markørklikk kaprer ikke kategorien (2026-08-13)"
     act(() => {
       (marker.onClick as () => void)();
     });
-    expect(dispatch).toHaveBeenCalledWith({ type: "OPEN_POI", id: "p-natur" });
+    expect(dispatch).toHaveBeenCalledWith({ type: "OPEN_POI", id: "p-natur", detail: false });
   });
 });
 
@@ -1142,5 +1153,75 @@ describe("BoardMap — utglisning av trange pinner (2D)", () => {
     ]);
     render(<BoardMap has3dAddon={false} />);
     expect(demotedByPoi()).toEqual({ "utenfor-1": false, "utenfor-2": false });
+  });
+});
+
+/**
+ * Detaljpanelet over kolonnen erstatter popupen på desktop (2026-09-15).
+ * Alt er gatet på `useDesktopPlacePanel` (mocket her), så de tre påstandene
+ * under holder BARE når policyen er på — og speilvendt når den er av.
+ */
+describe("BoardMap — aktiv markør erstatter popupen under panel-policyen", () => {
+  const twoCategories = {
+    categories: [
+      { id: "mat", label: "Mat", lead: "", body: "", icon: "Utensils", color: "#cc3300", pois: [makePoi("p-mat")], topRankedPois: [] },
+    ],
+  };
+  const markerFor = (id: string) =>
+    [...h.captured.markers].reverse().find((m) => (m.poi as { id: string }).id === id)!;
+  const clickBackground = () => {
+    const onClick = h.captured.mapProps.at(-1)!.onClick as (e: {
+      originalEvent: { target: HTMLElement };
+    }) => void;
+    act(() => onClick({ originalEvent: { target: document.createElement("canvas") } }));
+  };
+
+  it("uten policy: mini-popupen vises, navnet undertrykkes, markøren er ikke `selected`", () => {
+    h.popupMode = "mini";
+    setBoard(twoCategories, { phase: "poi", activePOIId: "p-mat" });
+    const { queryByTestId } = render(<BoardMap has3dAddon={false} />);
+    expect(queryByTestId("mini-popup")).not.toBeNull();
+    expect(markerFor("p-mat").suppressLabel).toBe(true);
+    expect(markerFor("p-mat").selected).toBe(false);
+  });
+
+  it("med policy: ingen popup, navnet står, og den aktive markøren er `selected`", () => {
+    h.popupMode = "mini";
+    h.placePanel = true;
+    setBoard(twoCategories, { phase: "poi", activePOIId: "p-mat" });
+    const { queryByTestId } = render(<BoardMap has3dAddon={false} />);
+    expect(queryByTestId("mini-popup")).toBeNull();
+    expect(markerFor("p-mat").suppressLabel).toBe(false);
+    expect(markerFor("p-mat").selected).toBe(true);
+  });
+
+  it("med policy: bare den aktive markøren er valgt", () => {
+    h.placePanel = true;
+    const two = {
+      categories: [
+        { id: "mat", label: "Mat", lead: "", body: "", icon: "Utensils", color: "#cc3300", pois: [makePoi("p-a"), makePoi("p-b")], topRankedPois: [] },
+      ],
+    };
+    setBoard(two, { phase: "poi", activePOIId: "p-a" });
+    render(<BoardMap has3dAddon={false} />);
+    expect(markerFor("p-a").selected).toBe(true);
+    expect(markerFor("p-b").selected).toBe(false);
+  });
+
+  it("med policy: klikk på tomt kart lukker IKKE valget (R7)", () => {
+    h.placePanel = true;
+    setBoard(twoCategories, { phase: "poi", activePOIId: "p-mat" });
+    render(<BoardMap has3dAddon={false} />);
+    const dispatch = boardCtx().dispatch as ReturnType<typeof vi.fn>;
+    clickBackground();
+    expect(dispatch).not.toHaveBeenCalledWith({ type: "BACK_TO_DEFAULT" });
+  });
+
+  it("uten policy: klikk på tomt kart lukker fortsatt valget", () => {
+    setBoard(twoCategories, { phase: "poi", activePOIId: "p-mat" });
+    render(<BoardMap has3dAddon={false} />);
+    const dispatch = boardCtx().dispatch as ReturnType<typeof vi.fn>;
+    clickBackground();
+    expect(dispatch).toHaveBeenCalledWith({ type: "BACK_TO_DEFAULT" });
   });
 });

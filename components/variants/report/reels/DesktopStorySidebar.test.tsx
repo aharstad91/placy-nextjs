@@ -1,11 +1,12 @@
 import { describe, it, expect, vi } from "vitest";
 import {
+  act,
   render as rtlRender,
   cleanup,
   fireEvent,
   within,
 } from "@testing-library/react";
-import { afterEach } from "vitest";
+import { afterEach, beforeEach } from "vitest";
 import { useEffect } from "react";
 import type { MapCameraApi } from "@/lib/board/board-types";
 import type { BoardData, BoardPOI } from "../board/board-data";
@@ -16,6 +17,7 @@ import {
   DISCLOSURE_ROW,
 } from "../board/Disclosure";
 import { StoryColumn } from "./DesktopStorySidebar";
+import { useMapPinClick } from "../board/use-map-pin-click";
 import type { RealtimeData } from "@/lib/hooks/useRealtimeData";
 
 /**
@@ -209,8 +211,19 @@ function makeCamera() {
 
 /** Setter fane-tilstanden mobil kan ha satt. Ingen knapp i kolonnen kan gjøre
  *  det — det er nettopp poenget med tvangen som testes. */
+/* Det kartet og panelet leser av board-state, speilet ut til testene. */
+const spy = {
+  activePOIId: null as string | null,
+  exploreOpen: false,
+  pane: "about" as string,
+};
+
 function PaneProbe() {
-  const { showPane } = useStoryTour();
+  const { showPane, pane } = useStoryTour();
+  const { state } = useBoard();
+  spy.activePOIId = state.activePOIId ? String(state.activePOIId) : null;
+  spy.exploreOpen = state.exploreOpen;
+  spy.pane = pane;
   return (
     <button
       type="button"
@@ -229,16 +242,40 @@ function CameraProbe({ camera }: { camera: MapCameraApi }) {
   return null;
 }
 
+/* Desktop-policyen «ett panel for alle steder» krever ≥1024 px: `useIsDesktop`
+   leser `window.matchMedia`. Default er mobil-bredde (ingen policy), så alle
+   eldre tester står som de sto; policy-testene setter `desktop = true`. */
+let desktop = false;
+beforeEach(() => {
+  desktop = false;
+  window.matchMedia = ((query: string) =>
+    ({
+      matches: query === "(min-width: 1024px)" && desktop,
+      media: query,
+      addEventListener: () => {},
+      removeEventListener: () => {},
+    }) as unknown as MediaQueryList) as typeof window.matchMedia;
+});
+
+/* Kartklikket, EKTE: samme hook begge kartmotorene kaller. */
+const pin = { click: (() => {}) as (id: string) => void };
+function PinProbe() {
+  pin.click = useMapPinClick();
+  return null;
+}
+
 function setup(
   props: { noBrokers?: boolean } = {},
   data: Partial<BoardData> = {},
+  provider: { placePanel?: boolean } = {},
 ) {
   const camera = makeCamera();
   const utils = rtlRender(
-    <BoardProvider data={{ ...boardData(), ...data }}>
+    <BoardProvider data={{ ...boardData(), ...data }} placePanel={provider.placePanel}>
       <StoryTourProvider>
         <CameraProbe camera={camera as unknown as MapCameraApi} />
         <PaneProbe />
+        <PinProbe />
         <StoryColumn {...props} />
       </StoryTourProvider>
     </BoardProvider>,
@@ -537,6 +574,105 @@ describe("temastoppet på desktop", () => {
     const extra = document.querySelector('[data-poi="extra"]') as HTMLElement;
     fireEvent.click(extra);
     expect(extra.closest("li")!.textContent).not.toContain("5 min");
+  });
+});
+
+describe("ett panel for alle steder — desktop-policyen (2026-09-15)", () => {
+  const openTheme = () => {
+    desktop = true;
+    const utils = setup({}, {}, { placePanel: true });
+    enterTheme(utils);
+    return utils;
+  };
+  const panel = (utils: ReturnType<typeof setup>) => utils.getByTestId("story-poi-panel");
+  const board = (utils: ReturnType<typeof setup>) => utils.getByTestId("story-sidebar");
+
+  it("har INGEN faner og ingen snarvei til stedslista — innholdet står rett under raden", () => {
+    const utils = openTheme();
+    expect(utils.queryByRole("tablist", { name: "Svarform" })).toBeNull();
+    expect(utils.queryByTestId("story-places-row")).toBeNull();
+    // Utvalget står, som klikkbare innganger.
+    expect(utils.getAllByTestId("story-row").length).toBeGreaterThan(0);
+    // Svarene er der fortsatt.
+    expect(utils.getByTestId("story-faq")).toBeTruthy();
+  });
+
+  it("et utvalgt sted åpner panelet over oversikten — ingen utfolding i raden", () => {
+    const utils = openTheme();
+    const row = utils.getAllByTestId("story-row")[0];
+    fireEvent.click(row);
+    expect(spy.activePOIId).toBe(row.getAttribute("data-poi"));
+    expect(spy.exploreOpen).toBe(true);
+    expect(panel(utils).getAttribute("data-open")).toBe("true");
+    expect(utils.queryByTestId("story-narrative")).toBeNull();
+    // Oversikten bak er inert: ingen skjulte tabb-stopp (R12).
+    expect(board(utils).hasAttribute("inert")).toBe(true);
+    expect(row.getAttribute("aria-haspopup")).toBeNull();
+  });
+
+  it("et kartklikk går rett i panelet: ingen fanebytte, ingen kamerabevegelse, ingen utsatt oppfølging", () => {
+    vi.useFakeTimers();
+    try {
+      const utils = openTheme();
+      act(() => pin.click("apotek"));
+      expect(spy.activePOIId).toBe("apotek");
+      expect(spy.exploreOpen).toBe(true);
+      expect(panel(utils).getAttribute("data-open")).toBe("true");
+      vi.advanceTimersByTime(1000);
+      expect(spy.pane).toBe("about");
+      expect(utils.camera.flyToPoint).not.toHaveBeenCalled();
+      expect(utils.camera.fitCoordinates).not.toHaveBeenCalled();
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it("samme sted to ganger er en no-op; et annet sted bytter innholdet i samme panel", () => {
+    const utils = openTheme();
+    const rows = utils.getAllByTestId("story-row");
+    fireEvent.click(rows[0]);
+    const first = spy.activePOIId;
+    fireEvent.click(rows[0]);
+    expect(spy.activePOIId).toBe(first);
+    expect(spy.exploreOpen).toBe(true);
+    fireEvent.click(rows[1]);
+    expect(spy.activePOIId).toBe(rows[1].getAttribute("data-poi"));
+    expect(spy.exploreOpen).toBe(true);
+    expect(utils.getAllByTestId("story-poi-panel")).toHaveLength(1);
+  });
+
+  it("lukking slipper punktet og gir oversikten tilbake med samme stopp", () => {
+    const utils = openTheme();
+    fireEvent.click(utils.getAllByTestId("story-row")[0]);
+    fireEvent.click(utils.getByTestId("story-poi-panel-close"));
+    expect(spy.exploreOpen).toBe(false);
+    expect(spy.activePOIId).toBeNull();
+    expect(board(utils).hasAttribute("inert")).toBe(false);
+    expect(activeStop(utils)).toBe("Hverdagsliv");
+    // Kameraet hoppet ikke tilbake.
+    expect(utils.camera.restore).not.toHaveBeenCalled();
+  });
+
+  it("Escape lukker på samme måte", () => {
+    const utils = openTheme();
+    fireEvent.click(utils.getAllByTestId("story-row")[0]);
+    fireEvent.keyDown(window, { key: "Escape" });
+    expect(spy.activePOIId).toBeNull();
+    expect(spy.exploreOpen).toBe(false);
+  });
+
+  it("uten policyen står fanene og utfoldingen som før — også på desktop-bredde", () => {
+    desktop = true;
+    const utils = setup();
+    enterTheme(utils);
+    expect(utils.getByRole("tablist", { name: "Svarform" })).toBeTruthy();
+    expect(utils.getByTestId("story-places-row")).toBeTruthy();
+  });
+
+  it("policyen uten desktop-bredde er ingen policy — mobil er urørt", () => {
+    const utils = setup({}, {}, { placePanel: true });
+    enterTheme(utils);
+    expect(utils.getByRole("tablist", { name: "Svarform" })).toBeTruthy();
   });
 });
 

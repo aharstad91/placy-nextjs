@@ -13,6 +13,7 @@ import {
 import { useEngagement } from "@/lib/instrumentation/engagement-scope";
 import type { BoardCategory, BoardPOI, BoardPOIId } from "../board-data";
 import { useBoard } from "../board-state";
+import { useDesktopPlacePanel } from "../use-popup-mode";
 import { storyEmphasis, storyPicks, type StoryEmphasis } from "./story-model";
 
 /**
@@ -195,6 +196,8 @@ export function StoryTourProvider({ children }: { children: ReactNode }) {
   const { data, state, dispatch, mapCamera } = useBoard();
   const engagement = useEngagement();
   const travelMode = state.travelMode;
+  // Desktop-policyen «ett panel for alle steder» — se doccen øverst.
+  const placePanel = useDesktopPlacePanel();
 
   const stops = data.categories;
   const [tour, setTour] = useState<{ step: number; pane: StoryPane } | null>(
@@ -399,20 +402,25 @@ export function StoryTourProvider({ children }: { children: ReactNode }) {
 
   const showPlace = useCallback(
     (poi: BoardPOI) => {
-      setOpenPoiIds((prev) => {
-        if (prev.has(String(poi.id))) return prev;
-        const nextSet = new Set(prev);
-        nextSet.add(String(poi.id));
-        return nextSet;
-      });
+      // Under panel-policyen finnes ingen utfoldet rad å huske — se doccen.
+      if (!placePanel) {
+        setOpenPoiIds((prev) => {
+          if (prev.has(String(poi.id))) return prev;
+          const nextSet = new Set(prev);
+          nextSet.add(String(poi.id));
+          return nextSet;
+        });
+      }
       cancelPending();
       // `source: "story"` undertrykker POI-modalen på mobil: stedets egne ord
       // åpner seg i raden, og en 85vh-modal over den ville vært den
       // kompleksiteten omvisningen fjerner. Kartet flyr likevel.
+      // `detail` åpner detaljflaten i SAMME dispatch under panel-policyen.
       dispatch({
         type: "OPEN_POI",
         id: poi.id as BoardPOIId,
         source: "story",
+        detail: placePanel,
       });
       engagement.emit("poi_clicked", {
         poiId: String(poi.id),
@@ -427,12 +435,14 @@ export function StoryTourProvider({ children }: { children: ReactNode }) {
         cameraRef.current?.flyToPoint(poi.coordinates, { holdFrame: true });
       }, CAMERA_DELAY_MS);
     },
-    [cancelPending, dispatch, engagement],
+    [cancelPending, dispatch, engagement, placePanel],
   );
 
   const togglePlace = useCallback(
     (poi: BoardPOI) => {
-      if (!openPoiIds.has(String(poi.id))) {
+      // Panel-policyen: ingenting å folde sammen. Samme sted igjen er en no-op
+      // i reduceren (`OPEN_POI` med `detail`), et annet sted bytter innhold.
+      if (placePanel || !openPoiIds.has(String(poi.id))) {
         showPlace(poi);
         return;
       }
@@ -447,7 +457,7 @@ export function StoryTourProvider({ children }: { children: ReactNode }) {
       // navn og rutelinja følger det du har åpent.
       if (state.activePOIId === poi.id) dispatch({ type: "BACK_TO_DEFAULT" });
     },
-    [cancelPending, dispatch, openPoiIds, showPlace, state.activePOIId],
+    [cancelPending, dispatch, openPoiIds, placePanel, showPlace, state.activePOIId],
   );
 
   const revealFromMap = useCallback(
@@ -455,6 +465,10 @@ export function StoryTourProvider({ children }: { children: ReactNode }) {
       // Omvisningen er AV: på mobil ligger indeksen der da, og et pinnetrykk
       // skal ikke dra brukeren inn i en omvisning hun ikke startet.
       if (!on) return;
+      // Panel-policyen: kartklikket har alt åpnet detaljflaten over kolonnen
+      // (`useMapPinClick`). Flaten bak den skal stå som den sto — ingen
+      // fanebytte, ingen rad som åpner seg, ingen utsatt oppfølging.
+      if (placePanel) return;
       const id = String(poiId);
       // Stoppet du STÅR i vinner når punktet ligger i det: et anker ligger i
       // flere kategorier, og et trykk skal ikke flytte deg til et annet tema enn
@@ -483,7 +497,7 @@ export function StoryTourProvider({ children }: { children: ReactNode }) {
         if (idx !== step) emitStop(stops[idx]);
       }, SIDEBAR_FOLLOW_MS);
     },
-    [cancelPending, emitStop, on, step, stop, stops],
+    [cancelPending, emitStop, on, placePanel, step, stop, stops],
   );
 
   const isPlaceOpen = useCallback(

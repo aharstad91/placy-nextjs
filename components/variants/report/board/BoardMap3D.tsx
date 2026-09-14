@@ -16,7 +16,7 @@ import {
   STORY_EMPHASIS_OPACITY,
   STORY_EMPHASIS_PIN_SCALE,
 } from "./story/story-model";
-import { useBoardPopupMode } from "./use-popup-mode";
+import { useBoardPopupMode, useDesktopPlacePanel } from "./use-popup-mode";
 import { BoardPOI3DMiniPopup } from "./BoardPOI3DMiniPopup";
 import { BoardTravelChip3D } from "./BoardTravelChip3D";
 import { BoardContourLabels3D } from "./BoardContourLabels3D";
@@ -241,6 +241,11 @@ export function BoardMap3D({
   const activeCategory = useActiveCategory();
   const activePOI = useActivePOI();
   const popupMode = useBoardPopupMode();
+  // Detaljpanelet over kolonnen eier stedsflaten på desktop for boards som
+  // har bedt om det (2026-09-15). Ingen popup på kartet da; den valgte pinnen
+  // viser valget selv (`selectedPoiId` på MapView3D). Falsk på andre boards
+  // og på mobil.
+  const placePanel = useDesktopPlacePanel();
 
   // Rute for RouteLayer3D — samme delte kilde som rutelinja og chipen i 2D,
   // i aktiv reisemodus (BoardRouteProvider).
@@ -742,11 +747,14 @@ export function BoardMap3D({
     const el = map3dInstance as unknown as HTMLElement;
     const onMapClick = (e: Event) => {
       if (isMarker3DTarget(e.target)) return;
+      // Under panel-policyen står valget til leseren velger noe annet eller
+      // lukker panelet selv (R7, 2026-09-15) — samme regel som 2D-kartet.
+      if (placePanel) return;
       if (state.activePOIId) dispatch({ type: "BACK_TO_DEFAULT" });
     };
     el.addEventListener("gmp-click", onMapClick);
     return () => el.removeEventListener("gmp-click", onMapClick);
-  }, [map3dInstance, state.activePOIId, dispatch]);
+  }, [map3dInstance, state.activePOIId, dispatch, placePanel]);
 
   // Aktiv POIs koordinater for kamera-directoren (memoisert så hook-deps holdes
   // stabile på primitiver).
@@ -889,8 +897,9 @@ export function BoardMap3D({
     textureIds: storyTextureIds,
     dotIds: reach.outsideIds,
     highlightedIds: highlightedIdSet,
-    // Mini-popupen viser navnet — da skal ikke pinnen vise det også.
-    suppressActiveLabel: popupMode === "mini",
+    // Mini-popupen viser navnet — da skal ikke pinnen vise det også. Under
+    // panel-policyen finnes ingen popup, og navnet må stå ved pinnen.
+    suppressActiveLabel: popupMode === "mini" && !placePanel,
     enabled: !compactMarkers && markerPOIs.length > 0,
     // Kollisjonen skal avgjøres blant de synlige: elementet er både bredere enn
     // vinduet og delvis dekket av panelet, og uten disse ville et navn ingen ser
@@ -1006,6 +1015,8 @@ export function BoardMap3D({
         fadedOpacity={REACH_OUTSIDE_OPACITY}
         highlightIndexes={highlightIndexes}
         narrationPoiId={state.narrationPoiId}
+        // Valget vises av pinnen selv når panelet eier stedsflaten.
+        selectedPoiId={placePanel ? state.activePOIId : null}
         revealItems={revealItems}
         showReveal={showReveal}
         animateReveal={!reducedMotion}
@@ -1066,7 +1077,7 @@ export function BoardMap3D({
       {/* Auto/Fri + Kart/3D-kontrollene bor nå i den felles BoardMapControls
           (rendret av BoardMap, sentrert nederst-midt). Drag-takeover-lytteren
           over varsler BoardMap via onDragTakeover. */}
-      {popupMode === "mini" && state.activePOIId && (
+      {popupMode === "mini" && !placePanel && state.activePOIId && (
         <BoardPOI3DMiniPopup
           map3d={map3dInstance}
           pinScale={declutter.pinScale}

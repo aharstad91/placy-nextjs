@@ -243,6 +243,38 @@ describe("boardReducer", () => {
     });
   });
 
+  describe("OPEN_POI med detail — ett panel for alle steder (2026-09-15)", () => {
+    it("åpner detaljflaten i samme dispatch som punktet velges", () => {
+      const next = boardReducer(initialBoardState, { type: "OPEN_POI", id: POI_1, detail: true });
+      expect(next.phase).toBe("poi");
+      expect(next.activePOIId).toBe(POI_1);
+      expect(next.exploreOpen).toBe(true);
+      expect(next.exploreSuppressed).toBe(false);
+    });
+
+    it("uten detail er detaljflaten lukket, som før", () => {
+      const next = boardReducer(initialBoardState, { type: "OPEN_POI", id: POI_1 });
+      expect(next.exploreOpen).toBe(false);
+    });
+
+    it("samme sted en gang til er en stabil no-op (samme state-objekt)", () => {
+      const open = boardReducer(initialBoardState, { type: "OPEN_POI", id: POI_1, detail: true });
+      expect(boardReducer(open, { type: "OPEN_POI", id: POI_1, detail: true })).toBe(open);
+      // Et annet sted bytter innholdet i samme panel.
+      const other = boardReducer(open, { type: "OPEN_POI", id: POI_2, detail: true });
+      expect(other.activePOIId).toBe(POI_2);
+      expect(other.exploreOpen).toBe(true);
+    });
+
+    it("lukking med BACK_TO_DEFAULT slipper både panel og punkt, men beholder kategorien", () => {
+      const start = boardReducer({ ...initialBoardState, activeCategoryId: CAT_A }, { type: "OPEN_POI", id: POI_1, detail: true });
+      const closed = boardReducer(start, { type: "BACK_TO_DEFAULT" });
+      expect(closed.exploreOpen).toBe(false);
+      expect(closed.activePOIId).toBeNull();
+      expect(closed.activeCategoryId).toBe(CAT_A);
+    });
+  });
+
   describe("BACK_TO_ACTIVE", () => {
     it("from poi → active (clears POI)", () => {
       const start: BoardState = {

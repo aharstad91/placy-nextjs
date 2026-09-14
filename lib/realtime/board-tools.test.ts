@@ -44,10 +44,20 @@ describe("Kartkommandoene i nettleseren", () => {
     expect(env.mapCamera?.flyToPoint).not.toHaveBeenCalled();
     const shown = executeBoardTool("show_place", { poi_id: "planned-park" }, env);
     expect(shown).toEqual({ ok: true, shown: "Havneparken", poi_id: "planned-park" });
-    expect(env.dispatch).toHaveBeenLastCalledWith({ type: "OPEN_POI", id: "planned-park", source: "voice" });
+    expect(env.dispatch).toHaveBeenLastCalledWith({ type: "OPEN_POI", id: "planned-park", source: "voice", detail: false });
     expect(env.mapCamera?.flyToPoint).toHaveBeenCalledOnce();
     // Ingen RESET: fremhevingen og temaet står når ett sted åpnes.
     expect(env.dispatch).not.toHaveBeenCalledWith({ type: "RESET_TO_DEFAULT" });
+  });
+
+  it("åpner detaljflaten under desktop-policyen «ett panel for alle steder» — bare for show_place (2026-09-15)", () => {
+    const env = { ...fixture(), placePanel: true };
+    executeBoardTool("show_place", { poi_id: "planned-park" }, env);
+    expect(env.dispatch).toHaveBeenLastCalledWith({ type: "OPEN_POI", id: "planned-park", source: "voice", detail: true });
+    // Gruppefremhevingen åpner aldri et panel, uansett policy.
+    const group = { ...fixture(), placePanel: true };
+    executeBoardTool("highlight_places", { poi_ids: ["planned-park"] }, group);
+    expect(group.dispatch).not.toHaveBeenCalledWith(expect.objectContaining({ type: "OPEN_POI" }));
   });
 
   it("fremhever flere steder samtidig i uttalt rekkefølge, på tvers av temaer, uten å åpne noen", () => {

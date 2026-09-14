@@ -461,17 +461,24 @@ export function useMarker3DDeclutter({
     // de ligger. Uten fritaket forsvant hele gruppen i prikke-teppet i det
     // kameraet rammet den inn. Ingen kollisjonsregning her — settet er for lite
     // til å kollidere med seg selv, og resten av kartet er prikker uten navn.
+    //
+    // Det ÅPNE punktet er unntatt på samme måte (2026-09-15): det er stedet
+    // leseren står i, og uten popup på kartet (panel-policyen) er pinnen og
+    // navnet det eneste som peker det ut. 2D-markøren har alltid løftet den
+    // åpne markøren til ikon med navn uansett tier (`BoardMarker.showLabel`);
+    // dette gir Google-motoren samme svar.
+    const isProminent = (poi: POI) => isHighlighted(poi) || poi.id === activeId;
     if (tier === "dot") {
       const labels: Record<string, LabelPlacement> = {};
       for (const { poi } of projected) {
-        if (!isHighlighted(poi)) continue;
+        if (!isProminent(poi)) continue;
         if (hideActiveLabel && poi.id === activeId) continue;
         labels[poi.id] = { text: poi.name, side: "right" };
       }
       const next: Marker3DDeclutter = {
         labels,
         demotedIds: new Set(
-          items.filter((p) => !isHighlighted(p)).map((p) => p.id),
+          items.filter((p) => !isProminent(p)).map((p) => p.id),
         ),
         zIndexes,
         // Prikk-tieren ligger langt under vekst-rampen — men vi leser den av
@@ -617,9 +624,10 @@ export function useMarker3DDeclutter({
     // gir første valg i kullingen, ikke en garanti — en hindring
     // (prosjekt-chipen) kan fortsatt spise begge sidene. Et navn som overlapper
     // litt er til å lese; et navn som mangler er stedet borte, og da hjelper
-    // det ikke at assistenten nettopp sa det.
+    // det ikke at assistenten nettopp sa det. Det åpne punktet får samme
+    // garanti (se `isProminent`) — med mindre popupen alt viser navnet.
     for (const { poi } of projected) {
-      if (!isHighlighted(poi) || labels[poi.id]) continue;
+      if (!isProminent(poi) || labels[poi.id]) continue;
       if (hideActiveLabel && poi.id === activeId) continue;
       labels[poi.id] = { text: poi.name, side: "right" };
     }
