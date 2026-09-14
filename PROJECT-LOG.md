@@ -6,6 +6,17 @@
 
 ---
 
+## 2026-09-14 — Servering: innholdspakke til Lene-demoen
+
+På Andreas sin bestilling er Servering utarbeidet som første kategori med mer samtaledybde til møtet om Nyhavna 16. september. Egen arbeidskopi `placy-nyhavna-innhold`, gren `docs/nyhavna-servering-demo`, holder arbeidet adskilt fra pågående tekniske endringer i hovedarbeidskopien. Leveransen er et redaksjonelt forslag; aktiv demo er ikke endret.
+
+Pakken har én introduksjon, seks hovedspørsmål, tolv bakgrunnsnotater og seks samtaleprøver med tre spørsmål hver. 8 av 8 valgte virksomheter, 6 av 6 førstesvar og 12 av 12 notater gjennomgått mot 16 leste primær-/eier-/utbyggersider. Fem eksisterende steds-ID-er og planområdet Transittkaia kontrollert mot aktiv lokal JSON. Tre nye stedskoblinger foreslått: HAVET, E.C. Dahls og Monkey Brew; koordinater og ruter er ikke levert. Avgrenset ekstra agentreview av HAVET, Monkey Brew, E.C. Dahls og Dora 1 fant ingen påstandsavvik. Kildereferansene i dokumentet er kontrollert uten brutte referanser. Ingen kodeendring eller faktisk talesamtale.
+
+Leveranse: `docs/research/nyhavna-lokal-demo/2026-09-14-servering-innholdspakke.md`. Åpent: Andreas vurderer nivået før de øvrige kategoriene behandles; etter gjennomgang gjenstår kartkontroll, innholdsimport i gjeldende demo og lyttetest. Ikke erstatt hovedarbeidskopiens nyere JSON med denne grenens basisfiler. Ingen push.
+
+---
+
+
 ## 2026-09-14 — Lokal Nyhavna-demo med enkel FAQ, steder og samtaleframdrift
 
 **Resultat:** 12 korte FAQ-er er demoens innganger til samtale og kart. 18 kuraterte steder har kilde og beregnede gang-/sykkeltider fra ett fast punkt, merket «Demoens utgangspunkt». Menyer, priser og aldersspesifikke scenarioer er ute av runtime. Tidligere 67 FAQ-er, 56 notater og 65 kilder er bevart uendret i et separat researcharkiv. Ingen Supabase-skriving eller push.
