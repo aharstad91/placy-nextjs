@@ -21,7 +21,7 @@ import {
 
 /**
  * Lasteren er demoens eneste inngang til innhold. Testene her holder tre løfter:
- * datasettet i repoet er GYLDIG og TOMT, brutte referanser stoppes med en
+ * datasettet i repoet er gyldig, brutte referanser stoppes med en
  * forståelig feil, og samtaleeksemplene ligger utenfor faktagrunnlaget.
  */
 
@@ -47,20 +47,20 @@ async function fixture(dataset: {
 }
 
 describe("lokalt Nyhavna-datasett", () => {
-  it("leveres uten steder: kategoriene står, stedslista er tom", async () => {
+  it("har et kuratert stedsutvalg med beregnede reisetider", async () => {
     const dataset = await loadDataset();
     expect(dataset.board.categories.length).toBeGreaterThan(0);
-    // Kartet er geografisk bakgrunn i denne demoen — ingen steder, ingen
-    // markører. FAQ-en er innholdet som ER lagt inn.
-    expect(dataset.places).toEqual([]);
+    expect(dataset.places.length).toBeGreaterThan(5);
+    expect(dataset.places.every(p => p.travelTime?.walk !== undefined)).toBe(true);
     expect(dataset.topics.length).toBeGreaterThan(0);
   });
 
-  it("har importert FAQ, og hvert importerte svar har en kilde", async () => {
+  it("har lokale FAQ med kilder og gyldige kartlenker", async () => {
     const dataset = await loadDataset();
     expect(dataset.faqs.length).toBeGreaterThan(0);
     const known = new Set(dataset.sources.map((s) => s.id));
-    for (const entry of dataset.faqs.filter((f) => f.origin === "imported")) {
+    for (const entry of dataset.faqs) {
+      expect(entry.origin).toBe("local");
       expect(entry.sourceIds.length).toBeGreaterThan(0);
       for (const id of entry.sourceIds) expect(known.has(id)).toBe(true);
     }
@@ -157,6 +157,13 @@ describe("referansesjekken", () => {
       { id: "sp-b", question: "Q?", answer: "Se [Noe](category:finnes-ikke)." },
     ]);
     expect(() => assertReferences(base({ faqs }))).toThrow(/ukjent kategori/);
+  });
+
+  it("stopper FAQ-lenker til kartsteder som mangler", () => {
+    const faqs = localFaqsSchema.parse([
+      { id: "sp-sted", question: "Q?", answer: "Se [Skolen](poi: mangler )." },
+    ]);
+    expect(() => assertReferences(base({ faqs }))).toThrow(/ukjent kartsted/);
   });
 
   it("krever kilde på et importert svar", () => {

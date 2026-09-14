@@ -51,17 +51,19 @@ export interface ViewportCategoryList {
 export function useViewportCategoryList(
   category: BoardCategory | null,
 ): ViewportCategoryList {
-  const { state, viewportRect } = useBoard();
+  const { state, viewportRect, data } = useBoard();
+  // Demoens lille, kuraterte utvalg skal ikke forsvinne når samtalen flytter kartet.
+  const scopedRect = data?.demoDataset === "nyhavna-lokal" ? null : viewportRect;
   const activePOIId = state.activePOIId;
   const travelMode = state.travelMode;
 
   // Primitiver i dep-arrayet, aldri rektangel-OBJEKTET: et nytt objekt med
   // samme verdier ville re-kjørt memoen ved hver render
   // (`useeffect-object-dependency-infinite-loop-20260410`).
-  const west = viewportRect?.west;
-  const south = viewportRect?.south;
-  const east = viewportRect?.east;
-  const north = viewportRect?.north;
+  const west = scopedRect?.west;
+  const south = scopedRect?.south;
+  const east = scopedRect?.east;
+  const north = scopedRect?.north;
 
   return useMemo(() => {
     if (!category) {

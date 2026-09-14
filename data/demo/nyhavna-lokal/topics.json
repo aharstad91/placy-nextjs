@@ -1,1442 +1,288 @@
 [
   {
-    "id": "oppvekst-planer",
-    "title": "Dagens nærmiljø og foreslått utvikling på Transittkaia",
-    "categoryIds": [
-      "barn-oppvekst"
-    ],
-    "status": "planned",
-    "text": "Eksisterende tilbud i nærområdet må skilles fra foreslåtte nye tilbud på Transittkaia. Kommunens arkiverte høring beskriver boliger, barnehage, byrom og elvepromenade i fire planalternativer. Høringsfristen var 28. april 2026. Dette er planhistorikk, ikke en bekreftelse på siste vedtak eller ferdige tilbud.",
-    "keywords": [
-      "barn",
-      "familie",
-      "oppvekst",
-      "i dag",
-      "planlagt",
-      "Transittkaia",
-      "byrom",
-      "promenade"
-    ],
-    "sourceIds": [
-      "v-plan"
-    ],
-    "relatedPlaceIds": [],
-    "checkedAt": "2026-09-13",
-    "caveats": [
-      "Siste endelige vedtaksstatus er ikke avklart i materialet. Opplysningene gjelder Transittkaia, ikke automatisk hele Nyhavna."
-    ]
-  },
-  {
-    "id": "oppvekst-skoler",
-    "title": "Aktuelle skoler og skolekrets",
+    "id": "demo-krets",
+    "title": "Hvilke skoler er aktuelle?",
     "categoryIds": [
       "barn-oppvekst"
     ],
     "status": "existing",
-    "text": "Planbeskrivelsen for Transittkaia, revidert 30. januar 2026, side 21, peker på Lilleby barneskole og Rosenborg ungdomsskole. Dette er utgangspunkt for å undersøke skole for Transittkaia. Faktisk skolekrets må kontrolleres for boligadressen og innflyttingstidspunktet.",
+    "text": "Lilleby barneskole og Rosenborg ungdomsskole er de aktuelle skolene i planmaterialet for Transittkaia. Skoletilhørigheten må avklares for den aktuelle boligen.",
     "keywords": [
-      "skole",
-      "skoler",
-      "barneskole",
-      "ungdomsskole",
-      "Lilleby",
-      "Rosenborg",
-      "sokner",
-      "sogner",
-      "tiåring",
-      "fjortenåring"
+      "Lilleby skole",
+      "Rosenborg skole"
     ],
     "sourceIds": [
       "v-planb",
       "v-krets"
     ],
-    "relatedPlaceIds": [],
-    "checkedAt": "2026-09-13",
-    "caveats": [
-      "Ingen konkret boligadresse eller framtidig skoletildeling er avklart."
-    ]
-  },
-  {
-    "id": "oppvekst-parker",
-    "title": "Lek, ballspill og parkour i Strandveiparken",
-    "categoryIds": [
-      "barn-oppvekst"
+    "relatedPlaceIds": [
+      "lilleby-skole",
+      "rosenborg-skole"
     ],
-    "status": "existing",
-    "text": "Strandveiparken har lekeområde, flerbruksbane og parkour. Kommunen oppgir at parken åpnet igjen 26. mai 2025 etter oppgraderingen. Den gamle opplysningen om at parken er stengt skal ikke brukes som dagens status.",
-    "keywords": [
-      "leke",
-      "lek",
-      "park",
-      "parker",
-      "ute",
-      "ball",
-      "parkour",
-      "Strandveiparken",
-      "venner"
-    ],
-    "sourceIds": [
-      "v-park-s",
-      "v-park-aapen"
-    ],
-    "relatedPlaceIds": [],
-    "checkedAt": "2026-09-13",
-    "caveats": [
-      "Ingen gang- eller sykkelavstand fra en bolig er målt."
-    ]
-  },
-  {
-    "id": "oppvekst-nye-skoler",
-    "title": "Ny skole: hva er bekreftet?",
-    "categoryIds": [
-      "barn-oppvekst"
-    ],
-    "status": "unresolved",
-    "text": "Planbeskrivelsen for Transittkaia fra januar 2026 omtaler uavklart plassering og planprosess for ny skole. Materialet vi har kontrollert bekrefter ingen åpningsdato for en ny skole på Nyhavna.",
-    "keywords": [
-      "ny skole",
-      "nye skoler",
-      "åpner",
-      "åpning",
-      "Smelteverket",
-      "fremtid",
-      "framtid"
-    ],
-    "sourceIds": [
-      "v-planb"
-    ],
-    "relatedPlaceIds": [],
-    "checkedAt": "2026-09-13",
-    "caveats": [
-      "Dette daterte dokumentet er ikke bevis for at ingen nyere beslutning finnes. Ikke lov kortere skolevei eller en bestemt åpning."
-    ]
-  },
-  {
-    "id": "oppvekst-kapasitet",
-    "title": "Skolekapasitet og barnets skoleplass er ulike spørsmål",
-    "categoryIds": [
-      "barn-oppvekst"
-    ],
-    "status": "existing",
-    "text": "Kommunens temakart om skolekapasitet brukes i vurdering av utbygging og byggesaker. Rød farge i dette kartet er ikke i seg selv et vedtak om at et bestemt barn må gå på en annen skole. Barnets skolekrets kontrolleres separat etter bostedsadresse.",
-    "keywords": [
-      "skolekapasitet",
-      "kapasitet",
-      "rødt",
-      "rød",
-      "skoleplass",
-      "fullt",
-      "plass"
-    ],
-    "sourceIds": [
-      "v-kapasitet",
-      "v-krets"
-    ],
-    "relatedPlaceIds": [],
-    "checkedAt": "2026-09-13",
-    "caveats": [
-      "Historiske elevtall, prognoser og kapasitetstall for Lilleby er holdt tilbake. Ingen skolekvalitet kan utledes av elevtall."
-    ]
-  },
-  {
-    "id": "oppvekst-barnehager",
-    "title": "Barnehager rundt Nyhavna",
-    "categoryIds": [
-      "barn-oppvekst"
-    ],
-    "status": "existing",
-    "text": "Kommunens register viser Svartlamon kunst- og kulturbarnehage, Lademoen, Nedre Elvehavn og Voldsminde som eksisterende alternativer i nærområdet. Nedre Elvehavn og Voldsminde inngår i Sentrum barnehager.",
-    "keywords": [
-      "barnehage",
-      "barnehager",
-      "småbarn",
-      "Svartlamon",
-      "Lademoen",
-      "Voldsminde",
-      "Nedre Elvehavn"
-    ],
-    "sourceIds": [
-      "v-bhg-reg",
-      "v-bhg-n",
-      "v-bhg-v"
-    ],
-    "relatedPlaceIds": [],
-    "checkedAt": "2026-09-13",
-    "caveats": [
-      "Ingen ledige plasser eller nærmeste-rangering er bekreftet."
-    ]
-  },
-  {
-    "id": "oppvekst-barnehageopptak",
-    "title": "Søknad og opptak til barnehage",
-    "categoryIds": [
-      "barn-oppvekst"
-    ],
-    "status": "existing",
-    "text": "Trondheim har felles søknadsportal for barnehageplass. Hovedopptaket har søknadsfrist 1. mars. Suppleringsopptak omfatter blant annet tilflyttere gjennom året. Rett til barnehageplass er ikke garanti for plass i den barnehagen familien ønsker.",
-    "keywords": [
-      "barnehageplass",
-      "søke",
-      "søknad",
-      "opptak",
-      "frist",
-      "flytte",
-      "tilflytter"
-    ],
-    "sourceIds": [
-      "v-bhg-opptak"
-    ],
-    "relatedPlaceIds": [],
-    "checkedAt": "2026-09-13",
-    "caveats": [
-      "Individuell rett og plass må avklares gjennom opptaket; en god leveringsrute er ikke målt her."
-    ]
-  },
-  {
-    "id": "oppvekst-ny-barnehage",
-    "title": "Foreslått barnehage på Transittkaia",
-    "categoryIds": [
-      "barn-oppvekst"
-    ],
-    "status": "planned",
-    "text": "Planforslagene for Transittkaia omfatter en barnehage. Planbeskrivelsens alternativer knytter den til ulike byggetrinn, blant annet første eller tredje trinn. Det finnes derfor ikke én bekreftet åpningsdato i dette materialet. Beskrivelsen av manglende ordinær barnehage i planområdet betyr ikke at hele Nyhavna og nærområdet er uten barnehager.",
-    "keywords": [
-      "ny barnehage",
-      "planlagt barnehage",
-      "byggetrinn",
-      "åpning",
-      "Transittkaia"
-    ],
-    "sourceIds": [
-      "v-planb",
-      "v-plan"
-    ],
-    "relatedPlaceIds": [],
-    "checkedAt": "2026-09-13",
-    "caveats": [
-      "Åpne tilbud er ikke det samme som ordinær barnehageplass. Ikke lov at barnehagen er klar ved familiens innflytting."
-    ]
-  },
-  {
-    "id": "oppvekst-skolevei",
-    "title": "Skolevei og planlagt gang- og sykkelforbindelse",
-    "categoryIds": [
-      "barn-oppvekst"
-    ],
-    "status": "planned",
-    "text": "Statens vegvesen beskriver en planlagt gang- og sykkelforbindelse mellom Lilleby skole og Strandveien i prosjektet Lilleby skole–Nordtvedts gate. Ved kildekontrollen står fasen som «bygging forberedes». Siden har motstridende anslag for åpning i 2027 og 2028.",
-    "keywords": [
-      "skolevei",
-      "gå",
-      "sykle",
-      "sykkel",
-      "gangvei",
-      "Lilleby",
-      "Strandveien",
-      "avstand",
-      "minutter",
-      "trygg"
-    ],
-    "sourceIds": [
-      "v-sykkel"
-    ],
-    "relatedPlaceIds": [],
-    "checkedAt": "2026-09-13",
-    "caveats": [
-      "Åpning og byggestart er ikke bekreftet. Ingen rute, gangtid eller sykkeltid fra en bolig er målt. Ikke velg ett av årstallene som sikkert."
-    ]
-  },
-  {
-    "id": "oppvekst-anleggsruter",
-    "title": "Skolevei i anleggsperioden",
-    "categoryIds": [
-      "barn-oppvekst"
-    ],
-    "status": "existing",
-    "text": "Barnas representants uttalelse til planarbeidet for Transittkaia fremhever behovet for trygg skolevei og hensyn til barn i anleggsperioden. For en konkret bolig bør gangruten undersøkes med kryssinger, anleggstrafikk og eventuelle midlertidige traseer.",
-    "keywords": [
-      "anleggstrafikk",
-      "kryssinger",
-      "trafikk",
-      "trygghet",
-      "skolevei",
-      "anleggsperiode"
-    ],
-    "sourceIds": [
-      "v-barn-plan"
-    ],
-    "relatedPlaceIds": [],
-    "checkedAt": "2026-09-13",
-    "caveats": [
-      "Uttalelsen er et innspill til planarbeidet, ikke en kontroll av dagens rute eller en garanti for sikkerhet ved innflytting."
-    ]
-  },
-  {
-    "id": "oppvekst-skoleskyss",
-    "title": "Gratis skoleskyss i grunnskolen",
-    "categoryIds": [
-      "barn-oppvekst"
-    ],
-    "status": "existing",
-    "text": "Trøndelags regler oppgir mer enn to kilometer på første trinn og mer enn fire kilometer på andre til tiende trinn som avstandsgrenser. Særlig farlig eller vanskelig skolevei, eller behov knyttet til sykdom, skade eller nedsatt funksjonsevne, kan også gi rett ved kortere avstand.",
-    "keywords": [
-      "skoleskyss",
-      "gratis buss",
-      "skyss",
-      "to kilometer",
-      "fire kilometer",
-      "første klasse"
-    ],
-    "sourceIds": [
-      "v-skyss",
-      "v-skyss-reg"
-    ],
-    "relatedPlaceIds": [],
-    "checkedAt": "2026-09-13",
-    "caveats": [
-      "Barnets situasjon vurderes individuelt. Ikke avgjør retten med demoens referansepunkt eller anslåtte reisetid. Valg av annen skole kan påvirke skyssretten."
-    ]
-  },
-  {
-    "id": "oppvekst-videregaende",
-    "title": "Videregående: Thora Storm og Trondheim Katedralskole",
-    "categoryIds": [
-      "barn-oppvekst"
-    ],
-    "status": "existing",
-    "text": "Thora Storm og Trondheim Katedralskole er to eksempler på videregående skoler i sentrum. Begge tilbyr studiespesialisering. Thora Storm har blant annet helse- og oppvekstfag; Katedralskolen tilbyr musikk og medier og kommunikasjon. Programvalg og fylkets inntak er relevant, ikke grunnskolens skolekrets.",
-    "keywords": [
-      "videregående",
-      "vgs",
-      "studiespesialisering",
-      "musikk",
-      "helsefag",
-      "Thora Storm",
-      "Katedralskole",
-      "inntak"
-    ],
-    "sourceIds": [
-      "v-vgs-ts",
-      "v-vgs-tk",
-      "v-inntak"
-    ],
-    "relatedPlaceIds": [],
-    "checkedAt": "2026-09-13",
-    "caveats": [
-      "Listen er ikke uttømmende. Ingen reiseruter eller reisetider er kontrollert. Ikke gi plassgaranti."
-    ]
-  },
-  {
-    "id": "oppvekst-flere-parker",
-    "title": "Lademoparken, Ladeparken og Buranbanen",
-    "categoryIds": [
-      "barn-oppvekst"
-    ],
-    "status": "existing",
-    "text": "Lademoparken har lek for de minste. Ladeparken har blant annet vannlek og plass til ballspill. Buranbanen er en aktivitetspark. Tilbudene kan gi flere alternativer etter barnas alder og interesser.",
-    "keywords": [
-      "småbarn",
-      "lekeplass",
-      "parker",
-      "Lademoparken",
-      "Ladeparken",
-      "Buranbanen",
-      "vannlek"
-    ],
-    "sourceIds": [
-      "v-park-l",
-      "v-park-lade",
-      "v-buran"
-    ],
-    "relatedPlaceIds": [],
-    "checkedAt": "2026-09-13",
-    "caveats": [
-      "Hvilket sted som er enklest i hverdagen avhenger av boligen. Ingen avstand er målt."
-    ]
-  },
-  {
-    "id": "oppvekst-jubateater",
-    "title": "Jubateater for mellomtrinnet på Lademoen",
-    "categoryIds": [
-      "barn-oppvekst"
-    ],
-    "status": "existing",
-    "text": "Kommunens kulturtilbud beskriver Jubateater på Lademoen for barn på 4.–7. trinn, i Østersunds gate 1. Det er et tilbud å undersøke for et barn på mellomtrinnet som liker teater.",
-    "keywords": [
-      "teater",
-      "Jubateater",
-      "tiåring",
-      "10 år",
-      "mellomtrinn",
-      "fritidsaktiviteter",
-      "kultur"
-    ],
-    "sourceIds": [
-      "v-kultur"
-    ],
-    "relatedPlaceIds": [],
-    "checkedAt": "2026-09-13",
-    "caveats": [
-      "Semester, ledige plasser, påmelding og pris er ikke kontrollert. Andre danse- og Tweenies-tilbud på oversiktssiden hører ikke automatisk til Lademoen."
-    ]
-  },
-  {
-    "id": "oppvekst-lade-klubb",
-    "title": "Lade fritidsklubb: gratis møteplass",
-    "categoryIds": [
-      "barn-oppvekst"
-    ],
-    "status": "existing",
-    "text": "Lade fritidsklubb er gratis og har gaming, aktivitetsrom, mat på klubbkveldene og voksne til stede. Den er et alternativ til kommersielle møteplasser for ungdom.",
-    "keywords": [
-      "Lade fritidsklubb",
-      "ungdom",
-      "venner",
-      "gratis",
-      "møteplass",
-      "gaming",
-      "fjortenåring",
-      "14 år",
-      "fritid"
-    ],
-    "sourceIds": [
-      "v-klubb"
-    ],
-    "relatedPlaceIds": [],
-    "checkedAt": "2026-09-13",
-    "caveats": [
-      "Nøyaktig besøksalder er ikke avklart. Kildesiden har motstridende ukedager for gaming; ikke oppgi en fast ukedag eller bekreft at et bestemt barn kan møte opp."
-    ]
-  },
-  {
-    "id": "oppvekst-lade-motor",
-    "title": "Lade Motor fra 13 år",
-    "categoryIds": [
-      "barn-oppvekst"
-    ],
-    "status": "existing",
-    "text": "Lade Motor har et tilbud fra 13 år. Det krever fast og forpliktende deltakelse, og er ikke et generelt drop-in-tilbud.",
-    "keywords": [
-      "Lade Motor",
-      "motor",
-      "13 år",
-      "14 år",
-      "ungdom",
-      "fritidsaktiviteter"
-    ],
-    "sourceIds": [
-      "v-motor"
-    ],
-    "relatedPlaceIds": [],
-    "checkedAt": "2026-09-13",
-    "caveats": [
-      "Aktuell rekruttering, ledige plasser og påmelding må avklares med tilbudet."
-    ]
-  },
-  {
-    "id": "oppvekst-bua",
-    "title": "BUA Lademoen: gratis utstyrslån",
-    "categoryIds": [
-      "barn-oppvekst"
-    ],
-    "status": "existing",
-    "text": "BUA Lademoen låner ut sports- og friluftsutstyr gratis i Innherredsveien 91. Røde Kors beskriver tilbudet. BUA Leangen flyttet og ble BUA Lademoen i 2026; et gammelt Leangen-navn i lenker betyr derfor ikke et annet nåværende tilbud.",
-    "keywords": [
-      "BUA",
-      "utstyr",
-      "låne",
-      "gratis",
-      "sport",
-      "friluft",
-      "fritidsaktiviteter"
-    ],
-    "sourceIds": [
-      "v-bua",
-      "v-bua-hist"
-    ],
-    "relatedPlaceIds": [],
-    "checkedAt": "2026-09-13",
-    "caveats": [
-      "BUA er utstyrslån, ikke ungdomsklubb. Åpningstider og tilgjengelig utstyr er ikke kontrollert."
-    ]
-  },
-  {
-    "id": "oppvekst-rosenborg-klubben",
-    "title": "Rosenborgs skoletilknyttede KLUBBEN",
-    "categoryIds": [
-      "barn-oppvekst"
-    ],
-    "status": "existing",
-    "text": "Rosenborg skole beskriver KLUBBEN som et tilbud primært for skolens elever. Det kan være relevant å undersøke dersom ungdommen skal gå der.",
-    "keywords": [
-      "Rosenborg",
-      "KLUBBEN",
-      "ungdom",
-      "venner",
-      "møteplasser"
-    ],
-    "sourceIds": [
-      "v-rosenborg"
-    ],
-    "relatedPlaceIds": [],
-    "checkedAt": "2026-09-13",
-    "caveats": [
-      "Gratisstatus og adgang for ungdom som ikke går på skolen er ikke bekreftet."
-    ]
-  },
-  {
-    "id": "oppvekst-helsestasjon",
-    "title": "Helsestasjon bestemmes av bostedsadresse",
-    "categoryIds": [
-      "barn-oppvekst"
-    ],
-    "status": "existing",
-    "text": "Trondheim kommune har adressebasert oppslag for å finne riktig helsestasjon. Familien må bruke den faktiske bostedsadressen for å få riktig kontor og adresse.",
-    "keywords": [
-      "helsestasjon",
-      "baby",
-      "småbarn",
-      "adresse",
-      "helse"
-    ],
-    "sourceIds": [
-      "v-helse"
-    ],
-    "relatedPlaceIds": [],
-    "checkedAt": "2026-09-13",
-    "caveats": [
-      "Materialet tildeler ikke én bestemt helsestasjon til hele Nyhavna."
-    ]
-  },
-  {
-    "id": "oppvekst-skolehelse",
-    "title": "Skolehelsetjenesten for barn og ungdom",
-    "categoryIds": [
-      "barn-oppvekst"
-    ],
-    "status": "existing",
-    "text": "Skolehelsetjenesten finnes på alle skolene i Trondheim, er gratis og kan kontaktes direkte av barn og foreldre uten henvisning. For familier med skolebarn er dette et relevant tilbud å kjenne til.",
-    "keywords": [
-      "skolehelsetjeneste",
-      "helsesykepleier",
-      "skolebarn",
-      "helse",
-      "ungdom"
-    ],
-    "sourceIds": [
-      "v-skolehelse"
-    ],
-    "relatedPlaceIds": [],
-    "checkedAt": "2026-09-13",
+    "checkedAt": "2026-09-14",
     "caveats": []
   },
   {
-    "id": "oppvekst-innflytting",
-    "title": "Utbyggers anslag for Transittkaia",
-    "categoryIds": [
-      "barn-oppvekst"
-    ],
-    "status": "planned",
-    "text": "Nyhavna Utvikling oppgir på Transittkaia-siden et betinget anslag om byggestart i 2027 og innflytting i 2029, forutsatt plangodkjenning høsten 2026. Dette er utbyggers anslag, ikke en garantert tidsplan.",
-    "keywords": [
-      "innflytting",
-      "byggestart",
-      "2027",
-      "2029",
-      "ferdig",
-      "kjøpe",
-      "Transittkaia"
-    ],
-    "sourceIds": [
-      "v-nyhavna"
-    ],
-    "relatedPlaceIds": [],
-    "checkedAt": "2026-09-13",
-    "caveats": [
-      "Planforutsetningen og siste vedtaksstatus er ikke avklart. Ikke bruk anslaget som løfte for hele Nyhavna eller for ny skole/barnehage."
-    ]
-  },
-  {
-    "id": "oppvekst-etapper",
-    "title": "Etappevis utvikling og hverdagen ved innflytting",
-    "categoryIds": [
-      "barn-oppvekst"
-    ],
-    "status": "planned",
-    "text": "Kommunens omtale av omformingen fra 2021 beskriver en langsiktig utvikling av Nyhavna. Det støtter at bydelen utvikles etappevis. For familien må man undersøke hva som er ferdig ved innflytting og hvilke arbeider som fortsetter rundt den aktuelle boligen.",
-    "keywords": [
-      "utbygging",
-      "byggeperiode",
-      "etapper",
-      "hverdagen",
-      "familie",
-      "ferdig",
-      "kjøpe"
-    ],
-    "sourceIds": [
-      "v-havn",
-      "v-barn-plan"
-    ],
-    "relatedPlaceIds": [],
-    "checkedAt": "2026-09-13",
-    "caveats": [
-      "Ikke gi én varighet for anleggsarbeid ved en bestemt bolig. Overordnede planer er ikke ferdige tilbud."
-    ]
-  },
-  {
-    "id": "oppvekst-stoy-luft",
-    "title": "Støy og luftkvalitet: avgrenset ROS for Transittkaia",
+    "id": "demo-skolevei",
+    "title": "Hvor langt er det til skolene?",
     "categoryIds": [
       "barn-oppvekst"
     ],
     "status": "existing",
-    "text": "ROS-analysen for Transittkaia, datert 21. mars 2025, vurderer støy og luftkvalitet i planområdet og skiller mellom eksisterende situasjon og tiltak i fremtidig utbygging. Analysen beskriver også tiltak og vurderer prosjektet som gjennomførbart med oppfølging.",
+    "text": "Fra demoens markerte punkt er det beregnet cirka 16 minutter å gå til Lilleby skole og 20 minutter til Rosenborg skole. På sykkel er anslagene 6 og 10 minutter. Trykk på skolen for å se ruten.",
     "keywords": [
-      "støy",
-      "luft",
-      "luftkvalitet",
-      "miljø",
-      "trafikk",
-      "industri",
-      "kjøpe"
+      "Lilleby skole",
+      "Rosenborg skole"
     ],
     "sourceIds": [
-      "v-ros"
+      "demo-route",
+      "demo-lilleby",
+      "demo-rosenborg"
     ],
-    "relatedPlaceIds": [],
-    "checkedAt": "2026-09-13",
-    "caveats": [
-      "Dette er en avgrenset analyse, ikke målinger inne i fremtidige boliger eller dokumentasjon på forholdene i hele Nyhavna. Be om vurdering for konkret bygg og uteareal."
-    ]
+    "relatedPlaceIds": [
+      "lilleby-skole",
+      "rosenborg-skole"
+    ],
+    "checkedAt": "2026-09-14",
+    "caveats": []
   },
   {
-    "id": "oppvekst-grunn",
-    "title": "Forurenset grunn og oppfølging under bygging",
+    "id": "demo-barnehage-dekning",
+    "title": "Hvilke barnehager finnes i nærområdet?",
     "categoryIds": [
       "barn-oppvekst"
     ],
     "status": "existing",
-    "text": "ROS-analysen for Transittkaia omtaler forurensningsfunn og behov for håndtering og kontroll. Innledende undersøkelser fant ikke deponigass; videre oppfølging beskrives betinget. Analysen behandler også krigsetterlatenskaper som del av en avgrenset anleggsvurdering.",
+    "text": "Nedre Elvehavn og Voldsminde er to kommunale barnehager i nærområdet. Fra demoens punkt er det beregnet rundt 9 og 12 minutter å gå. Se kommunens sider for informasjon og opptak; ledige plasser er ikke undersøkt.",
     "keywords": [
-      "grunn",
-      "forurensning",
-      "deponigass",
-      "bomber",
-      "miljø",
-      "bygging"
+      "Nedre Elvehavn barnehage",
+      "Voldsminde barnehage"
     ],
     "sourceIds": [
-      "v-ros"
+      "v-bhg-n",
+      "v-bhg-v",
+      "demo-route"
     ],
-    "relatedPlaceIds": [],
-    "checkedAt": "2026-09-13",
-    "caveats": [
-      "Ikke framstill dette som en generell fare for beboere eller som dokumentasjon på ferdig sanering. Oppfølging må vurderes for det konkrete bygget."
-    ]
+    "relatedPlaceIds": [
+      "nedre-elvehavn-bhg",
+      "voldsminde-bhg"
+    ],
+    "checkedAt": "2026-09-14",
+    "caveats": []
   },
   {
-    "id": "oppvekst-kaikant",
-    "title": "Kaikanter, vann og fortsatt havnevirksomhet",
+    "id": "demo-familie-aktiviteter",
+    "title": "Hva kan vi gjøre som familie i nærområdet?",
     "categoryIds": [
-      "barn-oppvekst"
-    ],
-    "status": "planned",
-    "text": "ROS-analysen for Transittkaia legger fortsatt havnevirksomhet til grunn og beskriver sikringstiltak som kanter og redningsstiger. Ved boligkjøp bør familien undersøke hvordan utearealer, gangveier og overgangen til vannet faktisk blir sikret ved innflytting.",
-    "keywords": [
-      "kaikant",
-      "kaikanter",
-      "vannet",
-      "sjø",
-      "drukning",
-      "sikring",
-      "trygg",
-      "småbarn",
-      "havn"
-    ],
-    "sourceIds": [
-      "v-ros"
-    ],
-    "relatedPlaceIds": [],
-    "checkedAt": "2026-09-13",
-    "caveats": [
-      "Omtalte tiltak er ikke bevis på ferdig barnesikring. Unngå både garanti om trygghet og påstand om at alle tiltak mangler."
-    ]
-  },
-  {
-    "id": "oppvekst-bading",
-    "title": "Strandveikaia og bading",
-    "categoryIds": [
-      "barn-oppvekst"
+      "opplevelser"
     ],
     "status": "existing",
-    "text": "Kommunen beskriver Strandveikaia på Nyhavna som offentlig badeplass med badebrygge. Badestedets eksistens er ikke en vurdering av egnethet for et bestemt barn. Kommunens flerårige badevannsklassifisering er heller ikke dagens enkeltprøve eller et permanent badeforbud.",
+    "text": "Dere har blant annet bowling på Dora 1, padel ved E.C. Dahls og turmuligheter langs Ladestien. Bowling ligger rundt 3 minutter til fots fra demoens punkt, padel rundt 8. Se stedskortene for plassering og booking.",
     "keywords": [
-      "bade",
-      "bading",
-      "badevann",
-      "badebrygge",
-      "Strandveikaia"
+      "Dora 1 Bowling",
+      "Nyhavna Padel",
+      "Ladestien – via Ormen Langes vei"
     ],
     "sourceIds": [
-      "v-badeplass",
-      "v-badevann"
+      "s-bowling",
+      "demo-padel",
+      "demo-ladestien",
+      "demo-route"
     ],
-    "relatedPlaceIds": [],
-    "checkedAt": "2026-09-13",
-    "caveats": [
-      "Dagens badevannsprøve, forhold og barnets ferdigheter er ikke vurdert."
-    ]
+    "relatedPlaceIds": [
+      "dora-bowling",
+      "nyhavna-padel",
+      "ladestien"
+    ],
+    "checkedAt": "2026-09-14",
+    "caveats": []
   },
   {
-    "id": "oppvekst-pirbadet",
-    "title": "Pirbadet som innendørs badealternativ",
-    "categoryIds": [
-      "barn-oppvekst"
-    ],
-    "status": "existing",
-    "text": "Pirbadet er et alternativ for innendørs bading. Prisopplysninger må kontrolleres hos Pirbadet og skille mellom kjøpskanaler og aldersgrupper.",
-    "keywords": [
-      "Pirbadet",
-      "svømme",
-      "svømming",
-      "bading",
-      "pris"
-    ],
-    "sourceIds": [
-      "v-pirbadet"
-    ],
-    "relatedPlaceIds": [],
-    "checkedAt": "2026-09-13",
-    "caveats": [
-      "Gamle priser fra researchrapporten er fjernet. Ingen reisetid eller aktuell billettpris gis her."
-    ]
-  },
-  {
-    "id": "servering-dora-kaffe",
-    "title": "Dora Kaffebar og byggets interne tilbud",
+    "id": "demo-kafe",
+    "title": "Hvor finner vi kaféer og bakerier?",
     "categoryIds": [
       "mat-drikke"
     ],
     "status": "existing",
-    "text": "Dora Eiendom beskriver en offentlig tilgjengelig kafé i første etasje i Kobbes gate 2. Den følger byggets åpningstider. Byggets personalrestaurant og takterrasser skal ikke presenteres som offentlige spisesteder.",
+    "text": "Dora Kaffebar ligger i Kobbes gate, rundt 2 minutter til fots fra demoens punkt. Snurr i Ladebekken har kaffe, frokost og bakervarer, rundt 15 minutter unna til fots. Åpningstider finner dere på stedenes egne sider.",
     "keywords": [
       "Dora Kaffebar",
-      "kaffe",
-      "frokost",
-      "lunsj",
-      "kantine",
-      "Kobbes"
+      "Snurr Nyhavna"
     ],
     "sourceIds": [
-      "s-dora"
+      "s-dora",
+      "s-snurr",
+      "demo-route"
     ],
-    "relatedPlaceIds": [],
-    "checkedAt": "2026-09-13",
-    "caveats": [
-      "Eksakte kafétider og menypriser er ikke bekreftet i denne kildekontrollen."
-    ]
+    "relatedPlaceIds": [
+      "dora-kaffebar",
+      "snurr-nyhavna"
+    ],
+    "checkedAt": "2026-09-14",
+    "caveats": []
   },
   {
-    "id": "servering-bowling-mat",
-    "title": "Pizza og enkel mat hos Dora 1",
+    "id": "demo-spisesteder",
+    "title": "Hvilke restauranter finnes i nærheten?",
     "categoryIds": [
       "mat-drikke"
     ],
     "status": "existing",
-    "text": "Dora 1 har pizza fra 135 kroner for 30 cm og 229 for 40 cm, hamburger til 98 og seks nuggets til 69. Menyen har vegetarpizza og glutenfri 30-centimeters bunn.",
-    "keywords": [
-      "Dora 1",
-      "pizza",
-      "burger",
-      "nuggets",
-      "billig",
-      "pris",
-      "glutenfri"
-    ],
-    "sourceIds": [
-      "s-bowling-mat"
-    ],
-    "relatedPlaceIds": [],
-    "checkedAt": "2026-09-13",
-    "caveats": [
-      "Menypriser kontrollert 13. september 2026, kan endres. Glutenfri bunn er ikke dokumentasjon på allergitrygg tilberedning."
-    ]
-  },
-  {
-    "id": "servering-bowling-familie",
-    "title": "Familiebowling på Dora 1",
-    "categoryIds": [
-      "mat-drikke"
-    ],
-    "status": "existing",
-    "text": "Dora 1 i Kobbes gate 6 tilbyr familiebowling med to serier, skoleie og én slush, kaffe eller te for 150 kroner per person. Mat kjøpes separat. Det finnes barnegjerde og stativ for de minste.",
-    "keywords": [
-      "Dora 1",
-      "familiebowling",
-      "bowling",
-      "barn",
-      "aktivitet"
-    ],
-    "sourceIds": [
-      "s-bowling-pris",
-      "s-bowling"
-    ],
-    "relatedPlaceIds": [],
-    "checkedAt": "2026-09-13",
-    "caveats": [
-      "Pris kontrollert 13. september 2026. Ikke lov ledig bane eller bruk tilbudet som generell aldersgodkjenning."
-    ]
-  },
-  {
-    "id": "servering-havet",
-    "title": "BarbeintQ og Heim på HAVET",
-    "categoryIds": [
-      "mat-drikke"
-    ],
-    "status": "existing",
-    "text": "HAVET i Strandveien 104 har restauranten BarbeintQ og baren Heim, i tillegg til badstu og kulturprogram. BarbeintQ har egen bordbestilling.",
-    "keywords": [
-      "HAVET",
-      "BarbeintQ",
-      "Heim",
-      "middag",
-      "badstu",
-      "uten bade"
-    ],
-    "sourceIds": [
-      "s-havet",
-      "s-havet-faq"
-    ],
-    "relatedPlaceIds": [],
-    "checkedAt": "2026-09-13",
-    "caveats": [
-      "Mattilbud og bar er ulike tilbud; åpning og aldersvilkår må skilles."
-    ]
-  },
-  {
-    "id": "servering-havet-tider",
-    "title": "Motstridende søndagsåpning på HAVET",
-    "categoryIds": [
-      "mat-drikke"
-    ],
-    "status": "unresolved",
-    "text": "HAVETs egne sider gir motstridende opplysninger om søndagsåpning for kjøkkenet: serveringssiden oppgir stengt, mens forsiden oppgir søndag 15–20. Søndagsmat er derfor uavklart.",
-    "keywords": [
-      "HAVET søndag",
-      "BarbeintQ",
-      "åpningstider",
-      "søndagsmat",
-      "kjøkken"
-    ],
-    "sourceIds": [
-      "s-havet",
-      "s-havet-hjem"
-    ],
-    "relatedPlaceIds": [],
-    "checkedAt": "2026-09-13",
-    "caveats": [
-      "Kontakt HAVET før et søndagsbesøk; ikke velg én av tidene som sikker."
-    ]
-  },
-  {
-    "id": "servering-havet-alder",
-    "title": "Aldersgrenser på HAVET",
-    "categoryIds": [
-      "mat-drikke"
-    ],
-    "status": "existing",
-    "text": "HAVETs FAQ oppgir fredag–lørdag 18-årsgrense i Ardna fra 16 og på ARK-flåtene fra 18, og 20-årsgrense i Heim bar og restaurant fra 21.",
-    "keywords": [
-      "HAVET aldersgrense",
-      "Heim",
-      "Ardna",
-      "ARK",
-      "ungdom",
-      "20 år"
-    ],
-    "sourceIds": [
-      "s-havet-faq"
-    ],
-    "relatedPlaceIds": [],
-    "checkedAt": "2026-09-13",
-    "caveats": [
-      "Kontrollert 13. september 2026. Arrangementer kan ha egne vilkår; vergeordning er ikke automatisk adgang."
-    ]
-  },
-  {
-    "id": "servering-ramp",
-    "title": "Ramp på Svartlamon",
-    "categoryIds": [
-      "mat-drikke"
-    ],
-    "status": "existing",
-    "text": "Svartlamons virksomhetsoversikt beskriver Ramp som et spisested med burgere av blant annet storfe, lam og kikerter. Det gir et alternativ i nabolaget rundt Nyhavna.",
-    "keywords": [
-      "Ramp",
-      "Svartlamon",
-      "pub",
-      "burger",
-      "kikert",
-      "uteliv"
-    ],
-    "sourceIds": [
-      "s-svartlamon"
-    ],
-    "relatedPlaceIds": [],
-    "checkedAt": "2026-09-13",
-    "caveats": [
-      "Aktuelle menypriser og kjøkkentider er ikke tilstrekkelig bekreftet. Oversiktens kjøkkentid må ikke brukes som sikker besøksinformasjon."
-    ]
-  },
-  {
-    "id": "servering-ladejarlen-barn",
-    "title": "Barnepizza på Ladejarlen",
-    "categoryIds": [
-      "mat-drikke"
-    ],
-    "status": "existing",
-    "text": "Ladejarlens pizzameny oppgir barnepizza til 155 kroner for barn under 12 år. Dette er en barnepris, ikke fra-pris for voksenpizza.",
-    "keywords": [
-      "Ladejarlen barnepizza",
-      "barnemeny",
-      "12 år",
-      "familie",
-      "barnepris"
-    ],
-    "sourceIds": [
-      "s-ladejarlen-pizza"
-    ],
-    "relatedPlaceIds": [],
-    "checkedAt": "2026-09-13",
-    "caveats": [
-      "Pris kontrollert 13. september 2026. En 14-åring omfattes ikke av vilkåret under 12."
-    ]
-  },
-  {
-    "id": "servering-ladejarlen-mat",
-    "title": "Ladejarlen: takeaway og veganske tilpasninger",
-    "categoryIds": [
-      "mat-drikke"
-    ],
-    "status": "existing",
-    "text": "Ladejarlen oppgir ti prosent rabatt på selvhentet takeaway og at flere retter kan tilpasses vegetarisk eller vegansk. To egne menysider viser ulike priser på enkelte pizzaer.",
+    "text": "Ladejarlen og Nyhavna BistroBar er to alternativer i nærområdet, rundt 8 og 15 minutter til fots fra demoens punkt. På stedskortene finner dere lenker til meny og åpningstider.",
     "keywords": [
       "Ladejarlen",
-      "takeaway",
-      "hente",
-      "rabatt",
-      "vegansk",
-      "vegetar",
-      "pizza"
+      "Nyhavna BistroBar"
     ],
     "sourceIds": [
       "s-ladejarlen",
-      "s-ladejarlen-pizza"
+      "s-bistro",
+      "demo-route"
     ],
-    "relatedPlaceIds": [],
-    "checkedAt": "2026-09-13",
-    "caveats": [
-      "Bekreft bestillingspris og tilpasning. Leveringsdekning til en konkret bolig er ikke kontrollert."
-    ]
+    "relatedPlaceIds": [
+      "ladejarlen",
+      "nyhavna-bistro"
+    ],
+    "checkedAt": "2026-09-14",
+    "caveats": []
   },
   {
-    "id": "servering-ladejarlen-tid",
-    "title": "Ladejarlen: kjøkkentider og kafépause",
+    "id": "demo-aktuelle-menyer",
+    "title": "Hvor finner vi aktuelle åpningstider og menyer?",
     "categoryIds": [
       "mat-drikke"
     ],
     "status": "existing",
-    "text": "Ladejarlen varsler midlertidig redusert åpning. Kjøkkentidene på siden er mandag–lørdag 16–23 og søndag 14–22. Den separate kaféen er bare åpen for arrangementer og lukkede selskap; vaffelbuffeten er satt på pause.",
+    "text": "Åpne kortet til Snurr, Ladejarlen eller Nyhavna BistroBar og følg lenken til stedets egen nettside. Der finner dere oppdaterte menyer og åpningstider.",
     "keywords": [
+      "Snurr Nyhavna",
       "Ladejarlen",
-      "sent",
-      "kjøkkentid",
-      "søndag",
-      "kafé",
-      "vaffelbuffet"
+      "Nyhavna BistroBar"
     ],
     "sourceIds": [
-      "s-ladejarlen-tid",
-      "s-ladejarlen-kafe"
-    ],
-    "relatedPlaceIds": [],
-    "checkedAt": "2026-09-13",
-    "caveats": [
-      "Kontrollert 13. september 2026. Midlertidige tider kan endres raskt; ikke presenter kaféen som et ordinært dagtilbud."
-    ]
-  },
-  {
-    "id": "servering-dahls",
-    "title": "E.C. Dahls: middag og pubmat",
-    "categoryIds": [
-      "mat-drikke"
-    ],
-    "status": "existing",
-    "text": "E.C. Dahls Pub og Kjøkken ligger i Strandveien 71. Egen side oppgir tirsdag–lørdag 17–00.30, med kjøkken til 21.30. Konsertdager kan ha andre tider.",
-    "keywords": [
-      "E.C. Dahls",
-      "Dahls",
-      "pub",
-      "kjøkken",
-      "åpningstid",
-      "kveld"
-    ],
-    "sourceIds": [
-      "s-dahls"
-    ],
-    "relatedPlaceIds": [],
-    "checkedAt": "2026-09-13",
-    "caveats": [
-      "Kontrollert 13. september 2026. Barens stengetid er ikke tidspunkt for siste matbestilling."
-    ]
-  },
-  {
-    "id": "servering-dahls-meny",
-    "title": "E.C. Dahls: priseksempler og vegetar",
-    "categoryIds": [
-      "mat-drikke"
-    ],
-    "status": "existing",
-    "text": "Menyen fra 11. august 2026 har cheeseburger til 315 kroner, falafelburger til 255 og entrecôte til 545. Falafelburgeren er merket med melk og egg og skal ikke anbefales som vegansk uten tilpasning.",
-    "keywords": [
-      "Dahls",
-      "pris",
-      "falafelburger",
-      "cheeseburger",
-      "entrecôte",
-      "vegan"
-    ],
-    "sourceIds": [
-      "s-dahls-meny"
-    ],
-    "relatedPlaceIds": [],
-    "checkedAt": "2026-09-13",
-    "caveats": [
-      "Kontrollert 13. september 2026. Ingen separat barnemeny er funnet i denne PDF-en; det beviser ikke at stedet mangler barnetilbud."
-    ]
-  },
-  {
-    "id": "servering-snurr",
-    "title": "Snurr Nyhavna: frokost, kaffe og helg",
-    "categoryIds": [
-      "mat-drikke"
-    ],
-    "status": "existing",
-    "text": "Snurr Nyhavna ligger i Ladebekken 24D. Egen side oppgir hverdager 08–17 og helg 10–16. Espresso koster 35 kroner, stor vanlig kaffe 49, og Tomat & avokado er merket vegansk og koster 159.",
-    "keywords": [
-      "Snurr",
-      "kaffe",
-      "espresso",
-      "frokost",
-      "bakeri",
-      "brød",
-      "søndag",
-      "Ladebekken"
-    ],
-    "sourceIds": [
-      "s-snurr"
-    ],
-    "relatedPlaceIds": [],
-    "checkedAt": "2026-09-13",
-    "caveats": [
-      "Kontrollert 13. september 2026. Kaffe fra 35 betyr espresso; ikke bruk det som pris for en stor kaffe. Ingen gangrute fra boligen er målt."
-    ]
-  },
-  {
-    "id": "servering-bistro",
-    "title": "Nyhavna BistroBar ligger i Ladebekken",
-    "categoryIds": [
-      "mat-drikke"
-    ],
-    "status": "existing",
-    "text": "Nyhavna BistroBar ligger i Ladebekken 24A. Egen side oppgir mandag 16–20.30 med bare pizzameny, tirsdag–lørdag 16–22.30. Søndagstid er ikke oppgitt. Navnet betyr ikke at stedet ligger ved Dora.",
-    "keywords": [
-      "Nyhavna BistroBar",
-      "bistro",
-      "Ladebekken",
-      "mandag",
-      "pizza",
-      "søndag"
-    ],
-    "sourceIds": [
+      "s-snurr",
+      "s-ladejarlen",
       "s-bistro"
     ],
-    "relatedPlaceIds": [],
-    "checkedAt": "2026-09-13",
-    "caveats": [
-      "Kontrollert 13. september 2026. Mandagens pizzautvalg og åpningsåret er ikke bekreftet; ikke kall stedet nyest."
-    ]
+    "relatedPlaceIds": [
+      "snurr-nyhavna",
+      "ladejarlen",
+      "nyhavna-bistro"
+    ],
+    "checkedAt": "2026-09-14",
+    "caveats": []
   },
   {
-    "id": "servering-bistro-mat",
-    "title": "Middag på Nyhavna BistroBar",
+    "id": "demo-dagligvarer",
+    "title": "Hvor handler vi dagligvarer?",
     "categoryIds": [
-      "mat-drikke"
+      "hverdagsliv"
     ],
     "status": "existing",
-    "text": "BistroBars meny har fish and chips og bakt spisskål til 285 kroner, andelår til 345, kveite til 395 og entrecôte til 550.",
+    "text": "MENY Solsiden og KIWI Lilleby er to alternativer, rundt 11 og 15 minutter til fots fra demoens punkt. KIWI har også utendørs pakkebokser fra Posten og PostNord.",
     "keywords": [
-      "BistroBar",
-      "pris",
-      "spisskål",
-      "vegetar",
-      "middag",
-      "kveite"
+      "MENY Solsiden",
+      "KIWI Lilleby"
     ],
     "sourceIds": [
-      "s-bistro-meny"
+      "demo-meny",
+      "demo-kiwi",
+      "demo-route"
     ],
-    "relatedPlaceIds": [],
-    "checkedAt": "2026-09-13",
-    "caveats": [
-      "Prisene er kontrollert 13. september 2026 og kan endres. Vegetarisk rett er ikke automatisk vegansk."
-    ]
+    "relatedPlaceIds": [
+      "meny-solsiden",
+      "kiwi-lilleby"
+    ],
+    "checkedAt": "2026-09-14",
+    "caveats": []
   },
   {
-    "id": "servering-sabrura",
-    "title": "Sabrura: buffet, barn og glutenfritt",
+    "id": "demo-holdeplass",
+    "title": "Hvor er nærmeste holdeplass?",
     "categoryIds": [
-      "mat-drikke"
+      "transport"
     ],
     "status": "existing",
-    "text": "Sabrura oppgir gratis buffet for barn opptil 6 år sammen med en spisende voksen og glutenfri buffet fra kjøkkenet mot 25 kroner ekstra. Ordinær bordtid er to timer, med lokale variasjoner.",
+    "text": "Av holdeplassene i dette utvalget er Losgata nærmest, rundt 4 minutter til fots fra demoens punkt. Dora ligger rundt 5 minutter unna. Sjekk AtB for riktig retning og avgang.",
     "keywords": [
-      "Sabrura",
-      "sushi",
-      "buffet",
-      "barn",
-      "gratis",
-      "glutenfri",
-      "allergi"
+      "Losgata",
+      "Dora"
     ],
     "sourceIds": [
-      "s-sabrura"
+      "demo-atb",
+      "demo-route"
     ],
-    "relatedPlaceIds": [],
-    "checkedAt": "2026-09-13",
-    "caveats": [
-      "Fast voksenpris på 229 kroner for både lunsj og middag er ikke bekreftet for Solsiden. Allergibehov må avklares direkte."
-    ]
+    "relatedPlaceIds": [
+      "losgata",
+      "dora-holdeplass"
+    ],
+    "checkedAt": "2026-09-14",
+    "caveats": []
   },
   {
-    "id": "servering-sabrura-tid",
-    "title": "Sabrura Solsiden: restaurant og takeaway",
+    "id": "demo-sentrum",
+    "title": "Hvordan kommer vi oss til sentrum?",
     "categoryIds": [
-      "mat-drikke"
+      "transport"
     ],
     "status": "existing",
-    "text": "Sabrura Solsiden i Bassengbakken 2 oppgir mandag–torsdag og søndag 13–22, fredag 13–23 og lørdag 12–23. Takeaway avsluttes én time før restauranten.",
+    "text": "Linje 20 fra Losgata eller Dora går mot Trondheim S og sentrum. Fra Dora går også linje 71 via Solsiden og sentrum. Bruk AtB for avgangen som passer reisen deres. Til Trondheim S er det beregnet rundt 8 minutter på sykkel fra demoens punkt.",
     "keywords": [
-      "Sabrura",
-      "søndag",
-      "takeaway",
-      "hente",
-      "åpningstid",
-      "Bassengbakken"
+      "Losgata",
+      "Dora"
     ],
     "sourceIds": [
-      "s-sabrura-solsiden"
+      "demo-line20",
+      "demo-line71",
+      "demo-route",
+      "demo-stasjon"
     ],
-    "relatedPlaceIds": [],
-    "checkedAt": "2026-09-13",
-    "caveats": [
-      "Kontrollert 13. september 2026. Ordinære åpningstider er ikke bekreftelse på åpent akkurat nå."
-    ]
+    "relatedPlaceIds": [
+      "losgata",
+      "dora-holdeplass",
+      "trondheim-s"
+    ],
+    "checkedAt": "2026-09-14",
+    "caveats": []
   },
   {
-    "id": "servering-egon",
-    "title": "Egon Solsiden: pizzabuffet og takeaway",
+    "id": "demo-bildeling",
+    "title": "Kan vi bruke bildeling?",
     "categoryIds": [
-      "mat-drikke"
+      "transport"
     ],
     "status": "existing",
-    "text": "Egon Solsidens egen side beskriver pizzabuffet, burgere og takeaway på TMV-kaia 21.",
+    "text": "Trondheim Bilkollektiv har hentested i Mellomveien, rundt 12 minutter til fots fra demoens punkt. Dere trenger medlemskap og reservasjon, og bilen returneres til hentestedet. Se operatørens side for tilgjengelighet og vilkår.",
     "keywords": [
-      "Egon",
-      "pizzabuffet",
-      "familie",
-      "barn",
-      "takeaway",
-      "Solsiden"
+      "Bildeling i Mellomveien"
     ],
     "sourceIds": [
-      "s-egon"
+      "demo-tbk",
+      "demo-route"
     ],
-    "relatedPlaceIds": [],
-    "checkedAt": "2026-09-13",
-    "caveats": [
-      "Rapportens kjedepriser og aldersvilkår er ikke bekreftet for denne avdelingen og gis ikke som lokale priser."
-    ]
+    "relatedPlaceIds": [
+      "tbk-mellomveien"
+    ],
+    "checkedAt": "2026-09-14",
+    "caveats": []
   },
   {
-    "id": "servering-barnemeny-uavklart",
-    "title": "Barnemeny hos Olivia og Una er ikke avklart",
+    "id": "demo-parkering",
+    "title": "Hvordan fungerer parkering?",
     "categoryIds": [
-      "mat-drikke"
-    ],
-    "status": "unresolved",
-    "text": "Det er ikke funnet egen barneseksjon i den kontrollerte Una-menyen eller Olivia-filen merket Solsiden sommer 2026. Dette beviser ikke at stedene mangler barnemeny. Olivia-filen nevner også Ramsalt i teksten, så stedstilknytningen trenger avklaring.",
-    "keywords": [
-      "Olivia barnemeny",
-      "Una barnemeny",
-      "barn",
-      "bambini"
-    ],
-    "sourceIds": [
-      "s-olivia",
-      "s-una"
-    ],
-    "relatedPlaceIds": [],
-    "checkedAt": "2026-09-13",
-    "caveats": [
-      "Google-attributter eller en generell kjedemeny gir ikke sikker dokumentasjon for en konkret avdeling."
-    ]
-  },
-  {
-    "id": "servering-una",
-    "title": "Una Solsiden: pizza og vegansk alternativ",
-    "categoryIds": [
-      "mat-drikke"
+      "transport"
     ],
     "status": "existing",
-    "text": "Una ligger i Beddingen 14 på Solsiden. Menyen har Vegana-pizza til 238 kroner og Margherita til 202.",
+    "text": "Det finnes korttidsparkering ved Dora, oppgitt av Trondheim parkering i Maskinistgata. Følg skiltingen på stedet. Parkering som følger en framtidig bolig må avklares med boligprosjektet.",
     "keywords": [
-      "Una",
-      "vegansk pizza",
-      "Vegana",
-      "Margherita",
-      "Solsiden",
-      "pris"
+      "Parkering ved Dora"
     ],
     "sourceIds": [
-      "s-una"
+      "demo-parking"
     ],
-    "relatedPlaceIds": [],
-    "checkedAt": "2026-09-13",
-    "caveats": [
-      "Priser kontrollert 13. september 2026. Allergenmerking beskriver innhold, ikke garanti for tilberedning uten krysskontakt."
-    ]
-  },
-  {
-    "id": "servering-godtbrod",
-    "title": "Godt Brød Solsiden: bakeri og helg",
-    "categoryIds": [
-      "mat-drikke"
+    "relatedPlaceIds": [
+      "dora-parkering"
     ],
-    "status": "existing",
-    "text": "Godt Brød i Beddingen 10 oppgir hverdager 06.30–21 og lørdag–søndag 08–18. Det er et bakerialternativ for tidlig kaffe og helgebakst.",
-    "keywords": [
-      "Godt Brød",
-      "bakeri",
-      "brød",
-      "frokost",
-      "tidlig",
-      "søndag"
-    ],
-    "sourceIds": [
-      "s-godtbrod"
-    ],
-    "relatedPlaceIds": [],
-    "checkedAt": "2026-09-13",
-    "caveats": [
-      "Tider kontrollert 13. september 2026. Ingen konkrete menypriser eller rangering som nærmeste bakeri er bekreftet."
-    ]
-  },
-  {
-    "id": "servering-dromedar",
-    "title": "Dromedar Kaffebar Solsiden",
-    "categoryIds": [
-      "mat-drikke"
-    ],
-    "status": "existing",
-    "text": "Dromedar i Beddingen 10 oppgir hverdager 07.30–18, lørdag 10–17 og søndag 11–17.",
-    "keywords": [
-      "Dromedar",
-      "kaffebar",
-      "kaffe",
-      "Solsiden",
-      "søndag"
-    ],
-    "sourceIds": [
-      "s-dromedar"
-    ],
-    "relatedPlaceIds": [],
-    "checkedAt": "2026-09-13",
-    "caveats": [
-      "Kontrollert 13. september 2026. Gangtid fra en konkret bolig er ikke målt."
-    ]
-  },
-  {
-    "id": "servering-rosendal",
-    "title": "Rosendal Kafé og teaterbesøk",
-    "categoryIds": [
-      "mat-drikke"
-    ],
-    "status": "existing",
-    "text": "Rosendal Teater har kafé med matservering i tilknytning til forestillingene. Siden oppgir at kaféen åpner én time før forestilling.",
-    "keywords": [
-      "Rosendal",
-      "teater",
-      "kafé",
-      "aktivitet",
-      "mat"
-    ],
-    "sourceIds": [
-      "s-rosendal"
-    ],
-    "relatedPlaceIds": [],
-    "checkedAt": "2026-09-13",
-    "caveats": [
-      "Sjekk forestilling og kjøkkentid for besøksdagen; forestillingsåpning er ikke automatisk utvidet kjøkkentid."
-    ]
-  },
-  {
-    "id": "servering-leos",
-    "title": "Leo’s Lekeland med bistro",
-    "categoryIds": [
-      "mat-drikke"
-    ],
-    "status": "existing",
-    "text": "Leo’s Lekeland i Ladebekken 6 har bistro for barn og voksne.",
-    "keywords": [
-      "Leo",
-      "Leos",
-      "lekeland",
-      "bistro",
-      "aktivitet",
-      "barn"
-    ],
-    "sourceIds": [
-      "s-leos"
-    ],
-    "relatedPlaceIds": [],
-    "checkedAt": "2026-09-13",
-    "caveats": [
-      "Aktuell billettpris, bistropris og egnethet for barnets alder er ikke kontrollert. Ikke anta at bistroen kan besøkes uten lekelandbillett."
-    ]
-  },
-  {
-    "id": "servering-planer",
-    "title": "Servering i planforslaget for Transittkaia",
-    "categoryIds": [
-      "mat-drikke"
-    ],
-    "status": "planned",
-    "text": "Utbygger beskriver servering og andre publikumstilbud på bakkeplan i planforslaget for Transittkaia. Utbyggingen er etappevis og påvirkes av marked og rekkefølgekrav.",
-    "keywords": [
-      "Transittkaia",
-      "nye restauranter",
-      "planforslag",
-      "fremtid",
-      "innflytting",
-      "servering"
-    ],
-    "sourceIds": [
-      "v-nyhavna",
-      "v-plan"
-    ],
-    "relatedPlaceIds": [],
-    "checkedAt": "2026-09-13",
-    "caveats": [
-      "Kontrollerte sider gir ikke bekreftede restaurantaktører eller åpningsdatoer for de planlagte lokalene. Siste planvedtak er ikke fastslått her."
-    ]
-  },
-  {
-    "id": "servering-havet-mat",
-    "title": "BarbeintQ: priseksempler og vegansk forbehold",
-    "categoryIds": [
-      "mat-drikke"
-    ],
-    "status": "existing",
-    "text": "HAVETs menybilde merket sommer 2026 viser cheeseburger til 225 kroner og veggie tostada til 179. Chili sin carne til 259 omtales som vegansk, men er også oppført med rømme, cheddar og melk.",
-    "keywords": [
-      "HAVET",
-      "BarbeintQ",
-      "pris",
-      "burger",
-      "vegan",
-      "chili"
-    ],
-    "sourceIds": [
-      "s-havet-meny"
-    ],
-    "relatedPlaceIds": [],
-    "checkedAt": "2026-09-13",
-    "caveats": [
-      "Bildet ble kontrollert 13. september 2026. Avklar vegansk servering uten tilbehøret; sesongmenyen kan være erstattet."
-    ]
-  },
-  {
-    "id": "servering-rosendal-mat",
-    "title": "Rosendal Kafé: konkrete priseksempler",
-    "categoryIds": [
-      "mat-drikke"
-    ],
-    "status": "existing",
-    "text": "Rosendal Kafés publiserte meny har gruyère-toast til 129 kroner, Adasi med linser og kikerter til 149 og kjøttgryte til 279. Adasi er oppført med laktose.",
-    "keywords": [
-      "Rosendal",
-      "pris",
-      "toast",
-      "suppe",
-      "Adasi",
-      "vegan"
-    ],
-    "sourceIds": [
-      "s-rosendal-meny"
-    ],
-    "relatedPlaceIds": [],
-    "checkedAt": "2026-09-13",
-    "caveats": [
-      "Kontrollert 13. september 2026; menyens gyldighetsperiode er ikke datofestet. Ikke anbefal Adasi som vegansk uten avklaring."
-    ]
-  },
-  {
-    "id": "servering-rosendal-adkomst",
-    "title": "Rosendal: rampe og heis til kaféen",
-    "categoryIds": [
-      "mat-drikke"
-    ],
-    "status": "existing",
-    "text": "Rosendal beskriver rampe ved nybyggets inngang, heis til kaféen og tilgjengelig toalett med stellerom i kjelleren.",
-    "keywords": [
-      "Rosendal",
-      "rullestol",
-      "trinnfri",
-      "heis",
-      "tilgjengelighet",
-      "barnevogn"
-    ],
-    "sourceIds": [
-      "s-rosendal-adkomst"
-    ],
-    "relatedPlaceIds": [],
-    "checkedAt": "2026-09-13",
-    "caveats": [
-      "Dette beskriver Rosendal, ikke tilgjengeligheten hos andre spisesteder. Aktuell drift av heisen er ikke kontrollert."
-    ]
-  },
-  {
-    "id": "servering-monkey",
-    "title": "Monkey Brew: bryggeri og utsalg",
-    "categoryIds": [
-      "mat-drikke"
-    ],
-    "status": "existing",
-    "text": "Nyhavna Utvikling omtaler Monkey Brew som håndverksbryggeri i Kobbes gate 10, med utsalg torsdag og fredag.",
-    "keywords": [
-      "Monkey Brew",
-      "bryggeri",
-      "øl",
-      "utsalg"
-    ],
-    "sourceIds": [
-      "s-nyhavna"
-    ],
-    "relatedPlaceIds": [],
-    "checkedAt": "2026-09-13",
-    "caveats": [
-      "Eksakte klokkeslett og aktuell matservering er ikke kontrollert. Ikke presenter et bryggeriutsalg som en vanlig restaurant."
-    ]
+    "checkedAt": "2026-09-14",
+    "caveats": []
   }
 ]

@@ -208,6 +208,9 @@ describe("Transkript uten turgrenser", () => {
     const { result, peer } = await connect();
     await act(async () => { peer.channel.emit({ type: "error", error: { code: "moderation", message: "kuttet" } }); });
     expect(result.current.notice).toContain("Noe avbrøt svaret");
+    expect(result.current.interruptionVersion).toBe(1);
+    await act(async () => { peer.channel.emit({ type: "error", error: { code: "moderation", message: "kuttet" } }); });
+    expect(result.current.interruptionVersion).toBe(2);
     expect(result.current.status).not.toBe("error");
     expect(peer.close).not.toHaveBeenCalled();
   });

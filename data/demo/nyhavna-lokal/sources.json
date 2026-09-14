@@ -1,21 +1,5 @@
 [
   {
-    "id": "nyhavna-leve-board",
-    "label": "Nyhavna-boardet",
-    "page": "Spørsmål og svar på Leve-varianten",
-    "url": "http://localhost:3103/eiendom/nyhavna-utvikling/nyhavna/leve",
-    "publisher": "Placy",
-    "checkedAt": "2026-09-13"
-  },
-  {
-    "id": "v-plan",
-    "label": "Trondheim kommune",
-    "page": "Transittkaia – kommunens arkiverte høring",
-    "url": "https://www.trondheim.kommune.no/aktuelt/kunngjoring-arealplan/arkiv-planer-kunngjort/2026/Transittkaia-detaljregulering/",
-    "publisher": "Trondheim kommune",
-    "checkedAt": "2026-09-13"
-  },
-  {
     "id": "v-planb",
     "label": "Trondheim kommune",
     "page": "Planbeskrivelse Transittkaia",
@@ -24,74 +8,10 @@
     "checkedAt": "2026-09-13"
   },
   {
-    "id": "v-nyhavna",
-    "label": "Nyhavna Utvikling",
-    "page": "Utbyggers Transittkaia-side",
-    "url": "https://nyhavna.no/bo/transittkaia/",
-    "publisher": "Nyhavna Utvikling",
-    "checkedAt": "2026-09-13"
-  },
-  {
-    "id": "v-havn",
-    "label": "Trondheim kommune",
-    "page": "Kommunen om gradvis utvikling og fortsatt byhavn",
-    "url": "https://www.trondheim.kommune.no/aktuelt/nyhetssaker/2021/etablerer-felles-eiendomsselskap--for-a-utvikle-nyhavna-til-ny-bydel/",
-    "publisher": "Trondheim kommune",
-    "checkedAt": "2026-09-13"
-  },
-  {
-    "id": "v-barn-plan",
-    "label": "Trondheim kommune",
-    "page": "Barnas representants uttalelse om Transittkaia",
-    "url": "https://www.trondheim.kommune.no/globalassets/10-bilder-og-filer/10-byutvikling/byplankontoret/1b_offentlig-ettersyn/2026/transittkaia/53.-uttalelse-fra-barnas-reprentant.pdf",
-    "publisher": "Trondheim kommune",
-    "checkedAt": "2026-09-13"
-  },
-  {
-    "id": "v-ros",
-    "label": "Trondheim kommune",
-    "page": "ROS-analyse Transittkaia",
-    "url": "https://www.trondheim.kommune.no/globalassets/10-bilder-og-filer/10-byutvikling/byplankontoret/1b_offentlig-ettersyn/2026/transittkaia/40.-ros-analyse.pdf",
-    "publisher": "Trondheim kommune",
-    "checkedAt": "2026-09-13"
-  },
-  {
-    "id": "v-sykkel",
-    "label": "Statens vegvesen",
-    "page": "Vegvesenet: Lilleby skole–Nordtvedts gate",
-    "url": "https://www.vegvesen.no/vegprosjekter/prosjekt/lillebynordtvedtsgate/",
-    "publisher": "Statens vegvesen",
-    "checkedAt": "2026-09-13"
-  },
-  {
     "id": "v-krets",
     "label": "Trondheim kommune",
     "page": "Kommunen: Finn din skolekrets",
     "url": "https://www.trondheim.kommune.no/tema/skole/praktisk-informasjon-skole/finn-din-skolekrets/",
-    "publisher": "Trondheim kommune",
-    "checkedAt": "2026-09-13"
-  },
-  {
-    "id": "v-kapasitet",
-    "label": "Trondheim kommune",
-    "page": "Kommunen: forklaring av skolekapasitetskart",
-    "url": "https://www.trondheim.kommune.no/tema/bygg-kart-og-eiendom/kart/temakart/",
-    "publisher": "Trondheim kommune",
-    "checkedAt": "2026-09-13"
-  },
-  {
-    "id": "v-rosenborg",
-    "label": "Trondheim kommune",
-    "page": "Rosenborg skole",
-    "url": "https://www.trondheim.kommune.no/org/oppvekst/skoler/rosenborg-skole/",
-    "publisher": "Trondheim kommune",
-    "checkedAt": "2026-09-13"
-  },
-  {
-    "id": "v-bhg-reg",
-    "label": "Trondheim kommune",
-    "page": "Kommunens barnehageregister",
-    "url": "https://www.trondheim.kommune.no/tema/barnehage/praktisk-informasjon-foreldre-barnehage/barnehager-i-trondheim/",
     "publisher": "Trondheim kommune",
     "checkedAt": "2026-09-13"
   },
@@ -112,187 +32,11 @@
     "checkedAt": "2026-09-13"
   },
   {
-    "id": "v-bhg-opptak",
-    "label": "Trondheim kommune",
-    "page": "Kommunen: Barnehageplass",
-    "url": "https://www.trondheim.kommune.no/tema/barnehage/barnehageplass/",
-    "publisher": "Trondheim kommune",
-    "checkedAt": "2026-09-13"
-  },
-  {
-    "id": "v-skyss",
-    "label": "Trøndelag fylkeskommune",
-    "page": "Trøndelag: skoleskyss i grunnskolen",
-    "url": "https://www.trondelagfylke.no/en/vare-tjenester/samferdsel/Skoleskyss/skoleskyss---grunnskole/",
-    "publisher": "Trøndelag fylkeskommune",
-    "checkedAt": "2026-09-13"
-  },
-  {
-    "id": "v-skyss-reg",
-    "label": "Trøndelag fylkeskommune",
-    "page": "Retningslinjer for grunnskoleskyss",
-    "url": "https://www.trondelagfylke.no/contentassets/bd4a82788cb346598d2b5e12f17e3134/retningslinjer-for-skoleskyss-i-grunnskole_vedtatt-i-ft-100425.pdf",
-    "publisher": "Trøndelag fylkeskommune",
-    "checkedAt": "2026-09-13"
-  },
-  {
-    "id": "v-vgs-ts",
-    "label": "Trøndelag fylkeskommune",
-    "page": "Thora Storm videregående skole",
-    "url": "https://web.trondelagfylke.no/thora-storm-videregaende-skole/",
-    "publisher": "Trøndelag fylkeskommune",
-    "checkedAt": "2026-09-13"
-  },
-  {
-    "id": "v-vgs-tk",
-    "label": "Trøndelag fylkeskommune",
-    "page": "Trondheim Katedralskole",
-    "url": "https://web.trondelagfylke.no/trondheim-katedralskole/",
-    "publisher": "Trøndelag fylkeskommune",
-    "checkedAt": "2026-09-13"
-  },
-  {
-    "id": "v-inntak",
-    "label": "Trøndelag fylkeskommune",
-    "page": "Trøndelag: inntak",
-    "url": "https://www.trondelagfylke.no/inntak",
-    "publisher": "Trøndelag fylkeskommune",
-    "checkedAt": "2026-09-13"
-  },
-  {
-    "id": "v-helse",
-    "label": "Trondheim kommune",
-    "page": "Kommunen: Finn din helsestasjon",
-    "url": "https://www.trondheim.kommune.no/tema/helse-og-omsorg/helsetjenester/helsestasjon/helsestasjon-hovedsak/helsestasjonene/",
-    "publisher": "Trondheim kommune",
-    "checkedAt": "2026-09-13"
-  },
-  {
-    "id": "v-skolehelse",
-    "label": "Trondheim kommune",
-    "page": "Kommunen: Skolehelsetjenesten",
-    "url": "https://www.trondheim.kommune.no/tema/skole/trondheimsskolen/skolehelsetjenesten/",
-    "publisher": "Trondheim kommune",
-    "checkedAt": "2026-09-13"
-  },
-  {
-    "id": "v-park-s",
-    "label": "Trondheim kommune",
-    "page": "Strandveiparken",
-    "url": "https://www.trondheim.kommune.no/tema/kultur-og-fritid/park-og-mark/parker-og-byrom/strandveiparken/",
-    "publisher": "Trondheim kommune",
-    "checkedAt": "2026-09-13"
-  },
-  {
-    "id": "v-park-aapen",
-    "label": "Trondheim kommune",
-    "page": "Kommunens gjenåpningsartikkel",
-    "url": "https://trondheim.kommune.no/aktuelt/om-kommunen/annet/prosjekter-fra-a-a/omradesatsingene-i-trondheim/nytt-fra-omradesatsingene/nytt-fra-omradesatsingene/strandveiparken-er-apen--ventetiden-er-over2/",
-    "publisher": "Trondheim kommune",
-    "checkedAt": "2026-09-13"
-  },
-  {
-    "id": "v-park-l",
-    "label": "Trondheim kommune",
-    "page": "Lademoparken",
-    "url": "https://www.trondheim.kommune.no/tema/kultur-og-fritid/park-og-mark/parker-og-byrom/lademoparken/",
-    "publisher": "Trondheim kommune",
-    "checkedAt": "2026-09-13"
-  },
-  {
-    "id": "v-park-lade",
-    "label": "Trondheim kommune",
-    "page": "Ladeparken",
-    "url": "https://www.trondheim.kommune.no/tema/kultur-og-fritid/park-og-mark/parker-og-byrom/ladeparken/",
-    "publisher": "Trondheim kommune",
-    "checkedAt": "2026-09-13"
-  },
-  {
-    "id": "v-buran",
-    "label": "Trondheim kommune",
-    "page": "Buranbanen",
-    "url": "https://www.trondheim.kommune.no/tema/kultur-og-fritid/park-og-mark/parker-og-byrom/buranbanen/",
-    "publisher": "Trondheim kommune",
-    "checkedAt": "2026-09-13"
-  },
-  {
-    "id": "v-klubb",
-    "label": "Trondheim kommune",
-    "page": "Lade fritidsklubb",
-    "url": "https://www.trondheim.kommune.no/tema/kultur-og-fritid/aktivitetstilbudkulturtilbud/fritidsklubber/lade-fritidsklubb/",
-    "publisher": "Trondheim kommune",
-    "checkedAt": "2026-09-13"
-  },
-  {
-    "id": "v-motor",
-    "label": "Trondheim kommune",
-    "page": "Lade Motor",
-    "url": "https://www.trondheim.kommune.no/tema/kultur-og-fritid/aktivitetstilbudkulturtilbud/fritidsklubber/lade-motor/",
-    "publisher": "Trondheim kommune",
-    "checkedAt": "2026-09-13"
-  },
-  {
-    "id": "v-kultur",
-    "label": "Trondheim kommune",
-    "page": "Kommunen: kulturtilbud for barn",
-    "url": "https://www.trondheim.kommune.no/tema/kultur-og-fritid/aktivitetstilbudkulturtilbud/kulturbarn/kulturtilbudforbarn/",
-    "publisher": "Trondheim kommune",
-    "checkedAt": "2026-09-13"
-  },
-  {
-    "id": "v-bua",
-    "label": "Trondheim Røde Kors",
-    "page": "Røde Kors: BUA Lademoen",
-    "url": "https://www.rodekors.no/lokalforeninger/trondelag/trondheim/aktiviteter-og-kurs/sosialinkludering/bua/",
-    "publisher": "Trondheim Røde Kors",
-    "checkedAt": "2026-09-13"
-  },
-  {
-    "id": "v-bua-hist",
-    "label": "Trondheim Røde Kors",
-    "page": "Røde Kors: åpningen etter flytting",
-    "url": "https://www.rodekors.no/lokalforeninger/trondelag/trondheim/aktuelt/2026/apningsfest/",
-    "publisher": "Trondheim Røde Kors",
-    "checkedAt": "2026-09-13"
-  },
-  {
-    "id": "v-badeplass",
-    "label": "Trondheim kommune",
-    "page": "Kommunen: Strandveikaia badeplass",
-    "url": "https://www.trondheim.kommune.no/tema/kultur-og-fritid/park-og-mark/badeplasser/badeplasser-i-saltvann/strandveikaia-nyhavna/",
-    "publisher": "Trondheim kommune",
-    "checkedAt": "2026-09-13"
-  },
-  {
-    "id": "v-badevann",
-    "label": "Trondheim kommune",
-    "page": "Kommunen: badevannskvalitet",
-    "url": "https://www.trondheim.kommune.no/tema/klima-miljo-og-naring/skogbruk/badevannskvalitet/",
-    "publisher": "Trondheim kommune",
-    "checkedAt": "2026-09-13"
-  },
-  {
-    "id": "v-pirbadet",
-    "label": "Pirbadet",
-    "page": "Pirbadets egne priser",
-    "url": "https://www.pirbadet.no/priser/",
-    "publisher": "Pirbadet",
-    "checkedAt": "2026-09-13"
-  },
-  {
     "id": "s-dora",
     "label": "Dora Eiendom",
     "page": "Kobbes gate 2 – kafé og personalrestaurant",
     "url": "https://dora.no/eiendommer/nyhavna-en/",
     "publisher": "Dora Eiendom",
-    "checkedAt": "2026-09-13"
-  },
-  {
-    "id": "s-nyhavna",
-    "label": "Nyhavna Utvikling",
-    "page": "Café og restauranter",
-    "url": "https://nyhavna.no/leve/cafe-og-restauranter/",
-    "publisher": "Nyhavna Utvikling",
     "checkedAt": "2026-09-13"
   },
   {
@@ -304,99 +48,11 @@
     "checkedAt": "2026-09-13"
   },
   {
-    "id": "s-bowling-mat",
-    "label": "Dora 1",
-    "page": "Mat- og pizzameny",
-    "url": "https://dora1.no/meny",
-    "publisher": "Dora 1",
-    "checkedAt": "2026-09-13"
-  },
-  {
-    "id": "s-bowling-pris",
-    "label": "Dora 1",
-    "page": "Priser på bowling",
-    "url": "https://dora1.no/priser",
-    "publisher": "Dora 1",
-    "checkedAt": "2026-09-13"
-  },
-  {
-    "id": "s-havet",
-    "label": "HAVET Arena",
-    "page": "Restaurant BarbeintQ",
-    "url": "https://www.havetarena.no/servering",
-    "publisher": "HAVET Arena",
-    "checkedAt": "2026-09-13"
-  },
-  {
-    "id": "s-havet-faq",
-    "label": "HAVET Arena",
-    "page": "Spørsmål, tider og aldersgrenser",
-    "url": "https://www.havetarena.no/faq",
-    "publisher": "HAVET Arena",
-    "checkedAt": "2026-09-13"
-  },
-  {
-    "id": "s-havet-hjem",
-    "label": "HAVET Arena",
-    "page": "Forside med kjøkkentider",
-    "url": "https://www.havetarena.no/",
-    "publisher": "HAVET Arena",
-    "checkedAt": "2026-09-13"
-  },
-  {
-    "id": "s-svartlamon",
-    "label": "Svartlamon",
-    "page": "Virksomheter i nabolaget",
-    "url": "https://svartlamon.org/virksomheter/",
-    "publisher": "Svartlamon",
-    "checkedAt": "2026-09-13"
-  },
-  {
     "id": "s-ladejarlen",
     "label": "Ladejarlen",
     "page": "Matmeny",
     "url": "https://www.ladejarlen.com/meny",
     "publisher": "Ladejarlen",
-    "checkedAt": "2026-09-13"
-  },
-  {
-    "id": "s-ladejarlen-pizza",
-    "label": "Ladejarlen",
-    "page": "Pizzameny",
-    "url": "https://www.ladejarlen.com/pizzameny",
-    "publisher": "Ladejarlen",
-    "checkedAt": "2026-09-13"
-  },
-  {
-    "id": "s-ladejarlen-tid",
-    "label": "Ladejarlen",
-    "page": "Åpningstider og midlertidige endringer",
-    "url": "https://www.ladejarlen.com/pningstider",
-    "publisher": "Ladejarlen",
-    "checkedAt": "2026-09-13"
-  },
-  {
-    "id": "s-ladejarlen-kafe",
-    "label": "Ladejarlen",
-    "page": "Kafé – arrangementer og pause i ordinært tilbud",
-    "url": "https://www.ladejarlen.com/kafe",
-    "publisher": "Ladejarlen",
-    "checkedAt": "2026-09-13"
-  },
-  {
-    "id": "s-dahls",
-    "label": "E.C. Dahls",
-    "page": "Pub og Kjøkken",
-    "url": "https://ecdahls.no/pub-kjokken/",
-    "publisher": "E.C. Dahls",
-    "checkedAt": "2026-09-13"
-  },
-  {
-    "id": "s-dahls-meny",
-    "label": "E.C. Dahls",
-    "page": "Restaurantmeny fra 11. august 2026",
-    "url": "https://ecdahls.no/wp-content/uploads/2026/08/1.1-Meny-Restaurant-Host-2026-fra-11.-August-.pdf",
-    "publisher": "E.C. Dahls",
     "checkedAt": "2026-09-13"
   },
   {
@@ -416,107 +72,107 @@
     "checkedAt": "2026-09-13"
   },
   {
-    "id": "s-bistro-meny",
-    "label": "Nyhavna BistroBar",
-    "page": "Matmeny",
-    "url": "https://www.nyhavnabistrobar.no/our-menu",
-    "publisher": "Nyhavna BistroBar",
-    "checkedAt": "2026-09-13"
+    "id": "demo-kiwi",
+    "label": "KIWI Lilleby",
+    "publisher": "KIWI Lilleby",
+    "page": "KIWI Lilleby",
+    "url": "https://kiwi.no/finn-butikk/kiwi-142-lilleby",
+    "checkedAt": "2026-09-14"
   },
   {
-    "id": "s-sabrura",
-    "label": "Sabrura",
-    "page": "Sushibuffet og vilkår",
-    "url": "https://www.sabrurasushi.no/sushibuffet/",
-    "publisher": "Sabrura",
-    "checkedAt": "2026-09-13"
+    "id": "demo-meny",
+    "label": "MENY Solsiden",
+    "publisher": "MENY Solsiden",
+    "page": "MENY Solsiden",
+    "url": "https://meny.no/finn-butikk/meny-solsiden",
+    "checkedAt": "2026-09-14"
   },
   {
-    "id": "s-sabrura-solsiden",
-    "label": "Sabrura",
-    "page": "Solsiden – adresse og restaurant/takeaway-tider",
-    "url": "https://www.sabrurasushi.no/restauranter/midt-norge/sabrura-solsiden/",
-    "publisher": "Sabrura",
-    "checkedAt": "2026-09-13"
+    "id": "demo-padel",
+    "label": "Nyhavna Padel",
+    "publisher": "Nyhavna Padel",
+    "page": "Nyhavna Padel",
+    "url": "https://nyhavnapadel.no/",
+    "checkedAt": "2026-09-14"
   },
   {
-    "id": "s-egon",
-    "label": "Egon",
-    "page": "Solsiden – restaurant og pizzabuffet",
-    "url": "https://egon.no/restauranter/troendelag/egon-solsiden",
-    "publisher": "Egon",
-    "checkedAt": "2026-09-13"
+    "id": "demo-atb",
+    "label": "AtB",
+    "publisher": "AtB",
+    "page": "Bussruter i Trondheimsområdet",
+    "url": "https://www.atb.no/trondheimsomradet/",
+    "checkedAt": "2026-09-14"
   },
   {
-    "id": "s-olivia",
-    "label": "Olivia",
-    "page": "Solsiden-fil: sommermeny 2026, med stedsavvik i teksten",
-    "url": "https://oliviarestauranter.no/wp-content/uploads/2020/10/SOL-NO-mat-web-sommer26.pdf",
-    "publisher": "Olivia",
-    "checkedAt": "2026-09-13"
+    "id": "demo-line20",
+    "label": "AtB",
+    "publisher": "AtB",
+    "page": "Linje 20 fra 10. august 2026",
+    "url": "https://www.atb.no/getfile.php/13126090-1782724709/Rutetabeller/26_27_by/AtB_linje20.pdf",
+    "checkedAt": "2026-09-14"
   },
   {
-    "id": "s-una",
-    "label": "Una Solsiden",
-    "page": "Meny og adresse",
-    "url": "https://unapizzeria.no/meny/",
-    "publisher": "Una Solsiden",
-    "checkedAt": "2026-09-13"
+    "id": "demo-line71",
+    "label": "AtB",
+    "publisher": "AtB",
+    "page": "Linje 71 fra 10. august 2026",
+    "url": "https://www.atb.no/getfile.php/13126156-1782724824/Rutetabeller/26_27_by/AtB_linje71.pdf",
+    "checkedAt": "2026-09-14"
   },
   {
-    "id": "s-godtbrod",
-    "label": "Godt Brød",
-    "page": "Solsiden – adresse og åpningstider",
-    "url": "https://www.godtbrod.no/godt-brod-bakerier/godt-brod-solsiden",
-    "publisher": "Godt Brød",
-    "checkedAt": "2026-09-13"
+    "id": "demo-parking",
+    "label": "Trondheim parkering",
+    "publisher": "Trondheim parkering",
+    "page": "Parkering ved Dora – Maskinistgata 1",
+    "url": "https://trondheimparkering.no/vare-priser/",
+    "checkedAt": "2026-09-14"
   },
   {
-    "id": "s-dromedar",
-    "label": "Dromedar",
-    "page": "Solsiden – adresse og åpningstider",
-    "url": "https://dromedar.no/kaffebarer/solsiden/",
-    "publisher": "Dromedar",
-    "checkedAt": "2026-09-13"
+    "id": "demo-tbk",
+    "label": "Trondheim Bilkollektiv",
+    "publisher": "Trondheim Bilkollektiv",
+    "page": "Bildeling og hentesteder",
+    "url": "https://trondheim-bilkollektiv.no/",
+    "checkedAt": "2026-09-14"
   },
   {
-    "id": "s-rosendal",
-    "label": "Rosendal Teater",
-    "page": "Rosendal Kafé",
-    "url": "https://rosendalteater.no/rosendal-kafe",
-    "publisher": "Rosendal Teater",
-    "checkedAt": "2026-09-13"
+    "id": "demo-route",
+    "label": "Mapbox",
+    "publisher": "Mapbox",
+    "page": "Beregnet fra demoens utgangspunkt 14. september 2026",
+    "url": "https://www.mapbox.com/directions",
+    "checkedAt": "2026-09-14"
   },
   {
-    "id": "s-leos",
-    "label": "Leo’s Lekeland",
-    "page": "Trondheim – lekeland og bistro",
-    "url": "https://www.leoslekeland.no/vare-lekeland/trondheim",
-    "publisher": "Leo’s Lekeland",
-    "checkedAt": "2026-09-13"
+    "id": "demo-lilleby",
+    "label": "Trondheim kommune",
+    "publisher": "Trondheim kommune",
+    "page": "Lilleby skole",
+    "url": "https://www.trondheim.kommune.no/org/oppvekst/skoler/lilleby-skole/",
+    "checkedAt": "2026-09-14"
   },
   {
-    "id": "s-havet-meny",
-    "label": "HAVET Arena",
-    "page": "BarbeintQ – menybilde sommer 2026",
-    "url": "https://images.squarespace-cdn.com/content/v1/607057d7ab8eb21ff50947ed/628b887b-1092-4370-831a-f122047f52ab/Menyen_2026_sommer2.jpg",
-    "publisher": "HAVET Arena",
-    "checkedAt": "2026-09-13"
+    "id": "demo-rosenborg",
+    "label": "Trondheim kommune",
+    "publisher": "Trondheim kommune",
+    "page": "Rosenborg skole",
+    "url": "https://www.trondheim.kommune.no/org/oppvekst/skoler/rosenborg-skole/",
+    "checkedAt": "2026-09-14"
   },
   {
-    "id": "s-rosendal-meny",
-    "label": "Rosendal Teater",
-    "page": "Kafémeny – mat og drikke",
-    "url": "https://rosendalteater.no/uploads/images/Menu-RK.pdf",
-    "publisher": "Rosendal Teater",
-    "checkedAt": "2026-09-13"
+    "id": "demo-ladestien",
+    "label": "Visit Trondheim",
+    "publisher": "Visit Trondheim",
+    "page": "Ladestien via Ormen Langes vei",
+    "url": "https://www.visitnorway.no/listings/ladestien/501667/",
+    "checkedAt": "2026-09-14"
   },
   {
-    "id": "s-rosendal-adkomst",
-    "label": "Rosendal Teater",
-    "page": "Tilgjengelighet og fasiliteter",
-    "url": "https://rosendalteater.no/tilgjengelighet/fasiliteter",
-    "publisher": "Rosendal Teater",
-    "checkedAt": "2026-09-13"
+    "id": "demo-stasjon",
+    "label": "Bane NOR",
+    "publisher": "Bane NOR",
+    "page": "Trondheim S",
+    "url": "https://www.banenor.no/reise-og-trafikk/stasjoner/-t-/trondheim-s/",
+    "checkedAt": "2026-09-14"
   }
 ]

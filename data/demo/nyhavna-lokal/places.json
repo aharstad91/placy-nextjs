@@ -1,1 +1,472 @@
-[]
+[
+  {
+    "id": "lilleby-skole",
+    "name": "Lilleby skole",
+    "categoryId": "barn-oppvekst",
+    "address": "Ladeveien 1",
+    "coordinates": {
+      "lat": 63.440701120707324,
+      "lng": 10.434759032716794
+    },
+    "placeType": "Barneskole",
+    "summary": "Aktuell barneskole i planmaterialet for Transittkaia. Skoletilhørighet må avklares for boligen.",
+    "travelTime": {
+      "walk": 16,
+      "bike": 6
+    },
+    "locationPrecision": "approximate",
+    "locationNote": "Kartpunktet viser adressen, ikke en bestemt inngang.",
+    "sourceIds": [
+      "demo-lilleby",
+      "v-planb",
+      "v-krets",
+      "demo-route"
+    ],
+    "checkedAt": "2026-09-14",
+    "status": "existing",
+    "facts": [],
+    "caveats": []
+  },
+  {
+    "id": "rosenborg-skole",
+    "name": "Rosenborg skole",
+    "categoryId": "barn-oppvekst",
+    "address": "Stadsing Dahls gate 1",
+    "coordinates": {
+      "lat": 63.42947887067819,
+      "lng": 10.417651891448672
+    },
+    "placeType": "Ungdomsskole",
+    "summary": "Aktuell ungdomsskole i planmaterialet for Transittkaia. Skoletilhørighet må avklares for boligen.",
+    "travelTime": {
+      "walk": 20,
+      "bike": 10
+    },
+    "locationPrecision": "approximate",
+    "locationNote": "Kartpunktet viser adressen, ikke en bestemt inngang.",
+    "sourceIds": [
+      "demo-rosenborg",
+      "v-planb",
+      "v-krets",
+      "demo-route"
+    ],
+    "checkedAt": "2026-09-14",
+    "status": "existing",
+    "facts": [],
+    "caveats": []
+  },
+  {
+    "id": "nedre-elvehavn-bhg",
+    "name": "Nedre Elvehavn barnehage",
+    "categoryId": "barn-oppvekst",
+    "address": "Dyre Halses gate 6",
+    "coordinates": {
+      "lat": 63.43635458725975,
+      "lng": 10.41336319733787
+    },
+    "placeType": "Barnehage",
+    "summary": "Kommunal barnehage ved Solsiden. Se kommunens side for informasjon og opptak.",
+    "travelTime": {
+      "walk": 9,
+      "bike": 4
+    },
+    "locationPrecision": "approximate",
+    "locationNote": "Kartpunktet viser adressen, ikke en bestemt inngang.",
+    "sourceIds": [
+      "v-bhg-n",
+      "demo-route"
+    ],
+    "checkedAt": "2026-09-14",
+    "status": "existing",
+    "facts": [],
+    "caveats": []
+  },
+  {
+    "id": "voldsminde-bhg",
+    "name": "Voldsminde barnehage",
+    "categoryId": "barn-oppvekst",
+    "address": "Mellomveien 5",
+    "coordinates": {
+      "lat": 63.437839587557164,
+      "lng": 10.430218179966088
+    },
+    "placeType": "Barnehage",
+    "summary": "Kommunal barnehage på Lademoen. Se kommunens side for informasjon og opptak.",
+    "travelTime": {
+      "walk": 12,
+      "bike": 6
+    },
+    "locationPrecision": "approximate",
+    "locationNote": "Kartpunktet viser adressen, ikke en bestemt inngang.",
+    "sourceIds": [
+      "v-bhg-v",
+      "demo-route"
+    ],
+    "checkedAt": "2026-09-14",
+    "status": "existing",
+    "facts": [],
+    "caveats": []
+  },
+  {
+    "id": "dora-bowling",
+    "name": "Dora 1 Bowling",
+    "categoryId": "opplevelser",
+    "address": "Kobbes gate 6",
+    "coordinates": {
+      "lat": 63.43993516460002,
+      "lng": 10.420666837757702
+    },
+    "placeType": "Bowling",
+    "summary": "Bowling på Nyhavna. Se stedets nettside for booking og aktuelle tilbud.",
+    "travelTime": {
+      "walk": 3,
+      "bike": 2
+    },
+    "locationPrecision": "approximate",
+    "locationNote": "Kartpunktet viser adressen, ikke en bestemt inngang.",
+    "sourceIds": [
+      "s-bowling",
+      "demo-route"
+    ],
+    "checkedAt": "2026-09-14",
+    "status": "existing",
+    "facts": [],
+    "caveats": []
+  },
+  {
+    "id": "nyhavna-padel",
+    "name": "Nyhavna Padel",
+    "categoryId": "trening-aktivitet",
+    "address": "Strandveien 53",
+    "coordinates": {
+      "lat": 63.440462,
+      "lng": 10.426183
+    },
+    "placeType": "Padel",
+    "summary": "Padel ved E.C. Dahls. Baner bestilles gjennom stedets bookingside.",
+    "travelTime": {
+      "walk": 8,
+      "bike": 3
+    },
+    "locationPrecision": "sourced",
+    "sourceIds": [
+      "demo-padel",
+      "demo-route"
+    ],
+    "checkedAt": "2026-09-14",
+    "status": "existing",
+    "facts": [],
+    "caveats": []
+  },
+  {
+    "id": "snurr-nyhavna",
+    "name": "Snurr Nyhavna",
+    "categoryId": "mat-drikke",
+    "address": "Ladebekken 24D",
+    "coordinates": {
+      "lat": 63.44406500533509,
+      "lng": 10.433015291725665
+    },
+    "placeType": "Bakeri og kafé",
+    "summary": "Kaffe, frokost og bakervarer i Ladebekken. Se nettsiden for åpningstider.",
+    "travelTime": {
+      "walk": 15,
+      "bike": 5
+    },
+    "locationPrecision": "approximate",
+    "locationNote": "Kartpunktet viser adressen, ikke en bestemt inngang.",
+    "sourceIds": [
+      "s-snurr",
+      "demo-route"
+    ],
+    "checkedAt": "2026-09-14",
+    "status": "existing",
+    "facts": [],
+    "caveats": []
+  },
+  {
+    "id": "dora-kaffebar",
+    "name": "Dora Kaffebar",
+    "categoryId": "mat-drikke",
+    "address": "Kobbes gate 2",
+    "coordinates": {
+      "lat": 63.43900200197254,
+      "lng": 10.419208852501855
+    },
+    "placeType": "Kaffebar",
+    "summary": "Offentlig tilgjengelig kafé i første etasje. Følger byggets åpningstider.",
+    "travelTime": {
+      "walk": 2,
+      "bike": 2
+    },
+    "locationPrecision": "approximate",
+    "locationNote": "Kartpunktet viser adressen, ikke en bestemt inngang.",
+    "sourceIds": [
+      "s-dora",
+      "demo-route"
+    ],
+    "checkedAt": "2026-09-14",
+    "status": "existing",
+    "facts": [],
+    "caveats": []
+  },
+  {
+    "id": "nyhavna-bistro",
+    "name": "Nyhavna BistroBar",
+    "categoryId": "mat-drikke",
+    "address": "Ladebekken 24A",
+    "coordinates": {
+      "lat": 63.44394426134825,
+      "lng": 10.43210214262946
+    },
+    "placeType": "Restaurant",
+    "summary": "Restaurant i Ladebekken. Meny og åpningstider finnes på stedets nettside.",
+    "travelTime": {
+      "walk": 15,
+      "bike": 5
+    },
+    "locationPrecision": "approximate",
+    "locationNote": "Kartpunktet viser adressen, ikke en bestemt inngang.",
+    "sourceIds": [
+      "s-bistro",
+      "demo-route"
+    ],
+    "checkedAt": "2026-09-14",
+    "status": "existing",
+    "facts": [],
+    "caveats": []
+  },
+  {
+    "id": "ladejarlen",
+    "name": "Ladejarlen",
+    "categoryId": "mat-drikke",
+    "address": "Innherredsveien 50",
+    "coordinates": {
+      "lat": 63.436198917999825,
+      "lng": 10.420287911632006
+    },
+    "placeType": "Restaurant",
+    "summary": "Spisested i Innherredsveien. Se stedets nettside for meny, bestilling og åpningstider.",
+    "travelTime": {
+      "walk": 8,
+      "bike": 3
+    },
+    "locationPrecision": "approximate",
+    "locationNote": "Kartpunktet viser adressen, ikke en bestemt inngang.",
+    "sourceIds": [
+      "s-ladejarlen",
+      "demo-route"
+    ],
+    "checkedAt": "2026-09-14",
+    "status": "existing",
+    "facts": [],
+    "caveats": []
+  },
+  {
+    "id": "kiwi-lilleby",
+    "name": "KIWI Lilleby",
+    "categoryId": "hverdagsliv",
+    "address": "Stjørdalsveien 2",
+    "coordinates": {
+      "lat": 63.44228979804275,
+      "lng": 10.433636735423338
+    },
+    "placeType": "Dagligvare",
+    "summary": "Dagligvarebutikk med utendørs pakkebokser fra Posten og PostNord.",
+    "travelTime": {
+      "walk": 15,
+      "bike": 5
+    },
+    "locationPrecision": "approximate",
+    "locationNote": "Kartpunktet viser adressen, ikke en bestemt inngang.",
+    "sourceIds": [
+      "demo-kiwi",
+      "demo-route"
+    ],
+    "checkedAt": "2026-09-14",
+    "status": "existing",
+    "facts": [],
+    "caveats": []
+  },
+  {
+    "id": "meny-solsiden",
+    "name": "MENY Solsiden",
+    "categoryId": "hverdagsliv",
+    "address": "Beddingen 12",
+    "coordinates": {
+      "lat": 63.43520165549338,
+      "lng": 10.410991191893789
+    },
+    "placeType": "Dagligvare",
+    "summary": "Dagligvarebutikk på Solsiden. Se butikkens side for tjenester og åpningstider.",
+    "travelTime": {
+      "walk": 11,
+      "bike": 6
+    },
+    "locationPrecision": "approximate",
+    "locationNote": "Kartpunktet viser adressen, ikke en bestemt inngang.",
+    "sourceIds": [
+      "demo-meny",
+      "demo-route"
+    ],
+    "checkedAt": "2026-09-14",
+    "status": "existing",
+    "facts": [],
+    "caveats": []
+  },
+  {
+    "id": "losgata",
+    "name": "Losgata",
+    "categoryId": "transport",
+    "address": "Losgata",
+    "coordinates": {
+      "lat": 63.437948,
+      "lng": 10.417375
+    },
+    "placeType": "Bussholdeplass",
+    "summary": "Linje 20 har forbindelse mot Trondheim S og sentrum. Sjekk AtB for aktuell avgang.",
+    "travelTime": {
+      "walk": 4,
+      "bike": 2
+    },
+    "locationPrecision": "sourced",
+    "sourceIds": [
+      "demo-atb",
+      "demo-line20",
+      "demo-route"
+    ],
+    "checkedAt": "2026-09-14",
+    "status": "existing",
+    "facts": [],
+    "caveats": []
+  },
+  {
+    "id": "dora-holdeplass",
+    "name": "Dora",
+    "categoryId": "transport",
+    "address": "Maskinistgata",
+    "coordinates": {
+      "lat": 63.438589,
+      "lng": 10.421238
+    },
+    "placeType": "Bussholdeplass",
+    "summary": "Linje 20 og 71 gir forbindelser mot sentrum. Sjekk AtB for avgang og retning.",
+    "travelTime": {
+      "walk": 5,
+      "bike": 2
+    },
+    "locationPrecision": "sourced",
+    "sourceIds": [
+      "demo-atb",
+      "demo-line20",
+      "demo-line71",
+      "demo-route"
+    ],
+    "checkedAt": "2026-09-14",
+    "status": "existing",
+    "facts": [],
+    "caveats": []
+  },
+  {
+    "id": "tbk-mellomveien",
+    "name": "Bildeling i Mellomveien",
+    "categoryId": "transport",
+    "address": "Mellomveien 16",
+    "coordinates": {
+      "lat": 63.43794770905176,
+      "lng": 10.428246343298422
+    },
+    "placeType": "Bildeling",
+    "summary": "Trondheim Bilkollektiv har hentested i Mellomveien. Medlemskap og reservasjon kreves; bilen returneres til hentestedet.",
+    "travelTime": {
+      "walk": 12,
+      "bike": 5
+    },
+    "locationPrecision": "approximate",
+    "locationNote": "Kartpunktet viser adressen, ikke en bestemt inngang.",
+    "sourceIds": [
+      "demo-tbk",
+      "demo-route"
+    ],
+    "checkedAt": "2026-09-14",
+    "status": "existing",
+    "facts": [],
+    "caveats": []
+  },
+  {
+    "id": "dora-parkering",
+    "name": "Parkering ved Dora",
+    "categoryId": "transport",
+    "address": "Maskinistgata 1",
+    "coordinates": {
+      "lat": 63.4388147911664,
+      "lng": 10.420606720559652
+    },
+    "placeType": "Parkering",
+    "summary": "Trondheim parkering oppgir korttidsparkering ved Dora. Følg skiltingen på stedet. Dette sier ikke noe om parkering til en framtidig bolig.",
+    "travelTime": {
+      "walk": 4,
+      "bike": 2
+    },
+    "locationPrecision": "approximate",
+    "locationNote": "Kartpunktet viser adressen, ikke en bestemt inngang.",
+    "sourceIds": [
+      "demo-parking",
+      "demo-route"
+    ],
+    "checkedAt": "2026-09-14",
+    "status": "existing",
+    "facts": [],
+    "caveats": []
+  },
+  {
+    "id": "ladestien",
+    "name": "Ladestien – via Ormen Langes vei",
+    "categoryId": "natur-friluftsliv",
+    "address": "Ormen Langes vei 24",
+    "coordinates": {
+      "lat": 63.44759460641882,
+      "lng": 10.422564899595331
+    },
+    "placeType": "Tursti",
+    "summary": "Turmuligheter langs sjøen. Kartpunkt og reisetid gjelder Ormen Langes vei, ikke hele turstien.",
+    "travelTime": {
+      "walk": 19,
+      "bike": 7
+    },
+    "locationPrecision": "approximate",
+    "locationNote": "Kartpunktet viser Ormen Langes vei ved Ladestien.",
+    "sourceIds": [
+      "demo-ladestien",
+      "demo-route"
+    ],
+    "checkedAt": "2026-09-14",
+    "status": "existing",
+    "facts": [],
+    "caveats": []
+  },
+  {
+    "id": "trondheim-s",
+    "name": "Trondheim S",
+    "categoryId": "transport",
+    "coordinates": {
+      "lng": 10.399123,
+      "lat": 63.436279
+    },
+    "placeType": "Knutepunkt",
+    "summary": "Knutepunkt for tog og buss. Et konkret mål for reisen mot sentrum.",
+    "travelTime": {
+      "walk": 18,
+      "bike": 8
+    },
+    "status": "existing",
+    "locationPrecision": "sourced",
+    "sourceIds": [
+      "demo-stasjon",
+      "demo-route"
+    ],
+    "checkedAt": "2026-09-14",
+    "facts": [],
+    "caveats": []
+  }
+]

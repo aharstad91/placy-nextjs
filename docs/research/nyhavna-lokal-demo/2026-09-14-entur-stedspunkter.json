@@ -1,0 +1,462 @@
+{
+  "checkedAt": "2026-09-14",
+  "lookups": [
+    {
+      "url": "https://api.entur.io/geocoder/v1/autocomplete?text=Dora&size=3&lang=no",
+      "response": {
+        "geocoding": {
+          "version": "0.2",
+          "attribution": "http://pelias.mapzen.com/v1/attribution",
+          "engine": {
+            "name": "Photon",
+            "author": "Komoot",
+            "version": "1.2.0"
+          },
+          "timestamp": 1789372836452
+        },
+        "type": "FeatureCollection",
+        "features": [
+          {
+            "type": "Feature",
+            "geometry": {
+              "type": "Point",
+              "coordinates": [
+                10.421238,
+                63.438589
+              ]
+            },
+            "properties": {
+              "id": "NSR:StopPlace:43469",
+              "gid": "whosonfirst:venue:NSR:StopPlace:43469",
+              "layer": "venue",
+              "source": "whosonfirst",
+              "source_id": "NSR:StopPlace:43469",
+              "name": "Dora",
+              "street": "NOT_AN_ADDRESS-NSR:StopPlace:43469",
+              "accuracy": "point",
+              "country_a": "NOR",
+              "county": "Trøndelag",
+              "county_gid": "whosonfirst:county:KVE:TopographicPlace:50",
+              "locality": "Trondheim",
+              "locality_gid": "whosonfirst:locality:KVE:TopographicPlace:5001",
+              "label": "Dora, Trondheim",
+              "category": [
+                "onstreetBus"
+              ],
+              "mode": [
+                {
+                  "bus": null
+                }
+              ],
+              "tariff_zones": [
+                "ATB:TariffZone:1",
+                "INN:TariffZone:2100",
+                "MOR:TariffZone:1016",
+                "ATB:FareZone:10"
+              ]
+            }
+          },
+          {
+            "type": "Feature",
+            "geometry": {
+              "type": "Point",
+              "coordinates": [
+                11.019349,
+                60.135385
+              ]
+            },
+            "properties": {
+              "id": "KVE:TopographicPlace:3238-Dora Sindings veg",
+              "gid": "whosonfirst:address:KVE:TopographicPlace:3238-Dora Sindings veg",
+              "layer": "address",
+              "source": "whosonfirst",
+              "source_id": "KVE:TopographicPlace:3238-Dora Sindings veg",
+              "name": "Dora Sindings veg",
+              "street": "Dora Sindings veg",
+              "accuracy": "point",
+              "country_a": "NOR",
+              "county": "Akershus",
+              "county_gid": "whosonfirst:county:KVE:TopographicPlace:32",
+              "locality": "Nannestad",
+              "locality_gid": "whosonfirst:locality:KVE:TopographicPlace:3238",
+              "borough": "Eltonåsen",
+              "borough_gid": "whosonfirst:borough:32380307",
+              "label": "Dora Sindings veg, Nannestad",
+              "category": [
+                "street"
+              ]
+            }
+          },
+          {
+            "type": "Feature",
+            "geometry": {
+              "type": "Point",
+              "coordinates": [
+                10.419152,
+                63.439112
+              ]
+            },
+            "properties": {
+              "id": "OSM:TopographicPlace:13367057293",
+              "gid": "whosonfirst:address:OSM:TopographicPlace:13367057293",
+              "layer": "address",
+              "source": "whosonfirst",
+              "source_id": "OSM:TopographicPlace:13367057293",
+              "name": "Dora Kaffebar",
+              "housenumber": "2",
+              "street": "Kobbes gate",
+              "accuracy": "point",
+              "country_a": "NOR",
+              "county": "Trøndelag",
+              "county_gid": "whosonfirst:county:KVE:TopographicPlace:50",
+              "locality": "Trondheim",
+              "locality_gid": "whosonfirst:locality:KVE:TopographicPlace:5001",
+              "label": "Dora Kaffebar, Trondheim",
+              "category": [
+                "poi",
+                "cafe"
+              ]
+            }
+          }
+        ],
+        "bbox": [
+          10.419152,
+          60.135385,
+          11.019349,
+          63.439112
+        ]
+      }
+    },
+    {
+      "url": "https://api.entur.io/geocoder/v1/autocomplete?text=Losgata&size=3&lang=no",
+      "response": {
+        "geocoding": {
+          "version": "0.2",
+          "attribution": "http://pelias.mapzen.com/v1/attribution",
+          "engine": {
+            "name": "Photon",
+            "author": "Komoot",
+            "version": "1.2.0"
+          },
+          "timestamp": 1789372836615
+        },
+        "type": "FeatureCollection",
+        "features": [
+          {
+            "type": "Feature",
+            "geometry": {
+              "type": "Point",
+              "coordinates": [
+                10.414139,
+                63.438056
+              ]
+            },
+            "properties": {
+              "id": "KVE:TopographicPlace:5001-Losgata",
+              "gid": "whosonfirst:address:KVE:TopographicPlace:5001-Losgata",
+              "layer": "address",
+              "source": "whosonfirst",
+              "source_id": "KVE:TopographicPlace:5001-Losgata",
+              "name": "Losgata",
+              "street": "Losgata",
+              "accuracy": "point",
+              "country_a": "NOR",
+              "county": "Trøndelag",
+              "county_gid": "whosonfirst:county:KVE:TopographicPlace:50",
+              "locality": "Trondheim",
+              "locality_gid": "whosonfirst:locality:KVE:TopographicPlace:5001",
+              "borough": "Lademoen 14",
+              "borough_gid": "whosonfirst:borough:50011514",
+              "label": "Losgata, Trondheim",
+              "category": [
+                "street"
+              ]
+            }
+          },
+          {
+            "type": "Feature",
+            "geometry": {
+              "type": "Point",
+              "coordinates": [
+                10.417375,
+                63.437948
+              ]
+            },
+            "properties": {
+              "id": "NSR:StopPlace:42926",
+              "gid": "whosonfirst:venue:NSR:StopPlace:42926",
+              "layer": "venue",
+              "source": "whosonfirst",
+              "source_id": "NSR:StopPlace:42926",
+              "name": "Losgata",
+              "street": "NOT_AN_ADDRESS-NSR:StopPlace:42926",
+              "accuracy": "point",
+              "country_a": "NOR",
+              "county": "Trøndelag",
+              "county_gid": "whosonfirst:county:KVE:TopographicPlace:50",
+              "locality": "Trondheim",
+              "locality_gid": "whosonfirst:locality:KVE:TopographicPlace:5001",
+              "label": "Losgata, Trondheim",
+              "category": [
+                "onstreetBus"
+              ],
+              "mode": [
+                {
+                  "bus": null
+                }
+              ],
+              "tariff_zones": [
+                "ATB:TariffZone:1",
+                "INN:TariffZone:2100",
+                "MOR:TariffZone:1016",
+                "ATB:FareZone:10"
+              ]
+            }
+          },
+          {
+            "type": "Feature",
+            "geometry": {
+              "type": "Point",
+              "coordinates": [
+                5.26044,
+                59.415328
+              ]
+            },
+            "properties": {
+              "id": "KVE:TopographicPlace:1106-Losgata",
+              "gid": "whosonfirst:address:KVE:TopographicPlace:1106-Losgata",
+              "layer": "address",
+              "source": "whosonfirst",
+              "source_id": "KVE:TopographicPlace:1106-Losgata",
+              "name": "Losgata",
+              "street": "Losgata",
+              "accuracy": "point",
+              "country_a": "NOR",
+              "county": "Rogaland",
+              "county_gid": "whosonfirst:county:KVE:TopographicPlace:11",
+              "locality": "Haugesund",
+              "locality_gid": "whosonfirst:locality:KVE:TopographicPlace:1106",
+              "borough": "Hasseløy",
+              "borough_gid": "whosonfirst:borough:11060403",
+              "label": "Losgata, Haugesund",
+              "category": [
+                "street"
+              ]
+            }
+          }
+        ],
+        "bbox": [
+          5.26044,
+          59.415328,
+          10.417375,
+          63.438056
+        ]
+      }
+    },
+    {
+      "url": "https://api.entur.io/geocoder/v1/autocomplete?text=Nyhavna+Padel&size=3&lang=no",
+      "response": {
+        "geocoding": {
+          "version": "0.2",
+          "attribution": "http://pelias.mapzen.com/v1/attribution",
+          "engine": {
+            "name": "Photon",
+            "author": "Komoot",
+            "version": "1.2.0"
+          },
+          "timestamp": 1789372836768
+        },
+        "type": "FeatureCollection",
+        "features": [
+          {
+            "type": "Feature",
+            "geometry": {
+              "type": "Point",
+              "coordinates": [
+                10.426183,
+                63.440462
+              ]
+            },
+            "properties": {
+              "id": "OSM:TopographicPlace:9546096858",
+              "gid": "whosonfirst:address:OSM:TopographicPlace:9546096858",
+              "layer": "address",
+              "source": "whosonfirst",
+              "source_id": "OSM:TopographicPlace:9546096858",
+              "name": "Nyhavna padel",
+              "street": "Strandveien",
+              "accuracy": "point",
+              "country_a": "NOR",
+              "county": "Trøndelag",
+              "county_gid": "whosonfirst:county:KVE:TopographicPlace:50",
+              "locality": "Trondheim",
+              "locality_gid": "whosonfirst:locality:KVE:TopographicPlace:5001",
+              "label": "Nyhavna padel, Trondheim",
+              "category": [
+                "poi",
+                "sports_centre"
+              ]
+            }
+          }
+        ],
+        "bbox": [
+          10.426183,
+          63.440462,
+          10.426183,
+          63.440462
+        ]
+      }
+    },
+    {
+      "url": "https://api.entur.io/geocoder/v1/autocomplete?text=Trondheim+S&size=3&lang=no",
+      "response": {
+        "geocoding": {
+          "version": "0.2",
+          "attribution": "http://pelias.mapzen.com/v1/attribution",
+          "engine": {
+            "name": "Photon",
+            "author": "Komoot",
+            "version": "1.2.0"
+          },
+          "timestamp": 1789372836928
+        },
+        "type": "FeatureCollection",
+        "features": [
+          {
+            "type": "Feature",
+            "geometry": {
+              "type": "Point",
+              "coordinates": [
+                10.399123,
+                63.436279
+              ]
+            },
+            "properties": {
+              "id": "NSR:StopPlace:59977",
+              "gid": "openstreetmap:venue:NSR:StopPlace:59977",
+              "layer": "venue",
+              "source": "openstreetmap",
+              "source_id": "NSR:StopPlace:59977",
+              "name": "Trondheim S",
+              "street": "NOT_AN_ADDRESS-NSR:StopPlace:59977",
+              "accuracy": "point",
+              "country_a": "NOR",
+              "county": "Trøndelag",
+              "county_gid": "whosonfirst:county:KVE:TopographicPlace:50",
+              "locality": "Trondheim",
+              "locality_gid": "whosonfirst:locality:KVE:TopographicPlace:5001",
+              "label": "Trondheim S, Trondheim",
+              "category": [
+                "busStation",
+                "railStation",
+                "onstreetBus"
+              ],
+              "mode": [
+                {
+                  "bus": null
+                },
+                {
+                  "rail": null
+                },
+                {
+                  "bus": "railReplacementBus"
+                }
+              ],
+              "tariff_zones": [
+                "ATB:TariffZone:1",
+                "INN:TariffZone:2100",
+                "MOR:TariffZone:1016",
+                "ATB:FareZone:10",
+                "INN:FareZone:173",
+                "MOR:FareZone:490"
+              ]
+            }
+          },
+          {
+            "type": "Feature",
+            "geometry": {
+              "type": "Point",
+              "coordinates": [
+                10.397728,
+                63.435119
+              ]
+            },
+            "properties": {
+              "id": "NSR:GroupOfStopPlaces:10",
+              "gid": "whosonfirst:address:NSR:GroupOfStopPlaces:10",
+              "layer": "address",
+              "source": "whosonfirst",
+              "source_id": "NSR:GroupOfStopPlaces:10",
+              "name": "Trondheim",
+              "street": "NOT_AN_ADDRESS-NSR:GroupOfStopPlaces:10",
+              "accuracy": "point",
+              "country_a": "NOR",
+              "county": "Trøndelag",
+              "county_gid": "whosonfirst:county:KVE:TopographicPlace:50",
+              "locality": "Trondheim",
+              "locality_gid": "whosonfirst:locality:KVE:TopographicPlace:5001",
+              "label": "Trondheim",
+              "category": [
+                "GroupOfStopPlaces"
+              ]
+            }
+          },
+          {
+            "type": "Feature",
+            "geometry": {
+              "type": "Point",
+              "coordinates": [
+                10.917272,
+                63.454254
+              ]
+            },
+            "properties": {
+              "id": "NSR:StopPlace:59261",
+              "gid": "openstreetmap:venue:NSR:StopPlace:59261",
+              "layer": "venue",
+              "source": "openstreetmap",
+              "source_id": "NSR:StopPlace:59261",
+              "name": "Trondheim lufthavn",
+              "popular_name": "Værnes",
+              "street": "NOT_AN_ADDRESS-NSR:StopPlace:59261",
+              "accuracy": "point",
+              "country_a": "NOR",
+              "county": "Trøndelag",
+              "county_gid": "whosonfirst:county:KVE:TopographicPlace:50",
+              "locality": "Stjørdal",
+              "locality_gid": "whosonfirst:locality:KVE:TopographicPlace:5035",
+              "label": "Trondheim lufthavn, Stjørdal",
+              "category": [
+                "busStation",
+                "railStation",
+                "onstreetBus",
+                "airport"
+              ],
+              "mode": [
+                {
+                  "bus": null
+                },
+                {
+                  "rail": null
+                },
+                {
+                  "air": null
+                }
+              ],
+              "tariff_zones": [
+                "ATB:TariffZone:1",
+                "ATB:FareZone:10"
+              ]
+            }
+          }
+        ],
+        "bbox": [
+          10.397728,
+          63.435119,
+          10.917272,
+          63.454254
+        ]
+      }
+    }
+  ]
+}

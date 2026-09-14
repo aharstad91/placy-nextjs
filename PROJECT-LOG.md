@@ -6,6 +6,24 @@
 
 ---
 
+## 2026-09-14 — Lokal Nyhavna-demo med enkel FAQ, steder og samtaleframdrift
+
+**Resultat:** 12 korte FAQ-er er demoens innganger til samtale og kart. 18 kuraterte steder har kilde og beregnede gang-/sykkeltider fra ett fast punkt, merket «Demoens utgangspunkt». Menyer, priser og aldersspesifikke scenarioer er ute av runtime. Tidligere 67 FAQ-er, 56 notater og 65 kilder er bevart uendret i et separat researcharkiv. Ingen Supabase-skriving eller push.
+
+**Dekning:** 12 av 12 FAQ-er gjennomgått og koblet til 12 korte notater; 18 av 18 kartpunkter og 36 av 36 reisetider kontrollert mot lagrede svar. 22 kilder i aktivt datasett. [Leveranse og prøverunde](docs/research/nyhavna-lokal-demo/2026-09-14-demo-leveranse.md) forklarer utvalg, kilder, begrensninger og testforløp.
+
+**Samspill:** FAQ-klikk fremhever tilknyttede steder. Uten samtale åpnes teksten og markeres utforsket; med aktiv samtale sendes spørsmålet gjennom eksisterende Live-forbindelse. Bekreftede kartkommandoer kan knytte talesvar til FAQ-ID-er. Hakene venter på observert lyd og etterfølgende ro; nye brukerytringer og feil avbryter ventingen. Samme brukerytrings transkriptfragmenter beholder koblingen. Nullstilling er lokal for økten. Den lokale kategorilisten viser hele det kuraterte utvalget uavhengig av kartutsnitt. Andre boards får ikke FAQ-framdrift.
+
+**Verifisering:** Desktop og 390×844 mobil kontrollert i nettleser: FAQ, haker, nullstilling, stedskort og synlig skolevei. Ingen konsollfeil. HTTP 200 og helseendepunkt bekrefter nytt datasett, konfigurert `gpt-live-1`, `cedar` og backend `gpt-5.6-terra`. Faktisk lydsamtale er ikke lyttetestet.
+
+**Mekaniske sjekker:** `npm test -- --maxWorkers=2`: 4 282 bestått, én kjent feil i `nyhavna-knowledge.test.ts:73` (319 ord mot grense 300, instruks/test uendret fra HEAD). Tidligere provisjonering-timeout bestod separat og i siste fullsuite. 79 målrettede tester består etter siste avbrudds- og klikkrettelse; disse siste rettelsene er etter fullsuite. `npm run lint`: 0 feil, 54 eksisterende advarsler. TypeScript og produksjonsbygg bestått. Generert endring i `next-env.d.ts` tilbakeført etter kontroll.
+
+**Code review:** Fullført `ce-code-review`, status `complete`, run `20260914-nyhavna-final` (rapport i `/tmp/compound-engineering-501/ce-code-review/20260914-nyhavna-final/review.json`). Eneste validerte sluttfunn #2 om sent kartresultat etter feil er rettet og regresjonstestet. Foreløpige funn om transkriptfragmenter og undertrykt temavalg ble også rettet. Arkitekturpreferanser og faste innholdsantall ble avvist; lydmåling beholdes som konservativt vilkår. Ingen validerte funn står uløst.
+
+**Åpent:** Lyttetest av faktisk stemme, avbrudd og naturlig flyt gjenstår. «Utforsket» etter tale er en indikator basert på lyd/transkript, siden Live-klienten ikke har en eksplisitt slutt-hendelse for hvert svar. Skolekrets for konkret framtidig bolig, trygg skolevei og faktiske avganger garanteres ikke av dette datasettet.
+
+---
+
 ## 2026-09-13 — Servering kuratert og koblet til lokal samtaledemo
 
 **Resultat:** `http://localhost:3103/demo/nyhavna-lokal` har nå 14 reviderte serverings-FAQ-er og 29 søkbare kunnskapsnotater. Alle 6 tidligere serverings-ID-er er bevart. 30 kilder er lagt til; plankildene fra oppvekstarbeidet gjenbrukes. Totalt i datasettet: 67 FAQ-er (25 kuraterte, 42 fortsatt importerte), 56 notater og 65 kilder. Sidebar og stemme bruker eksisterende lokale adaptere; ingen produktkode, modellinnstilling, kartsted eller Supabase-data er endret.

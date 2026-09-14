@@ -1,6 +1,8 @@
 "use client";
 
 import { useId, useState } from "react";
+import { Check } from "lucide-react";
+import { useBoardVoice } from "@/components/variants/report/board/voice/board-voice";
 import {
   boardLinkResolvers,
   parseLinkedText,
@@ -82,6 +84,7 @@ export function FAQSection({
   const [open, setOpen] = useState<ReadonlySet<string>>(() => new Set());
   const idPrefix = useId();
   const engagement = useEngagement();
+  const progress = useBoardVoice()?.faq;
 
   // Ingen svar → ingen seksjon. En tom overskrift ville lovet innhold som
   // ikke finnes, og på en ukuratert adresse er tomhet den normale tilstanden
@@ -93,6 +96,8 @@ export function FAQSection({
   const toggle = (id: string) => {
     // Moat 2: bare ÅPNING logges (uttalt behov). Lukking er ikke et signal.
     if (!open.has(id)) {
+      const entry = entries.find(entry => entry.id === id);
+      if (entry) progress?.select(entry);
       engagement.emit("faq_opened", {
         payload: categoryId ? { faq_id: id, category_id: categoryId } : { faq_id: id },
       });
@@ -111,6 +116,12 @@ export function FAQSection({
           luft som lovet en tekst som ikke kommer. */}
       {title && <p className={cn("mb-2.5", SIDEBAR_SECTION_TITLE)}>{title}</p>}
 
+      {progress && (
+        <div className="mb-2 flex items-center justify-between gap-3 text-xs text-stone-500">
+          <span>Velg et spørsmål eller spør med stemmen</span>
+          {progress.explored.size > 0 && <button type="button" onClick={progress.reset} className="shrink-0 underline underline-offset-2">Nullstill haker</button>}
+        </div>
+      )}
       <DisclosureList>
         {entries.map((entry) => {
           const expanded = open.has(entry.id);
@@ -136,6 +147,11 @@ export function FAQSection({
                 )}
               >
                 <span className={DISCLOSURE_LABEL}>{entry.question}</span>
+                {progress?.active.has(entry.id) ? (
+                  <span className="mt-0.5 text-xs font-medium text-stone-600" role="status">Aktiv</span>
+                ) : progress?.explored.has(entry.id) ? (
+                  <Check className="mt-0.5 h-4 w-4 shrink-0 text-emerald-700" aria-label="Utforsket" />
+                ) : null}
                 <DisclosureChevron open={expanded} className="mt-[3px]" />
               </button>
 

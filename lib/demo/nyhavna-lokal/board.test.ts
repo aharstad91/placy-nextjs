@@ -192,11 +192,11 @@ describe("spørsmål og svar", () => {
     const dataset = await loadDataset();
     const board = buildLocalBoard(dataset);
     const faq = board.categories.find((c) => c.id === "barn-oppvekst")!.editorial!.faq!;
-    expect(faq).toHaveLength(11);
+    expect(faq).toHaveLength(dataset.faqs.filter(f => f.categoryId === "barn-oppvekst").length);
     for (const entry of faq) {
       const original = dataset.faqs.find((f) => f.id === entry.id)!;
       expect(entry.knowledgeSources?.map((s) => s.id)).toEqual(original.sourceIds);
-      expect(entry.knowledgeSources?.every((s) => s.url.startsWith("https://") && s.verifiedAt === "2026-09-13")).toBe(true);
+      expect(entry.knowledgeSources?.every((s) => s.url.startsWith("https://") && s.verifiedAt === dataset.sources.find(source => source.id === s.id)?.checkedAt)).toBe(true);
     }
   });
 });

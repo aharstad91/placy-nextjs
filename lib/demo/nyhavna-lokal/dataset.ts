@@ -172,6 +172,9 @@ export function assertReferences(dataset: LocalDataset): void {
     if (entry.origin === "imported" && entry.sourceIds.length === 0) {
       problems.push(`${owner}: origin er "imported", men sourceIds er tom — oppgi hvor svaret er hentet fra.`);
     }
+    for (const match of entry.answer.matchAll(/\[[^\]]+\]\(poi:([^)]+)\)/g)) {
+      if (!placeIds.has(match[1].trim())) problems.push(`${owner}: ukjent kartsted «${match[1]}» i svaret.`);
+    }
     // Kategorilenker i svaret: degraderer til ren tekst på flaten, men en
     // lenke som aldri kan klikkes er en skrivefeil, ikke en variant.
     for (const match of entry.answer.matchAll(/\[[^\]]+\]\(category:([^)]+)\)/g)) {

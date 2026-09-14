@@ -201,7 +201,7 @@ describe("spørsmål og svar er felles for sidebar og stemme", () => {
     const instructions = buildLocalInstructions(dataset, buildLocalBoard(dataset));
     for (const faq of dataset.faqs) {
       if (faq.origin === "local") {
-        expect(instructions).toContain(faq.answer);
+        expect(instructions).toContain(faq.answer.replace(/\[([^\]]+)\]\([^)]+\)/g, "$1"));
         for (const id of faq.sourceIds) expect(instructions).toContain(dataset.sources.find((s) => s.id === id)!.url);
       } else {
         expect(instructions).not.toContain(faq.answer);
@@ -209,69 +209,33 @@ describe("spørsmål og svar er felles for sidebar og stemme", () => {
     }
   });
 
-  it.each([
-    ["skolekrets Lilleby Rosenborg", "oppvekst-skoler", "boligadressen"],
-    ["skolevei sykkel", "oppvekst-skolevei", "Ingen rute"],
-    ["ny skole åpning", "oppvekst-nye-skoler", "ingen åpningsdato"],
-    ["Lade Motor", "oppvekst-lade-motor", "forpliktende"],
-    ["Lade fritidsklubb gaming", "oppvekst-lade-klubb", "besøksalder"],
-    ["barnehageplass opptak", "oppvekst-barnehageopptak", "ikke garanti"],
-    ["skoleskyss", "oppvekst-skoleskyss", "individuelt"],
-    ["helsestasjon", "oppvekst-helsestasjon", "bostedsadressen"],
-  ])("finner dybde og forbehold for %s gjennom samtaleverktøyet", async (query, id, text) => {
+  it("bruker enkle FAQ og kartsteder, uten arkivets meny- og aldersdetaljer", async () => {
     const dataset = await loadDataset();
-    const conversation = conversationFor(dataset);
-    conversation.execute("set_interests", { interests: ["barn på 10 og 14"], theme_ids: ["barn-oppvekst"] });
-    const info = conversation.execute("find_project_info", { query }).result as {
-      results: Array<{ id: string; text: string; source: { url: string } }>;
-    };
-    const found = info.results.find((t) => t.id === id);
-    expect(found?.text).toContain(text);
-    expect(found?.source.url).toMatch(/^https:\/\//);
-    expect(dataset.places).toEqual([]);
+    const board = buildLocalBoard(dataset);
+    const instructions = buildLocalInstructions(dataset, board);
+    expect(instructions).not.toContain("ingen steder i kartet");
+    expect(instructions).toContain("demoens utgangspunkt");
+    expect(nyhavnaFaqCatalog(board)).toContain("vis:");
+    const knowledge = JSON.stringify(buildVoiceDeps(dataset).knowledge);
+    expect(knowledge).not.toMatch(/barnepizza|cheeseburger|155 kroner/i);
+    expect(dataset.topics.some(t => t.text.includes("16 minutter"))).toBe(true);
   });
 
-  it.each([
-    ["Dora Kaffebar", "servering-dora-kaffe", "Kobbes gate 2"],
-    ["Ladejarlen barnepizza", "servering-ladejarlen-barn", "under 12"],
-    ["HAVET søndag", "servering-havet-tider", "motstridende"],
-    ["Snurr kaffe frokost", "servering-snurr", "espresso"],
-    ["Una vegansk pizza", "servering-una", "Vegana"],
-    ["Olivia barnemeny", "servering-barnemeny-uavklart", "ikke"],
-    ["Transittkaia nye restauranter", "servering-planer", "planforslag"],
-    ["Sabrura glutenfri", "servering-sabrura", "25"],
-    ["Dora pizza nuggets", "servering-bowling-mat", "135"],
-    ["familiebowling", "servering-bowling-familie", "Mat kjøpes separat"],
-    ["BarbeintQ Heim", "servering-havet", "bordbestilling"],
-    ["Heim aldersgrense", "servering-havet-alder", "20-årsgrense"],
-    ["Ramp kikert", "servering-ramp", "storfe"],
-    ["Ladejarlen rabatt", "servering-ladejarlen-mat", "ti prosent"],
-    ["Ladejarlen vaffelbuffet", "servering-ladejarlen-tid", "pause"],
-    ["Dahls kjøkken", "servering-dahls", "21.30"],
-    ["Dahls falafelburger", "servering-dahls-meny", "melk og egg"],
-    ["BistroBar mandag", "servering-bistro", "Ladebekken 24A"],
-    ["BistroBar kveite", "servering-bistro-mat", "395"],
-    ["Sabrura hentetider", "servering-sabrura-tid", "én time før"],
-    ["Egon pizzabuffet", "servering-egon", "TMV-kaia 21"],
-    ["Godt Brød bakeri", "servering-godtbrod", "06.30"],
-    ["Dromedar", "servering-dromedar", "07.30"],
-    ["Rosendal forestilling", "servering-rosendal", "én time før"],
-    ["lekeland bistro", "servering-leos", "Ladebekken 6"],
-    ["BarbeintQ chili", "servering-havet-mat", "cheddar"],
-    ["Rosendal Adasi", "servering-rosendal-mat", "laktose"],
-    ["Rosendal heis", "servering-rosendal-adkomst", "rampe"],
-    ["Monkey Brew", "servering-monkey", "torsdag"],
-  ])("finner serveringsdybde for %s uten kartsteder", async (query, id, text) => {
+  it("kan fremheve alle steder lenket fra FAQ gjennom ekte kartverktøy", async () => {
+    const { executeBoardTool } = await import("@/lib/realtime/board-tools");
+    const { initialBoardState } = await import("@/components/variants/report/board/board-state");
     const dataset = await loadDataset();
-    const conversation = conversationFor(dataset);
-    conversation.execute("set_interests", { interests: ["spisesteder"], theme_ids: ["mat-drikke"] });
-    const info = conversation.execute("find_project_info", { query }).result as {
-      results: Array<{ id: string; text: string; source: { url: string } }>;
-    };
-    const found = info.results.find((topic) => topic.id === id);
-    expect(found?.text).toContain(text);
-    expect(found?.source.url).toMatch(/^https:\/\//);
-    expect(dataset.places).toEqual([]);
+    const board = buildLocalBoard(dataset);
+    for (const faq of dataset.faqs) {
+      const ids = [...faq.answer.matchAll(/\(poi:([^)]+)\)/g)].map(m => m[1]);
+      if (!ids.length) continue;
+      const actions: unknown[] = [];
+      const result = executeBoardTool("highlight_places", { poi_ids: ids }, {
+        data: board, state: initialBoardState, dispatch: action => actions.push(action),
+      });
+      expect(result).toMatchObject({ ok: true });
+      expect(actions).toContainEqual({ type: "HIGHLIGHT_POIS", ids });
+    }
   });
 
   it("gir stemmen nøyaktig de spørsmålene sidebaren viser", async () => {
@@ -285,15 +249,4 @@ describe("spørsmål og svar er felles for sidebar og stemme", () => {
     }
   });
 
-  it("sier til modellen at kartet er tomt, så den ikke lover markører", async () => {
-    expect(LOCAL_DEMO_INSTRUCTION).toContain("ingen steder i kartet");
-    expect(LOCAL_DEMO_INSTRUCTION).toContain("highlight_places");
-  });
-
-  it("gir ingen kart-ID-er til katalogsvarene, siden ingen steder finnes", async () => {
-    const board = buildLocalBoard(await loadDataset());
-    // «vis:» er kart-ID-ene modellen ville brukt til å fremheve. Ingen steder i
-    // datasettet = ingen slike referanser, uansett hvilke navn svarene nevner.
-    expect(nyhavnaFaqCatalog(board)).not.toContain("vis:");
-  });
 });

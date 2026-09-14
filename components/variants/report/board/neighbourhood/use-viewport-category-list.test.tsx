@@ -263,3 +263,12 @@ describe("useViewportCategoryList — reisemodus", () => {
     }
   });
 });
+
+
+it("beholder hele det kuraterte utvalget i den lokale demoen selv utenfor kartutsnittet", () => {
+  render(<BoardProvider data={{ ...boardData(), demoDataset: "nyhavna-lokal" }}>
+    <Probe rect={RECT} category={MAT} />
+  </BoardProvider>);
+  expect(list().rows.map(row => row.poi.id)).toEqual(["naer", "mellom", "langt"]);
+  expect(list().scoped).toBe(false);
+});

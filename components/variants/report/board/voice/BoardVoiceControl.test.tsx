@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { act, cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { BoardVoiceControl } from "@/components/variants/report/board/voice/BoardVoiceControl";
+import { FAQSection } from "@/components/variants/report/board/FAQSection";
 import { BoardVoiceProvider } from "@/components/variants/report/board/voice/board-voice";
 import { NYHAVNA_GREETING_INSTRUCTION } from "@/lib/realtime/nyhavna-greeting";
 
@@ -173,5 +174,49 @@ describe("BoardVoiceControl", () => {
     storyStop = category;
     act(() => { view.rerender(<BoardVoiceProvider><BoardVoiceControl /></BoardVoiceProvider>); });
     expect(sendContext).not.toHaveBeenCalled();
+  });
+});
+
+
+describe("lokal FAQ, stemme og kart", () => {
+  const faq = { id: "kaffe", question: "Hvor finner vi kaffe?", answer: "Se [Dora Kaffebar](poi:dora-kaffebar).", source: "curated" as const };
+  const renderLocal = () => {
+    Object.assign(data, { demoDataset: "nyhavna-lokal" });
+    Object.assign(category, { editorial: { faq: [faq] } });
+    return render(<BoardVoiceProvider><FAQSection entries={[faq]} poisById={data.poisById} categoryIds={["mat"]} /></BoardVoiceProvider>);
+  };
+  afterEach(() => {
+    Reflect.deleteProperty(data, "demoDataset");
+    Reflect.deleteProperty(category, "editorial");
+  });
+  it("åpner tekst og fremhever kartsteder uten å starte mikrofonen", () => {
+    renderLocal();
+    fireEvent.click(screen.getByTestId("faq-question"));
+    expect(dispatch).toHaveBeenCalledWith({ type: "HIGHLIGHT_POIS", ids: ["dora-kaffebar"] });
+    expect(screen.getByLabelText("Utforsket")).toBeTruthy();
+    expect(start).not.toHaveBeenCalled();
+    expect(sendText).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByText("Nullstill haker"));
+    expect(screen.queryByLabelText("Utforsket")).toBeNull();
+  });
+  it("sender senere temavalg selv om FAQ-en fremhevet steder der", () => {
+    resetLive({ status: "listening" });
+    const { rerender } = renderLocal();
+    fireEvent.click(screen.getByTestId("faq-question"));
+    sendContext.mockClear();
+    storyStop = category;
+    rerender(<BoardVoiceProvider><FAQSection entries={[faq]} poisById={data.poisById} categoryIds={["mat"]} /></BoardVoiceProvider>);
+    expect(sendContext).toHaveBeenCalledWith({ kind: "theme", id: "mat", label: category.label });
+  });
+  it("sender valgt FAQ inn i aktiv samtale uten å markere den ferdig på klikk", () => {
+    resetLive({ status: "listening" });
+    renderLocal();
+    fireEvent.click(screen.getByTestId("faq-question"));
+    expect(sendText).toHaveBeenCalledWith(faq.question);
+    expect(screen.queryByLabelText("Utforsket")).toBeNull();
+    expect(start).not.toHaveBeenCalled();
+    const tool = capturedOptions?.executeTool as (name: string, args: Record<string, unknown>) => unknown;
+    act(() => tool("highlight_places", { poi_ids: ["dora-kaffebar"], answered_faq_ids: ["kaffe"] }));
+    expect(screen.getByRole("status")).toHaveTextContent("Aktiv");
   });
 });

@@ -5,13 +5,13 @@
   "address": "",
   "district": "Nyhavna",
   "city": "Trondheim",
-  "intro": "",
+  "intro": "Utforsk hverdagen på Nyhavna. Velg et spørsmål eller snakk med Placy, og se stedene på kartet. Reisetidene regnes fra det markerte punktet.",
   "center": {
     "lat": 63.43980508893858,
     "lng": 10.41725655026434
   },
   "map3d": true,
-  "pinSubtitle": "",
+  "pinSubtitle": "Demoens utgangspunkt",
   "greeting": "Hei! Her kan vi utforske hvordan hverdagen på Nyhavna kan bli – fra skole og fritid til spisesteder og livet i nabolaget. Hva er viktig for deg når du tenker på å bo her?",
   "projectInfoLabel": "det kildekontrollerte materialet om Nyhavna",
   "categories": [

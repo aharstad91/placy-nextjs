@@ -1,10 +1,13 @@
 "use client";
 
-import { createContext, useContext, useEffect, useMemo, useRef, type ReactNode } from "react";
+import { createContext, useCallback, useContext, useEffect, useMemo, useRef, type ReactNode } from "react";
 import { useBoard } from "@/components/variants/report/board/board-state";
 import { AREA_STEP, useStoryTour } from "@/components/variants/report/board/story/story-tour";
 import { useAudioTourStore } from "@/lib/stores/audio-tour-store";
 import { useLive } from "@/lib/live/use-live";
+import { useFaqProgress } from "@/lib/demo/nyhavna-lokal/use-faq-progress";
+import { parseLinkedText, boardLinkResolvers } from "@/lib/board/poi-link-text";
+import type { FaqEntry } from "@/lib/generators/faq-generator";
 import type { LiveMessage, LiveStatus } from "@/lib/live/types";
 import { boardToolTargets, executeBoardTool, type BoardToolResult } from "@/lib/realtime/board-tools";
 import { greetingInstruction, NYHAVNA_GREETING_INSTRUCTION } from "@/lib/realtime/nyhavna-greeting";
@@ -45,6 +48,12 @@ export interface BoardVoice {
   latest: string | null;
   /** Spill/stopp. */
   toggle: () => void;
+  faq?: {
+    explored: ReadonlySet<string>;
+    active: ReadonlySet<string>;
+    select: (entry: FaqEntry) => void;
+    reset: () => void;
+  };
 }
 
 const BoardVoiceContext = createContext<BoardVoice | null>(null);
@@ -90,17 +99,24 @@ function BoardVoiceSession({ children }: { children: ReactNode }) {
   const stopId = story.stop ? String(story.stop.id) : null;
   const activePoiId = state.activePOIId ? String(state.activePOIId) : null;
 
-  const runBoardTool = (name: string, args: Record<string, unknown>): BoardToolResult => {
+  const progressRef = useRef<ReturnType<typeof useFaqProgress> | null>(null);
+  const localDemo = data.demoDataset === "nyhavna-lokal";
+  const faqIds = useMemo(() => localDemo ? [...(data.globalFaq ?? []), ...data.categories.flatMap(c => c.editorial?.faq ?? [])].map(f => f.id) : [], [data.globalFaq, data.categories, localDemo]);
+
+  const runBoardTool = useCallback((name: string, args: Record<string, unknown>): BoardToolResult => {
     const result = executeBoardTool(name, args, {
       data, state, dispatch, mapCamera,
       onCategory: (index) => story.begin(index),
       onReset: () => story.begin(AREA_STEP),
     });
+    if (localDemo && "ok" in result && !result.rejected?.length && Array.isArray(args.answered_faq_ids)) {
+      progressRef.current?.queue(args.answered_faq_ids.filter((id): id is string => typeof id === "string"));
+    }
     const targets = boardToolTargets(name, result, data);
     for (const id of targets.categoryIds) if (id !== stopId) voiceNav.current.categoryIds.add(id);
     for (const id of targets.poiIds) if (id !== activePoiId) voiceNav.current.poiIds.add(id);
     return result;
-  };
+  }, [data, state, dispatch, mapCamera, story, localDemo, stopId, activePoiId]);
 
   const live = useLive({
     // Hilsenen og datagrunnlaget følger BOARDET, ikke koden: to demoer deler
@@ -113,6 +129,9 @@ function BoardVoiceSession({ children }: { children: ReactNode }) {
     snapshotId: data.demoSnapshotId,
   });
   const { status, notice, error, messages, latest, start, stop, sendContext, sendText, replaceMicrophoneTrack } = live;
+  const progress = useFaqProgress(faqIds, status, messages, live.interruptionVersion);
+  progressRef.current = progress;
+  const { clear: clearFaq, read: readFaq } = progress;
   const connecting = status === "connecting";
   const connected = !["idle", "error", "connecting"].includes(status);
   const running = connected || connecting;
@@ -147,8 +166,22 @@ function BoardVoiceSession({ children }: { children: ReactNode }) {
     sendContext({ kind: "place", id: activePoiId });
   }, [activePoiId, connected, sendContext]);
 
+  const selectFaq = useCallback((entry: FaqEntry) => {
+    if (!faqIds.includes(entry.id)) return;
+    const poiIds = parseLinkedText(entry.answer, boardLinkResolvers(data.poisById, data.categories.map(c => String(c.id))))
+      .flatMap(node => node.kind === "poi" ? [node.poiId] : []);
+    if (poiIds.length) executeBoardTool("highlight_places", { poi_ids: poiIds }, { data, state, dispatch, mapCamera });
+    if (connected) {
+      clearFaq();
+      sendText(entry.question);
+    } else {
+      readFaq(entry.id);
+    }
+  }, [faqIds, data, state, dispatch, mapCamera, connected, clearFaq, readFaq, sendText]);
+
   const value = useMemo<BoardVoice>(() => ({
     status, running, connecting, notice, error, latest,
+    ...(localDemo ? { faq: { explored: progress.explored, active: progress.active, select: selectFaq, reset: progress.reset } } : {}),
     toggle: () => {
       if (connecting) return;
       if (running) {
@@ -163,7 +196,7 @@ function BoardVoiceSession({ children }: { children: ReactNode }) {
       dispatch({ type: "CLEAR_HIGHLIGHTS" });
       void start();
     },
-  }), [status, running, connecting, notice, error, latest, stop, start, pauseTour, dispatch]);
+  }), [status, running, connecting, notice, error, latest, localDemo, progress.explored, progress.active, progress.reset, selectFaq, stop, dispatch, pauseTour, start]);
 
   // Lokal styring for simulerte samtaler og verifisering uten mikrofon
   // (`?voicedev=1`). Bare på den lokale demoen; ingen data forlater siden.

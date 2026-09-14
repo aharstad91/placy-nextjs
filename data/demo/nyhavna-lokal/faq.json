@@ -1,206 +1,9 @@
 [
   {
-    "id": "til-byen",
-    "question": "Hvordan kommer jeg meg til byen?",
-    "answer": "Til Trondheim S tar det 8 minutter med linje 20. Se [Transport](category:transport) for holdeplassene i nabolaget.",
-    "origin": "imported",
-    "sourceIds": [
-      "nyhavna-leve-board"
-    ]
-  },
-  {
-    "id": "gangavstand",
-    "question": "Hva finnes innen ti minutters gange?",
-    "answer": "91 steder på kartet ligger innenfor ti minutter til fots. 23 av dem ligger innenfor fem.",
-    "origin": "imported",
-    "sourceIds": [
-      "nyhavna-leve-board"
-    ]
-  },
-  {
-    "id": "uten-bil",
-    "question": "Hvilke ærender kan jeg gjøre til fots?",
-    "answer": "Hverdagsærendene er i gangavstand: dagligvare, apotek, post, bank, frisør, bakeri, treningssenter, barnehage og bysykkel ligger alle innenfor 10 minutter til fots.",
-    "origin": "imported",
-    "sourceIds": [
-      "nyhavna-leve-board"
-    ]
-  },
-  {
-    "id": "tjenester-samme-sted",
-    "question": "Hvor kan jeg samle flere ærender på én tur?",
-    "answer": "Nærmeste sted på kartet som samler flere ærender er Solsiden kjøpesenter, 11 minutter til fots eller 6 med sykkel, med dagligvare, apotek, bank, frisør og bakeri. Byhaven samler apotek og frisør, 21 minutter til fots eller 11 med sykkel.",
-    "origin": "imported",
-    "sourceIds": [
-      "nyhavna-leve-board"
-    ]
-  },
-  {
-    "id": "apent-sent",
-    "question": "Er noe åpent sent på kvelden?",
-    "answer": "Feel24 Treningssenter | Buran og Vitusapotek Solsiden har åpent til midnatt på hverdager.",
-    "origin": "imported",
-    "sourceIds": [
-      "nyhavna-leve-board"
-    ]
-  },
-  {
-    "id": "regnvaersdag",
-    "question": "Hva finnes innendørs i nærheten?",
-    "answer": "TRONDHEIM KICKBOXING KLUBB er nærmeste treningssenter, 4 minutter til fots, og KNM Ula S300 nærmeste museum, 5 minutter til fots.",
-    "origin": "imported",
-    "sourceIds": [
-      "nyhavna-leve-board"
-    ]
-  },
-  {
-    "id": "naermest",
-    "question": "Hva ligger nærmest boligen?",
-    "answer": "Bunkerparken, Charge365 Charging Station og Dora 2 ligger alle ett minutt unna.",
-    "origin": "imported",
-    "sourceIds": [
-      "nyhavna-leve-board"
-    ]
-  },
-  {
-    "id": "mest-av",
-    "question": "Hva er det mest av i nabolaget?",
-    "answer": "[Hverdag](category:hverdagsliv) er størst, med 291 steder. [Oppvekst](category:barn-oppvekst) følger med 189 steder.",
-    "origin": "imported",
-    "sourceIds": [
-      "nyhavna-leve-board"
-    ]
-  },
-  {
-    "id": "hverdagshandel",
-    "categoryId": "hverdagsliv",
-    "question": "Hvor gjør jeg hverdagshandelen?",
-    "answer": "REMA 1000 SOLSIDEN er nærmest, 6 minutter til fots. Asia-Tropican Food ligger 8 minutter unna.",
-    "origin": "imported",
-    "sourceIds": [
-      "nyhavna-leve-board"
-    ]
-  },
-  {
-    "id": "apotek",
-    "categoryId": "hverdagsliv",
-    "question": "Hvor er nærmeste apotek?",
-    "answer": "Apotek 1 Solsiden ligger 10 minutter unna.",
-    "origin": "imported",
-    "sourceIds": [
-      "nyhavna-leve-board"
-    ]
-  },
-  {
-    "id": "tannlege",
-    "categoryId": "hverdagsliv",
-    "question": "Finnes det tannlege i nærheten?",
-    "answer": "Nærmeste tannlege er Ty tannklinikk, 10 minutter til fots.",
-    "origin": "imported",
-    "sourceIds": [
-      "nyhavna-leve-board"
-    ]
-  },
-  {
-    "id": "kjopesenter",
-    "categoryId": "hverdagsliv",
-    "question": "Hvor er nærmeste kjøpesenter?",
-    "answer": "Olavskvartalet er nærmeste kjøpesenter, 16 minutter til fots. For større handel er Byhaven alternativet, 21 minutter unna.",
-    "origin": "imported",
-    "sourceIds": [
-      "nyhavna-leve-board"
-    ]
-  },
-  {
-    "id": "pakker-post",
-    "categoryId": "hverdagsliv",
-    "question": "Hvor er nærmeste Post i butikk?",
-    "answer": "Solsiden Post i Butikk har Post i butikk, 7 minutter til fots. Lademoen Post i Butikk er alternativet, 9 minutter unna.",
-    "origin": "imported",
-    "sourceIds": [
-      "nyhavna-leve-board"
-    ]
-  },
-  {
-    "id": "dagligvare-lengst-apent",
-    "categoryId": "hverdagsliv",
-    "question": "Hvor sent kan jeg handle mat på hverdager?",
-    "answer": "REMA 1000 SOLSIDEN og Asia-Tropican Food holder åpent til 23 på hverdager, 6 minutter og 8 minutter til fots.",
-    "origin": "imported",
-    "sourceIds": [
-      "nyhavna-leve-board"
-    ]
-  },
-  {
-    "id": "dagligvare-sondag",
-    "categoryId": "hverdagsliv",
-    "question": "Hvor kan jeg handle dagligvarer på søndag?",
-    "answer": "På søndag holder Asia-Tropican Food åpent 12–23, 8 minutter til fots. Bunnpris Rosendal har åpent 10–22, 13 minutter unna.",
-    "origin": "imported",
-    "sourceIds": [
-      "nyhavna-leve-board"
-    ]
-  },
-  {
-    "id": "vinmonopol",
-    "categoryId": "hverdagsliv",
-    "question": "Hvor er nærmeste Vinmonopol?",
-    "answer": "Vinmonopolet i Solsiden kjøpesenter er nærmeste Vinmonopol, 10 minutter til fots, med åpent 10–18 på hverdager.",
-    "origin": "imported",
-    "sourceIds": [
-      "nyhavna-leve-board"
-    ]
-  },
-  {
-    "id": "legevakt-sykehus",
-    "categoryId": "hverdagsliv",
-    "question": "Hvor er nærmeste legevakt?",
-    "answer": "Trondheim Interkommunale Legevakt er nærmeste legevakt, 34 minutter til fots eller 11 med bil.",
-    "origin": "imported",
-    "sourceIds": [
-      "nyhavna-leve-board"
-    ]
-  },
-  {
-    "id": "legesenter",
-    "categoryId": "hverdagsliv",
-    "question": "Hvor er nærmeste legesenter?",
-    "answer": "Møllenberg legesenter er nærmeste legesenter, 10 minutter til fots. Lege Trondheim - Aleris Medisinske Senter ligger 10 minutter unna.",
-    "origin": "imported",
-    "sourceIds": [
-      "nyhavna-leve-board"
-    ]
-  },
-  {
-    "id": "oppvekst-naa-og-planlagt",
-    "categoryId": "barn-oppvekst",
-    "question": "Hva finnes for barnefamilier i dag, og hva er planlagt på Nyhavna?",
-    "answer": "Rundt Nyhavna finnes allerede skoler, barnehager og parker. Strandveiparken har blant annet lek, ballspill og parkour. På Transittkaia er barnehage, nye byrom og elvepromenade foreslått. For familien er det viktig å skille dagens tilbud fra det som faktisk blir ferdig til innflytting.",
-    "origin": "local",
-    "sourceIds": [
-      "v-park-s",
-      "v-plan",
-      "v-bhg-reg"
-    ],
-    "caveats": []
-  },
-  {
-    "id": "barnehage-dekning",
-    "categoryId": "barn-oppvekst",
-    "question": "Hvilke barnehager finnes i nærområdet, og hva bør vi vite om å få plass?",
-    "answer": "Svartlamon kunst- og kulturbarnehage, Lademoen, Nedre Elvehavn og Voldsminde er alternativer rundt området. Dere søker gjennom kommunens portal. Nærhet gir ikke garanti for plass i ønsket barnehage, så leveringsruten og opptaket bør vurderes sammen.",
-    "origin": "local",
-    "sourceIds": [
-      "v-bhg-reg",
-      "v-bhg-opptak"
-    ],
-    "caveats": []
-  },
-  {
     "id": "krets",
     "categoryId": "barn-oppvekst",
-    "question": "Hvilke barneskoler og ungdomsskoler er aktuelle hvis vi flytter til Nyhavna?",
-    "answer": "Planmaterialet for Transittkaia peker på Lilleby barneskole og Rosenborg ungdomsskole. Det er derfor naturlig å undersøke disse først. Hvilken skole barnet faktisk sokner til, må sjekkes for boligadressen og tidspunktet dere flytter inn.",
+    "question": "Hvilke skoler er aktuelle?",
+    "answer": "[Lilleby barneskole](poi:lilleby-skole) og [Rosenborg ungdomsskole](poi:rosenborg-skole) er de aktuelle skolene i planmaterialet for Transittkaia. Skoletilhørigheten må avklares for den aktuelle boligen.",
     "origin": "local",
     "sourceIds": [
       "v-planb",
@@ -211,524 +14,142 @@
   {
     "id": "skolevei",
     "categoryId": "barn-oppvekst",
-    "question": "Hvordan er skoleveien til fots og på sykkel?",
-    "answer": "Vi må følge ruten fra den aktuelle boligen før vi kan beskrive skoleveien ordentlig. Kryssinger og anleggstrafikk er viktige å undersøke. Det er planlagt en ny gang- og sykkelforbindelse mellom Lilleby skole og Strandveien, men vi har ikke bekreftet at den er åpnet.",
+    "question": "Hvor langt er det til skolene?",
+    "answer": "Fra demoens markerte punkt er det beregnet cirka 16 minutter å gå til [Lilleby skole](poi:lilleby-skole) og 20 minutter til [Rosenborg skole](poi:rosenborg-skole). På sykkel er anslagene 6 og 10 minutter. Trykk på skolen for å se ruten.",
     "origin": "local",
     "sourceIds": [
-      "v-barn-plan",
-      "v-sykkel"
+      "demo-route",
+      "demo-lilleby",
+      "demo-rosenborg"
     ],
     "caveats": []
   },
   {
-    "id": "skoleskyss",
+    "id": "barnehage-dekning",
     "categoryId": "barn-oppvekst",
-    "question": "Når kan barn på Nyhavna ha rett til gratis skoleskyss?",
-    "answer": "I grunnskolen er avstandsgrensen mer enn to kilometer på første trinn og mer enn fire kilometer på andre til tiende trinn. Særlig farlig eller vanskelig skolevei, eller behov knyttet til sykdom, skade eller nedsatt funksjonsevne, kan også gi rett ved kortere avstand. Barnets situasjon må vurderes konkret.",
+    "question": "Hvilke barnehager finnes i nærområdet?",
+    "answer": "[Nedre Elvehavn](poi:nedre-elvehavn-bhg) og [Voldsminde](poi:voldsminde-bhg) er to kommunale barnehager i nærområdet. Fra demoens punkt er det beregnet rundt 9 og 12 minutter å gå. Se kommunens sider for informasjon og opptak; ledige plasser er ikke undersøkt.",
     "origin": "local",
     "sourceIds": [
-      "v-skyss"
+      "v-bhg-n",
+      "v-bhg-v",
+      "demo-route"
     ],
     "caveats": []
   },
   {
-    "id": "vgs-naerhet",
-    "categoryId": "barn-oppvekst",
-    "question": "Hvilke videregående skoler finnes i nærheten, og hvordan kommer ungdommen seg dit?",
-    "answer": "Thora Storm og Trondheim Katedralskole er to alternativer i sentrum. Begge tilbyr studiespesialisering; Thora Storm har også blant annet helse- og oppvekstfag, mens Katedralskolen tilbyr musikk og medier og kommunikasjon. Programvalg og inntak avgjør hva som er aktuelt. Reiseruten fra boligen gjenstår å undersøke.",
+    "id": "familie-aktiviteter",
+    "categoryId": "opplevelser",
+    "question": "Hva kan vi gjøre som familie i nærområdet?",
+    "answer": "Dere har blant annet [bowling på Dora 1](poi:dora-bowling), [padel ved E.C. Dahls](poi:nyhavna-padel) og turmuligheter langs [Ladestien](poi:ladestien). Bowling ligger rundt 3 minutter til fots fra demoens punkt, padel rundt 8. Se stedskortene for plassering og booking.",
     "origin": "local",
     "sourceIds": [
-      "v-vgs-ts",
-      "v-vgs-tk",
-      "v-inntak"
-    ],
-    "caveats": []
-  },
-  {
-    "id": "lekeplass",
-    "categoryId": "barn-oppvekst",
-    "question": "Hvor kan barna leke og være ute i nærområdet?",
-    "answer": "Strandveiparken har lekeområde, flerbruksbane og parkour. Lademoparken har lek for de minste, mens Ladeparken har blant annet vannlek og plass til ballspill. Det gir ulike muligheter etter alder og aktivitet; hvilken park som blir enklest å bruke i hverdagen, avhenger av boligen.",
-    "origin": "local",
-    "sourceIds": [
-      "v-park-s",
-      "v-park-l",
-      "v-park-lade"
-    ],
-    "caveats": []
-  },
-  {
-    "id": "oppvekst-fritid",
-    "categoryId": "barn-oppvekst",
-    "question": "Hvilke fritidsaktiviteter finnes i nærheten for barn og ungdom?",
-    "answer": "For barn på mellomtrinnet er Jubateateret på Lademoen et tilbud å undersøke. For ungdom finnes Lade fritidsklubb med blant annet gaming, og Lade Motor har et fast tilbud fra 13 år. BUA Lademoen låner ut sports- og friluftsutstyr gratis. Kursplasser og aktuelle terminer må sjekkes.",
-    "origin": "local",
-    "sourceIds": [
-      "v-kultur",
-      "v-klubb",
-      "v-motor",
-      "v-bua"
-    ],
-    "caveats": []
-  },
-  {
-    "id": "ungdom-moteplasser",
-    "categoryId": "barn-oppvekst",
-    "question": "Hvor kan ungdom møte venner uten å måtte kjøpe noe?",
-    "answer": "Lade fritidsklubb er gratis og har gaming, aktivitetsrom og mat på klubbkveldene. Ute kan Strandveiparken brukes til å møtes, spille ball eller prøve parkour. Klubb og park gir to ulike muligheter: et tilbud med voksne til stede, og et sted ungdom kan bruke på egen hånd.",
-    "origin": "local",
-    "sourceIds": [
-      "v-klubb",
-      "v-park-s"
-    ],
-    "caveats": []
-  },
-  {
-    "id": "helsestasjon",
-    "categoryId": "barn-oppvekst",
-    "question": "Hvilken helsestasjon er aktuell for familier på Nyhavna, og hvor ligger den?",
-    "answer": "Helsestasjon for småbarn bestemmes ut fra bostedsadressen, så vi må sjekke adressen før vi peker ut riktig sted. For barn i skolealder finnes skolehelsetjenesten på alle skolene i Trondheim. Den er gratis og kan kontaktes direkte av barn og foreldre.",
-    "origin": "local",
-    "sourceIds": [
-      "v-helse",
-      "v-skolehelse"
-    ],
-    "caveats": []
-  },
-  {
-    "id": "oppvekst-for-kjop",
-    "categoryId": "barn-oppvekst",
-    "question": "Hva bør vi som barnefamilie undersøke før vi kjøper på Nyhavna?",
-    "answer": "Begynn med hva som faktisk vil være tilgjengelig ved innflytting: skole, skolevei, uteområder og fritidstilbud. Be også om oversikt over byggearbeid rundt boligen og hvordan gangveier blir ivaretatt. Støy, utearealer og sikring mot vannet bør avklares for det konkrete bygget, ikke bare for bydelen samlet.",
-    "origin": "local",
-    "sourceIds": [
-      "v-barn-plan",
-      "v-ros",
-      "v-krets"
-    ],
-    "caveats": []
-  },
-  {
-    "id": "spisesteder",
-    "categoryId": "mat-drikke",
-    "question": "Hva finnes av spisesteder på Nyhavna i dag?",
-    "answer": "Du har blant annet Dora Kaffebar, mat i Dora 1 bowlinghall og BarbeintQ på HAVET. E.C. Dahls ligger i Strandveien, og tilbudet utvides med steder på Svartlamon, Solsiden og i Ladebekken. Det er eksisterende tilbud, men åpningstidene varierer.",
-    "origin": "local",
-    "sourceIds": [
-      "s-dora",
       "s-bowling",
-      "s-havet",
-      "s-dahls",
-      "s-svartlamon",
-      "s-bistro"
+      "demo-padel",
+      "demo-ladestien",
+      "demo-route"
     ],
     "caveats": []
   },
   {
     "id": "kafe",
     "categoryId": "mat-drikke",
-    "question": "Hvor kan jeg ta en kaffe eller spise frokost?",
-    "answer": "Dora Kaffebar ligger i Kobbes gate 2. Vil du ha flere alternativer, finner du Snurr Nyhavna i Ladebekken og Godt Brød og Dromedar på Solsiden. De tre siste oppgir også helgeåpent; hva som er nærmest, avhenger av hvor på Nyhavna du bor.",
+    "question": "Hvor finner vi kaféer og bakerier?",
+    "answer": "[Dora Kaffebar](poi:dora-kaffebar) ligger i Kobbes gate, rundt 2 minutter til fots fra demoens punkt. [Snurr i Ladebekken](poi:snurr-nyhavna) har kaffe, frokost og bakervarer, rundt 15 minutter unna til fots. Åpningstider finner dere på stedenes egne sider.",
     "origin": "local",
     "sourceIds": [
       "s-dora",
       "s-snurr",
-      "s-godtbrod",
-      "s-dromedar"
+      "demo-route"
     ],
     "caveats": []
   },
   {
-    "id": "bakeri",
+    "id": "spisesteder",
     "categoryId": "mat-drikke",
-    "question": "Hvor kjøper jeg brød og bakervarer?",
-    "answer": "Snurr Nyhavna i Ladebekken og Godt Brød på Solsiden er to dokumenterte alternativer. Dora Kaffebar omtales også med eget brød og bakst. Vi har ikke kontrollert gangruten fra en bestemt bolig.",
+    "question": "Hvilke restauranter finnes i nærheten?",
+    "answer": "[Ladejarlen](poi:ladejarlen) og [Nyhavna BistroBar](poi:nyhavna-bistro) er to alternativer i nærområdet, rundt 8 og 15 minutter til fots fra demoens punkt. På stedskortene finner dere lenker til meny og åpningstider.",
     "origin": "local",
     "sourceIds": [
-      "s-snurr",
-      "s-godtbrod",
-      "s-nyhavna"
-    ],
-    "caveats": []
-  },
-  {
-    "id": "servering-familiemiddag",
-    "categoryId": "mat-drikke",
-    "question": "Hvor kan vi spise en vanlig middag med barna?",
-    "answer": "Ladejarlen har pizza og et eget tilbud for barn under 12. På Solsiden er Sabruras buffet og Egons pizzabuffet andre alternativer. Barnas alder og hva dere liker avgjør hva som passer; barnevilkårene er forskjellige.",
-    "origin": "local",
-    "sourceIds": [
-      "s-ladejarlen-pizza",
-      "s-sabrura",
-      "s-egon"
-    ],
-    "caveats": []
-  },
-  {
-    "id": "servering-barnemeny",
-    "categoryId": "mat-drikke",
-    "question": "Hvilke steder har dokumenterte tilbud for barn?",
-    "answer": "Ladejarlen oppgir barnepizza for barn under 12, mens Sabrura sier at barn opptil 6 spiser buffet gratis sammen med en spisende voksen. Dette er ulike aldersvilkår, og gjelder ikke automatisk eldre barn. Hos andre steder er barnemeny ikke tilstrekkelig avklart i materialet.",
-    "origin": "local",
-    "sourceIds": [
-      "s-ladejarlen-pizza",
-      "s-sabrura"
-    ],
-    "caveats": []
-  },
-  {
-    "id": "pizza",
-    "categoryId": "mat-drikke",
-    "question": "Hvor kan vi få pizza, takeaway eller en rask matbit?",
-    "answer": "Dora 1 har pizzameny, Ladejarlen tilbyr takeaway, og Sabrura Solsiden har egne hentetider. Vi har ikke kontrollert hvem som leverer til en konkret boligadresse, så levering må sjekkes i bestillingen.",
-    "origin": "local",
-    "sourceIds": [
-      "s-bowling-mat",
       "s-ladejarlen",
-      "s-sabrura-solsiden"
+      "s-bistro",
+      "demo-route"
     ],
     "caveats": []
   },
   {
-    "id": "servering-pris",
+    "id": "aktuelle-menyer",
     "categoryId": "mat-drikke",
-    "question": "Hva koster det å spise ute i nærområdet?",
-    "answer": "Som priseksempler fra menyene kontrollert 13. september 2026 koster en 30-centimeters pizza hos Dora 1 fra 135 kroner, en Vegana-pizza hos Una 238 og en cheeseburger på pubmenyen til E.C. Dahls 315. Det er enkeltretter, uten drikke og tillegg, og prisene kan endres.",
-    "origin": "local",
-    "sourceIds": [
-      "s-bowling-mat",
-      "s-una",
-      "s-dahls-meny"
-    ],
-    "caveats": []
-  },
-  {
-    "id": "servering-vegetar",
-    "categoryId": "mat-drikke",
-    "question": "Hva finnes av vegetarisk og vegansk mat?",
-    "answer": "Una har Vegana-pizza, og Ladejarlen oppgir at flere retter kan tilpasses vegansk. Vegetarisk er ikke det samme som vegansk, og ved allergi må dere avklare ingredienser og tilberedning direkte med stedet.",
-    "origin": "local",
-    "sourceIds": [
-      "s-una",
-      "s-ladejarlen"
-    ],
-    "caveats": []
-  },
-  {
-    "id": "servering-aktivitet",
-    "categoryId": "mat-drikke",
-    "question": "Hvor kan vi kombinere mat med noe barna kan gjøre?",
-    "answer": "Dora 1 kombinerer bowling med pizza og annen enkel mat. Leo’s Lekeland i Ladebekken har egen bistro. Velg etter barnas alder og interesser, og sjekk aktuelle aktivitetspriser og vilkår før dere drar.",
-    "origin": "local",
-    "sourceIds": [
-      "s-bowling",
-      "s-bowling-mat",
-      "s-leos"
-    ],
-    "caveats": []
-  },
-  {
-    "id": "uteliv",
-    "categoryId": "mat-drikke",
-    "question": "Hvor kan vi gå ut og spise eller ta et glass om kvelden?",
-    "answer": "Ramp på Svartlamon er en bydelspub med kjøkken, E.C. Dahls har pub og restaurant, og HAVET kombinerer servering med kultur og badstu. På HAVET gjelder egne aldersgrenser enkelte kvelder; åpningstid for bar er ikke nødvendigvis kjøkkentid.",
-    "origin": "local",
-    "sourceIds": [
-      "s-svartlamon",
-      "s-dahls",
-      "s-havet-faq"
-    ],
-    "caveats": []
-  },
-  {
-    "id": "servering-ute",
-    "categoryId": "mat-drikke",
-    "question": "Hvor kan vi spise ute eller sitte ved sjøen?",
-    "answer": "HAVET er et alternativ ved sjøen, og Egon Solsiden beskriver servering både inne og ute. Uteplasser og mattilbud avhenger av vær, sesong og åpningstid; ledige bord er ikke kontrollert.",
-    "origin": "local",
-    "sourceIds": [
-      "s-havet",
-      "s-egon"
-    ],
-    "caveats": []
-  },
-  {
-    "id": "sondagsapent",
-    "categoryId": "mat-drikke",
-    "question": "Hvilke alternativer har vi på søndager?",
-    "answer": "Snurr Nyhavna og Godt Brød Solsiden oppgir søndagsåpent, og Sabrura Solsiden oppgir restaurant fra 13 til 22. Dette er publiserte ordinære tider, kontrollert 13. september 2026. HAVETs egne sider er uenige om søndagsmat, så der bør dere sjekke direkte.",
+    "question": "Hvor finner vi aktuelle åpningstider og menyer?",
+    "answer": "Åpne kortet til [Snurr](poi:snurr-nyhavna), [Ladejarlen](poi:ladejarlen) eller [Nyhavna BistroBar](poi:nyhavna-bistro) og følg lenken til stedets egen nettside. Der finner dere oppdaterte menyer og åpningstider.",
     "origin": "local",
     "sourceIds": [
       "s-snurr",
-      "s-godtbrod",
-      "s-sabrura-solsiden",
-      "s-havet",
-      "s-havet-hjem"
+      "s-ladejarlen",
+      "s-bistro"
     ],
     "caveats": []
   },
   {
-    "id": "servering-sent",
-    "categoryId": "mat-drikke",
-    "question": "Hvor kan vi få mat sent på kvelden?",
-    "answer": "Ladejarlen oppgir kjøkken til 23 mandag–lørdag og 22 søndag, men har også varslet midlertidig reduserte åpningstider. E.C. Dahls oppgir kjøkken til 21.30 på åpningsdagene. Vi har ikke bekreftet et mattilbud etter midnatt; sjekk kjøkkenet før dere drar.",
+    "id": "dagligvarer",
+    "categoryId": "hverdagsliv",
+    "question": "Hvor handler vi dagligvarer?",
+    "answer": "[MENY Solsiden](poi:meny-solsiden) og [KIWI Lilleby](poi:kiwi-lilleby) er to alternativer, rundt 11 og 15 minutter til fots fra demoens punkt. KIWI har også utendørs pakkebokser fra Posten og PostNord.",
     "origin": "local",
     "sourceIds": [
-      "s-ladejarlen-tid",
-      "s-dahls"
+      "demo-meny",
+      "demo-kiwi",
+      "demo-route"
     ],
     "caveats": []
   },
   {
-    "id": "servering-fremtid",
-    "categoryId": "mat-drikke",
-    "question": "Kommer det flere kafeer og restauranter når Nyhavna bygges ut?",
-    "answer": "Utbygger beskriver servering og andre publikumstilbud på bakkeplan i planforslaget for Transittkaia. Det er en plan for et delområde, ikke et løfte om bestemte restauranter ved innflytting. Materialet gir ingen bekreftede restaurantnavn eller åpningsdatoer for disse lokalene.",
-    "origin": "local",
-    "sourceIds": [
-      "v-nyhavna",
-      "v-plan"
-    ],
-    "caveats": []
-  },
-  {
-    "id": "gronntomrade",
-    "categoryId": "natur-friluftsliv",
-    "question": "Hvor er nærmeste park eller grøntområde?",
-    "answer": "Strandveiparken er nærmeste grøntområde, 6 minutter til fots.",
-    "origin": "imported",
-    "sourceIds": [
-      "nyhavna-leve-board"
-    ]
-  },
-  {
-    "id": "bading",
-    "categoryId": "natur-friluftsliv",
-    "question": "Kan jeg bade i nærheten?",
-    "answer": "Strandveikaia er nærmeste badeplass, 9 minutter til fots. Korsvika og Sjøtrappa er alternativene.",
-    "origin": "imported",
-    "sourceIds": [
-      "nyhavna-leve-board"
-    ]
-  },
-  {
-    "id": "batliv",
-    "categoryId": "natur-friluftsliv",
-    "question": "Er det båtplass eller marina i nærheten?",
-    "answer": "Green Harbor i Solsiden kjøpesenter ligger 8 minutter unna, og Nedre Elvehavn Marina 13 minutter.",
-    "origin": "imported",
-    "sourceIds": [
-      "nyhavna-leve-board"
-    ]
-  },
-  {
-    "id": "hund",
-    "categoryId": "natur-friluftsliv",
-    "question": "Hvor er nærmeste hundepark?",
-    "answer": "Nærmeste hundepark på kartet er Lade Hundepark (kommunal), 29 minutter til fots eller 12 med sykkel. Brøset Hundepark ligger 42 minutter unna til fots, eller 10 med bil.",
-    "origin": "imported",
-    "sourceIds": [
-      "nyhavna-leve-board"
-    ]
-  },
-  {
-    "id": "naermeste-holdeplass",
+    "id": "holdeplass",
     "categoryId": "transport",
     "question": "Hvor er nærmeste holdeplass?",
-    "answer": "Dora ligger 250 meter fra boligen. Losgata er 350 meter unna.",
-    "origin": "imported",
+    "answer": "Av holdeplassene i dette utvalget er [Losgata](poi:losgata) nærmest, rundt 4 minutter til fots fra demoens punkt. [Dora](poi:dora-holdeplass) ligger rundt 5 minutter unna. Sjekk AtB for riktig retning og avgang.",
+    "origin": "local",
     "sourceIds": [
-      "nyhavna-leve-board"
-    ]
+      "demo-atb",
+      "demo-route"
+    ],
+    "caveats": []
   },
   {
-    "id": "linjer",
+    "id": "sentrum",
     "categoryId": "transport",
-    "question": "Hvor går linjene fra nærmeste holdeplass?",
-    "answer": "Fra Dora går linje 20 og 71 mot Melhus via City Syd E6 og linje 20 mot Grillstad via Ladeham.-Strindh. Lademoen stasjon gir i tillegg linje R70.",
-    "origin": "imported",
+    "question": "Hvordan kommer vi oss til sentrum?",
+    "answer": "Linje 20 fra [Losgata](poi:losgata) eller [Dora](poi:dora-holdeplass) går mot Trondheim S og sentrum. Fra Dora går også linje 71 via Solsiden og sentrum. Bruk AtB for avgangen som passer reisen deres. Til [Trondheim S](poi:trondheim-s) er det beregnet rundt 8 minutter på sykkel fra demoens punkt.",
+    "origin": "local",
     "sourceIds": [
-      "nyhavna-leve-board"
-    ]
+      "demo-line20",
+      "demo-line71",
+      "demo-route",
+      "demo-stasjon"
+    ],
+    "caveats": []
   },
   {
-    "id": "til-sentrum",
+    "id": "bildeling",
     "categoryId": "transport",
-    "question": "Hvor lang tid tar det til sentrum?",
-    "answer": "Til Trondheim S tar det 8 minutter med linje 20.",
-    "origin": "imported",
+    "question": "Kan vi bruke bildeling?",
+    "answer": "Trondheim Bilkollektiv har hentested i [Mellomveien](poi:tbk-mellomveien), rundt 12 minutter til fots fra demoens punkt. Dere trenger medlemskap og reservasjon, og bilen returneres til hentestedet. Se operatørens side for tilgjengelighet og vilkår.",
+    "origin": "local",
     "sourceIds": [
-      "nyhavna-leve-board"
-    ]
+      "demo-tbk",
+      "demo-route"
+    ],
+    "caveats": []
   },
   {
-    "id": "frekvens",
+    "id": "parkering",
     "categoryId": "transport",
-    "question": "Hvor ofte er det avganger på hverdager?",
-    "answer": "Mellom 07 og 09 på hverdager går det 18 avganger mot Melhus via City Syd E6 fra Dora, og 10 avganger mellom 19 og 21.",
-    "origin": "imported",
+    "question": "Hvordan fungerer parkering?",
+    "answer": "Det finnes [korttidsparkering ved Dora](poi:dora-parkering), oppgitt av Trondheim parkering i Maskinistgata. Følg skiltingen på stedet. Parkering som følger en framtidig bolig må avklares med boligprosjektet.",
+    "origin": "local",
     "sourceIds": [
-      "nyhavna-leve-board"
-    ]
-  },
-  {
-    "id": "til-arbeidsplassene",
-    "categoryId": "transport",
-    "question": "Hvor lang tid tar det til de store arbeidsplassene?",
-    "answer": "Reisen til St. Olavs hospital tar 29 minutter med linje 20, til NTNU Gløshaugen 25 minutter med linje 20 og 3 og til Sluppen 42 minutter med linje 20.",
-    "origin": "imported",
-    "sourceIds": [
-      "nyhavna-leve-board"
-    ]
-  },
-  {
-    "id": "siste-buss",
-    "categoryId": "transport",
-    "question": "Når går siste avgang hjem fra sentrum?",
-    "answer": "Siste avgang fra Trondheim S til Brattøra går 02.36 med linje 116, også natt til lørdag og søndag.",
-    "origin": "imported",
-    "sourceIds": [
-      "nyhavna-leve-board"
-    ]
-  },
-  {
-    "id": "tog",
-    "categoryId": "transport",
-    "question": "Hvor er nærmeste togstasjon?",
-    "answer": "Lademoen stasjon ligger 5 minutter til fots, og Lilleby stasjon 13 minutter.",
-    "origin": "imported",
-    "sourceIds": [
-      "nyhavna-leve-board"
-    ]
-  },
-  {
-    "id": "lading",
-    "categoryId": "transport",
-    "question": "Hvor finnes offentlig elbillading i nærheten?",
-    "answer": "Charge365 Charging Station har offentlig lading, ett minutt til fots.",
-    "origin": "imported",
-    "sourceIds": [
-      "nyhavna-leve-board"
-    ]
-  },
-  {
-    "id": "bysykkel",
-    "categoryId": "transport",
-    "question": "Finnes det bysykkel her?",
-    "answer": "Trondheim Bysykkel: Dora I har bysykkelstativ, 3 minutter unna.",
-    "origin": "imported",
-    "sourceIds": [
-      "nyhavna-leve-board"
-    ]
-  },
-  {
-    "id": "treningssenter",
-    "categoryId": "trening-aktivitet",
-    "question": "Hvor er nærmeste treningssenter?",
-    "answer": "TRONDHEIM KICKBOXING KLUBB ligger 4 minutter unna. MMA Trondheim BJJ er alternativet, 4 minutter til fots.",
-    "origin": "imported",
-    "sourceIds": [
-      "nyhavna-leve-board"
-    ]
-  },
-  {
-    "id": "trene-tidlig-sent",
-    "categoryId": "trening-aktivitet",
-    "question": "Kan jeg trene før jobb eller sent på kvelden?",
-    "answer": "Lilleby Treningssenter er døgnåpent på hverdager.",
-    "origin": "imported",
-    "sourceIds": [
-      "nyhavna-leve-board"
-    ]
-  },
-  {
-    "id": "treningspark",
-    "categoryId": "trening-aktivitet",
-    "question": "Er det utendørs treningspark?",
-    "answer": "Nærmeste utendørs treningspark på kartet er Trimpark på Øya, 39 minutter til fots.",
-    "origin": "imported",
-    "sourceIds": [
-      "nyhavna-leve-board"
-    ]
-  },
-  {
-    "id": "padel-tennis",
-    "categoryId": "trening-aktivitet",
-    "question": "Hvor kan jeg spille padel, tennis eller squash?",
-    "answer": "Nyhavna padel har padel, 8 minutter til fots. Lade tennisbaner har tennis, 29 minutter til fots eller 14 med sykkel.",
-    "origin": "imported",
-    "sourceIds": [
-      "nyhavna-leve-board"
-    ]
-  },
-  {
-    "id": "is-skoyter",
-    "categoryId": "trening-aktivitet",
-    "question": "Hvor er nærmeste ishall eller skøytebane?",
-    "answer": "Nærmeste skøytebane på kartet er Lade tennisbaner, 29 minutter til fots eller 14 med sykkel. Øya tennishall ligger 41 minutter unna til fots, eller 14 med bil.",
-    "origin": "imported",
-    "sourceIds": [
-      "nyhavna-leve-board"
-    ]
-  },
-  {
-    "id": "spesialtrening",
-    "categoryId": "trening-aktivitet",
-    "question": "Finnes det yoga, kampsport eller klatring her?",
-    "answer": "CrossFit Trondheim tilbyr crossfit, 4 minutter til fots. Trondheim Buldresenter tilbyr klatring, 12 minutter til fots eller 5 med sykkel.",
-    "origin": "imported",
-    "sourceIds": [
-      "nyhavna-leve-board"
-    ]
-  },
-  {
-    "id": "idrettsanlegg",
-    "categoryId": "trening-aktivitet",
-    "question": "Hvor finnes baner og idrettshaller i nærheten?",
-    "answer": "Nyhavna padel er nærmeste idrettsanlegg, 8 minutter til fots. Ute-hallen er nærmeste idrettshall, 16 minutter til fots eller 7 med sykkel.",
-    "origin": "imported",
-    "sourceIds": [
-      "nyhavna-leve-board"
-    ]
-  },
-  {
-    "id": "bibliotek",
-    "categoryId": "opplevelser",
-    "question": "Hvor er nærmeste bibliotek?",
-    "answer": "Nærmeste folkebibliotek på kartet er Trondheim folkebibliotek Hovedbiblioteket, 21 minutter til fots eller 11 med sykkel.",
-    "origin": "imported",
-    "sourceIds": [
-      "nyhavna-leve-board"
-    ]
-  },
-  {
-    "id": "kino",
-    "categoryId": "opplevelser",
-    "question": "Hvor er nærmeste kino?",
-    "answer": "Nærmeste kino på kartet er Trondheim Filmklubb i Olavskvartalet, 16 minutter til fots eller 10 med sykkel. Trondheim Kino Nova ligger 18 minutter unna til fots, eller 10 med sykkel.",
-    "origin": "imported",
-    "sourceIds": [
-      "nyhavna-leve-board"
-    ]
-  },
-  {
-    "id": "kirke",
-    "categoryId": "opplevelser",
-    "question": "Hvor er nærmeste kirke eller menighetshus?",
-    "answer": "Christian Schytte i Solsiden kjøpesenter er nærmeste kirke, 10 minutter til fots. Lademoen kirke ligger 12 minutter unna til fots, eller 7 med sykkel.",
-    "origin": "imported",
-    "sourceIds": [
-      "nyhavna-leve-board"
-    ]
-  },
-  {
-    "id": "museum",
-    "categoryId": "opplevelser",
-    "question": "Hvor er nærmeste museum?",
-    "answer": "KNM Ula S300 er nærmeste museum, 5 minutter til fots. Håkon Bleken senter ligger 9 minutter unna.",
-    "origin": "imported",
-    "sourceIds": [
-      "nyhavna-leve-board"
-    ]
+      "demo-parking"
+    ],
+    "caveats": []
   }
 ]

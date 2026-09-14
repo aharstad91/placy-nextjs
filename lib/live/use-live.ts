@@ -103,6 +103,7 @@ export function useLive(options: LiveOptions) {
   const [messages, setMessages] = useState<LiveMessage[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
+  const [interruptionVersion, setInterruptionVersion] = useState(0);
   const [usage, setUsage] = useState({ voiceSeconds: 0, estimatedUsd: 0 });
   const connection = useRef<Connection | null>(null);
   const generation = useRef(0);
@@ -320,7 +321,10 @@ export function useLive(options: LiveOptions) {
         audio.srcObject = stream;
         meterRemoteAudio(stream);
         void audio.play?.().catch(() => {
-          if (active()) setError("Nettleseren stoppet lydavspillingen. Start samtalen på nytt.");
+          if (active()) {
+            setInterruptionVersion(version => version + 1);
+            setError("Nettleseren stoppet lydavspillingen. Start samtalen på nytt.");
+          }
         });
       };
       pc.onconnectionstatechange = () => {
@@ -390,6 +394,7 @@ export function useLive(options: LiveOptions) {
           case "error":
             // Moderasjon kan kutte ett svar uten å drepe sesjonen; å legge på
             // ville vært å avslutte en samtale som fortsatt lever.
+            setInterruptionVersion(version => version + 1);
             setNotice("Noe avbrøt svaret. Spør gjerne igjen.");
             break;
         }
@@ -492,5 +497,5 @@ export function useLive(options: LiveOptions) {
   // Siste assistentinnslag, ikke siste fragment: kontrollen viser det som en
   // lesbar setning mens lyden går.
   const latest = messages.filter(message => message.role === "assistant").at(-1)?.text ?? null;
-  return { status, messages, latest, error, notice, usage, start, stop, sendContext, sendText, replaceMicrophoneTrack };
+  return { status, messages, latest, error, notice, interruptionVersion, usage, start, stop, sendContext, sendText, replaceMicrophoneTrack };
 }
