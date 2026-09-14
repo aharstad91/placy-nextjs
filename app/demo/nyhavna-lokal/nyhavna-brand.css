@@ -59,8 +59,13 @@
   background-color: var(--nyhavna-cream);
 }
 
-.nyhavna-board [data-report-sidebar] {
-  border-radius: 12px;
+/* Innrammet desktop: kolonnen og rammen rundt kartet er samme kremflate, kartet er modulen i den. */
+.nyhavna-board [data-report-frame] {
+  background: var(--nyhavna-cream);
+}
+
+.nyhavna-board [data-report-map-frame] {
+  border-radius: 6px;
 }
 
 .nyhavna-board [data-report-sidebar] img[src$="-logo.svg"] {
@@ -77,23 +82,14 @@
   background: var(--nyhavna-cream);
 }
 
-.nyhavna-board [data-story-assistant] {
-  padding: 16px;
-  border-radius: 6px;
-  background: #e5f0ff;
-}
-
-.nyhavna-board [data-story-assistant] button {
-  color: var(--nyhavna-blue);
-}
-
-.nyhavna-board [data-story-assistant] button[aria-pressed="true"] {
-  background: var(--nyhavna-blue);
-  color: white;
-}
-
-.nyhavna-board [data-story-assistant] select {
-  background-color: var(--nyhavna-cream);
-  border-color: #005ef533;
-  border-radius: 4px;
+/* Stemmefeltet i Nyhavnas farger: sirkelen og ringen i Nyhavna-blått på lys blå flate. */
+.nyhavna-board [data-testid="board-voice"] {
+  --voice-accent: var(--nyhavna-blue);
+  --voice-accent-hover: #004ac4;
+  --voice-bg: #e5f0ff;
+  --voice-bg-speaking: #dbe9ff;
+  --voice-bg-ended: #eeece2;
+  --voice-ink: var(--nyhavna-ink);
+  --voice-ink-2: #4a5068;
+  --voice-radius: 6px;
 }

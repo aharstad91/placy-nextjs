@@ -33,14 +33,24 @@ import { MAP_TOOLS } from "@/lib/realtime/types";
 const VOICE_USD_PER_SECOND = 0.05 / 60;
 /** Nytt transkript-innslag når det er mer enn dette mellom fragmentene – Live har ingen turgrenser å lene seg på. */
 const TRANSCRIPT_GAP_MS = 1500;
-/** Hvor lenge «snakker» holdes etter siste lydramme over terskel, så små pauser i en setning ikke blinker. */
+/** Hvor lenge lyden regnes som «ute» etter siste ramme over terskel. Kort med vilje: den gater ekko-målingen av brukerens mikrofon. */
 const SPEAKING_HOLD_MS = 300;
 const SPEAKING_RMS = 0.012;
+/**
+ * Hvor lenge ETIKETTEN «snakker» står etter siste lyd. Stemmen tar pusterom på
+ * 0,5–1,5 s mellom setninger, og med 300 ms blinket feltet «lytter» i hver
+ * pause (Andreas, 2026-09-14). Brukerens egne ord bryter ventetiden: sier hen
+ * noe, går feltet til «lytter» med en gang.
+ */
+const SPEAKING_LINGER_MS = 1800;
 /** Stillhet fra stemmen før vi kaller det «undersøker». */
 const THINKING_AFTER_MS = 1200;
 /** Pause etter brukerens siste fragment før vi antar at hen er ferdig med å snakke. */
 const USER_SETTLE_MS = 400;
 const METER_INTERVAL_MS = 100;
+/** Brukerens egen stemme: terskel og holdetid for «hører deg»-ringen. Lavere enn stemmens, mikrofoner er svakere enn fjernlyd. */
+const HEARING_RMS = 0.015;
+const HEARING_HOLD_MS = 250;
 const ICE_TIMEOUT_MS = 10000;
 const SESSION_START_TIMEOUT_MS = 15000;
 /** Puffet som får stemmen til å si hilsenen med én gang (se `session.instructions.appended`-casen). */
@@ -109,6 +119,11 @@ export function useLive(options: LiveOptions) {
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const [interruptionVersion, setInterruptionVersion] = useState(0);
+  // Brukeren snakker akkurat nå (etter mikrofonens eget nivå). Nivået ligger i
+  // en ref, ikke i state: det oppdateres ti ganger i sekundet og skal bare
+  // drive en ring, ikke rendre boardet.
+  const [hearing, setHearing] = useState(false);
+  const micLevel = useRef(0);
   const [usage, setUsage] = useState({ voiceSeconds: 0, estimatedUsd: 0 });
   const connection = useRef<Connection | null>(null);
   const generation = useRef(0);
@@ -148,6 +163,8 @@ export function useLive(options: LiveOptions) {
   const stop = useCallback(() => {
     dispose();
     setNotice(null);
+    setHearing(false);
+    micLevel.current = 0;
     setStatus("idle");
   }, [dispose]);
 
@@ -252,6 +269,8 @@ export function useLive(options: LiveOptions) {
         if (!active() || !current.started) return;
         if (current.speaking) { setStatus("speaking"); return; }
         const now = Date.now();
+        const lingering = now - current.loudAt < SPEAKING_LINGER_MS && current.lastUserAt < current.loudAt;
+        if (lingering) { setStatus("speaking"); return; }
         // «Undersøker» er stillhet ETTER at brukeren sa noe: stemmen har
         // hverken ord eller lyd ute, og siste ord i rommet var brukerens.
         // Den lille pausen etter brukerens siste fragment holder etiketten på
@@ -268,33 +287,65 @@ export function useLive(options: LiveOptions) {
        * måleren finnes, så etiketten skifter til «undersøker» av seg selv.
        */
       let analyser: AnalyserNode | null = null;
-      let samples = new Float32Array(0);
+      let samples = new Float32Array(new ArrayBuffer(0));
+      let micAnalyser: AnalyserNode | null = null;
+      let micSamples = new Float32Array(new ArrayBuffer(0));
+      let heardAt = 0;
+      const rms = (node: AnalyserNode, buffer: Float32Array<ArrayBuffer>) => {
+        node.getFloatTimeDomainData(buffer);
+        let sum = 0;
+        for (const sample of buffer) sum += sample * sample;
+        return Math.sqrt(sum / buffer.length);
+      };
       current.meter = setInterval(() => {
         if (!active()) return;
         const now = Date.now();
-        if (analyser) {
-          analyser.getFloatTimeDomainData(samples);
-          let sum = 0;
-          for (const sample of samples) sum += sample * sample;
-          if (Math.sqrt(sum / samples.length) > SPEAKING_RMS) current.loudAt = now;
-        }
+        if (analyser && rms(analyser, samples) > SPEAKING_RMS) current.loudAt = now;
         current.speaking = now - current.loudAt < SPEAKING_HOLD_MS;
+        // Brukerens stemme måles bare når guiden er stille: ekkoet av hennes
+        // egen lyd i rommet skal ikke lese som at brukeren snakker.
+        if (micAnalyser && !current.speaking) {
+          const level = rms(micAnalyser, micSamples);
+          if (level > HEARING_RMS) heardAt = now;
+          micLevel.current = Math.min(1, level / 0.12);
+        } else {
+          micLevel.current = 0;
+        }
+        setHearing(current.started && now - heardAt < HEARING_HOLD_MS);
         settle();
       }, METER_INTERVAL_MS);
 
-      const meterRemoteAudio = (stream: MediaStream) => {
+      const audioContext = () => {
+        if (current.audioContext) return current.audioContext;
         const Ctor = window.AudioContext ?? (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
-        if (!Ctor) return;
+        if (!Ctor) return null;
+        current.audioContext = new Ctor();
+        return current.audioContext;
+      };
+      const meterRemoteAudio = (stream: MediaStream) => {
         try {
-          const context = new Ctor();
+          const context = audioContext();
+          if (!context) return;
           const node = context.createAnalyser();
           node.fftSize = 512;
           context.createMediaStreamSource(stream).connect(node);
-          samples = new Float32Array(node.fftSize);
+          samples = new Float32Array(new ArrayBuffer(node.fftSize * 4));
           analyser = node;
-          current.audioContext = context;
         } catch {
           // Uten måler står status på «lytter» og «undersøker»; samtalen går som før.
+        }
+      };
+      const meterMicrophone = (stream: MediaStream) => {
+        try {
+          const context = audioContext();
+          if (!context) return;
+          const node = context.createAnalyser();
+          node.fftSize = 512;
+          context.createMediaStreamSource(stream).connect(node);
+          micSamples = new Float32Array(new ArrayBuffer(node.fftSize * 4));
+          micAnalyser = node;
+        } catch {
+          // Uten måler puster ringen bare; samtalen går som før.
         }
       };
 
@@ -416,6 +467,7 @@ export function useLive(options: LiveOptions) {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true } });
       if (!active()) { stream.getTracks().forEach(track => track.stop()); return; }
       current.stream = stream;
+      meterMicrophone(stream);
       const track = stream.getAudioTracks()[0];
       // Sporet står på fra start, også under hilsenen: Live kvitterer ikke
       // kontekst-appends uten lydrammer, og hilsenen ER en kontekst-append.
@@ -509,5 +561,5 @@ export function useLive(options: LiveOptions) {
   // Siste assistentinnslag, ikke siste fragment: kontrollen viser det som en
   // lesbar setning mens lyden går.
   const latest = messages.filter(message => message.role === "assistant").at(-1)?.text ?? null;
-  return { status, messages, latest, error, notice, interruptionVersion, usage, start, stop, sendContext, sendText, replaceMicrophoneTrack };
+  return { status, hearing, micLevel, messages, latest, error, notice, interruptionVersion, usage, start, stop, sendContext, sendText, replaceMicrophoneTrack };
 }

@@ -13,6 +13,10 @@ type Props = Pick<ComponentProps<typeof ReportReelsPage>, "project" | "boardData
  * eneste som bygde BoardData selv). Dette er et bolig-board, og skal ha
  * bolig-skallet — ikke programfilter og samlings-skuff.
  *
+ * `layout="framed"`: kolonnen inntil venstre kant, kartet som innrammet modul
+ * i Nyhavnas kremfarge (2026-09-14). Rammen gir plass til et topplinje-felt
+ * senere uten å endre kartets matte.
+ *
  * Ingen `?embed`/`?from`/`?src` her: demoen er lokal og deles ikke som lenke,
  * og uten dem slipper ruta `useSearchParams`.
  */
@@ -33,5 +37,5 @@ export default function LokalBoardGate({ project, boardData }: Props) {
     ...project,
     reportConfig: { ...project.reportConfig, hideBrokerCard: false },
   }), [project]);
-  return <ReportReelsPage project={brandedProject} boardData={brandedBoard} boardMode="report" />;
+  return <ReportReelsPage project={brandedProject} boardData={brandedBoard} boardMode="report" layout="framed" />;
 }

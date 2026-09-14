@@ -112,8 +112,9 @@ export function StoryCard({
   variant?: "sheet" | "column";
   /** Transporten, festet sammen med spørsmålet. Kun desktop. */
   head?: ReactNode;
-  /** Samtalen med Placy: én knapp under fanene, montert utenfor lagbyttet så
-   *  samtalen overlever område ↔ tema. Bare på boards som har den. */
+  /** Samtalen med Placy under fanene, montert utenfor lagbyttet så samtalen
+   *  overlever område ↔ tema. Bare på boards som har den, og bare på MOBIL:
+   *  kolonnen legger den nederst i panelet i stedet (se `StoryColumn`). */
   assistant?: ReactNode;
   /** Sist i seksjonen, inne i samme sticky-kontekst. Kun desktop. */
   footer?: ReactNode;
@@ -162,7 +163,10 @@ export function StoryCard({
          områdestoppet er raden borte, og 84 px tom bunn leste som et hull. */
       className={cn(
         "shrink-0",
-        column ? "pb-4" : onArea ? "pb-6" : "pb-[84px]",
+        /* Kolonnen: seksjonen fyller scroll-boksen, så en `mt-auto`-footer
+           (megler-kortet) lander i bunnen når innholdet er kort, og etter
+           innholdet når det er langt. */
+        column ? "flex flex-1 flex-col pb-4" : onArea ? "pb-6" : "pb-[84px]",
         /* Lagbyttet (område ↔ tema): innholdet toner ut FØR det nye kommer.
            Se STORY_LAYER_LEAVE_MS i story-tour. */
         leaving && (leaving === "area" ? "story-leave-back" : "story-leave"),
@@ -183,7 +187,7 @@ export function StoryCard({
         {/* Transporten står IKKE på områdestoppet (2026-09-05): der er du ikke
             inne i rekkefølgen ennå, og temaene ligger som rutenett i innholdet
             (`StoryThemeGrid`). Raden kommer inn når et tema er valgt. */}
-        {head && !onArea && <div className="mb-4">{head}</div>}
+        {head && !onArea && <div className="mb-3">{head}</div>}
         {!head && (
           <div className="sticky top-0 z-[3] flex h-0 justify-end">
             <button
@@ -215,7 +219,14 @@ export function StoryCard({
             Den hvite bakgrunnen hører til sticky-trikset og BARE til det: den er
             masken som skjuler innholdet som passerer under spørsmålet på mobil.
             På desktop passerer ingenting, og en hvit stripe i full tekstbredde
-            leste som et utfylt skrivefelt i stedet for som en overskrift. */}
+            leste som et utfylt skrivefelt i stedet for som en overskrift.
+
+            I KOLONNEN står overskriften bare på områdestoppet (2026-09-14). På
+            et tema sto den rett under raden, der det samme temaet alt er valgt
+            og markert — «Hverdag» to ganger på fire linjer, og fanene og
+            innholdet skjøvet ned for det. Mobil beholder den: der ligger raden
+            i bunnen, og overskriften er det eneste som sier hvilket tema du
+            er i mens du leser. */}
         {/* `key` på laget: overskrift og faner monteres på nytt når området
             byttes mot et tema (og animeres inn), men IKKE tema til tema — da
             er det samme lag, og bare teksten skifter. På området er
@@ -228,9 +239,11 @@ export function StoryCard({
             onArea ? "story-enter-back" : "story-enter-rest",
           )}
         >
-          <h3 className="sticky top-0 z-[2] -mx-4 bg-white px-4 pb-2.5 pr-14 pt-1 text-[20px] font-bold leading-[1.2] tracking-[-0.02em] text-stone-900 lg:static lg:m-0 lg:bg-transparent lg:p-0 lg:pt-1">
-            {onArea ? areaLabel(data.home) : stop!.question || stop!.label}
-          </h3>
+          {(onArea || !column) && (
+            <h3 className="sticky top-0 z-[2] -mx-4 bg-white px-4 pb-2.5 pr-14 pt-1 text-[20px] font-bold leading-[1.2] tracking-[-0.02em] text-stone-900 lg:static lg:m-0 lg:bg-transparent lg:p-0 lg:pt-1">
+              {onArea ? areaLabel(data.home) : stop!.question || stop!.label}
+            </h3>
+          )}
 
           {onArea ? (
             <p
@@ -246,7 +259,7 @@ export function StoryCard({
             <div
               role="tablist"
               aria-label="Svarform"
-              className="flex gap-0.5 rounded-full bg-black/[0.045] p-[3px] lg:mt-4"
+              className="flex gap-0.5 rounded-full bg-black/[0.045] p-[3px]"
             >
               {tab("about", "Om området")}
               {tab("places", `Steder (${visibleRows.length})`)}

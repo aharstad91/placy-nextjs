@@ -155,6 +155,13 @@ interface Props {
    */
   boardMode?: "report" | "event";
   /**
+   * Desktop-skallet. `floating` (default): kolonnen svømmer som et panel over et
+   * kart i full bredde (Apple Maps-modellen). `framed`: kolonnen står inntil
+   * venstre kant i full høyde, og kartet er en innrammet modul i feltet til
+   * høyre for den — brukt av den lokale Nyhavna-demoen. Mobil er lik i begge.
+   */
+  layout?: "floating" | "framed";
+  /**
    * Unit 5: rehydrert "Min samling" fra en delt `?c=<slug>`-lenke (ruten kaller
    * `getCollectionBySlug` — eiendom-presedens). `undefined` når ingen delt lenke
    * eller ugyldig/utløpt slug (→ tom samling, ingen krasj). Kun event-modus.
@@ -196,6 +203,7 @@ function Inner({
   enTranslations = {},
   boardData: inputBoardData,
   boardMode,
+  layout = "floating",
   collection,
   embed = false,
   fromEmbed = false,
@@ -375,6 +383,7 @@ function Inner({
                   onOpenCollection={() => setCollectionDrawerOpen(true)}
                   embed={embed}
                   fromEmbed={fromEmbed}
+                  layout={layout}
                 />
               </ReelsAudioShell>
             </BoardVoiceProvider>
@@ -635,6 +644,7 @@ function ResponsiveLayoutInner({
   onOpenCollection,
   embed,
   fromEmbed,
+  layout,
 }: {
   boardData: BoardData;
   has3dAddon: boolean;
@@ -654,6 +664,8 @@ function ResponsiveLayoutInner({
   embed: boolean;
   /** Ankommet fra embed (`?from=embed`): "Klar"-gate i stedet for velkomst-splash. */
   fromEmbed: boolean;
+  /** Desktop-skall: flytende panel over kartet, eller kolonne + innrammet kart. */
+  layout: "floating" | "framed";
 }) {
   const visibleBoard = useBoard().data;
   const home = boardData.home;
@@ -819,6 +831,103 @@ function ResponsiveLayoutInner({
   }
 
   if (isDesktop) {
+    const sidebar = (
+      <DesktopStorySidebar
+        home={home}
+        logoSrc={logoSrc}
+        onLogoClick={handleReopenSplash}
+        noBrokers={eventMode || hideBrokerCard}
+        eventFilter={eventFilter}
+        categories={visibleBoard.categories}
+        collection={collection}
+        onOpenCollection={onOpenCollection}
+        renderActiveCard={(i) => <CardRouter cardIndex={i} desktopMode />}
+        framed={layout === "framed"}
+      />
+    );
+    // Splash-laget ligger over begge desktop-skallene og står for selve
+    // avdekkingen (kryssfade) når brukeren trykker «play».
+    const splashLayer = fromEmbed ? (
+      <EmbedArrivalLoader
+        visible={splashVisible}
+        projectName={home.name}
+        headline={loaderHeadline}
+        subline={subline}
+        intro={loaderIntro}
+        logoSrc={logoSrc}
+        heroImage={splashHero}
+        heroVideo={splashVideo}
+        hasAudio={hasAudioGuide}
+        warm={!notStarted}
+        onEnter={handlePlay}
+      />
+    ) : (
+      <DesktopReportSplash
+        visible={splashVisible}
+        name={home.name}
+        subline={subline}
+        logoSrc={logoSrc}
+        heroImage={splashHero}
+        heroVideo={splashVideo}
+        intro={splashIntro}
+        primaryLabel={primaryLabel}
+        onPlay={handlePlay}
+      />
+    );
+
+    if (layout === "framed") {
+      // Innrammet desktop (Nyhavna-demoen, 2026-09-14): kolonnen står som en
+      // vegg helt inntil venstre kant i full høyde, og kartet er en MODUL i
+      // feltet til høyre for den, med 16 px luft mot topp, høyre og bunn. Kartet
+      // fortsetter ikke bak kolonnen, så det trenger ingen `mapPaddingLeft`:
+      // lerretet ER det synlige kartet, og sentrering, fitBounds og utsnitt
+      // regner på hele containeren. Rammen rundt kartet har boardets egen flate
+      // (skinnet setter fargen via `data-report-frame`), så kolonne og ramme
+      // leses som én flate med kartet innfelt. Et topplinje-felt kan senere
+      // legges over rammen uten å røre kartets matte — containeren krymper, og
+      // kartet følger den (`ResizeObserver` i BoardMap).
+      //
+      // Googles attribusjon ligger i kartelementets nederste venstre hjørne;
+      // her er det hjørnet synlig, så kolonnen trenger ingen ekstra bunnluft.
+      return (
+        <div
+          data-report-frame
+          className="relative flex h-[100dvh] w-full overflow-hidden bg-stone-100"
+        >
+          <div
+            className={cn(
+              "relative z-20 h-full shrink-0 transition-all duration-700 ease-out",
+              boardRevealed
+                ? "translate-x-0 opacity-100"
+                : "-translate-x-6 opacity-0",
+            )}
+          >
+            {sidebar}
+          </div>
+          <div className="relative min-w-0 flex-1 p-4 pl-0">
+            <div
+              data-report-map-frame
+              className="relative h-full w-full overflow-hidden"
+            >
+              <div
+                className={cn(
+                  "absolute inset-0 transition-transform duration-700 ease-out",
+                  boardRevealed ? "scale-100" : "scale-[1.04]",
+                )}
+              >
+                <BoardMap
+                  has3dAddon={has3dAddon}
+                  eventMode={eventMode}
+                  publishViewport
+                />
+              </div>
+            </div>
+          </div>
+          {splashLayer}
+        </div>
+      );
+    }
+
     // Adaptiv desktop: kartet ligger i FULL BREDDE, og storytelling-kolonnen
     // svømmer over det som et panel med luft rundt (Apple Maps-modellen, ønsket
     // 2026-08-27). Før sto de to side om side i flex-flow, og kartet begynte der
@@ -846,17 +955,7 @@ function ResponsiveLayoutInner({
               : "-translate-x-6 opacity-0",
           )}
         >
-          <DesktopStorySidebar
-            home={home}
-            logoSrc={logoSrc}
-            onLogoClick={handleReopenSplash}
-            noBrokers={eventMode || hideBrokerCard}
-            eventFilter={eventFilter}
-            categories={visibleBoard.categories}
-            collection={collection}
-            onOpenCollection={onOpenCollection}
-            renderActiveCard={(i) => <CardRouter cardIndex={i} desktopMode />}
-          />
+          {sidebar}
         </div>
         <div
           className={cn(
@@ -880,33 +979,7 @@ function ResponsiveLayoutInner({
             publishViewport
           />
         </div>
-        {fromEmbed ? (
-          <EmbedArrivalLoader
-            visible={splashVisible}
-            projectName={home.name}
-            headline={loaderHeadline}
-            subline={subline}
-            intro={loaderIntro}
-            logoSrc={logoSrc}
-            heroImage={splashHero}
-            heroVideo={splashVideo}
-            hasAudio={hasAudioGuide}
-            warm={!notStarted}
-            onEnter={handlePlay}
-          />
-        ) : (
-          <DesktopReportSplash
-            visible={splashVisible}
-            name={home.name}
-            subline={subline}
-            logoSrc={logoSrc}
-            heroImage={splashHero}
-            heroVideo={splashVideo}
-            intro={splashIntro}
-            primaryLabel={primaryLabel}
-            onPlay={handlePlay}
-          />
-        )}
+        {splashLayer}
       </div>
     );
   }

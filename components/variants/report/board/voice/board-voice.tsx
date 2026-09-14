@@ -1,13 +1,12 @@
 "use client";
 
-import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode, type RefObject } from "react";
 import { useBoard } from "@/components/variants/report/board/board-state";
 import { AREA_STEP, useStoryTour } from "@/components/variants/report/board/story/story-tour";
 import { useAudioTourStore } from "@/lib/stores/audio-tour-store";
 import { revealAfterCamera } from "@/lib/demo/nyhavna-lokal/reveal-transition";
 import { DISCOVERY_CATEGORIES, radiusOptions } from "@/lib/demo/nyhavna-lokal/radius";
 import { LOCAL_VOICE_PACING } from "@/lib/demo/nyhavna-lokal/voice-instructions";
-import type { LiveVoice } from "@/lib/live/voices";
 import { useLive } from "@/lib/live/use-live";
 import { useNarrationFocus } from "@/lib/demo/nyhavna-lokal/use-narration-focus";
 import type { BoardPOIId } from "@/components/variants/report/board/board-data";
@@ -21,8 +20,9 @@ import { greetingInstruction, NYHAVNA_GREETING_INSTRUCTION } from "@/lib/realtim
 /**
  * Samtalen med guiden som ÉN tilstand for hele boardet (2026-09-13).
  *
- * Kontrollen (`BoardVoiceControl`) står flere steder: under fanene i
- * omvisningen, og på mobilens nabolagsliste før omvisningen er begynt. Lå
+ * Kontrollen (`BoardVoiceControl`) står flere steder: nederst i
+ * desktop-kolonnen, under fanene i mobilens omvisning, og på mobilens
+ * nabolagsliste før omvisningen er begynt. Lå
  * samtalen inne i kontrollen, ville hvert lagbytte som monterer kontrollen på
  * nytt ha lagt på. Derfor eier provideren forbindelsen, og kontrollene er bare
  * knapper mot den. Montert én gang, inne i board- og omvisningskonteksten.
@@ -45,16 +45,19 @@ import { greetingInstruction, NYHAVNA_GREETING_INSTRUCTION } from "@/lib/realtim
  */
 export interface BoardVoice {
   morePlaces?: { current: number; options: { radiusKm: number; count: number }[]; show: (radiusKm: number) => void };
-  voiceSelection?: { value: LiveVoice | ""; select: (value: LiveVoice | "") => void };
   guided?: boolean;
   status: LiveStatus;
-  /** Tilkobling eller samtale i gang: knappen viser stopp. */
+  /** Brukeren snakker nå (mikrofonens eget nivå). Skiller «åpen mikrofon» fra «hører deg» i ringen. */
+  hearing: boolean;
+  /** Mikrofonnivå 0–1, oppdatert ti ganger i sekundet uten å rendre. Leses i en animasjonsramme. */
+  micLevel: RefObject<number>;
+  /** Tilkobling eller samtale i gang: sirkelen avslutter på trykk. */
   running: boolean;
   connecting: boolean;
+  /** Brukeren la på (eller samtalen ble avsluttet) siden sist: sirkelen viser «igjen». */
+  ended: boolean;
   notice: string | null;
   error: string | null;
-  /** Guidens siste setning, for å kunne følge med når lyden er lav. */
-  latest: string | null;
   /** Spill/stopp. */
   toggle: () => void;
   faq?: {
@@ -110,7 +113,6 @@ function BoardVoiceSession({ children }: { children: ReactNode }) {
 
   const progressRef = useRef<ReturnType<typeof useFaqProgress> | null>(null);
   const localDemo = data.demoDataset === "nyhavna-lokal";
-  const [selectedVoice, setSelectedVoice] = useState<LiveVoice | "">("");
   const faqIds = useMemo(() => localDemo ? [...(data.globalFaq ?? []), ...data.categories.flatMap(c => c.editorial?.faq ?? [])].map(f => f.id) : [], [data.globalFaq, data.categories, localDemo]);
 
   const commandVersion = useRef(0);
@@ -161,7 +163,6 @@ function BoardVoiceSession({ children }: { children: ReactNode }) {
   }, [data, state, dispatch, mapCamera, story, localDemo, stopId, activePoiId, revealPlaces, reserveData, revealedPlaceIds]);
 
   const live = useLive({
-    voice: selectedVoice || undefined,
     // Hilsenen og datagrunnlaget følger BOARDET, ikke koden: to demoer deler
     // denne flaten med hvert sitt innhold, og guiden skal si stedets egen
     // åpning og svare ut av stedets egne data.
@@ -171,7 +172,7 @@ function BoardVoiceSession({ children }: { children: ReactNode }) {
     executeTool: runBoardTool,
     snapshotId: data.demoSnapshotId,
   });
-  const { status, notice, error, messages, latest, start, stop, sendContext, sendText, replaceMicrophoneTrack } = live;
+  const { status, hearing, micLevel, notice, error, messages, start, stop, sendContext, sendText, replaceMicrophoneTrack } = live;
   const narrationPlaces = useMemo(() => state.highlightedPoiIds.flatMap(id => {
     const poi = data.poisById.get(id);
     return poi ? [{ id: String(id), name: poi.name.split(" – ")[0] }] : [];
@@ -184,6 +185,13 @@ function BoardVoiceSession({ children }: { children: ReactNode }) {
   const connecting = status === "connecting";
   const connected = !["idle", "error", "connecting"].includes(status);
   const running = connected || connecting;
+  // «Snakk med Anja igjen»: bare etter en samtale som faktisk kom i gang.
+  const [ended, setEnded] = useState(false);
+  const wasConnected = useRef(false);
+  useEffect(() => {
+    if (connected) wasConnected.current = true;
+    if (status === "idle" && wasConnected.current) { wasConnected.current = false; setEnded(true); }
+  }, [connected, status]);
 
   // Karttilstanden er stille kontekst: serveren skal vite hva brukeren ser på
   // uten at stemmen sier noe om det. Hooken dedupliserer uendret tilstand.
@@ -242,9 +250,8 @@ function BoardVoiceSession({ children }: { children: ReactNode }) {
   };
 
   const value: BoardVoice = {
-    status, running, connecting, notice, error, latest, guided: localDemo,
+    status, hearing: hearing ?? false, micLevel: micLevel ?? { current: 0 }, running, connecting, ended, notice, error, guided: localDemo,
     ...(localDemo && selectedCategory && (DISCOVERY_CATEGORIES as readonly string[]).includes(selectedCategory) ? { morePlaces: { current: radius.current, options: radius.options.map(o => ({ radiusKm: o.radiusKm, count: o.ids.length })), show: showMore } } : {}),
-    ...(localDemo ? { voiceSelection: { value: selectedVoice, select: setSelectedVoice } } : {}),
     ...(localDemo ? { faq: { explored: progress.explored, active: progress.active, select: selectFaq, reset: progress.reset } } : {}),
     toggle: () => {
       if (connecting) return;
@@ -254,6 +261,7 @@ function BoardVoiceSession({ children }: { children: ReactNode }) {
         dispatch({ type: "CLEAR_HIGHLIGHTS" });
         return;
       }
+      setEnded(false);
       pauseTour("manual");
       dispatch({ type: "END_INTRO" });
       // Ny samtale, tom profil – også i kartet.

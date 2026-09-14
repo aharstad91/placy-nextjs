@@ -20,24 +20,28 @@ import { AREA_STEP, useStoryTour } from "./story-tour";
  * har introdusert leste ikke som et valg. Temaene står i stedet som et rutenett
  * i innholdet (`StoryThemeGrid`); raden kommer inn når et tema er valgt.
  *
- * ## «Tilbake» er FESTET, temaene ruller ved siden av
+ * ## «Tilbake» er en EGEN knapp, temaene ruller ved siden av (2026-09-14)
  *
- * Baren er én sammenhengende avrundet flate med faste ender, men den er delt i
- * to: en fast venstredel og et rullende spor. Rullet hele baren, ville endene
- * forsvunnet ut av syne og flaten sluttet å lese som én ting.
+ * Raden er to ting som står ved siden av hverandre: en rund tilbakeknapp til
+ * venstre, og en avrundet flate med temaene ved siden av. Slik Chrome legger
+ * tilbakepilen som egen knapp utenfor adressefeltet. Før lå utgangen som første
+ * brikke INNE i den samme flaten som temaene, og da leste den som et syvende
+ * tema med et annet ord på.
  *
- * Venstredelen er utgangen. Den het «Beliggenhet» og lå først i sporet, altså
- * inne i det som ruller — og da kunne den rulle ut av syne. Det gikk så lenge
- * kategoriene også lå som faner i toppen, men etter at rutenettet overtok
- * inngangen er brikken den ENESTE veien tilbake, og en eneste vei ut kan ikke
+ * Knappen står fast, og bare temaene ruller. Etter at rutenettet overtok
+ * inngangen er den den ENESTE veien tilbake, og en eneste vei ut kan ikke
  * ligge bak en horisontal scroll (Andreas, 2026-09-05: «på en desktop mus …
  * så da må den ligge sticky left og alltid være tilgjengelig, så resten av
  * kategoriene slides horisontalt under den»). En Magic Mouse sveiper sidelengs
  * like lett som en telefon; en vanlig mus gjør det ikke.
  *
- * Den heter derfor det den GJØR. «Beliggenhet» beskrev stedet du kom fra, og
- * var riktig da brikken var første stopp i en rekkefølge. Som fast utgang er
- * den en tilbakeknapp, og bærer pil og ord deretter.
+ * Den bærer bare pilen. Ordet «Tilbake» er knappens tilgjengelige navn
+ * (`AREA_RAIL_LABEL`), ikke en etikett: pilen alene er nok når knappen står
+ * for seg selv, og uten etikett får temaene bredden.
+ *
+ * Til høyre er det plass til en tilsvarende egen knapp senere («mer»). Den
+ * kommer inn som `trailing`, og finnes ikke i DOM før noen sender den: en tom
+ * eller uvirksom knapp er verre enn ingen.
  *
  * ## De to variantene
  *
@@ -51,7 +55,14 @@ import { AREA_STEP, useStoryTour } from "./story-tour";
  * spørsmålet og svarformene — ett feste, og innholdet renner under hodets egen
  * bunn. En lys grå, avrundet flate samler brikkene i én kategorivelger.
  */
-export function StoryRail({ variant }: { variant: "deck" | "flow" }) {
+export function StoryRail({
+  variant,
+  trailing,
+}: {
+  variant: "deck" | "flow";
+  /** Egen knapp til høyre for temaene (f.eks. «mer»). Rendres bare når satt. */
+  trailing?: React.ReactNode;
+}) {
   const { stops, step, goto, onArea } = useStoryTour();
   const trackRef = useRef<HTMLDivElement | null>(null);
   /* Første posisjonering er en PLASSERING, ikke en bevegelse. Se hooken under. */
@@ -122,33 +133,37 @@ export function StoryRail({ variant }: { variant: "deck" | "flow" }) {
   return (
     <div
       className={cn(
-        "relative flex items-stretch",
+        "relative flex items-center gap-2",
         variant === "deck" ? "px-3.5 pb-2 pt-1.5" : "shrink-0",
         variant === "deck" ? "story-enter-first-up" : "story-enter-first",
       )}
     >
-      <div
-        role="tablist"
-        aria-label="Stopp"
+      {/* Utgangen: egen rund knapp, utenfor flaten med temaene. Mørk og
+          nøytral, ikke en temafarge — den er ikke et tema. */}
+      <button
+        type="button"
+        onClick={() => goto(AREA_STEP)}
+        aria-label={AREA_RAIL_LABEL}
         className={cn(
-          "flex min-w-0 flex-1 items-stretch gap-0.5 rounded-[22px] p-1",
+          "flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-stone-900",
+          "transition-colors duration-200 hover:bg-black/[0.09]",
           variant === "deck"
             ? "bg-[rgba(252,251,250,0.72)] shadow-[inset_0_0_0_1px_rgba(28,25,23,0.07),0_6px_22px_rgba(28,25,23,0.13)] backdrop-blur-md [backdrop-filter:blur(12px)_saturate(1.7)]"
             : "bg-black/[0.045]",
         )}
       >
-        <RailChip
-          /* Ikke stedsnavnet, og ikke lenger stedet: brikken er utgangen, og
-             heter det den gjør. Se doccen over og AREA_RAIL_LABEL. */
-          label={AREA_RAIL_LABEL}
-          Icon={ArrowLeft}
-          /* Mørk og nøytral, ikke en syvende temafarge: brikken er ikke et
-             tema. Samme svarte sirkel «Hele nabolaget» hadde. */
-          color="#1c1917"
-          root
-          active={onArea}
-          onClick={() => goto(AREA_STEP)}
-        />
+        <ArrowLeft size={18} strokeWidth={2.4} />
+      </button>
+      <div
+        role="tablist"
+        aria-label="Stopp"
+        className={cn(
+          "flex min-w-0 flex-1 items-stretch rounded-[22px] p-1",
+          variant === "deck"
+            ? "bg-[rgba(252,251,250,0.72)] shadow-[inset_0_0_0_1px_rgba(28,25,23,0.07),0_6px_22px_rgba(28,25,23,0.13)] backdrop-blur-md [backdrop-filter:blur(12px)_saturate(1.7)]"
+            : "bg-black/[0.045]",
+        )}
+      >
         <div
           ref={trackRef}
           role="presentation"
@@ -174,29 +189,26 @@ export function StoryRail({ variant }: { variant: "deck" | "flow" }) {
           ))}
         </div>
       </div>
+      {trailing}
     </div>
   );
 }
 
-/** Én brikke i raden. Samme form for utgangen og for temaene — det er FARGEN,
- *  pilen og plasseringen som sier at den første er noe annet. */
+/** Ett tema i raden: ikon i temaets farge over navnet. */
 function RailChip({
   label,
   Icon,
   color,
   active,
   past = false,
-  root = false,
   onClick,
 }: {
   label: string;
   Icon: LucideIcon;
   color: string;
   active: boolean;
-  /** Passert i rekkefølgen — teksten mørkner litt. Utgangen har ingen bakside. */
+  /** Passert i rekkefølgen — teksten mørkner litt. */
   past?: boolean;
-  /** Utgangen, ikke et tema: større sirkel og tykkere strøk. Se doccen over. */
-  root?: boolean;
   onClick: () => void;
 }) {
   return (
@@ -220,23 +232,16 @@ function RailChip({
       {/* Ikonene står i FULL farge uansett tilstand: å dempe dem gjorde
           progresjonen lesbar og kategoriene uleselige — og raden er først og
           fremst et sted du skal finne fram i. Progresjonen ligger derfor bare i
-          teksten.
-
-          Slotten er 22 px høy for ALLE brikkene, også de på 20: det er den som
-          holder etikettene på samme grunnlinje når utgangens sirkel er større
-          enn temaenes. */}
+          teksten. */}
       <span
         aria-hidden
         className="flex h-[22px] shrink-0 items-center justify-center"
       >
         <span
-          className={cn(
-            "flex shrink-0 items-center justify-center rounded-full text-white",
-            root ? "h-[22px] w-[22px]" : "h-5 w-5",
-          )}
+          className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-white"
           style={{ backgroundColor: color }}
         >
-          <Icon size={root ? 14 : 12} strokeWidth={root ? 2.5 : 2} />
+          <Icon size={12} strokeWidth={2} />
         </span>
       </span>
       <span>{label}</span>

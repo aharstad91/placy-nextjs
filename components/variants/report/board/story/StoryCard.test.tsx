@@ -576,22 +576,27 @@ describe("områdestoppet", () => {
     ),
   ];
 
-  it("ligger FØRST i raden, med et fast ord — ikke strøkets navn", () => {
-    // Navnet står som overskrift rett under brikken; å ha det begge steder
-    // gjorde brikken til et sjette tema (2026-08-27).
+  /** Utgangen: egen knapp til venstre for raden, ikke en brikke i den (2026-09-14). */
+  const back = () =>
+    document.querySelector<HTMLElement>('button[aria-label="Tilbake"]')!;
+
+  it("er en egen knapp FORAN raden — raden har bare temaene", () => {
+    // Som brikke i raden leste utgangen som et tema til; navnet på strøket
+    // står dessuten som overskrift der du kommer (2026-08-27, 2026-09-14).
     const utils = setup();
     utils.begin();
     expect(railTabs().map((t) => t.textContent)).toEqual([
-      "Tilbake",
       "Mat & drikke",
       "Natur & friluft",
     ]);
+    expect(back()).not.toBeNull();
+    expect(back().closest('[aria-label="Stopp"]')).toBeNull();
   });
 
   it("bærer strøkets intro som avsnitt, slik temaene bærer sin prosa", () => {
     const utils = setup();
     utils.begin();
-    act(() => fireEvent.click(railTabs()[0]));
+    act(() => fireEvent.click(back()));
     const tekst = utils.getByTestId("story-card").textContent!;
     expect(tekst).toContain("Første avsnitt om strøket.");
     expect(tekst).toContain("Andre avsnitt.");
@@ -602,7 +607,7 @@ describe("områdestoppet", () => {
   it("erstatter spørsmålet med stedet, og fanene med dekningen i tall", () => {
     const utils = setup();
     utils.begin();
-    act(() => fireEvent.click(railTabs()[0]));
+    act(() => fireEvent.click(back()));
     expect(utils.getByTestId("story-card").textContent).toContain("Lademoen");
     expect(utils.getByTestId("story-area-subline").textContent).toBe(
       "5 steder · 2 temaer",
@@ -613,7 +618,7 @@ describe("områdestoppet", () => {
   it("bærer boardets egen FAQ — den som ellers ligger i indeksen", () => {
     const utils = setup();
     utils.begin();
-    act(() => fireEvent.click(railTabs()[0]));
+    act(() => fireEvent.click(back()));
     expect(
       utils.getByTestId("story-area-faq").textContent,
     ).toContain("Hva kjennetegner området?");
@@ -623,7 +628,7 @@ describe("områdestoppet", () => {
     const utils = setup();
     utils.begin();
     expect(utils.camera.flyToPoint).not.toHaveBeenCalled();
-    act(() => fireEvent.click(railTabs()[0]));
+    act(() => fireEvent.click(back()));
     expect(utils.camera.flyToPoint).not.toHaveBeenCalled();
     expect(utils.camera.fitCoordinates).not.toHaveBeenCalled();
   });
@@ -634,7 +639,7 @@ describe("områdestoppet", () => {
     // På et temastopp vektes markørene i tre nivåer.
     expect(spy.story).toMatchObject({ on: true, onArea: false, hasStop: true });
     expect(spy.story.emphasis).toBe("named");
-    act(() => fireEvent.click(railTabs()[0]));
+    act(() => fireEvent.click(back()));
     // På området er vekten borte: alle pinnene står i full styrke, fordi
     // området ER overblikket. Vekten sier ikke lenger noe om hva som er
     // KLIKKBART — pinnene tar imot trykk på alle stopp (2026-08-28).
@@ -645,7 +650,7 @@ describe("områdestoppet", () => {
   it("beholder utgangen på mobil: indeksen ligger fortsatt bak den", () => {
     const utils = setup();
     utils.begin();
-    act(() => fireEvent.click(railTabs()[0]));
+    act(() => fireEvent.click(back()));
     act(() => fireEvent.click(utils.getByTestId("story-exit")));
     expect(utils.queryByTestId("story-card")).toBeNull();
     expect(utils.getByTestId("story-play")).not.toBeNull();

@@ -776,6 +776,22 @@ export function BoardMap({
     });
   }, [mapLoaded, mapPaddingBottom, mapPaddingLeft, sheetSurface]);
 
+  // Kartet følger sin egen container, ikke vinduet. Mapbox lytter bare på
+  // `window.resize`, så et lerret som krymper fordi noe annet i layouten vokser
+  // (innrammet desktop: en topplinje over rammen, en bredere kolonne) ville
+  // ellers stått igjen med feil størrelse til neste vindusendring, med
+  // strukket kart og markører på feil piksel. Google-motoren dimensjonerer seg
+  // selv.
+  useEffect(() => {
+    const el = mapBodyRef.current;
+    if (!mapLoaded || !el || typeof ResizeObserver === "undefined") return;
+    const observer = new ResizeObserver(() => {
+      mapRef.current?.getMap().resize();
+    });
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [mapLoaded]);
+
   // Venstre okklusjon bak en ref: den leses av BÅDE utsnitts-publiseringen og
   // det stabile kamera-API-et, og ingen av dem skal få ny identitet når panelets
   // bredde endrer seg.

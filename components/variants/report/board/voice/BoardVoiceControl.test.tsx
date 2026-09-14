@@ -85,11 +85,15 @@ afterEach(() => {
 resetLive();
 
 describe("BoardVoiceControl", () => {
-  it("er én knapp som starter tale med den navnløse hilsenen, og tømmer fremhevingen ved ny samtale", () => {
+  it("er én sirkel som starter tale med den navnløse hilsenen, og tømmer fremhevingen ved ny samtale", () => {
     mount();
-    expect(screen.getByRole("status")).toHaveTextContent("Snakk med Placy om nabolaget");
+    // Før samtalen er feltet én linje: hele linjen er knappen, uten statusfelt
+    // og hjelpetekst (2026-09-14).
+    expect(screen.queryByRole("status")).toBeNull();
+    expect(screen.getByTestId("board-voice")).toHaveAttribute("data-s", "idle");
     expect(screen.queryByRole("textbox")).toBeNull();
-    fireEvent.click(screen.getByRole("button", { name: "Start samtale med Placy" }));
+    expect(screen.queryByRole("combobox")).toBeNull();
+    fireEvent.click(screen.getByRole("button", { name: "Snakk med Placy" }));
     expect(pause).toHaveBeenCalledWith("manual");
     expect(dispatch).toHaveBeenCalledWith({ type: "END_INTRO" });
     expect(dispatch).toHaveBeenCalledWith({ type: "CLEAR_HIGHLIGHTS" });
@@ -98,15 +102,29 @@ describe("BoardVoiceControl", () => {
     expect(String(capturedOptions?.greeting)).not.toMatch(/Placy/);
   });
 
-  it("viser stopp og guidens siste setning mens samtalen går, og stopper og rydder kartet på trykk", () => {
+  it("sier «Snakker» uten transkript mens samtalen går, og sirkelen avslutter og rydder kartet på trykk", () => {
     resetLive({ status: "speaking", messages: [{ id: "u1", role: "user", text: "Hvor handler jeg?" }, { id: "a1", role: "assistant", text: "REMA 1000 Solsiden er nærmest, seks minutter til fots." }] });
     mount();
-    expect(screen.getByRole("status")).toHaveTextContent("Placy svarer");
-    expect(screen.getByTestId("board-voice-latest")).toHaveTextContent("REMA 1000 Solsiden er nærmest");
-    fireEvent.click(screen.getByRole("button", { name: "Stopp samtalen med Placy" }));
+    expect(screen.getByRole("status")).toHaveTextContent("Snakker");
+    expect(screen.getByTestId("board-voice")).toHaveAttribute("data-s", "speaking");
+    expect(screen.queryByText(/REMA 1000/)).toBeNull();
+    fireEvent.click(screen.getByRole("button", { name: "Avslutt samtalen" }));
     expect(stop).toHaveBeenCalledOnce();
     expect(dispatch).toHaveBeenCalledWith({ type: "CLEAR_HIGHLIGHTS" });
     expect(start).not.toHaveBeenCalled();
+  });
+
+  it("blir «Snakk med Placy igjen» etter samtalen — én linje, uten «Samtalen er avsluttet»", () => {
+    resetLive({ status: "speaking" });
+    const utils = mount();
+    resetLive({ status: "idle" });
+    utils.rerender(<BoardVoiceProvider><BoardVoiceControl /></BoardVoiceProvider>);
+    const knapp = screen.getByRole("button", { name: "Snakk med Placy igjen" });
+    expect(screen.getByTestId("board-voice")).toHaveAttribute("data-s", "ended");
+    expect(screen.queryByText(/avsluttet/i)).toBeNull();
+    expect(screen.queryByRole("status")).toBeNull();
+    fireEvent.click(knapp);
+    expect(start).toHaveBeenCalledOnce();
   });
 
   it("avbryter ikke guiden ved kartklikk – Live stopper selv når brukeren snakker", () => {
@@ -118,13 +136,25 @@ describe("BoardVoiceControl", () => {
     expect(stop).not.toHaveBeenCalled();
   });
 
-  it("viser feilen i stedet for siste setning, og lar knappen starte på nytt", () => {
-    resetLive({ status: "error", error: "Forbindelsen ble brutt.", messages: [{ id: "a1", role: "assistant", text: "Hei!" }] });
+  it("viser feilen som hovedtekst og instruksjonen under, og sirkelen prøver igjen", () => {
+    resetLive({ status: "error", error: "Mikrofonen er ikke tilgjengelig. Tillat mikrofon i nettleseren, og prøv igjen.", messages: [{ id: "a1", role: "assistant", text: "Hei!" }] });
     mount();
-    expect(screen.getByRole("alert")).toHaveTextContent("Forbindelsen ble brutt.");
-    expect(screen.queryByTestId("board-voice-latest")).toBeNull();
-    fireEvent.click(screen.getByRole("button", { name: "Start samtale med Placy" }));
+    expect(screen.getByRole("alert")).toHaveTextContent("Mikrofonen er ikke tilgjengelig");
+    expect(screen.getByText("Tillat mikrofon i nettleseren, og prøv igjen.")).toBeTruthy();
+    expect(screen.getByTestId("board-voice")).toHaveAttribute("data-s", "attention");
+    fireEvent.click(screen.getByRole("button", { name: "Prøv igjen" }));
     expect(start).toHaveBeenCalledOnce();
+  });
+
+  it("skiller åpen mikrofon fra å høre brukeren, uten å endre teksten", () => {
+    resetLive({ status: "listening" });
+    const view = mount();
+    expect(screen.getByRole("status")).toHaveTextContent("Jeg lytter");
+    expect(screen.getByTestId("board-voice")).toHaveAttribute("data-s", "listening");
+    resetLive({ status: "listening", hearing: true });
+    view.rerender(<BoardVoiceProvider><BoardVoiceControl /></BoardVoiceProvider>);
+    expect(screen.getByRole("status")).toHaveTextContent("Jeg lytter");
+    expect(screen.getByTestId("board-voice")).toHaveAttribute("data-s", "hearing");
   });
 
   it("rendrer ingenting uten samtalekontekst, så andre boards er urørt", () => {

@@ -98,6 +98,12 @@ interface Props {
   collection?: BoardCollectionApi | null;
   /** Unit 5: åpne samling-draweren (del-URL/QR). */
   onOpenCollection?: () => void;
+  /**
+   * Innrammet skall (ReportReelsPage `layout="framed"`): kolonnen står som en
+   * vegg inntil venstre kant, og kartet ligger ved siden av — ikke bak. Da er
+   * radius, ring og skygge feil signal («flytende panel»), og de faller bort.
+   */
+  framed?: boolean;
 }
 
 /**
@@ -137,7 +143,6 @@ interface Props {
 export function StoryColumn({ noBrokers = false }: { noBrokers?: boolean }) {
   const { available, on, begin } = useStoryTour();
   const { data } = useBoard();
-  const pinContact = !noBrokers && data.projectSlug === "nyhavna-lokal";
 
   useEffect(() => {
     if (available && !on) begin(AREA_STEP);
@@ -155,13 +160,22 @@ export function StoryColumn({ noBrokers = false }: { noBrokers?: boolean }) {
         <StoryCard
           variant="column"
           head={<StoryRail variant="flow" />}
-          assistant={data.demoSnapshotId ? <BoardVoiceControl /> : undefined}
-          footer={!noBrokers && !pinContact ? <MeglerFooterCard /> : undefined}
+          // Kortet kommer ETTER innholdet og skyves til bunnen når innholdet er
+          // kort (områdestoppet i en demo med lite tekst, 2026-09-14). Det er
+          // ikke festet: ruller du i et langt tema, kommer det til slutt, som
+          // en avslutning og ikke som en stripe som spiser av lesearealet.
+          footer={!noBrokers ? <div className="mt-auto"><MeglerFooterCard /></div> : undefined}
         />
       </div>
-      {pinContact && (
-        <div className="shrink-0 px-6 pb-3 [&>div]:mt-0" data-testid="pinned-contact">
-          <MeglerFooterCard />
+      {/* Samtalen med guiden: en kompakt inngang NEDERST i panelet, utenfor
+          scroll-boksen (2026-09-14). Den lå som et stort kort under fanene og
+          skjøv innholdet ned på hvert stopp; her tar den én linje til den
+          brukes, og vokser til statusfeltet mens samtalen går. Den ligger i
+          kolonnens flex-flyt, ikke over noe: den dekker verken innhold eller
+          kontroller, scroll-boksen blir bare så mye kortere. */}
+      {data.demoSnapshotId && (
+        <div data-story-assistant className="shrink-0 border-t border-stone-200 px-6 pb-4 pt-3">
+          <BoardVoiceControl />
         </div>
       )}
       {/* Stedets egen side, som et lag OVER omvisningen. Ligger her og ikke
@@ -284,6 +298,7 @@ export function DesktopStorySidebar({
   categories = [],
   collection = null,
   onOpenCollection,
+  framed = false,
 }: Props) {
   const { state, setActiveIndex, markAudioUnlocked } = useReels();
   const { unlock } = useAudioElement();
@@ -382,6 +397,7 @@ export function DesktopStorySidebar({
     // begge bredder — ikke krem på den ene og hvit på den andre.
     <aside
       data-report-sidebar
+      data-framed={framed || undefined}
       style={{ width: SIDEBAR_WIDTH_PX }}
       className={cn(
         // Flytende panel, ikke en vegg: kartet ligger i full bredde under og
@@ -398,8 +414,8 @@ export function DesktopStorySidebar({
         // farge og panelets farge den SAMME verdien, og båndet finnes ikke.
         // Beige-varianten (uten omvisning) har ikke noe festet hode, og beholder
         // gjennomskinnet.
-        "relative z-20 flex h-full shrink-0 flex-col overflow-hidden rounded-[26px]",
-        "ring-1 ring-black/5 shadow-[0_18px_50px_-12px_rgba(28,25,23,0.35)]",
+        "relative z-20 flex h-full shrink-0 flex-col overflow-hidden",
+        !framed && "rounded-[26px] ring-1 ring-black/5 shadow-[0_18px_50px_-12px_rgba(28,25,23,0.35)]",
         showStoryColumn ? "bg-white" : "bg-[#f2e9dc]/[0.94] backdrop-blur-xl",
       )}
     >

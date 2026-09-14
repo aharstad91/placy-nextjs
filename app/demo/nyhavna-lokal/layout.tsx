@@ -16,5 +16,16 @@ export const metadata: Metadata = {
 };
 
 export default function Layout({ children }: { children: React.ReactNode }) {
-  return <div className={`nyhavna-board ${unbounded.variable}`}>{children}</div>;
+  return (
+    <>
+      {/* Mapbox-stilarket, som de andre board-rutene (`app/eiendom/layout.tsx`)
+          laster. Uten det ligger 2D-kartets markører ustilt i dokumentflyten
+          under lerretet i stedet for på kartet (funnet 2026-09-14). */}
+      <link
+        href="https://api.mapbox.com/mapbox-gl-js/v3.3.0/mapbox-gl.css"
+        rel="stylesheet"
+      />
+      <div className={`nyhavna-board ${unbounded.variable}`}>{children}</div>
+    </>
+  );
 }

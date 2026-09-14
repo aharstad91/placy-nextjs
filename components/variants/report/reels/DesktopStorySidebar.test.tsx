@@ -63,6 +63,11 @@ vi.mock("next/image", () => ({
   ),
 }));
 
+/* Samtalen: bare plasseringen testes her; kontrollen selv har egne tester. */
+vi.mock("@/components/variants/report/board/voice/BoardVoiceControl", () => ({
+  BoardVoiceControl: () => <div data-testid="board-voice" />,
+}));
+
 afterEach(() => cleanup());
 
 function poi(
@@ -224,10 +229,13 @@ function CameraProbe({ camera }: { camera: MapCameraApi }) {
   return null;
 }
 
-function setup(props: { noBrokers?: boolean } = {}) {
+function setup(
+  props: { noBrokers?: boolean } = {},
+  data: Partial<BoardData> = {},
+) {
   const camera = makeCamera();
   const utils = rtlRender(
-    <BoardProvider data={boardData()}>
+    <BoardProvider data={{ ...boardData(), ...data }}>
       <StoryTourProvider>
         <CameraProbe camera={camera as unknown as MapCameraApi} />
         <PaneProbe />
@@ -240,6 +248,15 @@ function setup(props: { noBrokers?: boolean } = {}) {
 
 const rail = (utils: ReturnType<typeof setup>) =>
   utils.getByRole("tablist", { name: "Stopp" });
+
+/** Utgangen: egen rund knapp til venstre for raden (2026-09-14). */
+const back = (utils: ReturnType<typeof setup>) =>
+  utils.getByRole("button", { name: "Tilbake" });
+
+/** Det valgte temaet i raden — det som på desktop sier hvor du er, nå som
+ *  spørsmålet ikke gjentas under raden. */
+const activeStop = (utils: ReturnType<typeof setup>) =>
+  within(rail(utils)).getAllByRole("tab").find((t) => t.getAttribute("aria-current") === "true")?.textContent;
 
 /** Temarutenettet på områdestoppet — inngangen til omvisningen (2026-09-05). */
 const grid = (utils: ReturnType<typeof setup>) =>
@@ -291,26 +308,26 @@ describe("temarutenettet på områdestoppet (2026-09-05)", () => {
     );
   });
 
-  it("et trykk går inn i temaet, og først DA kommer raden — med området først", () => {
+  it("et trykk går inn i temaet, og først DA kommer raden — med temaet markert", () => {
     const utils = setup();
     enterTheme(utils, "Natur & Friluftsliv");
-    expect(utils.getByRole("heading", { level: 3 }).textContent).toBe(
-      "Kommer jeg ut i naturen?",
-    );
     expect(utils.queryByTestId("story-theme-grid")).toBeNull();
     const tabs = within(rail(utils)).getAllByRole("tab");
     expect(tabs.map((t) => t.textContent)).toEqual([
-      "Tilbake",
       "Hverdagsliv",
       "Natur & Friluftsliv",
     ]);
-    expect(tabs[2].getAttribute("aria-current")).toBe("true");
+    expect(tabs[1].getAttribute("aria-current")).toBe("true");
+    // Spørsmålet gjentas IKKE under raden på desktop (2026-09-14): temaet er
+    // alt valgt og markert der, og fanene kommer rett etter.
+    expect(utils.queryByRole("heading", { level: 3 })).toBeNull();
+    expect(utils.getByRole("tablist", { name: "Svarform" })).not.toBeNull();
   });
 
-  it("«Tilbake» i raden er veien tilbake: rutenettet igjen, raden borte", () => {
+  it("«Tilbake» er veien tilbake: rutenettet igjen, raden borte", () => {
     const utils = setup();
     enterTheme(utils);
-    fireEvent.click(within(rail(utils)).getByText("Tilbake"));
+    fireEvent.click(back(utils));
     expect(utils.getByRole("heading", { level: 3 }).textContent).toBe("Ranheim");
     expect(grid(utils)).not.toBeNull();
     expect(utils.queryByRole("tablist", { name: "Stopp" })).toBeNull();
@@ -355,7 +372,7 @@ describe("områdestoppet", () => {
     expect(utils.camera.fitCoordinates).not.toHaveBeenCalled();
     // Et stoppbytte bytter pinner, ikke utsnitt (2026-08-28).
     enterTheme(utils);
-    fireEvent.click(within(rail(utils)).getByText("Tilbake"));
+    fireEvent.click(back(utils));
     expect(utils.camera.flyToPoint).not.toHaveBeenCalled();
     expect(utils.camera.fitCoordinates).not.toHaveBeenCalled();
   });
@@ -366,29 +383,52 @@ describe("områdestoppet", () => {
   });
 });
 
+describe("samtalen med guiden (2026-09-14)", () => {
+  it("ligger NEDERST i panelet, utenfor scroll-boksen — ikke under fanene", () => {
+    const utils = setup({}, { demoSnapshotId: "snap" });
+    const voice = utils.getByTestId("board-voice");
+    const scroll = utils.getByTestId("story-sidebar");
+    expect(scroll.contains(voice)).toBe(false);
+    // Etter scroll-boksen i rekkefølgen: innholdet først, inngangen sist.
+    expect(scroll.compareDocumentPosition(voice) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    // Og fortsatt der inne i et tema.
+    enterTheme(utils);
+    expect(utils.getByTestId("story-sidebar").contains(utils.getByTestId("board-voice"))).toBe(false);
+  });
+
+  it("finnes ikke på boards uten samtale", () => {
+    const utils = setup();
+    expect(utils.queryByTestId("board-voice")).toBeNull();
+  });
+});
+
 describe("raden", () => {
-  it("legger utgangen FØRST, foran temaene — festet, med et fast ord", () => {
+  it("har bare temaene — utgangen er en egen knapp foran, med pil og navnet «Tilbake»", () => {
     const utils = setup();
     enterTheme(utils);
     const tabs = within(rail(utils)).getAllByRole("tab");
     expect(tabs.map((t) => t.textContent)).toEqual([
-      "Tilbake",
       "Hverdagsliv",
       "Natur & Friluftsliv",
     ]);
-    expect(tabs[1].getAttribute("aria-current")).toBe("true");
+    expect(tabs[0].getAttribute("aria-current")).toBe("true");
+    const knapp = back(utils);
+    // Bare pil: ordet er knappens tilgjengelige navn, ikke synlig tekst.
+    expect(knapp.textContent).toBe("");
+    expect(rail(utils).contains(knapp)).toBe(false);
+    // Knappen står FØR raden i rekkefølgen.
+    expect(knapp.compareDocumentPosition(rail(utils)) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
   });
 
   it("fester utgangen UTENFOR sporet — den kan ikke rulle ut av syne", () => {
-    // Etter at rutenettet overtok inngangen er brikken den eneste veien
+    // Etter at rutenettet overtok inngangen er knappen den eneste veien
     // tilbake, og en desktop-mus kan ikke sveipe raden sidelengs (2026-09-05).
     const utils = setup();
     enterTheme(utils);
     const bar = rail(utils);
     const spor = bar.querySelector('[role="presentation"]');
     expect(spor).not.toBeNull();
-    const tilbake = within(bar).getByText("Tilbake").closest('[role="tab"]')!;
-    expect(spor!.contains(tilbake)).toBe(false);
+    expect(spor!.contains(back(utils))).toBe(false);
     // Temaene ligger derimot i sporet, og ruller.
     const tema = within(bar).getByText("Hverdagsliv").closest('[role="tab"]')!;
     expect(spor!.contains(tema)).toBe(true);
@@ -397,10 +437,8 @@ describe("raden", () => {
   it("bytter til et tema, og tilbake til området igjen", () => {
     const utils = setup();
     enterTheme(utils);
-    expect(utils.getByRole("heading", { level: 3 }).textContent).toBe(
-      "Hva kan jeg ordne i nærheten?",
-    );
-    fireEvent.click(within(rail(utils)).getByText("Tilbake"));
+    expect(activeStop(utils)).toBe("Hverdagsliv");
+    fireEvent.click(back(utils));
     expect(utils.getByRole("heading", { level: 3 }).textContent).toBe(
       "Ranheim",
     );
@@ -508,10 +546,12 @@ describe("megler-kortet", () => {
     const scroller = utils.getByTestId("story-sidebar");
     const card = utils.getByText("Frank Robert Bae").closest("div.-mx-6");
     expect(card).not.toBeNull();
-    // Inne i scroll-containeren, og sist i selve stopp-seksjonen.
+    // Inne i scroll-containeren, og sist i selve stopp-seksjonen — i en
+    // `mt-auto`-wrapper som skyver kortet til bunnen når innholdet er kort.
     expect(scroller.contains(card!)).toBe(true);
     const section = utils.getByTestId("story-card");
-    expect(section.lastElementChild).toBe(card);
+    expect(section.lastElementChild).toBe(card!.parentElement);
+    expect(card!.parentElement!.className).toContain("mt-auto");
   });
 
   it("står også på områdestoppet — kontakten er ikke bundet til et tema", () => {

@@ -1,0 +1,233 @@
+/*
+ * Stemmefeltet: sirkelen er både handling og status (2026-09-14).
+ *
+ * Fargene er variabler med Placy-nøytrale standardverdier, slik at et boards
+ * skin (nyhavna-brand.css) kan sette sin egen aksent uten å kjenne klassene.
+ */
+.field {
+  --voice-accent: #1c1917;
+  --voice-accent-hover: #000;
+  --voice-on-accent: #fff;
+  --voice-surface: #fff;
+  --voice-bg: rgba(28, 25, 23, 0.06);
+  --voice-bg-speaking: rgba(28, 25, 23, 0.1);
+  --voice-bg-ended: rgba(28, 25, 23, 0.04);
+  --voice-ink: #1c1917;
+  --voice-ink-2: #57534e;
+  --voice-attention: #c9740f;
+  --voice-attention-bg: #fff2e0;
+  --voice-attention-ink: #7a4200;
+  --voice-radius: 12px;
+
+  position: relative;
+  display: grid;
+  grid-template-columns: 48px minmax(0, 1fr);
+  column-gap: 14px;
+  align-items: center;
+  min-height: 72px;
+  padding: 12px 14px;
+  border-radius: var(--voice-radius);
+  background: var(--voice-bg);
+  color: var(--voice-ink);
+  transition: background-color 0.4s, box-shadow 0.4s;
+}
+.field[data-s="speaking"] { background: var(--voice-bg-speaking); }
+.entry[data-s="ended"] { background: var(--voice-bg-ended); }
+.field[data-s="attention"] { background: var(--voice-attention-bg); box-shadow: inset 3px 0 0 var(--voice-attention); }
+
+/* Inngangen før/etter samtalen: én linje, 36 px sirkel, hele linjen er knappen. */
+.entry {
+  grid-template-columns: 36px minmax(0, 1fr);
+  column-gap: 12px;
+  min-height: 0;
+  width: 100%;
+  padding: 8px 10px;
+  border: 0;
+  text-align: left;
+  font: inherit;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+.entry:disabled { cursor: default; opacity: 0.6; }
+.entry:focus-visible { outline: 2px solid var(--voice-accent); outline-offset: 2px; }
+.entry .orb {
+  width: 36px;
+  height: 36px;
+  cursor: inherit;
+  background: var(--voice-accent);
+  color: var(--voice-on-accent);
+}
+.entry:hover .orb { background: var(--voice-accent-hover); }
+.entry[data-s="ended"] .orb { background: var(--voice-surface); color: var(--voice-ink-2); }
+.entry[data-s="ended"]:hover .orb { background: var(--voice-accent); color: var(--voice-on-accent); }
+.entry[data-s="ended"] .main { color: var(--voice-ink-2); }
+
+/* Sirkelen beholder alltid 48 px; bare formen inni endres. */
+.orb {
+  position: relative;
+  width: 48px;
+  height: 48px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: var(--voice-surface);
+  color: var(--voice-accent);
+  cursor: pointer;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+  transition: background-color 0.35s, color 0.35s, box-shadow 0.2s;
+}
+.orb:focus-visible { outline: 2px solid var(--voice-accent); outline-offset: 3px; }
+.glyph {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  opacity: 0;
+  transform: scale(0.6);
+  transition: opacity 0.28s, transform 0.28s;
+}
+.glyphOn { opacity: 1; transform: none; }
+.halo {
+  position: absolute;
+  inset: -5px;
+  border-radius: 50%;
+  border: 2px solid var(--voice-accent);
+  opacity: 0;
+  transition: opacity 0.3s, transform 0.1s linear;
+}
+.dots {
+  position: absolute;
+  inset: 0;
+  transition: transform 0.5s cubic-bezier(0.2, 0.7, 0.2, 1);
+}
+.dots i {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 5px;
+  height: 5px;
+  margin: -2.5px;
+  border-radius: 3px;
+  background: currentColor;
+  transition: transform 0.5s cubic-bezier(0.2, 0.7, 0.2, 1), height 0.5s, opacity 0.5s, margin 0.5s;
+}
+
+.field[data-s="connecting"] .halo {
+  opacity: 1;
+  border-color: var(--voice-accent) transparent transparent transparent;
+  animation: spin 1s linear infinite;
+}
+/* Lytter: tynn ring som puster = mikrofonen er åpen. */
+.field[data-s="listening"] .halo { opacity: 0.45; border-width: 1.5px; animation: breathe 3.2s ease-in-out infinite; }
+/* Hører deg: ringen følger stemmen. */
+.field[data-s="hearing"] .halo { opacity: 1; border-width: 2.5px; transform: scale(var(--lvl, 1)); }
+/* Jobber: ringen trekker seg inn og blir fire punkter i bane. */
+.field[data-s="thinking"] .halo { opacity: 0; transform: scale(0.42); transition: opacity 0.45s, transform 0.5s cubic-bezier(0.2, 0.7, 0.2, 1); }
+.field[data-s="thinking"] .dots { animation: spin 1.8s linear infinite; }
+.field[data-s="thinking"] .dots i:nth-child(1) { transform: translate(0, -12px); }
+.field[data-s="thinking"] .dots i:nth-child(2) { transform: rotate(90deg) translate(0, -12px); opacity: 0.8; }
+.field[data-s="thinking"] .dots i:nth-child(3) { transform: rotate(180deg) translate(0, -12px); opacity: 0.55; }
+.field[data-s="thinking"] .dots i:nth-child(4) { transform: rotate(270deg) translate(0, -12px); opacity: 0.3; }
+/* Snakker: de samme fire punktene faller inn på en linje og blir lydbølgen. */
+.field[data-s="speaking"] .orb { background: var(--voice-accent); color: var(--voice-on-accent); }
+.field[data-s="speaking"] .dots i { width: 3px; margin-left: -1.5px; opacity: 1; animation: bar 0.9s ease-in-out infinite 0.5s; }
+.field[data-s="speaking"] .dots i:nth-child(1) { transform: translateX(-7.5px); }
+.field[data-s="speaking"] .dots i:nth-child(2) { transform: translateX(-2.5px); animation-delay: 0.65s; }
+.field[data-s="speaking"] .dots i:nth-child(3) { transform: translateX(2.5px); animation-delay: 0.8s; }
+.field[data-s="speaking"] .dots i:nth-child(4) { transform: translateX(7.5px); animation-delay: 0.95s; }
+.field[data-s="attention"] .orb { color: var(--voice-attention); }
+
+/* Aktiv samtale: hover/fokus gir mørk kant og tooltip. Statusen og animasjonen står. */
+.active .orb:hover,
+.active .orb:focus-visible { box-shadow: 0 0 0 2px var(--voice-ink); }
+.active .orb:hover .halo,
+.active .orb:focus-visible .halo { border-color: var(--voice-ink); }
+.tip {
+  position: absolute;
+  left: 50%;
+  bottom: calc(100% + 10px);
+  transform: translate(-50%, 4px);
+  padding: 5px 9px;
+  border-radius: 4px;
+  background: var(--voice-ink);
+  color: #fff;
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.15s, transform 0.15s;
+  z-index: 1;
+}
+.tip::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 100%;
+  margin-left: -5px;
+  border: 5px solid transparent;
+  border-top-color: var(--voice-ink);
+}
+.active .orb:hover .tip,
+.active .orb:focus-visible .tip { opacity: 1; transform: translate(-50%, 0); }
+@media (hover: none) { .tip { display: none; } }
+
+/* Tekst: hovedstatus øverst, hjelpetekst under. */
+.text { min-width: 0; display: flex; flex-direction: column; justify-content: center; gap: 1px; }
+.main {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 700;
+  line-height: 1.3;
+  color: var(--voice-ink);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.sub {
+  margin: 0;
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  min-width: 0;
+  font-size: 13px;
+  line-height: 1.35;
+  color: var(--voice-ink-2);
+}
+.subText {
+  min-width: 0;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+/* Berøringsskjerm har ingen hover: «Avslutt» står som teksthandling under statusen. */
+.end {
+  display: none;
+  flex: none;
+  border: 0;
+  background: none;
+  padding: 0;
+  color: var(--voice-ink);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  cursor: pointer;
+}
+@media (hover: none) { .active .end { display: inline; } }
+.field[data-s="attention"] .main { color: var(--voice-attention-ink); }
+
+@keyframes spin { to { transform: rotate(360deg); } }
+@keyframes breathe { 50% { transform: scale(1.06); opacity: 0.7; } }
+@keyframes bar {
+  0%, 100% { height: 5px; margin-top: -2.5px; }
+  50% { height: 18px; margin-top: -9px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .halo, .dots, .dots i, .glyph { animation: none !important; transition-duration: 0.01ms !important; }
+}

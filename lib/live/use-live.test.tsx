@@ -264,7 +264,24 @@ describe("Status følger faktisk lyd", () => {
     act(() => { vi.advanceTimersByTime(200); });
     expect(result.current.status).toBe("speaking");
     amplitude = 0;
-    act(() => { vi.advanceTimersByTime(600); });
+    // Et pusterom mellom to setninger er ikke slutten på svaret: etiketten står.
+    act(() => { vi.advanceTimersByTime(1000); });
+    expect(result.current.status).toBe("speaking");
+    act(() => { vi.advanceTimersByTime(1000); });
+    expect(result.current.status).toBe("listening");
+  });
+
+  it("bryter «snakker» med en gang brukeren selv sier noe i pausen", async () => {
+    vi.useFakeTimers();
+    const { result, peer } = await connect();
+    act(() => { (peer.ontrack as unknown as (event: unknown) => void)({ streams: [{}], track: {} }); });
+    amplitude = 0.4;
+    act(() => { vi.advanceTimersByTime(200); });
+    amplitude = 0;
+    act(() => { vi.advanceTimersByTime(400); });
+    expect(result.current.status).toBe("speaking");
+    act(() => { peer.channel.emit({ type: "session.input_transcript.delta", delta: "Vent litt", start_ms: 0, end_ms: 300 }); });
+    act(() => { vi.advanceTimersByTime(100); });
     expect(result.current.status).toBe("listening");
   });
 
