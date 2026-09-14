@@ -6,6 +6,18 @@
 
 ---
 
+## 2026-09-14 — Bildepinner for delområdene, logo i utgangspunktet, alt merget til main
+
+De fem delområdene fra nyhavna.no/bo (Transittkaia, Kullkranpiren, Ladehammerkaia, Strandveikaia, Bunkerkvartalet) tegnes nå som sirkler fylt med utbyggerens hero-illustrasjon (256 px webp-utsnitt i `public/demo/nyhavna-lokal/bydeler/`), like store som prosjektpinnen (52 px, delt konstant `PROJECT_PIN_DISC` → `IMAGE_PIN_SIZE`). Utgangspunkt-pinnen viser Nyhavna-logomerket (`pinImage` på board). Temafargen står igjen som ring, ikonet faller bort. Andreas: nybyggene skal skilles fra stedene som finnes i dag, og være «like store som selve objekt-sirkelen».
+
+Nytt POI-felt `markerImage`, bevisst adskilt fra `featuredImage`: Google-stedene har Places-foto i `featuredImage`, og første utkast gjorde derfor hver kafé til bildepinne. Skjemafelt `image` (sted) og `pinImage` (board) i den lokale demoen. Kollisjonskullingen i begge motorer kjenner bildepinnene: aldri demotert (Infinity-prioritet som anker/aktiv), per-skive separasjon i `computePinDemotions` (`PinCandidate.halfSize`), større label-hindring og egen `offsetX` per `LabelCandidate`, og skive-senteret projiseres for den høyere boksen i 3D. Verifisert i Chrome på oversikten med alle 79 steder: ingen nabo-label over bildene.
+
+Hele grenen `fix/nyhavna-uninterrupted-greeting` committet som `b9ccd7f` og fast-forwardet inn i main — inkludert ukommittert arbeid fra parallelløktene (Nyhavna-nettside-demo, splash, Live-migrering, stemmeinstruksjoner, research-json; 163 filer). De tre kjente testfeilene lukket: to BoardVoiceControl-forventninger venter nå på det asynkrone verktøysvaret, og ordbudsjettet for stemmeinstruksen hevet 300 → 350 (den var 319). Full suite grønn før commit (4 324 tester), tsc og lint rene. Ikke pushet.
+
+Åpent: 23 MB media i repoet — `harbour.mp4` og splash-videoen er samme 11 MB-fil to steder; bør til Vercel Blob eller ett sted. Sidepanelets rader for delområdene bruker fortsatt ikon, ikke bildet.
+
+---
+
 ## 2026-09-14 — Kjøpesentre, flere dagligvarer og transport/aktiviteter i Nyhavna-demo
 
 39 nye steder, 72 nye fakta og 34 nye kilder lagt til; 7 tidligere steder oppdatert. Fire sentre med 24 kildebekreftede medlemmer, seks nye dagligvarer (ni totalt), Lademoen/Lilleby tog, seks DB-bysykkelstativ, Flex Gym, Buld.no, Trikkestallen og Ladesletta. Leo’s/Pirbadet bekreftet eksisterende uten dubletter. Alle 39 nye steder, 7 oppdateringer, 24 medlemskap og 18 eksplisitte referansesteder gjennomgått. 118 stedsrader/178 kilder; 94 unike kartdestinasjoner, 75 fra start/19reserve. UI viser 79 temarader fordi fire sentre inngår i to temaer. Skillet må beholdes i videre omtale.
