@@ -1,0 +1,14 @@
+--- a/lib/demo/nyhavna-lokal/presentation.test.ts
++++ b/lib/demo/nyhavna-lokal/presentation.test.ts
+@@ -75,6 +75,11 @@
+     expect(tour.execute("find_similar_places", {}).result).toMatchObject({
+       matches: 1, place: { id: "godt-brod-solsiden", categoryId: "mat-drikke" },
+     });
++    for (const id of ["cafe-lokka", "dromedar-solsiden"]) {
++      expect(tour.execute("find_similar_places", {}).result).toMatchObject({
++        matches: 1, place: { id, categoryId: "mat-drikke" },
++      });
++    }
+     expect(tour.execute("find_similar_places", {}).result).toMatchObject({ matches: 0 });
+     expect(tour.execute("present_neighbourhood", { action: "resume" }).result).toMatchObject({ segment: { categoryId: "mat-drikke" } });
+     expect(tour.execute("find_similar_places", { poi_id: "unknown-place" }).result).toHaveProperty("error");

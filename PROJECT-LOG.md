@@ -6,6 +6,16 @@
 
 ---
 
+## 2026-09-14 — 60 steder synlige fra start, 79 totalt
+
+Andreas så fortsatt 44 steder. Forklart og bekreftet årsaken: forrige 63-tall inkluderte 19 trenings-/natursteder i reserve. Denne runden utvider med 16 nye steder i Servering (8), Hverdag (3), Opplevelser (3) og Oppvekst (2), uten å endre reservefunksjonen. Startvisningen er nå 60, totalen 79. 17 kandidater vurdert, 16 lagt inn med 32 fakta; Pizzabakeren Lade erstattet av SOT på grunn av utilgjengelig egenkildestøttet besøksadresse. Kryssreview av alle steder/fakta uten gjenstående funn. 39 nye kilder og 32 beregnede Mapbox-ruter; alle adressepunkter fra Kartverket, merket som adresse og ikke kontrollert inngang.
+
+JSON integrert additivt etter hashkontroll, tidligere rader bevart. Bare en smal testforventning endret: Cafe Løkka og Dromedar kommer etter Godt Brød ved flere kaféalternativer. Ingen produktkode/manus/FAQ/topics/radius endret. Alle 73 lokale demotester passerte. Lint 0 feil / 53 advarsler og TypeScript grønn. Full suite 4313 passerte / 3 feilet, samme allerede kjente feil: stemmeinstruksens ordgrense og to BoardVoiceControl-forventninger. Ingen nye feil. Chrome åpnet i ny fane: faktisk UI bekreftet «60 steder · 8 temaer». Ny ekte samtale er ikke kjørt.
+
+Leveranse, råoppslag, additive data og fjerningsoppskrift: `/Users/andreasharstad/Documents/placy-nyhavna-innhold/docs/research/nyhavna-lokal-demo/2026-09-14-utvidelse2-punkter.md`. Aktive data/testfil beholdes ukommittert sammen med parallelløkten; innholdsleveranse committes separat, ingen push. Gamle faner må lastes på nytt. Skill alltid startvisning og totalbase i videre rapportering.
+
+---
+
 ## 2026-09-14 — 15 nye samtalepunkter i lokal Nyhavna-demo
 
 Andreas ba om flere punkter i flere kategorier, med tidligere research som utgangspunkt. 15 av 15 valgte kandidater kontrollert og lagt inn: fem Servering, fem Oppvekst, fire Opplevelser og BUA Lademoen i Hverdag. Totalt 48→63 steder, 44 nye kildekoblede fakta og 42 nye kilder. Tolv Kartverket-adressepunkter, to kommunale parksentre og ett tydelig merket omtrentlig badeplasspunkt fra snapshot. Tretti Mapbox-ruter lagret; gang/sykkeltider fra demoens faste utgangspunkt. BUA korrigert fra Lade til Lademoen og nåværende adresse. To fakta fikk korrigert underside etter uavhengig review. Manus, FAQ, topics og produktkode er ikke endret av denne runden.
