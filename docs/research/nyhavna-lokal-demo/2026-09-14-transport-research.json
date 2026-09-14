@@ -1,0 +1,621 @@
+{
+  "checkedAt": "2026-09-14",
+  "scope": "Lademoen stasjon og seks nærliggende bysykkelstativ. Read-only Supabase v2.pois, deretter primærkildekontroll. Ingen aktive data eller kode endret.",
+  "included": 7,
+  "bikeStations": 6,
+  "factsChecked": 14,
+  "databaseRead": {
+    "schema": "v2",
+    "table": "pois",
+    "filter": "bysykkel_station_id not null OR name ilike Lademoen OR name ilike Bunnpris Lade",
+    "rowsRead": 90,
+    "credentialsPersisted": false
+  },
+  "selection": "De seks nærmeste bysykkelstasjonene i databasen etter luftlinje fra demoens faste utgangspunkt. Alle seks finnes i offisiell GBFS med identiske koordinater; ingen er virtuelle. Luftlinje brukes bare for utvalget, ikke som gangavstand.",
+  "origin": {
+    "lat": 63.43980508893858,
+    "lng": 10.41725655026434
+  },
+  "candidates": [
+    {
+      "id": "lademoen-stasjon",
+      "name": "Lademoen stasjon",
+      "address": "Dyre Halses gate, Trondheim",
+      "category": "transport",
+      "categoryId": "transport",
+      "poiCategoryId": "train",
+      "placeType": "Togstasjon",
+      "icon": "TrainFront",
+      "aliases": [
+        "Lademoen togstasjon",
+        "Lademoen holdeplass",
+        "tog",
+        "togstasjon",
+        "Trønderbanen",
+        "R70"
+      ],
+      "coordinates": {
+        "lat": 63.437226,
+        "lng": 10.416702
+      },
+      "locationPrecision": "sourced",
+      "locationNote": "Stasjonspunkt fra Entur-importen i databasen. Bane NORs veibeskrivelsespunkt ligger omtrent 26 meter unna; kartpunktet er ikke en kontrollert plattforminngang.",
+      "status": "existing",
+      "summary": "Togstopp på Nordlandsbanen, med R70 og forbindelser mot Trondheim S og Steinkjer.",
+      "facts": [
+        {
+          "text": "Lademoen er en holdeplass på Nordlandsbanen, og Bane NOR oppgir R70 mellom Støren og Steinkjer.",
+          "sourceUrl": "https://www.banenor.no/reise-og-trafikk/stasjoner/-l-/lademoen/"
+        },
+        {
+          "text": "Stasjonen ligger i Dyre Halses gate og har leskur.",
+          "sourceUrl": "https://www.banenor.no/reise-og-trafikk/stasjoner/-l-/lademoen/"
+        }
+      ],
+      "sources": [
+        {
+          "url": "https://www.banenor.no/reise-og-trafikk/stasjoner/-l-/lademoen/",
+          "label": "Bane NOR",
+          "page": "Lademoen stasjon",
+          "publisher": "Bane NOR"
+        }
+      ],
+      "caveats": [
+        "Sjekk aktuell avgang og eventuelle avvik i Entur eller hos togselskapet."
+      ],
+      "checkedAt": "2026-09-14",
+      "provenance": {
+        "provider": "supabase",
+        "recordId": "entur-NSR-StopPlace-271",
+        "importedAt": "2026-09-14"
+      },
+      "researchMetadata": {
+        "enturStopplaceId": "NSR:StopPlace:271",
+        "databaseUpdatedAt": "2026-07-06T06:44:31.246848+00:00",
+        "baneNorWalkingDestination": {
+          "lat": 63.43724,
+          "lng": 10.41619
+        }
+      }
+    },
+    {
+      "id": "bysykkel-92",
+      "name": "Bysykkel Dora I",
+      "address": "Maskinistgata 1",
+      "category": "transport",
+      "categoryId": "transport",
+      "poiCategoryId": "bike",
+      "placeType": "Bysykkelstativ",
+      "icon": "Bike",
+      "aliases": [
+        "Dora I bysykkel",
+        "Trondheim Bysykkel: Dora I",
+        "bysykkel",
+        "bysykkelstativ",
+        "bysykler",
+        "leiesykkel"
+      ],
+      "coordinates": {
+        "lat": 63.43853720980968,
+        "lng": 10.419105291366577
+      },
+      "locationPrecision": "sourced",
+      "locationNote": "Stasjonspunkt fra databasen, kontrollert mot Trondheim Bysykkels stasjonsfeed 14.09.2026.",
+      "status": "existing",
+      "summary": "Bysykkelstativ i Maskinistgata 1 ved Byarkivet.",
+      "facts": [
+        {
+          "text": "Stativet ligger i Maskinistgata 1 ved Byarkivet.",
+          "sourceUrl": "https://gbfs.urbansharing.com/trondheimbysykkel.no/station_information.json"
+        },
+        {
+          "text": "Appen viser ledige sykler og stativer, og sykkelen kan leveres ved en annen bysykkelstasjon.",
+          "sourceUrl": "https://trondheimbysykkel.no/slik-virker-det"
+        }
+      ],
+      "sources": [
+        {
+          "url": "https://gbfs.urbansharing.com/trondheimbysykkel.no/station_information.json",
+          "label": "Trondheim Bysykkel",
+          "page": "Stasjonsinformasjon – offisiell GBFS-feed",
+          "publisher": "Trondheim Bysykkel"
+        },
+        {
+          "url": "https://trondheimbysykkel.no/slik-virker-det",
+          "label": "Trondheim Bysykkel",
+          "page": "Sånn funker det",
+          "publisher": "Trondheim Bysykkel"
+        }
+      ],
+      "caveats": [
+        "Tilgangen på sykler og ledige stativer varierer; sjekk Bysykkel-appen før turen."
+      ],
+      "checkedAt": "2026-09-14",
+      "provenance": {
+        "provider": "supabase",
+        "recordId": "bysykkel-92",
+        "importedAt": "2026-09-14"
+      },
+      "researchMetadata": {
+        "bysykkelStationId": "92",
+        "databaseUpdatedAt": "2026-07-06T06:44:31.246848+00:00",
+        "coordinatesMatchOfficialFeed": true
+      }
+    },
+    {
+      "id": "bysykkel-18",
+      "name": "Bysykkel Møllenberg",
+      "address": "Innherredsveien",
+      "category": "transport",
+      "categoryId": "transport",
+      "poiCategoryId": "bike",
+      "placeType": "Bysykkelstativ",
+      "icon": "Bike",
+      "aliases": [
+        "Møllenberg bysykkel",
+        "Trondheim Bysykkel: Møllenberg",
+        "bysykkel",
+        "bysykkelstativ",
+        "bysykler",
+        "leiesykkel"
+      ],
+      "coordinates": {
+        "lat": 63.43593538982745,
+        "lng": 10.419479162128454
+      },
+      "locationPrecision": "sourced",
+      "locationNote": "Stasjonspunkt fra databasen, kontrollert mot Trondheim Bysykkels stasjonsfeed 14.09.2026.",
+      "status": "existing",
+      "summary": "Bysykkelstativ langs Innherredsveien ved Kirkegata.",
+      "facts": [
+        {
+          "text": "Stativet ligger langs Innherredsveien ved Kirkegata.",
+          "sourceUrl": "https://gbfs.urbansharing.com/trondheimbysykkel.no/station_information.json"
+        },
+        {
+          "text": "Appen viser ledige sykler og stativer, og sykkelen kan leveres ved en annen bysykkelstasjon.",
+          "sourceUrl": "https://trondheimbysykkel.no/slik-virker-det"
+        }
+      ],
+      "sources": [
+        {
+          "url": "https://gbfs.urbansharing.com/trondheimbysykkel.no/station_information.json",
+          "label": "Trondheim Bysykkel",
+          "page": "Stasjonsinformasjon – offisiell GBFS-feed",
+          "publisher": "Trondheim Bysykkel"
+        },
+        {
+          "url": "https://trondheimbysykkel.no/slik-virker-det",
+          "label": "Trondheim Bysykkel",
+          "page": "Sånn funker det",
+          "publisher": "Trondheim Bysykkel"
+        }
+      ],
+      "caveats": [
+        "Tilgangen på sykler og ledige stativer varierer; sjekk Bysykkel-appen før turen."
+      ],
+      "checkedAt": "2026-09-14",
+      "provenance": {
+        "provider": "supabase",
+        "recordId": "bysykkel-18",
+        "importedAt": "2026-09-14"
+      },
+      "researchMetadata": {
+        "bysykkelStationId": "18",
+        "databaseUpdatedAt": "2026-07-06T06:44:31.246848+00:00",
+        "coordinatesMatchOfficialFeed": true
+      }
+    },
+    {
+      "id": "bysykkel-108",
+      "name": "Bysykkel Bassengbakken",
+      "address": "Dyre Halses 1",
+      "category": "transport",
+      "categoryId": "transport",
+      "poiCategoryId": "bike",
+      "placeType": "Bysykkelstativ",
+      "icon": "Bike",
+      "aliases": [
+        "Bassengbakken bysykkel",
+        "Trondheim Bysykkel: Bassengbakken",
+        "bysykkel",
+        "bysykkelstativ",
+        "bysykler",
+        "leiesykkel"
+      ],
+      "coordinates": {
+        "lat": 63.43592006472795,
+        "lng": 10.414788275957108
+      },
+      "locationPrecision": "sourced",
+      "locationNote": "Stasjonspunkt fra databasen, kontrollert mot Trondheim Bysykkels stasjonsfeed 14.09.2026.",
+      "status": "existing",
+      "summary": "Bysykkelstativ ved Rosenborgbassenget i Dyre Halses gate.",
+      "facts": [
+        {
+          "text": "Stativet ligger ved Rosenborgbassenget i Dyre Halses gate.",
+          "sourceUrl": "https://gbfs.urbansharing.com/trondheimbysykkel.no/station_information.json"
+        },
+        {
+          "text": "Appen viser ledige sykler og stativer, og sykkelen kan leveres ved en annen bysykkelstasjon.",
+          "sourceUrl": "https://trondheimbysykkel.no/slik-virker-det"
+        }
+      ],
+      "sources": [
+        {
+          "url": "https://gbfs.urbansharing.com/trondheimbysykkel.no/station_information.json",
+          "label": "Trondheim Bysykkel",
+          "page": "Stasjonsinformasjon – offisiell GBFS-feed",
+          "publisher": "Trondheim Bysykkel"
+        },
+        {
+          "url": "https://trondheimbysykkel.no/slik-virker-det",
+          "label": "Trondheim Bysykkel",
+          "page": "Sånn funker det",
+          "publisher": "Trondheim Bysykkel"
+        }
+      ],
+      "caveats": [
+        "Tilgangen på sykler og ledige stativer varierer; sjekk Bysykkel-appen før turen."
+      ],
+      "checkedAt": "2026-09-14",
+      "provenance": {
+        "provider": "supabase",
+        "recordId": "bysykkel-108",
+        "importedAt": "2026-09-14"
+      },
+      "researchMetadata": {
+        "bysykkelStationId": "108",
+        "databaseUpdatedAt": "2026-07-06T06:44:31.246848+00:00",
+        "coordinatesMatchOfficialFeed": true
+      }
+    },
+    {
+      "id": "bysykkel-7696",
+      "name": "Bysykkel Lademoparken",
+      "address": "Mellomveien",
+      "category": "transport",
+      "categoryId": "transport",
+      "poiCategoryId": "bike",
+      "placeType": "Bysykkelstativ",
+      "icon": "Bike",
+      "aliases": [
+        "Lademoparken bysykkel",
+        "Trondheim Bysykkel: Lademoparken",
+        "bysykkel",
+        "bysykkelstativ",
+        "bysykler",
+        "leiesykkel"
+      ],
+      "coordinates": {
+        "lat": 63.43670185062348,
+        "lng": 10.425908867370282
+      },
+      "locationPrecision": "sourced",
+      "locationNote": "Stasjonspunkt fra databasen, kontrollert mot Trondheim Bysykkels stasjonsfeed 14.09.2026.",
+      "status": "existing",
+      "summary": "Bysykkelstativ langs Mellomveien ved Lademoparken.",
+      "facts": [
+        {
+          "text": "Stativet ligger langs Mellomveien ved Lademoparken.",
+          "sourceUrl": "https://gbfs.urbansharing.com/trondheimbysykkel.no/station_information.json"
+        },
+        {
+          "text": "Appen viser ledige sykler og stativer, og sykkelen kan leveres ved en annen bysykkelstasjon.",
+          "sourceUrl": "https://trondheimbysykkel.no/slik-virker-det"
+        }
+      ],
+      "sources": [
+        {
+          "url": "https://gbfs.urbansharing.com/trondheimbysykkel.no/station_information.json",
+          "label": "Trondheim Bysykkel",
+          "page": "Stasjonsinformasjon – offisiell GBFS-feed",
+          "publisher": "Trondheim Bysykkel"
+        },
+        {
+          "url": "https://trondheimbysykkel.no/slik-virker-det",
+          "label": "Trondheim Bysykkel",
+          "page": "Sånn funker det",
+          "publisher": "Trondheim Bysykkel"
+        }
+      ],
+      "caveats": [
+        "Tilgangen på sykler og ledige stativer varierer; sjekk Bysykkel-appen før turen."
+      ],
+      "checkedAt": "2026-09-14",
+      "provenance": {
+        "provider": "supabase",
+        "recordId": "bysykkel-7696",
+        "importedAt": "2026-09-14"
+      },
+      "researchMetadata": {
+        "bysykkelStationId": "7696",
+        "databaseUpdatedAt": "2026-07-06T06:44:31.246848+00:00",
+        "coordinatesMatchOfficialFeed": true
+      }
+    },
+    {
+      "id": "bysykkel-85",
+      "name": "Bysykkel TMV-odden",
+      "address": "Beddingen 14",
+      "category": "transport",
+      "categoryId": "transport",
+      "poiCategoryId": "bike",
+      "placeType": "Bysykkelstativ",
+      "icon": "Bike",
+      "aliases": [
+        "TMV-odden bysykkel",
+        "Trondheim Bysykkel: TMV-odden",
+        "bysykkel",
+        "bysykkelstativ",
+        "bysykler",
+        "leiesykkel"
+      ],
+      "coordinates": {
+        "lat": 63.43547778770301,
+        "lng": 10.410569131581866
+      },
+      "locationPrecision": "sourced",
+      "locationNote": "Stasjonspunkt fra databasen, kontrollert mot Trondheim Bysykkels stasjonsfeed 14.09.2026.",
+      "status": "existing",
+      "summary": "Bysykkelstativ i Beddingen 14 ved snuplassen bak Una.",
+      "facts": [
+        {
+          "text": "Stativet ligger i Beddingen 14 ved snuplassen bak Una.",
+          "sourceUrl": "https://gbfs.urbansharing.com/trondheimbysykkel.no/station_information.json"
+        },
+        {
+          "text": "Appen viser ledige sykler og stativer, og sykkelen kan leveres ved en annen bysykkelstasjon.",
+          "sourceUrl": "https://trondheimbysykkel.no/slik-virker-det"
+        }
+      ],
+      "sources": [
+        {
+          "url": "https://gbfs.urbansharing.com/trondheimbysykkel.no/station_information.json",
+          "label": "Trondheim Bysykkel",
+          "page": "Stasjonsinformasjon – offisiell GBFS-feed",
+          "publisher": "Trondheim Bysykkel"
+        },
+        {
+          "url": "https://trondheimbysykkel.no/slik-virker-det",
+          "label": "Trondheim Bysykkel",
+          "page": "Sånn funker det",
+          "publisher": "Trondheim Bysykkel"
+        }
+      ],
+      "caveats": [
+        "Tilgangen på sykler og ledige stativer varierer; sjekk Bysykkel-appen før turen."
+      ],
+      "checkedAt": "2026-09-14",
+      "provenance": {
+        "provider": "supabase",
+        "recordId": "bysykkel-85",
+        "importedAt": "2026-09-14"
+      },
+      "researchMetadata": {
+        "bysykkelStationId": "85",
+        "databaseUpdatedAt": "2026-07-06T06:44:31.246848+00:00",
+        "coordinatesMatchOfficialFeed": true
+      }
+    },
+    {
+      "id": "bysykkel-65",
+      "name": "Bysykkel Strandveikaia",
+      "address": "Stiklestadveien 1",
+      "category": "transport",
+      "categoryId": "transport",
+      "poiCategoryId": "bike",
+      "placeType": "Bysykkelstativ",
+      "icon": "Bike",
+      "aliases": [
+        "Strandveikaia bysykkel",
+        "Trondheim Bysykkel: Strandveikaia",
+        "bysykkel",
+        "bysykkelstativ",
+        "bysykler",
+        "leiesykkel"
+      ],
+      "coordinates": {
+        "lat": 63.44208952370503,
+        "lng": 10.427939146757126
+      },
+      "locationPrecision": "sourced",
+      "locationNote": "Stasjonspunkt fra databasen, kontrollert mot Trondheim Bysykkels stasjonsfeed 14.09.2026.",
+      "status": "existing",
+      "summary": "Bysykkelstativ langs Stiklestadveien ved Strandveien.",
+      "facts": [
+        {
+          "text": "Stativet ligger langs Stiklestadveien ved Strandveien.",
+          "sourceUrl": "https://gbfs.urbansharing.com/trondheimbysykkel.no/station_information.json"
+        },
+        {
+          "text": "Appen viser ledige sykler og stativer, og sykkelen kan leveres ved en annen bysykkelstasjon.",
+          "sourceUrl": "https://trondheimbysykkel.no/slik-virker-det"
+        }
+      ],
+      "sources": [
+        {
+          "url": "https://gbfs.urbansharing.com/trondheimbysykkel.no/station_information.json",
+          "label": "Trondheim Bysykkel",
+          "page": "Stasjonsinformasjon – offisiell GBFS-feed",
+          "publisher": "Trondheim Bysykkel"
+        },
+        {
+          "url": "https://trondheimbysykkel.no/slik-virker-det",
+          "label": "Trondheim Bysykkel",
+          "page": "Sånn funker det",
+          "publisher": "Trondheim Bysykkel"
+        }
+      ],
+      "caveats": [
+        "Tilgangen på sykler og ledige stativer varierer; sjekk Bysykkel-appen før turen."
+      ],
+      "checkedAt": "2026-09-14",
+      "provenance": {
+        "provider": "supabase",
+        "recordId": "bysykkel-65",
+        "importedAt": "2026-09-14"
+      },
+      "researchMetadata": {
+        "bysykkelStationId": "65",
+        "databaseUpdatedAt": "2026-07-06T06:44:31.246848+00:00",
+        "coordinatesMatchOfficialFeed": true
+      }
+    }
+  ],
+  "verificationAudit": [
+    {
+      "database": {
+        "id": "bysykkel-92",
+        "name": "Trondheim Bysykkel: Dora I",
+        "lat": 63.43853720980968,
+        "lng": 10.419105291366577,
+        "address": "Maskinistgata 1",
+        "category_id": "bike",
+        "bysykkel_station_id": "92",
+        "updated_at": "2026-07-06T06:44:31.246848+00:00"
+      },
+      "officialFeed": {
+        "station_id": "92",
+        "name": "Dora I",
+        "address": "Maskinistgata 1",
+        "cross_street": "ved Byarkivet",
+        "lat": 63.43853720980968,
+        "lon": 10.419105291366577,
+        "is_virtual_station": false,
+        "capacity": 24
+      }
+    },
+    {
+      "database": {
+        "id": "bysykkel-18",
+        "name": "Trondheim Bysykkel: Møllenberg",
+        "lat": 63.43593538982745,
+        "lng": 10.419479162128454,
+        "address": "Innherredsveien",
+        "category_id": "bike",
+        "bysykkel_station_id": "18",
+        "updated_at": "2026-07-06T06:44:31.246848+00:00"
+      },
+      "officialFeed": {
+        "station_id": "18",
+        "name": "Møllenberg",
+        "address": "Innherredsveien",
+        "cross_street": "langs Innherredsveien ved Kirkegata",
+        "lat": 63.43593538982745,
+        "lon": 10.419479162128454,
+        "is_virtual_station": false,
+        "capacity": 15
+      }
+    },
+    {
+      "database": {
+        "id": "bysykkel-108",
+        "name": "Trondheim Bysykkel: Bassengbakken",
+        "lat": 63.43592006472795,
+        "lng": 10.414788275957108,
+        "address": "Dyre Halses 1",
+        "category_id": "bike",
+        "bysykkel_station_id": "108",
+        "updated_at": "2026-07-06T06:44:31.246848+00:00"
+      },
+      "officialFeed": {
+        "station_id": "108",
+        "name": "Bassengbakken",
+        "address": "Dyre Halses 1",
+        "cross_street": " ved Rosenborgbassenget",
+        "lat": 63.43592006472795,
+        "lon": 10.414788275957108,
+        "is_virtual_station": false,
+        "capacity": 30
+      }
+    },
+    {
+      "database": {
+        "id": "bysykkel-7696",
+        "name": "Trondheim Bysykkel: Lademoparken",
+        "lat": 63.43670185062348,
+        "lng": 10.425908867370282,
+        "address": "Mellomveien",
+        "category_id": "bike",
+        "bysykkel_station_id": "7696",
+        "updated_at": "2026-07-06T06:44:31.246848+00:00"
+      },
+      "officialFeed": {
+        "station_id": "7696",
+        "name": "Lademoparken",
+        "address": "Mellomveien",
+        "cross_street": "langs Mellomveien",
+        "lat": 63.43670185062348,
+        "lon": 10.425908867370282,
+        "is_virtual_station": false,
+        "capacity": 23
+      }
+    },
+    {
+      "database": {
+        "id": "bysykkel-85",
+        "name": "Trondheim Bysykkel: TMV-odden",
+        "lat": 63.43547778770301,
+        "lng": 10.410569131581866,
+        "address": "Beddingen 14",
+        "category_id": "bike",
+        "bysykkel_station_id": "85",
+        "updated_at": "2026-07-06T06:44:31.246848+00:00"
+      },
+      "officialFeed": {
+        "station_id": "85",
+        "name": "TMV-odden",
+        "address": "Beddingen 14",
+        "cross_street": "ved snuplassen bak Una",
+        "lat": 63.43547778770301,
+        "lon": 10.410569131581866,
+        "is_virtual_station": false,
+        "capacity": 31
+      }
+    },
+    {
+      "database": {
+        "id": "bysykkel-65",
+        "name": "Trondheim Bysykkel: Strandveikaia",
+        "lat": 63.44208952370503,
+        "lng": 10.427939146757126,
+        "address": "Stiklestadveien 1",
+        "category_id": "bike",
+        "bysykkel_station_id": "65",
+        "updated_at": "2026-07-06T06:44:31.246848+00:00"
+      },
+      "officialFeed": {
+        "station_id": "65",
+        "name": "Strandveikaia",
+        "address": "Stiklestadveien 1",
+        "cross_street": "langs Stiklestadveien ved Strandveien",
+        "lat": 63.44208952370503,
+        "lon": 10.427939146757126,
+        "is_virtual_station": false,
+        "capacity": 15
+      }
+    }
+  ],
+  "bunnprisLade": {
+    "id": "google-ChIJCzDwmgUxbUYRbM0LlUcPfu0",
+    "name": "Bunnpris Lade",
+    "lat": 63.4442813,
+    "lng": 10.4403128,
+    "address": "Håkon Magnussons gate 3, Trondheim",
+    "updated_at": "2026-09-01T20:36:56.583213+00:00"
+  },
+  "notSelected": [
+    {
+      "name": "Øvre Nyhavna",
+      "databaseId": "bysykkel-5428",
+      "reason": "Relevant alternativ med bekreftet feed, men ligger utenfor de seks nærmeste i denne avgrensningen."
+    }
+  ],
+  "integrationNotes": [
+    "Fjern researchMetadata og category før LocalPlace-schema-validering; categoryId er riktig felt.",
+    "Legg til kilde-IDer og fakta-IDer ved integrasjon; beregn gang- og sykkeltider fra demoens faste utgangspunkt.",
+    "Bysykkelstativene er egne transportpunkter, ikke underpunkter til kjøpesentre.",
+    "Ikke presenter statisk kapasitet som antall ledige sykler."
+  ]
+}

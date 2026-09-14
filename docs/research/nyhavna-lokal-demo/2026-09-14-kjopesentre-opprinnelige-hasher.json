@@ -1,0 +1,13 @@
+{
+  "lib/demo/nyhavna-lokal/schema.ts": "71212ee82ffbe0b8f9df9122430dd7ccded9d23323132f92e7fd8341a17443b7",
+  "lib/demo/nyhavna-lokal/dataset.ts": "5b0d5b2305b0cb209d3a685ad650b46760fabbcf410cd7e53d977d6dc71f7b68",
+  "lib/demo/nyhavna-lokal/board.ts": "1651c648db594083881943d917ee0e00c9248eb01141974154f4427e2d759e80",
+  "lib/demo/nyhavna-lokal/voice.ts": "8a41160a8ba9f1491b3de79c47a31866c2feedb9ef392422a373e60b989efac8",
+  "lib/demo/nyhavna-lokal/presentation.ts": "4ee80a687738d670070848555405b27717871d6412ead3add3053ebfa5653f97",
+  "lib/demo/nyhavna-lokal/presentation.test.ts": "028d87aa1cd08b6c856396814e683234c2074dd01a1be8a86017037bbb32e50e",
+  "lib/realtime/nyhavna-knowledge.ts": "11f5dd36af1b38e574c9163147d8ba3086ccdd69fe4365eedf59f948f959e0ad",
+  "lib/realtime/board-tools.ts": "1d7dac320adc231f68f463d88da74b0efbf9781fa66bebe499fcae5200f57998",
+  "components/variants/report/board/voice/board-voice.tsx": "3a5a0aa87bb985706f0cd46032965896cdc929f74045f2f5d6922b0f0038fef3",
+  "lib/demo/nyhavna-lokal/voice.test.ts": "e96283009766aafd3cfc0926889b88d0151f4f866ee3ac0259c25ebe0ef83a16",
+  "lib/demo/nyhavna-lokal/reserve.test.ts": "6437aa9f0de37ffaf0049fc36f0e26453ebd88893597b9e6a188bce9afccf544"
+}

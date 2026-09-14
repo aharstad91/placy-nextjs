@@ -1,0 +1,356 @@
+--- a/lib/demo/nyhavna-lokal/schema.ts
++++ b/lib/demo/nyhavna-lokal/schema.ts
+@@ -183,6 +183,15 @@
+     provenance: z.object({ provider: z.literal("supabase"), recordId: z.string(), importedAt: isoDate }).strict().optional(),
+     id: stableId,
+     name: z.string().min(1).max(120),
++    /** Dokumentert butikk inne i et kjøpesenter; kartet viser forelderen. */
++    parentPlaceId: stableId.optional(),
++    /** Kilde-ID-er for boardets eksisterende transportinformasjon. */
++    bysykkelStationId: z.string().min(1).max(80).optional(),
++    enturStopplaceId: z.string().regex(/^NSR:StopPlace:[0-9]+$/).optional(),
++    /** Stedets underkategori (f.eks. supermarket); categoryId er boardets tema. */
++    poiCategoryId: z.string().min(1).max(80).regex(/^[a-z0-9][a-z0-9_-]*$/).optional(),
++    /** Aktiverer boardets eksisterende sentermerke og butikkregister. */
++    anchorSummary: z.string().min(1).max(400).optional(),
+     /** Peker på en kategori i `board.json`. Validert i `dataset.ts`. */
+     categoryId: stableId,
+     coordinates,
+--- a/lib/demo/nyhavna-lokal/dataset.ts
++++ b/lib/demo/nyhavna-lokal/dataset.ts
+@@ -1,3 +1,4 @@
++import { isAnchorPOI } from "@/lib/board/anchor-poi";
+ import "server-only";
+ 
+ import { readFile } from "node:fs/promises";
+@@ -115,7 +116,12 @@
+ 
+   const categoryIds = new Set(dataset.board.categories.map((c) => c.id));
+   const sourceIds = new Set(dataset.sources.map((s) => s.id));
+-  const placeIds = new Set(dataset.places.map((p) => p.id));
++  const placeById = new Map(dataset.places.map(p => [p.id, p]));
++  const placeIds = new Set(placeById.keys());
++  const childCountByParentId = new Map<string, number>();
++  for (const place of dataset.places) {
++    if (place.parentPlaceId) childCountByParentId.set(place.parentPlaceId, (childCountByParentId.get(place.parentPlaceId) ?? 0) + 1);
++  }
+ 
+   const dupe = (file: string, ids: string[]) => {
+     const found = duplicates(ids);
+@@ -152,6 +158,15 @@
+     const owner = `${FILES.places} → «${place.id}»`;
+     if (!categoryIds.has(place.categoryId)) {
+       problems.push(`${owner}: ukjent categoryId «${place.categoryId}» (mangler i ${FILES.board}).`);
++    }
++    if (place.parentPlaceId) {
++      const parent = placeById.get(place.parentPlaceId);
++      if (place.parentPlaceId === place.id || !parent || !isAnchorPOI(parent) || parent.parentPlaceId || isAnchorPOI(place)) {
++        problems.push(`${owner}: parentPlaceId må peke til et annet, selvstendig kjøpesenter.`);
++      }
++    }
++    if (isAnchorPOI(place) && (childCountByParentId.get(place.id) ?? 0) < 4) {
++      problems.push(`${owner}: kjøpesenter må ha minst fire dokumenterte virksomheter.`);
+     }
+     source(owner, place.sourceIds);
+     source(owner, place.facts.map((f) => f.sourceId));
+--- a/lib/demo/nyhavna-lokal/board.ts
++++ b/lib/demo/nyhavna-lokal/board.ts
+@@ -1,3 +1,4 @@
++import { isAnchorPOI } from "@/lib/board/anchor-poi";
+ import { radiusPlaces } from "@/lib/demo/nyhavna-lokal/radius";
+ import { createHash } from "node:crypto";
+ import type {
+@@ -59,7 +60,8 @@
+ function toPoi(place: LocalPlace, category: Category, urlBySourceId: ReadonlyMap<string, string>): POI {
+   const subCategory: Category = {
+     ...category,
+-    name: place.placeType?.trim() || category.name,
++    id: place.poiCategoryId ?? category.id,
++    name: place.poiCategoryId === "butikk" ? "Butikker" : place.placeType?.trim() || category.name,
+     icon: place.icon?.trim() || category.icon,
+   };
+   return {
+@@ -67,6 +69,10 @@
+     name: place.name,
+     coordinates: place.coordinates,
+     category: subCategory,
++    ...(place.bysykkelStationId ? { bysykkelStationId: place.bysykkelStationId } : {}),
++    ...(place.enturStopplaceId ? { enturStopplaceId: place.enturStopplaceId } : {}),
++    ...(place.parentPlaceId ? { parentPoiId: place.parentPlaceId } : {}),
++    ...(place.anchorSummary ? { anchorSummary: place.anchorSummary } : {}),
+     ...(place.address ? { address: place.address } : {}),
+     ...(place.summary ? { editorialHook: place.summary } : {}),
+     ...(place.travelTime ? { travelTime: place.travelTime } : {}),
+@@ -90,6 +96,7 @@
+     categoryId,
+     icon: identity.icon,
+     color: identity.color,
++    ...(isAnchorPOI(poi) ? { isAnchor: true, childPOIs: poi.childPOIs ?? [] } : {}),
+     raw: poi,
+   };
+ }
+@@ -118,7 +125,9 @@
+ /** Spørsmålene per tema, i filas egen rekkefølge. Nøkkel `""` = hele området. */
+ function faqByCategory(dataset: LocalDataset): Map<string, FaqEntry[]> {
+   const byCategory = new Map<string, FaqEntry[]>();
+-  for (const entry of dataset.faqs) {
++  const mapIds = new Map(dataset.places.map(p => [p.id, p.parentPlaceId ?? p.id]));
++  for (const original of dataset.faqs) {
++    const entry = { ...original, answer: original.answer.replace(/\(poi:([^)]+)\)/g, (_, id: string) => `(poi:${mapIds.get(id) ?? id})`) };
+     const key = entry.categoryId ?? "";
+     const bucket = byCategory.get(key);
+     if (bucket) bucket.push(toFaqEntry(entry, dataset.sources));
+@@ -195,11 +204,36 @@
+  */
+ export function buildLocalBoard(dataset: LocalDataset): BoardData {
+   const project = buildLocalProject(dataset);
++  const byId = new Map(project.pois.map(p => [p.id, p]));
++  const children = new Map<string, POI[]>();
++  const themeByPoiId = new Map(dataset.places.map(p => [p.id, p.categoryId]));
++  const directByTheme = new Map<string, POI[]>();
++  for (const poi of project.pois) {
++    const theme = themeByPoiId.get(poi.id)!;
++    const direct = directByTheme.get(theme) ?? [];
++    direct.push(poi);
++    directByTheme.set(theme, direct);
++    if (!poi.parentPoiId) continue;
++    const siblings = children.get(poi.parentPoiId) ?? [];
++    siblings.push(poi);
++    children.set(poi.parentPoiId, siblings);
++  }
++  for (const [id, members] of children) {
++    const parent = byId.get(id)!;
++    parent.childPOIs = members;
++  }
++  const topLevel = project.pois.filter(p => !p.parentPoiId);
+   const poisByCategory = new Map<string, POI[]>();
+-  for (const poi of project.pois) {
+-    const bucket = poisByCategory.get(poi.category.id);
+-    if (bucket) bucket.push(poi);
+-    else poisByCategory.set(poi.category.id, [poi]);
++  for (const category of dataset.board.categories) {
++    const matches = new Map<string, POI>();
++    for (const poi of directByTheme.get(category.id) ?? []) {
++      const destination = poi.parentPoiId ? byId.get(poi.parentPoiId)! : poi;
++      if (matches.has(destination.id)) continue;
++      const members = children.get(destination.id);
++      const scoped = members?.filter(p => themeByPoiId.get(destination.id) === category.id || themeByPoiId.get(p.id) === category.id);
++      matches.set(destination.id, scoped ? { ...destination, childPOIs: scoped } : destination);
++    }
++    poisByCategory.set(category.id, [...matches.values()]);
+   }
+ 
+   const sourceById = new Map(dataset.sources.map((s) => [s.id, s]));
+@@ -272,7 +306,7 @@
+     projectSlug: project.urlSlug,
+     home,
+     categories,
+-    poisById: new Map(project.pois.map((poi) => [poi.id.toLowerCase(), poi])),
++    poisById: new Map(topLevel.map((poi) => [poi.id.toLowerCase(), poi])),
+     // Spørsmålene uten tema: de som gjelder hele området, vist på områdestoppet.
+     globalFaq: faqs.get("") ?? [],
+     audioTourEnabled: false,
+--- a/lib/demo/nyhavna-lokal/voice.ts
++++ b/lib/demo/nyhavna-lokal/voice.ts
+@@ -85,7 +85,7 @@
+     // to steder å skrive feil.
+     themes: [place.categoryId],
+     status: KNOWLEDGE_STATUS[place.status],
+-    mapPoiId: place.id,
++    mapPoiId: place.parentPlaceId ?? place.id,
+     summary: place.summary,
+     facts: [
+       ...place.facts.map((fact) => ({
+@@ -186,7 +186,7 @@
+     (byCategory.get(categoryId) ?? []).map((place) => ({
+       id: place.id,
+       name: place.name,
+-      map_poi_id: place.id,
++      map_poi_id: place.parentPlaceId ?? place.id,
+       status: KNOWLEDGE_STATUS[place.status],
+       summary: place.summary,
+       facts: place.facts
+@@ -298,7 +298,7 @@
+ ${dataset.places.length ? `KART: Ved faktasvar, aktiver først riktig kategori med show_category og fremhev bare stedene svaret faktisk handler om. Når spørsmålet gjelder ett sted, ikke trekk inn en annen skole eller holdeplass. Fremhev stedene fra katalogens «vis:» med highlight_places i samme svar. Oppgi besvarte FAQ-ID-er i answered_faq_ids. show_place åpner ett sted og ruten dit. Ved FAQ uten kartsteder, bruk show_category med answered_faq_ids. Si bare at noe vises når verktøyet har lykkes. Et klikk på FAQ er brukerens spørsmål og skal besvares direkte.
+ SPRÅK: Si «fra Nyhavna», «dagligvarer» og «hvis du vil trene». Ikke si demo, register, kildegrunnlag eller at du sjekker kartet. Behold nødvendige planforbehold, men ikke legg til standardforbehold om ventetid eller trafikk. Oppgi busstid som «ifølge rutetabellen», og skill den fra gangtid til holdeplassen. Ikke korriger noe brukeren allerede har forstått, som skillet mellom ungdomsskole og videregående. Når innholdet er brukt opp, tilby to andre relevante temaer én gang og vent. Ikke lov mer kunnskap eller et nytt søk du ikke har.
+ REISETIDER: Bruk lagrede tider fra det faste referansepunktet (${dataset.board.center.lat}, ${dataset.board.center.lng}). Det er et fast referansepunkt på Nyhavna, ikke en bolig. Ikke si at utgangspunkt mangler. Tider er beregnede anslag; bruk aktuell reisemåte. Ikke vurder trygg skolevei ut fra rutetiden.
+-STEDER OG REISETIDER (data): ${JSON.stringify(dataset.places.map(p => ({ id: p.id, name: p.name, provenance: p.provenance, travelTime: p.travelTime, address: p.address })))}` : "KART: Det er ingen steder i kartet. Ikke lov kartmarkører eller kall highlight_places/show_place."}
++STEDER OG REISETIDER (data): ${JSON.stringify(dataset.places.map(p => ({ id: p.id, map_poi_id: p.parentPlaceId ?? p.id, name: p.name, provenance: p.provenance, travelTime: p.travelTime, address: p.address })))}` : "KART: Det er ingen steder i kartet. Ikke lov kartmarkører eller kall highlight_places/show_place."}
+ TEMAER (data): ${JSON.stringify(board.categories.map((c) => ({ id: c.id, name: c.label })))}
+ SPØRSMÅL OG SVAR (data, per tema):
+ ${nyhavnaFaqCatalog(reviewedBoard)}
+--- a/lib/demo/nyhavna-lokal/presentation.ts
++++ b/lib/demo/nyhavna-lokal/presentation.ts
+@@ -33,6 +33,8 @@
+   let position = -1;
+   let lastNote = "";
+   let focusedPlaceId: string | null = null;
++  const mapIdByPlace = new Map(places.map(p => [p.id, p.parentPlaceId ?? p.id]));
++  const mapIds = (ids: readonly string[]) => [...new Set(ids.map(id => mapIdByPlace.get(id) ?? id))];
+   const visited = new Set<string>();
+   const revealed = new Set<string>();
+   const distances: RadiusPlace[] = center ? radiusPlaces(places, center, segments.flatMap(s => s.placeIds)) : [];
+@@ -72,8 +74,8 @@
+     
+     visited.add(target.id);
+     return {
+-      result: { matches: 1, place: target, text: placeText(target), instruction: "Fortell om dette stedet nå, uten ny bekreftelse eller omtale av andre steder. Tilby bare mer om stedet hvis faktaene inneholder noe nytt å fortelle. Ellers spør hvilket annet tema brukeren vil høre om. Vent på svaret. Ikke gå til neste kategori." },
+-      directives: [{ name: "highlight_places", args: { poi_ids: [target.id] } }, { name: "show_place", args: { poi_id: target.id } }],
++      result: { matches: 1, place: { ...target, map_poi_id: mapIdByPlace.get(target.id) ?? target.id }, text: placeText(target), instruction: "Fortell om dette stedet nå, uten ny bekreftelse eller omtale av andre steder. Tilby bare mer om stedet hvis faktaene inneholder noe nytt å fortelle. Ellers spør hvilket annet tema brukeren vil høre om. Vent på svaret. Ikke gå til neste kategori." },
++      directives: [{ name: "highlight_places", args: { poi_ids: mapIds([target.id]) } }, { name: "show_place", args: { poi_id: mapIdByPlace.get(target.id) ?? target.id } }],
+     };
+   };
+   const present = (args: Record<string, unknown>): ToolOutcome => {
+@@ -99,7 +101,7 @@
+       },
+       directives: [
+         { name: "show_category", args: { category_id: segment.categoryId } },
+-        ...(segment.placeIds.length ? [{ name: "highlight_places", args: { poi_ids: segment.placeIds } }] : [{ name: "clear_highlights", args: {} }]),
++        ...(segment.placeIds.length ? [{ name: "highlight_places", args: { poi_ids: mapIds(segment.placeIds) } }] : [{ name: "clear_highlights", args: {} }]),
+       ],
+     };
+   };
+--- a/lib/demo/nyhavna-lokal/presentation.test.ts
++++ b/lib/demo/nyhavna-lokal/presentation.test.ts
+@@ -29,7 +29,7 @@
+     expect(result.result).toMatchObject({ segment: { categoryId: "hverdagsliv" } });
+     expect(result.result).toHaveProperty("chapter.project_info");
+     expect(result.directives?.[0]).toEqual({ name: "show_category", args: { category_id: "hverdagsliv" } });
+-    expect(result.directives?.[1]).toMatchObject({ name: "highlight_places", args: { poi_ids: ["meny-solsiden", "kiwi-lilleby"] } });
++    expect(result.directives?.[1]).toMatchObject({ name: "highlight_places", args: { poi_ids: ["solsiden-senter", "kiwi-lilleby"] } });
+   });
+   it("keeps the return point through a question and resumes without advancing", async () => {
+     const tour = await fixture();
+@@ -72,14 +72,26 @@
+     const found = tour.execute("find_similar_places", {});
+     expect(found.result).toMatchObject({ matches: 1, place: { id: "snurr-nyhavna", categoryId: "mat-drikke" } });
+     expect(found.directives).toContainEqual({ name: "show_place", args: { poi_id: "snurr-nyhavna" } });
+-    expect(tour.execute("find_similar_places", {}).result).toMatchObject({
+-      matches: 1, place: { id: "godt-brod-solsiden", categoryId: "mat-drikke" },
++    const bakery = tour.execute("find_similar_places", {});
++    expect(bakery.result).toMatchObject({
++      matches: 1, place: { id: "godt-brod-solsiden", categoryId: "mat-drikke", map_poi_id: "solsiden-senter" },
+     });
++    expect(bakery.directives).toContainEqual({ name: "show_place", args: { poi_id: "solsiden-senter" } });
++    expect(bakery.directives).toContainEqual({ name: "highlight_places", args: { poi_ids: ["solsiden-senter"] } });
+     for (const id of ["cafe-lokka", "dromedar-solsiden"]) {
+       expect(tour.execute("find_similar_places", {}).result).toMatchObject({
+         matches: 1, place: { id, categoryId: "mat-drikke" },
+       });
+     }
++    const extraNames: string[] = [];
++    for (let i = 0; i < 10; i++) {
++      const next = tour.execute("find_similar_places", {}).result as { matches: number; place?: { name: string; categoryId: string } };
++      if (!next.matches) break;
++      expect(next.place?.categoryId).toBe("mat-drikke");
++      extraNames.push(next.place!.name);
++    }
++    expect(new Set(extraNames)).toEqual(new Set(["Rosenborg Bakeri City Lade", "Jordbærpikene Trondheim Torg", "Dromedar Sirkus Shopping"]));
++    expect(extraNames).toHaveLength(3);
+     expect(tour.execute("find_similar_places", {}).result).toMatchObject({ matches: 0 });
+     expect(tour.execute("present_neighbourhood", { action: "resume" }).result).toMatchObject({ segment: { categoryId: "mat-drikke" } });
+     expect(tour.execute("find_similar_places", { poi_id: "unknown-place" }).result).toHaveProperty("error");
+--- a/lib/realtime/nyhavna-knowledge.ts
++++ b/lib/realtime/nyhavna-knowledge.ts
+@@ -91,7 +91,7 @@
+     if (name === 'get_board_facts') return { ...pack(knowledge.area, true), categories: board.categories.map(c => ({ id: String(c.id), name: c.label })) };
+     if (name === 'get_place_facts') {
+       const id = typeof args.poi_id === 'string' ? poiAliases[args.poi_id] ?? args.poi_id : '';
+-      const entity = all.find(e => e.id === id || (e.mapPoiId !== null && e.mapPoiId === id));
++      const entity = all.find(e => e.id === id) ?? all.find(e => e.mapPoiId !== null && e.mapPoiId === id);
+       if (entity) return pack(entity, true);
+       const poi = pois.get(id);
+       return poi ? packRegister(poi) : { error: 'Ukjent sted. Finn ID med find_places før du forsøker igjen.' };
+--- a/lib/realtime/board-tools.ts
++++ b/lib/realtime/board-tools.ts
+@@ -53,7 +53,7 @@
+       const found: BoardPOI[] = [];
+       const rejected: string[] = [];
+       for (const id of requested.slice(0, env.highlightLimit ?? 6)) {
+-        const poi = findBoardPOI(data.categories, id);
++        const poi = findBoardPOI(data.categories, id, state.activeCategoryId);
+         if (!poi) rejected.push(id);
+         else if (!found.some((p) => p.id === poi.id)) found.push(poi);
+       }
+@@ -79,7 +79,7 @@
+       dispatch({ type: "CLEAR_HIGHLIGHTS" });
+       return { ok: true, shown: "Fremhevingen er fjernet" };
+     case "show_place": {
+-      const poi = typeof args.poi_id === "string" ? findBoardPOI(data.categories, args.poi_id) : null;
++      const poi = typeof args.poi_id === "string" ? findBoardPOI(data.categories, args.poi_id, state.activeCategoryId) : null;
+       if (!poi) return { error: "Ukjent sted. Bruk en kart-ID fra kapittelet, katalogen eller map_poi_id." };
+       // Stoppet følger stedets tema så flaten og kartet forteller det samme;
+       // fremhevingen står (ingen navigasjons-action rører den).
+@@ -116,12 +116,12 @@
+ }
+ 
+ /** Kart-ID-ene et verktøykall førte til – brukt av flaten til å skille assistentens navigasjon fra brukerens egne trykk. */
+-export function boardToolTargets(name: string, result: BoardToolResult, data: BoardData): { categoryIds: string[]; poiIds: string[] } {
++export function boardToolTargets(name: string, result: BoardToolResult, data: BoardData, preferCategoryId?: BoardCategoryId | null): { categoryIds: string[]; poiIds: string[] } {
+   if ("error" in result) return { categoryIds: [], poiIds: [] };
+   const poiIds = [...(result.poi_id ? [result.poi_id] : []), ...(result.highlighted?.map((h) => h.id) ?? [])];
+   const categoryIds = [
+     ...(result.category_id ? [result.category_id] : []),
+-    ...poiIds.map((id) => findBoardPOI(data.categories, id as BoardPOIId)?.categoryId).filter((id): id is BoardCategoryId => Boolean(id)).map(String),
++    ...poiIds.map((id) => findBoardPOI(data.categories, id as BoardPOIId, preferCategoryId)?.categoryId).filter((id): id is BoardCategoryId => Boolean(id)).map(String),
+   ];
+   return { categoryIds, poiIds: name === "highlight_places" ? [] : poiIds };
+ }
+--- a/components/variants/report/board/voice/board-voice.tsx
++++ b/components/variants/report/board/voice/board-voice.tsx
+@@ -154,7 +154,7 @@
+     if (localDemo && "ok" in result && !result.rejected?.length && Array.isArray(args.answered_faq_ids)) {
+       progressRef.current?.queue(args.answered_faq_ids.filter((id): id is string => typeof id === "string"));
+     }
+-    const targets = boardToolTargets(revealing ? "highlight_places" : name, result, toolData);
++    const targets = boardToolTargets(revealing ? "highlight_places" : name, result, toolData, state.activeCategoryId);
+     for (const id of targets.categoryIds) if (id !== stopId) voiceNav.current.categoryIds.add(id);
+     for (const id of targets.poiIds) if (id !== activePoiId) voiceNav.current.poiIds.add(id);
+     return result;
+--- a/lib/demo/nyhavna-lokal/voice.test.ts
++++ b/lib/demo/nyhavna-lokal/voice.test.ts
+@@ -226,8 +226,9 @@
+     const { initialBoardState } = await import("@/components/variants/report/board/board-state");
+     const dataset = await loadDataset();
+     const board = buildLocalBoard(dataset);
+-    for (const faq of dataset.faqs) {
+-      const ids = [...faq.answer.matchAll(/\(poi:([^)]+)\)/g)].map(m => m[1]);
++    const visibleFaqs = [...(board.globalFaq ?? []), ...board.categories.flatMap(c => c.editorial?.faq ?? [])];
++    for (const faq of visibleFaqs) {
++      const ids = [...new Set([...faq.answer.matchAll(/\(poi:([^)]+)\)/g)].map(m => m[1]))];
+       if (!ids.length) continue;
+       const actions: unknown[] = [];
+       const result = executeBoardTool("highlight_places", { poi_ids: ids }, {
+--- a/lib/demo/nyhavna-lokal/reserve.test.ts
++++ b/lib/demo/nyhavna-lokal/reserve.test.ts
+@@ -21,9 +21,11 @@
+     const { board } = await fixture();
+     let revealed = new Set<string>();
+     let visible = visibleReserveBoard(board, revealed);
+-    expect(visible.categories.find(c => c.id === category)?.pois).toHaveLength(4);
++    expect(visible.categories.find(c => c.id === category)?.pois).toHaveLength(6);
+     expect(visible.categories.find(c => c.id === 'natur-friluftsliv')?.pois).toHaveLength(4);
+     expect(visible.poisById.has('pool-3t-rosten')).toBe(false);
++    expect(visible.poisById.has('flex-gym')).toBe(true);
++    expect(visible.poisById.has('buld-no')).toBe(true);
+     const first = nextReserveIds(board, category, revealed);
+     expect(first).toHaveLength(4);
+     expect(first).toContain('pool-fresh-fitness-trondheim-sentrum');
+@@ -34,7 +36,7 @@
+     expect(distances).toEqual([...distances].sort((a, b) => a - b));
+     revealed = new Set(first);
+     visible = visibleReserveBoard(board, revealed);
+-    expect(visible.categories.find(c => c.id === category)?.pois).toHaveLength(8);
++    expect(visible.categories.find(c => c.id === category)?.pois).toHaveLength(10);
+     expect(visible.categories.find(c => c.id === 'natur-friluftsliv')?.pois).toHaveLength(4);
+     expect(discoveryGeometry(visible, category)[0].name).toBe('2 km fra Nyhavna');
+     const second = nextReserveIds(board, category, revealed);
+@@ -42,7 +44,7 @@
+     second.forEach(id => revealed.add(id));
+     while (nextReserveIds(board, category, revealed).length) nextReserveIds(board, category, revealed).forEach(id => revealed.add(id));
+     visible = visibleReserveBoard(board, revealed);
+-    expect(visible.categories.find(c => c.id === category)?.pois).toHaveLength(15);
++    expect(visible.categories.find(c => c.id === category)?.pois).toHaveLength(17);
+     expect(visible.poisById.has('pool-3t-rosten')).toBe(true);
+     expect(nextReserveIds(board, category, revealed)).toEqual([]);
+     expect(nextReserveIds(board, 'transport', revealed)).toEqual([]);

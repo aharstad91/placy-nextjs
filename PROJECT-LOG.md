@@ -6,6 +6,18 @@
 
 ---
 
+## 2026-09-14 — Kjøpesentre, flere dagligvarer og transport/aktiviteter i Nyhavna-demo
+
+39 nye steder, 72 nye fakta og 34 nye kilder lagt til; 7 tidligere steder oppdatert. Fire sentre med 24 kildebekreftede medlemmer, seks nye dagligvarer (ni totalt), Lademoen/Lilleby tog, seks DB-bysykkelstativ, Flex Gym, Buld.no, Trikkestallen og Ladesletta. Leo’s/Pirbadet bekreftet eksisterende uten dubletter. Alle 39 nye steder, 7 oppdateringer, 24 medlemskap og 18 eksplisitte referansesteder gjennomgått. 118 stedsrader/178 kilder; 94 unike kartdestinasjoner, 75 fra start/19reserve. UI viser 79 temarader fordi fire sentre inngår i to temaer. Skillet må beholdes i videre omtale.
+
+Gjenbruker boardets sentermarkør/register. Butikkfakta beholdes, men kart-ID peker til senter; valgt Servering beholdes. Tre kode-review-funn rettet og verifisert. Stasjons-ID-er beholdes i transportadapter. Flex/Buld føyd til kort treningsmanus så de vises fra start. Ladesletta er omtrentlig orientering, ikke bekreftet festivalinngang; NEON/Rocks 2026 og nærliggende sandvolleyball belagt, ingen lovnad om senere års program. 40 gang-/sykkelruter lagret. 4/4 sentervisninger og alle nye transportpunkter verifisert i Chrome. Ny ekte talesamtale gjenstår.
+
+Lint 0 feil/53 advarsler; TypeScript grønn. 91 målrettede tester dekket grønne etter én oppdatert reserveforventning. Full suite 4310/4324 passerte; ti tidsavbrudd avklart grønne i mindre kjøringer (siste taxi-import med utvidet tidsgrense), én reserveforventning rettet, tre tidligere kjente feil gjenstår: nyhavna-knowledge ordgrense og to BoardVoiceControl-forventninger. Hele suiten er ikke grønn. Ingen nye uavklarte feil fra denne leveransen.
+
+Leveranse, smal kodepatch, data, kilder, ruter, før/etter og review: `/Users/andreasharstad/Documents/placy-nyhavna-innhold/docs/research/nyhavna-lokal-demo/2026-09-14-handel-transport-aktivitet.md`. Aktive kode-/dataendringer beholdes ukommittert med parallelløkten; egne leveranseartefakter committes lokalt. Ingen push. Port3103 var stoppet og ble startet igjen som Next dev. Neste: last siden på nytt og gjennomfør lyttetest før demoen.
+
+---
+
 ## 2026-09-14 — 60 steder synlige fra start, 79 totalt
 
 Andreas så fortsatt 44 steder. Forklart og bekreftet årsaken: forrige 63-tall inkluderte 19 trenings-/natursteder i reserve. Denne runden utvider med 16 nye steder i Servering (8), Hverdag (3), Opplevelser (3) og Oppvekst (2), uten å endre reservefunksjonen. Startvisningen er nå 60, totalen 79. 17 kandidater vurdert, 16 lagt inn med 32 fakta; Pizzabakeren Lade erstattet av SOT på grunn av utilgjengelig egenkildestøttet besøksadresse. Kryssreview av alle steder/fakta uten gjenstående funn. 39 nye kilder og 32 beregnede Mapbox-ruter; alle adressepunkter fra Kartverket, merket som adresse og ikke kontrollert inngang.

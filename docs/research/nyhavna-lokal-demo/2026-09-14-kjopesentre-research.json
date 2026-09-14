@@ -1,0 +1,310 @@
+{
+  "checkedAt": "2026-09-14",
+  "scope": "Fire kjøpesentre som selvstendige destinasjoner, med seks bekreftede virksomheter per senter. Kun senterets egne nettsider brukes som medlemskapskilder.",
+  "candidates": [
+    {
+      "id": "solsiden-senter",
+      "name": "Solsiden senter",
+      "placeType": "Kjøpesenter",
+      "address": "Beddingen 10",
+      "addressSourceUrl": "https://www.solsidensenter.no/finn-frem/",
+      "summary": "Kjøpesenter på Solsiden med dagligvarer, apotek, klær og steder for kaffe og bakst.",
+      "facts": [
+        {
+          "text": "MENY, Apotek 1 og Vinmonopolet ligger på Solsiden senter.",
+          "sourceUrl": "https://www.solsidensenter.no/butikker-2/"
+        },
+        {
+          "text": "Godt Brød og Dromedar gir mulighet for en kafépause, og senteret har også H&M.",
+          "sourceUrl": "https://www.solsidensenter.no/butikker-2/"
+        }
+      ],
+      "sources": [
+        {
+          "url": "https://www.solsidensenter.no/butikker-2/",
+          "label": "Butikker på Solsiden",
+          "page": "Butikker på Solsiden",
+          "publisher": "Solsiden senter"
+        },
+        {
+          "url": "https://www.solsidensenter.no/finn-frem/",
+          "label": "Finn frem til Solsiden",
+          "page": "Finn frem til Solsiden",
+          "publisher": "Solsiden senter"
+        }
+      ],
+      "members": [
+        {
+          "name": "MENY Solsiden",
+          "type": "Dagligvare",
+          "sourceUrl": "https://www.solsidensenter.no/butikker-2/",
+          "existingPlaceId": "meny-solsiden"
+        },
+        {
+          "name": "Apotek 1 Solsiden",
+          "type": "Apotek",
+          "sourceUrl": "https://www.solsidensenter.no/butikker-2/",
+          "existingPlaceId": "apotek-1-solsiden"
+        },
+        {
+          "name": "Vinmonopolet Solsiden",
+          "type": "Vinmonopol",
+          "sourceUrl": "https://www.solsidensenter.no/butikker-2/",
+          "existingPlaceId": "vinmonopolet-solsiden"
+        },
+        {
+          "name": "Godt Brød Solsiden",
+          "type": "Bakeri og kafé",
+          "sourceUrl": "https://www.solsidensenter.no/butikker-2/",
+          "existingPlaceId": "godt-brod-solsiden"
+        },
+        {
+          "name": "Dromedar Kaffebar Solsiden",
+          "type": "Kaffebar",
+          "sourceUrl": "https://www.solsidensenter.no/butikker-2/",
+          "existingPlaceId": "dromedar-solsiden"
+        },
+        {
+          "name": "H&M Solsiden",
+          "type": "Klær",
+          "sourceUrl": "https://www.solsidensenter.no/butikker-2/"
+        }
+      ],
+      "caveats": [
+        "Medlemskap er bekreftet i senterets butikkregister. Det sier ikke at alle virksomhetene har identisk inngang eller gateadresse.",
+        "Restaurantrekka på Solsiden og REMA 1000 i Dyre Halses gate er ikke lagt til som sentermedlemmer.",
+        "Butikkregisteret ble lest i denne kontrollen, men senere gjentatte nettoppslag fikk timeout. Adressekilden var fortsatt lesbar."
+      ]
+    },
+    {
+      "id": "city-lade",
+      "name": "City Lade",
+      "placeType": "Kjøpesenter",
+      "address": "Haakon VIIs gate 9",
+      "addressSourceUrl": "https://citylade.no/",
+      "summary": "Kjøpesenter på Lade med dagligvarer, apotek, klær, sports- og barneutstyr og bakeri.",
+      "facts": [
+        {
+          "text": "Obs Stormarked og Apotek 1 ligger i andre etasje på City Lade.",
+          "sourceUrl": "https://citylade.no/butikkoversikt/"
+        },
+        {
+          "text": "Senteret har blant annet Anton Sport, Barnas Hus og Rosenborg Bakeri.",
+          "sourceUrl": "https://citylade.no/butikkoversikt/"
+        }
+      ],
+      "sources": [
+        {
+          "url": "https://citylade.no/butikkoversikt/",
+          "label": "Butikker på City Lade",
+          "page": "Butikker på City Lade",
+          "publisher": "City Lade"
+        },
+        {
+          "url": "https://citylade.no/",
+          "label": "City Lade – adresse",
+          "page": "City Lade – adresse",
+          "publisher": "City Lade"
+        }
+      ],
+      "members": [
+        {
+          "name": "Obs City Lade",
+          "type": "Dagligvare og stormarked",
+          "sourceUrl": "https://citylade.no/butikkoversikt/",
+          "plannedPlaceId": "obs-city-lade"
+        },
+        {
+          "name": "Apotek 1 City Lade",
+          "type": "Apotek",
+          "sourceUrl": "https://citylade.no/butikkoversikt/"
+        },
+        {
+          "name": "Rosenborg Bakeri City Lade",
+          "type": "Bakeri og kafé",
+          "sourceUrl": "https://citylade.no/butikkoversikt/"
+        },
+        {
+          "name": "B.young City Lade",
+          "type": "Klær",
+          "sourceUrl": "https://citylade.no/butikkoversikt/"
+        },
+        {
+          "name": "Barnas Hus City Lade",
+          "type": "Barneutstyr og barneklær",
+          "sourceUrl": "https://citylade.no/butikkoversikt/"
+        },
+        {
+          "name": "Anton Sport City Lade",
+          "type": "Sportsbutikk",
+          "sourceUrl": "https://citylade.no/butikkoversikt/"
+        }
+      ],
+      "caveats": [
+        "Obs er navngitt som Obs Stormarked i senterregisteret. Koblingen obs-city-lade er planlagt i parallell dagligvareimport, og var ikke et eksisterende aktivt sted ved kontroll.",
+        "Senterets adresse er skrevet Haakon VIIs gt. 9 i kilden; gate er skrevet fullt ut her."
+      ]
+    },
+    {
+      "id": "trondheim-torg",
+      "name": "Trondheim Torg",
+      "placeType": "Kjøpesenter",
+      "address": "Kongens gate 9",
+      "addressSourceUrl": "https://trondheimtorg.no/",
+      "summary": "Kjøpesenter i Midtbyen med klær, apotek, bøker, leker, utstyr til hjemmet og kafé.",
+      "facts": [
+        {
+          "text": "På Trondheim Torg finner du blant annet Vitusapotek, H&M, ARK, Lekia, Clas Ohlson og Jordbærpikene.",
+          "sourceUrl": "https://trondheimtorg.no/butikker/"
+        },
+        {
+          "text": "Utvalgte butikker på Trondheim Torg tilbyr klikk og hent.",
+          "sourceUrl": "https://trondheimtorg.no/klikk-hent/"
+        }
+      ],
+      "sources": [
+        {
+          "url": "https://trondheimtorg.no/butikker/",
+          "label": "Butikker på Trondheim Torg",
+          "page": "Butikker på Trondheim Torg",
+          "publisher": "Trondheim Torg"
+        },
+        {
+          "url": "https://trondheimtorg.no/",
+          "label": "Trondheim Torg – besøksadresse",
+          "page": "Trondheim Torg – besøksadresse",
+          "publisher": "Trondheim Torg"
+        },
+        {
+          "url": "https://trondheimtorg.no/klikk-hent/",
+          "label": "Klikk og hent på Trondheim Torg",
+          "page": "Klikk og hent på Trondheim Torg",
+          "publisher": "Trondheim Torg"
+        },
+        {
+          "url": "https://trondheimtorg.no/butikk/rema-1000/",
+          "label": "REMA 1000 – plassering utenfor hovedinngangen",
+          "page": "REMA 1000 – plassering utenfor hovedinngangen",
+          "publisher": "Trondheim Torg"
+        }
+      ],
+      "members": [
+        {
+          "name": "Vitusapotek Trondheim Torg",
+          "type": "Apotek",
+          "sourceUrl": "https://trondheimtorg.no/butikker/"
+        },
+        {
+          "name": "H&M Trondheim Torg",
+          "type": "Klær",
+          "sourceUrl": "https://trondheimtorg.no/butikker/"
+        },
+        {
+          "name": "ARK Trondheim Torg",
+          "type": "Bokhandel",
+          "sourceUrl": "https://trondheimtorg.no/butikker/"
+        },
+        {
+          "name": "Lekia Trondheim Torg",
+          "type": "Lekebutikk",
+          "sourceUrl": "https://trondheimtorg.no/butikker/"
+        },
+        {
+          "name": "Clas Ohlson Trondheim Torg",
+          "type": "Utstyr til hjemmet",
+          "sourceUrl": "https://trondheimtorg.no/butikker/"
+        },
+        {
+          "name": "Jordbærpikene Trondheim Torg",
+          "type": "Kafé",
+          "sourceUrl": "https://trondheimtorg.no/butikker/"
+        }
+      ],
+      "caveats": [
+        "REMA 1000 Torvet er ikke tatt med i I senteret. Senterets egen butikkside sier utenfor hovedinngangen; butikken skal beholde selvstendig kartpunkt.",
+        "Klikk og hent gjelder deltakende butikker og tilgjengelige varer, uten løfte om felles hentevilkår eller hentetid."
+      ]
+    },
+    {
+      "id": "sirkus-shopping",
+      "name": "Sirkus Shopping",
+      "placeType": "Kjøpesenter",
+      "address": "Falkenborgvegen 1",
+      "addressSourceUrl": "https://sirkusshopping.no/praktisk-informasjon/om-senteret/",
+      "summary": "Kjøpesenter med dagligvarer, apotek, klær og servering, samt posttjenester og stellerom.",
+      "facts": [
+        {
+          "text": "Coop Mega, Vitusapotek, Cubus, Clas Ohlson, Vinmonopolet og Dromedar er blant virksomhetene på Sirkus Shopping.",
+          "sourceUrl": "https://sirkusshopping.no/butikker/"
+        },
+        {
+          "text": "Ved Informasjonen på P1 finnes posttjenester, og senteret oppgir stellerom og ammesone ved Informasjonen.",
+          "sourceUrl": "https://sirkusshopping.no/praktisk-informasjon/om-senteret/"
+        }
+      ],
+      "sources": [
+        {
+          "url": "https://sirkusshopping.no/butikker/",
+          "label": "Butikker på Sirkus Shopping",
+          "page": "Butikker på Sirkus Shopping",
+          "publisher": "Sirkus Shopping"
+        },
+        {
+          "url": "https://sirkusshopping.no/praktisk-informasjon/om-senteret/",
+          "label": "Om senteret – adresse og tjenester",
+          "page": "Om senteret – adresse og tjenester",
+          "publisher": "Sirkus Shopping"
+        },
+        {
+          "url": "https://sirkusshopping.no/butikker/coop-mega/",
+          "label": "Coop Mega på Sirkus Shopping",
+          "page": "Coop Mega på Sirkus Shopping",
+          "publisher": "Sirkus Shopping"
+        }
+      ],
+      "members": [
+        {
+          "name": "Coop Mega Sirkus",
+          "type": "Dagligvare",
+          "sourceUrl": "https://sirkusshopping.no/butikker/coop-mega/",
+          "plannedPlaceId": "coop-mega-sirkus"
+        },
+        {
+          "name": "Vitusapotek Sirkus Shopping",
+          "type": "Apotek",
+          "sourceUrl": "https://sirkusshopping.no/butikker/"
+        },
+        {
+          "name": "Dromedar Sirkus Shopping",
+          "type": "Kaffebar",
+          "sourceUrl": "https://sirkusshopping.no/butikker/"
+        },
+        {
+          "name": "Cubus Sirkus Shopping",
+          "type": "Klær",
+          "sourceUrl": "https://sirkusshopping.no/butikker/"
+        },
+        {
+          "name": "Clas Ohlson Sirkus Shopping",
+          "type": "Utstyr til hjemmet",
+          "sourceUrl": "https://sirkusshopping.no/butikker/"
+        },
+        {
+          "name": "Vinmonopolet Sirkus Shopping",
+          "type": "Vinmonopol",
+          "sourceUrl": "https://sirkusshopping.no/butikker/"
+        }
+      ],
+      "caveats": [
+        "Falkenborgvegen 1 er senterets oppgitte besøksadresse. Enkeltvirksomheter kan oppgi andre gatenumre eller innganger.",
+        "Coop Megas senterprofil oppgir Falkenborgvegen 5; dagligvareagenten har funnet Falkenborgvegen 9 hos Coop. Medlemskapet er bekreftet, men adressene må ikke likestilles automatisk.",
+        "Koblingen coop-mega-sirkus er planlagt i parallell dagligvareimport, og var ikke et eksisterende aktivt sted ved kontroll."
+      ]
+    }
+  ],
+  "researchNotes": [
+    "Alle fire sentrene og alle 24 utvalgte medlemskap er kontrollert. Adressene gjelder sentrene; butikkadresser/ruter håndteres separat.",
+    "Fem existingPlaceId er kontrollert mot aktiv data/demo/nyhavna-lokal/places.json. To plannedPlaceId er avtalt med parallell dagligvareagent og må først brukes når importert.",
+    "Kortfattet parafrase; ingen direkte sitater i fakta. Ingen totalantall butikker, parkeringstider, priser eller åpningstider gjengis. Nettsidene hadde normalt 200 ord kildebudsjett; de korte faktaene og medlemsnavnene holder seg under dette per side."
+  ]
+}

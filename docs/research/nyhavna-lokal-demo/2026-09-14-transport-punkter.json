@@ -1,0 +1,443 @@
+{
+  "places": [
+    {
+      "id": "lademoen-stasjon",
+      "name": "Lademoen stasjon",
+      "address": "Dyre Halses gate, Trondheim",
+      "categoryId": "transport",
+      "poiCategoryId": "train",
+      "placeType": "Togstasjon",
+      "icon": "TrainFront",
+      "aliases": [
+        "Lademoen togstasjon",
+        "Lademoen holdeplass",
+        "tog",
+        "togstasjon",
+        "Trønderbanen",
+        "R70"
+      ],
+      "coordinates": {
+        "lat": 63.437226,
+        "lng": 10.416702
+      },
+      "locationPrecision": "approximate",
+      "locationNote": "Stasjonspunkt fra Entur-importen i databasen. Bane NORs veibeskrivelsespunkt ligger omtrent 26 meter unna; kartpunktet er ikke en kontrollert plattforminngang.",
+      "status": "existing",
+      "summary": "Togstopp på Nordlandsbanen, med R70 og forbindelser mot Trondheim S og Steinkjer.",
+      "caveats": [
+        "Sjekk aktuell avgang og eventuelle avvik i Entur eller hos togselskapet."
+      ],
+      "checkedAt": "2026-09-14",
+      "provenance": {
+        "provider": "supabase",
+        "recordId": "entur-NSR-StopPlace-271",
+        "importedAt": "2026-09-14"
+      },
+      "facts": [
+        {
+          "id": "lademoen-stasjon-faktum-1",
+          "text": "Lademoen er en holdeplass på Nordlandsbanen, og Bane NOR oppgir R70 mellom Støren og Steinkjer.",
+          "sourceId": "transport-20260914-01",
+          "checkedAt": "2026-09-14",
+          "verification": "confirmed"
+        },
+        {
+          "id": "lademoen-stasjon-faktum-2",
+          "text": "Stasjonen ligger i Dyre Halses gate og har leskur.",
+          "sourceId": "transport-20260914-01",
+          "checkedAt": "2026-09-14",
+          "verification": "confirmed"
+        }
+      ],
+      "sourceIds": [
+        "transport-20260914-01",
+        "demo-route"
+      ],
+      "travelTime": {
+        "walk": 6,
+        "bike": 3
+      },
+      "enturStopplaceId": "NSR:StopPlace:271"
+    },
+    {
+      "id": "bysykkel-92",
+      "name": "Bysykkel Dora I",
+      "address": "Maskinistgata 1",
+      "categoryId": "transport",
+      "poiCategoryId": "bike",
+      "placeType": "Bysykkelstativ",
+      "icon": "Bike",
+      "aliases": [
+        "Dora I bysykkel",
+        "Trondheim Bysykkel: Dora I",
+        "bysykkel",
+        "bysykkelstativ",
+        "bysykler",
+        "leiesykkel"
+      ],
+      "coordinates": {
+        "lat": 63.43853720980968,
+        "lng": 10.419105291366577
+      },
+      "locationPrecision": "sourced",
+      "status": "existing",
+      "summary": "Bysykkelstativ i Maskinistgata 1 ved Byarkivet.",
+      "caveats": [
+        "Tilgangen på sykler og ledige stativer varierer; sjekk Bysykkel-appen før turen."
+      ],
+      "checkedAt": "2026-09-14",
+      "provenance": {
+        "provider": "supabase",
+        "recordId": "bysykkel-92",
+        "importedAt": "2026-09-14"
+      },
+      "facts": [
+        {
+          "id": "bysykkel-92-faktum-1",
+          "text": "Stativet ligger i Maskinistgata 1 ved Byarkivet.",
+          "sourceId": "transport-20260914-02",
+          "checkedAt": "2026-09-14",
+          "verification": "confirmed"
+        },
+        {
+          "id": "bysykkel-92-faktum-2",
+          "text": "Appen viser ledige sykler og stativer, og sykkelen kan leveres ved en annen bysykkelstasjon.",
+          "sourceId": "transport-20260914-03",
+          "checkedAt": "2026-09-14",
+          "verification": "confirmed"
+        }
+      ],
+      "sourceIds": [
+        "transport-20260914-02",
+        "transport-20260914-03",
+        "demo-route"
+      ],
+      "travelTime": {
+        "walk": 3,
+        "bike": 2
+      },
+      "bysykkelStationId": "92"
+    },
+    {
+      "id": "bysykkel-18",
+      "name": "Bysykkel Møllenberg",
+      "address": "Innherredsveien",
+      "categoryId": "transport",
+      "poiCategoryId": "bike",
+      "placeType": "Bysykkelstativ",
+      "icon": "Bike",
+      "aliases": [
+        "Møllenberg bysykkel",
+        "Trondheim Bysykkel: Møllenberg",
+        "bysykkel",
+        "bysykkelstativ",
+        "bysykler",
+        "leiesykkel"
+      ],
+      "coordinates": {
+        "lat": 63.43593538982745,
+        "lng": 10.419479162128454
+      },
+      "locationPrecision": "sourced",
+      "status": "existing",
+      "summary": "Bysykkelstativ langs Innherredsveien ved Kirkegata.",
+      "caveats": [
+        "Tilgangen på sykler og ledige stativer varierer; sjekk Bysykkel-appen før turen."
+      ],
+      "checkedAt": "2026-09-14",
+      "provenance": {
+        "provider": "supabase",
+        "recordId": "bysykkel-18",
+        "importedAt": "2026-09-14"
+      },
+      "facts": [
+        {
+          "id": "bysykkel-18-faktum-1",
+          "text": "Stativet ligger langs Innherredsveien ved Kirkegata.",
+          "sourceId": "transport-20260914-02",
+          "checkedAt": "2026-09-14",
+          "verification": "confirmed"
+        },
+        {
+          "id": "bysykkel-18-faktum-2",
+          "text": "Appen viser ledige sykler og stativer, og sykkelen kan leveres ved en annen bysykkelstasjon.",
+          "sourceId": "transport-20260914-03",
+          "checkedAt": "2026-09-14",
+          "verification": "confirmed"
+        }
+      ],
+      "sourceIds": [
+        "transport-20260914-02",
+        "transport-20260914-03",
+        "demo-route"
+      ],
+      "travelTime": {
+        "walk": 8,
+        "bike": 6
+      },
+      "bysykkelStationId": "18"
+    },
+    {
+      "id": "bysykkel-108",
+      "name": "Bysykkel Bassengbakken",
+      "address": "Dyre Halses 1",
+      "categoryId": "transport",
+      "poiCategoryId": "bike",
+      "placeType": "Bysykkelstativ",
+      "icon": "Bike",
+      "aliases": [
+        "Bassengbakken bysykkel",
+        "Trondheim Bysykkel: Bassengbakken",
+        "bysykkel",
+        "bysykkelstativ",
+        "bysykler",
+        "leiesykkel"
+      ],
+      "coordinates": {
+        "lat": 63.43592006472795,
+        "lng": 10.414788275957108
+      },
+      "locationPrecision": "sourced",
+      "status": "existing",
+      "summary": "Bysykkelstativ ved Rosenborgbassenget i Dyre Halses gate.",
+      "caveats": [
+        "Tilgangen på sykler og ledige stativer varierer; sjekk Bysykkel-appen før turen."
+      ],
+      "checkedAt": "2026-09-14",
+      "provenance": {
+        "provider": "supabase",
+        "recordId": "bysykkel-108",
+        "importedAt": "2026-09-14"
+      },
+      "facts": [
+        {
+          "id": "bysykkel-108-faktum-1",
+          "text": "Stativet ligger ved Rosenborgbassenget i Dyre Halses gate.",
+          "sourceId": "transport-20260914-02",
+          "checkedAt": "2026-09-14",
+          "verification": "confirmed"
+        },
+        {
+          "id": "bysykkel-108-faktum-2",
+          "text": "Appen viser ledige sykler og stativer, og sykkelen kan leveres ved en annen bysykkelstasjon.",
+          "sourceId": "transport-20260914-03",
+          "checkedAt": "2026-09-14",
+          "verification": "confirmed"
+        }
+      ],
+      "sourceIds": [
+        "transport-20260914-02",
+        "transport-20260914-03",
+        "demo-route"
+      ],
+      "travelTime": {
+        "walk": 8,
+        "bike": 5
+      },
+      "bysykkelStationId": "108"
+    },
+    {
+      "id": "bysykkel-7696",
+      "name": "Bysykkel Lademoparken",
+      "address": "Mellomveien",
+      "categoryId": "transport",
+      "poiCategoryId": "bike",
+      "placeType": "Bysykkelstativ",
+      "icon": "Bike",
+      "aliases": [
+        "Lademoparken bysykkel",
+        "Trondheim Bysykkel: Lademoparken",
+        "bysykkel",
+        "bysykkelstativ",
+        "bysykler",
+        "leiesykkel"
+      ],
+      "coordinates": {
+        "lat": 63.43670185062348,
+        "lng": 10.425908867370282
+      },
+      "locationPrecision": "sourced",
+      "status": "existing",
+      "summary": "Bysykkelstativ langs Mellomveien ved Lademoparken.",
+      "caveats": [
+        "Tilgangen på sykler og ledige stativer varierer; sjekk Bysykkel-appen før turen."
+      ],
+      "checkedAt": "2026-09-14",
+      "provenance": {
+        "provider": "supabase",
+        "recordId": "bysykkel-7696",
+        "importedAt": "2026-09-14"
+      },
+      "facts": [
+        {
+          "id": "bysykkel-7696-faktum-1",
+          "text": "Stativet ligger langs Mellomveien ved Lademoparken.",
+          "sourceId": "transport-20260914-02",
+          "checkedAt": "2026-09-14",
+          "verification": "confirmed"
+        },
+        {
+          "id": "bysykkel-7696-faktum-2",
+          "text": "Appen viser ledige sykler og stativer, og sykkelen kan leveres ved en annen bysykkelstasjon.",
+          "sourceId": "transport-20260914-03",
+          "checkedAt": "2026-09-14",
+          "verification": "confirmed"
+        }
+      ],
+      "sourceIds": [
+        "transport-20260914-02",
+        "transport-20260914-03",
+        "demo-route"
+      ],
+      "travelTime": {
+        "walk": 12,
+        "bike": 4
+      },
+      "bysykkelStationId": "7696"
+    },
+    {
+      "id": "bysykkel-85",
+      "name": "Bysykkel TMV-odden",
+      "address": "Beddingen 14",
+      "categoryId": "transport",
+      "poiCategoryId": "bike",
+      "placeType": "Bysykkelstativ",
+      "icon": "Bike",
+      "aliases": [
+        "TMV-odden bysykkel",
+        "Trondheim Bysykkel: TMV-odden",
+        "bysykkel",
+        "bysykkelstativ",
+        "bysykler",
+        "leiesykkel"
+      ],
+      "coordinates": {
+        "lat": 63.43547778770301,
+        "lng": 10.410569131581866
+      },
+      "locationPrecision": "sourced",
+      "status": "existing",
+      "summary": "Bysykkelstativ i Beddingen 14 ved snuplassen bak Una.",
+      "caveats": [
+        "Tilgangen på sykler og ledige stativer varierer; sjekk Bysykkel-appen før turen."
+      ],
+      "checkedAt": "2026-09-14",
+      "provenance": {
+        "provider": "supabase",
+        "recordId": "bysykkel-85",
+        "importedAt": "2026-09-14"
+      },
+      "facts": [
+        {
+          "id": "bysykkel-85-faktum-1",
+          "text": "Stativet ligger i Beddingen 14 ved snuplassen bak Una.",
+          "sourceId": "transport-20260914-02",
+          "checkedAt": "2026-09-14",
+          "verification": "confirmed"
+        },
+        {
+          "id": "bysykkel-85-faktum-2",
+          "text": "Appen viser ledige sykler og stativer, og sykkelen kan leveres ved en annen bysykkelstasjon.",
+          "sourceId": "transport-20260914-03",
+          "checkedAt": "2026-09-14",
+          "verification": "confirmed"
+        }
+      ],
+      "sourceIds": [
+        "transport-20260914-02",
+        "transport-20260914-03",
+        "demo-route"
+      ],
+      "travelTime": {
+        "walk": 11,
+        "bike": 6
+      },
+      "bysykkelStationId": "85"
+    },
+    {
+      "id": "bysykkel-65",
+      "name": "Bysykkel Strandveikaia",
+      "address": "Stiklestadveien 1",
+      "categoryId": "transport",
+      "poiCategoryId": "bike",
+      "placeType": "Bysykkelstativ",
+      "icon": "Bike",
+      "aliases": [
+        "Strandveikaia bysykkel",
+        "Trondheim Bysykkel: Strandveikaia",
+        "bysykkel",
+        "bysykkelstativ",
+        "bysykler",
+        "leiesykkel"
+      ],
+      "coordinates": {
+        "lat": 63.44208952370503,
+        "lng": 10.427939146757126
+      },
+      "locationPrecision": "sourced",
+      "status": "existing",
+      "summary": "Bysykkelstativ langs Stiklestadveien ved Strandveien.",
+      "caveats": [
+        "Tilgangen på sykler og ledige stativer varierer; sjekk Bysykkel-appen før turen."
+      ],
+      "checkedAt": "2026-09-14",
+      "provenance": {
+        "provider": "supabase",
+        "recordId": "bysykkel-65",
+        "importedAt": "2026-09-14"
+      },
+      "facts": [
+        {
+          "id": "bysykkel-65-faktum-1",
+          "text": "Stativet ligger langs Stiklestadveien ved Strandveien.",
+          "sourceId": "transport-20260914-02",
+          "checkedAt": "2026-09-14",
+          "verification": "confirmed"
+        },
+        {
+          "id": "bysykkel-65-faktum-2",
+          "text": "Appen viser ledige sykler og stativer, og sykkelen kan leveres ved en annen bysykkelstasjon.",
+          "sourceId": "transport-20260914-03",
+          "checkedAt": "2026-09-14",
+          "verification": "confirmed"
+        }
+      ],
+      "sourceIds": [
+        "transport-20260914-02",
+        "transport-20260914-03",
+        "demo-route"
+      ],
+      "travelTime": {
+        "walk": 11,
+        "bike": 4
+      },
+      "bysykkelStationId": "65"
+    }
+  ],
+  "sources": [
+    {
+      "url": "https://www.banenor.no/reise-og-trafikk/stasjoner/-l-/lademoen/",
+      "label": "Bane NOR",
+      "page": "Lademoen stasjon",
+      "publisher": "Bane NOR",
+      "id": "transport-20260914-01",
+      "checkedAt": "2026-09-14"
+    },
+    {
+      "url": "https://gbfs.urbansharing.com/trondheimbysykkel.no/station_information.json",
+      "label": "Trondheim Bysykkel",
+      "page": "Stasjonsinformasjon – offisiell GBFS-feed",
+      "publisher": "Trondheim Bysykkel",
+      "id": "transport-20260914-02",
+      "checkedAt": "2026-09-14"
+    },
+    {
+      "url": "https://trondheimbysykkel.no/slik-virker-det",
+      "label": "Trondheim Bysykkel",
+      "page": "Sånn funker det",
+      "publisher": "Trondheim Bysykkel",
+      "id": "transport-20260914-03",
+      "checkedAt": "2026-09-14"
+    }
+  ]
+}
