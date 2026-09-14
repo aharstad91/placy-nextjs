@@ -6,6 +6,16 @@
 
 ---
 
+## 2026-09-14 — 15 nye samtalepunkter i lokal Nyhavna-demo
+
+Andreas ba om flere punkter i flere kategorier, med tidligere research som utgangspunkt. 15 av 15 valgte kandidater kontrollert og lagt inn: fem Servering, fem Oppvekst, fire Opplevelser og BUA Lademoen i Hverdag. Totalt 48→63 steder, 44 nye kildekoblede fakta og 42 nye kilder. Tolv Kartverket-adressepunkter, to kommunale parksentre og ett tydelig merket omtrentlig badeplasspunkt fra snapshot. Tretti Mapbox-ruter lagret; gang/sykkeltider fra demoens faste utgangspunkt. BUA korrigert fra Lade til Lademoen og nåværende adresse. To fakta fikk korrigert underside etter uavhengig review. Manus, FAQ, topics og produktkode er ikke endret av denne runden.
+
+Aktivt `places.json` og `sources.json` utvidet additivt etter hashkontroll; alle tidligere rader bevart. Testforventningen i `presentation.test.ts` utvidet med Godt Brød etter Dora→Snurr, før utvalget er uttømt. Alle 73 lokale demotester passerte. Kart- og stemmeadapterne inneholder alle 15 med minst to fakta; HTTP 200 med alle nye IDs. Lint: 0 feil / 53 advarsler. TypeScript grønn. Full suite: 4312 passerte / 4 feilet; avgrenset ny kjøring fjernet en pipeline-timeout. Tre gjenværende tekniske testfeil utenfor innholdsdataene: `nyhavna-knowledge.test.ts:73` (stemmeinstruks 319 ord), `BoardVoiceControl.test.tsx:138` (Promise mot synkront resultat) og `:220` (manglende statusrolle). Loggført for parallelløkten, ikke endret her. Ny visuell/ekte talesamtale gjenstår.
+
+Leveranse og nøyaktig fjerneoppskrift: `/Users/andreasharstad/Documents/placy-nyhavna-innhold/docs/research/nyhavna-lokal-demo/2026-09-14-utvidelse-punkter.md`. Payload, research, adresse-/parkoppslag, rutesvar og smal testpatch følger samme mappe. Aktive data/testendring forblir ukommittert sammen med parallelløktens arbeid; leveransen lagres i innholdsarbeidskopien. Ingen push. Neste: last demoen på nytt og start ny samtale for lyttetest.
+
+---
+
 ## 2026-09-14 — Fire korte serveringsnotater på prøve
 
 Andreas godkjente en liten prøve i aktiv demo etter å ha redusert den større innholdspakken. Lagt til fire `servering-prove-*`-notater for Dora Kaffebar, Snurr, BistroBar og Ladejarlen, samt to `s-servering-prove-*`-kilder. Alle tidligere oppføringer bevart; kart, FAQ, manus og kode uendret av denne økten. 4 av 4 notater validert og funnet som første treff ved relevante stedssøk. 34 eksisterende datasett-/stemmekunnskapstester passerte, demosiden svarte HTTP 200. Neste: ny sidelasting og ny samtale for å vurdere innhold og tone med ørene.

@@ -1,0 +1,629 @@
+[
+  {
+    "query": "Strandveien 71",
+    "sourceUrl": "https://ws.geonorge.no/adresser/v1/sok?sok=Strandveien+71&kommunenummer=5001&utkoordsys=4258&treffPerSide=10",
+    "result": {
+      "metadata": {
+        "treffPerSide": 10,
+        "side": 0,
+        "totaltAntallTreff": 1,
+        "viserFra": 0,
+        "viserTil": 10,
+        "sokeStreng": "sok=Strandveien+71&kommunenummer=5001&utkoordsys=4258&treffPerSide=10",
+        "asciiKompatibel": true
+      },
+      "adresser": [
+        {
+          "adressenavn": "Strandveien",
+          "adressetekst": "Strandveien 71",
+          "adressetilleggsnavn": null,
+          "adressekode": 7140,
+          "nummer": 71,
+          "bokstav": "",
+          "kommunenummer": "5001",
+          "kommunenavn": "TRONDHEIM",
+          "gardsnummer": 415,
+          "bruksnummer": 102,
+          "festenummer": 0,
+          "undernummer": null,
+          "bruksenhetsnummer": [],
+          "objtype": "Vegadresse",
+          "poststed": "TRONDHEIM",
+          "postnummer": "7067",
+          "adressetekstutenadressetilleggsnavn": "Strandveien 71",
+          "stedfestingverifisert": false,
+          "representasjonspunkt": {
+            "epsg": "EPSG:4258",
+            "lat": 63.44087738940128,
+            "lon": 10.427008893459815
+          },
+          "oppdateringsdato": "2025-04-07T18:40:02"
+        }
+      ]
+    }
+  },
+  {
+    "query": "Strandveien 25A",
+    "sourceUrl": "https://ws.geonorge.no/adresser/v1/sok?sok=Strandveien+25A&kommunenummer=5001&utkoordsys=4258&treffPerSide=10",
+    "result": {
+      "metadata": {
+        "treffPerSide": 10,
+        "side": 0,
+        "totaltAntallTreff": 1,
+        "viserFra": 0,
+        "viserTil": 10,
+        "sokeStreng": "sok=Strandveien+25A&kommunenummer=5001&utkoordsys=4258&treffPerSide=10",
+        "asciiKompatibel": true
+      },
+      "adresser": [
+        {
+          "adressenavn": "Strandveien",
+          "adressetekst": "Strandveien 25A",
+          "adressetilleggsnavn": null,
+          "adressekode": 7140,
+          "nummer": 25,
+          "bokstav": "A",
+          "kommunenummer": "5001",
+          "kommunenavn": "TRONDHEIM",
+          "gardsnummer": 415,
+          "bruksnummer": 90,
+          "festenummer": 0,
+          "undernummer": null,
+          "bruksenhetsnummer": [
+            "H0101",
+            "H0102",
+            "H0103",
+            "H0201",
+            "H0202",
+            "H0203",
+            "H0301",
+            "H0302",
+            "H0303"
+          ],
+          "objtype": "Vegadresse",
+          "poststed": "TRONDHEIM",
+          "postnummer": "7067",
+          "adressetekstutenadressetilleggsnavn": "Strandveien 25A",
+          "stedfestingverifisert": false,
+          "representasjonspunkt": {
+            "epsg": "EPSG:4258",
+            "lat": 63.43802337857259,
+            "lon": 10.421551819906638
+          },
+          "oppdateringsdato": "2025-08-22T08:56:00"
+        }
+      ]
+    }
+  },
+  {
+    "query": "Beddingen 14",
+    "sourceUrl": "https://ws.geonorge.no/adresser/v1/sok?sok=Beddingen+14&kommunenummer=5001&utkoordsys=4258&treffPerSide=10",
+    "result": {
+      "metadata": {
+        "treffPerSide": 10,
+        "side": 0,
+        "totaltAntallTreff": 1,
+        "viserFra": 0,
+        "viserTil": 10,
+        "sokeStreng": "sok=Beddingen+14&kommunenummer=5001&utkoordsys=4258&treffPerSide=10",
+        "asciiKompatibel": true
+      },
+      "adresser": [
+        {
+          "adressenavn": "Beddingen",
+          "adressetekst": "Beddingen 14",
+          "adressetilleggsnavn": null,
+          "adressekode": 1097,
+          "nummer": 14,
+          "bokstav": "",
+          "kommunenummer": "5001",
+          "kommunenavn": "TRONDHEIM",
+          "gardsnummer": 410,
+          "bruksnummer": 632,
+          "festenummer": 0,
+          "undernummer": null,
+          "bruksenhetsnummer": [],
+          "objtype": "Vegadresse",
+          "poststed": "TRONDHEIM",
+          "postnummer": "7042",
+          "adressetekstutenadressetilleggsnavn": "Beddingen 14",
+          "stedfestingverifisert": false,
+          "representasjonspunkt": {
+            "epsg": "EPSG:4258",
+            "lat": 63.43525224659627,
+            "lon": 10.410412377188472
+          },
+          "oppdateringsdato": "2023-03-01T19:59:43"
+        }
+      ]
+    }
+  },
+  {
+    "query": "Beddingen 10",
+    "sourceUrl": "https://ws.geonorge.no/adresser/v1/sok?sok=Beddingen+10&kommunenummer=5001&utkoordsys=4258&treffPerSide=10",
+    "result": {
+      "metadata": {
+        "treffPerSide": 10,
+        "side": 0,
+        "totaltAntallTreff": 1,
+        "viserFra": 0,
+        "viserTil": 10,
+        "sokeStreng": "sok=Beddingen+10&kommunenummer=5001&utkoordsys=4258&treffPerSide=10",
+        "asciiKompatibel": true
+      },
+      "adresser": [
+        {
+          "adressenavn": "Beddingen",
+          "adressetekst": "Beddingen 10",
+          "adressetilleggsnavn": null,
+          "adressekode": 1097,
+          "nummer": 10,
+          "bokstav": "",
+          "kommunenummer": "5001",
+          "kommunenavn": "TRONDHEIM",
+          "gardsnummer": 410,
+          "bruksnummer": 658,
+          "festenummer": 0,
+          "undernummer": null,
+          "bruksenhetsnummer": [
+            "H0601",
+            "H0602",
+            "H0603",
+            "H0604",
+            "H0605"
+          ],
+          "objtype": "Vegadresse",
+          "poststed": "TRONDHEIM",
+          "postnummer": "7042",
+          "adressetekstutenadressetilleggsnavn": "Beddingen 10",
+          "stedfestingverifisert": false,
+          "representasjonspunkt": {
+            "epsg": "EPSG:4258",
+            "lat": 63.43523563981423,
+            "lon": 10.412095335856362
+          },
+          "oppdateringsdato": "2023-03-01T19:59:43"
+        }
+      ]
+    }
+  },
+  {
+    "query": "Bassengbakken 2",
+    "sourceUrl": "https://ws.geonorge.no/adresser/v1/sok?sok=Bassengbakken+2&kommunenummer=5001&utkoordsys=4258&treffPerSide=10",
+    "result": {
+      "metadata": {
+        "treffPerSide": 10,
+        "side": 0,
+        "totaltAntallTreff": 3,
+        "viserFra": 0,
+        "viserTil": 10,
+        "sokeStreng": "sok=Bassengbakken+2&kommunenummer=5001&utkoordsys=4258&treffPerSide=10",
+        "asciiKompatibel": true
+      },
+      "adresser": [
+        {
+          "adressenavn": "Bassengbakken",
+          "adressetekst": "Bassengbakken 2",
+          "adressetilleggsnavn": null,
+          "adressekode": 1093,
+          "nummer": 2,
+          "bokstav": "",
+          "kommunenummer": "5001",
+          "kommunenavn": "TRONDHEIM",
+          "gardsnummer": 410,
+          "bruksnummer": 589,
+          "festenummer": 0,
+          "undernummer": null,
+          "bruksenhetsnummer": [],
+          "objtype": "Vegadresse",
+          "poststed": "TRONDHEIM",
+          "postnummer": "7042",
+          "adressetekstutenadressetilleggsnavn": "Bassengbakken 2",
+          "stedfestingverifisert": false,
+          "representasjonspunkt": {
+            "epsg": "EPSG:4258",
+            "lat": 63.43565021871486,
+            "lon": 10.416465567510546
+          },
+          "oppdateringsdato": "2023-03-01T19:59:43"
+        },
+        {
+          "adressenavn": "Bassengbakken",
+          "adressetekst": "Bassengbakken 1",
+          "adressetilleggsnavn": null,
+          "adressekode": 1093,
+          "nummer": 1,
+          "bokstav": "",
+          "kommunenummer": "5001",
+          "kommunenavn": "TRONDHEIM",
+          "gardsnummer": 410,
+          "bruksnummer": 664,
+          "festenummer": 0,
+          "undernummer": null,
+          "bruksenhetsnummer": [],
+          "objtype": "Vegadresse",
+          "poststed": "TRONDHEIM",
+          "postnummer": "7042",
+          "adressetekstutenadressetilleggsnavn": "Bassengbakken 1",
+          "stedfestingverifisert": false,
+          "representasjonspunkt": {
+            "epsg": "EPSG:4258",
+            "lat": 63.43603636546815,
+            "lon": 10.415542499348168
+          },
+          "oppdateringsdato": "2023-03-01T19:59:43"
+        },
+        {
+          "adressenavn": "Bassengbakken",
+          "adressetekst": "Bassengbakken 4",
+          "adressetilleggsnavn": null,
+          "adressekode": 1093,
+          "nummer": 4,
+          "bokstav": "",
+          "kommunenummer": "5001",
+          "kommunenavn": "TRONDHEIM",
+          "gardsnummer": 410,
+          "bruksnummer": 589,
+          "festenummer": 0,
+          "undernummer": null,
+          "bruksenhetsnummer": [],
+          "objtype": "Vegadresse",
+          "poststed": "TRONDHEIM",
+          "postnummer": "7042",
+          "adressetekstutenadressetilleggsnavn": "Bassengbakken 4",
+          "stedfestingverifisert": false,
+          "representasjonspunkt": {
+            "epsg": "EPSG:4258",
+            "lat": 63.43577272329544,
+            "lon": 10.416368183930164
+          },
+          "oppdateringsdato": "2023-03-01T19:59:43"
+        }
+      ]
+    }
+  },
+  {
+    "query": "Strandveien 104",
+    "sourceUrl": "https://ws.geonorge.no/adresser/v1/sok?sok=Strandveien+104&kommunenummer=5001&utkoordsys=4258&treffPerSide=10",
+    "result": {
+      "metadata": {
+        "treffPerSide": 10,
+        "side": 0,
+        "totaltAntallTreff": 1,
+        "viserFra": 0,
+        "viserTil": 10,
+        "sokeStreng": "sok=Strandveien+104&kommunenummer=5001&utkoordsys=4258&treffPerSide=10",
+        "asciiKompatibel": true
+      },
+      "adresser": [
+        {
+          "adressenavn": "Strandveien",
+          "adressetekst": "Strandveien 104",
+          "adressetilleggsnavn": null,
+          "adressekode": 7140,
+          "nummer": 104,
+          "bokstav": "",
+          "kommunenummer": "5001",
+          "kommunenavn": "TRONDHEIM",
+          "gardsnummer": 439,
+          "bruksnummer": 233,
+          "festenummer": 0,
+          "undernummer": null,
+          "bruksenhetsnummer": [],
+          "objtype": "Vegadresse",
+          "poststed": "TRONDHEIM",
+          "postnummer": "7067",
+          "adressetekstutenadressetilleggsnavn": "Strandveien 104",
+          "stedfestingverifisert": false,
+          "representasjonspunkt": {
+            "epsg": "EPSG:4258",
+            "lat": 63.441461519275904,
+            "lon": 10.42501538435317
+          },
+          "oppdateringsdato": "2025-11-05T12:24:08"
+        }
+      ]
+    }
+  },
+  {
+    "query": "Innherredsveien 73",
+    "sourceUrl": "https://ws.geonorge.no/adresser/v1/sok?sok=Innherredsveien+73&kommunenummer=5001&utkoordsys=4258&treffPerSide=10",
+    "result": {
+      "metadata": {
+        "treffPerSide": 10,
+        "side": 0,
+        "totaltAntallTreff": 1,
+        "viserFra": 0,
+        "viserTil": 10,
+        "sokeStreng": "sok=Innherredsveien+73&kommunenummer=5001&utkoordsys=4258&treffPerSide=10",
+        "asciiKompatibel": true
+      },
+      "adresser": [
+        {
+          "adressenavn": "Innherredsveien",
+          "adressetekst": "Innherredsveien 73",
+          "adressetilleggsnavn": null,
+          "adressekode": 3260,
+          "nummer": 73,
+          "bokstav": "",
+          "kommunenummer": "5001",
+          "kommunenavn": "TRONDHEIM",
+          "gardsnummer": 9,
+          "bruksnummer": 208,
+          "festenummer": 0,
+          "undernummer": null,
+          "bruksenhetsnummer": [],
+          "objtype": "Vegadresse",
+          "poststed": "TRONDHEIM",
+          "postnummer": "7068",
+          "adressetekstutenadressetilleggsnavn": "Innherredsveien 73",
+          "stedfestingverifisert": false,
+          "representasjonspunkt": {
+            "epsg": "EPSG:4258",
+            "lat": 63.43668599265991,
+            "lon": 10.432509045023487
+          },
+          "oppdateringsdato": "2025-06-10T13:26:37"
+        }
+      ]
+    }
+  },
+  {
+    "query": "Kobbes gate 10",
+    "sourceUrl": "https://ws.geonorge.no/adresser/v1/sok?sok=Kobbes+gate+10&kommunenummer=5001&utkoordsys=4258&treffPerSide=10",
+    "result": {
+      "metadata": {
+        "treffPerSide": 10,
+        "side": 0,
+        "totaltAntallTreff": 1,
+        "viserFra": 0,
+        "viserTil": 10,
+        "sokeStreng": "sok=Kobbes+gate+10&kommunenummer=5001&utkoordsys=4258&treffPerSide=10",
+        "asciiKompatibel": true
+      },
+      "adresser": [
+        {
+          "adressenavn": "Kobbes gate",
+          "adressetekst": "Kobbes gate 10",
+          "adressetilleggsnavn": null,
+          "adressekode": 3830,
+          "nummer": 10,
+          "bokstav": "",
+          "kommunenummer": "5001",
+          "kommunenavn": "TRONDHEIM",
+          "gardsnummer": 439,
+          "bruksnummer": 28,
+          "festenummer": 0,
+          "undernummer": null,
+          "bruksenhetsnummer": [
+            "H0301",
+            "H0302"
+          ],
+          "objtype": "Vegadresse",
+          "poststed": "TRONDHEIM",
+          "postnummer": "7042",
+          "adressetekstutenadressetilleggsnavn": "Kobbes gate 10",
+          "stedfestingverifisert": false,
+          "representasjonspunkt": {
+            "epsg": "EPSG:4258",
+            "lat": 63.44057097990753,
+            "lon": 10.420818632252876
+          },
+          "oppdateringsdato": "2025-04-07T18:40:02"
+        }
+      ]
+    }
+  },
+  {
+    "query": "Østersunds gate 3",
+    "sourceUrl": "https://ws.geonorge.no/adresser/v1/sok?sok=%C3%98stersunds+gate+3&kommunenummer=5001&utkoordsys=4258&treffPerSide=10",
+    "result": {
+      "metadata": {
+        "treffPerSide": 10,
+        "side": 0,
+        "totaltAntallTreff": 1,
+        "viserFra": 0,
+        "viserTil": 10,
+        "sokeStreng": "sok=%C3%98stersunds+gate+3&kommunenummer=5001&utkoordsys=4258&treffPerSide=10",
+        "asciiKompatibel": true
+      },
+      "adresser": [
+        {
+          "adressenavn": "Østersunds gate",
+          "adressetekst": "Østersunds gate 3",
+          "adressetilleggsnavn": null,
+          "adressekode": 8350,
+          "nummer": 3,
+          "bokstav": "",
+          "kommunenummer": "5001",
+          "kommunenavn": "TRONDHEIM",
+          "gardsnummer": 410,
+          "bruksnummer": 535,
+          "festenummer": 0,
+          "undernummer": null,
+          "bruksenhetsnummer": [],
+          "objtype": "Vegadresse",
+          "poststed": "TRONDHEIM",
+          "postnummer": "7067",
+          "adressetekstutenadressetilleggsnavn": "Østersunds gate 3",
+          "stedfestingverifisert": false,
+          "representasjonspunkt": {
+            "epsg": "EPSG:4258",
+            "lat": 63.436869354029895,
+            "lon": 10.42115643733528
+          },
+          "oppdateringsdato": "2025-04-07T18:40:02"
+        }
+      ]
+    }
+  },
+  {
+    "query": "Strandveien 33",
+    "sourceUrl": "https://ws.geonorge.no/adresser/v1/sok?sok=Strandveien+33&kommunenummer=5001&utkoordsys=4258&treffPerSide=10",
+    "result": {
+      "metadata": {
+        "treffPerSide": 10,
+        "side": 0,
+        "totaltAntallTreff": 1,
+        "viserFra": 0,
+        "viserTil": 10,
+        "sokeStreng": "sok=Strandveien+33&kommunenummer=5001&utkoordsys=4258&treffPerSide=10",
+        "asciiKompatibel": true
+      },
+      "adresser": [
+        {
+          "adressenavn": "Strandveien",
+          "adressetekst": "Strandveien 33",
+          "adressetilleggsnavn": null,
+          "adressekode": 7140,
+          "nummer": 33,
+          "bokstav": "",
+          "kommunenummer": "5001",
+          "kommunenavn": "TRONDHEIM",
+          "gardsnummer": 415,
+          "bruksnummer": 95,
+          "festenummer": 0,
+          "undernummer": null,
+          "bruksenhetsnummer": [],
+          "objtype": "Vegadresse",
+          "poststed": "TRONDHEIM",
+          "postnummer": "7067",
+          "adressetekstutenadressetilleggsnavn": "Strandveien 33",
+          "stedfestingverifisert": false,
+          "representasjonspunkt": {
+            "epsg": "EPSG:4258",
+            "lat": 63.43862109341741,
+            "lon": 10.422826993232965
+          },
+          "oppdateringsdato": "2025-04-07T18:40:02"
+        }
+      ]
+    }
+  },
+  {
+    "query": "Håkon Magnussons gate 5",
+    "sourceUrl": "https://ws.geonorge.no/adresser/v1/sok?sok=H%C3%A5kon+Magnussons+gate+5&kommunenummer=5001&utkoordsys=4258&treffPerSide=10",
+    "result": {
+      "metadata": {
+        "treffPerSide": 10,
+        "side": 0,
+        "totaltAntallTreff": 1,
+        "viserFra": 0,
+        "viserTil": 10,
+        "sokeStreng": "sok=H%C3%A5kon+Magnussons+gate+5&kommunenummer=5001&utkoordsys=4258&treffPerSide=10",
+        "asciiKompatibel": true
+      },
+      "adresser": [
+        {
+          "adressenavn": "Håkon Magnussons gate",
+          "adressetekst": "Håkon Magnussons gate 5",
+          "adressetilleggsnavn": null,
+          "adressekode": 3125,
+          "nummer": 5,
+          "bokstav": "",
+          "kommunenummer": "5001",
+          "kommunenavn": "TRONDHEIM",
+          "gardsnummer": 414,
+          "bruksnummer": 399,
+          "festenummer": 0,
+          "undernummer": null,
+          "bruksenhetsnummer": [],
+          "objtype": "Vegadresse",
+          "poststed": "TRONDHEIM",
+          "postnummer": "7041",
+          "adressetekstutenadressetilleggsnavn": "Håkon Magnussons gate 5",
+          "stedfestingverifisert": false,
+          "representasjonspunkt": {
+            "epsg": "EPSG:4258",
+            "lat": 63.443679017389776,
+            "lon": 10.442126415185394
+          },
+          "oppdateringsdato": "2020-06-15T18:01:37"
+        }
+      ]
+    }
+  },
+  {
+    "query": "Innherredsveien 91",
+    "sourceUrl": "https://ws.geonorge.no/adresser/v1/sok?sok=Innherredsveien+91&kommunenummer=5001&utkoordsys=4258&treffPerSide=10",
+    "result": {
+      "metadata": {
+        "treffPerSide": 10,
+        "side": 0,
+        "totaltAntallTreff": 2,
+        "viserFra": 0,
+        "viserTil": 10,
+        "sokeStreng": "sok=Innherredsveien+91&kommunenummer=5001&utkoordsys=4258&treffPerSide=10",
+        "asciiKompatibel": true
+      },
+      "adresser": [
+        {
+          "adressenavn": "Innherredsveien",
+          "adressetekst": "Innherredsveien 91",
+          "adressetilleggsnavn": null,
+          "adressekode": 3260,
+          "nummer": 91,
+          "bokstav": "",
+          "kommunenummer": "5001",
+          "kommunenavn": "TRONDHEIM",
+          "gardsnummer": 9,
+          "bruksnummer": 162,
+          "festenummer": 0,
+          "undernummer": null,
+          "bruksenhetsnummer": [
+            "H0101",
+            "H0102",
+            "H0201",
+            "H0202",
+            "H0301"
+          ],
+          "objtype": "Vegadresse",
+          "poststed": "TRONDHEIM",
+          "postnummer": "7068",
+          "adressetekstutenadressetilleggsnavn": "Innherredsveien 91",
+          "stedfestingverifisert": false,
+          "representasjonspunkt": {
+            "epsg": "EPSG:4258",
+            "lat": 63.43696180715256,
+            "lon": 10.437057690417996
+          },
+          "oppdateringsdato": "2025-04-07T18:40:02"
+        },
+        {
+          "adressenavn": "Innherredsveien",
+          "adressetekst": "Innherredsveien 65B",
+          "adressetilleggsnavn": null,
+          "adressekode": 3260,
+          "nummer": 65,
+          "bokstav": "B",
+          "kommunenummer": "5001",
+          "kommunenavn": "TRONDHEIM",
+          "gardsnummer": 411,
+          "bruksnummer": 91,
+          "festenummer": 0,
+          "undernummer": null,
+          "bruksenhetsnummer": [
+            "H0101",
+            "H0102",
+            "H0201",
+            "H0202",
+            "H0301",
+            "H0401",
+            "H0402"
+          ],
+          "objtype": "Vegadresse",
+          "poststed": "TRONDHEIM",
+          "postnummer": "7068",
+          "adressetekstutenadressetilleggsnavn": "Innherredsveien 65B",
+          "stedfestingverifisert": false,
+          "representasjonspunkt": {
+            "epsg": "EPSG:4258",
+            "lat": 63.43626058415798,
+            "lon": 10.428202413201888
+          },
+          "oppdateringsdato": "2025-04-07T18:40:02"
+        }
+      ]
+    }
+  }
+]
