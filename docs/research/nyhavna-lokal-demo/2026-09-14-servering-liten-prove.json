@@ -1,0 +1,70 @@
+{
+  "topics": [
+    {
+      "id": "servering-prove-dora",
+      "title": "Dora Kaffebar: kaffe, bakst og hvem som kan komme innom",
+      "categoryIds": ["mat-drikke"],
+      "status": "existing",
+      "text": "Dora Kaffebar ligger i første etasje i Kobbes gate 2 og er åpen også for besøkende som ikke jobber i bygget. Nyhavna omtaler brød, søtbakst og håndverkskaffe. Kaffebaren følger byggets åpningstider.",
+      "keywords": ["Dora Kaffebar", "Dora", "kaffe", "bakst", "brød", "ansatte", "besøkende", "åpent for alle"],
+      "sourceIds": ["s-dora", "s-servering-prove-nyhavna"],
+      "relatedPlaceIds": ["dora-kaffebar"],
+      "checkedAt": "2026-09-14",
+      "caveats": ["Eksakte åpningstider er ikke lagt inn. Byggets personalrestaurant og takterrasser er ikke dokumentert som tilbud for kafégjester."]
+    },
+    {
+      "id": "servering-prove-snurr",
+      "title": "Snurr Nyhavna: frokost, lunsj og et vegansk alternativ",
+      "categoryIds": ["mat-drikke"],
+      "status": "existing",
+      "text": "Snurr i Ladebekken har frokostretter, påsmurt mat og varme lunsjretter. Menyen viser blant annet croissant med bær, sandwicher og pasta. Tomat og avokado på surdeigsbrød er merket vegansk. Avdelingen har også klikk og hent.",
+      "keywords": ["Snurr", "frokost", "lunsj", "mat", "meny", "vegansk", "veganer", "vegetar", "hente"],
+      "sourceIds": ["s-snurr"],
+      "relatedPlaceIds": ["snurr-nyhavna"],
+      "checkedAt": "2026-09-14",
+      "caveats": ["Menyeksempler kontrollert 14. september 2026; utvalget kan endres. Vegansk menymerking er ikke en garanti om allergenfri tilberedning."]
+    },
+    {
+      "id": "servering-prove-bistro",
+      "title": "Nyhavna BistroBar: middag med venner, småretter og lokale leverandører",
+      "categoryIds": ["mat-drikke"],
+      "status": "existing",
+      "text": "Nyhavna BistroBar har småretter som egner seg til forrett eller deling rundt bordet, blant annet tartar og stracciatella. Menyen har også hovedretter som fish and chips. Brødet er oppgitt å komme fra Snurr Håndverksbakeri, og stracciatellaen fra Toddum gård.",
+      "keywords": ["Nyhavna BistroBar", "BistroBar", "bistro", "middag", "venner", "mat", "meny", "småretter", "dele", "deling", "lokale", "leverandører", "brød", "Snurr"],
+      "sourceIds": ["s-servering-prove-bistro-meny"],
+      "relatedPlaceIds": ["nyhavna-bistro", "snurr-nyhavna"],
+      "checkedAt": "2026-09-14",
+      "caveats": ["Menyeksempler kontrollert 14. september 2026; utvalget kan endres. De navngitte leverandørene betyr ikke at alle råvarer er lokale."]
+    },
+    {
+      "id": "servering-prove-ladejarlen",
+      "title": "Ladejarlen: pizza, middag med barn og takeaway",
+      "categoryIds": ["mat-drikke"],
+      "status": "existing",
+      "text": "Ladejarlen har pizza og middagsretter, og menyen har barnepizza med valgfri topping for barn under tolv år. Du kan også bestille takeaway for henting. Dette gir et konkret alternativ både når dere vil spise ute og når dere vil hente med mat hjem.",
+      "keywords": ["Ladejarlen", "pizza", "middag", "barn", "barnepizza", "familie", "takeaway", "henting", "hente", "mat", "meny"],
+      "sourceIds": ["s-ladejarlen"],
+      "relatedPlaceIds": ["ladejarlen"],
+      "checkedAt": "2026-09-14",
+      "caveats": ["Aldersvilkåret er under tolv år. Levering til en bestemt adresse, aktuelle kjøkkentider og priser er ikke kontrollert i denne prøven."]
+    }
+  ],
+  "sources": [
+    {
+      "id": "s-servering-prove-nyhavna",
+      "label": "Nyhavna Utvikling",
+      "page": "Café og restauranter – Dora Kaffebar",
+      "url": "https://nyhavna.no/leve/cafe-og-restauranter/",
+      "publisher": "Nyhavna Utvikling",
+      "checkedAt": "2026-09-14"
+    },
+    {
+      "id": "s-servering-prove-bistro-meny",
+      "label": "Nyhavna BistroBar",
+      "page": "Meny – småretter og leverandører",
+      "url": "https://www.nyhavnabistrobar.no/our-menu",
+      "publisher": "Nyhavna BistroBar",
+      "checkedAt": "2026-09-14"
+    }
+  ]
+}

@@ -6,6 +6,14 @@
 
 ---
 
+## 2026-09-14 — Fire korte serveringsnotater på prøve
+
+Andreas godkjente en liten prøve i aktiv demo etter å ha redusert den større innholdspakken. Lagt til fire `servering-prove-*`-notater for Dora Kaffebar, Snurr, BistroBar og Ladejarlen, samt to `s-servering-prove-*`-kilder. Alle tidligere oppføringer bevart; kart, FAQ, manus og kode uendret av denne økten. 4 av 4 notater validert og funnet som første treff ved relevante stedssøk. 34 eksisterende datasett-/stemmekunnskapstester passerte, demosiden svarte HTTP 200. Neste: ny sidelasting og ny samtale for å vurdere innhold og tone med ørene.
+
+Prøvedata og presis fjerneoppskrift er lagret i innholdsarbeidskopien: `/Users/andreasharstad/Documents/placy-nyhavna-innhold/docs/research/nyhavna-lokal-demo/2026-09-14-servering-liten-prove.md`. Fjern bare prøvens fire notat-ID-er og eventuelt de to ubrukte kilde-ID-ene, aldri gjenopprett hele filer over annet arbeid. Aktive datafiler forblir ukommittert sammen med parallelløkten; innholdsleveransen lagres separat. Ingen push.
+
+---
+
 ## 2026-09-14 — Servering: innholdspakke til Lene-demoen
 
 På Andreas sin bestilling er Servering utarbeidet som første kategori med mer samtaledybde til møtet om Nyhavna 16. september. Egen arbeidskopi `placy-nyhavna-innhold`, gren `docs/nyhavna-servering-demo`, holder arbeidet adskilt fra pågående tekniske endringer i hovedarbeidskopien. Leveransen er et redaksjonelt forslag; aktiv demo er ikke endret.
