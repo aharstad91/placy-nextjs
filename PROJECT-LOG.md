@@ -6,6 +6,191 @@
 
 ---
 
+## 2026-09-14 — Kjøpesentre, flere dagligvarer og transport/aktiviteter i Nyhavna-demo
+
+39 nye steder, 72 nye fakta og 34 nye kilder lagt til; 7 tidligere steder oppdatert. Fire sentre med 24 kildebekreftede medlemmer, seks nye dagligvarer (ni totalt), Lademoen/Lilleby tog, seks DB-bysykkelstativ, Flex Gym, Buld.no, Trikkestallen og Ladesletta. Leo’s/Pirbadet bekreftet eksisterende uten dubletter. Alle 39 nye steder, 7 oppdateringer, 24 medlemskap og 18 eksplisitte referansesteder gjennomgått. 118 stedsrader/178 kilder; 94 unike kartdestinasjoner, 75 fra start/19reserve. UI viser 79 temarader fordi fire sentre inngår i to temaer. Skillet må beholdes i videre omtale.
+
+Gjenbruker boardets sentermarkør/register. Butikkfakta beholdes, men kart-ID peker til senter; valgt Servering beholdes. Tre kode-review-funn rettet og verifisert. Stasjons-ID-er beholdes i transportadapter. Flex/Buld føyd til kort treningsmanus så de vises fra start. Ladesletta er omtrentlig orientering, ikke bekreftet festivalinngang; NEON/Rocks 2026 og nærliggende sandvolleyball belagt, ingen lovnad om senere års program. 40 gang-/sykkelruter lagret. 4/4 sentervisninger og alle nye transportpunkter verifisert i Chrome. Ny ekte talesamtale gjenstår.
+
+Lint 0 feil/53 advarsler; TypeScript grønn. 91 målrettede tester dekket grønne etter én oppdatert reserveforventning. Full suite 4310/4324 passerte; ti tidsavbrudd avklart grønne i mindre kjøringer (siste taxi-import med utvidet tidsgrense), én reserveforventning rettet, tre tidligere kjente feil gjenstår: nyhavna-knowledge ordgrense og to BoardVoiceControl-forventninger. Hele suiten er ikke grønn. Ingen nye uavklarte feil fra denne leveransen.
+
+Leveranse, smal kodepatch, data, kilder, ruter, før/etter og review: `/Users/andreasharstad/Documents/placy-nyhavna-innhold/docs/research/nyhavna-lokal-demo/2026-09-14-handel-transport-aktivitet.md`. Aktive kode-/dataendringer beholdes ukommittert med parallelløkten; egne leveranseartefakter committes lokalt. Ingen push. Port3103 var stoppet og ble startet igjen som Next dev. Neste: last siden på nytt og gjennomfør lyttetest før demoen.
+
+---
+
+## 2026-09-14 — Behold Live-oppsettet; mål svartid før optimalisering
+
+Andreas ønsket avklart hvilken motor Anja bruker og om svartiden kan forbedres. Kjørende demos helseendepunkt bekreftet GPT-Live-1, Willow og GPT-5.6 Terra som backend. Backendens konfigurerte standard er reasoning effort `low`; dette er ikke GPT-5.6 Sol. Taletempoet på 80–90 ord/minutt gjelder fremføringen og må skilles fra ventetiden før et svar. Ved påfyll venter kartflyten bevisst cirka 1,5 sekund før nye punkter vises og kartverktøyet kvitterer.
+
+Beslutning: behold modelloppsettet som et fornuftig utgangspunkt. Ingen modell-, tempo- eller konfigurasjonsendringer i denne avklaringen. Vi har ikke målt nok til å kalle svartiden optimal eller utelukke modellen som bidrag til ventetid. Ved neste ytelsesrunde: mål fra avsluttet brukerytring til første substansielle svar, og skill backend-/verktøyrunder fra kartventing med eksisterende tidslogging. Målet er kortere venting med bevart rolig tale og kartkoordinering. Ingen ny ytelsestest gjennomført; måling er en åpen tråd, ikke en ferdig optimalisering.
+
+---
+
+## 2026-09-14 — 60 steder synlige fra start, 79 totalt
+
+Andreas så fortsatt 44 steder. Forklart og bekreftet årsaken: forrige 63-tall inkluderte 19 trenings-/natursteder i reserve. Denne runden utvider med 16 nye steder i Servering (8), Hverdag (3), Opplevelser (3) og Oppvekst (2), uten å endre reservefunksjonen. Startvisningen er nå 60, totalen 79. 17 kandidater vurdert, 16 lagt inn med 32 fakta; Pizzabakeren Lade erstattet av SOT på grunn av utilgjengelig egenkildestøttet besøksadresse. Kryssreview av alle steder/fakta uten gjenstående funn. 39 nye kilder og 32 beregnede Mapbox-ruter; alle adressepunkter fra Kartverket, merket som adresse og ikke kontrollert inngang.
+
+JSON integrert additivt etter hashkontroll, tidligere rader bevart. Bare en smal testforventning endret: Cafe Løkka og Dromedar kommer etter Godt Brød ved flere kaféalternativer. Ingen produktkode/manus/FAQ/topics/radius endret. Alle 73 lokale demotester passerte. Lint 0 feil / 53 advarsler og TypeScript grønn. Full suite 4313 passerte / 3 feilet, samme allerede kjente feil: stemmeinstruksens ordgrense og to BoardVoiceControl-forventninger. Ingen nye feil. Chrome åpnet i ny fane: faktisk UI bekreftet «60 steder · 8 temaer». Ny ekte samtale er ikke kjørt.
+
+Leveranse, råoppslag, additive data og fjerningsoppskrift: `/Users/andreasharstad/Documents/placy-nyhavna-innhold/docs/research/nyhavna-lokal-demo/2026-09-14-utvidelse2-punkter.md`. Aktive data/testfil beholdes ukommittert sammen med parallelløkten; innholdsleveranse committes separat, ingen push. Gamle faner må lastes på nytt. Skill alltid startvisning og totalbase i videre rapportering.
+
+---
+
+## 2026-09-14 — 15 nye samtalepunkter i lokal Nyhavna-demo
+
+Andreas ba om flere punkter i flere kategorier, med tidligere research som utgangspunkt. 15 av 15 valgte kandidater kontrollert og lagt inn: fem Servering, fem Oppvekst, fire Opplevelser og BUA Lademoen i Hverdag. Totalt 48→63 steder, 44 nye kildekoblede fakta og 42 nye kilder. Tolv Kartverket-adressepunkter, to kommunale parksentre og ett tydelig merket omtrentlig badeplasspunkt fra snapshot. Tretti Mapbox-ruter lagret; gang/sykkeltider fra demoens faste utgangspunkt. BUA korrigert fra Lade til Lademoen og nåværende adresse. To fakta fikk korrigert underside etter uavhengig review. Manus, FAQ, topics og produktkode er ikke endret av denne runden.
+
+Aktivt `places.json` og `sources.json` utvidet additivt etter hashkontroll; alle tidligere rader bevart. Testforventningen i `presentation.test.ts` utvidet med Godt Brød etter Dora→Snurr, før utvalget er uttømt. Alle 73 lokale demotester passerte. Kart- og stemmeadapterne inneholder alle 15 med minst to fakta; HTTP 200 med alle nye IDs. Lint: 0 feil / 53 advarsler. TypeScript grønn. Full suite: 4312 passerte / 4 feilet; avgrenset ny kjøring fjernet en pipeline-timeout. Tre gjenværende tekniske testfeil utenfor innholdsdataene: `nyhavna-knowledge.test.ts:73` (stemmeinstruks 319 ord), `BoardVoiceControl.test.tsx:138` (Promise mot synkront resultat) og `:220` (manglende statusrolle). Loggført for parallelløkten, ikke endret her. Ny visuell/ekte talesamtale gjenstår.
+
+Leveranse og nøyaktig fjerneoppskrift: `/Users/andreasharstad/Documents/placy-nyhavna-innhold/docs/research/nyhavna-lokal-demo/2026-09-14-utvidelse-punkter.md`. Payload, research, adresse-/parkoppslag, rutesvar og smal testpatch følger samme mappe. Aktive data/testendring forblir ukommittert sammen med parallelløktens arbeid; leveransen lagres i innholdsarbeidskopien. Ingen push. Neste: last demoen på nytt og start ny samtale for lyttetest.
+
+---
+
+## 2026-09-14 — Fire korte serveringsnotater på prøve
+
+Andreas godkjente en liten prøve i aktiv demo etter å ha redusert den større innholdspakken. Lagt til fire `servering-prove-*`-notater for Dora Kaffebar, Snurr, BistroBar og Ladejarlen, samt to `s-servering-prove-*`-kilder. Alle tidligere oppføringer bevart; kart, FAQ, manus og kode uendret av denne økten. 4 av 4 notater validert og funnet som første treff ved relevante stedssøk. 34 eksisterende datasett-/stemmekunnskapstester passerte, demosiden svarte HTTP 200. Neste: ny sidelasting og ny samtale for å vurdere innhold og tone med ørene.
+
+Prøvedata og presis fjerneoppskrift er lagret i innholdsarbeidskopien: `/Users/andreasharstad/Documents/placy-nyhavna-innhold/docs/research/nyhavna-lokal-demo/2026-09-14-servering-liten-prove.md`. Fjern bare prøvens fire notat-ID-er og eventuelt de to ubrukte kilde-ID-ene, aldri gjenopprett hele filer over annet arbeid. Aktive datafiler forblir ukommittert sammen med parallelløkten; innholdsleveransen lagres separat. Ingen push.
+
+---
+
+## 2026-09-14 — Omtal hele påfyllet og tilby lignende steder
+
+Brukerens nye lyttetest bekreftet at kartet zoomer ut. Fjernet begrensningen som ga stemmen og fremhevingen bare to av de nye stedene. Hele påfyllet sendes nå i avstandsrekkefølge, med instruks om én kort beskrivelse per sted og beholdt rolig tempo. Validerte lokale påfyll kan også fremheve mer enn kartverktøyets ordinære seks steder. Oppfølging bruker «flere lignende treningssteder» / «flere lignende turmål». Presisert at tilbakemeldinger om formulering ikke er samtykke til ny utvidelse.
+
+Målrettede presentasjons-, påfylls- og kartverktøytester, TypeScript og ESLint kontrollert. Ekte stemmeformulering må lyttetestes; ingen push/commit.
+
+---
+
+## 2026-09-14 — Nærmeste påfyll før større radius, kamera før markører
+
+Ny lyttetest viste at Anja gikk rett til Leangen/Ilsvika, og brukeren opplevde manglende kartbevegelse. Påfyll filtrerte bort alt innen 2 km fordi alle disse stedene allerede var synlige. Endret startutvalg til manusstedene + de tre nærmeste per oppdagelseskategori: fire trening/fire natur (29 steder totalt fra start, 48 tilgjengelig). Første påfyll henter resten innen 2 km sortert på avstand; Fresh Fitness og 3T-Lade kommer dermed før Leangen/Ilsvika. Lokal JSON, Supabase-import og stemmetempo uendret.
+
+Kartverktøyet er nå asynkront: kategori får rendre, kamera rammer inn kommende steder, etter 1400ms flytur + 100ms margin legges steder til, og browser-ack sendes etter rendering/fremheving. En nyere verktøykommando eller unmount avbryter ventende innlasting. Dette erstatter tidligere umiddelbar innlasting og kvittering. Nøyaktig årsak til manglende bevegelse i den ekte talesesjonen er ikke isolert; forrige kontroll testet knapp uten tale. Nettleseren bekreftet nå fire steder under flyturen og åtte etterpå, med større utsnitt og nye navngitte markører. 32 målrettede tester grønne, inkludert overgangsrekkefølge/avbrudd, nærmeste IDs og Live-verktøytransport; TypeScript og målrettet ESLint grønne. Ny ekte talesamtale gjenstår. Ingen commit/push; øvrig lokalt arbeid bevart.
+
+---
+
+## 2026-09-14 — Naturligere invitasjon og mindre kartutvidelser
+
+Etter lyttetest: endret radiussteg til 2/4/6/8/10 km (hopper over tomme intervaller), én «Vis flere steder»-knapp og naturlige invitasjoner uten tekniske radius-/antallsoppramsinger. Talegrunnlaget for nye steder inneholder de samme to som fremheves; alle nye steder vises. Kartet rammer inn de nye stedene og Nyhavna i én kamerabevegelse, fremfor hele radiusringen. Willow og 80–90 ord/minutt er beholdt.
+
+Verifisert: 12 målrettede presentasjons-/reservetester, TypeScript og målrettet ESLint grønne. Nettleser viste trening 8→11 og nye markører med nummer/navn i det nye kartutsnittet. Ny talesamtale gjenstår for å vurdere faktisk formulering og synkronisering. Ingen commit eller push.
+
+---
+
+## 2026-09-14 — Radiusstyrt utvidelse av trening og natur
+
+Andreas rapporterte manglende «flere steder»-knapp og ønsket 2 km fra start, utvidelse mot 10 km og større datagrunnlag fra Supabase. Erstattet den gamle reserven på to treningssteder med radiusstyrt, kontrollert lokalt utvalg. Alle valgte steder innen 2 km vises fra start; knapper og `reveal_more_places` utvider til 5 eller 10 km. Alle nye steder legges inn i kart/liste; to fremheves for fortellingen. Utvidelsen er separat per kategori og gjenopprettes i nye samtaler via viste ID-er. Full sidelasting nullstiller. Generelt `open_theme` går gjennom samme presentasjon og radiusinvitasjon; fallback for aktiv kategori bruker også fremhevet sted. Rotårsaken til manglende knapp i brukerens tidligere opptak er ikke sikkert fastslått.
+
+Supabase ble lest uten DB-endringer: 5119 rader i bounding box, 796 relevante kandidater klassifisert, 24 kandidater vurdert individuelt, 23 importert og ett Reppe-punkt utelatt på grunn av usikker inngangsplassering. 732 øvrige kandidater er ikke ferdig kuratert/faktakontrollert. Importerte data bærer Supabase-record-ID/importdato og konservative beskrivelser, uten oppdiktede ruter/tider eller ukontrollerte tilbud. Ingen ny nettsidekontroll påstås. Se `docs/research/nyhavna-lokal-demo/2026-09-14-radius-import.json`. 48 steder totalt, 34 fra start; trening 8/11/15 og natur 5/8/12 ved 2/5/10 km. Runtime leser fortsatt lokale JSON-filer.
+
+Radius er luftlinje. Eksisterende geometrilag tegner ring i begge kartmotorer. Nettlesertest avdekket 4000m-grense i 3D-innrammingen; eksplisitt `maxRangeM` ved radiusutvidelse lar kartet vise 10km-ringen uten å endre standardinnramming for andre boards. Ti varierte korte ventefraser erstatter instruksen om bare «Et lite øyeblikk». Willow og måltempo 80–90 ord/minutt beholdes.
+
+Verifisert: 133 avgrensede tester grønne (inkludert taleverktøy/browser-ack, feil uten konsumert reserve, nye samtaler, kategoriisolasjon og kameraopt-in), TypeScript og målrettet ESLint uten feil. Desktop-nettleser: knapper, trening 8→11→15, natur 5→12 separat, nye kartmarkører og synlig 10km-ring. Avgrenset agentreview uten handlingskrevende funn. Ikke gjennomført ny ekte talesamtale eller mobiltest; naturlig tilbud/ja og ventefraser er neste lyttetest. Ingen bred ny testsuite eller produksjonsbygg; dette er lokal prototypeiterasjon uten PR. Ikke pushet eller committet; tidligere pågående endringer bevart. Trello Utvikling #31 i Review: https://trello.com/c/HfDddHRo.
+
+---
+
+## 2026-09-14 — Behold rolig tempo ved nytt innhold
+
+Andreas opplevde igjen for rask tale. Helseendepunkt bekreftet Willow og koden beholdt målet 90–100 ord/minutt. Presisert at samme tempo gjelder ved backendresultater og ekstra steder, med to sekunders pause mellom steder. Fjernet svakere formulering om «liten pause»; manus-/ekstrautvalgsinstrukser ber om rolig formidling. Faktisk årsak til variasjonen er ikke fastslått, og effekt må lyttetestes. Avgrensede presentasjons-/reservetester, ESLint og diff-sjekk kjørt. Ingen push.
+
+---
+
+## 2026-09-14 — Kuratert ekstrautvalg med «Vis flere steder»
+
+Første testkategori er trening: 23 startpunkter beholdes, to kildekontrollerte reservepunkter legges til først ved forespørsel (CrossFit Trondheim og Lilleby Treningssenter). Lokal JSON og eksisterende snapshot brukes, ingen runtime-Supabase eller nettsøk. Validerte reserve-ID-er projiseres inn i kart, lister og tellinger; taleverktøyet og knappen deler samme visningshandling. Nye punkter fremheves i nummerert rekkefølge. Viste reservepunkter huskes gjennom besøket og meldes til nye stemmesamtaler. Ingen tilbud om mer ved tomt utvalg. Full sidelasting nullstiller utvalget.
+
+2 av 2 reservekandidater gjennomgått mot offisielle kilder av research-agent; ingen oppdiktede reisetider. 121 relevante tester passerte, deretter 18 SSE/klienttester med to nye kontroller (123 unike). TypeScript, målrettet ESLint og diff-sjekk passerte. Nettleser bekrefter 23 startpunkter, Trening 1 → 3, nye markører og stedsliste, og at knappen forsvinner. Faktisk talesamtale og Anjas naturlige tilbud gjenstår lyttetest. Kun trening har reserve i denne første prøven. Ingen push.
+
+---
+
+## 2026-09-14 — Ytterligere redusert taletempo
+
+Etter ny tilbakemelding er felles tempoinstruks for lokal samtale og intro justert fra 110–120 til 90–100 ord/minutt som mål, med cirka ett sekund mellom setninger og to før nytt sted eller spørsmål. Willow/Anja beholdes. Dette er instruksstyring, ikke garantert lydhastighet; ny lyttetest må bekrefte effekten. Målrettet ESLint og diff-sjekk passerte. Ingen push.
+
+---
+
+## 2026-09-14 — Anja som digital guide
+
+Lokal Nyhavna-demo introduserer Anja som digital guide og viser «Anja · AI-guide fra Placy» ved mikrofonen. Rollen er varm og rolig, tydelig AI og uten påstått ansettelse eller egne opplevelser. Hilseregelen tillater navnet i datasettets intro; andre demoer får ikke Anja. Willow og roligere tempo beholdes. Begge innganger (planer / dagens nærområde) beholdes.
+
+28 relevante tester passerte. Nettleser bekrefter identitet og starttekst. TypeScript og målrettet ESLint kontrollert. Faktisk muntlig intro gjenstår lyttetest i ny samtale. Ingen push.
+
+---
+
+## 2026-09-14 — Willow valgt som standard
+
+Andreas justerte stemmevalget til Willow etter videre lytting. Standard i kode og lokal serverkonfigurasjon er endret; den roligere tempoinstruksen beholdes. Eksplisitt valg i stemmevelgeren overstyrer standarden for neste samtale. Ingen push.
+
+---
+
+## 2026-09-14 — Marin og roligere tale
+
+Andreas valgte Marin etter lyttetest, men opplevde fortsatt for høyt tempo. Marin er nå standard i kode og lokal serverkonfigurasjon. Lokal stemmeinstruks og oppstartshilsen deler et tempoønske på cirka 110–120 ord/minutt med naturlige pustepauser og luft før nye steder/spørsmål. Dette er modellinstruksjon, ikke målt eller garantert avspillingshastighet. Norsk setningsmelodi er presisert.
+
+24 relevante tester, TypeScript, målrettet ESLint og diff-sjekk passerte. Helseendepunkt på 3103 bekrefter Marin. Ny samtale må lyttetestes for faktisk tempo og uttale. Ingen push.
+
+---
+
+## 2026-09-14 — Rask sammenligning av Live-stemmer
+
+Lokal Nyhavna-demo har stemmevelger ved mikrofonen med 22 innebygde Live-stemmer fra OpenAI-referansen. Ny samtale bruker valgt stemme; valget er låst under samtalen. Standard følger fortsatt serverkonfigurasjonen (Cedar på 3103). Samme intro, instruks og innhold beholdes for sammenligning. Valget varer mens boardet er åpent; ingen permanent stemme er valgt.
+
+40 unike relevante tester passerte, inkludert kontroll av stemmeoverstyring og avvisning av ukjente navn før API-kall. TypeScript, målrettet ESLint og diff-sjekk passerte. Nettleser bekreftet synlig velger og valg av Marin. Norsk lydkvalitet og faktisk oppstart med alternativene gjenstår Andreas sin lyttetest. Ingen push.
+
+---
+
+## 2026-09-14 — Temaknagger og lengre lokal samtale
+
+Etter lyttetest: fjernet automatisk dagligvarevalg ved brede spørsmål, fast invitasjon til neste kategori og tekniske formuleringer i manus/faktatekster. Delområder får egen oppfølging. Uttømt innhold skal gi nytt temavalg, ikke et tomt løfte om mer. Live-supervisor får eksplisitt 30-minuttersgrense; klienten viser varsel etter cirka 28 minutter og rydder timer ved stopp. Sluttmeldingen peker på mikrofonknappen for ny samtale. Ingen automatisk historikkoverføring. Server 3103 restartet og helseendepunkt verifisert.
+
+113 relevante tester passerte, deretter 24 tester med to nye regresjoner for temafokus og varsel/rydding (115 unike totalt). TypeScript og målrettet ESLint bestått. Muntlig etterlevelse og virkelig lang samtale gjenstår å lytteteste; videregående er fortsatt et kunnskapshull. Lokale endringer, ingen push.
+
+---
+
+
+## 2026-09-14 — Nyhavna som framtidig bydel i lokal demo
+
+Gjennomgått `/bo/`, alle fem delområdesidene og nyhetsbrevsiden. Lagt til global felleskontekst, fem kildebelagte planpunkter med egne fakta og sju FAQ-er. Ny intro gir valg mellom planene for Nyhavna og dagens nærområde. Ny kategori følger samme kart-/samtaleflyt; stedsklikk får valgt områdes fakta. Områdene kalles delområder, ikke fem nummererte byggetrinn. Agent kontrollerte representative kartankre hos Kartverket; ingen oppdiktede boligadresser eller reisetider.
+
+74 relevante tester, TypeScript og målrettet ESLint passerer. Nettleser kontrollert: ny kategori, planmerking og Transittkaia ved klikk. Dokumentert i `docs/research/nyhavna-lokal-demo/2026-09-14-bo-grunnlag.md`. Neste steg er Andreas sin lyttetest av de to inngangene og områdesamtalen. Endringene ligger lokalt sammen med tidligere prototypendringer; ingen push eller utrulling.
+
+---
+
+## 2026-09-14 — Dora → Snurr uten sen kategorikommentar
+
+**Patch:** Stedsklikk sender ikke i tillegg kategorikommentar når et sted allerede er valgt. Sideband forkaster en ventende kartkommentar hvis et nyere valg har kommet. Lokal presentasjon lager omtalen fra bare valgt steds data, og husker valgt sted. `find_similar_places` velger et ikke tidligere vist sted med samme kategori og stedstype (kaffebar/kafé/bakeri samles); Dora gir Snurr direkte. Tomt utvalg gir ingen ny søkeinvitasjon. Stemmeinstruksen bruker «Et lite øyeblikk» fremfor teknisk søkeprat. Forrige lokale `placeSelectionInstruction` er erstattet av den konkrete stedsomtalen; den delte samtalen beholder sin opprinnelige oppførsel.
+
+**Kontroll:** 31 målrettede tester bestått: sen kategorikommentar etter stedsklikk, Dora → Snurr, uttømt utvalg, ukjent sted, bevart manusposisjon og registrert verktøy i Live-sesjonen. TypeScript og målrettet ESLint bestått. Dette beviser styring og datavalg, ikke modellens muntlige etterlevelse; neste lyttetest prøver samme forløp. Lokal arbeidskopi, ingen push.
+
+---
+
+## 2026-09-14 — Liten samtalepatch etter lyttetest
+
+**Endret:** Roligere tempo og pauser fra starten. Oppfølgingsspørsmål beholder temaet; et stedsvalg gir kun omtale av valgt sted og tilbyr lignende steder i samme kategori. Ja til dette tilbudet skal ikke gå til neste manusdel. Ny valgfri `placeSelectionInstruction` brukes bare av lokal demo; andre samtaler beholder sin standard. Tempo og modellens etterlevelse må lyttetestes.
+
+**Kontroll:** 24 målrettede tester bestått (presentasjon, samtale og Live-rute), målrettet ESLint og TypeScript bestått. Helseendepunkt svarer konfigurert. Ingen ny fullsuite eller agentrunde i denne lille prototypeløkken, i tråd med avtalt raskere iterasjon. Endringene ligger lokalt sammen med forrige guide-iterasjon; ingen push.
+
+**Forrige guide-iterasjons review:** Fullført med status `complete`, ingen gjenværende actionable findings, run `20260914-nyhavna-guided`, rapport `/tmp/compound-engineering-501/ce-code-review/20260914-nyhavna-guided`. Denne etterfølgende lille patchen er kontrollert lokalt med avgrensede tester.
+
+---
+
+## 2026-09-14 — Guidet Nyhavna-samtale med kategori og kart som følger fortellingen
+
+**Resultat:** Lokal demo har ny invitasjon til å utforske hverdagen og 7 kuraterte manusdeler for alle 7 kategorier. Placy får rollen som forteller, med pause etter hver del og spørsmål underveis. `present_neighbourhood` holder returpunktet gjennom sidespørsmål; kategorihopp fortsetter i manusrekkefølgen derfra. Manus, FAQ og fakta forblir lokale JSON-data. Ingen modellbytte eller Supabase-endring.
+
+**Grensesnitt:** Sidepanelet følger kategori fra både manus og omtalte steder. Ekstra ring og navneskilt fremhever siste stedsnavn i transkriptet mens lyd spilles. Gruppen står synlig; ekstra fokus ryddes ved avbrudd. Dette er transkriptassistert orientering, ikke ordnøyaktig lydsynkronisering. Parallelle backend-verktøykall er deaktivert for den lokale demoen for å unngå samtidige manusendringer. Hver manusdel videresender også kapittelets oppfølgingskunnskap.
+
+**Innhold:** Alle 7 manusdeler skrevet og referansevalidert mot 18 steder og 23 kilder; 12 FAQ-er beholdt. Lilleby 1.–7. trinn bekreftet mot skolens offisielle timeplan-PDF. Losgata korrigert til retning Lade/Strindheim/Grilstad; Dora mot sentrum. Linje 20-eksempelet Dora 08.31 → Trondheim S 08.35 er hentet fra AtBs rutetabell fra 10.08.2026. Gangtid og ventetid holdes adskilt fra busstid. Lilleby-ruten oppgis som beregnet 1,3 km uten å påstå trygghet. [Bruksanvisningen](docs/research/nyhavna-lokal-demo/README.md) erstatter den utdaterte tom-demo-beskrivelsen.
+
+**Verifisering:** Desktop og 390×844 mobil kontrollert i nettleser: kategori, FAQ og markørgruppe. Ingen konsollfeil. Helseendepunkt svarer med konfigurert Live-protokoll og nytt datasett. 182 målrettede tester bestått etter reviewrettelser; omfatter manusposisjon, kategori, avbrudd, stedsreferanser, markørattributter og lokal sesjonskonfigurasjon. Siste fullsuite før reviewrettelser: 4 296 bestått, én kjent feil i `nyhavna-knowledge.test.ts:73` (319 ord mot grense 300; den delte instruksen og testen er uendret). Lint: 0 feil, 54 eksisterende advarsler. TypeScript og produksjonsbygg bestått. Generert `next-env.d.ts` tilbakeført etter kontroll.
+
+**Kvalitet:** Simplify gjennomført med reuse-review og inline kvalitet/effektivitet etter verktøyets trådgrense. Ingen relevant duplisering krevde refaktorering. Reviewrettelser: fokus ryddes ved avbrudd, kapittelkunnskap videresendes, manuslengde begrenses til 1200 tegn, kategoritilhørighet valideres, UI-suksess påstås ikke før bekreftelse, og lokal session-/kartdekning er utvidet.
+
+**Åpent for lyttetesten:** Faktisk mikrofon/lydflyt er ikke lyttetestet. Markørfokus kan komme før eller etter navnet i lyden; de øvrige stedene forblir synlige for å bevare orienteringen. Retur til manusdel er deterministisk; hvor i avsnittet stemmen gjenopptar, styres av modellen og transkriptet. Eksakt ordsynkronisering krever en pålitelig avspillingstidslinje og er ikke hevdet levert. Ingen push eller produksjonsutrulling.
+
+---
+
 ## 2026-09-14 — Lokal Nyhavna-demo med enkel FAQ, steder og samtaleframdrift
 
 **Resultat:** 12 korte FAQ-er er demoens innganger til samtale og kart. 18 kuraterte steder har kilde og beregnede gang-/sykkeltider fra ett fast punkt, merket «Demoens utgangspunkt». Menyer, priser og aldersspesifikke scenarioer er ute av runtime. Tidligere 67 FAQ-er, 56 notater og 65 kilder er bevart uendret i et separat researcharkiv. Ingen Supabase-skriving eller push.

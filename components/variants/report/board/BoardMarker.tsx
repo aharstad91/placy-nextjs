@@ -18,6 +18,7 @@ import {
   type StoryEmphasis,
 } from "./story/story-model";
 import { REACH_OUTSIDE_OPACITY } from "@/lib/board/reach";
+import { PROJECT_PIN_DISC } from "@/components/map/ProjectSitePin";
 
 /**
  * Ikon-sirkelens diameter for en INAKTIV markør, i px.
@@ -122,6 +123,7 @@ interface Props {
    * kjenne igjen ut fra det som ble sagt.
    */
   highlightIndex?: number;
+  narrationFocus?: "current" | "other";
   onClick: () => void;
 }
 
@@ -139,10 +141,13 @@ function BoardMarkerImpl({
   emphasis = null,
   outOfReach = false,
   highlightIndex,
+  narrationFocus,
   onClick,
 }: Props) {
   const isHighlighted = highlightIndex !== undefined;
   const Icon = getFilledIcon(poi.raw.category.icon || icon);
+  // Bilde i skiva i stedet for ikon — samme regel som `PoiMarkerContent.imageSrc`.
+  const imageSrc = poi.raw.markerImage;
   const circle = markerCircleStyle(color);
   // Lysere border (~50% hvit-blanding) demper rammen så ikonet får primær
   // visuell vekt — mindre detaljer per markør, men hue-identitet bevart.
@@ -181,12 +186,14 @@ function BoardMarkerImpl({
   // Omtalte steder tegnes med samme vekt som omvisningens navngitte (38): de er
   // det kartet handler om akkurat nå, men de er ikke åpnet — 44 er forbeholdt
   // punktet leseren faktisk står i.
+  // Bildepinner tegnes like store som prosjektpinnen (se `PoiMarkerContent`).
+  const baseSize = imageSrc ? PROJECT_PIN_DISC : MARKER_CIRCLE_SIZE;
   const containerSize = isActive
-    ? 44
+    ? Math.max(44, baseSize)
     : isHighlighted || emphasis === "named"
-      ? 38
+      ? Math.max(38, baseSize)
       : Math.round(
-          MARKER_CIRCLE_SIZE *
+          baseSize *
             (emphasis ? STORY_EMPHASIS_PIN_SCALE[emphasis] : 1),
         );
 
@@ -240,6 +247,7 @@ function BoardMarkerImpl({
           så aktiv ikon-sirkel (44 px) ikke klippes av container-bbox når den
           vokser. Label sitter absolute utenfor container-edge til høyre. */}
       <div
+        data-narration-focus={narrationFocus}
         style={{
           position: "relative",
           width: containerSize,
@@ -350,6 +358,9 @@ function BoardMarkerImpl({
             borderStyle: "solid",
             borderColor: isActive ? circle.borderColor : inactiveBorder,
             backgroundColor: circle.backgroundColor,
+            ...(imageSrc
+              ? { backgroundImage: `url(${imageSrc})`, backgroundSize: "cover", backgroundPosition: "center" }
+              : {}),
             color: circle.borderColor,
             boxShadow: "0 2px 4px rgba(0, 0, 0, 0.15)",
             opacity: showIconCircle ? 1 : 0,
@@ -364,16 +375,18 @@ function BoardMarkerImpl({
           {/* Ikonet følger sirkelen: 16 px i en 22 px ring med 2 px kant ville
               ligget helt inntil kanten. Tallene er de samme forholdene som den
               fulle pinnen har. */}
-          <Icon
-            className={
-              isActive
-                ? "w-5 h-5"
-                : containerSize < 28
-                  ? "w-3 h-3"
-                  : "w-4 h-4"
-            }
-            weight="fill"
-          />
+          {!imageSrc && (
+            <Icon
+              className={
+                isActive
+                  ? "w-5 h-5"
+                  : containerSize < 28
+                    ? "w-3 h-3"
+                    : "w-4 h-4"
+              }
+              weight="fill"
+            />
+          )}
 
           {/* Kjøpesenter-merket. Samme `+` som Google-motoren tegner
               (`PoiMarkerContent`), og med vilje samme geometri: 16 px boks,
@@ -459,6 +472,7 @@ function BoardMarkerImpl({
             pinnen. */}
         <span
           aria-hidden="true"
+          data-poi-label=""
           style={{
             position: "absolute",
             ...(labelSide === "right"
@@ -520,5 +534,6 @@ export const BoardMarker = React.memo(
     // Samme regel, samme felle: uten denne linja ville et nytt svar fra
     // assistenten skrevet en ny liste i state uten at én eneste markør endret
     // seg på skjermen.
-    prev.highlightIndex === next.highlightIndex,
+    prev.highlightIndex === next.highlightIndex &&
+    prev.narrationFocus === next.narrationFocus,
 );

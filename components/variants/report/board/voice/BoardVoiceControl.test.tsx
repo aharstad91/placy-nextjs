@@ -132,19 +132,19 @@ describe("BoardVoiceControl", () => {
     expect(screen.queryByTestId("board-voice")).toBeNull();
   });
 
-  it("sender bare kartstatus tilbake fra klientverktøyet, og fremhever flere steder i rekkefølge", () => {
+  it("sender bare kartstatus tilbake fra klientverktøyet, og fremhever flere steder i rekkefølge", async () => {
     mount();
-    const executeTool = capturedOptions?.executeTool as (name: string, args: Record<string, unknown>) => Record<string, unknown>;
-    expect(executeTool("show_place", { poi_id: poi.id })).toEqual({ ok: true, shown: "Dora Kaffebar", poi_id: poi.id });
+    const executeTool = capturedOptions?.executeTool as (name: string, args: Record<string, unknown>) => Promise<Record<string, unknown>>;
+    await expect(executeTool("show_place", { poi_id: poi.id })).resolves.toEqual({ ok: true, shown: "Dora Kaffebar", poi_id: poi.id });
     expect(flyToPoint).toHaveBeenCalled();
     expect(begin).toHaveBeenCalledWith(0);
-    expect(executeTool("highlight_places", { poi_ids: [brew.id, poi.id] })).toEqual({ ok: true, shown: "Monkey Brew, Dora Kaffebar", highlighted: [{ ord: 1, id: brew.id, name: "Monkey Brew" }, { ord: 2, id: poi.id, name: "Dora Kaffebar" }] });
+    await expect(executeTool("highlight_places", { poi_ids: [brew.id, poi.id] })).resolves.toEqual({ ok: true, shown: "Monkey Brew, Dora Kaffebar", highlighted: [{ ord: 1, id: brew.id, name: "Monkey Brew" }, { ord: 2, id: poi.id, name: "Dora Kaffebar" }] });
     expect(dispatch).toHaveBeenCalledWith({ type: "HIGHLIGHT_POIS", ids: [brew.id, poi.id] });
     expect(fitCoordinates).toHaveBeenCalledOnce();
-    expect(executeTool("reset_board", {})).toEqual({ ok: true, shown: "Hele nabolaget" });
+    await expect(executeTool("reset_board", {})).resolves.toEqual({ ok: true, shown: "Hele nabolaget" });
     expect(begin).toHaveBeenCalledWith(-1);
-    expect(executeTool("show_place", { poi_id: "finnes-ikke" })).toHaveProperty("error");
-    expect(executeTool("find_places", { query: "kaffe" })).toEqual({ error: "Ukjent kartkommando." });
+    await expect(executeTool("show_place", { poi_id: "finnes-ikke" })).resolves.toHaveProperty("error");
+    await expect(executeTool("find_places", { query: "kaffe" })).resolves.toEqual({ error: "Ukjent kartkommando." });
   });
 
   it("melder brukerens egne tema- og stedstrykk som kontekst, men ikke guidens egne kartendringer", () => {
@@ -208,15 +208,17 @@ describe("lokal FAQ, stemme og kart", () => {
     rerender(<BoardVoiceProvider><FAQSection entries={[faq]} poisById={data.poisById} categoryIds={["mat"]} /></BoardVoiceProvider>);
     expect(sendContext).toHaveBeenCalledWith({ kind: "theme", id: "mat", label: category.label });
   });
-  it("sender valgt FAQ inn i aktiv samtale uten å markere den ferdig på klikk", () => {
+  it("sender valgt FAQ inn i aktiv samtale uten å markere den ferdig på klikk", async () => {
     resetLive({ status: "listening" });
     renderLocal();
     fireEvent.click(screen.getByTestId("faq-question"));
     expect(sendText).toHaveBeenCalledWith(faq.question);
     expect(screen.queryByLabelText("Utforsket")).toBeNull();
     expect(start).not.toHaveBeenCalled();
-    const tool = capturedOptions?.executeTool as (name: string, args: Record<string, unknown>) => unknown;
-    act(() => tool("highlight_places", { poi_ids: ["dora-kaffebar"], answered_faq_ids: ["kaffe"] }));
-    expect(screen.getByRole("status")).toHaveTextContent("Aktiv");
+    const tool = capturedOptions?.executeTool as (name: string, args: Record<string, unknown>) => Promise<Record<string, unknown>>;
+    // Verktøyet svarer med kartstatus, ikke med en ferdig-markering: FAQ-en
+    // forblir uavkrysset til samtalen faktisk har besvart den.
+    await act(async () => { await expect(tool("highlight_places", { poi_ids: ["dora-kaffebar"], answered_faq_ids: ["kaffe"] })).resolves.toMatchObject({ ok: true }); });
+    expect(screen.queryByLabelText("Utforsket")).toBeNull();
   });
 });

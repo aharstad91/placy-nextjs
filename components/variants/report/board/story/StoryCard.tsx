@@ -169,7 +169,7 @@ export function StoryCard({
       )}
     >
       {/* `contents` på mobil — se doccen over. */}
-      <div className="contents lg:sticky lg:top-0 lg:z-[4] lg:-mx-6 lg:block lg:bg-white lg:px-6 lg:pb-2 lg:pt-3">
+      <div data-story-heading className="contents lg:sticky lg:top-0 lg:z-[4] lg:-mx-6 lg:block lg:bg-white lg:px-6 lg:pb-2 lg:pt-3">
         {/* Utgangen finnes bare på MOBIL. Der ligger indeksen (nabolagslista,
             boardets FAQ, inngangen) bak omvisningen, og krysset er veien
             tilbake til den — øverst til høyre, der en lukkeknapp alltid har
@@ -258,7 +258,7 @@ export function StoryCard({
         {/* Samtalen ligger UTENFOR det nøklede laget over: nøkkelen monterer
             overskrift og faner på nytt ved område ↔ tema, og en samtale som
             ble montert på nytt ville lagt på. */}
-        {assistant && <div className="mt-3.5">{assistant}</div>}
+        {assistant && <div data-story-assistant className="mt-3.5">{assistant}</div>}
       </div>
 
       {/* Fanene bytter enkelt: den inaktive tas ut av layouten. Flaten står

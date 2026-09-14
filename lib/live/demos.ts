@@ -8,6 +8,9 @@ import { buildVoiceDeps, buildLocalInstructions } from "@/lib/demo/nyhavna-lokal
 import { createNyhavnaConversation, type NyhavnaConversation } from "@/lib/realtime/nyhavna-conversation";
 import { nyhavnaInstructions } from "@/lib/realtime/nyhavna-knowledge";
 import { nyhavnaProjectInfo } from "@/lib/realtime/nyhavna-project-info";
+import { createPresentation, presentationTool, similarPlacesTool, morePlacesTool } from "@/lib/demo/nyhavna-lokal/presentation";
+import { LOCAL_VOICE_INSTRUCTIONS } from "@/lib/demo/nyhavna-lokal/voice-instructions";
+import type { RealtimeTool } from "@/lib/realtime/types";
 
 /**
  * Hvilket datagrunnlag en Live-samtale gjelder (2026-09-13).
@@ -44,6 +47,9 @@ export interface LiveDemo {
   board: BoardData;
   /** Den lange instruksen til Responses-backenden: regler, temaer, katalog. */
   backendInstructions: string;
+  voiceInstructions?: string;
+  additionalTools?: RealtimeTool[];
+  parallelTools?: boolean;
   /** Fabrikken lager en FERSK samtaletilstand per sesjon — aldri delt. */
   createConversation: () => NyhavnaConversation;
 }
@@ -69,7 +75,10 @@ async function lokalDemo(): Promise<LiveDemo> {
     snapshotId: datasetId(dataset),
     board,
     backendInstructions: buildLocalInstructions(dataset, board),
-    createConversation: () => createNyhavnaConversation(board, deps),
+    voiceInstructions: LOCAL_VOICE_INSTRUCTIONS,
+    additionalTools: [presentationTool, similarPlacesTool, morePlacesTool],
+    parallelTools: false,
+    createConversation: () => createPresentation(createNyhavnaConversation(board, deps), dataset.board.presentation ?? [], dataset.places, dataset.board.center),
   };
 }
 

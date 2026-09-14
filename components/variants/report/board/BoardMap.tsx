@@ -1,5 +1,7 @@
 "use client";
 
+import { discoveryGeometry } from "@/lib/demo/nyhavna-lokal/radius";
+
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Map, {
   type MapRef,
@@ -75,6 +77,7 @@ import {
   type PendingCamera,
 } from "@/components/map/motor-camera";
 import { getProjectMassing } from "@/lib/map/project-massing";
+import { IMAGE_PIN_SIZE } from "@/components/map/PoiMarkerContent";
 
 const TOKEN = process.env.NEXT_PUBLIC_MAPBOX_TOKEN;
 
@@ -84,6 +87,8 @@ const TOKEN = process.env.NEXT_PUBLIC_MAPBOX_TOKEN;
  * skjermen må være enige om hvor stor en pin er.
  */
 const MARKER_HALF_PX = MARKER_CIRCLE_SIZE / 2;
+/** Bildepinnens halve diameter (delområdene) — se `IMAGE_PIN_SIZE`. */
+const IMAGE_MARKER_HALF_PX = IMAGE_PIN_SIZE / 2;
 const DOT_HALF_PX = MARKER_DOT_SIZE / 2;
 
 /**
@@ -399,6 +404,7 @@ export function BoardMap({
   // hver for seg, ville de før eller siden svart forskjellig på samme spørsmål.
   const activeThemeId =
     activeCategory?.id != null ? String(activeCategory.id) : storyStopId;
+  const radiusGeometry = useMemo(() => discoveryGeometry(data, activeThemeId), [data, activeThemeId]);
 
   /**
    * De OMTALTE stedene, som id → plass i rekken (1-basert).
@@ -611,11 +617,13 @@ export function BoardMap({
         id: poi.id,
         x,
         y,
+        // Bildepinnen er større og holder unna tilsvarende mer plass.
+        ...(poi.raw.markerImage ? { halfSize: IMAGE_MARKER_HALF_PX } : {}),
         priority:
           // Et omtalt sted eier plassen sin på linje med det åpne og med
           // ankeret: blir det en prikk, kan ikke leseren finne det assistenten
           // nettopp snakket om.
-          state.activePOIId === poi.id || poi.isAnchor === true || highlighted
+          state.activePOIId === poi.id || poi.isAnchor === true || highlighted || poi.raw.markerImage
             ? Number.POSITIVE_INFINITY
             : (poi.raw.googleRating ?? 0) +
               (emphasis !== null && emphasis !== "texture"
@@ -667,7 +675,11 @@ export function BoardMap({
       obstacles.push({
         x,
         y,
-        halfSize: isDemoted ? DOT_HALF_PX : MARKER_HALF_PX,
+        halfSize: isDemoted
+          ? DOT_HALF_PX
+          : poi.raw.markerImage
+            ? IMAGE_MARKER_HALF_PX
+            : MARKER_HALF_PX,
       });
       // En prikk bærer ikke navn: navnet ville pekt på noe som ikke lenger ser
       // ut som et sted.
@@ -677,8 +689,10 @@ export function BoardMap({
         x,
         y,
         name: poi.name,
+        // Labelen starter utenfor den større skiva (8 px luft, som markøren).
+        ...(poi.raw.markerImage ? { offsetX: IMAGE_MARKER_HALF_PX + 8 } : {}),
         priority:
-          state.activePOIId === poi.id || highlighted
+          state.activePOIId === poi.id || highlighted || poi.raw.markerImage
             ? Number.POSITIVE_INFINITY
             : (poi.raw.googleRating ?? 0),
       });
@@ -1354,6 +1368,7 @@ export function BoardMap({
                       demoted={demotedPinIds.has(poi.id)}
                       emphasis={emphasis}
                       outOfReach={outOfReach}
+                      narrationFocus={state.narrationPoiId ? (state.narrationPoiId === poi.id ? "current" : "other") : undefined}
                       highlightIndex={highlightIndex}
                       // Samme vei inn som 3D-pinnene: punkt + måling + flatens
                       // oppfølging. Se `useMapPinClick`.
@@ -1379,6 +1394,7 @@ export function BoardMap({
                   activeThemeId={activeThemeId}
                 />
               )}
+              {mapLoaded && radiusGeometry.length > 0 && <BoardCuratedGeometryLayer features={radiusGeometry} activeThemeId={activeThemeId} />}
               <BoardContourLayer
                 mapRef={mapRef}
                 mapLoaded={mapLoaded}

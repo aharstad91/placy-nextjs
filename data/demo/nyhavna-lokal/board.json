@@ -5,16 +5,25 @@
   "address": "",
   "district": "Nyhavna",
   "city": "Trondheim",
-  "intro": "Utforsk hverdagen på Nyhavna. Velg et spørsmål eller snakk med Placy, og se stedene på kartet. Reisetidene regnes fra det markerte punktet.",
+  "intro": "Utforsk Nyhavna som framtidig bydel, eller bli kjent med stedene som finnes i nærområdet i dag. Velg et område i kartet eller start en samtale.",
   "center": {
     "lat": 63.43980508893858,
     "lng": 10.41725655026434
   },
   "map3d": true,
   "pinSubtitle": "Demoens utgangspunkt",
-  "greeting": "Hei! Her kan vi utforske hvordan hverdagen på Nyhavna kan bli – fra skole og fritid til spisesteder og livet i nabolaget. Hva er viktig for deg når du tenker på å bo her?",
+  "pinImage": "/demo/nyhavna-lokal/bydeler/nyhavna-logo.svg",
+  "greeting": "Hei, jeg heter Anja og er din digitale guide på Nyhavna. Jeg kan fortelle om bydelen som vokser fram, og vise deg hva som finnes i nabolaget allerede i dag. Du kan spørre underveis eller trykke på kartet. Vil du først høre om planene for Nyhavna eller om nærområdet slik det er i dag?",
   "projectInfoLabel": "det kildekontrollerte materialet om Nyhavna",
   "categories": [
+    {
+      "id": "nyhavna-bydel",
+      "name": "Nyhavna som bydel",
+      "icon": "Building2",
+      "color": "#8b6cc4",
+      "lead": "Boligliv, byrom og fem delområder under utvikling.",
+      "body": "Velg et delområde for å høre om det som planlegges der."
+    },
     {
       "id": "hverdagsliv",
       "name": "Hverdag",
@@ -70,6 +79,140 @@
       "color": "#a06cf5",
       "lead": "",
       "body": ""
+    }
+  ],
+  "presentation": [
+    {
+      "id": "hverdag",
+      "categoryId": "hverdagsliv",
+      "placeIds": [
+        "meny-solsiden",
+        "kiwi-lilleby"
+      ],
+      "text": "La oss begynne med dagligvarer. MENY Solsiden ligger omtrent elleve minutter til fots fra Nyhavna. KIWI Lilleby er et annet alternativ, omtrent femten minutter å gå. Der finnes også pakkebokser, så du kan kombinere handlingen med å hente en pakke.",
+      "sourceIds": [
+        "demo-meny",
+        "demo-route",
+        "demo-kiwi"
+      ],
+      "checkedAt": "2026-09-14"
+    },
+    {
+      "id": "transport",
+      "categoryId": "transport",
+      "placeIds": [
+        "dora-holdeplass",
+        "losgata"
+      ],
+      "text": "Når du skal inn til byen, kan du ta bussen fra Dora holdeplass, omtrent fem minutter å gå fra Nyhavna. Linje tjue bruker rundt fire minutter til Trondheim S etter rutetabellen. Losgata ligger omtrent fire minutter å gå fra Nyhavna, med linje tjue i retning Lade, Strindheim og Grilstad.",
+      "sourceIds": [
+        "demo-atb",
+        "demo-line20",
+        "demo-route",
+        "demo-line71"
+      ],
+      "checkedAt": "2026-09-14"
+    },
+    {
+      "id": "servering",
+      "categoryId": "mat-drikke",
+      "placeIds": [
+        "dora-kaffebar",
+        "nyhavna-bistro"
+      ],
+      "text": "For en kaffepause har du Dora Kaffebar like i området, omtrent to minutter å gå fra Nyhavna. Vil du ut og spise, er Nyhavna BistroBar i Ladebekken et av alternativene, omtrent femten minutter til fots. Det gir deg både en kafé nært og et spisested å oppsøke i nabolaget. Aktuelle åpningstider finner du på stedenes egne sider.",
+      "sourceIds": [
+        "s-dora",
+        "demo-route",
+        "s-bistro"
+      ],
+      "checkedAt": "2026-09-14"
+    },
+    {
+      "id": "oppvekst",
+      "categoryId": "barn-oppvekst",
+      "placeIds": [
+        "lilleby-skole",
+        "rosenborg-skole"
+      ],
+      "text": "For familier er skole og barnehage en viktig del av hverdagen. Lilleby skole har første til sjuende trinn og er aktuell barneskole i planmaterialet for Transittkaia, omtrent seksten minutter å gå fra Nyhavna. Rosenborg skole er aktuell ungdomsskole, omtrent tjue minutter til fots. Skoletilhørigheten må avklares for den konkrete boligen. Det finnes også barnehager i nabolaget, som vi kan se nærmere på.",
+      "sourceIds": [
+        "demo-lilleby",
+        "v-planb",
+        "v-krets",
+        "demo-route",
+        "demo-rosenborg",
+        "demo-lilleby-trinn"
+      ],
+      "checkedAt": "2026-09-14"
+    },
+    {
+      "id": "natur",
+      "categoryId": "natur-friluftsliv",
+      "placeIds": [
+        "ladestien",
+        "pool-korsvika",
+        "pool-lademoparken"
+      ],
+      "text": "Vil du gå tur langs sjøen, er Ladestien et sted å begynne. Fra Nyhavna er det omtrent nitten minutter å gå til punktet ved Ormen Langes vei. Korsvika er en badeplass ved sjøen på Lade, mens Lademoparken er en park i nærområdet. Det finnes også flere turmål litt lenger unna.",
+      "sourceIds": [
+        "demo-ladestien",
+        "demo-route",
+        "source-pool-korsvika",
+        "source-pool-lademoparken"
+      ],
+      "checkedAt": "2026-09-14"
+    },
+    {
+      "id": "trening",
+      "categoryId": "trening-aktivitet",
+      "placeIds": [
+        "nyhavna-padel",
+        "crossfit-trondheim",
+        "pool-3t-solsiden",
+        "flex-gym",
+        "buld-no"
+      ],
+      "text": "Hvis du vil trene, finnes det flere ulike tilbud i nærheten. Hos Nyhavna Padel ved E.C. Dahls kan du spille padel, omtrent åtte minutter å gå fra Nyhavna. CrossFit Trondheim tilbyr CrossFit, og 3T-Solsiden er et alternativ hvis du ser etter et treningssenter. Flex Gym er et døgnåpent treningssenter på Lade. Buld.no i Ormen Langes vei har buldring og klatreskole for barn.",
+      "sourceIds": [
+        "demo-padel",
+        "demo-route",
+        "reserve-crossfit-trondheim",
+        "source-pool-3t-solsiden",
+        "aktivitet-20260914-02",
+        "aktivitet-20260914-05"
+      ],
+      "checkedAt": "2026-09-14"
+    },
+    {
+      "id": "opplevelser",
+      "categoryId": "opplevelser",
+      "placeIds": [
+        "dora-bowling"
+      ],
+      "text": "Et annet sted å merke seg er Dora 1 Bowling. Det ligger omtrent tre minutter å gå fra Nyhavna, og er et alternativ når dere vil finne på noe sammen i nærområdet. Nå har vi sett på både det praktiske i hverdagen og noen steder for kaffe, tur og aktiviteter. Du kan gå tilbake til kategoriene eller spørre meg om et av stedene.",
+      "sourceIds": [
+        "s-bowling",
+        "demo-route"
+      ],
+      "checkedAt": "2026-09-14"
+    },
+    {
+      "id": "bydelen-som-kommer",
+      "categoryId": "nyhavna-bydel",
+      "text": "Nyhavna skal bli et sted å bo, jobbe og møtes ved vannet. Tanken er at boliger, kultur og grønne uterom sammen skal forme hverdagen. Utviklingen omfatter fem delområder. Transittkaia er starten; de øvrige områdene har egne planer og karakter. Du kan velge et av områdene i kartet, så forteller jeg om det.",
+      "placeIds": [
+        "transittkaia",
+        "kullkranpiren",
+        "strandveikaia",
+        "ladehammerkaia",
+        "bunkerkvartalet"
+      ],
+      "sourceIds": [
+        "bo-felles",
+        "bo-transittkaia"
+      ],
+      "checkedAt": "2026-09-14"
     }
   ]
 }

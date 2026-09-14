@@ -30,6 +30,12 @@ export interface PinCandidate {
    * `Number.POSITIVE_INFINITY` og demoteres aldri.
    */
   priority: number;
+  /**
+   * Skivens halve diameter i px når den avviker fra standardpinnen (bilde-
+   * pinnene er større). Utelatt = halve `minSeparationPx`, som gir dagens
+   * oppførsel for to standardpinner.
+   */
+  halfSize?: number;
 }
 
 /**
@@ -78,7 +84,7 @@ export function computePinDemotions(
   options: PinDeclutterOptions = {},
 ): Set<string> {
   const minSeparation = options.minSeparationPx ?? DEFAULT_PIN_SEPARATION_PX;
-  const minSeparationSq = minSeparation * minSeparation;
+  const defaultHalf = minSeparation / 2;
   const sorted = [...candidates].sort(
     (a, b) => b.priority - a.priority || (a.id < b.id ? -1 : 1),
   );
@@ -98,7 +104,10 @@ export function computePinDemotions(
     const crowded = kept.some((k) => {
       const dx = c.x - k.x;
       const dy = c.y - k.y;
-      return dx * dx + dy * dy < minSeparationSq;
+      // Avstanden skalerer med skivene: en bildepinne (52 px) mot en
+      // standardpinne (32 px) krever mer luft enn to standardpinner.
+      const sep = (c.halfSize ?? defaultHalf) + (k.halfSize ?? defaultHalf);
+      return dx * dx + dy * dy < sep * sep;
     });
     if (blocked || crowded) {
       demoted.add(c.id);

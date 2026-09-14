@@ -145,6 +145,7 @@ export function DesktopReportSplash({
         "fixed inset-0 z-50 overflow-hidden bg-[#f2e9dc] transition-opacity duration-[600ms] ease-out",
         visible ? "opacity-100" : "pointer-events-none opacity-0",
       )}
+      data-report-splash="desktop"
       aria-hidden={!visible}
     >
       <div className="relative mx-auto flex h-full w-full max-w-[1440px] items-center gap-10 px-10 lg:gap-16 lg:px-20">

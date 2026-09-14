@@ -137,6 +137,7 @@ interface Props {
 export function StoryColumn({ noBrokers = false }: { noBrokers?: boolean }) {
   const { available, on, begin } = useStoryTour();
   const { data } = useBoard();
+  const pinContact = !noBrokers && data.projectSlug === "nyhavna-lokal";
 
   useEffect(() => {
     if (available && !on) begin(AREA_STEP);
@@ -155,9 +156,14 @@ export function StoryColumn({ noBrokers = false }: { noBrokers?: boolean }) {
           variant="column"
           head={<StoryRail variant="flow" />}
           assistant={data.demoSnapshotId ? <BoardVoiceControl /> : undefined}
-          footer={!noBrokers ? <MeglerFooterCard /> : undefined}
+          footer={!noBrokers && !pinContact ? <MeglerFooterCard /> : undefined}
         />
       </div>
+      {pinContact && (
+        <div className="shrink-0 px-6 pb-3 [&>div]:mt-0" data-testid="pinned-contact">
+          <MeglerFooterCard />
+        </div>
+      )}
       {/* Stedets egen side, som et lag OVER omvisningen. Ligger her og ikke
           inne i scroll-boksen: den skal dekke hele kolonnen (også logoen) og
           ikke rulle med innholdet bak seg. `<aside>` under er `relative`, så
@@ -183,7 +189,11 @@ function MeglerFooterCard() {
 
   return (
     <div className="-mx-6 mt-5 shrink-0 border-t border-stone-200 px-6 pb-3 pt-5">
-      <p className={cn("mb-3", SIDEBAR_SECTION_TITLE)}>Ansvarlig megler</p>
+      <p className={cn("mb-3", SIDEBAR_SECTION_TITLE)}>
+        {brokers.length > 0 && brokers.every((broker) => !/megler/i.test(broker.title))
+          ? "Kontaktperson"
+          : "Ansvarlig megler"}
+      </p>
       {brokers.length > 0 ? (
         <div className="flex flex-col gap-3">
           {brokers.map((broker) => (
@@ -371,6 +381,7 @@ export function DesktopStorySidebar({
     // kort som ligger på en beige bunn. Det skal dessuten være samme flate på
     // begge bredder — ikke krem på den ene og hvit på den andre.
     <aside
+      data-report-sidebar
       style={{ width: SIDEBAR_WIDTH_PX }}
       className={cn(
         // Flytende panel, ikke en vegg: kartet ligger i full bredde under og

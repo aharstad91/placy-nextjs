@@ -121,6 +121,16 @@ export const localCategorySchema = z
   .strict();
 export type LocalCategory = z.infer<typeof localCategorySchema>;
 
+export const presentationSegmentSchema = z.object({
+  id: stableId,
+  categoryId: stableId,
+  text: z.string().min(1).max(1200),
+  placeIds: z.array(stableId).max(6),
+  sourceIds: z.array(stableId).min(1),
+  checkedAt: isoDate,
+}).strict();
+export type PresentationSegment = z.infer<typeof presentationSegmentSchema>;
+
 export const localBoardSchema = z
   .object({
     schemaVersion: z.literal(1),
@@ -154,6 +164,8 @@ export const localBoardSchema = z
      * sekund på et board som skal starte tomt.
      */
     pinSubtitle: z.string().max(80).default(""),
+    /** Kvadratisk bilde i prosjektmarkørens skive (sti under `public/`), f.eks. logoen. */
+    pinImage: z.string().regex(/^\/[^\s]+$/).max(200).optional(),
     /** Førstesetningen stemmen sier. Eies av datasettet, ikke av koden. */
     greeting: z.string().min(1).max(400),
     /**
@@ -162,14 +174,26 @@ export const localBoardSchema = z
      */
     projectInfoLabel: z.string().min(1).max(80),
     categories: z.array(localCategorySchema).min(1).max(30),
+    /** Kuratert fortelling, adskilt fra transkripter og spørsmål/svar. */
+    presentation: z.array(presentationSegmentSchema).max(30).optional(),
   })
   .strict();
 export type LocalBoard = z.infer<typeof localBoardSchema>;
 
 export const localPlaceSchema = z
   .object({
+    provenance: z.object({ provider: z.literal("supabase"), recordId: z.string(), importedAt: isoDate }).strict().optional(),
     id: stableId,
     name: z.string().min(1).max(120),
+    /** Dokumentert butikk inne i et kjøpesenter; kartet viser forelderen. */
+    parentPlaceId: stableId.optional(),
+    /** Kilde-ID-er for boardets eksisterende transportinformasjon. */
+    bysykkelStationId: z.string().min(1).max(80).optional(),
+    enturStopplaceId: z.string().regex(/^NSR:StopPlace:[0-9]+$/).optional(),
+    /** Stedets underkategori (f.eks. supermarket); categoryId er boardets tema. */
+    poiCategoryId: z.string().min(1).max(80).regex(/^[a-z0-9][a-z0-9_-]*$/).optional(),
+    /** Aktiverer boardets eksisterende sentermerke og butikkregister. */
+    anchorSummary: z.string().min(1).max(400).optional(),
     /** Peker på en kategori i `board.json`. Validert i `dataset.ts`. */
     categoryId: stableId,
     coordinates,
@@ -178,6 +202,12 @@ export const localPlaceSchema = z
     placeType: z.string().max(60).optional(),
     /** Lucide-ikonnavn for markøren. Utelatt = kategoriens ikon. */
     icon: z.string().max(60).optional(),
+    /**
+     * Kvadratisk bilde som FYLLER markørskiva i stedet for ikonet (sti under
+     * `public/`). Brukes for delområdene under utvikling: Nyhavnas egne
+     * illustrasjoner skiller nybyggene fra stedene som finnes i dag.
+     */
+    image: z.string().regex(/^\/[^\s]+$/).max(200).optional(),
     /** Navn folk også bruker. Brukes av stemmens stedssøk. */
     aliases: z.array(z.string().min(1).max(120)).max(20).default([]),
     status: localStatus.default("existing"),

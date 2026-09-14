@@ -20,6 +20,7 @@ const contextSchema = z.union([
     selected_category_id: z.string().max(120).nullable(),
     selected_place_id: z.string().max(120).nullable(),
     travel_mode: z.string().max(20),
+    revealed_place_ids: z.array(z.string().max(120)).max(500).optional(),
   }),
   z.object({ kind: z.literal('text'), text: z.string().max(2000) }),
 ]);

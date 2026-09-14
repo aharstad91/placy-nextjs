@@ -73,6 +73,7 @@ export interface BoardState {
   selected_category_id: string | null;
   selected_place_id: string | null;
   travel_mode: string;
+  revealed_place_ids?: string[];
 }
 
 export interface NyhavnaConversation {

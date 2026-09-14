@@ -1,0 +1,309 @@
+<!doctype html>
+<html lang="no">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Anja stemmefelt</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Unbounded:wght@600;700&family=Figtree:wght@400;500;600;700&display=swap">
+<style>
+:root{
+  --blue:#005ef5; --blue-deep:#004ac4; --sky:#e5f0ff; --sky-2:#cfe1ff;
+  --cream:#f7f5eb; --paper:#fffdf6; --ink:#171b2d; --ink-2:#4a5068; --ink-3:#7b819a;
+  --line:#e2dfd2; --amber:#c9740f; --amber-bg:#fff2e0; --ok:#1f8a4c;
+  --harbor:#1b2334;
+  --display:"Unbounded",system-ui,sans-serif; --body:"Figtree",system-ui,sans-serif;
+  --r:6px;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--cream);color:var(--ink);font-family:var(--body);font-size:15px;line-height:1.5;padding:0 16px;padding-block:0 40px}
+button{font:inherit;cursor:pointer}
+.wrap{max-width:1180px;margin:0 auto}
+header.top{display:flex;flex-wrap:wrap;align-items:baseline;justify-content:space-between;gap:8px 24px;padding-block:22px 18px;border-bottom:1px solid var(--line)}
+header.top h1{font-family:var(--display);font-size:20px;letter-spacing:-.03em;margin:0;font-weight:700}
+header.top h1 span{color:var(--blue)}
+header.top p{margin:0;color:var(--ink-2);font-size:14px;max-width:62ch}
+
+.grid{display:grid;grid-template-columns:minmax(0,1fr) 360px;gap:24px;margin-top:22px;align-items:start}
+@media (max-width:900px){.grid{grid-template-columns:1fr}}
+
+/* ---------- stage: kart + sidepanel ---------- */
+.stage{position:relative;border-radius:14px;overflow:hidden;background:var(--harbor);min-height:720px;display:grid;grid-template-columns:400px 1fr}
+@media (max-width:640px){.stage{grid-template-columns:1fr;min-height:0}}
+.map{position:relative;overflow:hidden;min-height:320px;
+  background:
+    radial-gradient(ellipse 60% 40% at 70% 30%,#2e4a6a 0%,transparent 70%),
+    radial-gradient(ellipse 50% 30% at 30% 80%,#233248 0%,transparent 70%),
+    linear-gradient(160deg,#1a2436,#141b2a 60%,#0f1522)}
+.map svg{position:absolute;inset:0;width:100%;height:100%}
+.map .water{fill:#1c3a5e;opacity:.55}
+.map .quay{fill:none;stroke:#7d8aa6;stroke-opacity:.35;stroke-width:1.2}
+.map .road{fill:none;stroke:#aab3c8;stroke-opacity:.18;stroke-width:1}
+.pin{position:absolute;transform:translate(-50%,-100%);display:flex;flex-direction:column;align-items:center;gap:4px;transition:opacity .4s,transform .4s;opacity:.55}
+.pin .dot{width:14px;height:14px;border-radius:50%;background:#5b6784;border:2px solid #0f1522;box-shadow:0 0 0 0 rgba(0,94,245,0)}
+.pin .lbl{font-size:11px;color:#c8cfe0;background:rgba(15,21,34,.7);padding:2px 7px;border-radius:4px;white-space:nowrap;opacity:0;transform:translateY(-4px);transition:opacity .3s,transform .3s}
+.pin.lit{opacity:1;transform:translate(-50%,-100%) scale(1.08)}
+.pin.lit .dot{background:var(--blue);border-color:#fff;animation:ring 1.6s ease-out infinite}
+.pin.lit .lbl{opacity:1;transform:none}
+@keyframes ring{0%{box-shadow:0 0 0 0 rgba(0,94,245,.55)}100%{box-shadow:0 0 0 14px rgba(0,94,245,0)}}
+.map .cam{position:absolute;left:14px;bottom:14px;font-size:12px;color:#aab3c8;background:rgba(15,21,34,.7);padding:5px 9px;border-radius:4px;opacity:0;transition:opacity .3s}
+.map .cam.show{opacity:1}
+
+.panel{background:var(--cream);padding:24px 22px 20px;display:flex;flex-direction:column;gap:18px;position:relative}
+.brand{display:flex;align-items:center;gap:10px;font-family:var(--display);font-weight:700;color:var(--blue);font-size:17px}
+.brand i{display:block;width:26px;height:30px;background:var(--blue);clip-path:polygon(0 8%,55% 0,100% 12%,72% 100%,42% 92%,30% 38%,0 40%)}
+.panel h2{font-family:var(--display);font-size:30px;margin:6px 0 0;letter-spacing:-.04em;line-height:1.1}
+.panel .meta{color:var(--ink-3);font-size:14px;margin:2px 0 0}
+.themes{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.theme{display:flex;align-items:center;gap:10px;background:#fff;border-radius:10px;padding:10px 12px;box-shadow:0 1px 2px rgba(23,27,45,.06)}
+.theme b{display:block;font-size:14px;font-weight:600}
+.theme small{color:var(--ink-3);font-size:12px}
+.theme .ic{width:34px;height:34px;border-radius:50%;flex:none}
+.panel .hint{margin:0;color:var(--ink-2);font-size:15px}
+.sec{font-weight:600;font-size:15px;margin:4px 0 -8px}
+
+/* ---------- Anja-feltet ---------- */
+.anja{position:relative;background:var(--sky);border-radius:var(--r);padding:12px 12px 12px 14px;display:grid;grid-template-columns:44px minmax(0,1fr) auto;grid-template-areas:"orb txt ctl";column-gap:12px;align-items:center;transition:background .4s,box-shadow .4s;min-height:68px}
+.anja[data-s="speaking"]{background:#dbe9ff}
+.anja[data-s="ended"]{background:#eeece2}
+.anja[data-s="attention"]{background:var(--amber-bg);box-shadow:inset 3px 0 0 var(--amber)}
+
+/* orb: fast plass til venstre */
+.orb{grid-area:orb;width:44px;height:44px;border-radius:50%;position:relative;display:grid;place-items:center;background:#fff;color:var(--blue);transition:background .35s,color .35s;user-select:none}
+.orb svg{width:18px;height:18px;position:absolute;transition:opacity .25s,transform .25s}
+.orb .halo{position:absolute;inset:-5px;border-radius:50%;border:2px solid var(--blue);opacity:0;transition:opacity .3s,transform .1s linear}
+.orb .bars{position:absolute;display:flex;gap:3px;align-items:center;height:20px;opacity:0;transition:opacity .25s}
+.orb .bars i{display:block;width:3px;height:6px;border-radius:2px;background:currentColor}
+.orb .dots{position:absolute;inset:0;opacity:0;transition:opacity .25s}
+.orb .dots i{position:absolute;top:50%;left:50%;width:5px;height:5px;margin:-2.5px;border-radius:50%;background:currentColor}
+.orb .mic,.orb .stop,.orb .check,.orb .warn{opacity:0;transform:scale(.7)}
+.anja[data-s="idle"] .orb{background:var(--blue);color:#fff}
+.anja[data-s="idle"] .mic{opacity:1;transform:none}
+.anja[data-s="connecting"] .halo{opacity:1;border-color:var(--blue) transparent transparent transparent;animation:spin 1s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+/* lytter: rolig, tynn ring = mikrofonen er åpen */
+.anja[data-s="listening"] .mic,.anja[data-s="hearing"] .mic{opacity:1;transform:none}
+.anja[data-s="listening"] .halo{opacity:.45;border-width:1.5px;animation:breathe 3.2s ease-in-out infinite}
+@keyframes breathe{50%{transform:scale(1.06);opacity:.7}}
+/* hører deg: ringen følger stemmen */
+.anja[data-s="hearing"] .halo{opacity:1;border-width:2.5px;transform:scale(var(--lvl,1))}
+.anja[data-s="hearing"] .orb{cursor:pointer}
+.anja[data-s="listening"] .orb{cursor:pointer}
+.anja[data-s="thinking"] .dots{opacity:1;animation:spin 1.8s linear infinite}
+.anja[data-s="thinking"] .dots i:nth-child(1){transform:translate(0,-12px)}
+.anja[data-s="thinking"] .dots i:nth-child(2){transform:rotate(120deg) translate(0,-12px);opacity:.65}
+.anja[data-s="thinking"] .dots i:nth-child(3){transform:rotate(240deg) translate(0,-12px);opacity:.35}
+.anja[data-s="speaking"] .orb{background:var(--blue);color:#fff}
+.anja[data-s="speaking"] .bars{opacity:1}
+.anja[data-s="speaking"] .bars i{animation:bar .9s ease-in-out infinite}
+.anja[data-s="speaking"] .bars i:nth-child(2){animation-delay:.15s}.anja[data-s="speaking"] .bars i:nth-child(3){animation-delay:.3s}.anja[data-s="speaking"] .bars i:nth-child(4){animation-delay:.45s}
+@keyframes bar{0%,100%{height:5px}50%{height:18px}}
+.anja[data-s="ended"] .orb{color:var(--ink-3)}
+.anja[data-s="ended"] .check{opacity:1;transform:none}
+.anja[data-s="attention"] .orb{color:var(--amber)}
+.anja[data-s="attention"] .warn{opacity:1;transform:none}
+
+/* tekst: hovedstatus øverst, hjelpetekst under, alltid to linjer */
+.txt{grid-area:txt;min-width:0;display:flex;flex-direction:column;justify-content:center;gap:1px}
+.main{margin:0;font-size:15px;font-weight:700;line-height:1.3;color:var(--ink);display:flex;align-items:center;gap:8px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sub{margin:0;font-size:13px;line-height:1.35;color:var(--ink-2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:flex;align-items:center;gap:6px;min-width:0}
+.sub .t{overflow:hidden;text-overflow:ellipsis;min-width:0}
+.turn{font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:#fff;background:var(--blue);padding:2px 6px;border-radius:3px;animation:blink 1.4s ease-in-out infinite;flex:none}
+@keyframes blink{50%{opacity:.55}}
+.anja[data-s="ended"] .main{color:var(--ink-2)}
+.anja[data-s="attention"] .main{color:#7a4200}
+
+/* kontroll: alltid nøyaktig én handling, alltid til høyre */
+.ctl{grid-area:ctl;display:flex;align-items:center;justify-content:flex-end;min-width:0}
+.act{border:0;border-radius:var(--r);padding:9px 14px;font-weight:600;font-size:14px;display:inline-flex;align-items:center;gap:8px;white-space:nowrap;transition:background .2s,color .2s}
+.act.primary{background:var(--blue);color:#fff}
+.act.primary:hover{background:var(--blue-deep)}
+.act.quiet{background:#fff;color:var(--ink);box-shadow:inset 0 0 0 1px #171b2d22}
+.act.quiet:hover{background:#f3f7ff;box-shadow:inset 0 0 0 1px #005ef566}
+.act.quiet i{display:block;width:10px;height:10px;background:var(--ink);border-radius:2px}
+.act.amber{background:var(--amber);color:#fff}
+.act.amber:hover{background:#a95f08}
+@media (max-width:420px){.act .lbl{display:none}.act{padding:9px 11px}}
+
+
+/* ---------- kontroll ---------- */
+.ctrl{background:var(--paper);border:1px solid var(--line);border-radius:14px;padding:18px;position:sticky;top:16px;display:flex;flex-direction:column;gap:14px}
+.ctrl h3{margin:0;font-family:var(--display);font-size:15px;letter-spacing:-.02em}
+.ctrl p{margin:0;color:var(--ink-2);font-size:14px}
+.play{display:flex;align-items:center;justify-content:center;gap:10px;background:var(--blue);color:#fff;border:0;border-radius:var(--r);padding:13px 16px;font-weight:600;font-size:15px}
+.play:hover{background:var(--blue-deep)}
+.play.running{background:var(--ink)}
+.steps{display:flex;flex-direction:column;border-top:1px solid var(--line)}
+.step{display:grid;grid-template-columns:10px 1fr auto;gap:12px;align-items:start;padding:11px 4px;border:0;border-bottom:1px solid var(--line);background:none;text-align:left;color:inherit;border-radius:0;transition:background .2s}
+.step:hover{background:var(--cream)}
+.step .k{width:10px;height:10px;border-radius:50%;background:var(--line);margin-top:6px;transition:background .3s,box-shadow .3s}
+.step.on .k{background:var(--blue);box-shadow:0 0 0 4px var(--sky-2)}
+.step.on .k.amb{background:var(--amber);box-shadow:0 0 0 4px #f5d9b3}
+.step b{display:block;font-size:14px;font-weight:600}
+.step span{display:block;font-size:13px;color:var(--ink-2);line-height:1.4}
+.step em{font-style:normal;font-size:12px;color:var(--ink-3);font-variant-numeric:tabular-nums;margin-top:3px}
+.step.on b{color:var(--blue)}
+.step.on .k.amb~div b{color:var(--amber)}
+.legend{font-size:13px;color:var(--ink-2);border-top:1px solid var(--line);padding-top:12px;display:grid;gap:6px}
+.legend b{color:var(--ink);font-weight:600}
+.legend code{font:600 12px/1 var(--body);background:var(--sky);color:var(--blue);padding:2px 6px;border-radius:3px}
+
+/* prinsipper */
+.notes{margin-top:26px;display:grid;grid-template-columns:repeat(3,1fr);gap:18px 28px}
+@media (max-width:820px){.notes{grid-template-columns:1fr}}
+.notes h4{font-family:var(--display);font-size:14px;margin:0 0 6px;letter-spacing:-.02em}
+.notes p{margin:0;color:var(--ink-2);font-size:14px;max-width:48ch}
+:focus-visible{outline:2px solid var(--blue);outline-offset:2px}
+@media (prefers-reduced-motion:reduce){*{animation-duration:.01ms!important;transition-duration:.01ms!important}}
+</style>
+</head>
+<body>
+
+<div class="wrap">
+<header class="top">
+  <h1>Anja <span>·</span> ett felt, faste plasser</h1>
+  <p>Versjon 2 av stemmefeltet i Nyhavna-panelet. Indikator til venstre, status i midten, én kontroll til høyre, samme høyde i alle tilstander. Trykk «Spill hele forløpet», hopp til en tilstand, eller hold inne orben mens Anja lytter.</p>
+</header>
+
+<div class="grid">
+  <div class="stage">
+    <aside class="panel">
+      <div class="brand"><i></i>Nyhavna</div>
+      <div>
+        <h2>Nyhavna</h2>
+        <p class="meta">79 steder · 8 temaer</p>
+      </div>
+
+      <div class="anja" id="anja" data-s="idle" role="group" aria-label="Anja, stemmeguide">
+        <div class="orb" id="orb" aria-hidden="true" title="Hold inne for å simulere at du snakker">
+          <span class="halo"></span>
+          <svg class="mic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><rect x="9" y="3" width="6" height="11" rx="3" fill="currentColor" stroke="none"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3M9 21h6"/></svg>
+          <span class="dots"><i></i><i></i><i></i></span>
+          <span class="bars"><i></i><i></i><i></i><i></i></span>
+          <svg class="check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>
+          <svg class="warn" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M12 4l9 16H3z" stroke-linejoin="round"/><path d="M12 10v4M12 17.5v.5"/></svg>
+        </div>
+        <div class="txt">
+          <p class="main" id="main" role="status" aria-live="polite">Anja, AI-guide fra Placy</p>
+          <p class="sub" id="sub"><span class="t" id="subt">Spør om steder, veier og hverdagen i Nyhavna</span></p>
+        </div>
+        <div class="ctl" id="ctl"></div>
+      </div>
+
+      <p class="hint">Kartet viser hele nabolaget. Velg et tema for å gå inn i ett av dem.</p>
+      <div class="sec">Temaer</div>
+      <div class="themes">
+        <div class="theme"><span class="ic" style="background:#7c5cbf"></span><div><b>Nyhavna som bydel</b><small>5 steder</small></div></div>
+        <div class="theme"><span class="ic" style="background:#4cb26b"></span><div><b>Hverdag</b><small>11 steder</small></div></div>
+        <div class="theme"><span class="ic" style="background:#e5a53a"></span><div><b>Oppvekst</b><small>12 steder</small></div></div>
+        <div class="theme"><span class="ic" style="background:#e15b5b"></span><div><b>Servering</b><small>19 steder</small></div></div>
+        <div class="theme"><span class="ic" style="background:#4bb59a"></span><div><b>Natur</b><small>4 steder</small></div></div>
+        <div class="theme"><span class="ic" style="background:#4a86e8"></span><div><b>Transport</b><small>13 steder</small></div></div>
+      </div>
+    </aside>
+
+    <div class="map" id="map" aria-hidden="true">
+      <svg viewBox="0 0 600 720" preserveAspectRatio="none">
+        <path class="water" d="M0 0h600v180c-80 30-160 20-230 60S250 300 180 290 60 250 0 260z"/>
+        <path class="quay" d="M0 262c60-8 120 10 180 28s120 30 190-10 150-60 230-100"/>
+        <path class="road" d="M40 720V330M120 720V310M230 720V330M330 720V300M430 720V270M0 420h600M0 520h600M0 620h600"/>
+        <path class="quay" d="M340 190l40 60M470 120l40 80"/>
+      </svg>
+      <div class="pin" data-place="barnehage" style="left:38%;top:62%"><span class="dot"></span><span class="lbl">Nyhavna barnehage · 4 min</span></div>
+      <div class="pin" data-place="svartlamon" style="left:66%;top:74%"><span class="dot"></span><span class="lbl">Svartlamon barnehage · 9 min</span></div>
+      <div class="pin" data-place="dora" style="left:57%;top:36%"><span class="dot"></span><span class="lbl">Dora 1</span></div>
+      <div class="pin" style="left:22%;top:48%"><span class="dot"></span><span class="lbl">Ladehammeren</span></div>
+      <div class="pin" style="left:80%;top:52%"><span class="dot"></span><span class="lbl">Strandveikaia</span></div>
+      <div class="pin" style="left:45%;top:82%"><span class="dot"></span><span class="lbl">Reina</span></div>
+      <div class="cam" id="cam">Kartet flyr til Nyhavna barnehage</div>
+    </div>
+  </div>
+
+  <aside class="ctrl">
+    <h3>Forløpet</h3>
+    <p>Hvert steg viser hva orben, teksten og høyre side gjør. Tider er demo-tider, ikke målt latens.</p>
+    <button class="play" id="play">▶ Spill hele forløpet</button>
+    <div class="steps" id="steps">
+      <button class="step" data-go="idle"><span class="k"></span><div><b>Klar</b><span>Blå orb, hvem Anja er, og én tydelig handling: «Snakk med Anja». Anja har én stemme, så det er ingenting å velge.</span></div></button>
+      <button class="step" data-go="connecting"><span class="k"></span><div><b>Kobler til</b><span>Én animasjon: halvring roterer rundt orben. «Avslutt» tar plassen til høyre fra nå.</span><em>~1,5 s</em></div></button>
+      <button class="step" data-go="listening"><span class="k"></span><div><b>Lytter</b><span>Mikrofonen er åpen: tynn ring puster sakte. Ingenting slår ut før du faktisk sier noe.</span></div></button>
+      <button class="step" data-go="hearing"><span class="k"></span><div><b>Hører deg</b><span>Ringen følger stemmen din. Hold inne orben for å simulere at du snakker.</span></div></button>
+      <button class="step" data-go="thinking"><span class="k"></span><div><b>Finner svar</b><span>Tre punkter i bane. Hovedteksten står i ro. Hjelpeteksten skifter bare når oppgaven faktisk endrer seg.</span><em>~2,5 s</em></div></button>
+      <button class="step" data-go="speaking"><span class="k"></span><div><b>Snakker</b><span>Blå orb med lydbølge. Kartet bærer svaret: stedene lyser opp med gangtid. Be Anja gjenta eller utdype hvis noe var uklart.</span></div></button>
+      <button class="step" data-go="yourturn"><span class="k"></span><div><b>Din tur</b><span>Tilbake til lytting med et kort «Din tur»-merke.</span></div></button>
+      <button class="step" data-go="ended"><span class="k"></span><div><b>Avsluttet</b><span>Grått og rolig. Stedene står igjen på kartet. «Start igjen».</span></div></button>
+      <button class="step" data-go="attention"><span class="k amb"></span><div><b>Trenger deg</b><span>Gul kant. Hva som er galt som hovedtekst, hva du gjør som hjelpetekst, én knapp.</span></div></button>
+    </div>
+    <div class="legend">
+      <div><b>Faste plasser:</b> indikator til venstre, tekst i midten, én kontroll til høyre. Feltet er 68 px høyt i alle tilstander.</div>
+      <div><b>Hovedteksten</b> sier tilstanden med ett ord: <code>Lytter</code>, <code>Finner svar</code>, <code>Snakker</code>. Hjelpeteksten sier hva du kan gjøre.</div>
+      <div><b>Avslutt</b> avslutter hele samtalen og er merket med ord. Å avbryte opplesningen gjør du ved å snakke.</div>
+    </div>
+  </aside>
+</div>
+
+<section class="notes">
+  <div><h4>Samme høyde hele veien</h4><p>Feltet gjør tre ting: starte samtalen, vise hva Anja gjør, og la deg avslutte. Ingen historikk, ingen ekstra valg. Anja forklarer med stemmen, kartet og panelet viser innholdet. En egen tekstmodus for bruk uten lyd kan utforskes senere.</p></div>
+  <div><h4>Åpen mikrofon er ikke det samme som å høre deg</h4><p>Lytter: tynn ring som puster sakte. Hører deg: ringen slår ut i takt med stemmen. Skillet er det som gjør brukeren trygg på at lyden registreres.</p></div>
+  <div><h4>Kartet er svaret</h4><p>Stedene Anja nevner lyser opp med gangtid, og kameraet flyr dit. Feltet trenger derfor bare å si «Snakker», ikke gjenta svaret.</p></div>
+</section>
+</div>
+
+<script>
+(function(){
+  const $=id=>document.getElementById(id);
+  const anja=$('anja'),orb=$('orb'),main=$('main'),subt=$('subt'),sub=$('sub'),ctl=$('ctl'),
+  play=$('play'),cam=$('cam'),steps=[...document.querySelectorAll('.step')],pins=[...document.querySelectorAll('.pin')];
+  const reduce=matchMedia('(prefers-reduced-motion: reduce)').matches;
+  let timers=[],current='idle',running=false,raf=null,holding=false;
+
+  const T=(fn,ms)=>{const id=setTimeout(fn,ms);timers.push(id);return id};
+  const clearT=()=>{timers.forEach(clearTimeout);timers=[];if(raf)cancelAnimationFrame(raf);raf=null;anja.style.removeProperty('--lvl')};
+  const light=ids=>pins.forEach(p=>p.classList.toggle('lit',ids.includes(p.dataset.place)));
+  const setMain=(html)=>{main.innerHTML=html};
+  const setSub=(text,opts={})=>{sub.innerHTML='';const t=document.createElement('span');t.className='t';t.id='subt';t.textContent=text;sub.appendChild(t)};
+  const setCtl=(kind,label,onClick,aria)=>{ctl.innerHTML='';if(!kind)return;const b=document.createElement('button');b.type='button';b.className='act '+kind;b.setAttribute('aria-label',aria||label);b.title=aria||label;
+    b.innerHTML=(kind==='quiet'?'<i></i>':'')+'<span class="lbl">'+label+'</span>';b.addEventListener('click',onClick);ctl.appendChild(b)};
+
+  let shown=false; /* om steder er merket på kartet */
+
+  /* stemmenivå: en talelignende kurve mens brukeren "snakker", null ellers */
+  function envelope(){let t=0;const f=()=>{t+=.05;const v=1+Math.max(0,.10+Math.sin(t*4.2)*.08+Math.sin(t*11)*.05);anja.style.setProperty('--lvl',v.toFixed(3));raf=requestAnimationFrame(f)};f()}
+  function stopEnvelope(){if(raf)cancelAnimationFrame(raf);raf=null;anja.style.removeProperty('--lvl')}
+
+  const S={
+    idle(){setMain('Anja, AI-guide fra Placy');setSub('Spør om steder, veier og hverdagen i Nyhavna');setCtl('primary','Snakk med Anja',run);light([]);cam.classList.remove('show');shown=false},
+    connecting(){setMain('Kobler til …');setSub('Et øyeblikk');setCtl('quiet','Avslutt',end,'Avslutt samtalen');light([]);cam.classList.remove('show')},
+    listening(){setMain('Lytter');setSub('Mikrofonen er åpen. Snakk når du vil');setCtl('quiet','Avslutt',end,'Avslutt samtalen')},
+    hearing(){setMain('Hører deg');setSub('Fortsett, jeg venter til du er ferdig');setCtl('quiet','Avslutt',end,'Avslutt samtalen');envelope()},
+    thinking(){setMain('Finner svar …');setSub('Leser det som er skrevet om Nyhavna');setCtl('quiet','Avslutt',end,'Avslutt samtalen');
+      T(()=>{const t=$('subt');if(t)t.textContent='Flytter kartet til Nyhavna barnehage';cam.textContent='Kartet flyr til Nyhavna barnehage';cam.classList.add('show')},1500)},
+    speaking(){setMain('Snakker');setSub('Snakk for å avbryte');setCtl('quiet','Avslutt',end,'Avslutt samtalen');
+      T(()=>{light(['barnehage']);cam.textContent='Kartet flyr til Nyhavna barnehage';cam.classList.add('show')},300);
+      T(()=>{light(['barnehage','svartlamon']);cam.textContent='Viser begge barnehagene';shown=true},2600)},
+    yourturn(){setMain('<span class="turn">Din tur</span> Lytter');setSub('Spør videre, eller si «neste sted»');setCtl('quiet','Avslutt',end,'Avslutt samtalen');
+      T(()=>{const t=main.querySelector('.turn');if(t)t.remove()},3200)},
+    ended(){setMain('Samtalen er avsluttet');setSub(shown?'To steder står igjen merket på kartet':'Ingen steder ble vist');setCtl('primary','Start igjen',run);cam.classList.remove('show')},
+    attention(){setMain('Mikrofonen er blokkert');setSub('Tillat den i nettleseren, så fortsetter vi');setCtl('amber','Prøv igjen',()=>{go('connecting');T(()=>go('listening'),1400)});light([]);cam.classList.remove('show')}
+  };
+
+  function go(s){clearT();stopEnvelope();current=s;anja.dataset.s=s==='yourturn'?'listening':s;S[s]();steps.forEach(b=>b.classList.toggle('on',b.dataset.go===s))}
+  function end(){if(running)stopRun();go('ended')}
+
+  const seq=[['connecting',1500],['listening',1800],['hearing',2600],['thinking',2600],['speaking',6000],['yourturn',4200],['ended',0]];
+  function run(){if(running)return;running=true;play.textContent='■ Stopp forløpet';play.classList.add('running');let i=0;
+    const next=()=>{if(!running)return;if(i>=seq.length){stopRun();return}const [s,ms]=seq[i++];go(s);if(ms)T(next,ms);else stopRun()};next()}
+  function stopRun(){running=false;play.textContent='▶ Spill hele forløpet';play.classList.remove('running')}
+
+  play.addEventListener('click',()=>running?(stopRun(),go('idle')):run());
+  steps.forEach(b=>b.addEventListener('click',()=>{if(running)stopRun();go(b.dataset.go)}));
+
+  /* hold inne orben mens Anja lytter = du snakker */
+  const down=e=>{if(anja.dataset.s!=='listening'||current==='yourturn'&&false)return;if(current!=='listening'&&current!=='yourturn')return;e.preventDefault();holding=true;if(running)stopRun();go('hearing')};
+  const up=()=>{if(!holding)return;holding=false;go('listening')};
+  orb.addEventListener('pointerdown',down);window.addEventListener('pointerup',up);window.addEventListener('pointercancel',up);
+
+  go('idle');
+})();
+</script>
+</body>
+</html>

@@ -106,6 +106,22 @@ beforeEach(() => {
 afterEach(() => { cleanup(); vi.useRealTimers(); vi.unstubAllGlobals(); vi.restoreAllMocks(); });
 
 describe("Live-oppkobling", () => {
+  it("varsler før lokal tidsgrense og rydder varselet ved stopp", async () => {
+    vi.useFakeTimers();
+    const { result, peer } = await connect();
+    await act(async () => { vi.advanceTimersByTime(27 * 60 * 1000); });
+    expect(result.current.notice).toBeNull();
+    // Duplisert started-event må ikke flytte varselet framover.
+    act(() => { peer.channel.emit({ type: "session.started" }); });
+    await act(async () => { vi.advanceTimersByTime(60 * 1000); });
+    expect(result.current.notice).toContain("to minutter");
+    expect(result.current.status).not.toBe("error");
+    act(() => { result.current.stop(); });
+    expect(result.current.notice).toBeNull();
+    await act(async () => { vi.advanceTimersByTime(30 * 60 * 1000); });
+    expect(result.current.notice).toBeNull();
+  });
+
   it("kobler opp, hilser over datakanalen og lytter", async () => {
     const { result, peer, events } = await connect();
     expect(peer.createDataChannel).toHaveBeenCalledWith("oai-events");
@@ -160,6 +176,19 @@ describe("Live-oppkobling", () => {
 });
 
 describe("Kartdirektiver over SSE", () => {
+  it("slipper ekstrautvalget gjennom SSE bare for lokal Nyhavna-demo", async () => {
+    const executeTool = vi.fn(() => ({ ok: true, shown: "CrossFit Trondheim" }));
+    const { events } = await connect({ ...options(executeTool), dataset: "nyhavna-lokal" });
+    await act(async () => { events.emit({ type: "map", directive: { id: "reserve-1", name: "reveal_places", args: { poi_ids: ["crossfit-trondheim"] } } }); });
+    expect(executeTool).toHaveBeenCalledWith("reveal_places", { poi_ids: ["crossfit-trondheim"] });
+    expect(JSON.parse(String(posts("/api/prototype/live/map")[0][1]?.body)).output).toMatchObject({ ok: true });
+  });
+  it("avviser ekstrautvalg-direktivet på andre demoer", async () => {
+    const executeTool = vi.fn(() => ({ ok: true }));
+    const { events } = await connect(options(executeTool));
+    await act(async () => { events.emit({ type: "map", directive: { id: "reserve-2", name: "reveal_places", args: { poi_ids: ["crossfit-trondheim"] } } }); });
+    expect(executeTool).not.toHaveBeenCalled();
+  });
   it("utfører direktivet i nettleseren og leverer kartstatus tilbake", async () => {
     const executeTool = vi.fn(() => ({ ok: true, shown: "Dora Kaffebar" }));
     const { events } = await connect(options(executeTool));

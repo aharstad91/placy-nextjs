@@ -38,7 +38,7 @@ const SUPERSEDED_OUTPUT = MAP_CANCELLED_OUTPUT;
 
 const END_MESSAGES: Record<LiveEndReason, string> = {
   manual: 'Samtalen er avsluttet.',
-  limit: 'Samtalen nådde tidsgrensen.',
+  limit: 'Samtalen nådde tidsgrensen. Trykk på mikrofonen for å starte en ny samtale.',
   idle: 'Samtalen ble avsluttet fordi det var stille en stund.',
   connection: 'Forbindelsen til samtalen falt.',
   error: 'Samtalen ble avsluttet på grunn av en feil.',
@@ -431,6 +431,7 @@ export async function connectLiveSideband(
   }, 10000);
   idleTimer.unref?.();
 
+  let selectionVersion = 0;
   const onContext = (message: LiveContextMessage) => {
     if (ended) return;
     lastActivity = Date.now();
@@ -439,6 +440,7 @@ export async function connectLiveSideband(
         selected_category_id: message.selected_category_id,
         selected_place_id: message.selected_place_id,
         travel_mode: message.travel_mode,
+        revealed_place_ids: message.revealed_place_ids,
       });
       const mapContext = conversation.mapContextIfChanged();
       if (mapContext) send({ type: 'session.thinking.append', delegation_id: null, content: clip(mapContext) });
@@ -451,13 +453,17 @@ export async function connectLiveSideband(
       send({ type: 'response.create' });
       return;
     }
+    const version = ++selectionVersion;
     const selection = conversation.onMapSelection(message.kind, message.id);
     if (!selection) return;
     void (async () => {
       for (const directive of selection.directives) {
+        if (ended || version !== selectionVersion) return;
         const output = await bridge.dispatch(directive.name, directive.args).result;
+        if (ended || version !== selectionVersion) return;
         conversation.observeBrowserResult(directive.name, directive.args, output);
       }
+      if (ended || version !== selectionVersion) return;
       const note = conversation.noteIfChanged();
       if (note) send({ type: 'session.update', session: { delegation: { type: 'responses', responses: { instructions: `${baseInstructions}\n\n${note}` } } } });
       // Kommentar, ikke instruks: stemmen skal FORTELLE dette, parafrasert.

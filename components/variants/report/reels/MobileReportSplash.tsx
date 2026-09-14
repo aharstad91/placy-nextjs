@@ -126,6 +126,7 @@ export function MobileReportSplash({
         "fixed inset-0 z-50 overflow-hidden bg-black transition-opacity duration-[600ms] ease-out",
         visible ? "opacity-100" : "pointer-events-none opacity-0",
       )}
+      data-report-splash="mobile"
       aria-hidden={!visible}
     >
       {/* Full-bleed hero — video (foretrukket) eller bilde. */}

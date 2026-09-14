@@ -10,6 +10,7 @@ import {
   LABEL_MAX_W,
   type LabelSide,
 } from "@/lib/board/label-collision";
+import { PROJECT_PIN_DISC } from "./ProjectSitePin";
 
 /**
  * Innholdet i en POI-markør: disc + ikon + navn, som HTML og CSS.
@@ -73,6 +74,12 @@ import {
  * (`BoardMarker`s `containerSize`), så samme sted er like stort i begge motorer.
  */
 export const PIN_SIZE = 32;
+/**
+ * Bildepinnens diameter — delområdene tegnes like store som prosjektpinnen
+ * (Andreas, 2026-09-14: «like store som selve objekt-sirkelen»). Kollisjons-
+ * kullingen i begge motorer reserverer denne størrelsen for dem.
+ */
+export const IMAGE_PIN_SIZE = PROJECT_PIN_DISC;
 /** Prikken en demotert markør tegnes som. Speiles av `DOT_HALF`. */
 export const DOT_SIZE = 14;
 /** Ikon-ratio 0,50 — 32 px disc → 16 px ikon, samme som 2D-markørene og lista. */
@@ -102,6 +109,13 @@ export interface PoiMarkerContentProps {
   /** Lys tint av `color` (typisk `hexLightTint`). Disc-bakgrunn. */
   backgroundColor: string;
   Icon: PhosphorIcon;
+  /**
+   * Bilde som fyller skiva i stedet for ikonet (`center/cover`). Kategori-
+   * fargen står igjen som ring, så temaet leses fortsatt. Brukes der stedet
+   * har et eget bilde som sier mer enn et ikon — nybyggene på Nyhavna har
+   * utbyggerens illustrasjon, stedene som finnes i dag har ikonet.
+   */
+  imageSrc?: string;
   /** Valgfritt tall-badge øverst til høyre. */
   number?: number;
   /**
@@ -179,6 +193,7 @@ export interface PoiMarkerContentProps {
    * det samme med de samme tallene.
    */
   highlightIndex?: number;
+  narrationFocus?: "current" | "other";
 }
 
 /** Mørk nok til å lese over satellittfoto uansett kategorifarge under. */
@@ -188,6 +203,7 @@ export function PoiMarkerContent({
   color,
   backgroundColor,
   Icon,
+  imageSrc,
   number,
   anchor = false,
   label,
@@ -197,11 +213,14 @@ export function PoiMarkerContent({
   opacity = 1,
   pinFactor = 1,
   highlightIndex,
+  narrationFocus,
 }: PoiMarkerContentProps) {
   // Prikken OG den nedskalerte pinnen beholder markørens fulle
   // {@link PIN_SIZE}-boks, så ankeret ikke flytter seg. Bare det tegnede
   // innholdet krymper — se `pinFactor`.
-  const pin = Math.round(PIN_SIZE * scale);
+  // Bildepinner (delområdene) tegnes like store som prosjektpinnen: de er
+  // objekter i samme klasse som utgangspunktet, ikke steder rundt det.
+  const pin = Math.round((imageSrc ? IMAGE_PIN_SIZE : PIN_SIZE) * scale);
   const disc = Math.round(pin * pinFactor);
   /** Luften mellom boksens kant og disc-ens, når disc-en er nedskalert. */
   const discInset = (pin - disc) / 2;
@@ -220,6 +239,7 @@ export function PoiMarkerContent({
   return (
     <div
       data-poi-marker=""
+      data-narration-focus={narrationFocus}
       style={{
         position: "relative",
         width: pin,
@@ -289,7 +309,9 @@ export function PoiMarkerContent({
               marginLeft: -disc / 2,
               marginTop: -disc / 2,
               borderRadius: "50%",
-              background: backgroundColor,
+              background: imageSrc
+                ? `${backgroundColor} center/cover no-repeat url(${imageSrc})`
+                : backgroundColor,
               border: `2px solid ${color}`,
               boxShadow: "0 1.5px 3px rgba(0,0,0,0.35)",
               boxSizing: "border-box",
@@ -301,7 +323,9 @@ export function PoiMarkerContent({
               justifyContent: "center",
             }}
           >
-            <Icon width={iconSize} height={iconSize} weight="fill" color={color} />
+            {!imageSrc && (
+              <Icon width={iconSize} height={iconSize} weight="fill" color={color} />
+            )}
           </span>
           {badge !== undefined && (
             <span

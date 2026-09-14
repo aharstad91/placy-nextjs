@@ -15,7 +15,7 @@
     "id": "skolevei",
     "categoryId": "barn-oppvekst",
     "question": "Hvor langt er det til skolene?",
-    "answer": "Fra demoens markerte punkt er det beregnet cirka 16 minutter å gå til [Lilleby skole](poi:lilleby-skole) og 20 minutter til [Rosenborg skole](poi:rosenborg-skole). På sykkel er anslagene 6 og 10 minutter. Trykk på skolen for å se ruten.",
+    "answer": "Fra demoens markerte punkt er det beregnet cirka 16 minutter å gå til [Lilleby skole](poi:lilleby-skole) og 20 minutter til [Rosenborg skole](poi:rosenborg-skole). På sykkel er anslagene 6 og 10 minutter. Trykk på skolen for å se ruten. Gangruten til Lilleby er omtrent 1,3 kilometer. Dette er en beregnet rute; kryssingene og tryggheten på stedet er ikke vurdert.",
     "origin": "local",
     "sourceIds": [
       "demo-route",
@@ -28,7 +28,7 @@
     "id": "barnehage-dekning",
     "categoryId": "barn-oppvekst",
     "question": "Hvilke barnehager finnes i nærområdet?",
-    "answer": "[Nedre Elvehavn](poi:nedre-elvehavn-bhg) og [Voldsminde](poi:voldsminde-bhg) er to kommunale barnehager i nærområdet. Fra demoens punkt er det beregnet rundt 9 og 12 minutter å gå. Se kommunens sider for informasjon og opptak; ledige plasser er ikke undersøkt.",
+    "answer": "[Nedre Elvehavn](poi:nedre-elvehavn-bhg) og [Voldsminde](poi:voldsminde-bhg) er to kommunale barnehager i nærområdet. Fra Nyhavna er det beregnet rundt 9 og 12 minutter å gå. Se kommunens sider for informasjon og opptak; ledige plasser er ikke undersøkt.",
     "origin": "local",
     "sourceIds": [
       "v-bhg-n",
@@ -41,7 +41,7 @@
     "id": "familie-aktiviteter",
     "categoryId": "opplevelser",
     "question": "Hva kan vi gjøre som familie i nærområdet?",
-    "answer": "Dere har blant annet [bowling på Dora 1](poi:dora-bowling), [padel ved E.C. Dahls](poi:nyhavna-padel) og turmuligheter langs [Ladestien](poi:ladestien). Bowling ligger rundt 3 minutter til fots fra demoens punkt, padel rundt 8. Se stedskortene for plassering og booking.",
+    "answer": "Dere har blant annet [bowling på Dora 1](poi:dora-bowling), [padel ved E.C. Dahls](poi:nyhavna-padel) og turmuligheter langs [Ladestien](poi:ladestien). Bowling ligger rundt 3 minutter til fots fra Nyhavna, padel rundt 8. Se stedskortene for plassering og booking.",
     "origin": "local",
     "sourceIds": [
       "s-bowling",
@@ -55,7 +55,7 @@
     "id": "kafe",
     "categoryId": "mat-drikke",
     "question": "Hvor finner vi kaféer og bakerier?",
-    "answer": "[Dora Kaffebar](poi:dora-kaffebar) ligger i Kobbes gate, rundt 2 minutter til fots fra demoens punkt. [Snurr i Ladebekken](poi:snurr-nyhavna) har kaffe, frokost og bakervarer, rundt 15 minutter unna til fots. Åpningstider finner dere på stedenes egne sider.",
+    "answer": "[Dora Kaffebar](poi:dora-kaffebar) ligger i Kobbes gate, rundt 2 minutter til fots fra Nyhavna. [Snurr i Ladebekken](poi:snurr-nyhavna) har kaffe, frokost og bakervarer, rundt 15 minutter unna til fots. Åpningstider finner dere på stedenes egne sider.",
     "origin": "local",
     "sourceIds": [
       "s-dora",
@@ -68,7 +68,7 @@
     "id": "spisesteder",
     "categoryId": "mat-drikke",
     "question": "Hvilke restauranter finnes i nærheten?",
-    "answer": "[Ladejarlen](poi:ladejarlen) og [Nyhavna BistroBar](poi:nyhavna-bistro) er to alternativer i nærområdet, rundt 8 og 15 minutter til fots fra demoens punkt. På stedskortene finner dere lenker til meny og åpningstider.",
+    "answer": "[Ladejarlen](poi:ladejarlen) og [Nyhavna BistroBar](poi:nyhavna-bistro) er to alternativer i nærområdet, rundt 8 og 15 minutter til fots fra Nyhavna. På stedskortene finner dere lenker til meny og åpningstider.",
     "origin": "local",
     "sourceIds": [
       "s-ladejarlen",
@@ -94,7 +94,7 @@
     "id": "dagligvarer",
     "categoryId": "hverdagsliv",
     "question": "Hvor handler vi dagligvarer?",
-    "answer": "[MENY Solsiden](poi:meny-solsiden) og [KIWI Lilleby](poi:kiwi-lilleby) er to alternativer, rundt 11 og 15 minutter til fots fra demoens punkt. KIWI har også utendørs pakkebokser fra Posten og PostNord.",
+    "answer": "[MENY Solsiden](poi:meny-solsiden) og [KIWI Lilleby](poi:kiwi-lilleby) er to alternativer, rundt 11 og 15 minutter til fots fra Nyhavna. KIWI har også utendørs pakkebokser fra Posten og PostNord.",
     "origin": "local",
     "sourceIds": [
       "demo-meny",
@@ -107,11 +107,12 @@
     "id": "holdeplass",
     "categoryId": "transport",
     "question": "Hvor er nærmeste holdeplass?",
-    "answer": "Av holdeplassene i dette utvalget er [Losgata](poi:losgata) nærmest, rundt 4 minutter til fots fra demoens punkt. [Dora](poi:dora-holdeplass) ligger rundt 5 minutter unna. Sjekk AtB for riktig retning og avgang.",
+    "answer": "[Losgata](poi:losgata) ligger rundt 4 minutter til fots fra Nyhavna, med linje 20 mot Lade, Strindheim og Grilstad. Skal du mot sentrum, bruker du [Dora holdeplass](poi:dora-holdeplass), rundt 5 minutter å gå. Sjekk AtB for riktig avgang.",
     "origin": "local",
     "sourceIds": [
       "demo-atb",
-      "demo-route"
+      "demo-route",
+      "demo-line20"
     ],
     "caveats": []
   },
@@ -119,7 +120,7 @@
     "id": "sentrum",
     "categoryId": "transport",
     "question": "Hvordan kommer vi oss til sentrum?",
-    "answer": "Linje 20 fra [Losgata](poi:losgata) eller [Dora](poi:dora-holdeplass) går mot Trondheim S og sentrum. Fra Dora går også linje 71 via Solsiden og sentrum. Bruk AtB for avgangen som passer reisen deres. Til [Trondheim S](poi:trondheim-s) er det beregnet rundt 8 minutter på sykkel fra demoens punkt.",
+    "answer": "Fra [Dora holdeplass](poi:dora-holdeplass) går linje 20 mot [Trondheim S](poi:trondheim-s). Selve bussturen tar rundt 4 minutter i rutetabellen, for eksempel klokken 08.31–08.35 på en hverdag. Til holdeplassen er det rundt 5 minutter å gå fra Nyhavna. Linje 71 fra Dora går også via Solsiden og sentrum.",
     "origin": "local",
     "sourceIds": [
       "demo-line20",
@@ -133,7 +134,7 @@
     "id": "bildeling",
     "categoryId": "transport",
     "question": "Kan vi bruke bildeling?",
-    "answer": "Trondheim Bilkollektiv har hentested i [Mellomveien](poi:tbk-mellomveien), rundt 12 minutter til fots fra demoens punkt. Dere trenger medlemskap og reservasjon, og bilen returneres til hentestedet. Se operatørens side for tilgjengelighet og vilkår.",
+    "answer": "Trondheim Bilkollektiv har hentested i [Mellomveien](poi:tbk-mellomveien), rundt 12 minutter til fots fra Nyhavna. Dere trenger medlemskap og reservasjon, og bilen returneres til hentestedet. Se operatørens side for tilgjengelighet og vilkår.",
     "origin": "local",
     "sourceIds": [
       "demo-tbk",
@@ -149,6 +150,83 @@
     "origin": "local",
     "sourceIds": [
       "demo-parking"
+    ],
+    "caveats": []
+  },
+  {
+    "id": "bo-felles",
+    "categoryId": "nyhavna-bydel",
+    "question": "Hva slags bydel skal Nyhavna bli?",
+    "answer": "Målet er en bydel med boliger, arbeidsliv, kultur og grøntområder ved vannet. Fellesrom og møteplasser skal bidra til naboskap.",
+    "origin": "local",
+    "sourceIds": [
+      "bo-felles"
+    ],
+    "caveats": []
+  },
+  {
+    "id": "bo-transittkaia",
+    "categoryId": "nyhavna-bydel",
+    "question": "Hvor kommer de første boligene?",
+    "answer": "Transittkaia er utpekt som første område. Se [Transittkaia](poi:transittkaia) for boligplanene og framdriftsanslaget.",
+    "origin": "local",
+    "sourceIds": [
+      "bo-transittkaia"
+    ],
+    "caveats": []
+  },
+  {
+    "id": "bo-kullkranpiren",
+    "categoryId": "nyhavna-bydel",
+    "question": "Hva er planlagt på Kullkranpiren?",
+    "answer": "Boliger, grøntområder og kultur inngår i planene for [Kullkranpiren](poi:kullkranpiren). Detaljene er ikke presentert som vedtatte planer.",
+    "origin": "local",
+    "sourceIds": [
+      "bo-kullkranpiren"
+    ],
+    "caveats": []
+  },
+  {
+    "id": "bo-strandveikaia",
+    "categoryId": "nyhavna-bydel",
+    "question": "Hva skal skje på Strandveikaia?",
+    "answer": "[Strandveikaia](poi:strandveikaia) er planlagt som et bydelssentrum med kultur, sjøbad og forbindelser over havnebassenget.",
+    "origin": "local",
+    "sourceIds": [
+      "bo-strandveikaia"
+    ],
+    "caveats": []
+  },
+  {
+    "id": "bo-ladehammerkaia",
+    "categoryId": "nyhavna-bydel",
+    "question": "Hvordan kan det bli å bo på Ladehammerkaia?",
+    "answer": "[Ladehammerkaia](poi:ladehammerkaia) er tenkt med en høy boligandel, parker og tilbud i sørvendte omgivelser ved vannet.",
+    "origin": "local",
+    "sourceIds": [
+      "bo-ladehammerkaia"
+    ],
+    "caveats": []
+  },
+  {
+    "id": "bo-bunkerkvartalet",
+    "categoryId": "nyhavna-bydel",
+    "question": "Hva er Bunkerkvartalet?",
+    "answer": "[Bunkerkvartalet](poi:bunkerkvartalet) handler særlig om kultur, kunnskap og havteknologi rundt Dora 2, blant annet ønsket om et nytt Vitensenter.",
+    "origin": "local",
+    "sourceIds": [
+      "bo-bunkerkvartalet"
+    ],
+    "caveats": []
+  },
+  {
+    "id": "bo-folg-utviklingen",
+    "categoryId": "nyhavna-bydel",
+    "question": "Hvordan kan jeg følge boligplanene?",
+    "answer": "På Nyhavnas nettside kan du melde deg på nyhetsbrevet for oppdateringer og invitasjon til forsalg. Påmeldingen skjer hos Nyhavna Utvikling.",
+    "origin": "local",
+    "sourceIds": [
+      "bo-nyhetsbrev"
     ],
     "caveats": []
   }

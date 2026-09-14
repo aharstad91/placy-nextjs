@@ -1,0 +1,452 @@
+{
+  "meta": {
+    "origin": {
+      "lat": 63.43980508893858,
+      "lng": 10.41725655026434
+    },
+    "radiusKm": 10,
+    "distanceMethod": "Haversine straight line to stored POI coordinate, not travel distance",
+    "retrievedAt": "2026-09-14",
+    "supabaseBoundingBoxRows": 5119,
+    "relevantCandidateCount": 796,
+    "selectedCount": 24,
+    "candidateRadiusCounts": {
+      "2": {
+        "trening-aktivitet": 154,
+        "natur-friluftsliv": 136
+      },
+      "5": {
+        "trening-aktivitet": 349,
+        "natur-friluftsliv": 254
+      },
+      "10": {
+        "trening-aktivitet": 463,
+        "natur-friluftsliv": 316
+      }
+    },
+    "selectedRadiusCounts": {
+      "2": {
+        "trening-aktivitet": 5,
+        "natur-friluftsliv": 4
+      },
+      "5": {
+        "trening-aktivitet": 8,
+        "natur-friluftsliv": 7
+      },
+      "10": {
+        "trening-aktivitet": 12,
+        "natur-friluftsliv": 12
+      }
+    },
+    "decisions": {
+      "not-selected-curated-scope": 732,
+      "excluded-existing-local": 8,
+      "excluded-misclassified-or-planned": 13,
+      "selected": 24,
+      "duplicate-of-selected": 19
+    },
+    "qualityNotes": [
+      "All 5119 bounding-box rows processed; 796 relevant 10km rows classified for bounded curation. Not a comprehensive factual verification of every POI.",
+      "No description fields populated; editorial hooks contain misclassification and unsupported claims. Selected summaries intentionally omit superlatives, opening hours, prices and route estimates.",
+      "Existing local four venues preserved; candidates from nature adjacent marina/campground not selected.",
+      "No database writes; no new web verification."
+    ]
+  },
+  "importedCount": 23,
+  "excludedAfterReview": [
+    "outdoor-estenstadmarka-reppe: usikkert manuelt inngangspunkt"
+  ],
+  "places": [
+    {
+      "id": "google-ChIJSUfPIqAxbUYRiyIKq4-hSPs",
+      "name": "3T-Solsiden",
+      "categoryId": "trening-aktivitet",
+      "lat": 63.43650049999999,
+      "lng": 10.4163885,
+      "distanceKm": 0.37,
+      "website": "https://www.3t.no/treningssenter/3t-solsiden",
+      "summary": "Treningssenter på Solsiden.",
+      "provenance": {
+        "provider": "Supabase v2.pois",
+        "recordId": "google-ChIJSUfPIqAxbUYRiyIKq4-hSPs",
+        "importedAt": "2026-09-14",
+        "verification": "Stored provider data, not freshly verified official sources",
+        "summaryBasis": "Conservative name/category and stored editorial context"
+      }
+    },
+    {
+      "id": "google-ChIJhQ_hSpkxbUYRWqS19GSEX74",
+      "name": "Fresh Fitness Trondheim Sentrum",
+      "categoryId": "trening-aktivitet",
+      "lat": 63.432711499999996,
+      "lng": 10.4040612,
+      "distanceKm": 1.026,
+      "website": "https://www.freshfitness.no/treningssenter/treningssenter-trondheim-sentrum",
+      "summary": "Treningssenter i Trondheim sentrum.",
+      "provenance": {
+        "provider": "Supabase v2.pois",
+        "recordId": "google-ChIJhQ_hSpkxbUYRWqS19GSEX74",
+        "importedAt": "2026-09-14",
+        "verification": "Stored provider data, not freshly verified official sources",
+        "summaryBasis": "Conservative name/category and stored editorial context"
+      }
+    },
+    {
+      "id": "google-ChIJ14ihUqMxbUYRRdMpmDgsdfE",
+      "name": "Cora Pilates as.",
+      "categoryId": "trening-aktivitet",
+      "lat": 63.43263809999999,
+      "lng": 10.4080846,
+      "distanceKm": 0.9182,
+      "website": "https://www.corapilates.no/",
+      "summary": "Pilatesstudio i Nedre Elvehavn.",
+      "provenance": {
+        "provider": "Supabase v2.pois",
+        "recordId": "google-ChIJ14ihUqMxbUYRRdMpmDgsdfE",
+        "importedAt": "2026-09-14",
+        "verification": "Stored provider data, not freshly verified official sources",
+        "summaryBasis": "Conservative name/category and stored editorial context"
+      }
+    },
+    {
+      "id": "google-ChIJ3dC0THUxbUYRDwPe-_rPKqA",
+      "name": "Nidaros Bokseklubb",
+      "categoryId": "trening-aktivitet",
+      "lat": 63.4388723,
+      "lng": 10.4158712,
+      "distanceKm": 0.1245,
+      "website": "http://nidaros.bokseklubb.no/",
+      "summary": "Bokseklubb på Dora.",
+      "provenance": {
+        "provider": "Supabase v2.pois",
+        "recordId": "google-ChIJ3dC0THUxbUYRDwPe-_rPKqA",
+        "importedAt": "2026-09-14",
+        "verification": "Stored provider data, not freshly verified official sources",
+        "summaryBasis": "Conservative name/category and stored editorial context"
+      }
+    },
+    {
+      "id": "google-ChIJIxSO7s0xbUYRQTZSjmjBkjk",
+      "name": "3T-Lade",
+      "categoryId": "trening-aktivitet",
+      "lat": 63.44332319999999,
+      "lng": 10.4505412,
+      "distanceKm": 1.7004,
+      "website": "https://www.3t.no/treningssenter/3t-lade",
+      "summary": "Treningssenter på Lade.",
+      "provenance": {
+        "provider": "Supabase v2.pois",
+        "recordId": "google-ChIJIxSO7s0xbUYRQTZSjmjBkjk",
+        "importedAt": "2026-09-14",
+        "verification": "Stored provider data, not freshly verified official sources",
+        "summaryBasis": "Conservative name/category and stored editorial context"
+      }
+    },
+    {
+      "id": "google-ChIJUdaOG_8wbUYRthFAqcjZ5kM",
+      "name": "3T-Leangen",
+      "categoryId": "trening-aktivitet",
+      "lat": 63.435792500000005,
+      "lng": 10.4649422,
+      "distanceKm": 2.4127,
+      "website": "https://www.3t.no/treningssenter/3t-leangen",
+      "summary": "Treningssenter på Leangen.",
+      "provenance": {
+        "provider": "Supabase v2.pois",
+        "recordId": "google-ChIJUdaOG_8wbUYRthFAqcjZ5kM",
+        "importedAt": "2026-09-14",
+        "verification": "Stored provider data, not freshly verified official sources",
+        "summaryBasis": "Conservative name/category and stored editorial context"
+      }
+    },
+    {
+      "id": "google-ChIJMT2GMjUwbUYRp-2cXe7QB7U",
+      "name": "3T-Moholt",
+      "categoryId": "trening-aktivitet",
+      "lat": 63.410436499999996,
+      "lng": 10.4450702,
+      "distanceKm": 3.5466,
+      "website": "https://www.3t.no/treningssenter/3t-moholt",
+      "summary": "Treningssenter på Moholt.",
+      "provenance": {
+        "provider": "Supabase v2.pois",
+        "recordId": "google-ChIJMT2GMjUwbUYRp-2cXe7QB7U",
+        "importedAt": "2026-09-14",
+        "verification": "Stored provider data, not freshly verified official sources",
+        "summaryBasis": "Conservative name/category and stored editorial context"
+      }
+    },
+    {
+      "id": "google-ChIJH_fiRS8ybUYRh-R4Hu9kxwc",
+      "name": "3T-Ilsvika",
+      "categoryId": "trening-aktivitet",
+      "lat": 63.431317899999996,
+      "lng": 10.357327999999999,
+      "distanceKm": 3.1259,
+      "website": "https://www.3t.no/treningssenter/3t-ilsvika",
+      "summary": "Treningssenter i Ilsvika.",
+      "provenance": {
+        "provider": "Supabase v2.pois",
+        "recordId": "google-ChIJH_fiRS8ybUYRh-R4Hu9kxwc",
+        "importedAt": "2026-09-14",
+        "verification": "Stored provider data, not freshly verified official sources",
+        "summaryBasis": "Conservative name/category and stored editorial context"
+      }
+    },
+    {
+      "id": "google-ChIJ8QQ3630wbUYRUMm48wRgbVc",
+      "name": "3T-Ranheim",
+      "categoryId": "trening-aktivitet",
+      "lat": 63.4280825,
+      "lng": 10.5251726,
+      "distanceKm": 5.5227,
+      "website": "https://www.3t.no/treningssenter/3t-ranheim",
+      "summary": "Treningssenter på Ranheim.",
+      "provenance": {
+        "provider": "Supabase v2.pois",
+        "recordId": "google-ChIJ8QQ3630wbUYRUMm48wRgbVc",
+        "importedAt": "2026-09-14",
+        "verification": "Stored provider data, not freshly verified official sources",
+        "summaryBasis": "Conservative name/category and stored editorial context"
+      }
+    },
+    {
+      "id": "google-ChIJC7qrjGsubUYRR4F9fNXYHK4",
+      "name": "3T-Rosten",
+      "categoryId": "trening-aktivitet",
+      "lat": 63.36513120000001,
+      "lng": 10.3714531,
+      "distanceKm": 8.6108,
+      "website": "https://www.3t.no/treningssenter/3t-rosten",
+      "summary": "Treningssenter på Rosten.",
+      "provenance": {
+        "provider": "Supabase v2.pois",
+        "recordId": "google-ChIJC7qrjGsubUYRR4F9fNXYHK4",
+        "importedAt": "2026-09-14",
+        "verification": "Stored provider data, not freshly verified official sources",
+        "summaryBasis": "Conservative name/category and stored editorial context"
+      }
+    },
+    {
+      "id": "google-ChIJP0k9kGcubUYRAzydzOTwZ7k",
+      "name": "Fresh Fitness Tiller",
+      "categoryId": "trening-aktivitet",
+      "lat": 63.3550605,
+      "lng": 10.3753623,
+      "distanceKm": 9.6513,
+      "website": "https://www.freshfitness.no/treningssenter/treningssenter-tiller-229",
+      "summary": "Treningssenter på Tiller.",
+      "provenance": {
+        "provider": "Supabase v2.pois",
+        "recordId": "google-ChIJP0k9kGcubUYRAzydzOTwZ7k",
+        "importedAt": "2026-09-14",
+        "verification": "Stored provider data, not freshly verified official sources",
+        "summaryBasis": "Conservative name/category and stored editorial context"
+      }
+    },
+    {
+      "id": "google-ChIJeeFFX98xbUYRAtPJQRqcQ04",
+      "name": "3T-Fossegrenda",
+      "categoryId": "trening-aktivitet",
+      "lat": 63.39118609999999,
+      "lng": 10.4031022,
+      "distanceKm": 5.4519,
+      "website": "https://www.3t.no/treningssenter/3t-fossegrenda",
+      "summary": "Treningssenter i Fossegrenda.",
+      "provenance": {
+        "provider": "Supabase v2.pois",
+        "recordId": "google-ChIJeeFFX98xbUYRAtPJQRqcQ04",
+        "importedAt": "2026-09-14",
+        "verification": "Stored provider data, not freshly verified official sources",
+        "summaryBasis": "Conservative name/category and stored editorial context"
+      }
+    },
+    {
+      "id": "google-ChIJQUYtXqcxbUYRnntdZiQYiDE",
+      "name": "Lademoparken",
+      "categoryId": "natur-friluftsliv",
+      "lat": 63.436867,
+      "lng": 10.4275854,
+      "distanceKm": 0.6087,
+      "website": null,
+      "summary": "Park i nærområdet på Lademoen.",
+      "provenance": {
+        "provider": "Supabase v2.pois",
+        "recordId": "google-ChIJQUYtXqcxbUYRnntdZiQYiDE",
+        "importedAt": "2026-09-14",
+        "verification": "Stored provider data, not freshly verified official sources",
+        "summaryBasis": "Conservative name/category and stored editorial context"
+      }
+    },
+    {
+      "id": "google-ChIJ26Pxfw8xbUYRw4xh_eDq0JE",
+      "name": "Ladeparken",
+      "categoryId": "natur-friluftsliv",
+      "lat": 63.445483599999996,
+      "lng": 10.4402498,
+      "distanceKm": 1.3059,
+      "website": "https://www.trondheim.kommune.no/ladeparken/",
+      "summary": "Park på Lade.",
+      "provenance": {
+        "provider": "Supabase v2.pois",
+        "recordId": "google-ChIJ26Pxfw8xbUYRw4xh_eDq0JE",
+        "importedAt": "2026-09-14",
+        "verification": "Stored provider data, not freshly verified official sources",
+        "summaryBasis": "Conservative name/category and stored editorial context"
+      }
+    },
+    {
+      "id": "google-ChIJle1bvxExbUYRqE7HtdGY0kA",
+      "name": "Korsvika",
+      "categoryId": "natur-friluftsliv",
+      "lat": 63.45015420000001,
+      "lng": 10.432821899999999,
+      "distanceKm": 1.3867,
+      "website": "https://www.trondheim.kommune.no/tema/kultur-og-fritid/park-og-mark/badeplasser/badeplasser-i-saltvann/korsvika/",
+      "summary": "Badeplass ved sjøen på Lade.",
+      "provenance": {
+        "provider": "Supabase v2.pois",
+        "recordId": "google-ChIJle1bvxExbUYRqE7HtdGY0kA",
+        "importedAt": "2026-09-14",
+        "verification": "Stored provider data, not freshly verified official sources",
+        "summaryBasis": "Conservative name/category and stored editorial context"
+      }
+    },
+    {
+      "id": "google-ChIJZZmfpBwxbUYRgEXlKQkTmmc",
+      "name": "NTNU Ringve botaniske hage",
+      "categoryId": "natur-friluftsliv",
+      "lat": 63.44828889999999,
+      "lng": 10.452311199999999,
+      "distanceKm": 1.9816,
+      "website": "https://www.ntnu.no/vitenskapsmuseet/ringve-botaniske-hage",
+      "summary": "Botanisk hage på Ringve.",
+      "provenance": {
+        "provider": "Supabase v2.pois",
+        "recordId": "google-ChIJZZmfpBwxbUYRgEXlKQkTmmc",
+        "importedAt": "2026-09-14",
+        "verification": "Stored provider data, not freshly verified official sources",
+        "summaryBasis": "Conservative name/category and stored editorial context"
+      }
+    },
+    {
+      "id": "google-ChIJXUbogKcxbUYRxumaw2AIQCo",
+      "name": "Ilaparken",
+      "categoryId": "natur-friluftsliv",
+      "lat": 63.428782000000005,
+      "lng": 10.3681742,
+      "distanceKm": 2.7313,
+      "website": "https://www.trondheim.kommune.no/tema/kultur-og-fritid/park-og-mark/parker-og-byrom/ilaparken/",
+      "summary": "Park i Ila.",
+      "provenance": {
+        "provider": "Supabase v2.pois",
+        "recordId": "google-ChIJXUbogKcxbUYRxumaw2AIQCo",
+        "importedAt": "2026-09-14",
+        "verification": "Stored provider data, not freshly verified official sources",
+        "summaryBasis": "Conservative name/category and stored editorial context"
+      }
+    },
+    {
+      "id": "google-ChIJbTaNm7QxbUYR2Ea6H5n7tjo",
+      "name": "Rotvollfjæra",
+      "categoryId": "natur-friluftsliv",
+      "lat": 63.43899,
+      "lng": 10.487190799999999,
+      "distanceKm": 3.4783,
+      "website": null,
+      "summary": "Badeplass ved fjorden på Rotvoll.",
+      "provenance": {
+        "provider": "Supabase v2.pois",
+        "recordId": "google-ChIJbTaNm7QxbUYR2Ea6H5n7tjo",
+        "importedAt": "2026-09-14",
+        "verification": "Stored provider data, not freshly verified official sources",
+        "summaryBasis": "Conservative name/category and stored editorial context"
+      }
+    },
+    {
+      "id": "google-ChIJnSAN9OEzbUYRkkMCbFxgzmU",
+      "name": "Theisendammen badeplass",
+      "categoryId": "natur-friluftsliv",
+      "lat": 63.42262179999999,
+      "lng": 10.349074199999999,
+      "distanceKm": 3.8923,
+      "website": "https://www.visittrondheim.no/theisendammen",
+      "summary": "Badeplass ved Theisendammen.",
+      "provenance": {
+        "provider": "Supabase v2.pois",
+        "recordId": "google-ChIJnSAN9OEzbUYRkkMCbFxgzmU",
+        "importedAt": "2026-09-14",
+        "verification": "Stored provider data, not freshly verified official sources",
+        "summaryBasis": "Conservative name/category and stored editorial context"
+      }
+    },
+    {
+      "id": "badeplass-haukvatnet",
+      "name": "Haukvatnet",
+      "categoryId": "natur-friluftsliv",
+      "lat": 63.39467695499999,
+      "lng": 10.32214954625,
+      "distanceKm": 6.8975,
+      "website": null,
+      "summary": "Badeplass ved Haukvatnet.",
+      "provenance": {
+        "provider": "Supabase v2.pois",
+        "recordId": "badeplass-haukvatnet",
+        "importedAt": "2026-09-14",
+        "verification": "Stored provider data, not freshly verified official sources",
+        "summaryBasis": "Conservative name/category and stored editorial context"
+      }
+    },
+    {
+      "id": "badeplass-lianvatnet",
+      "name": "Lianvatnet",
+      "categoryId": "natur-friluftsliv",
+      "lat": 63.401690412499995,
+      "lng": 10.314247035,
+      "distanceKm": 6.6504,
+      "website": null,
+      "summary": "Badeplass ved Lianvatnet.",
+      "provenance": {
+        "provider": "Supabase v2.pois",
+        "recordId": "badeplass-lianvatnet",
+        "importedAt": "2026-09-14",
+        "verification": "Stored provider data, not freshly verified official sources",
+        "summaryBasis": "Conservative name/category and stored editorial context"
+      }
+    },
+    {
+      "id": "google-ChIJs5ZbvjwwbUYRTFjqEf58oVI",
+      "name": "Burmaklippen",
+      "categoryId": "natur-friluftsliv",
+      "lat": 63.3992068,
+      "lng": 10.474606099999999,
+      "distanceKm": 5.3405,
+      "website": null,
+      "summary": "Turmål i Estenstadmarka.",
+      "provenance": {
+        "provider": "Supabase v2.pois",
+        "recordId": "google-ChIJs5ZbvjwwbUYRTFjqEf58oVI",
+        "importedAt": "2026-09-14",
+        "verification": "Stored provider data, not freshly verified official sources",
+        "summaryBasis": "Conservative name/category and stored editorial context"
+      }
+    },
+    {
+      "id": "badeplass-hansbakkfj-ra",
+      "name": "Hansbakkfjæra",
+      "categoryId": "natur-friluftsliv",
+      "lat": 63.430947417096775,
+      "lng": 10.541044956774194,
+      "distanceKm": 6.2339,
+      "website": null,
+      "summary": "Badeplass ved fjorden på Ranheim.",
+      "provenance": {
+        "provider": "Supabase v2.pois",
+        "recordId": "badeplass-hansbakkfj-ra",
+        "importedAt": "2026-09-14",
+        "verification": "Stored provider data, not freshly verified official sources",
+        "summaryBasis": "Conservative name/category and stored editorial context"
+      }
+    }
+  ]
+}

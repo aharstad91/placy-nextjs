@@ -308,6 +308,8 @@ export interface FocusCamera3D {
 }
 
 export interface FocusCamera3DInput {
+  /** Explicit opt-in for regional discovery; ordinary boards retain their close framing. */
+  maxRangeM?: number;
   /** Punktene som skal ligge i det IKKE-okkluderte båndet. */
   points: readonly LngLat[];
   viewport: Viewport3DMetrics;
@@ -422,7 +424,7 @@ export function deriveFocusCamera3D(
   const tanHalfFov = Math.tan((fovDeg * Math.PI) / 360);
   const rangeM = Math.max(
     FOCUS_RANGE_MIN_M,
-    Math.min(FOCUS_RANGE_MAX_M, halfDepthNeeded / tanHalfFov),
+    Math.min(input.maxRangeM ?? FOCUS_RANGE_MAX_M, halfDepthNeeded / tanHalfFov),
   );
   // Klampingen kan ha flyttet dybden, og forskyvningene under må regnes på den
   // dybden kameraet FAKTISK får — ikke på den vi ba om.

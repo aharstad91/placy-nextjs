@@ -1,10 +1,16 @@
 "use client";
 
-import { createContext, useCallback, useContext, useEffect, useMemo, useRef, type ReactNode } from "react";
+import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { useBoard } from "@/components/variants/report/board/board-state";
 import { AREA_STEP, useStoryTour } from "@/components/variants/report/board/story/story-tour";
 import { useAudioTourStore } from "@/lib/stores/audio-tour-store";
+import { revealAfterCamera } from "@/lib/demo/nyhavna-lokal/reveal-transition";
+import { DISCOVERY_CATEGORIES, radiusOptions } from "@/lib/demo/nyhavna-lokal/radius";
+import { LOCAL_VOICE_PACING } from "@/lib/demo/nyhavna-lokal/voice-instructions";
+import type { LiveVoice } from "@/lib/live/voices";
 import { useLive } from "@/lib/live/use-live";
+import { useNarrationFocus } from "@/lib/demo/nyhavna-lokal/use-narration-focus";
+import type { BoardPOIId } from "@/components/variants/report/board/board-data";
 import { useFaqProgress } from "@/lib/demo/nyhavna-lokal/use-faq-progress";
 import { parseLinkedText, boardLinkResolvers } from "@/lib/board/poi-link-text";
 import type { FaqEntry } from "@/lib/generators/faq-generator";
@@ -38,6 +44,9 @@ import { greetingInstruction, NYHAVNA_GREETING_INSTRUCTION } from "@/lib/realtim
  * selv når brukeren begynner å snakke.
  */
 export interface BoardVoice {
+  morePlaces?: { current: number; options: { radiusKm: number; count: number }[]; show: (radiusKm: number) => void };
+  voiceSelection?: { value: LiveVoice | ""; select: (value: LiveVoice | "") => void };
+  guided?: boolean;
   status: LiveStatus;
   /** Tilkobling eller samtale i gang: knappen viser stopp. */
   running: boolean;
@@ -78,7 +87,7 @@ interface VoiceDevHook {
   /** Send en brukerytring som tekst – samme vei som talen, uten mikrofon. */
   say: (text: string) => void;
   /** Kjør en kartkommando lokalt, uten modell. */
-  tool: (name: string, args: Record<string, unknown>) => BoardToolResult;
+  tool: (name: string, args: Record<string, unknown>) => Promise<BoardToolResult>;
   /** Spill en lydfil INN i samtalen som mikrofon, så hele Live-banen kan testes med ekte tale. */
   play: (url: string) => Promise<void>;
   status: () => LiveStatus;
@@ -88,7 +97,7 @@ interface VoiceDevHook {
 }
 
 function BoardVoiceSession({ children }: { children: ReactNode }) {
-  const { data, state, dispatch, mapCamera } = useBoard();
+  const { data, state, dispatch, mapCamera, reserveData, revealedPlaceIds, revealPlaces } = useBoard();
   const story = useStoryTour();
   const pauseTour = useAudioTourStore((s) => s.pause);
 
@@ -101,34 +110,74 @@ function BoardVoiceSession({ children }: { children: ReactNode }) {
 
   const progressRef = useRef<ReturnType<typeof useFaqProgress> | null>(null);
   const localDemo = data.demoDataset === "nyhavna-lokal";
+  const [selectedVoice, setSelectedVoice] = useState<LiveVoice | "">("");
   const faqIds = useMemo(() => localDemo ? [...(data.globalFaq ?? []), ...data.categories.flatMap(c => c.editorial?.faq ?? [])].map(f => f.id) : [], [data.globalFaq, data.categories, localDemo]);
 
-  const runBoardTool = useCallback((name: string, args: Record<string, unknown>): BoardToolResult => {
-    const result = executeBoardTool(name, args, {
-      data, state, dispatch, mapCamera,
-      onCategory: (index) => story.begin(index),
+  const commandVersion = useRef(0);
+  useEffect(() => () => { commandVersion.current++; }, []);
+  const runBoardTool = useCallback(async (name: string, args: Record<string, unknown>): Promise<BoardToolResult> => {
+    const version = ++commandVersion.current;
+    const revealing = localDemo && name === "reveal_places";
+    const ids = Array.isArray(args.poi_ids) ? args.poi_ids.filter((id): id is string => typeof id === "string") : [];
+    const validReveal = revealing && reserveData && typeof args.category_id === "string"
+      ? radiusOptions(reserveData.demoRadiusPlaces ?? [], args.category_id, revealedPlaceIds ?? new Set()).options.find(o => o.radiusKm === args.radius_km)
+      : undefined;
+    if (revealing && (!validReveal || validReveal.ids.length !== ids.length || ids.some(id => !validReveal.ids.includes(id)))) return { error: "Ugyldig radiusutvidelse." };
+    if (revealing) {
+      if (!mapCamera || !reserveData) return { error: "Kartet er ikke klart. Ingen nye steder er vist." };
+      const index = data.categories.findIndex(c => String(c.id) === args.category_id);
+      if (index >= 0 && (String(data.categories[index]?.id) !== stopId || activePoiId)) {
+        voiceNav.current.categoryIds.add(String(args.category_id));
+        story.begin(index);
+      }
+    }
+    const painted = () => new Promise<void>(resolve => requestAnimationFrame(() => requestAnimationFrame(() => resolve())));
+    const toolData = revealing && revealPlaces && reserveData && mapCamera
+      ? await revealAfterCamera({
+        painted,
+        wait: ms => new Promise(resolve => setTimeout(resolve, ms)),
+        current: () => commandVersion.current === version,
+        frame: () => mapCamera.fitCoordinates([data.home.coordinates, ...ids.flatMap(id => reserveData.poisById.get(id)?.coordinates ?? [])], { maxZoom: 15, durationMs: 1400, maxRangeM: 100000 }),
+        reveal: () => revealPlaces(ids),
+      }) : data;
+    if (!toolData) return { error: "Visningen ble avbrutt av et nytt valg." };
+    const result = executeBoardTool(revealing ? "highlight_places" : name, revealing ? { ...args, poi_ids: ids } : args, {
+      data: toolData, state, dispatch, mapCamera: revealing ? null : mapCamera,
+      followHighlightCategory: localDemo,
+      highlightLimit: revealing ? ids.length : undefined,
+      onCategory: (index) => { if (!revealing && (String(data.categories[index]?.id) !== stopId || activePoiId)) story.begin(index); },
       onReset: () => story.begin(AREA_STEP),
     });
+    if (revealing && "ok" in result) {
+      await new Promise<void>(resolve => requestAnimationFrame(() => requestAnimationFrame(() => resolve())));
+    }
     if (localDemo && "ok" in result && !result.rejected?.length && Array.isArray(args.answered_faq_ids)) {
       progressRef.current?.queue(args.answered_faq_ids.filter((id): id is string => typeof id === "string"));
     }
-    const targets = boardToolTargets(name, result, data);
+    const targets = boardToolTargets(revealing ? "highlight_places" : name, result, toolData, state.activeCategoryId);
     for (const id of targets.categoryIds) if (id !== stopId) voiceNav.current.categoryIds.add(id);
     for (const id of targets.poiIds) if (id !== activePoiId) voiceNav.current.poiIds.add(id);
     return result;
-  }, [data, state, dispatch, mapCamera, story, localDemo, stopId, activePoiId]);
+  }, [data, state, dispatch, mapCamera, story, localDemo, stopId, activePoiId, revealPlaces, reserveData, revealedPlaceIds]);
 
   const live = useLive({
+    voice: selectedVoice || undefined,
     // Hilsenen og datagrunnlaget følger BOARDET, ikke koden: to demoer deler
     // denne flaten med hvert sitt innhold, og guiden skal si stedets egen
     // åpning og svare ut av stedets egne data.
-    greeting: data.demoGreeting ? greetingInstruction(data.demoGreeting) : NYHAVNA_GREETING_INSTRUCTION,
+    greeting: (data.demoGreeting ? greetingInstruction(data.demoGreeting) : NYHAVNA_GREETING_INSTRUCTION) + (localDemo ? `\n${LOCAL_VOICE_PACING}` : ""),
     dataset: data.demoDataset,
-    getContext: () => ({ selected_category_id: stopId ?? (state.activeCategoryId ? String(state.activeCategoryId) : null), selected_place_id: activePoiId, travel_mode: state.travelMode }),
+    getContext: () => ({ selected_category_id: stopId ?? (state.activeCategoryId ? String(state.activeCategoryId) : null), selected_place_id: activePoiId, travel_mode: state.travelMode, ...(localDemo ? { revealed_place_ids: [...(revealedPlaceIds ?? [])] } : {}) }),
     executeTool: runBoardTool,
     snapshotId: data.demoSnapshotId,
   });
   const { status, notice, error, messages, latest, start, stop, sendContext, sendText, replaceMicrophoneTrack } = live;
+  const narrationPlaces = useMemo(() => state.highlightedPoiIds.flatMap(id => {
+    const poi = data.poisById.get(id);
+    return poi ? [{ id: String(id), name: poi.name.split(" – ")[0] }] : [];
+  }), [state.highlightedPoiIds, data.poisById]);
+  useNarrationFocus(localDemo, narrationPlaces, status, messages,
+    id => dispatch({ type: "FOCUS_NARRATION", id: id as BoardPOIId | null }));
   const progress = useFaqProgress(faqIds, status, messages, live.interruptionVersion);
   progressRef.current = progress;
   const { clear: clearFaq, read: readFaq } = progress;
@@ -140,8 +189,8 @@ function BoardVoiceSession({ children }: { children: ReactNode }) {
   // uten at stemmen sier noe om det. Hooken dedupliserer uendret tilstand.
   useEffect(() => {
     if (!connected) return;
-    sendContext({ kind: "state", selected_category_id: stopId ?? (state.activeCategoryId ? String(state.activeCategoryId) : null), selected_place_id: activePoiId, travel_mode: state.travelMode });
-  }, [connected, sendContext, stopId, state.activeCategoryId, activePoiId, state.travelMode]);
+    sendContext({ kind: "state", selected_category_id: stopId ?? (state.activeCategoryId ? String(state.activeCategoryId) : null), selected_place_id: activePoiId, travel_mode: state.travelMode, ...(localDemo ? { revealed_place_ids: [...(revealedPlaceIds ?? [])] } : {}) });
+  }, [connected, sendContext, stopId, state.activeCategoryId, activePoiId, state.travelMode, localDemo, revealedPlaceIds]);
 
   // Brukeren valgte et tema i raden/rutenettet: serveren åpner kapittelet,
   // fremhever stedene og gir stemmen en kommentar.
@@ -151,9 +200,9 @@ function BoardVoiceSession({ children }: { children: ReactNode }) {
     prevStop.current = stopId;
     if (!stopId) return;
     if (voiceNav.current.categoryIds.delete(stopId)) return;
-    if (!connected) return;
+    if (!connected || activePoiId) return;
     sendContext({ kind: "theme", id: stopId, label: story.stop?.label });
-  }, [stopId, connected, sendContext, story.stop?.label]);
+  }, [stopId, activePoiId, connected, sendContext, story.stop?.label]);
 
   // Brukeren trykket på et sted (pinne eller rad): én kort kommentar, så videre.
   const prevPoi = useRef(activePoiId);
@@ -179,8 +228,23 @@ function BoardVoiceSession({ children }: { children: ReactNode }) {
     }
   }, [faqIds, data, state, dispatch, mapCamera, connected, clearFaq, readFaq, sendText]);
 
-  const value = useMemo<BoardVoice>(() => ({
-    status, running, connecting, notice, error, latest,
+  const highlightedCategory = state.highlightedPoiIds.length ? data.poisById.get(state.highlightedPoiIds[0])?.category.id : null;
+  const selectedCategory = stopId ?? (state.activeCategoryId ? String(state.activeCategoryId) : null) ?? highlightedCategory;
+  const radius = radiusOptions(reserveData?.demoRadiusPlaces ?? [], selectedCategory ?? "", revealedPlaceIds ?? new Set());
+  const showMore = (radiusKm: number) => {
+    const option = radius.options.find(o => o.radiusKm === radiusKm);
+    if (!option || connecting) return;
+    if (connected) {
+      sendText(`Vis flere steder i kategorien ${selectedCategory} innen ${radiusKm} kilometer. Bruk reveal_more_places med category_id ${selectedCategory} og radius_km ${radiusKm}.`);
+    } else {
+      runBoardTool("reveal_places", { poi_ids: option.ids, category_id: selectedCategory, radius_km: radiusKm });
+    }
+  };
+
+  const value: BoardVoice = {
+    status, running, connecting, notice, error, latest, guided: localDemo,
+    ...(localDemo && selectedCategory && (DISCOVERY_CATEGORIES as readonly string[]).includes(selectedCategory) ? { morePlaces: { current: radius.current, options: radius.options.map(o => ({ radiusKm: o.radiusKm, count: o.ids.length })), show: showMore } } : {}),
+    ...(localDemo ? { voiceSelection: { value: selectedVoice, select: setSelectedVoice } } : {}),
     ...(localDemo ? { faq: { explored: progress.explored, active: progress.active, select: selectFaq, reset: progress.reset } } : {}),
     toggle: () => {
       if (connecting) return;
@@ -196,7 +260,7 @@ function BoardVoiceSession({ children }: { children: ReactNode }) {
       dispatch({ type: "CLEAR_HIGHLIGHTS" });
       void start();
     },
-  }), [status, running, connecting, notice, error, latest, localDemo, progress.explored, progress.active, progress.reset, selectFaq, stop, dispatch, pauseTour, start]);
+  };
 
   // Lokal styring for simulerte samtaler og verifisering uten mikrofon
   // (`?voicedev=1`). Bare på den lokale demoen; ingen data forlater siden.

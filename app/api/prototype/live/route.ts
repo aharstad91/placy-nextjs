@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
+import { LIVE_VOICES } from '@/lib/live/voices';
 import { backendModel, liveModel, liveSessionConfig, liveVoice } from '@/lib/live/session-config';
 import { createLiveSession, LiveSessionError } from '@/lib/live/create-session';
 import { connectLiveSideband } from '@/lib/live/sideband';
@@ -18,6 +19,7 @@ export const dynamic = 'force-dynamic';
 // `dataset` velger datagrunnlaget (se lib/live/demos.ts). Utelatt = den frosne
 // Nyhavna-demoen, som er den eneste som fantes før 2026-09-13.
 const bodySchema = z.object({
+  voice: z.enum(LIVE_VOICES).optional(),
   sdp: z.string().startsWith('v=0').max(32000),
   snapshotId: z.string().max(150),
   dataset: z.string().max(60).optional(),
@@ -87,7 +89,8 @@ export async function POST(request: NextRequest) {
   const backendInstructions = demo.backendInstructions;
   let identityKnown = false;
   try {
-    const session = liveSessionConfig(NYHAVNA_VOICE_INSTRUCTIONS, backendInstructions, nyhavnaTools);
+    const session = liveSessionConfig(demo.voiceInstructions ?? NYHAVNA_VOICE_INSTRUCTIONS, backendInstructions, [...nyhavnaTools, ...(demo.additionalTools ?? [])], parsed.data.voice);
+    session.delegation.responses.parallel_tool_calls = demo.parallelTools ?? true;
     const created = await createLiveSession(session, parsed.data.sdp);
     identityKnown = true;
     // Gaten mot en modell som ikke er Live: fortsetter vi her, snakker resten av

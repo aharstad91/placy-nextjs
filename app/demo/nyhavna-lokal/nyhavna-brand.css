@@ -1,0 +1,99 @@
+/* Nyhavna's demo skin. Shared report layouts keep their default appearance. */
+.nyhavna-board {
+  --nyhavna-blue: #005ef5;
+  --nyhavna-cream: #f7f5eb;
+  --nyhavna-ink: #171b2d;
+  color: var(--nyhavna-ink);
+}
+
+.nyhavna-board [data-report-splash="desktop"] {
+  background: var(--nyhavna-cream);
+}
+
+.nyhavna-board [data-report-splash] h1 {
+  font-family: var(--font-nyhavna-board), sans-serif;
+  font-weight: 700;
+  font-size: clamp(30px, 3.5vw, 54px);
+  line-height: 1.18;
+  letter-spacing: -0.045em;
+}
+
+.nyhavna-board [data-report-splash="desktop"] h1 {
+  color: var(--nyhavna-ink);
+}
+
+.nyhavna-board [data-report-splash] img[src$="-logo.svg"] {
+  height: 44px;
+  width: auto;
+}
+
+.nyhavna-board [data-report-splash] button {
+  background: var(--nyhavna-blue);
+  color: white;
+  border-radius: 6px;
+  box-shadow: none;
+  padding: 17px 25px;
+}
+
+.nyhavna-board [data-report-splash] button:hover {
+  background: #004ac4;
+}
+
+.nyhavna-board [data-report-splash] button svg {
+  fill: currentColor;
+}
+
+.nyhavna-board [data-report-splash="desktop"] video {
+  border-radius: 6px;
+}
+
+.nyhavna-board [data-report-splash="desktop"] .aspect-video {
+  aspect-ratio: 4 / 5;
+  max-height: 70dvh;
+  border-radius: 6px;
+  box-shadow: none;
+}
+
+.nyhavna-board [data-report-sidebar],
+.nyhavna-board [data-story-heading] {
+  background-color: var(--nyhavna-cream);
+}
+
+.nyhavna-board [data-report-sidebar] {
+  border-radius: 12px;
+}
+
+.nyhavna-board [data-report-sidebar] img[src$="-logo.svg"] {
+  height: 34px;
+  width: auto;
+}
+
+.nyhavna-board [data-report-sidebar] h2,
+.nyhavna-board [data-story-heading] h3 {
+  font-family: var(--font-nyhavna-board), sans-serif;
+  font-size: 22px;
+  line-height: 1.3;
+  color: var(--nyhavna-ink);
+  background: var(--nyhavna-cream);
+}
+
+.nyhavna-board [data-story-assistant] {
+  padding: 16px;
+  border-radius: 6px;
+  background: #e5f0ff;
+}
+
+.nyhavna-board [data-story-assistant] button {
+  color: var(--nyhavna-blue);
+}
+
+.nyhavna-board [data-story-assistant] button[aria-pressed="true"] {
+  background: var(--nyhavna-blue);
+  color: white;
+}
+
+.nyhavna-board [data-story-assistant] select {
+  background-color: var(--nyhavna-cream);
+  border-color: #005ef533;
+  border-radius: 4px;
+}

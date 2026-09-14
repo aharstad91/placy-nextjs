@@ -1,3 +1,5 @@
+import { isAnchorPOI } from "@/lib/board/anchor-poi";
+import { radiusPlaces } from "@/lib/demo/nyhavna-lokal/radius";
 import { createHash } from "node:crypto";
 import type {
   BoardCategory,
@@ -58,7 +60,8 @@ function toCategory(category: LocalCategory): Category {
 function toPoi(place: LocalPlace, category: Category, urlBySourceId: ReadonlyMap<string, string>): POI {
   const subCategory: Category = {
     ...category,
-    name: place.placeType?.trim() || category.name,
+    id: place.poiCategoryId ?? category.id,
+    name: place.poiCategoryId === "butikk" ? "Butikker" : place.placeType?.trim() || category.name,
     icon: place.icon?.trim() || category.icon,
   };
   return {
@@ -66,8 +69,13 @@ function toPoi(place: LocalPlace, category: Category, urlBySourceId: ReadonlyMap
     name: place.name,
     coordinates: place.coordinates,
     category: subCategory,
+    ...(place.bysykkelStationId ? { bysykkelStationId: place.bysykkelStationId } : {}),
+    ...(place.enturStopplaceId ? { enturStopplaceId: place.enturStopplaceId } : {}),
+    ...(place.parentPlaceId ? { parentPoiId: place.parentPlaceId } : {}),
+    ...(place.anchorSummary ? { anchorSummary: place.anchorSummary } : {}),
     ...(place.address ? { address: place.address } : {}),
     ...(place.summary ? { editorialHook: place.summary } : {}),
+    ...(place.image ? { featuredImage: place.image, markerImage: place.image } : {}),
     ...(place.travelTime ? { travelTime: place.travelTime } : {}),
     developmentStatus: isExisting(place.status) ? "existing" : "planned",
     locationPrecision: place.locationPrecision,
@@ -89,6 +97,7 @@ function toBoardPoi(poi: POI, categoryId: BoardCategoryId, fallback: { icon: str
     categoryId,
     icon: identity.icon,
     color: identity.color,
+    ...(isAnchorPOI(poi) ? { isAnchor: true, childPOIs: poi.childPOIs ?? [] } : {}),
     raw: poi,
   };
 }
@@ -117,7 +126,9 @@ const toFaqEntry = (entry: LocalFaq, sources: LocalDataset["sources"]): FaqEntry
 /** Spørsmålene per tema, i filas egen rekkefølge. Nøkkel `""` = hele området. */
 function faqByCategory(dataset: LocalDataset): Map<string, FaqEntry[]> {
   const byCategory = new Map<string, FaqEntry[]>();
-  for (const entry of dataset.faqs) {
+  const mapIds = new Map(dataset.places.map(p => [p.id, p.parentPlaceId ?? p.id]));
+  for (const original of dataset.faqs) {
+    const entry = { ...original, answer: original.answer.replace(/\(poi:([^)]+)\)/g, (_, id: string) => `(poi:${mapIds.get(id) ?? id})`) };
     const key = entry.categoryId ?? "";
     const bucket = byCategory.get(key);
     if (bucket) bucket.push(toFaqEntry(entry, dataset.sources));
@@ -194,11 +205,36 @@ export function buildLocalProject(dataset: LocalDataset): Project {
  */
 export function buildLocalBoard(dataset: LocalDataset): BoardData {
   const project = buildLocalProject(dataset);
-  const poisByCategory = new Map<string, POI[]>();
+  const byId = new Map(project.pois.map(p => [p.id, p]));
+  const children = new Map<string, POI[]>();
+  const themeByPoiId = new Map(dataset.places.map(p => [p.id, p.categoryId]));
+  const directByTheme = new Map<string, POI[]>();
   for (const poi of project.pois) {
-    const bucket = poisByCategory.get(poi.category.id);
-    if (bucket) bucket.push(poi);
-    else poisByCategory.set(poi.category.id, [poi]);
+    const theme = themeByPoiId.get(poi.id)!;
+    const direct = directByTheme.get(theme) ?? [];
+    direct.push(poi);
+    directByTheme.set(theme, direct);
+    if (!poi.parentPoiId) continue;
+    const siblings = children.get(poi.parentPoiId) ?? [];
+    siblings.push(poi);
+    children.set(poi.parentPoiId, siblings);
+  }
+  for (const [id, members] of children) {
+    const parent = byId.get(id)!;
+    parent.childPOIs = members;
+  }
+  const topLevel = project.pois.filter(p => !p.parentPoiId);
+  const poisByCategory = new Map<string, POI[]>();
+  for (const category of dataset.board.categories) {
+    const matches = new Map<string, POI>();
+    for (const poi of directByTheme.get(category.id) ?? []) {
+      const destination = poi.parentPoiId ? byId.get(poi.parentPoiId)! : poi;
+      if (matches.has(destination.id)) continue;
+      const members = children.get(destination.id);
+      const scoped = members?.filter(p => themeByPoiId.get(destination.id) === category.id || themeByPoiId.get(p.id) === category.id);
+      matches.set(destination.id, scoped ? { ...destination, childPOIs: scoped } : destination);
+    }
+    poisByCategory.set(category.id, [...matches.values()]);
   }
 
   const sourceById = new Map(dataset.sources.map((s) => [s.id, s]));
@@ -260,16 +296,19 @@ export function buildLocalBoard(dataset: LocalDataset): BoardData {
     ...(dataset.board.district ? { district: dataset.board.district } : {}),
     ...(dataset.board.city ? { city: dataset.board.city } : {}),
     pinSubtitle: dataset.board.pinSubtitle,
+    ...(dataset.board.pinImage ? { pinImage: dataset.board.pinImage } : {}),
   };
 
   return {
     demoSnapshotId: project.demoSnapshotId,
     demoDataset: LOCAL_DATASET_ID,
+    demoRadiusPlaces: radiusPlaces(dataset.places, dataset.board.center, dataset.board.presentation?.flatMap(s => s.placeIds)),
+    demoReservePlaceIds: radiusPlaces(dataset.places, dataset.board.center, dataset.board.presentation?.flatMap(s => s.placeIds)).filter(p => !p.initiallyVisible).map(p => p.id),
     demoGreeting: dataset.board.greeting,
     projectSlug: project.urlSlug,
     home,
     categories,
-    poisById: new Map(project.pois.map((poi) => [poi.id.toLowerCase(), poi])),
+    poisById: new Map(topLevel.map((poi) => [poi.id.toLowerCase(), poi])),
     // Spørsmålene uten tema: de som gjelder hele området, vist på områdestoppet.
     globalFaq: faqs.get("") ?? [],
     audioTourEnabled: false,

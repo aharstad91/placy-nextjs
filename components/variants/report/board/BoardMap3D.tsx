@@ -1,5 +1,7 @@
 "use client";
 
+import { discoveryGeometry } from "@/lib/demo/nyhavna-lokal/radius";
+
 import dynamic from "next/dynamic";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { MapView3D, type Map3DInstance } from "@/components/map/map-view-3d";
@@ -411,6 +413,7 @@ export function BoardMap3D({
   const curatedThemeId = story?.on
     ? (story.stop?.id ?? null)
     : (activeCategory?.id ?? null);
+  const radiusGeometry = useMemo(() => discoveryGeometry(data, curatedThemeId), [data, curatedThemeId]);
 
   /**
    * De OMTALTE stedene, i tre former fordi tre konsumenter trenger hver sin.
@@ -537,7 +540,7 @@ export function BoardMap3D({
   /** Felles innramming for de to fit-metodene: regn posituren, og fly dit.
    *  Ligger utenfor `cameraApi` så begge kan dele den uten å bli ustabile. */
   const flyToFrame = useCallback(
-    (points: readonly { lng: number; lat: number }[], durationMs: number) => {
+    (points: readonly { lng: number; lat: number }[], durationMs: number, maxRangeM?: number) => {
       const map = mapInstanceRef.current as
         | (FlyCapableMap & Map3DPoseLike)
         | null;
@@ -548,6 +551,7 @@ export function BoardMap3D({
       // punkt når settet er lite, og leseren mister forankringen til hvor hun bor.
       const camera = deriveFocusCamera3D({
         points: [...points, homeRef.current],
+        maxRangeM,
         viewport: {
           widthPx: box.width,
           heightPx: box.height,
@@ -630,7 +634,7 @@ export function BoardMap3D({
         );
       },
       fitCoordinates: (coords, opts) => {
-        flyToFrame(coords, opts?.durationMs ?? FIT_COORDS_MS);
+        flyToFrame(coords, opts?.durationMs ?? FIT_COORDS_MS, opts?.maxRangeM);
       },
       flyToPoint: (coord, opts) => {
         const map = mapInstanceRef.current as
@@ -694,7 +698,7 @@ export function BoardMap3D({
         });
       },
     }),
-    [],
+    [flyToFrame],
   );
 
   useEffect(() => {
@@ -1001,6 +1005,7 @@ export function BoardMap3D({
         fadedMarkerIds={reach.outsideIds}
         fadedOpacity={REACH_OUTSIDE_OPACITY}
         highlightIndexes={highlightIndexes}
+        narrationPoiId={state.narrationPoiId}
         revealItems={revealItems}
         showReveal={showReveal}
         animateReveal={!reducedMotion}
@@ -1015,7 +1020,7 @@ export function BoardMap3D({
           // Undefined lar markøren bruke sin egen default; tom streng skrur
           // undertittelen AV for boards som ikke er ett byggeprosjekt.
           subtitle: data.home.pinSubtitle,
-          imageSrc: getProjectPinThumbnail(data.projectSlug, data.assets),
+          imageSrc: data.home.pinImage ?? getProjectPinThumbnail(data.projectSlug, data.assets),
         }}
       />
       <ProjectMassingLayer3D
@@ -1032,6 +1037,7 @@ export function BoardMap3D({
           activeThemeId={curatedThemeId}
         />
       )}
+      {radiusGeometry.length > 0 && <CuratedGeometryLayer3D map3d={map3dInstance} features={radiusGeometry} activeThemeId={curatedThemeId} />}
       <RouteLayer3D map3d={map3dInstance} routeData={routeData} />
       {/* Tids-chipen. Lå tidligere som en inline-SVG inne i RouteLayer3D, men
           `Marker3DInteractiveElement` kan ikke bære et utvidbart panel — se

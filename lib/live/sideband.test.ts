@@ -189,6 +189,25 @@ describe('live sideband delegation loop', () => {
     expect(sentOf('session.commentary.append')[0]).toMatchObject({ delegation_id: null, content: 'Brukeren valgte temaet «Mat».' });
   });
 
+  it('drops a delayed theme commentary when a place is selected afterward', async () => {
+    const conversation = fakeConversation({
+      onMapSelection: vi.fn((kind: string) => kind === 'theme'
+        ? { commentary: 'Servering med flere steder', directives: [{ name: 'highlight_places', args: { poi_ids: ['a'] } }] }
+        : { commentary: 'Bare Dora Kaffebar', directives: [] }) as never,
+    });
+    const bridge = getMapBridge(TOKEN);
+    let pendingId = '';
+    bridge.subscribe(message => { if (message.type === 'map') pendingId = message.directive.id; });
+    const handle = await connect(conversation);
+    handle.onContext({ kind: 'theme', id: 'mat' });
+    handle.onContext({ kind: 'place', id: 'dora' });
+    expect(pendingId).not.toBe('');
+    bridge.resolve(pendingId, { ok: true });
+    await flush();
+    expect(sentOf('session.commentary.append').map(e => e.content)).toEqual(['Bare Dora Kaffebar']);
+    expect(conversation.observeBrowserResult).not.toHaveBeenCalled();
+  });
+
   it('turns a board-state message into silent context, never speech', async () => {
     const conversation = fakeConversation({ mapContextIfChanged: vi.fn(() => 'Tema i kartet: Mat.') as never });
     const handle = await connect(conversation);

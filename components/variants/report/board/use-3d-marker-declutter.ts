@@ -20,7 +20,7 @@ import { STORY_EMPHASIS_PIN_SCALE } from "./story/story-model";
 import { projectLatLngToScreen } from "@/components/map/project-latlng-to-screen";
 import { scaleForRange } from "@/components/map/project-pin-scale";
 import { projectSitePinBlocker } from "@/components/map/ProjectSitePin";
-import { DOT_SIZE, PIN_SIZE } from "@/components/map/PoiMarkerContent";
+import { DOT_SIZE, IMAGE_PIN_SIZE, PIN_SIZE } from "@/components/map/PoiMarkerContent";
 import { poiPinScaleForZoom } from "@/components/map/poi-pin-scale";
 import { computeZoomTier } from "./use-board-zoom-tier";
 
@@ -72,6 +72,8 @@ import { computeZoomTier } from "./use-board-zoom-tier";
  *  være den samme disc-en som `PoiMarkerContent` faktisk tegner, ellers
  *  kolliderer vi mot en størrelse som ikke finnes på skjermen. */
 const PIN_HALF = PIN_SIZE / 2;
+/** Bildepinnens halve diameter — se {@link IMAGE_PIN_SIZE}. */
+const IMAGE_PIN_HALF = IMAGE_PIN_SIZE / 2;
 /** Halv bredde på en demotert prikk — `PoiMarkerContent`s compact-gren, ikke
  *  reveal-lagets `BlobMarker3D` (samme tall, ulik markør). */
 const DOT_HALF = DOT_SIZE / 2;
@@ -417,6 +419,11 @@ export function useMarker3DDeclutter({
     const pinScale = poiPinScaleForZoom(zoom);
     const pinHalf = PIN_HALF * pinScale;
     const dotHalf = DOT_HALF * pinScale;
+    // Bildepinnene (delområdene) er større og reserverer sin egen skive — både
+    // i utglisningen og som label-hindring. Tegnes de like store som prosjekt-
+    // pinnen men reserverer 32 px, legger navnene til naboene seg oppå bildet.
+    const discHalfOf = (poi: POI) =>
+      poi.markerImage ? IMAGE_PIN_HALF * pinScale : pinHalf;
 
     // Projeksjonen gjøres FØR tier-sjekken, fordi dybdesorteringen trengs i
     // begge grener: også et kart av bare prikker må vite hvem som ligger foran.
@@ -439,7 +446,7 @@ export function useMarker3DDeclutter({
       }
       // y løftes til skive-senter (se anchorToDiscCenterY). Full pin her;
       // demoterte prikker justeres når utglisningen er kjent.
-      projected.push({ poi, x: pt.x, y: anchorToDiscCenterY(pt.y, pinHalf) });
+      projected.push({ poi, x: pt.x, y: anchorToDiscCenterY(pt.y, discHalfOf(poi)) });
     }
 
     const zIndexes = depthOrder(projected, activeId);
@@ -519,7 +526,7 @@ export function useMarker3DDeclutter({
     const isTexture = (poi: POI) =>
       (texture?.has(poi.id) ?? false) && !isHighlighted(poi);
     const priorityOf = (poi: POI) =>
-      poi.id === activeId || isAnchorPOI(poi) || isHighlighted(poi)
+      poi.id === activeId || isAnchorPOI(poi) || isHighlighted(poi) || poi.markerImage
         ? Number.POSITIVE_INFINITY
         : (poi.googleRating ?? 0) + (isTexture(poi) ? 0 : SCENE_PRIORITY_BOOST);
 
@@ -536,6 +543,8 @@ export function useMarker3DDeclutter({
         x,
         y,
         priority: priorityOf(poi),
+        // Bildepinnen holder unna en større radius, standardpinnen sin vanlige.
+        ...(poi.markerImage ? { halfSize: discHalfOf(poi) } : {}),
       }));
     const crowdedOut = computePinDemotions(pinCandidates, blockers);
     const demotedIds: ReadonlySet<string> = dots?.size
@@ -562,7 +571,7 @@ export function useMarker3DDeclutter({
           y: isDemoted ? y + pinHalf - dotHalf : y,
           halfSize: isDemoted
             ? dotHalf
-            : pinHalf * (isTexture(poi) ? TEXTURE_PIN_SCALE : 1),
+            : discHalfOf(poi) * (isTexture(poi) ? TEXTURE_PIN_SCALE : 1),
         });
         // En prikk bærer ikke navn: navnet ville pekt på noe som ikke lenger
         // ser ut som et sted.
@@ -573,6 +582,11 @@ export function useMarker3DDeclutter({
           y,
           name: poi.name,
           priority: priorityOf(poi),
+          // Labelen starter utenfor den STØRRE skiva, ellers regnes den som
+          // plassert der bildet ligger.
+          ...(poi.markerImage
+            ? { offsetX: discHalfOf(poi) + LABEL_GAP_X * pinScale }
+            : {}),
         });
       }
       for (const b of blockers) {

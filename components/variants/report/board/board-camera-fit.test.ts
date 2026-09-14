@@ -512,3 +512,9 @@ describe("deriveFocusCamera3D", () => {
     ).toBe(true);
   });
 });
+
+it('allows an explicit regional frame without widening normal board framing', () => {
+  const input = { points: [{lat:63.35,lng:10.21},{lat:63.53,lng:10.62}], viewport: {widthPx:1280,heightPx:720,occludedBottomPx:0,occludedLeftPx:450}, fovDeg:35, headingDeg:0 };
+  expect(deriveFocusCamera3D(input)!.rangeM).toBe(4000);
+  expect(deriveFocusCamera3D({...input,maxRangeM:100000})!.rangeM).toBeGreaterThan(30000);
+});

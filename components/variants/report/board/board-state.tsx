@@ -7,6 +7,7 @@ import {
   useEffect,
   useMemo,
   useReducer,
+  useRef,
   useState,
   type Dispatch,
   type ReactNode,
@@ -18,6 +19,7 @@ import type {
   VisibleIdsSource,
   ViewportRect,
 } from "@/lib/board/board-types";
+import { visibleReserveBoard } from "@/lib/demo/nyhavna-lokal/reserve";
 import { intersectVisible } from "@/lib/event-board/marker-visibility";
 import { availableTravelModes } from "@/lib/board/neighbourhood-list";
 import { contourTravelModes } from "@/lib/board/contour-modes";
@@ -113,6 +115,8 @@ export interface BoardState {
    * `HIGHLIGHT_POIS` og `CLEAR_HIGHLIGHTS` skriver det. Se `resetNavigation`.
    */
   highlightedPoiIds: BoardPOIId[];
+  /** Stedet som nå omtales i talesamtalen, uten å åpne et detaljkort. */
+  narrationPoiId?: BoardPOIId | null;
 }
 
 /**
@@ -173,7 +177,8 @@ export type BoardAction =
    * første forekomst beholdt, så en id ikke kan bære to tall.
    */
   | { type: "HIGHLIGHT_POIS"; ids: BoardPOIId[] }
-  | { type: "CLEAR_HIGHLIGHTS" };
+  | { type: "CLEAR_HIGHLIGHTS" }
+  | { type: "FOCUS_NARRATION"; id: BoardPOIId | null };
 
 export const initialBoardState: BoardState = {
   phase: "default",
@@ -340,14 +345,19 @@ export function boardReducer(
       // setning) skal ikke re-rendre ~1 000 markører. Identisk liste = identisk
       // state-objekt.
       if (sameHighlights(ids, state.highlightedPoiIds)) return state;
-      return { ...state, highlightedPoiIds: ids };
+      return { ...state, highlightedPoiIds: ids, ...(state.narrationPoiId ? { narrationPoiId: null } : {}) };
     }
+
+    case "FOCUS_NARRATION":
+      if (action.id && !state.highlightedPoiIds.includes(action.id)) return state;
+      if ((state.narrationPoiId ?? null) === action.id) return state;
+      return { ...state, narrationPoiId: action.id };
 
     case "CLEAR_HIGHLIGHTS":
       // Samme dedup-begrunnelse som over, i tom form: er det ingenting å
       // fjerne, skal ingenting re-rendres.
-      if (state.highlightedPoiIds.length === 0) return state;
-      return { ...state, highlightedPoiIds: [] };
+      if (state.highlightedPoiIds.length === 0 && !state.narrationPoiId) return state;
+      return { ...state, highlightedPoiIds: [], narrationPoiId: null };
 
     default:
       return state;
@@ -355,6 +365,9 @@ export function boardReducer(
 }
 
 interface BoardContextValue {
+  reserveData?: BoardData;
+  revealedPlaceIds?: ReadonlySet<string>;
+  revealPlaces?: (ids: string[]) => BoardData;
   state: BoardState;
   dispatch: Dispatch<BoardAction>;
   data: BoardData;
@@ -443,7 +456,7 @@ interface BoardContextValue {
 const BoardContext = createContext<BoardContextValue | null>(null);
 
 export function BoardProvider({
-  data,
+  data: suppliedData,
   visiblePoiIds,
   collectionPoiIds,
   children,
@@ -455,6 +468,17 @@ export function BoardProvider({
   collectionPoiIds?: Set<string>;
   children: ReactNode;
 }) {
+  const [revealedPlaceIds, setRevealedPlaceIds] = useState<ReadonlySet<string>>(new Set());
+  const revealedRef = useRef(revealedPlaceIds);
+  const data = useMemo(() => visibleReserveBoard(suppliedData, revealedPlaceIds), [suppliedData, revealedPlaceIds]);
+  const revealPlaces = useCallback((ids: string[]) => {
+    const allowed = new Set(suppliedData.demoReservePlaceIds);
+    const next = new Set(revealedRef.current);
+    ids.forEach(id => { if (allowed.has(id)) next.add(id); });
+    revealedRef.current = next;
+    setRevealedPlaceIds(next);
+    return visibleReserveBoard(suppliedData, next);
+  }, [suppliedData]);
   const [state, dispatch] = useReducer(boardReducer, initialBoardState);
   const subFilter = useSubCategoryFilter(state.activeCategoryId);
 
@@ -535,6 +559,7 @@ export function BoardProvider({
         dispatch,
         data,
         subFilter,
+        reserveData: suppliedData, revealedPlaceIds, revealPlaces,
         visiblePoiIds: effectiveVisiblePoiIds,
         visibleIdsSource,
         setViewportPoiIds,

@@ -705,3 +705,18 @@ describe("fremhevede steder (HIGHLIGHT_POIS / CLEAR_HIGHLIGHTS)", () => {
     expect(state.highlightedPoiIds).toEqual([POI_1, POI_2]);
   });
 });
+
+
+describe("talefokus", () => {
+  const POI_3 = "poi-3" as BoardPOIId;
+  it("tillater bare omtalte steder og rydder fokus ved ny gruppe eller nullstilling", () => {
+    const group = boardReducer(initialBoardState, { type: "HIGHLIGHT_POIS", ids: [POI_1, POI_2] });
+    expect(boardReducer(group, { type: "FOCUS_NARRATION", id: POI_3 })).toBe(group);
+    const focused = boardReducer(group, { type: "FOCUS_NARRATION", id: POI_1 });
+    expect(focused.narrationPoiId).toBe(POI_1);
+    expect(boardReducer(focused, { type: "FOCUS_NARRATION", id: POI_1 })).toBe(focused);
+    expect(boardReducer(focused, { type: "HIGHLIGHT_POIS", ids: [POI_2] }).narrationPoiId).toBeNull();
+    expect(boardReducer(focused, { type: "CLEAR_HIGHLIGHTS" }).narrationPoiId).toBeNull();
+    expect(boardReducer(focused, { type: "FOCUS_NARRATION", id: null }).highlightedPoiIds).toEqual([POI_1, POI_2]);
+  });
+});

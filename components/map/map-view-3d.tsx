@@ -231,6 +231,7 @@ export interface MapView3DProps {
    * objekt per markør defeatet memo.
    */
   highlightIndexes?: Record<string, number>;
+  narrationPoiId?: string | null;
 }
 
 /**
@@ -286,6 +287,7 @@ const Marker3DItem = memo(function Marker3DItem({
   opacity,
   pinFactor,
   highlightIndex,
+  narrationFocus,
 }: {
   poi: POI;
   /** Kartinstansen markøren appendes til. */
@@ -314,6 +316,7 @@ const Marker3DItem = memo(function Marker3DItem({
   pinFactor?: number;
   /** Plass i rekken for et OMTALT sted. Se `highlightIndexes` på MapView3D. */
   highlightIndex?: number;
+  narrationFocus?: "current" | "other";
 }) {
   return (
     <DomMarker3D
@@ -341,6 +344,7 @@ const Marker3DItem = memo(function Marker3DItem({
         color={poi.category.color}
         backgroundColor={hexLightTint(poi.category.color)}
         Icon={getFilledIcon(poi.category.icon)}
+        imageSrc={poi.markerImage}
         anchor={isAnchorPOI(poi)}
         label={label}
         labelSide={labelSide}
@@ -348,6 +352,7 @@ const Marker3DItem = memo(function Marker3DItem({
         scale={scale}
         opacity={opacity}
         pinFactor={pinFactor}
+        narrationFocus={narrationFocus}
         highlightIndex={highlightIndex}
       />
     </DomMarker3D>
@@ -442,6 +447,7 @@ function Map3DInner({
   fadedMarkerIds,
   fadedOpacity = 1,
   highlightIndexes,
+  narrationPoiId,
 }: MapView3DProps) {
   // freeMode dropper alle camera-låser så brukeren får standard Google Maps
   // 3D-feel. Andre kontekster (overview, modal) beholder dagens lock for
@@ -601,6 +607,7 @@ function Map3DInner({
               scale={markerScale}
               opacity={opacity}
               pinFactor={pinFactor}
+              narrationFocus={narrationPoiId ? (narrationPoiId === poi.id ? "current" : "other") : undefined}
               highlightIndex={highlightIndex}
             />
           );

@@ -17,7 +17,8 @@ import {
  */
 
 async function realBoard() {
-  return localBoardSchema.parse(JSON.parse(await readFile(join(LOCAL_DATASET_DIR, "board.json"), "utf8")));
+  const board = localBoardSchema.parse(JSON.parse(await readFile(join(LOCAL_DATASET_DIR, "board.json"), "utf8")));
+  return { ...board, presentation: [], categories: board.categories.map(c => ({ ...c, lead: "", body: "", sourceId: undefined })) };
 }
 
 const emptyDataset = async (): Promise<LocalDataset> => ({

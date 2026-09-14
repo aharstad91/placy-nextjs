@@ -41,7 +41,7 @@ async function realBoard() {
 }
 
 const emptyDataset = async (): Promise<LocalDataset> => ({
-  board: await realBoard(),
+  board: { ...(await realBoard()), presentation: [] },
   sources: [],
   places: [],
   topics: [],
@@ -226,8 +226,9 @@ describe("spørsmål og svar er felles for sidebar og stemme", () => {
     const { initialBoardState } = await import("@/components/variants/report/board/board-state");
     const dataset = await loadDataset();
     const board = buildLocalBoard(dataset);
-    for (const faq of dataset.faqs) {
-      const ids = [...faq.answer.matchAll(/\(poi:([^)]+)\)/g)].map(m => m[1]);
+    const visibleFaqs = [...(board.globalFaq ?? []), ...board.categories.flatMap(c => c.editorial?.faq ?? [])];
+    for (const faq of visibleFaqs) {
+      const ids = [...new Set([...faq.answer.matchAll(/\(poi:([^)]+)\)/g)].map(m => m[1]))];
       if (!ids.length) continue;
       const actions: unknown[] = [];
       const result = executeBoardTool("highlight_places", { poi_ids: ids }, {

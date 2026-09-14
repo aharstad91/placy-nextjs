@@ -91,7 +91,7 @@ export function createNyhavnaKnowledge(board: BoardData, options: KnowledgeOptio
     if (name === 'get_board_facts') return { ...pack(knowledge.area, true), categories: board.categories.map(c => ({ id: String(c.id), name: c.label })) };
     if (name === 'get_place_facts') {
       const id = typeof args.poi_id === 'string' ? poiAliases[args.poi_id] ?? args.poi_id : '';
-      const entity = all.find(e => e.id === id || (e.mapPoiId !== null && e.mapPoiId === id));
+      const entity = all.find(e => e.id === id) ?? all.find(e => e.mapPoiId !== null && e.mapPoiId === id);
       if (entity) return pack(entity, true);
       const poi = pois.get(id);
       return poi ? packRegister(poi) : { error: 'Ukjent sted. Finn ID med find_places før du forsøker igjen.' };

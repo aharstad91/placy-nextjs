@@ -3,6 +3,7 @@ import { mkdir, readFile, rename, unlink, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { RealtimeSupervisor } from '@/lib/realtime/server-session';
 import { liveHangup } from '@/lib/live/hangup';
+import { LIVE_SESSION_MAX_MS } from '@/lib/live/session-limits';
 
 /**
  * Én lokal Node-prosess eier hvem som får starte en Live-sesjon, og rydder opp
@@ -16,6 +17,7 @@ const globals = globalThis as typeof globalThis & { placyLiveSupervisor?: Realti
 export function getLiveSupervisor() {
   return globals.placyLiveSupervisor ??= new RealtimeSupervisor({
     stop: liveHangup,
+    maxMs: LIVE_SESSION_MAX_MS,
     read: async () => {
       try {
         const parsed = JSON.parse(await readFile(stateFile(), 'utf8'));

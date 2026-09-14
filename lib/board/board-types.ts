@@ -131,7 +131,7 @@ export interface MapCameraApi {
    */
   fitCoordinates: (
     coords: readonly { lng: number; lat: number }[],
-    opts?: { maxZoom?: number; durationMs?: number },
+    opts?: { maxZoom?: number; durationMs?: number; maxRangeM?: number },
   ) => void;
   /**
    * Flyr til ett punkt. `minZoom` er et GULV, ikke et mål — står kameraet

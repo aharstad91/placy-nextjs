@@ -341,3 +341,10 @@ describe("BoardMarker — omtalte steder", () => {
     expect(badge(container)!.textContent).toBe("1");
   });
 });
+
+
+it("exposes current speech focus and its label without opening the place", () => {
+  const { container } = renderMarker({ narrationFocus: "current" });
+  expect(container.querySelector('[data-narration-focus="current"]')).not.toBeNull();
+  expect(container.querySelector('[data-poi-label]')?.textContent).toContain("Valentinlyst Senter");
+});

@@ -1,356 +1,110 @@
-# Nyhavna lokal demo — bruksanvisning
+# Nyhavna lokal demo
 
-En ren Placy-demo for Nyhavna som henter ALT faginnhold fra lokale JSON-filer.
-Ingenting dukker opp av seg selv: hvert sted, hvert fakta, hvert spørsmål og
-hver kilde har noen lagt inn med vilje.
+**Åpne:** http://localhost:3103/demo/nyhavna-lokal
 
-Første innhold er de 56 spørsmålene og svarene fra Leve-varianten av
-Nyhavna-boardet, importert 2026-09-13. Steder og temakunnskap er fortsatt
-tomme — se «Hva demoen har i dag» under.
+Demoen leser faginnhold fra `data/demo/nyhavna-lokal/`. Ingen Supabase-oppslag under samtalen; utvalgte steder importeres kontrollert til JSON.
+Per 14. september 2026: 8 kategorier, 8 manusdeler, 19 FAQ-er, 48 kartpunkter totalt (43 eksisterende steder og 5 planområder), hvor 29 vises fra start, og 61 kilder.
+Tidligere bred research er arkivert; den aktive demoen bruker det kuraterte utvalget.
 
-**URL:** `http://localhost:3103/demo/nyhavna-lokal`
-(porten er den dev-serveren faktisk kjører på — sjekk med `git worktree list` og
-`lsof -nP -iTCP -sTCP:LISTEN | grep node` før du gjetter)
+## Prøv presentasjonen
 
-```bash
-npm run dev      # eller PORT=3105 npm run dev fra en worktree
-```
+1. Last siden på nytt og start samtalen.
+2. Velg «planene for Nyhavna» eller «steder som finnes i dag» i den nye introen.
+3. Placy presenterer én del, åpner tilhørende kategori og viser stedene.
+4. Avbryt med et spørsmål. Si «fortsett» for å vende tilbake til presentasjonen.
+5. Velg en annen kategori med stemmen eller i sidepanelet.
 
-Den eksisterende demoen på `/eiendom/nyhavna-utvikling/nyhavna/leve` er uendret
-og deler ingen data med denne.
+Ved et bredt spørsmål om dagens nærområde gir Anja to temavalg og venter. «Nyhavna som bydel» gir felleskontekst og fem delområder som kan velges i kartet. Etter en presentasjon velger brukeren hva de vil høre om videre.
+Etter hver del inviterer stemmen til et valg og venter. Stillhet skal ikke starte neste del.
+Manuset er et formidlingsgrunnlag; modellen kan formulere setningene naturlig.
 
----
+## Redigere innhold
 
-## Hvor filene ligger
-
-`data/demo/nyhavna-lokal/`
-
-| Fil | Rolle |
+| Fil | Innhold |
 |---|---|
-| `board.json` | Identitet, kartutsnitt, kartmotor, hilsen og KATEGORIENE. Ingen fakta. |
-| `sources.json` | Kilderegisteret. Stabile ID-er alt annet peker på. |
-| `places.json` | Stedene — det som får markør i kartet. |
-| `topics.json` | Temakunnskap: fakta og sammenhenger uten ett bestemt sted. |
-| `faq.json` | Spørsmål og svar, per tema eller for hele området. |
-| `conversations.json` | Samtaleeksempler. **Testgrunnlag, aldri faktakilde.** |
-| `eksempel.json` | Dokumentasjon. Lastes ALDRI av demoen. |
-
-Skjemaene står i `lib/demo/nyhavna-lokal/schema.ts`, lasteren i `dataset.ts`.
-
-## Kategoriene som er beholdt
-
-De sju generiske temaene fra Placy-boardet, med samme ID, navn, ikon og farge:
-
-`hverdagsliv` (Hverdag) · `barn-oppvekst` (Oppvekst) · `mat-drikke` (Servering) ·
-`natur-friluftsliv` (Natur) · `transport` (Transport) ·
-`trening-aktivitet` (Trening) · `opplevelser` (Opplevelser)
-
-Dagens Nyhavna-demo har i tillegg tre temaer bygd på Nyhavna Utviklings egne
-«Leve»-sider (Café og restauranter, Park og promenade, Kunst og kultur). De er
-IKKE med her (Andreas, 2026-09-13): de er kildens egen inndeling av kildens eget
-innhold, og denne demoen skal starte fra den generiske rammen. Skal de inn
-senere, legges de til i `board.json` som vanlige kategorier.
-
-ID-ene er med vilje de samme som i det eksisterende boardet: stemmens
-interesse-ordliste (`lib/realtime/tour-state.ts`) kjenner dem igjen, så «mat»
-åpner riktig tema uten at noe må skrives om.
-
-Tomme kategorier er tilgjengelige. De står i temaraden, kan åpnes, og viser
-«Ingen steder er lagt inn i dette temaet ennå.» — sammen med temaets spørsmål og
-svar, som ikke trenger et eneste sted for å kunne leses.
-
----
-
-## Kartet: Kart / Satelitt / 3D
-
-`board.json` har `"map3d": true`. Det gir kartveksleren nederst med tre valg —
-**Kart** (Mapbox-vektorkart), **Satelitt** (Google, rett ovenfra) og **3D**
-(Google, skrå) — og boardet åpner i Satelitt, som er den letteste orienteringen
-på et board uten innlest omvisning. Markørene tegnes på begge motorene med samme
-farge og ikon.
-
-Sett `"map3d": false` for å bare ha Mapbox. Google-motoren krever
-`NEXT_PUBLIC_GOOGLE_MAPS_API_KEY` i `.env.local` (den samme dagens demo bruker).
-
-`"pinSubtitle": ""` gir prosjektmarkøren bare navnet. Utelates feltet, faller
-markøren tilbake på sin egen standardtekst («Nybygg 2028») — en påstand om
-byggeår demoen ikke har dekning for.
-
----
-
-## Hva demoen har i dag
-
-| Innhold | Status |
-|---|---|
-| Kategorier | 7, alle med innhold i sidebaren |
-| Spørsmål og svar | 56 (8 for hele området + 48 fordelt på temaene) |
-| Steder | 0 — kartet er geografisk bakgrunn, uten markører |
-| Temakunnskap | 0 |
-
-Fordelingen av de 48 temaspørsmålene: Hverdag 10, Transport 9, Oppvekst 8,
-Trening 7, Servering 6, Natur 4, Opplevelser 4.
-
-## Spørsmål og svar
-
-Ett innhold, to flater. `faq.json` blir både det venstre sidefeltet viser
-(`FAQSection`) og spørsmålskatalogen stemmen får i instruksjonen
-(`nyhavnaFaqCatalog`). Det er ikke to kopier som må holdes i takt — det er den
-samme lista lest to ganger, og en test holder de to identiske.
-
-Et spørsmål uten `categoryId` hører til hele området og står på områdestoppet
-(det første stoppet, med navnet på strøket). Med `categoryId` står det under det
-temaet — også når temaet ikke har ett eneste sted.
-
-```json
-{
-  "id": "hvor-er-naermeste-apotek",
-  "categoryId": "hverdagsliv",
-  "question": "Hvor er nærmeste apotek?",
-  "answer": "Det står ikke i materialet ennå. Se [Hverdag](category:hverdagsliv) for det som er lagt inn.",
-  "origin": "local",
-  "sourceIds": ["nyhavna-leve-board"],
-  "caveats": []
-}
-```
-
-- **Rekkefølgen i fila er rekkefølgen på flaten.** Ingen sortering skjer.
-- `origin: "imported"` betyr at svaret er hentet ferdig fra et annet board og
-  gjengitt som det sto — det er IKKE etterkontrollert her. Lasteren krever da
-  minst én `sourceId`, så det alltid står hvor teksten kommer fra.
-  `origin: "local"` er et svar noen har skrevet for denne demoen.
-- `[tekst](category:id)` i svaret gjør kategorien klikkbar i sidebaren og
-  oppgis til stemmen. Peker den på en kategori som ikke finnes, stopper
-  lasteren — en lenke som aldri kan klikkes er en skrivefeil.
-- `caveats` følger svaret som forbehold, på samme måte som for steder og temaer.
-
-### Om importen fra Leve-boardet
-
-Svarene er hentet fra `/eiendom/nyhavna-utvikling/nyhavna/leve` slik de STÅR
-der, med samme ordlyd, samme tema og samme rekkefølge. De er generert
-deterministisk av det boardets 1 400+ steder — reisetider, åpningstider og
-opptellinger kommer derfra.
-
-To ting følger av det, og begge er med vilje:
-
-1. **Stedslenkene er skrelt bort.** Svarene bar `[navn](poi:google-ChIJ…)`, som
-   peker på stedene i det ANDRE boardet. De finnes ikke her, ville aldri kunnet
-   klikkes, og ville vært støy i en fil som skal redigeres for hånd. Selve
-   ordlyden er uendret: lenketeksten står igjen som vanlig tekst.
-2. **Flere svar snakker om et kart denne demoen ikke har** («91 steder på kartet
-   ligger innenfor ti minutter», «Dromedar Kaffebar … 10 minutter til fots»).
-   Tallene er sanne om Nyhavna og om Leve-boardet, men denne demoen har ingen
-   markører å vise dem på. Derfor har guiden en egen regel om nettopp det (se
-   «Stemmen»), og derfor er ingen kart-ID-er med i katalogen den får.
-
-Kildeposten `nyhavna-leve-board` i `sources.json` er selve importsporet: den
-sier hvor svarene er hentet fra og når. Den sier IKKE at innholdet er
-faktakontrollert på nytt — det er det ikke.
-
-## Legge til et sted
-
-I `places.json`:
-
-```json
-{
-  "id": "dora-kaffebar",
-  "name": "Dora Kaffebar",
-  "categoryId": "mat-drikke",
-  "coordinates": { "lat": 63.4398, "lng": 10.4172 },
-  "address": "Kobbes gate 2",
-  "placeType": "Kafé",
-  "icon": "Coffee",
-  "aliases": ["Dora kafe"],
-  "status": "existing",
-  "summary": "Nabolagskafé med bakst og håndverkskaffe.",
-  "travelTime": { "walk": 2, "bike": 2, "car": 2 },
-  "locationPrecision": "sourced",
-  "facts": [
-    {
-      "id": "dora-kaffebar-type",
-      "text": "Dora Kaffebar er en nabolagskafé.",
-      "sourceId": "nyhavna-servering",
-      "checkedAt": "2026-09-14",
-      "verification": "confirmed"
-    }
-  ],
-  "sourceIds": ["nyhavna-servering"],
-  "checkedAt": "2026-09-14",
-  "caveats": ["Åpningstider er ikke kontrollert."]
-}
-```
-
-- `categoryId` må finnes i `board.json` — ellers stopper lasteren.
-- `travelTime` er **minutter**, målt, aldri gjettet. Utelat heller enn å anslå;
-  et sted uten tid viser ingen tid, og det er riktig.
-- `icon` er et Lucide-navn. Utelatt = kategoriens ikon. Fargen kommer ALLTID fra
-  temaet — det er boardets regel, og den er ikke overstyrbar per sted.
-- `status: "planned"` merker stedet som planlagt både i kartet og i det stemmen
-  sier. `"adopted-plan"` og `"vision"` regnes også som «ikke et tilbud i dag».
-
-## Legge til en temafakta
-
-I `topics.json`:
-
-```json
-{
-  "id": "nyhavna-gronnstruktur",
-  "title": "Parker og allmenninger",
-  "categoryIds": ["natur-friluftsliv"],
-  "status": "planned",
-  "text": "Nyhavna beskriver et planlagt nettverk av parker, byrom og allmenninger nær vannet.",
-  "keywords": ["park", "allmenning", "grønt", "byrom"],
-  "sourceIds": ["nyhavna-park"],
-  "relatedPlaceIds": [],
-  "checkedAt": "2026-09-14",
-  "caveats": []
-}
-```
-
-- `categoryIds: []` betyr at fakta gjelder HELE området. Da blir den en del av
-  det stemmen svarer med når spørsmålet handler om Nyhavna som sted.
-- `keywords` er det stemmens søk treffer på i tillegg til tittel og tekst.
-- `relatedPlaceIds` må peke på ID-er i `places.json`.
-
-## Kilder og forbehold
-
-Kilder registreres én gang i `sources.json` og refereres med ID:
-
-```json
-{
-  "id": "nyhavna-servering",
-  "label": "nyhavna.no",
-  "page": "Café og restauranter",
-  "url": "https://nyhavna.no/leve/cafe-og-restauranter/",
-  "publisher": "Nyhavna Utvikling",
-  "checkedAt": "2026-09-14"
-}
-```
-
-Lenk til den **spesifikke** siden, ikke forsiden.
-
-Tre måter å ta forbehold på, med hver sin virkning:
-
-| Felt | Hva det gjør |
-|---|---|
-| `caveats: ["…"]` | Følger stedet/temaet som forbehold. Stemmen sier det som usikkert, aldri som fakta. |
-| `facts[].verification: "unresolved"` | Samme, men for én bestemt påstand du har sett men ikke fått bekreftet. |
-| `status` | Skiller dagens tilbud fra planlagt, vedtatt plan, visjon og uavklart. |
-
-`locationPrecision: "approximate"` + `locationNote` brukes når koordinatet er
-utledet av en tekstbeskrivelse. Lasteren krever at de to følges ad — et notat om
-plassering uten flagget ville tatt forbehold om et koordinat som er belagt.
-
-## Hvordan innholdet henger sammen med kategorier og kart
-
-- `place.categoryId` → temaet stedet vises under, og markørens farge.
-- `topic.categoryIds` → temaene guiden henter fakta fra når kapittelet åpnes.
-- `place.coordinates` → markøren. Steder uten koordinat finnes ikke i formatet;
-  noe kilden navngir uten at det kan plasseres, hører hjemme i kategoriens
-  `unplaced` i `board.json` og får aldri markør.
-- `faq.categoryId` → temaet spørsmålet står under. Uten feltet: områdestoppet.
-- Kart, board og stemme leser det SAMME datasettet. Stemmens kartverktøy
-  validerer i tillegg hver ID mot boardet, så en markør på et sted som ikke
-  finnes er umulig.
-
-## Krever endringer refresh, restart eller rebuild?
-
-**Bare refresh.** Ruta er `dynamic = "force-dynamic"` og leser filene per
-forespørsel. Lagre JSON-en, last siden på nytt.
-
-Én ting å vite: en samtale som allerede er i gang snakker ut fra datasettet slik
-det var da den startet. Har du redigert mens fanen sto åpen, avvises en ny
-samtale med «Datagrunnlaget er oppdatert. Last boardet på nytt.» Det er en
-sikring, ikke en feil.
-
-`npm run build` trenger du ikke. Dev-serveren trenger ikke restart.
-
-## Nye samtaleeksempler
-
-Legges i `conversations.json`:
-
-```json
-{
-  "id": "2026-09-14-barn-og-spisesteder",
-  "recordedAt": "2026-09-14",
-  "topic": "barn og spisesteder",
-  "notes": "Kort om hva samtalen avdekket.",
-  "transcript": [{ "speaker": "bruker", "text": "…" }],
-  "questions": [
-    { "id": "barnevennlig-servering", "text": "…", "expectation": "…" }
-  ]
-}
-```
-
-De blir **ikke** faktagrunnlag for modellen. `loadDataset` laster dem ikke,
-`lib/demo/nyhavna-lokal/voice.ts` importerer dem ikke, og en test holder begge
-dørene lukket (`voice.test.ts`, «samtaleeksemplene»). Bruk dem som arbeidsliste:
-finn spørsmålene, hent og kontroller informasjonen, legg den inn i `places.json`
-eller `topics.json` med kilde.
-
-## Når noe er galt
-
-Lasteren kaster med filnavn, sti i JSON-en og hva som manglet:
-
-```
-places.json har ugyldige data:
-  • 0.coordinates: Required
-```
-
-```
-Datasettet i data/demo/nyhavna-lokal/ har brutte referanser:
-  • places.json → «dora-kaffebar»: ukjent categoryId «servering» (mangler i board.json).
-  • faq.json → «hvor-er-apoteket»: origin er "imported", men sourceIds er tom — oppgi hvor svaret er hentet fra.
-```
-
-Feilen vises i nettleseren og i terminalen. Den skal gjøre det — en demo som
-stille faller tilbake til noe annet er verdiløs.
-
----
-
-## Stemmen
-
-| Rolle | Modell |
-|---|---|
-| Stemme (lyd, samtaleflyt) | `gpt-live-1` — WebRTC, full duplex |
-| Backend (fakta, verktøyvalg) | `gpt-5.6-terra` via Responses |
-
-Begge leses fra env (`OPENAI_BOARD_LIVE_MODEL`, `OPENAI_BOARD_BACKEND_MODEL`) med
-disse som standard. Ruta nekter å starte hvis stemmemodellen ikke er en
-Live-modell, og klienten nekter å koble til en server som ikke svarer
-`protocol: "live"` — ingen stille omvei tilbake til Realtime.
-
-Datagrunnlaget velges av boardet (`BoardData.demoDataset`), ikke av URL-en:
-denne demoen sender `nyhavna-lokal`, den eksisterende sender ingenting og får
-`nyhavna-leve`. Registeret står i `lib/live/demos.ts`.
-
-Guiden får to ekstra regler i denne demoen (`LOCAL_DEMO_INSTRUCTION`):
-
-1. Mangler verktøyene et svar, skal den si kort at den ikke har det i materialet
-   ennå — ikke fylle hullet med generell kunnskap, ikke gjette, ikke søke på
-   nettet.
-2. Kartet er tomt. Den skal ikke kalle `highlight_places` eller `show_place`,
-   ikke love å vise eller markere noe, og ikke si «her ser du». Katalogsvarene
-   navngir steder og oppgir minutter fra det andre boardet; navn, tall og
-   forbehold gjengis som de står, men stedene påstås ikke å ligge i DETTE
-   kartet.
-
-Spørsmålene stemmen kan svare med er nøyaktig de sidebaren viser: begge leser
-`faq.json`. Katalogen står i den faste delen av instruksjonen, så et
-katalogspørsmål kan besvares i én runde.
-
-Simulert samtale uten mikrofon: legg på `?voicedev=1` og bruk `window.placyVoice`
-(`start()`, `say()`, `tool()`, `messages()`, `status()`, `stop()`).
-
----
-
-## Grenser
-
-- **Lokalt bare.** Ruta svarer 404 i produksjonsbygg.
-- **Ingen Supabase.** Verken lesing eller skriving, for denne demoen.
-- **Ingen steder i kartet.** Importen tok med spørsmål og svar, ikke steder.
-  Svar som navngir et sted kan leses og sies, men stedet har ingen markør — og
-  flere svar oppgir tall (avstander, opptellinger) som gjelder Leve-boardets
-  kart, ikke dette.
-- **Ingen lyd, megler, oppsummering eller isokroner.** Datasettet bærer dem ikke,
-  og et tomt board som later som det har dem er en løgn om datagrunnlaget.
-- **Ingen CMS.** Filene redigeres for hånd eller av en agent. Det er meningen.
+| `board.json` | Kategorier, kartinnstillinger, hilsen og `presentation` |
+| `faq.json` | Korte svar og stedslenker for sidebar og stemme |
+| `places.json` | Steder, koordinater, reisetider og fakta |
+| `topics.json` | Søkbare fakta på tvers av steder |
+| `sources.json` | Kilder med URL og kontrolldato |
+| `conversations.json` | Testgrunnlag, aldri faktakilde |
+| `eksempel.json` | Formatdokumentasjon, lastes ikke |
+
+Hver manusdel har `id`, `categoryId`, `text`, `placeIds`, `sourceIds` og `checkedAt`.
+Rekkefølgen i `presentation` bestemmer omvisningen. Et kategorihopp fortsetter derfra i rekkefølgen. Steder skal nevnes i samme rekkefølge
+som `placeIds`. Alle referanser og stedenes kategoritilhørighet valideres når datasettet lastes. Manusdelen kan være høyst 1200 tegn.
+
+FAQ-lenker bruker `[navn](poi:sted-id)` og `[tema](category:kategori-id)`.
+Bruk stabile ID-er. Skillet mellom eksisterende tilbud, planer og uavklart informasjon
+må beholdes i både manus, fakta og svar. Minutter skal ha et beregningsgrunnlag;
+demoen bruker ett fast geografisk utgangspunkt, ikke en bestemt framtidig bolig.
+
+Lagre JSON og last siden på nytt. En pågående samtale beholder sitt datasett;
+start en ny samtale etter endringer. Det er ikke nødvendig å bygge på nytt.
+
+## Samtale og grensesnitt
+
+`lib/live/demos.ts` velger lokal samtale og egne stemmeinstruksjoner.
+`lib/demo/nyhavna-lokal/presentation.ts` holder manusposisjonen gjennom faktaspørsmål.
+Verktøyet `present_neighbourhood` starter, fortsetter eller bytter kategori. Parallelle backend-verktøykall er deaktivert for denne demoen for å unngå samtidige fremdriftsendringer.
+`voice.ts` gir backenden detaljert faggrunnlag; `voice-instructions.ts` gir stemmen
+korte regler for formidling og avbrudd.
+
+Kategori og kartgruppe oppdateres samlet. Det sist navngitte stedet får ekstra
+visuell fokus mens stemmen snakker. Resten av den omtalte gruppen forblir synlig. Fokus bygger på transkript og registrert
+lydavspilling, **ikke ordnøyaktige lydtidskoder**. Ved avbrudd fjernes det ekstra
+fokuset, mens den omtalte gruppen blir stående. Retur til riktig manusdel er
+styrt i kode; hvor i setningen stemmen fortsetter, avhenger av samtaletranskriptet.
+
+Modellene leses fra `OPENAI_BOARD_LIVE_MODEL` og `OPENAI_BOARD_BACKEND_MODEL`;
+standardene i denne prototypen er `gpt-live-1` og `gpt-5.6-terra`.
+Integrasjonen følger eksisterende Live-protokoll. Denne iterasjonen bytter ikke modell.
+
+## Verifisering og grenser
+
+Skjema og laster: `lib/demo/nyhavna-lokal/schema.ts` og `dataset.ts`.
+Målrettede tester dekker manusposisjon, kategoribytte, avbruddsfokus og kartkommandoer.
+Desktop og mobil er kontrollert i nettleser. Faktisk lydflyt og tidspunktet for
+markørfokus må vurderes i lyttetesten; det kan ikke bevises av DOM- og enhetstester.
+
+Demoen er lokal og returnerer 404 i produksjonsmodus. Ingen produksjonsutrulling.
+Skolekrets er ikke avklart for en bestemt bolig. Reisetider er beregnede eller
+daterte rutetabelleksempler; trygg skolevei og faktiske avganger er ikke garantert.
+
+Den opprinnelige Leve-demoen bruker sitt eget datagrunnlag. Regler for guidet
+presentasjon og automatisk kategoribytte ved fremheving gjelder den lokale demoen.
+
+## Bydelen som kommer
+
+[Bo-grunnlaget](2026-09-14-bo-grunnlag.md) dokumenterer alle sidene under `/bo/` og kartankrene. Felleskonteksten er et globalt tema i `topics.json`; hvert delområde har planstatus, eget sammendrag, fakta og kilder i `places.json`. Det er delområder, ikke fem fast nummererte byggetrinn. Kartpunktene er omtrentlige områdeankre uten beregnet reisetid.
+
+## Samtalepatch etter siste lyttetest
+
+Brede spørsmål om dagens nærområde skal få to temaknagger før en kategori velges. Oppfølging blir i valgt tema; delområder har spørsmål om boligplanene eller dagens nærområde. Manus og svar bruker «fra Nyhavna» og rutetabelltid uten standardtillegg om trafikk.
+
+Live har nå lokal grense på 30 minutter, med synlig varsel rundt to minutter før stopp. Mikrofonknappen kan starte en ny samtale etterpå; samtalehistorikken videreføres ikke automatisk. Leverandørgrenser og forbindelsesbrudd kan fortsatt avslutte tidligere. Testet med simulerte tidsforløp, ikke en faktisk 30-minutters samtale.
+
+
+### Ekstrautvalg ved interesse (2026-09-14)
+
+Trening er første prøve: Nyhavna Padel vises fra starten. CrossFit Trondheim og Lilleby Treningssenter ligger i `places.json` med `revealOnRequest: true`. De vises først når brukeren trykker «Vis flere steder» eller ber Anja om flere treningssteder. To nye steder vises og fremheves samtidig. Utvalget varer til siden lastes på nytt; ny stemmesamtale får vite hva som allerede er vist. Knappen skjules når kategorien er tom for ekstra steder.
+
+Dette er et lokalt, kuratert uttrekk, ikke runtime-søk i Supabase eller på nettet. Kandidatene og koordinatene kom fra `data/demo/nyhavna-snapshot.json`; navn, adresse og tilbud ble kontrollert mot https://www.crossfittrondheim.com/ og https://lillebytreningssenter.no/om-oss/ samt https://lillebytreningssenter.no/salgsbetingelser/. Nye ruteanslag er ikke lagt til. CrossFit omtales ikke som fritt drop-in.
+
+Test: last siden på nytt → velg Trening → se ett sted → «Vis flere steder» → se tre steder og to nummererte nye markører. For tale: ny sidelasting → be Anja fortelle om trening → takk ja til flere alternativer. Faktisk muntlig etterlevelse må lyttetestes; knappen, datafiltrering, serververktøy og SSE-håndtering er kontrollert.
+
+## Radius og flere steder (14. september)
+
+Trening og natur har et kontrollert utvalg fra Supabase innen 10 km i luftlinje fra boardets senter. Fra start vises manusstedene og de tre nærmeste i hver av disse kategoriene (fire i hver med dagens overlapp). Første «flere» fyller på resten innen 2 km, sortert nærmest først, før radius utvides. Kategoripanelet tilbyr én «Vis flere steder»-knapp for neste utvidelse. Anja inviterer naturlig til flere steder i nærheten, uten å lese opp antall eller radius med mindre brukeren spør. Taleverktøyet `reveal_more_places` bruker samme avstandsutvalg. Alle nye punkter legges til; alle fremheves og omtales i samme rekkefølge, med én kort beskrivelse og pause per sted. Begge kartmotorene tegner radiusringen. Utvidelsen huskes per kategori gjennom besøket og ved ny stemmesamtale, men nullstilles ved full sidelasting. Kartkameraet rammer først inn Nyhavna og de kommende stedene. Etter kameraflyturen legges de nye markørene til, og først etter rendering bekreftes verktøyet til stemmen; hele radiusringen trenger ikke passe i utsnittet. 3D-kameraets vanlige 4000m-grense kan overskrides ved denne innrammingen.
+
+| Radius | Trening | Natur |
+|---|---:|---:|
+| 2 km | 8 | 5 |
+| 5 km | 11 | 8 |
+| 10 km | 15 | 12 |
+
+23 Supabase-poster er importert med `provenance.recordId` og importdato. Lagrede beskrivelser er forenklet til stedstype og område; åpningstider, priser og rutetider er ikke importert. `checkedAt` for disse postene betyr kontroll mot lagret databaseoppføring, ikke ny kontroll av nettsiden. Naturpunkter representerer lagrede plasseringer, ikke nødvendigvis turinnganger. Se `2026-09-14-radius-import.json` for de 24 vurderte forslagene og det utelatte Reppe-punktet. 796 kandidater ble klassifisert fra 5119 databaseposter; 732 er ikke ferdig kuratert eller faktakontrollert.
+
+Før ny import: gjennomgå kildedata og dubletter, behold eksisterende lokale ID-er, kontroller koordinater/kategorier, legg bare valgte poster til `places.json` og kilde/proveniens. Ingen automatisk import av hele poolen. Radius er foreløpig 2/4/6/8/10 km og bare utvidelse; tomme større intervaller tilbys ikke.
+
+Test: velg Trening, utvid til 5 km, deretter 10 km. Bytt til Natur (fortsatt 2 km) og prøv «vis flere natursteder innen ti kilometer». Kontroller at kart og stedsliste følger med. Willow og måltempo 80–90 ord/minutt beholdes. Ti korte ventefraser gir språklig variasjon; effekten må lyttetestes.

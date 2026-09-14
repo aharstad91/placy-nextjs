@@ -26,6 +26,10 @@ export interface BoardToolEnvironment {
   onCategory?: (index: number) => void;
   /** Omvisningen: tilbake til området. */
   onReset?: () => void;
+  /** Den lokale samtaledemoen lar kategori-panelet følge omtalte steder. */
+  followHighlightCategory?: boolean;
+  /** Validated local reveals may contain more than the default six places. */
+  highlightLimit?: number;
 }
 
 export interface HighlightedPlaceStatus {
@@ -48,12 +52,17 @@ export function executeBoardTool(name: string, args: Record<string, unknown>, en
       if (!requested.length) return { error: "poi_ids mangler. Bruk kart-ID-er fra kapittelet, katalogen eller map_poi_id." };
       const found: BoardPOI[] = [];
       const rejected: string[] = [];
-      for (const id of requested.slice(0, 6)) {
-        const poi = findBoardPOI(data.categories, id);
+      for (const id of requested.slice(0, env.highlightLimit ?? 6)) {
+        const poi = findBoardPOI(data.categories, id, state.activeCategoryId);
         if (!poi) rejected.push(id);
         else if (!found.some((p) => p.id === poi.id)) found.push(poi);
       }
       if (!found.length) return { error: `Ukjente kart-ID-er: ${rejected.join(", ")}. Ingen steder ble fremhevet. Bruk bare ID-er fra kapittel, katalog («vis:») eller map_poi_id.` };
+      if (env.followHighlightCategory && found.every(p => p.categoryId === found[0].categoryId)) {
+        const index = data.categories.findIndex(c => c.id === found[0].categoryId);
+        if (env.onCategory) env.onCategory(index);
+        else dispatch({ type: "SELECT_CATEGORY", id: found[0].categoryId, source: "voice" });
+      }
       const ids = found.map((p) => p.id);
       const unchanged = sameOrder(ids, state.highlightedPoiIds);
       dispatch({ type: "HIGHLIGHT_POIS", ids });
@@ -70,7 +79,7 @@ export function executeBoardTool(name: string, args: Record<string, unknown>, en
       dispatch({ type: "CLEAR_HIGHLIGHTS" });
       return { ok: true, shown: "Fremhevingen er fjernet" };
     case "show_place": {
-      const poi = typeof args.poi_id === "string" ? findBoardPOI(data.categories, args.poi_id) : null;
+      const poi = typeof args.poi_id === "string" ? findBoardPOI(data.categories, args.poi_id, state.activeCategoryId) : null;
       if (!poi) return { error: "Ukjent sted. Bruk en kart-ID fra kapittelet, katalogen eller map_poi_id." };
       // Stoppet følger stedets tema så flaten og kartet forteller det samme;
       // fremhevingen står (ingen navigasjons-action rører den).
@@ -107,12 +116,12 @@ export function executeBoardTool(name: string, args: Record<string, unknown>, en
 }
 
 /** Kart-ID-ene et verktøykall førte til – brukt av flaten til å skille assistentens navigasjon fra brukerens egne trykk. */
-export function boardToolTargets(name: string, result: BoardToolResult, data: BoardData): { categoryIds: string[]; poiIds: string[] } {
+export function boardToolTargets(name: string, result: BoardToolResult, data: BoardData, preferCategoryId?: BoardCategoryId | null): { categoryIds: string[]; poiIds: string[] } {
   if ("error" in result) return { categoryIds: [], poiIds: [] };
   const poiIds = [...(result.poi_id ? [result.poi_id] : []), ...(result.highlighted?.map((h) => h.id) ?? [])];
   const categoryIds = [
     ...(result.category_id ? [result.category_id] : []),
-    ...poiIds.map((id) => findBoardPOI(data.categories, id as BoardPOIId)?.categoryId).filter((id): id is BoardCategoryId => Boolean(id)).map(String),
+    ...poiIds.map((id) => findBoardPOI(data.categories, id as BoardPOIId, preferCategoryId)?.categoryId).filter((id): id is BoardCategoryId => Boolean(id)).map(String),
   ];
   return { categoryIds, poiIds: name === "highlight_places" ? [] : poiIds };
 }

@@ -1,7 +1,10 @@
 "use client";
 
+import type { LiveVoice } from "@/lib/live/voices";
+
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { LiveBoardState, LiveContextMessage, LiveMessage, LiveServerMessage, LiveStatus, MapDirective } from "@/lib/live/types";
+import { LIVE_SESSION_WARNING_MS } from "@/lib/live/session-limits";
 import { MAP_TOOLS } from "@/lib/realtime/types";
 
 /**
@@ -44,6 +47,7 @@ const SESSION_START_TIMEOUT_MS = 15000;
 const GREETING_KICK = "Begynn samtalen nå: si hilsenen slik instruksjonen sier, og vent så på brukeren.";
 
 export interface LiveOptions {
+  voice?: LiveVoice;
   /** Kartkommandoen serveren ba om. Returverdien er ren kartstatus, aldri fakta. */
   executeTool: (name: string, args: Record<string, unknown>) => unknown | Promise<unknown>;
   getContext: () => LiveBoardState;
@@ -69,6 +73,7 @@ interface Connection {
   events?: EventSource;
   audioContext?: AudioContext;
   meter?: ReturnType<typeof setInterval>;
+  warningTimer?: ReturnType<typeof setTimeout>;
   started: boolean;
   /** Serveren har avsluttet sesjonen; da skal vi ikke sende en ny DELETE. */
   ended: boolean;
@@ -120,6 +125,7 @@ export function useLive(options: LiveOptions) {
     connection.current = null;
     if (!current) return;
     clearInterval(current.meter);
+    clearTimeout(current.warningTimer);
     current.abort.abort();
     current.events?.close();
     current.stream?.getTracks().forEach(track => track.stop());
@@ -214,6 +220,7 @@ export function useLive(options: LiveOptions) {
 
       // Sjekk oppsettet før vi ber om mikrofontillatelse.
       const dataset = latestOptions.current.dataset;
+      const selectedVoice = latestOptions.current.voice;
       const health = await fetch(`/api/prototype/live${dataset ? `?dataset=${encodeURIComponent(dataset)}` : ""}`, { cache: "no-store" });
       if (run !== generation.current) return;
       if (!health.ok) throw new Error("Denne prototypen kan bare starte samtaler på localhost.");
@@ -361,6 +368,11 @@ export function useLive(options: LiveOptions) {
         try { event = JSON.parse(message.data) as LiveEvent; } catch { return; }
         switch (event.type) {
           case "session.started":
+            if (!current.started) {
+              current.warningTimer = setTimeout(() => {
+                if (active()) setNotice("Samtalen avsluttes om cirka to minutter. Du kan starte en ny samtale etterpå.");
+              }, LIVE_SESSION_WARNING_MS);
+            }
             current.started = true;
             sessionStarted();
             break;
@@ -429,7 +441,7 @@ export function useLive(options: LiveOptions) {
       const response = await fetch("/api/prototype/live", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ sdp: pc.localDescription?.sdp ?? offer.sdp, snapshotId, ...(dataset ? { dataset } : {}) }),
+        body: JSON.stringify({ sdp: pc.localDescription?.sdp ?? offer.sdp, snapshotId, ...(dataset ? { dataset } : {}), ...(selectedVoice ? { voice: selectedVoice } : {}) }),
         signal: current.abort.signal,
       });
       if (!active()) return;
@@ -468,7 +480,7 @@ export function useLive(options: LiveOptions) {
           const directive: MapDirective = payload.directive;
           let output: unknown;
           try {
-            if (!MAP_TOOLS.has(directive.name)) throw new Error("Ukjent kartkommando");
+            if (!MAP_TOOLS.has(directive.name) && !(dataset === "nyhavna-lokal" && directive.name === "reveal_places")) throw new Error("Ukjent kartkommando");
             output = await latestOptions.current.executeTool(directive.name, directive.args ?? {});
           } catch {
             output = { error: "Kartkommandoen kunne ikke utføres. Ikke påstå at kartet ble flyttet." };

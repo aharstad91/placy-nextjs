@@ -14,6 +14,22 @@
 
 ---
 
+## 2026-09-14 — Emera: første meglerkjede med åpen objektside
+
+**Funn:** Emera Eiendomsmegling kjører Vitec Next som meglersystem, men har **egenutviklet Next.js-nettside på Vercel med Sanity som CMS** — uten CSP og uten X-Frame-Options. Objektsiden har koordinater og adresse i sitt eget datalag, så en Placy-komponent kan bygge board-URL per objekt uten Vitec-integrasjon. Én kodeendring vil dekke alle ~700 aktive annonser. Dette er motsatt av EM1/SpareBank 1s felles frontend (2026-08-04), der verken iframe eller lenke overlevde.
+
+**Pitchen:** Objektsiden viser null nabolagsinnhold — eneste stedsreferanse er en «Åpne i Google Maps»-lenke — samtidig som hver meglerbio sier «vi kjenner nabolagene like godt som vi kjenner prosessen».
+
+**Kontakt:** Ingen markedssjef og ingen teknologirolle i organisasjonen; nettsiden er laget av designstudioet Vii. Beslutningen ligger derfor på toppen: Sveinung Lüthcke Solberg (adm.dir, sveinung.solberg@emera.no) og Katarina Nakken (salgsdirektør, katarina.nakken@emera.no). Ingen kontakt er tatt, ingen pris vurdert.
+
+**Begrensning:** Geofencen dekker bare kuraterte strøk, og Emera har kontorer i Oslo, Bergen, Trondheim, Lillestrøm, Halden og Narvik. Trondheim er det eneste vi kan levere i dag — derfor er Emera Trondheim (gamle Era eiendomsmegling AS) pilotenheten. «Nyttige lenker» i FINN via Vitec Next er en enklere, uavhengig slot som kan testes først.
+
+**Detaljer:** [Emera embed-kartlegging](2026-09-14-emera-embed-kartlegging.md). Nytt [Emera-kort](https://trello.com/c/2bdY1Tm9) opprettet i Kandidater.
+
+**Status:** Aktiv — kartlegging, ingen dialog startet.
+
+---
+
 ## 2026-09-11 — StasjonsKvartalet: Tonje følges opp mandag
 
 **Beslutning:** Vent til mandag 14.09 med ny mail til Tonje Folstad, tonje.folstad@dnbeiendom.no. Andreas bekrefter at boardet er nylig provisjonert. [E-postutkast](2026-09-11-tonje-dnb-epostutkast.md) er lagret; nytt skjermbilde må settes inn før sending. Demo-URL og bilde er ikke kontrollert i denne sesjonen.

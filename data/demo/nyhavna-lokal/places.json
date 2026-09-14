@@ -20,11 +20,20 @@
       "demo-lilleby",
       "v-planb",
       "v-krets",
-      "demo-route"
+      "demo-route",
+      "demo-lilleby-trinn"
     ],
     "checkedAt": "2026-09-14",
     "status": "existing",
-    "facts": [],
+    "facts": [
+      {
+        "id": "lilleby-trinn",
+        "text": "Lilleby skole er en barneskole med 1.–7. trinn.",
+        "sourceId": "demo-lilleby-trinn",
+        "checkedAt": "2026-09-14",
+        "verification": "confirmed"
+      }
+    ],
     "caveats": []
   },
   {
@@ -286,7 +295,14 @@
     "checkedAt": "2026-09-14",
     "status": "existing",
     "facts": [],
-    "caveats": []
+    "caveats": [],
+    "poiCategoryId": "supermarket",
+    "aliases": [
+      "dagligvare",
+      "dagligvarer",
+      "matbutikk",
+      "dagligvarebutikk"
+    ]
   },
   {
     "id": "meny-solsiden",
@@ -307,12 +323,29 @@
     "locationNote": "Kartpunktet viser adressen, ikke en bestemt inngang.",
     "sourceIds": [
       "demo-meny",
-      "demo-route"
+      "demo-route",
+      "handel-20260914-01"
     ],
     "checkedAt": "2026-09-14",
     "status": "existing",
-    "facts": [],
-    "caveats": []
+    "facts": [
+      {
+        "id": "meny-solsiden-sentermedlemskap",
+        "text": "MENY Solsiden ligger i Solsiden senter.",
+        "sourceId": "handel-20260914-01",
+        "checkedAt": "2026-09-14",
+        "verification": "confirmed"
+      }
+    ],
+    "caveats": [],
+    "parentPlaceId": "solsiden-senter",
+    "poiCategoryId": "supermarket",
+    "aliases": [
+      "dagligvare",
+      "dagligvarer",
+      "matbutikk",
+      "dagligvarebutikk"
+    ]
   },
   {
     "id": "losgata",
@@ -324,7 +357,7 @@
       "lng": 10.417375
     },
     "placeType": "Bussholdeplass",
-    "summary": "Linje 20 har forbindelse mot Trondheim S og sentrum. Sjekk AtB for aktuell avgang.",
+    "summary": "Linje 20 går herfra mot Lade, Strindheim og Grilstad. Bruk Dora for linje 20 mot sentrum.",
     "travelTime": {
       "walk": 4,
       "bike": 2
@@ -364,7 +397,15 @@
     ],
     "checkedAt": "2026-09-14",
     "status": "existing",
-    "facts": [],
+    "facts": [
+      {
+        "id": "dora-busstid",
+        "text": "AtBs linje 20-tabell fra 10.08.2026 viser for eksempel Dora 08.31 til Trondheim S 08.35 på hverdager: omtrent fire minutter på bussen.",
+        "sourceId": "demo-line20",
+        "checkedAt": "2026-09-14",
+        "verification": "confirmed"
+      }
+    ],
     "caveats": []
   },
   {
@@ -468,5 +509,4500 @@
     "checkedAt": "2026-09-14",
     "facts": [],
     "caveats": []
+  },
+  {
+    "id": "transittkaia",
+    "name": "Transittkaia",
+    "categoryId": "nyhavna-bydel",
+    "coordinates": {
+      "lat": 63.44244,
+      "lng": 10.41744
+    },
+    "placeType": "Delområde under utvikling",
+    "icon": "Building2",
+    "aliases": [
+      "Transittkaia boligprosjekt"
+    ],
+    "status": "planned",
+    "summary": "Transittkaia er første del av omformingen. Her planlegges boliger langs Nidelva, med elvepromenade, møteplasser og tilbud på bakkeplan.",
+    "locationPrecision": "approximate",
+    "locationNote": "Områdemarkør ved Kartverkets navnepunkt for kaia. Viser ikke tomtegrense eller framtidig inngang.",
+    "facts": [
+      {
+        "id": "transittkaia-plan-1",
+        "text": "Utbyggers planforslag omfatter tre boligkvartaler, handel, næring, barnehage og offentlige byrom. Utbyggingen starter i sør ved brannstasjonen og skjer etappevis.",
+        "sourceId": "bo-transittkaia",
+        "checkedAt": "2026-09-14",
+        "verification": "confirmed"
+      },
+      {
+        "id": "transittkaia-plan-2",
+        "text": "Nettsiden oppgir byggestart i 2027 og mulig innflytting i 2029, forutsatt plangodkjenning høsten 2026. Dette er utbyggers framdriftsanslag, ikke bekreftet vedtak eller garantert innflytting.",
+        "sourceId": "bo-transittkaia",
+        "checkedAt": "2026-09-14",
+        "verification": "confirmed"
+      },
+      {
+        "id": "transittkaia-plan-3",
+        "text": "Doratorget, elvepark og Transittparken ytterst mot fjorden skal gi plass til opphold og aktiviteter. Mobilitetshuset er foreslått med parkering og publikumsrettede funksjoner.",
+        "sourceId": "bo-transittkaia",
+        "checkedAt": "2026-09-14",
+        "verification": "confirmed"
+      }
+    ],
+    "sourceIds": [
+      "bo-transittkaia",
+      "bo-kart-transittkaia"
+    ],
+    "checkedAt": "2026-09-14",
+    "caveats": [
+      "Framtidig utvikling slik utbygger beskriver den. Detaljer og framdrift kan endres."
+    ],
+    "image": "/demo/nyhavna-lokal/bydeler/transittkaia.webp"
+  },
+  {
+    "id": "kullkranpiren",
+    "name": "Kullkranpiren",
+    "categoryId": "nyhavna-bydel",
+    "coordinates": {
+      "lat": 63.44229,
+      "lng": 10.42076
+    },
+    "placeType": "Delområde under utvikling",
+    "icon": "Building2",
+    "aliases": [
+      "Kullkranpiren boligprosjekt"
+    ],
+    "status": "planned",
+    "summary": "Kullkranpiren har vann på tre sider. Planene kombinerer boliger og kultur med en større park ytterst på piren.",
+    "locationPrecision": "approximate",
+    "locationNote": "Områdemarkør ved Kartverkets navnepunkt for kaia. Viser ikke tomtegrense eller framtidig inngang.",
+    "facts": [
+      {
+        "id": "kullkranpiren-plan-1",
+        "text": "Utbygger beskriver boliger, barnehage og næringsbygg, og en gang- og sykkelbro til Strandveikaia. En ny kai mot vest er en mulighet som skal undersøkes.",
+        "sourceId": "bo-kullkranpiren",
+        "checkedAt": "2026-09-14",
+        "verification": "confirmed"
+      },
+      {
+        "id": "kullkranpiren-plan-2",
+        "text": "Det arbeides med ideen om et bygg for akustisk musikk. Illustrasjonen viser muligheter, ikke vedtatte planer.",
+        "sourceId": "bo-kullkranpiren",
+        "checkedAt": "2026-09-14",
+        "verification": "confirmed"
+      },
+      {
+        "id": "kullkranpiren-plan-3",
+        "text": "Piren stammer fra mellomkrigstiden. Kullkrana skal bevares som del av industrihistorien. Parken er tenkt for lek, rekreasjon og mindre arrangementer.",
+        "sourceId": "bo-kullkranpiren",
+        "checkedAt": "2026-09-14",
+        "verification": "confirmed"
+      }
+    ],
+    "sourceIds": [
+      "bo-kullkranpiren",
+      "bo-kart-kullkranpiren"
+    ],
+    "checkedAt": "2026-09-14",
+    "caveats": [
+      "Framtidig utvikling slik utbygger beskriver den. Detaljer og framdrift kan endres."
+    ],
+    "image": "/demo/nyhavna-lokal/bydeler/kullkranpiren.webp"
+  },
+  {
+    "id": "strandveikaia",
+    "name": "Strandveikaia",
+    "categoryId": "nyhavna-bydel",
+    "coordinates": {
+      "lat": 63.44082,
+      "lng": 10.4242
+    },
+    "placeType": "Delområde under utvikling",
+    "icon": "Building2",
+    "aliases": [
+      "Strandveikaia boligprosjekt"
+    ],
+    "status": "planned",
+    "summary": "Strandveikaia er tenkt som et sentrum for bydelen, med kultur og aktivitet ved havnebassenget. Havet Arena og kulturaktører gir allerede området liv.",
+    "locationPrecision": "approximate",
+    "locationNote": "Områdemarkør ved Kartverkets navnepunkt for kaia. Viser ikke tomtegrense eller framtidig inngang.",
+    "facts": [
+      {
+        "id": "strandveikaia-plan-1",
+        "text": "Utbygger planlegger et offentlig sjøbad, metrobuss-stopp og gang- og sykkelbro til Kullkranpiren.",
+        "sourceId": "bo-strandveikaia",
+        "checkedAt": "2026-09-14",
+        "verification": "confirmed"
+      },
+      {
+        "id": "strandveikaia-plan-2",
+        "text": "Kulturminnene skal rehabiliteres og brukes særlig til kunst og kultur. Strandveien 100 er et pilotprosjekt med mål om restaurant, kulturvirksomhet og kontorer.",
+        "sourceId": "bo-strandveikaia",
+        "checkedAt": "2026-09-14",
+        "verification": "confirmed"
+      },
+      {
+        "id": "strandveikaia-plan-3",
+        "text": "Nettsiden sier at videre arbeid med Strandveien 100 er satt på vent i påvente av finansiering. Det er derfor ikke en bekreftet kommende åpning.",
+        "sourceId": "bo-strandveikaia",
+        "checkedAt": "2026-09-14",
+        "verification": "confirmed"
+      }
+    ],
+    "sourceIds": [
+      "bo-strandveikaia",
+      "bo-kart-strandveikaia"
+    ],
+    "checkedAt": "2026-09-14",
+    "caveats": [
+      "Framtidig utvikling slik utbygger beskriver den. Detaljer og framdrift kan endres."
+    ],
+    "image": "/demo/nyhavna-lokal/bydeler/strandveikaia.webp"
+  },
+  {
+    "id": "ladehammerkaia",
+    "name": "Ladehammerkaia",
+    "categoryId": "nyhavna-bydel",
+    "coordinates": {
+      "lat": 63.44381,
+      "lng": 10.42216
+    },
+    "placeType": "Delområde under utvikling",
+    "icon": "Building2",
+    "aliases": [
+      "Ladehammerkaia boligprosjekt"
+    ],
+    "status": "planned",
+    "summary": "Ladehammerkaia vender sørover mot vannet. Utbygger ser for seg et område med mange boliger, grønne oppholdssteder og bevarte kulturminner.",
+    "locationPrecision": "approximate",
+    "locationNote": "Områdemarkør ved Kartverkets navnepunkt for kaia. Viser ikke tomtegrense eller framtidig inngang.",
+    "facts": [
+      {
+        "id": "ladehammerkaia-plan-1",
+        "text": "Planene omfatter barnehage og servicetilbud, med enten to mindre parker eller én større ved spissbunkerne.",
+        "sourceId": "bo-ladehammerkaia",
+        "checkedAt": "2026-09-14",
+        "verification": "confirmed"
+      },
+      {
+        "id": "ladehammerkaia-plan-2",
+        "text": "De to spissbunkerne og artilleriverkstedet fra andre verdenskrig skal bevares og få ny aktivitet.",
+        "sourceId": "bo-ladehammerkaia",
+        "checkedAt": "2026-09-14",
+        "verification": "confirmed"
+      },
+      {
+        "id": "ladehammerkaia-plan-3",
+        "text": "Galleri og klatrevegg nevnes som mulige bruksområder, ikke som avklarte tilbud. Siden oppgir ingen fast byggestart eller innflyttingsdato.",
+        "sourceId": "bo-ladehammerkaia",
+        "checkedAt": "2026-09-14",
+        "verification": "confirmed"
+      }
+    ],
+    "sourceIds": [
+      "bo-ladehammerkaia",
+      "bo-kart-ladehammerkaia"
+    ],
+    "checkedAt": "2026-09-14",
+    "caveats": [
+      "Framtidig utvikling slik utbygger beskriver den. Detaljer og framdrift kan endres."
+    ],
+    "image": "/demo/nyhavna-lokal/bydeler/ladehammerkaia.webp"
+  },
+  {
+    "id": "bunkerkvartalet",
+    "name": "Bunkerkvartalet",
+    "categoryId": "nyhavna-bydel",
+    "coordinates": {
+      "lat": 63.440591477722535,
+      "lng": 10.415890869266919
+    },
+    "placeType": "Delområde under utvikling",
+    "icon": "Building2",
+    "aliases": [
+      "Bunkerkvartalet boligprosjekt"
+    ],
+    "status": "planned",
+    "summary": "Bunkerkvartalet samler planer om havteknologi, kultur og kunnskapsformidling rundt Dora 2 og Fyringsbunkeren. Det er ikke beskrevet som et rent boligtrinn.",
+    "locationPrecision": "approximate",
+    "locationNote": "Omtrentlig områdemarkør ved Dora 2. Viser ikke tomtegrense eller framtidig inngang.",
+    "facts": [
+      {
+        "id": "bunkerkvartalet-plan-1",
+        "text": "Planinitiativet ble ifølge utbygger levert i januar 2026. Nye næringsbygg skal betjene miljøet innen havteknologi, mens Dora 2 er tenkt brukt til både næring og kultur.",
+        "sourceId": "bo-bunkerkvartalet",
+        "checkedAt": "2026-09-14",
+        "verification": "confirmed"
+      },
+      {
+        "id": "bunkerkvartalet-plan-2",
+        "text": "Vitensenteret ønsker et nybygg på taket av Dora 2 i 2030. Dette er en ambisjon, ikke en bekreftet åpningsdato.",
+        "sourceId": "bo-bunkerkvartalet",
+        "checkedAt": "2026-09-14",
+        "verification": "confirmed"
+      },
+      {
+        "id": "bunkerkvartalet-plan-3",
+        "text": "Fyringsbunkeren skal særlig brukes til kunst og kultur, med et offentlig byrom kalt Bunkerparken foran. Illustrasjonen er en visjon, ikke en vedtatt plan.",
+        "sourceId": "bo-bunkerkvartalet",
+        "checkedAt": "2026-09-14",
+        "verification": "confirmed"
+      }
+    ],
+    "sourceIds": [
+      "bo-bunkerkvartalet",
+      "bo-dora2-adresse",
+      "bo-bunker-plassering"
+    ],
+    "checkedAt": "2026-09-14",
+    "caveats": [
+      "Framtidig utvikling slik utbygger beskriver den. Detaljer og framdrift kan endres."
+    ],
+    "image": "/demo/nyhavna-lokal/bydeler/bunkerkvartalet.webp"
+  },
+  {
+    "id": "crossfit-trondheim",
+    "name": "CrossFit Trondheim",
+    "categoryId": "trening-aktivitet",
+    "address": "Kobbes gate 10",
+    "coordinates": {
+      "lat": 63.4405361,
+      "lng": 10.4205412
+    },
+    "placeType": "CrossFit",
+    "summary": "CrossFit på Nyhavna med gruppetimer, egentrening og personlig trening.",
+    "locationPrecision": "approximate",
+    "locationNote": "Koordinater fra eksisterende lokalt Google Places-snapshot; ikke en kontrollert inngang.",
+    "sourceIds": [
+      "reserve-crossfit-trondheim"
+    ],
+    "checkedAt": "2026-09-14",
+    "status": "existing",
+    "facts": [
+      {
+        "id": "crossfit-trondheim-tilbud",
+        "text": "CrossFit på Nyhavna med gruppetimer, egentrening og personlig trening.",
+        "sourceId": "reserve-crossfit-trondheim",
+        "checkedAt": "2026-09-14",
+        "verification": "confirmed"
+      }
+    ],
+    "caveats": [
+      "Medlemskap forutsetter introkurs eller relevant erfaring og screening. Ikke presenter tilbudet som fritt drop-in."
+    ]
+  },
+  {
+    "id": "lilleby-treningssenter",
+    "name": "Lilleby Treningssenter",
+    "categoryId": "trening-aktivitet",
+    "address": "Stiklestadveien 3",
+    "coordinates": {
+      "lat": 63.4421745,
+      "lng": 10.4295016
+    },
+    "placeType": "Treningssenter",
+    "summary": "Ubemannet treningssenter på Lilleby med utstyr for styrke- og kondisjonstrening.",
+    "locationPrecision": "approximate",
+    "locationNote": "Koordinater fra eksisterende lokalt Google Places-snapshot; ikke en kontrollert inngang.",
+    "sourceIds": [
+      "reserve-lilleby-treningssenter"
+    ],
+    "checkedAt": "2026-09-14",
+    "status": "existing",
+    "facts": [
+      {
+        "id": "lilleby-treningssenter-tilbud",
+        "text": "Ubemannet treningssenter på Lilleby med utstyr for styrke- og kondisjonstrening.",
+        "sourceId": "reserve-lilleby-treningssenter",
+        "checkedAt": "2026-09-14",
+        "verification": "confirmed"
+      }
+    ],
+    "caveats": []
+  },
+  {
+    "id": "pool-3t-solsiden",
+    "name": "3T-Solsiden",
+    "categoryId": "trening-aktivitet",
+    "coordinates": {
+      "lat": 63.43650049999999,
+      "lng": 10.4163885
+    },
+    "placeType": "Treningssenter",
+    "status": "existing",
+    "summary": "Treningssenter på Solsiden.",
+    "locationPrecision": "approximate",
+    "locationNote": "Lagret punkt for stedet, ikke kontrollert inngang eller rute. Radius er luftlinje til punktet.",
+    "facts": [],
+    "sourceIds": [
+      "source-pool-3t-solsiden"
+    ],
+    "checkedAt": "2026-09-14",
+    "caveats": [
+      "Importert fra lagret stedsinformasjon. Tilbud og tilgjengelighet er ikke kontrollert på nytt."
+    ],
+    "provenance": {
+      "provider": "supabase",
+      "recordId": "google-ChIJSUfPIqAxbUYRiyIKq4-hSPs",
+      "importedAt": "2026-09-14"
+    },
+    "address": "Dyre Halses gate 1, Trondheim"
+  },
+  {
+    "id": "pool-fresh-fitness-trondheim-sentrum",
+    "name": "Fresh Fitness Trondheim Sentrum",
+    "categoryId": "trening-aktivitet",
+    "coordinates": {
+      "lat": 63.432711499999996,
+      "lng": 10.4040612
+    },
+    "placeType": "Treningssenter",
+    "status": "existing",
+    "summary": "Treningssenter i Trondheim sentrum.",
+    "locationPrecision": "approximate",
+    "locationNote": "Lagret punkt for stedet, ikke kontrollert inngang eller rute. Radius er luftlinje til punktet.",
+    "facts": [],
+    "sourceIds": [
+      "source-pool-fresh-fitness-trondheim-sentrum"
+    ],
+    "checkedAt": "2026-09-14",
+    "caveats": [
+      "Importert fra lagret stedsinformasjon. Tilbud og tilgjengelighet er ikke kontrollert på nytt."
+    ],
+    "provenance": {
+      "provider": "supabase",
+      "recordId": "google-ChIJhQ_hSpkxbUYRWqS19GSEX74",
+      "importedAt": "2026-09-14"
+    },
+    "address": "Kjøpmannsgata 65, Trondheim"
+  },
+  {
+    "id": "pool-cora-pilates-as",
+    "name": "Cora Pilates as.",
+    "categoryId": "trening-aktivitet",
+    "coordinates": {
+      "lat": 63.43263809999999,
+      "lng": 10.4080846
+    },
+    "placeType": "Pilates",
+    "status": "existing",
+    "summary": "Pilatesstudio i Nedre Elvehavn.",
+    "locationPrecision": "approximate",
+    "locationNote": "Lagret punkt for stedet, ikke kontrollert inngang eller rute. Radius er luftlinje til punktet.",
+    "facts": [],
+    "sourceIds": [
+      "source-pool-cora-pilates-as"
+    ],
+    "checkedAt": "2026-09-14",
+    "caveats": [
+      "Importert fra lagret stedsinformasjon. Tilbud og tilgjengelighet er ikke kontrollert på nytt."
+    ],
+    "provenance": {
+      "provider": "supabase",
+      "recordId": "google-ChIJ14ihUqMxbUYRRdMpmDgsdfE",
+      "importedAt": "2026-09-14"
+    },
+    "address": "Ferjemannsveien 4, Trondheim"
+  },
+  {
+    "id": "pool-nidaros-bokseklubb",
+    "name": "Nidaros Bokseklubb",
+    "categoryId": "trening-aktivitet",
+    "coordinates": {
+      "lat": 63.4388723,
+      "lng": 10.4158712
+    },
+    "placeType": "Boksing",
+    "status": "existing",
+    "summary": "Bokseklubb på Dora.",
+    "locationPrecision": "approximate",
+    "locationNote": "Lagret punkt for stedet, ikke kontrollert inngang eller rute. Radius er luftlinje til punktet.",
+    "facts": [],
+    "sourceIds": [
+      "source-pool-nidaros-bokseklubb"
+    ],
+    "checkedAt": "2026-09-14",
+    "caveats": [
+      "Importert fra lagret stedsinformasjon. Tilbud og tilgjengelighet er ikke kontrollert på nytt."
+    ],
+    "provenance": {
+      "provider": "supabase",
+      "recordId": "google-ChIJ3dC0THUxbUYRDwPe-_rPKqA",
+      "importedAt": "2026-09-14"
+    },
+    "address": "Båtsmannsgata 4, Trondheim"
+  },
+  {
+    "id": "pool-3t-lade",
+    "name": "3T-Lade",
+    "categoryId": "trening-aktivitet",
+    "coordinates": {
+      "lat": 63.44332319999999,
+      "lng": 10.4505412
+    },
+    "placeType": "Treningssenter",
+    "status": "existing",
+    "summary": "Treningssenter på Lade.",
+    "locationPrecision": "approximate",
+    "locationNote": "Lagret punkt for stedet, ikke kontrollert inngang eller rute. Radius er luftlinje til punktet.",
+    "facts": [],
+    "sourceIds": [
+      "source-pool-3t-lade"
+    ],
+    "checkedAt": "2026-09-14",
+    "caveats": [
+      "Importert fra lagret stedsinformasjon. Tilbud og tilgjengelighet er ikke kontrollert på nytt."
+    ],
+    "provenance": {
+      "provider": "supabase",
+      "recordId": "google-ChIJIxSO7s0xbUYRQTZSjmjBkjk",
+      "importedAt": "2026-09-14"
+    },
+    "address": "Haakon VIIs gt. 11, Trondheim"
+  },
+  {
+    "id": "pool-3t-leangen",
+    "name": "3T-Leangen",
+    "categoryId": "trening-aktivitet",
+    "coordinates": {
+      "lat": 63.435792500000005,
+      "lng": 10.4649422
+    },
+    "placeType": "Treningssenter",
+    "status": "existing",
+    "summary": "Treningssenter på Leangen.",
+    "locationPrecision": "approximate",
+    "locationNote": "Lagret punkt for stedet, ikke kontrollert inngang eller rute. Radius er luftlinje til punktet.",
+    "facts": [],
+    "sourceIds": [
+      "source-pool-3t-leangen"
+    ],
+    "checkedAt": "2026-09-14",
+    "caveats": [
+      "Importert fra lagret stedsinformasjon. Tilbud og tilgjengelighet er ikke kontrollert på nytt."
+    ],
+    "provenance": {
+      "provider": "supabase",
+      "recordId": "google-ChIJUdaOG_8wbUYRthFAqcjZ5kM",
+      "importedAt": "2026-09-14"
+    },
+    "address": "Leangenvegen 10, Trondheim"
+  },
+  {
+    "id": "pool-3t-moholt",
+    "name": "3T-Moholt",
+    "categoryId": "trening-aktivitet",
+    "coordinates": {
+      "lat": 63.410436499999996,
+      "lng": 10.4450702
+    },
+    "placeType": "Treningssenter",
+    "status": "existing",
+    "summary": "Treningssenter på Moholt.",
+    "locationPrecision": "approximate",
+    "locationNote": "Lagret punkt for stedet, ikke kontrollert inngang eller rute. Radius er luftlinje til punktet.",
+    "facts": [],
+    "sourceIds": [
+      "source-pool-3t-moholt"
+    ],
+    "checkedAt": "2026-09-14",
+    "caveats": [
+      "Importert fra lagret stedsinformasjon. Tilbud og tilgjengelighet er ikke kontrollert på nytt."
+    ],
+    "provenance": {
+      "provider": "supabase",
+      "recordId": "google-ChIJMT2GMjUwbUYRp-2cXe7QB7U",
+      "importedAt": "2026-09-14"
+    },
+    "address": "Vegamot 16, Trondheim"
+  },
+  {
+    "id": "pool-3t-ilsvika",
+    "name": "3T-Ilsvika",
+    "categoryId": "trening-aktivitet",
+    "coordinates": {
+      "lat": 63.431317899999996,
+      "lng": 10.357327999999999
+    },
+    "placeType": "Treningssenter",
+    "status": "existing",
+    "summary": "Treningssenter i Ilsvika.",
+    "locationPrecision": "approximate",
+    "locationNote": "Lagret punkt for stedet, ikke kontrollert inngang eller rute. Radius er luftlinje til punktet.",
+    "facts": [],
+    "sourceIds": [
+      "source-pool-3t-ilsvika"
+    ],
+    "checkedAt": "2026-09-14",
+    "caveats": [
+      "Importert fra lagret stedsinformasjon. Tilbud og tilgjengelighet er ikke kontrollert på nytt."
+    ],
+    "provenance": {
+      "provider": "supabase",
+      "recordId": "google-ChIJH_fiRS8ybUYRh-R4Hu9kxwc",
+      "importedAt": "2026-09-14"
+    },
+    "address": "Ilsvikveien 18, Trondheim"
+  },
+  {
+    "id": "pool-3t-ranheim",
+    "name": "3T-Ranheim",
+    "categoryId": "trening-aktivitet",
+    "coordinates": {
+      "lat": 63.4280825,
+      "lng": 10.5251726
+    },
+    "placeType": "Treningssenter",
+    "status": "existing",
+    "summary": "Treningssenter på Ranheim.",
+    "locationPrecision": "approximate",
+    "locationNote": "Lagret punkt for stedet, ikke kontrollert inngang eller rute. Radius er luftlinje til punktet.",
+    "facts": [],
+    "sourceIds": [
+      "source-pool-3t-ranheim"
+    ],
+    "checkedAt": "2026-09-14",
+    "caveats": [
+      "Importert fra lagret stedsinformasjon. Tilbud og tilgjengelighet er ikke kontrollert på nytt."
+    ],
+    "provenance": {
+      "provider": "supabase",
+      "recordId": "google-ChIJ8QQ3630wbUYRUMm48wRgbVc",
+      "importedAt": "2026-09-14"
+    },
+    "address": "Ranheim Arena, Ranheimsvegen 174, Ranheim"
+  },
+  {
+    "id": "pool-3t-rosten",
+    "name": "3T-Rosten",
+    "categoryId": "trening-aktivitet",
+    "coordinates": {
+      "lat": 63.36513120000001,
+      "lng": 10.3714531
+    },
+    "placeType": "Treningssenter",
+    "status": "existing",
+    "summary": "Treningssenter på Rosten.",
+    "locationPrecision": "approximate",
+    "locationNote": "Lagret punkt for stedet, ikke kontrollert inngang eller rute. Radius er luftlinje til punktet.",
+    "facts": [],
+    "sourceIds": [
+      "source-pool-3t-rosten"
+    ],
+    "checkedAt": "2026-09-14",
+    "caveats": [
+      "Importert fra lagret stedsinformasjon. Tilbud og tilgjengelighet er ikke kontrollert på nytt."
+    ],
+    "provenance": {
+      "provider": "supabase",
+      "recordId": "google-ChIJC7qrjGsubUYRR4F9fNXYHK4",
+      "importedAt": "2026-09-14"
+    },
+    "address": "Vestre Rosten 80, Tiller"
+  },
+  {
+    "id": "pool-fresh-fitness-tiller",
+    "name": "Fresh Fitness Tiller",
+    "categoryId": "trening-aktivitet",
+    "coordinates": {
+      "lat": 63.3550605,
+      "lng": 10.3753623
+    },
+    "placeType": "Treningssenter",
+    "status": "existing",
+    "summary": "Treningssenter på Tiller.",
+    "locationPrecision": "approximate",
+    "locationNote": "Lagret punkt for stedet, ikke kontrollert inngang eller rute. Radius er luftlinje til punktet.",
+    "facts": [],
+    "sourceIds": [
+      "source-pool-fresh-fitness-tiller"
+    ],
+    "checkedAt": "2026-09-14",
+    "caveats": [
+      "Importert fra lagret stedsinformasjon. Tilbud og tilgjengelighet er ikke kontrollert på nytt."
+    ],
+    "provenance": {
+      "provider": "supabase",
+      "recordId": "google-ChIJP0k9kGcubUYRAzydzOTwZ7k",
+      "importedAt": "2026-09-14"
+    },
+    "address": "Ivar Lykkes veg 10, Tiller"
+  },
+  {
+    "id": "pool-3t-fossegrenda",
+    "name": "3T-Fossegrenda",
+    "categoryId": "trening-aktivitet",
+    "coordinates": {
+      "lat": 63.39118609999999,
+      "lng": 10.4031022
+    },
+    "placeType": "Treningssenter",
+    "status": "existing",
+    "summary": "Treningssenter i Fossegrenda.",
+    "locationPrecision": "approximate",
+    "locationNote": "Lagret punkt for stedet, ikke kontrollert inngang eller rute. Radius er luftlinje til punktet.",
+    "facts": [],
+    "sourceIds": [
+      "source-pool-3t-fossegrenda"
+    ],
+    "checkedAt": "2026-09-14",
+    "caveats": [
+      "Importert fra lagret stedsinformasjon. Tilbud og tilgjengelighet er ikke kontrollert på nytt."
+    ],
+    "provenance": {
+      "provider": "supabase",
+      "recordId": "google-ChIJeeFFX98xbUYRAtPJQRqcQ04",
+      "importedAt": "2026-09-14"
+    },
+    "address": "Hornebergvegen 7b, Trondheim"
+  },
+  {
+    "id": "pool-lademoparken",
+    "name": "Lademoparken",
+    "categoryId": "natur-friluftsliv",
+    "coordinates": {
+      "lat": 63.436867,
+      "lng": 10.4275854
+    },
+    "placeType": "Park",
+    "status": "existing",
+    "summary": "Park i nærområdet på Lademoen.",
+    "locationPrecision": "approximate",
+    "locationNote": "Lagret punkt for stedet, ikke kontrollert inngang eller rute. Radius er luftlinje til punktet.",
+    "facts": [],
+    "sourceIds": [
+      "source-pool-lademoparken"
+    ],
+    "checkedAt": "2026-09-14",
+    "caveats": [
+      "Importert fra lagret stedsinformasjon. Tilbud og tilgjengelighet er ikke kontrollert på nytt."
+    ],
+    "provenance": {
+      "provider": "supabase",
+      "recordId": "google-ChIJQUYtXqcxbUYRnntdZiQYiDE",
+      "importedAt": "2026-09-14"
+    },
+    "address": "Innherredsveien 65A, Trondheim"
+  },
+  {
+    "id": "pool-ladeparken",
+    "name": "Ladeparken",
+    "categoryId": "natur-friluftsliv",
+    "coordinates": {
+      "lat": 63.445483599999996,
+      "lng": 10.4402498
+    },
+    "placeType": "Park",
+    "status": "existing",
+    "summary": "Park på Lade.",
+    "locationPrecision": "approximate",
+    "locationNote": "Lagret punkt for stedet, ikke kontrollert inngang eller rute. Radius er luftlinje til punktet.",
+    "facts": [],
+    "sourceIds": [
+      "source-pool-ladeparken"
+    ],
+    "checkedAt": "2026-09-14",
+    "caveats": [
+      "Importert fra lagret stedsinformasjon. Tilbud og tilgjengelighet er ikke kontrollert på nytt."
+    ],
+    "provenance": {
+      "provider": "supabase",
+      "recordId": "google-ChIJ26Pxfw8xbUYRw4xh_eDq0JE",
+      "importedAt": "2026-09-14"
+    },
+    "address": "Håkon Magnussons gate, Trondheim"
+  },
+  {
+    "id": "pool-korsvika",
+    "name": "Korsvika",
+    "categoryId": "natur-friluftsliv",
+    "coordinates": {
+      "lat": 63.45015420000001,
+      "lng": 10.432821899999999
+    },
+    "placeType": "Badeplass",
+    "status": "existing",
+    "summary": "Badeplass ved sjøen på Lade.",
+    "locationPrecision": "approximate",
+    "locationNote": "Lagret punkt for stedet, ikke kontrollert inngang eller rute. Radius er luftlinje til punktet.",
+    "facts": [],
+    "sourceIds": [
+      "source-pool-korsvika"
+    ],
+    "checkedAt": "2026-09-14",
+    "caveats": [
+      "Importert fra lagret stedsinformasjon. Tilbud og tilgjengelighet er ikke kontrollert på nytt."
+    ],
+    "provenance": {
+      "provider": "supabase",
+      "recordId": "google-ChIJle1bvxExbUYRqE7HtdGY0kA",
+      "importedAt": "2026-09-14"
+    },
+    "address": "Ladestien, Trondheim"
+  },
+  {
+    "id": "pool-ntnu-ringve-botaniske-hage",
+    "name": "NTNU Ringve botaniske hage",
+    "categoryId": "natur-friluftsliv",
+    "coordinates": {
+      "lat": 63.44828889999999,
+      "lng": 10.452311199999999
+    },
+    "placeType": "Park",
+    "status": "existing",
+    "summary": "Botanisk hage på Ringve.",
+    "locationPrecision": "approximate",
+    "locationNote": "Lagret punkt for stedet, ikke kontrollert inngang eller rute. Radius er luftlinje til punktet.",
+    "facts": [],
+    "sourceIds": [
+      "source-pool-ntnu-ringve-botaniske-hage"
+    ],
+    "checkedAt": "2026-09-14",
+    "caveats": [
+      "Importert fra lagret stedsinformasjon. Tilbud og tilgjengelighet er ikke kontrollert på nytt."
+    ],
+    "provenance": {
+      "provider": "supabase",
+      "recordId": "google-ChIJZZmfpBwxbUYRgEXlKQkTmmc",
+      "importedAt": "2026-09-14"
+    },
+    "address": "Lade alle 58, Trondheim"
+  },
+  {
+    "id": "pool-ilaparken",
+    "name": "Ilaparken",
+    "categoryId": "natur-friluftsliv",
+    "coordinates": {
+      "lat": 63.428782000000005,
+      "lng": 10.3681742
+    },
+    "placeType": "Park",
+    "status": "existing",
+    "summary": "Park i Ila.",
+    "locationPrecision": "approximate",
+    "locationNote": "Lagret punkt for stedet, ikke kontrollert inngang eller rute. Radius er luftlinje til punktet.",
+    "facts": [],
+    "sourceIds": [
+      "source-pool-ilaparken"
+    ],
+    "checkedAt": "2026-09-14",
+    "caveats": [
+      "Importert fra lagret stedsinformasjon. Tilbud og tilgjengelighet er ikke kontrollert på nytt."
+    ],
+    "provenance": {
+      "provider": "supabase",
+      "recordId": "google-ChIJXUbogKcxbUYRxumaw2AIQCo",
+      "importedAt": "2026-09-14"
+    },
+    "address": "Unnamed Road, Trondheim"
+  },
+  {
+    "id": "pool-rotvollfjra",
+    "name": "Rotvollfjæra",
+    "categoryId": "natur-friluftsliv",
+    "coordinates": {
+      "lat": 63.43899,
+      "lng": 10.487190799999999
+    },
+    "placeType": "Badeplass",
+    "status": "existing",
+    "summary": "Badeplass ved fjorden på Rotvoll.",
+    "locationPrecision": "approximate",
+    "locationNote": "Lagret punkt for stedet, ikke kontrollert inngang eller rute. Radius er luftlinje til punktet.",
+    "facts": [],
+    "sourceIds": [
+      "source-pool-rotvollfjra"
+    ],
+    "checkedAt": "2026-09-14",
+    "caveats": [
+      "Importert fra lagret stedsinformasjon. Tilbud og tilgjengelighet er ikke kontrollert på nytt."
+    ],
+    "provenance": {
+      "provider": "supabase",
+      "recordId": "google-ChIJbTaNm7QxbUYR2Ea6H5n7tjo",
+      "importedAt": "2026-09-14"
+    },
+    "address": "Arkitekt Ebbells veg, Trondheim"
+  },
+  {
+    "id": "pool-theisendammen-badeplass",
+    "name": "Theisendammen badeplass",
+    "categoryId": "natur-friluftsliv",
+    "coordinates": {
+      "lat": 63.42262179999999,
+      "lng": 10.349074199999999
+    },
+    "placeType": "Badeplass",
+    "status": "existing",
+    "summary": "Badeplass ved Theisendammen.",
+    "locationPrecision": "approximate",
+    "locationNote": "Lagret punkt for stedet, ikke kontrollert inngang eller rute. Radius er luftlinje til punktet.",
+    "facts": [],
+    "sourceIds": [
+      "source-pool-theisendammen-badeplass"
+    ],
+    "checkedAt": "2026-09-14",
+    "caveats": [
+      "Importert fra lagret stedsinformasjon. Tilbud og tilgjengelighet er ikke kontrollert på nytt."
+    ],
+    "provenance": {
+      "provider": "supabase",
+      "recordId": "google-ChIJnSAN9OEzbUYRkkMCbFxgzmU",
+      "importedAt": "2026-09-14"
+    },
+    "address": "Trondheim"
+  },
+  {
+    "id": "pool-haukvatnet",
+    "name": "Haukvatnet",
+    "categoryId": "natur-friluftsliv",
+    "coordinates": {
+      "lat": 63.39467695499999,
+      "lng": 10.32214954625
+    },
+    "placeType": "Badeplass",
+    "status": "existing",
+    "summary": "Badeplass ved Haukvatnet.",
+    "locationPrecision": "approximate",
+    "locationNote": "Lagret punkt for stedet, ikke kontrollert inngang eller rute. Radius er luftlinje til punktet.",
+    "facts": [],
+    "sourceIds": [
+      "source-pool-haukvatnet"
+    ],
+    "checkedAt": "2026-09-14",
+    "caveats": [
+      "Importert fra lagret stedsinformasjon. Tilbud og tilgjengelighet er ikke kontrollert på nytt."
+    ],
+    "provenance": {
+      "provider": "supabase",
+      "recordId": "badeplass-haukvatnet",
+      "importedAt": "2026-09-14"
+    }
+  },
+  {
+    "id": "pool-lianvatnet",
+    "name": "Lianvatnet",
+    "categoryId": "natur-friluftsliv",
+    "coordinates": {
+      "lat": 63.401690412499995,
+      "lng": 10.314247035
+    },
+    "placeType": "Badeplass",
+    "status": "existing",
+    "summary": "Badeplass ved Lianvatnet.",
+    "locationPrecision": "approximate",
+    "locationNote": "Lagret punkt for stedet, ikke kontrollert inngang eller rute. Radius er luftlinje til punktet.",
+    "facts": [],
+    "sourceIds": [
+      "source-pool-lianvatnet"
+    ],
+    "checkedAt": "2026-09-14",
+    "caveats": [
+      "Importert fra lagret stedsinformasjon. Tilbud og tilgjengelighet er ikke kontrollert på nytt."
+    ],
+    "provenance": {
+      "provider": "supabase",
+      "recordId": "badeplass-lianvatnet",
+      "importedAt": "2026-09-14"
+    }
+  },
+  {
+    "id": "pool-burmaklippen",
+    "name": "Burmaklippen",
+    "categoryId": "natur-friluftsliv",
+    "coordinates": {
+      "lat": 63.3992068,
+      "lng": 10.474606099999999
+    },
+    "placeType": "Turområde",
+    "status": "existing",
+    "summary": "Turmål i Estenstadmarka.",
+    "locationPrecision": "approximate",
+    "locationNote": "Lagret punkt for stedet, ikke kontrollert inngang eller rute. Radius er luftlinje til punktet.",
+    "facts": [],
+    "sourceIds": [
+      "source-pool-burmaklippen"
+    ],
+    "checkedAt": "2026-09-14",
+    "caveats": [
+      "Importert fra lagret stedsinformasjon. Tilbud og tilgjengelighet er ikke kontrollert på nytt."
+    ],
+    "provenance": {
+      "provider": "supabase",
+      "recordId": "google-ChIJs5ZbvjwwbUYRTFjqEf58oVI",
+      "importedAt": "2026-09-14"
+    },
+    "address": "Estenstadvegen, Trondheim"
+  },
+  {
+    "id": "pool-hansbakkfjra",
+    "name": "Hansbakkfjæra",
+    "categoryId": "natur-friluftsliv",
+    "coordinates": {
+      "lat": 63.430947417096775,
+      "lng": 10.541044956774194
+    },
+    "placeType": "Badeplass",
+    "status": "existing",
+    "summary": "Badeplass ved fjorden på Ranheim.",
+    "locationPrecision": "approximate",
+    "locationNote": "Lagret punkt for stedet, ikke kontrollert inngang eller rute. Radius er luftlinje til punktet.",
+    "facts": [],
+    "sourceIds": [
+      "source-pool-hansbakkfjra"
+    ],
+    "checkedAt": "2026-09-14",
+    "caveats": [
+      "Importert fra lagret stedsinformasjon. Tilbud og tilgjengelighet er ikke kontrollert på nytt."
+    ],
+    "provenance": {
+      "provider": "supabase",
+      "recordId": "badeplass-hansbakkfj-ra",
+      "importedAt": "2026-09-14"
+    }
+  },
+  {
+    "id": "ec-dahls",
+    "name": "E.C. Dahls Pub og Kjøkken",
+    "categoryId": "mat-drikke",
+    "coordinates": {
+      "lat": 63.44087738940128,
+      "lng": 10.427008893459815
+    },
+    "placeType": "Pub og restaurant",
+    "aliases": [],
+    "status": "existing",
+    "summary": "Pub og restaurant på Nyhavna med mat, bryggeritilknytning og organiserte smaksopplevelser.",
+    "locationPrecision": "approximate",
+    "locationNote": "Kartpunktet viser adressen, ikke en kontrollert inngang.",
+    "facts": [
+      {
+        "id": "ec-dahls-f1",
+        "text": "Puben tilbyr uformell mat og øl, blant annet fra E.C. Dahls Bryggeri.",
+        "sourceId": "utv-20260914-01",
+        "checkedAt": "2026-09-14",
+        "verification": "confirmed"
+      },
+      {
+        "id": "ec-dahls-f2",
+        "text": "Restauranten framhever lokale råvarer og kombinasjoner av mat og øl.",
+        "sourceId": "utv-20260914-01",
+        "checkedAt": "2026-09-14",
+        "verification": "confirmed"
+      },
+      {
+        "id": "ec-dahls-f3",
+        "text": "Virksomheten tilbyr omvisning og ølsmaking etter avtale.",
+        "sourceId": "utv-20260914-01",
+        "checkedAt": "2026-09-14",
+        "verification": "confirmed"
+      }
+    ],
+    "sourceIds": [
+      "utv-20260914-01",
+      "utv-20260914-02",
+      "demo-route"
+    ],
+    "checkedAt": "2026-09-14",
+    "caveats": [
+      "Omvisning og smaking må avtales. Konsertdager kan gi andre serveringstider."
+    ],
+    "address": "Strandveien 71",
+    "travelTime": {
+      "walk": 8,
+      "bike": 3
+    }
+  },
+  {
+    "id": "ramp",
+    "name": "Ramp Pub & Spiseri",
+    "categoryId": "mat-drikke",
+    "coordinates": {
+      "lat": 63.43802337857259,
+      "lng": 10.421551819906638
+    },
+    "placeType": "Pub og spiseri",
+    "aliases": [],
+    "status": "existing",
+    "summary": "Pub og spiseri på Svartlamon, omtalt av området selv som et uformelt sted for mat og drikke.",
+    "locationPrecision": "approximate",
+    "locationNote": "Kartpunktet viser adressen, ikke en kontrollert inngang.",
+    "facts": [
+      {
+        "id": "ramp-f1",
+        "text": "Svartlamons virksomhetsoversikt presenterer Ramp som pub og spiseri.",
+        "sourceId": "utv-20260914-03",
+        "checkedAt": "2026-09-14",
+        "verification": "confirmed"
+      },
+      {
+        "id": "ramp-f2",
+        "text": "Omtalen framhever burgere laget av storfe, lam eller kikerter.",
+        "sourceId": "utv-20260914-03",
+        "checkedAt": "2026-09-14",
+        "verification": "confirmed"
+      }
+    ],
+    "sourceIds": [
+      "utv-20260914-03",
+      "utv-20260914-04",
+      "utv-20260914-05",
+      "demo-route"
+    ],
+    "checkedAt": "2026-09-14",
+    "caveats": [
+      "Matomtalen hos Svartlamon er udatert; sjekk aktuell meny og åpning hos Ramp."
+    ],
+    "address": "Strandveien 25A",
+    "travelTime": {
+      "walk": 6,
+      "bike": 3
+    }
+  },
+  {
+    "id": "una-solsiden",
+    "name": "Una Solsiden",
+    "categoryId": "mat-drikke",
+    "coordinates": {
+      "lat": 63.43525224659627,
+      "lng": 10.410412377188472
+    },
+    "placeType": "Pizzeria",
+    "aliases": [],
+    "status": "existing",
+    "summary": "Pizzeria og bar på Solsiden, med pizza, pasta og italienske forretter.",
+    "locationPrecision": "approximate",
+    "locationNote": "Kartpunktet viser adressen, ikke en kontrollert inngang.",
+    "facts": [
+      {
+        "id": "una-solsiden-f1",
+        "text": "Virksomheten beskriver Solsiden som sin opprinnelige restaurant, etablert i 2014.",
+        "sourceId": "utv-20260914-06",
+        "checkedAt": "2026-09-14",
+        "verification": "confirmed"
+      },
+      {
+        "id": "una-solsiden-f2",
+        "text": "Menyen omfatter pizza, pasta, bruschetta og salater.",
+        "sourceId": "utv-20260914-07",
+        "checkedAt": "2026-09-14",
+        "verification": "confirmed"
+      },
+      {
+        "id": "una-solsiden-f3",
+        "text": "Pizzaen Vegana er oppført med tomat, sopp, oliven, rødløk, paprika og ruccola.",
+        "sourceId": "utv-20260914-07",
+        "checkedAt": "2026-09-14",
+        "verification": "confirmed"
+      }
+    ],
+    "sourceIds": [
+      "utv-20260914-06",
+      "utv-20260914-07",
+      "utv-20260914-08",
+      "demo-route"
+    ],
+    "checkedAt": "2026-09-14",
+    "caveats": [
+      "Menyen kan endres. Avklar allergener direkte med restauranten."
+    ],
+    "address": "Beddingen 14",
+    "travelTime": {
+      "walk": 11,
+      "bike": 6
+    }
+  },
+  {
+    "id": "godt-brod-solsiden",
+    "name": "Godt Brød Solsiden",
+    "categoryId": "mat-drikke",
+    "coordinates": {
+      "lat": 63.43523563981423,
+      "lng": 10.412095335856362
+    },
+    "placeType": "Bakeri og kafé",
+    "aliases": [],
+    "status": "existing",
+    "summary": "Bakeverksted på Solsiden med bakervarer, påsmurt mat og kaffe.",
+    "locationPrecision": "approximate",
+    "locationNote": "Kartpunktet viser adressen, ikke en kontrollert inngang.",
+    "facts": [
+      {
+        "id": "godt-brod-solsiden-f1",
+        "text": "Avdelingssiden plasserer bakeverkstedet på Solsiden senter.",
+        "sourceId": "utv-20260914-09",
+        "checkedAt": "2026-09-14",
+        "verification": "confirmed"
+      },
+      {
+        "id": "godt-brod-solsiden-f2",
+        "text": "Stedet beskriver håndbakte, økologiske brød og boller.",
+        "sourceId": "utv-20260914-09",
+        "checkedAt": "2026-09-14",
+        "verification": "confirmed"
+      },
+      {
+        "id": "godt-brod-solsiden-f3",
+        "text": "Avdelingen oppgir påsmurte sandwicher, juice, baristakaffe og kaker.",
+        "sourceId": "utv-20260914-09",
+        "checkedAt": "2026-09-14",
+        "verification": "confirmed"
+      },
+      {
+        "id": "godt-brod-solsiden-sentermedlemskap",
+        "text": "Godt Brød Solsiden ligger i Solsiden senter.",
+        "sourceId": "handel-20260914-01",
+        "checkedAt": "2026-09-14",
+        "verification": "confirmed"
+      }
+    ],
+    "sourceIds": [
+      "utv-20260914-09",
+      "utv-20260914-10",
+      "demo-route",
+      "handel-20260914-01"
+    ],
+    "checkedAt": "2026-09-14",
+    "caveats": [
+      "Utvalget av bakervarer varierer."
+    ],
+    "address": "Beddingen 10",
+    "travelTime": {
+      "walk": 11,
+      "bike": 7
+    },
+    "parentPlaceId": "solsiden-senter",
+    "poiCategoryId": "bakery"
+  },
+  {
+    "id": "sabrura-solsiden",
+    "name": "Sabrura Solsiden",
+    "categoryId": "mat-drikke",
+    "coordinates": {
+      "lat": 63.43565021871486,
+      "lng": 10.416465567510546
+    },
+    "placeType": "Sushi og buffet",
+    "aliases": [],
+    "status": "existing",
+    "summary": "Sushi- og buffetrestaurant på Solsiden med eget takeawaytilbud.",
+    "locationPrecision": "approximate",
+    "locationNote": "Kartpunktet viser adressen, ikke en kontrollert inngang.",
+    "facts": [
+      {
+        "id": "sabrura-solsiden-f1",
+        "text": "Avdelingssiden oppgir både restaurant og takeaway som tilbud.",
+        "sourceId": "utv-20260914-11",
+        "checkedAt": "2026-09-14",
+        "verification": "confirmed"
+      },
+      {
+        "id": "sabrura-solsiden-f2",
+        "text": "Kjedens buffetbeskrivelse omfatter sushi og varme retter som dumplings, vårruller og kyllingsticks.",
+        "sourceId": "utv-20260914-12",
+        "checkedAt": "2026-09-14",
+        "verification": "confirmed"
+      },
+      {
+        "id": "sabrura-solsiden-f3",
+        "text": "Kjeden beskriver også à la carte og separat takeawaybestilling.",
+        "sourceId": "utv-20260914-12",
+        "checkedAt": "2026-09-14",
+        "verification": "confirmed"
+      }
+    ],
+    "sourceIds": [
+      "utv-20260914-11",
+      "utv-20260914-12",
+      "utv-20260914-13",
+      "demo-route"
+    ],
+    "checkedAt": "2026-09-14",
+    "caveats": [
+      "Buffetutvalget er beskrevet på kjedenivå og kan variere lokalt. Takeaway bestilles separat."
+    ],
+    "address": "Bassengbakken 2",
+    "travelTime": {
+      "walk": 8,
+      "bike": 3
+    }
+  },
+  {
+    "id": "havet-arena",
+    "name": "HAVET Arena",
+    "categoryId": "opplevelser",
+    "coordinates": {
+      "lat": 63.441461519275904,
+      "lng": 10.42501538435317
+    },
+    "placeType": "Badstue og kultur",
+    "aliases": [
+      "BarbeintQ",
+      "Heim"
+    ],
+    "status": "existing",
+    "summary": "Badstuer, konserter og servering ved vannet på Nyhavna, med BarbeintQ som restaurant.",
+    "locationPrecision": "approximate",
+    "locationNote": "Kartpunktet viser adressen, ikke en kontrollert inngang.",
+    "facts": [
+      {
+        "id": "havet-arena-f1",
+        "text": "HAVET har badstuer, konsert- og arrangementstilbud samt restaurant og bar.",
+        "sourceId": "utv-20260914-15",
+        "checkedAt": "2026-09-14",
+        "verification": "confirmed"
+      },
+      {
+        "id": "havet-arena-f2",
+        "text": "BarbeintQ bruker vedfyrte smokere og beskriver kjøtt, fisk, vegetariske og veganske alternativer.",
+        "sourceId": "utv-20260914-14",
+        "checkedAt": "2026-09-14",
+        "verification": "confirmed"
+      },
+      {
+        "id": "havet-arena-f3",
+        "text": "HAVET foreslår restaurantbesøk før eller etter en badstueøkt.",
+        "sourceId": "utv-20260914-15",
+        "checkedAt": "2026-09-14",
+        "verification": "confirmed"
+      }
+    ],
+    "sourceIds": [
+      "utv-20260914-14",
+      "utv-20260914-15",
+      "utv-20260914-16",
+      "demo-route"
+    ],
+    "checkedAt": "2026-09-14",
+    "caveats": [
+      "Badstue, restaurant og arrangementer har ulike tider, bestilling og aldersvilkår. Sjekk det aktuelle tilbudet."
+    ],
+    "address": "Strandveien 104",
+    "travelTime": {
+      "walk": 8,
+      "bike": 3
+    }
+  },
+  {
+    "id": "rosendal-teater",
+    "name": "Rosendal Teater og Kafé",
+    "categoryId": "opplevelser",
+    "coordinates": {
+      "lat": 63.43668599265991,
+      "lng": 10.432509045023487
+    },
+    "placeType": "Teater og kafé",
+    "aliases": [
+      "Rosendal Teater",
+      "Rosendal Kafé"
+    ],
+    "status": "existing",
+    "summary": "Scenekunsthus med egen kafé og bar; ett sted for forestillinger, mat og sosiale arrangementer.",
+    "locationPrecision": "approximate",
+    "locationNote": "Kartpunktet viser adressen, ikke en kontrollert inngang.",
+    "facts": [
+      {
+        "id": "rosendal-teater-f1",
+        "text": "Teatret presenterer blant annet teater, dans, konserter og samtalearrangementer.",
+        "sourceId": "utv-20260914-18",
+        "checkedAt": "2026-09-14",
+        "verification": "confirmed"
+      },
+      {
+        "id": "rosendal-teater-f2",
+        "text": "Kafeen beskriver suppe og gryte på menyen samt arrangementer som Nabojazz og åpen scene.",
+        "sourceId": "utv-20260914-17",
+        "checkedAt": "2026-09-14",
+        "verification": "confirmed"
+      },
+      {
+        "id": "rosendal-teater-f3",
+        "text": "Hovedinngangen ligger i front av glassfasaden på venstre side; foajeen kan også nås via kaféinngangen.",
+        "sourceId": "utv-20260914-19",
+        "checkedAt": "2026-09-14",
+        "verification": "confirmed"
+      }
+    ],
+    "sourceIds": [
+      "utv-20260914-17",
+      "utv-20260914-18",
+      "utv-20260914-19",
+      "utv-20260914-20",
+      "demo-route"
+    ],
+    "checkedAt": "2026-09-14",
+    "caveats": [
+      "Program, billetter og aldersanbefalinger avhenger av arrangement. Kaféens kjøkkentider sjekkes separat."
+    ],
+    "address": "Innherredsveien 73",
+    "travelTime": {
+      "walk": 16,
+      "bike": 6
+    }
+  },
+  {
+    "id": "monkey-brew",
+    "name": "Monkey Brew",
+    "categoryId": "opplevelser",
+    "coordinates": {
+      "lat": 63.44057097990753,
+      "lng": 10.420818632252876
+    },
+    "placeType": "Bryggeri og utsalg",
+    "aliases": [],
+    "status": "existing",
+    "summary": "Håndverksbryggeri på Nyhavna med eget utsalg og gruppeomvisninger etter avtale.",
+    "locationPrecision": "approximate",
+    "locationNote": "Kartpunktet viser adressen, ikke en kontrollert inngang. Utsalget oppgir inngang på østsiden, overfor HAVET.",
+    "facts": [
+      {
+        "id": "monkey-brew-f1",
+        "text": "Monkey Brew beskriver seg som et lite, uavhengig håndverksbryggeri i Trondheim.",
+        "sourceId": "utv-20260914-21",
+        "checkedAt": "2026-09-14",
+        "verification": "confirmed"
+      },
+      {
+        "id": "monkey-brew-f2",
+        "text": "Bryggeriutsalget på Nyhavna selger øl og profilvarer og lar besøkende få et innblikk i bryggeriet.",
+        "sourceId": "utv-20260914-22",
+        "checkedAt": "2026-09-14",
+        "verification": "confirmed"
+      },
+      {
+        "id": "monkey-brew-f3",
+        "text": "Omvisning med smaking kan avtales for grupper på minst ti personer.",
+        "sourceId": "utv-20260914-22",
+        "checkedAt": "2026-09-14",
+        "verification": "confirmed"
+      }
+    ],
+    "sourceIds": [
+      "utv-20260914-21",
+      "utv-20260914-22",
+      "s-servering-prove-nyhavna",
+      "utv-20260914-23",
+      "utv-20260914-24",
+      "demo-route"
+    ],
+    "checkedAt": "2026-09-14",
+    "caveats": [
+      "Dette er bryggeri og utsalg; omvisning med smaking må avtales og er ikke et drop-in-tilbud."
+    ],
+    "address": "Kobbes gate 10",
+    "travelTime": {
+      "walk": 4,
+      "bike": 2
+    }
+  },
+  {
+    "id": "lademoen-bhg",
+    "name": "Lademoen barnehage",
+    "categoryId": "barn-oppvekst",
+    "coordinates": {
+      "lat": 63.436869354029895,
+      "lng": 10.42115643733528
+    },
+    "placeType": "Barnehage",
+    "aliases": [],
+    "status": "existing",
+    "summary": "Privat barnehage på Lademoen, med vekt på lek og bruk av nærmiljøet.",
+    "locationPrecision": "approximate",
+    "locationNote": "Kartpunktet viser adressen, ikke en kontrollert inngang.",
+    "facts": [
+      {
+        "id": "lademoen-bhg-f1",
+        "text": "Eies og drives av Trondhjems Asylselskap.",
+        "sourceId": "utv-20260914-25",
+        "checkedAt": "2026-09-14",
+        "verification": "confirmed"
+      },
+      {
+        "id": "lademoen-bhg-f2",
+        "text": "Holder til i en bygning fra 1893.",
+        "sourceId": "utv-20260914-26",
+        "checkedAt": "2026-09-14",
+        "verification": "confirmed"
+      },
+      {
+        "id": "lademoen-bhg-f3",
+        "text": "Barnehagen beskriver lek, fysisk aktivitet og barns medvirkning som deler av sin pedagogiske profil.",
+        "sourceId": "utv-20260914-27",
+        "checkedAt": "2026-09-14",
+        "verification": "confirmed"
+      }
+    ],
+    "sourceIds": [
+      "utv-20260914-25",
+      "utv-20260914-26",
+      "utv-20260914-27",
+      "utv-20260914-28",
+      "demo-route"
+    ],
+    "checkedAt": "2026-09-14",
+    "caveats": [
+      "Barnehageplass krever søknad og opptak. Nærhet gir ingen garanti om plass."
+    ],
+    "address": "Østersunds gate 3",
+    "travelTime": {
+      "walk": 8,
+      "bike": 3
+    }
+  },
+  {
+    "id": "svartlamon-bhg",
+    "name": "Svartlamon kunst- og kulturbarnehage",
+    "categoryId": "barn-oppvekst",
+    "coordinates": {
+      "lat": 63.43862109341741,
+      "lng": 10.422826993232965
+    },
+    "placeType": "Barnehage",
+    "aliases": [],
+    "status": "existing",
+    "summary": "Kommunal kunst- og kulturbarnehage på Svartlamon, i en tidligere bilbutikk.",
+    "locationPrecision": "approximate",
+    "locationNote": "Kartpunktet viser adressen, ikke en kontrollert inngang.",
+    "facts": [
+      {
+        "id": "svartlamon-bhg-f1",
+        "text": "Kommunens enhet heter Svartlamon kunst- og kulturbarnehage og ReMida.",
+        "sourceId": "utv-20260914-29",
+        "checkedAt": "2026-09-14",
+        "verification": "confirmed"
+      },
+      {
+        "id": "svartlamon-bhg-f2",
+        "text": "Den tidligere bilbutikken Strandveien Auto ble omgjort til barnehage; barna deltok i utviklingsprosjektet.",
+        "sourceId": "utv-20260914-31",
+        "checkedAt": "2026-09-14",
+        "verification": "confirmed"
+      },
+      {
+        "id": "svartlamon-bhg-f3",
+        "text": "Dette prosjektet vant den nasjonale barnehageprisen for kunst og kultur i 2008.",
+        "sourceId": "utv-20260914-31",
+        "checkedAt": "2026-09-14",
+        "verification": "confirmed"
+      }
+    ],
+    "sourceIds": [
+      "utv-20260914-29",
+      "utv-20260914-30",
+      "utv-20260914-31",
+      "utv-20260914-32",
+      "demo-route"
+    ],
+    "checkedAt": "2026-09-14",
+    "caveats": [
+      "Barnehageplass krever søknad og opptak. ReMida er ikke dokumentert som et fritt drop-in-tilbud."
+    ],
+    "address": "Strandveien 33",
+    "travelTime": {
+      "walk": 6,
+      "bike": 4
+    }
+  },
+  {
+    "id": "lade-fritidsklubb",
+    "name": "Lade fritidsklubb",
+    "categoryId": "barn-oppvekst",
+    "coordinates": {
+      "lat": 63.443679017389776,
+      "lng": 10.442126415185394
+    },
+    "placeType": "Fritidsklubb",
+    "aliases": [],
+    "status": "existing",
+    "summary": "Kommunalt kultur- og fritidstilbud for ungdom, med møteplass og særlig vekt på gaming.",
+    "locationPrecision": "approximate",
+    "locationNote": "Kartpunktet viser adressen, ikke en kontrollert inngang.",
+    "facts": [
+      {
+        "id": "lade-fritidsklubb-f1",
+        "text": "Holder til i Dagskolens lokaler på Lade.",
+        "sourceId": "utv-20260914-33",
+        "checkedAt": "2026-09-14",
+        "verification": "confirmed"
+      },
+      {
+        "id": "lade-fritidsklubb-f2",
+        "text": "Har gamingrom, aktivitetsrom og gymsal.",
+        "sourceId": "utv-20260914-33",
+        "checkedAt": "2026-09-14",
+        "verification": "confirmed"
+      },
+      {
+        "id": "lade-fritidsklubb-f3",
+        "text": "Ungdom er med på å bestemme aktivitetene; gamingtilbudet bruker påmelding.",
+        "sourceId": "utv-20260914-33",
+        "checkedAt": "2026-09-14",
+        "verification": "confirmed"
+      }
+    ],
+    "sourceIds": [
+      "utv-20260914-33",
+      "utv-20260914-34",
+      "demo-route"
+    ],
+    "checkedAt": "2026-09-14",
+    "caveats": [
+      "Gaming bruker påmelding. Avklar besøksalder og aktuelle tider med klubben."
+    ],
+    "address": "Håkon Magnussons gate 5",
+    "travelTime": {
+      "walk": 23,
+      "bike": 8
+    }
+  },
+  {
+    "id": "strandveiparken",
+    "name": "Strandveiparken",
+    "categoryId": "barn-oppvekst",
+    "coordinates": {
+      "lat": 63.436710288130335,
+      "lng": 10.41793924845744
+    },
+    "placeType": "Park og lekeplass",
+    "aliases": [],
+    "status": "existing",
+    "summary": "Park med lekegate, grøntområder og aktiviteter som gjør den relevant for både små og større barn.",
+    "locationPrecision": "approximate",
+    "locationNote": "Kartpunktet viser parkens representative senter fra kommunens parkregister, ikke en kontrollert inngang.",
+    "facts": [
+      {
+        "id": "strandveiparken-f1",
+        "text": "Utvidet og oppgradert med ferdigstillelse i mai 2025.",
+        "sourceId": "utv-20260914-35",
+        "checkedAt": "2026-09-14",
+        "verification": "confirmed"
+      },
+      {
+        "id": "strandveiparken-f2",
+        "text": "Lekegaten har små hus inspirert av bygninger i bydelen.",
+        "sourceId": "utv-20260914-35",
+        "checkedAt": "2026-09-14",
+        "verification": "confirmed"
+      },
+      {
+        "id": "strandveiparken-f3",
+        "text": "Har flerbruksområde for blant annet ballspill og parkour, samt plen og sitteplasser.",
+        "sourceId": "utv-20260914-35",
+        "checkedAt": "2026-09-14",
+        "verification": "confirmed"
+      }
+    ],
+    "sourceIds": [
+      "utv-20260914-35",
+      "utv-20260914-36",
+      "demo-route"
+    ],
+    "checkedAt": "2026-09-14",
+    "caveats": [
+      "Kommunen oppgir nærmeste toalett i Lademoparken."
+    ],
+    "travelTime": {
+      "walk": 6,
+      "bike": 3
+    }
+  },
+  {
+    "id": "strandveikaia-badeplass",
+    "name": "Strandveikaia badeplass",
+    "categoryId": "opplevelser",
+    "coordinates": {
+      "lat": 63.44203222875,
+      "lng": 10.42498068875
+    },
+    "placeType": "Offentlig badeplass",
+    "aliases": [],
+    "status": "existing",
+    "summary": "Eksisterende offentlig badebrygge med stupetårn på Nyhavna.",
+    "locationPrecision": "approximate",
+    "locationNote": "Omtrentlig punkt ved badebryggen. Nøyaktig adkomst er ikke kontrollert.",
+    "facts": [
+      {
+        "id": "strandveikaia-badeplass-f1",
+        "text": "Badebryggen er åpen for alle.",
+        "sourceId": "utv-20260914-37",
+        "checkedAt": "2026-09-14",
+        "verification": "confirmed"
+      },
+      {
+        "id": "strandveikaia-badeplass-f2",
+        "text": "Ligger ved HAVET, med adkomst fra Strandveien.",
+        "sourceId": "utv-20260914-37",
+        "checkedAt": "2026-09-14",
+        "verification": "confirmed"
+      },
+      {
+        "id": "strandveikaia-badeplass-f3",
+        "text": "Kommunen henviser til HAVET for garderobe, badstue og servering.",
+        "sourceId": "utv-20260914-37",
+        "checkedAt": "2026-09-14",
+        "verification": "confirmed"
+      }
+    ],
+    "sourceIds": [
+      "utv-20260914-37",
+      "utv-20260914-38",
+      "demo-route"
+    ],
+    "checkedAt": "2026-09-14",
+    "caveats": [
+      "Kommunen varsler at vannkvaliteten kan være nedsatt etter store nedbørsmengder. Sjekk aktuelle baderåd. HAVETs badstue og garderobe har egne vilkår."
+    ],
+    "travelTime": {
+      "walk": 9,
+      "bike": 3
+    }
+  },
+  {
+    "id": "bua-lademoen",
+    "name": "BUA Lademoen",
+    "categoryId": "hverdagsliv",
+    "coordinates": {
+      "lat": 63.43696180715256,
+      "lng": 10.437057690417996
+    },
+    "placeType": "Utstyrsutlån",
+    "aliases": [],
+    "status": "existing",
+    "summary": "Utlånssentral for sports- og friluftsutstyr hos Trondheim Røde Kors.",
+    "locationPrecision": "approximate",
+    "locationNote": "Kartpunktet viser adressen, ikke en kontrollert inngang.",
+    "facts": [
+      {
+        "id": "bua-lademoen-f1",
+        "text": "Låner ut sports- og friluftsutstyr.",
+        "sourceId": "utv-20260914-39",
+        "checkedAt": "2026-09-14",
+        "verification": "confirmed"
+      },
+      {
+        "id": "bua-lademoen-f2",
+        "text": "Utlånstilbudet er for alle, med mål om å gjøre aktivitet tilgjengelig for barn og unge.",
+        "sourceId": "utv-20260914-39",
+        "checkedAt": "2026-09-14",
+        "verification": "confirmed"
+      },
+      {
+        "id": "bua-lademoen-f3",
+        "text": "Tidligere BUA Leangen flyttet til Innherredsveien 91 og åpnet som BUA Lademoen 27. mai 2026.",
+        "sourceId": "utv-20260914-40",
+        "checkedAt": "2026-09-14",
+        "verification": "confirmed"
+      }
+    ],
+    "sourceIds": [
+      "utv-20260914-39",
+      "utv-20260914-40",
+      "utv-20260914-41",
+      "demo-route"
+    ],
+    "checkedAt": "2026-09-14",
+    "caveats": [
+      "Utstyr må være tilgjengelig, og utlån følger BUA sine vilkår."
+    ],
+    "address": "Innherredsveien 91",
+    "travelTime": {
+      "walk": 19,
+      "bike": 7
+    }
+  },
+  {
+    "id": "buranbanen",
+    "name": "Buranbanen",
+    "categoryId": "barn-oppvekst",
+    "coordinates": {
+      "lat": 63.43532549125392,
+      "lng": 10.423033695576043
+    },
+    "placeType": "Aktivitetspark",
+    "aliases": [
+      "Buran aktivitetspark"
+    ],
+    "status": "existing",
+    "summary": "Aktivitetspark med lek for yngre barn og muligheter for ballspill, trening og sykkel eller sparkesykkel.",
+    "locationPrecision": "approximate",
+    "locationNote": "Kartpunktet viser parkens representative senter fra kommunens parkregister, ikke en kontrollert inngang.",
+    "facts": [
+      {
+        "id": "buranbanen-f1",
+        "text": "Oppgradert fra grusbane til aktivitetspark i 2023.",
+        "sourceId": "utv-20260914-42",
+        "checkedAt": "2026-09-14",
+        "verification": "confirmed"
+      },
+      {
+        "id": "buranbanen-f2",
+        "text": "Har blant annet basket, trimpark og asfalterte humper for sykkel og sparkesykkel.",
+        "sourceId": "utv-20260914-42",
+        "checkedAt": "2026-09-14",
+        "verification": "confirmed"
+      },
+      {
+        "id": "buranbanen-f3",
+        "text": "Lekeskulpturene Buranus er laget av gjenbruksmaterialer.",
+        "sourceId": "utv-20260914-42",
+        "checkedAt": "2026-09-14",
+        "verification": "confirmed"
+      }
+    ],
+    "sourceIds": [
+      "utv-20260914-42",
+      "utv-20260914-36",
+      "demo-route"
+    ],
+    "checkedAt": "2026-09-14",
+    "caveats": [
+      "Parken har ikke eget toalett. Vinterbruk avhenger av forholdene."
+    ],
+    "travelTime": {
+      "walk": 11,
+      "bike": 5
+    }
+  },
+  {
+    "id": "egon-solsiden",
+    "name": "Egon Solsiden",
+    "categoryId": "mat-drikke",
+    "coordinates": {
+      "lat": 63.434756095981314,
+      "lng": 10.411570610332323
+    },
+    "address": "TMV-kaia 21",
+    "placeType": "Restaurant",
+    "aliases": [],
+    "status": "existing",
+    "summary": "Restaurant på Solsidens restaurantrekke, med pizzabuffet, burgere og takeaway.",
+    "locationPrecision": "approximate",
+    "locationNote": "Kartpunktet viser adressen, ikke en kontrollert inngang.",
+    "facts": [
+      {
+        "id": "egon-solsiden-f1",
+        "text": "Avdelingssiden beskriver pizzabuffet og burgermeny.",
+        "sourceId": "utv2-20260914-01",
+        "checkedAt": "2026-09-14",
+        "verification": "confirmed"
+      },
+      {
+        "id": "egon-solsiden-f2",
+        "text": "Restauranten tilbyr takeaway og måltider både inne og ute.",
+        "sourceId": "utv2-20260914-01",
+        "checkedAt": "2026-09-14",
+        "verification": "confirmed"
+      }
+    ],
+    "sourceIds": [
+      "utv2-20260914-01",
+      "utv2-20260914-02",
+      "demo-route"
+    ],
+    "checkedAt": "2026-09-14",
+    "caveats": [
+      "Buffetdager, priser og barnemeny er ikke kontrollert. Uteservering avhenger av forholdene."
+    ],
+    "travelTime": {
+      "walk": 11,
+      "bike": 6
+    }
+  },
+  {
+    "id": "olivia-solsiden",
+    "name": "Olivia Solsiden",
+    "categoryId": "mat-drikke",
+    "coordinates": {
+      "lat": 63.43554744956133,
+      "lng": 10.409605043155508
+    },
+    "address": "Beddingen 16",
+    "placeType": "Italiensk restaurant",
+    "aliases": [],
+    "status": "existing",
+    "summary": "Italiensk restaurant på Solsiden med pizza, pasta og inspirasjon fra Firenze.",
+    "locationPrecision": "approximate",
+    "locationNote": "Kartpunktet viser adressen, ikke en kontrollert inngang.",
+    "facts": [
+      {
+        "id": "olivia-solsiden-f1",
+        "text": "Restauranten beskriver pizza stekt i steinovn, pasta og andre italienske retter.",
+        "sourceId": "utv2-20260914-03",
+        "checkedAt": "2026-09-14",
+        "verification": "confirmed"
+      },
+      {
+        "id": "olivia-solsiden-f2",
+        "text": "Solsiden-avdelingen er inspirert av Firenze og tilbyr også mat for henting.",
+        "sourceId": "utv2-20260914-03",
+        "checkedAt": "2026-09-14",
+        "verification": "confirmed"
+      }
+    ],
+    "sourceIds": [
+      "utv2-20260914-03",
+      "utv2-20260914-04",
+      "demo-route"
+    ],
+    "checkedAt": "2026-09-14",
+    "caveats": [
+      "Menyen kan endres. Barnemeny og aldersvilkår er ikke kontrollert."
+    ],
+    "travelTime": {
+      "walk": 11,
+      "bike": 6
+    }
+  },
+  {
+    "id": "cafe-lokka",
+    "name": "Cafe Løkka",
+    "categoryId": "mat-drikke",
+    "coordinates": {
+      "lat": 63.4334923737593,
+      "lng": 10.408642165674454
+    },
+    "address": "Dokkgata 8",
+    "placeType": "Kafé og restaurant",
+    "aliases": [],
+    "status": "existing",
+    "summary": "Spisested ved Solsiden med burgere, salater og lunsjretter.",
+    "locationPrecision": "approximate",
+    "locationNote": "Kartpunktet viser adressen, ikke en kontrollert inngang.",
+    "facts": [
+      {
+        "id": "cafe-lokka-f1",
+        "text": "Den publiserte menyen omfatter burgere, salater, fish and chips og lunsjsandwicher.",
+        "sourceId": "utv2-20260914-06",
+        "checkedAt": "2026-09-14",
+        "verification": "confirmed"
+      },
+      {
+        "id": "cafe-lokka-f2",
+        "text": "Menyen oppgir at biffburger kan byttes til kyllingfilet eller vegetarburger.",
+        "sourceId": "utv2-20260914-06",
+        "checkedAt": "2026-09-14",
+        "verification": "confirmed"
+      }
+    ],
+    "sourceIds": [
+      "utv2-20260914-05",
+      "utv2-20260914-06",
+      "utv2-20260914-07",
+      "demo-route"
+    ],
+    "checkedAt": "2026-09-14",
+    "caveats": [
+      "Den publiserte menyen er fra oktober 2025; sjekk dagens utvalg. Vegetarburger er ikke nødvendigvis vegansk."
+    ],
+    "travelTime": {
+      "walk": 14,
+      "bike": 7
+    }
+  },
+  {
+    "id": "dromedar-solsiden",
+    "name": "Dromedar Kaffebar Solsiden",
+    "categoryId": "mat-drikke",
+    "coordinates": {
+      "lat": 63.43523563981423,
+      "lng": 10.412095335856362
+    },
+    "address": "Beddingen 10",
+    "placeType": "Kaffebar",
+    "aliases": [],
+    "status": "existing",
+    "summary": "Kaffebar på Solsiden i Dromedar-kjeden, med kaffe fra Solberg & Hansen.",
+    "locationPrecision": "approximate",
+    "locationNote": "Kartpunktet viser adressen, ikke en kontrollert inngang.",
+    "facts": [
+      {
+        "id": "dromedar-solsiden-f1",
+        "text": "Dromedar har en egen kaffebar på Solsiden i Beddingen 10.",
+        "sourceId": "utv2-20260914-08",
+        "checkedAt": "2026-09-14",
+        "verification": "confirmed"
+      },
+      {
+        "id": "dromedar-solsiden-f2",
+        "text": "Kjeden oppgir at kaffemenyen bygger på kaffe kjøpt inn og brent av Solberg & Hansen.",
+        "sourceId": "utv2-20260914-09",
+        "checkedAt": "2026-09-14",
+        "verification": "confirmed"
+      },
+      {
+        "id": "dromedar-solsiden-sentermedlemskap",
+        "text": "Dromedar Kaffebar Solsiden ligger i Solsiden senter.",
+        "sourceId": "handel-20260914-01",
+        "checkedAt": "2026-09-14",
+        "verification": "confirmed"
+      }
+    ],
+    "sourceIds": [
+      "utv2-20260914-08",
+      "utv2-20260914-09",
+      "utv-20260914-10",
+      "demo-route",
+      "handel-20260914-01"
+    ],
+    "checkedAt": "2026-09-14",
+    "caveats": [
+      "Kaffebeskrivelsen gjelder kjeden. Utvalget på avdelingen kan variere."
+    ],
+    "travelTime": {
+      "walk": 11,
+      "bike": 7
+    },
+    "parentPlaceId": "solsiden-senter",
+    "poiCategoryId": "cafe"
+  },
+  {
+    "id": "hector-solsiden",
+    "name": "Héctor Food & Fiesta",
+    "categoryId": "mat-drikke",
+    "coordinates": {
+      "lat": 63.43495941123553,
+      "lng": 10.410979274296379
+    },
+    "address": "TMV-kaia 25",
+    "placeType": "Meksikansk restaurant",
+    "aliases": [],
+    "status": "existing",
+    "summary": "Restaurant og bar på Solsiden med Cali-Mex-mat og taco som del av konseptet.",
+    "locationPrecision": "approximate",
+    "locationNote": "Kartpunktet viser adressen, ikke en kontrollert inngang.",
+    "facts": [
+      {
+        "id": "hector-solsiden-f1",
+        "text": "Héctor beskriver sitt matkonsept som Cali-Mex, med taco og margarita.",
+        "sourceId": "utv2-20260914-10",
+        "checkedAt": "2026-09-14",
+        "verification": "confirmed"
+      },
+      {
+        "id": "hector-solsiden-f2",
+        "text": "Virksomheten tilbyr takeaway i tillegg til restaurantbesøk.",
+        "sourceId": "utv2-20260914-10",
+        "checkedAt": "2026-09-14",
+        "verification": "confirmed"
+      }
+    ],
+    "sourceIds": [
+      "utv2-20260914-10",
+      "utv2-20260914-11",
+      "demo-route"
+    ],
+    "checkedAt": "2026-09-14",
+    "caveats": [
+      "Mat og bar har ulike tider. Ukentlige kampanjer, arrangementer og aldersvilkår er ikke del av dette innholdet. Ingen leveringsdekning til en bestemt adresse er kontrollert."
+    ],
+    "travelTime": {
+      "walk": 11,
+      "bike": 6
+    }
+  },
+  {
+    "id": "tollbua",
+    "name": "Tollbua",
+    "categoryId": "mat-drikke",
+    "coordinates": {
+      "lat": 63.43929630332324,
+      "lng": 10.402632275226042
+    },
+    "address": "Brattørkaia 13B",
+    "placeType": "Restaurant",
+    "aliases": [],
+    "status": "existing",
+    "summary": "Nordisk gourmetbistro i det gamle tollkammeret på Brattøra.",
+    "locationPrecision": "approximate",
+    "locationNote": "Kartpunktet viser adressen, ikke en kontrollert inngang.",
+    "facts": [
+      {
+        "id": "tollbua-f1",
+        "text": "Restauranten framhever lokale råvarer kombinert med smaker fra ulike deler av verden.",
+        "sourceId": "utv2-20260914-12",
+        "checkedAt": "2026-09-14",
+        "verification": "confirmed"
+      },
+      {
+        "id": "tollbua-f2",
+        "text": "Tollbua ligger i Tollboden, som sto ferdig i 1910 og ble tegnet av Karl Norum.",
+        "sourceId": "utv2-20260914-12",
+        "checkedAt": "2026-09-14",
+        "verification": "confirmed"
+      }
+    ],
+    "sourceIds": [
+      "utv2-20260914-12",
+      "utv2-20260914-13",
+      "demo-route"
+    ],
+    "checkedAt": "2026-09-14",
+    "caveats": [
+      "Meny og besøksvilkår må sjekkes for aktuell dato. Selskapsfløyens tilgjengelighet er ikke restaurantens ordinære åpning."
+    ],
+    "travelTime": {
+      "walk": 14,
+      "bike": 5
+    }
+  },
+  {
+    "id": "bror-solsiden",
+    "name": "Bror Solsiden",
+    "categoryId": "mat-drikke",
+    "coordinates": {
+      "lat": 63.43456214594917,
+      "lng": 10.41212231024678
+    },
+    "address": "TMV-kaia 13",
+    "placeType": "Burgerrestaurant",
+    "aliases": [],
+    "status": "existing",
+    "summary": "Restaurant og bar på Solsiden med burgere, taco og briochebrød fra Snurr.",
+    "locationPrecision": "approximate",
+    "locationNote": "Kartpunktet viser adressen, ikke en kontrollert inngang.",
+    "facts": [
+      {
+        "id": "bror-solsiden-f1",
+        "text": "Menyen har burgere med valg mellom storfe, kylling og vegetar.",
+        "sourceId": "utv2-20260914-15",
+        "checkedAt": "2026-09-14",
+        "verification": "confirmed"
+      },
+      {
+        "id": "bror-solsiden-f2",
+        "text": "Burgerbrødet oppgis som brioche fra Snurr bakeri; menyen har også taco.",
+        "sourceId": "utv2-20260914-15",
+        "checkedAt": "2026-09-14",
+        "verification": "confirmed"
+      }
+    ],
+    "sourceIds": [
+      "utv2-20260914-14",
+      "utv2-20260914-15",
+      "utv2-20260914-16",
+      "demo-route"
+    ],
+    "checkedAt": "2026-09-14",
+    "caveats": [
+      "Menyen kan endres. Vegetarburger er ikke dokumentert som vegansk."
+    ],
+    "travelTime": {
+      "walk": 12,
+      "bike": 6
+    }
+  },
+  {
+    "id": "sot-solsiden",
+    "name": "SOT Bar & Burger Solsiden",
+    "categoryId": "mat-drikke",
+    "coordinates": {
+      "lat": 63.43423941904887,
+      "lng": 10.412988368154677
+    },
+    "address": "TMV-kaia 3",
+    "placeType": "Burgerrestaurant",
+    "aliases": [],
+    "status": "existing",
+    "summary": "Burgersted på Solsiden med smashburgere og takeaway.",
+    "locationPrecision": "approximate",
+    "locationNote": "Kartpunktet viser adressen, ikke en kontrollert inngang.",
+    "facts": [
+      {
+        "id": "sot-solsiden-f1",
+        "text": "Solsiden-stedet beskriver smashburgere av storfe i spesiallagde burgerbrød.",
+        "sourceId": "utv2-20260914-18",
+        "checkedAt": "2026-09-14",
+        "verification": "confirmed"
+      },
+      {
+        "id": "sot-solsiden-f2",
+        "text": "Stedet tilbyr bestilling av takeaway som kan hentes.",
+        "sourceId": "utv2-20260914-19",
+        "checkedAt": "2026-09-14",
+        "verification": "confirmed"
+      }
+    ],
+    "sourceIds": [
+      "utv2-20260914-17",
+      "utv2-20260914-18",
+      "utv2-20260914-19",
+      "utv2-20260914-20",
+      "demo-route"
+    ],
+    "checkedAt": "2026-09-14",
+    "caveats": [
+      "Restaurant og takeaway har ulike tider. Hjemlevering til en bestemt adresse er ikke kontrollert."
+    ],
+    "travelTime": {
+      "walk": 11,
+      "bike": 7
+    }
+  },
+  {
+    "id": "rockheim",
+    "name": "Rockheim",
+    "categoryId": "opplevelser",
+    "coordinates": {
+      "lat": 63.43888679492669,
+      "lng": 10.401369302901397
+    },
+    "address": "Brattørkaia 14",
+    "placeType": "Museum",
+    "aliases": [],
+    "status": "existing",
+    "summary": "Musikkmuseum på Brattøra der man kan utforske norsk populærmusikk gjennom en interaktiv hovedutstilling.",
+    "locationPrecision": "approximate",
+    "locationNote": "Kartpunktet viser adressen, ikke en kontrollert inngang.",
+    "facts": [
+      {
+        "id": "rockheim-f1",
+        "text": "Rockheim er det nasjonale museet for populærmusikk.",
+        "sourceId": "utv2-20260914-22",
+        "checkedAt": "2026-09-14",
+        "verification": "confirmed"
+      },
+      {
+        "id": "rockheim-f2",
+        "text": "Den faste hovedutstillingen følger norsk populærmusikk fra 1950-tallet til nyere tid, med interaktive innslag som inviterer publikum til å delta.",
+        "sourceId": "utv2-20260914-21",
+        "checkedAt": "2026-09-14",
+        "verification": "confirmed"
+      }
+    ],
+    "sourceIds": [
+      "utv2-20260914-21",
+      "utv2-20260914-22",
+      "utv2-20260914-23",
+      "demo-route"
+    ],
+    "checkedAt": "2026-09-14",
+    "caveats": [
+      "Program, særutstillinger og omvisninger må sjekkes for besøksdatoen."
+    ],
+    "travelTime": {
+      "walk": 15,
+      "bike": 6
+    }
+  },
+  {
+    "id": "pirbadet",
+    "name": "Pirbadet",
+    "categoryId": "opplevelser",
+    "coordinates": {
+      "lat": 63.44040109496344,
+      "lng": 10.400701114560139
+    },
+    "address": "Havnegata 12",
+    "placeType": "Badeanlegg",
+    "aliases": [],
+    "status": "existing",
+    "summary": "Innendørs badeanlegg ved fjorden, med tilbud for både lek og svømming.",
+    "locationPrecision": "approximate",
+    "locationNote": "Kartpunktet viser adressen, ikke en kontrollert inngang.",
+    "facts": [
+      {
+        "id": "pirbadet-f1",
+        "text": "Anlegget har bølgebasseng, vannsklier og et 50-meters idrettsbasseng.",
+        "sourceId": "utv2-20260914-24",
+        "checkedAt": "2026-09-14",
+        "verification": "confirmed"
+      },
+      {
+        "id": "pirbadet-f2",
+        "text": "Småbarnsområdet er formet som Selbusjøen, Nidelva og Trondheimsfjorden og har leker og vannkanoner.",
+        "sourceId": "utv2-20260914-24",
+        "checkedAt": "2026-09-14",
+        "verification": "confirmed"
+      }
+    ],
+    "sourceIds": [
+      "utv2-20260914-24",
+      "utv2-20260914-25",
+      "utv2-20260914-26",
+      "demo-route"
+    ],
+    "checkedAt": "2026-09-14",
+    "caveats": [
+      "Barn under 10 år skal ifølge Pirbadets regler følges av en badende voksen over 16 år.",
+      "Attraksjoner og bassengbaner kan være reservert eller midlertidig utilgjengelige; ikke lov tilgang til alle tilbud ved et bestemt besøk."
+    ],
+    "travelTime": {
+      "walk": 15,
+      "bike": 6
+    }
+  },
+  {
+    "id": "dokkhuset",
+    "name": "Dokkhuset",
+    "categoryId": "opplevelser",
+    "coordinates": {
+      "lat": 63.43420319262855,
+      "lng": 10.41120264724678
+    },
+    "address": "Dokkparken 4",
+    "placeType": "Konsertscene",
+    "aliases": [],
+    "status": "existing",
+    "summary": "Konsertscene på Solsiden med jazz, kammermusikk og flere andre musikalske uttrykk.",
+    "locationPrecision": "approximate",
+    "locationNote": "Kartpunktet viser adressen, ikke en kontrollert inngang.",
+    "facts": [
+      {
+        "id": "dokkhuset-f1",
+        "text": "Konsertprogrammet omfatter blant annet jazz og kammermusikk.",
+        "sourceId": "utv2-20260914-27",
+        "checkedAt": "2026-09-14",
+        "verification": "confirmed"
+      },
+      {
+        "id": "dokkhuset-f2",
+        "text": "Programmet inneholder også familieforestillinger; aldersgrensen oppgis for hvert arrangement.",
+        "sourceId": "utv2-20260914-27",
+        "checkedAt": "2026-09-14",
+        "verification": "confirmed"
+      }
+    ],
+    "sourceIds": [
+      "utv2-20260914-27",
+      "utv2-20260914-28",
+      "utv2-20260914-29",
+      "demo-route"
+    ],
+    "checkedAt": "2026-09-14",
+    "caveats": [
+      "Sjekk program, billetter og aldersgrense for det enkelte arrangement.",
+      "Ikke presenter en familieforestilling som et daglig eller fast ukentlig tilbud."
+    ],
+    "travelTime": {
+      "walk": 12,
+      "bike": 6
+    }
+  },
+  {
+    "id": "apotek-1-solsiden",
+    "name": "Apotek 1 Solsiden",
+    "categoryId": "hverdagsliv",
+    "coordinates": {
+      "lat": 63.43523563981423,
+      "lng": 10.412095335856362
+    },
+    "address": "Beddingen 10",
+    "placeType": "Apotek",
+    "aliases": [],
+    "status": "existing",
+    "summary": "Apotek i første etasje på Solsiden kjøpesenter, som kan inngå i den vanlige handleturen.",
+    "locationPrecision": "approximate",
+    "locationNote": "Kartpunktet viser adressen, ikke en kontrollert inngang.",
+    "facts": [
+      {
+        "id": "apotek-1-solsiden-f1",
+        "text": "Apoteket ligger i første etasje på Solsiden kjøpesenter.",
+        "sourceId": "utv2-20260914-30",
+        "checkedAt": "2026-09-14",
+        "verification": "confirmed"
+      },
+      {
+        "id": "apotek-1-solsiden-f2",
+        "text": "Butikken fører apotekvarer samt blant annet produkter for hud- og hårpleie.",
+        "sourceId": "utv2-20260914-30",
+        "checkedAt": "2026-09-14",
+        "verification": "confirmed"
+      },
+      {
+        "id": "apotek-1-solsiden-sentermedlemskap",
+        "text": "Apotek 1 Solsiden ligger i Solsiden senter.",
+        "sourceId": "handel-20260914-01",
+        "checkedAt": "2026-09-14",
+        "verification": "confirmed"
+      }
+    ],
+    "sourceIds": [
+      "utv2-20260914-30",
+      "utv2-20260914-31",
+      "utv-20260914-10",
+      "demo-route",
+      "handel-20260914-01"
+    ],
+    "checkedAt": "2026-09-14",
+    "caveats": [
+      "Lagerstatus og tilgjengelige tjenester må avklares med apoteket."
+    ],
+    "travelTime": {
+      "walk": 11,
+      "bike": 7
+    },
+    "parentPlaceId": "solsiden-senter",
+    "poiCategoryId": "pharmacy"
+  },
+  {
+    "id": "vinmonopolet-solsiden",
+    "name": "Vinmonopolet Solsiden",
+    "categoryId": "hverdagsliv",
+    "coordinates": {
+      "lat": 63.43523563981423,
+      "lng": 10.412095335856362
+    },
+    "address": "Beddingen 10",
+    "placeType": "Vinmonopol",
+    "aliases": [],
+    "status": "existing",
+    "summary": "Vinmonopol på Solsiden kjøpesenter, som gir flere typer ærender på samme senter.",
+    "locationPrecision": "approximate",
+    "locationNote": "Kartpunktet viser adressen, ikke en kontrollert inngang.",
+    "facts": [
+      {
+        "id": "vinmonopolet-solsiden-f1",
+        "text": "Vinmonopolet Solsiden ligger i første etasje på kjøpesenteret.",
+        "sourceId": "utv2-20260914-32",
+        "checkedAt": "2026-09-14",
+        "verification": "confirmed"
+      },
+      {
+        "id": "vinmonopolet-solsiden-f2",
+        "text": "Senteret har også apotek og dagligvarebutikk, slik at ulike ærender kan samles på samme sted.",
+        "sourceId": "utv2-20260914-32",
+        "checkedAt": "2026-09-14",
+        "verification": "confirmed"
+      },
+      {
+        "id": "vinmonopolet-solsiden-sentermedlemskap",
+        "text": "Vinmonopolet Solsiden ligger i Solsiden senter.",
+        "sourceId": "handel-20260914-01",
+        "checkedAt": "2026-09-14",
+        "verification": "confirmed"
+      }
+    ],
+    "sourceIds": [
+      "utv2-20260914-32",
+      "utv2-20260914-33",
+      "utv-20260914-10",
+      "demo-route",
+      "handel-20260914-01"
+    ],
+    "checkedAt": "2026-09-14",
+    "caveats": [
+      "Senteradressen brukes som kartadresse; den viser ikke butikkens interne inngang.",
+      "Ikke lov bestemt vareutvalg eller lagerstatus."
+    ],
+    "travelTime": {
+      "walk": 11,
+      "bike": 7
+    },
+    "parentPlaceId": "solsiden-senter",
+    "poiCategoryId": "liquor_store"
+  },
+  {
+    "id": "rema-1000-solsiden",
+    "name": "REMA 1000 Solsiden",
+    "categoryId": "hverdagsliv",
+    "coordinates": {
+      "lat": 63.436464299658766,
+      "lng": 10.416563908353693
+    },
+    "address": "Dyre Halses gate 1A",
+    "placeType": "Dagligvare",
+    "aliases": [
+      "dagligvare",
+      "dagligvarer",
+      "matbutikk",
+      "dagligvarebutikk"
+    ],
+    "status": "existing",
+    "summary": "Dagligvarebutikk i Dyre Halses gate, et alternativ for matinnkjøp i Solsiden-området.",
+    "locationPrecision": "approximate",
+    "locationNote": "Kartpunktet viser adressen, ikke en kontrollert inngang.",
+    "facts": [
+      {
+        "id": "rema-1000-solsiden-f1",
+        "text": "Butikken ligger i Dyre Halses gate 1A ved Solsiden.",
+        "sourceId": "utv2-20260914-34",
+        "checkedAt": "2026-09-14",
+        "verification": "confirmed"
+      },
+      {
+        "id": "rema-1000-solsiden-f2",
+        "text": "REMA 1000 Solsiden er en dagligvarebutikk.",
+        "sourceId": "utv2-20260914-35",
+        "checkedAt": "2026-09-14",
+        "verification": "confirmed"
+      }
+    ],
+    "sourceIds": [
+      "utv2-20260914-34",
+      "utv2-20260914-35",
+      "utv2-20260914-36",
+      "demo-route"
+    ],
+    "checkedAt": "2026-09-14",
+    "caveats": [
+      "Butikken ligger i Dyre Halses gate, utenfor selve Solsiden kjøpesenter. Tilleggstjenester og søndagsåpning er ikke bekreftet."
+    ],
+    "travelTime": {
+      "walk": 7,
+      "bike": 3
+    },
+    "poiCategoryId": "supermarket"
+  },
+  {
+    "id": "leos-lekeland-trondheim",
+    "name": "Leo's Lekeland Trondheim",
+    "categoryId": "barn-oppvekst",
+    "coordinates": {
+      "lat": 63.44339470487315,
+      "lng": 10.428396381768284
+    },
+    "address": "Ladebekken 6",
+    "placeType": "Lekeland",
+    "aliases": [],
+    "status": "existing",
+    "summary": "Innendørs lekeland på Lade for aktiv lek og familiebesøk.",
+    "locationPrecision": "approximate",
+    "locationNote": "Kartpunktet viser adressen, ikke en kontrollert inngang.",
+    "facts": [
+      {
+        "id": "leos-lekeland-trondheim-f1",
+        "text": "Lekelandet legger til rette for blant annet løping, hopping og klatring innendørs.",
+        "sourceId": "utv2-20260914-37",
+        "checkedAt": "2026-09-14",
+        "verification": "confirmed"
+      },
+      {
+        "id": "leos-lekeland-trondheim-f2",
+        "text": "Har bistro og mulighet for å bestille barnebursdag.",
+        "sourceId": "utv2-20260914-37",
+        "checkedAt": "2026-09-14",
+        "verification": "confirmed"
+      }
+    ],
+    "sourceIds": [
+      "utv2-20260914-37",
+      "utv2-20260914-38",
+      "demo-route"
+    ],
+    "checkedAt": "2026-09-14",
+    "caveats": [
+      "Barn er under foresattes ansvar og kan ikke være alene i lekelandet. Besøk og bursdager følger lekelandets booking- og besøksvilkår."
+    ],
+    "travelTime": {
+      "walk": 12,
+      "bike": 6
+    }
+  },
+  {
+    "id": "lade-motor",
+    "name": "Lade Motor",
+    "categoryId": "barn-oppvekst",
+    "coordinates": {
+      "lat": 63.443679017389776,
+      "lng": 10.442126415185394
+    },
+    "address": "Håkon Magnussons gate 5",
+    "placeType": "Fritidstilbud",
+    "aliases": [],
+    "status": "existing",
+    "summary": "Kommunalt fritidstilbud for ungdom fra 13 år som vil delta fast i bilcross og mekanikk.",
+    "locationPrecision": "approximate",
+    "locationNote": "Kartpunktet viser adressen, ikke en kontrollert inngang.",
+    "facts": [
+      {
+        "id": "lade-motor-f1",
+        "text": "Ungdommene arbeider med service og reparasjon av løpsbiler på verkstedet og deltar i bilcrossløp i sesongen.",
+        "sourceId": "utv2-20260914-39",
+        "checkedAt": "2026-09-14",
+        "verification": "confirmed"
+      },
+      {
+        "id": "lade-motor-f2",
+        "text": "Tilbudet er for ungdom fra 13 år og bygger på fast deltakelse over tid; rekruttering skjer i samarbeid med skole, andre fritidstilbud eller Barne- og familietjenesten.",
+        "sourceId": "utv2-20260914-39",
+        "checkedAt": "2026-09-14",
+        "verification": "confirmed"
+      }
+    ],
+    "sourceIds": [
+      "utv2-20260914-39",
+      "utv-20260914-34",
+      "demo-route"
+    ],
+    "checkedAt": "2026-09-14",
+    "caveats": [
+      "Dette er en forpliktende aktivitet, ikke generell drop-in. Kontakt tilbudet for å avklare deltakelse.",
+      "Deler bygg med Lade fritidsklubb, men har andre besøks- og deltakelsesvilkår."
+    ],
+    "travelTime": {
+      "walk": 23,
+      "bike": 8
+    }
+  },
+  {
+    "id": "solsiden-senter",
+    "name": "Solsiden senter",
+    "categoryId": "hverdagsliv",
+    "address": "Beddingen 10",
+    "placeType": "Kjøpesenter",
+    "icon": "Store",
+    "aliases": [
+      "kjøpesenter",
+      "kjøpesentre"
+    ],
+    "status": "existing",
+    "summary": "Kjøpesenter på Solsiden med dagligvarer, apotek, klær og steder for kaffe og bakst.",
+    "locationPrecision": "approximate",
+    "locationNote": "Kartpunktet viser adressen, ikke en kontrollert inngang.",
+    "facts": [
+      {
+        "id": "solsiden-senter-handel-f1",
+        "text": "MENY, Apotek 1 og Vinmonopolet ligger på Solsiden senter.",
+        "sourceId": "handel-20260914-01",
+        "checkedAt": "2026-09-14",
+        "verification": "confirmed"
+      },
+      {
+        "id": "solsiden-senter-handel-f2",
+        "text": "Godt Brød og Dromedar gir mulighet for en kafépause, og senteret har også H&M.",
+        "sourceId": "handel-20260914-01",
+        "checkedAt": "2026-09-14",
+        "verification": "confirmed"
+      }
+    ],
+    "sourceIds": [
+      "handel-20260914-01",
+      "utv2-20260914-33",
+      "demo-route",
+      "handel-20260914-16"
+    ],
+    "checkedAt": "2026-09-14",
+    "caveats": [],
+    "coordinates": {
+      "lat": 63.43523563981423,
+      "lng": 10.412095335856362
+    },
+    "poiCategoryId": "shopping",
+    "anchorSummary": "Kjøpesenter på Solsiden med dagligvarer, apotek, klær og steder for kaffe og bakst.",
+    "travelTime": {
+      "walk": 11,
+      "bike": 7
+    }
+  },
+  {
+    "id": "city-lade",
+    "name": "City Lade",
+    "categoryId": "hverdagsliv",
+    "address": "Haakon VII's gate 9",
+    "placeType": "Kjøpesenter",
+    "icon": "Store",
+    "aliases": [
+      "kjøpesenter",
+      "kjøpesentre"
+    ],
+    "status": "existing",
+    "summary": "Kjøpesenter på Lade med dagligvarer, apotek, klær, sports- og barneutstyr og bakeri.",
+    "locationPrecision": "approximate",
+    "locationNote": "Kartpunktet viser adressen, ikke en kontrollert inngang.",
+    "facts": [
+      {
+        "id": "city-lade-handel-f1",
+        "text": "Obs Stormarked og Apotek 1 ligger i andre etasje på City Lade.",
+        "sourceId": "handel-20260914-02",
+        "checkedAt": "2026-09-14",
+        "verification": "confirmed"
+      },
+      {
+        "id": "city-lade-handel-f2",
+        "text": "Senteret har blant annet Anton Sport, Barnas Hus og Rosenborg Bakeri.",
+        "sourceId": "handel-20260914-02",
+        "checkedAt": "2026-09-14",
+        "verification": "confirmed"
+      }
+    ],
+    "sourceIds": [
+      "handel-20260914-02",
+      "handel-20260914-03",
+      "demo-route",
+      "handel-20260914-17"
+    ],
+    "checkedAt": "2026-09-14",
+    "caveats": [],
+    "coordinates": {
+      "lat": 63.444122138837024,
+      "lng": 10.448084301592935
+    },
+    "poiCategoryId": "shopping",
+    "anchorSummary": "Kjøpesenter på Lade med dagligvarer, apotek, klær, sports- og barneutstyr og bakeri.",
+    "travelTime": {
+      "walk": 27,
+      "bike": 10
+    }
+  },
+  {
+    "id": "trondheim-torg",
+    "name": "Trondheim Torg",
+    "categoryId": "hverdagsliv",
+    "address": "Kongens gate 9",
+    "placeType": "Kjøpesenter",
+    "icon": "Store",
+    "aliases": [
+      "kjøpesenter",
+      "kjøpesentre"
+    ],
+    "status": "existing",
+    "summary": "Kjøpesenter i Midtbyen med klær, apotek, bøker, leker, utstyr til hjemmet og kafé.",
+    "locationPrecision": "approximate",
+    "locationNote": "Kartpunktet viser adressen, ikke en kontrollert inngang.",
+    "facts": [
+      {
+        "id": "trondheim-torg-handel-f1",
+        "text": "På Trondheim Torg finner du blant annet Vitusapotek, H&M, ARK, Lekia, Clas Ohlson og Jordbærpikene.",
+        "sourceId": "handel-20260914-04",
+        "checkedAt": "2026-09-14",
+        "verification": "confirmed"
+      },
+      {
+        "id": "trondheim-torg-handel-f2",
+        "text": "Utvalgte butikker på Trondheim Torg tilbyr klikk og hent.",
+        "sourceId": "handel-20260914-06",
+        "checkedAt": "2026-09-14",
+        "verification": "confirmed"
+      }
+    ],
+    "sourceIds": [
+      "handel-20260914-04",
+      "handel-20260914-05",
+      "handel-20260914-06",
+      "handel-20260914-07",
+      "demo-route",
+      "handel-20260914-18"
+    ],
+    "checkedAt": "2026-09-14",
+    "caveats": [],
+    "coordinates": {
+      "lat": 63.430362235801326,
+      "lng": 10.39371788317803
+    },
+    "poiCategoryId": "shopping",
+    "anchorSummary": "Kjøpesenter i Midtbyen med klær, apotek, bøker, leker, utstyr til hjemmet og kafé.",
+    "travelTime": {
+      "walk": 26,
+      "bike": 9
+    }
+  },
+  {
+    "id": "sirkus-shopping",
+    "name": "Sirkus Shopping",
+    "categoryId": "hverdagsliv",
+    "address": "Falkenborgvegen 1",
+    "placeType": "Kjøpesenter",
+    "icon": "Store",
+    "aliases": [
+      "kjøpesenter",
+      "kjøpesentre"
+    ],
+    "status": "existing",
+    "summary": "Kjøpesenter med dagligvarer, apotek, klær og servering, samt posttjenester og stellerom.",
+    "locationPrecision": "approximate",
+    "locationNote": "Kartpunktet viser adressen, ikke en kontrollert inngang.",
+    "facts": [
+      {
+        "id": "sirkus-shopping-handel-f1",
+        "text": "Coop Mega, Vitusapotek, Cubus, Clas Ohlson, Vinmonopolet og Dromedar er blant virksomhetene på Sirkus Shopping.",
+        "sourceId": "handel-20260914-08",
+        "checkedAt": "2026-09-14",
+        "verification": "confirmed"
+      },
+      {
+        "id": "sirkus-shopping-handel-f2",
+        "text": "Ved Informasjonen på P1 finnes posttjenester, og senteret oppgir stellerom og ammesone ved Informasjonen.",
+        "sourceId": "handel-20260914-09",
+        "checkedAt": "2026-09-14",
+        "verification": "confirmed"
+      }
+    ],
+    "sourceIds": [
+      "handel-20260914-08",
+      "handel-20260914-09",
+      "handel-20260914-10",
+      "demo-route",
+      "handel-20260914-19"
+    ],
+    "checkedAt": "2026-09-14",
+    "caveats": [],
+    "coordinates": {
+      "lat": 63.43678643857908,
+      "lng": 10.45502433980722
+    },
+    "poiCategoryId": "shopping",
+    "anchorSummary": "Kjøpesenter med dagligvarer, apotek, klær og servering, samt posttjenester og stellerom.",
+    "travelTime": {
+      "walk": 34,
+      "bike": 13
+    }
+  },
+  {
+    "id": "obs-city-lade",
+    "name": "Obs City Lade",
+    "categoryId": "hverdagsliv",
+    "address": "Haakon VIIs gate 9",
+    "placeType": "Dagligvare",
+    "icon": "ShoppingCart",
+    "aliases": [
+      "dagligvare",
+      "dagligvarer",
+      "matbutikk",
+      "dagligvarebutikk"
+    ],
+    "status": "existing",
+    "summary": "Stormarked på City Lade hvor matinnkjøp kan kombineres med klær, sko og varer til hjemmet.",
+    "locationPrecision": "approximate",
+    "locationNote": "Kartpunktet og reisetiden viser City Lade, ikke butikkens interne inngang.",
+    "facts": [
+      {
+        "id": "obs-city-lade-handel-f1",
+        "text": "Obs Stormarked ligger i andre etasje på City Lade.",
+        "sourceId": "handel-20260914-02",
+        "checkedAt": "2026-09-14",
+        "verification": "confirmed"
+      },
+      {
+        "id": "obs-city-lade-handel-f2",
+        "text": "Vareutvalget omfatter mat, klær, sko og artikler til hjemmet.",
+        "sourceId": "handel-20260914-02",
+        "checkedAt": "2026-09-14",
+        "verification": "confirmed"
+      }
+    ],
+    "sourceIds": [
+      "handel-20260914-02",
+      "handel-20260914-11",
+      "demo-route",
+      "handel-20260914-03",
+      "handel-20260914-17"
+    ],
+    "checkedAt": "2026-09-14",
+    "caveats": [
+      "Utvalget av enkeltvarer kan variere."
+    ],
+    "poiCategoryId": "supermarket",
+    "parentPlaceId": "city-lade",
+    "coordinates": {
+      "lat": 63.444122138837024,
+      "lng": 10.448084301592935
+    },
+    "travelTime": {
+      "walk": 27,
+      "bike": 10
+    }
+  },
+  {
+    "id": "coop-mega-sirkus",
+    "name": "Coop Mega Sirkus Shopping",
+    "categoryId": "hverdagsliv",
+    "address": "Falkenborgvegen 9",
+    "placeType": "Dagligvare",
+    "icon": "ShoppingCart",
+    "aliases": [
+      "dagligvare",
+      "dagligvarer",
+      "matbutikk",
+      "dagligvarebutikk"
+    ],
+    "status": "existing",
+    "summary": "Matbutikk i første etasje på Sirkus Shopping, med andre butikker og spisesteder i samme senter.",
+    "locationPrecision": "approximate",
+    "locationNote": "Kartpunktet og reisetiden viser Sirkus Shopping, ikke butikkens interne inngang.",
+    "facts": [
+      {
+        "id": "coop-mega-sirkus-handel-f1",
+        "text": "Coop Mega ligger i første etasje på Sirkus Shopping.",
+        "sourceId": "handel-20260914-10",
+        "checkedAt": "2026-09-14",
+        "verification": "confirmed"
+      },
+      {
+        "id": "coop-mega-sirkus-handel-f2",
+        "text": "Matinnkjøpet kan kombineres med andre butikker, restauranter og servicetilbud på samme senter.",
+        "sourceId": "handel-20260914-10",
+        "checkedAt": "2026-09-14",
+        "verification": "confirmed"
+      }
+    ],
+    "sourceIds": [
+      "handel-20260914-10",
+      "handel-20260914-12",
+      "demo-route",
+      "handel-20260914-08",
+      "handel-20260914-09",
+      "handel-20260914-19"
+    ],
+    "checkedAt": "2026-09-14",
+    "caveats": [],
+    "poiCategoryId": "supermarket",
+    "parentPlaceId": "sirkus-shopping",
+    "coordinates": {
+      "lat": 63.43678643857908,
+      "lng": 10.45502433980722
+    },
+    "travelTime": {
+      "walk": 34,
+      "bike": 13
+    }
+  },
+  {
+    "id": "rema-1000-torvet",
+    "name": "REMA 1000 Torvet",
+    "categoryId": "hverdagsliv",
+    "address": "Munkegata 22",
+    "placeType": "Dagligvare",
+    "icon": "ShoppingCart",
+    "aliases": [
+      "dagligvare",
+      "dagligvarer",
+      "matbutikk",
+      "dagligvarebutikk"
+    ],
+    "status": "existing",
+    "summary": "Dagligvarebutikk rett utenfor hovedinngangen til Trondheim Torg, relevant når man gjør ærender i Midtbyen.",
+    "locationPrecision": "approximate",
+    "locationNote": "Kartpunktet viser adressen, ikke en kontrollert inngang.",
+    "facts": [
+      {
+        "id": "rema-1000-torvet-handel-f1",
+        "text": "Butikken ligger rett utenfor hovedinngangen til Trondheim Torg.",
+        "sourceId": "handel-20260914-07",
+        "checkedAt": "2026-09-14",
+        "verification": "confirmed"
+      },
+      {
+        "id": "rema-1000-torvet-handel-f2",
+        "text": "Butikkpresentasjonen beskriver frukt og grønnsaker, ferske bakervarer, drikke og lunsjvarer.",
+        "sourceId": "handel-20260914-07",
+        "checkedAt": "2026-09-14",
+        "verification": "confirmed"
+      }
+    ],
+    "sourceIds": [
+      "handel-20260914-07",
+      "utv2-20260914-34",
+      "demo-route",
+      "handel-20260914-20"
+    ],
+    "checkedAt": "2026-09-14",
+    "caveats": [],
+    "coordinates": {
+      "lat": 63.43001133617458,
+      "lng": 10.394722936721704
+    },
+    "poiCategoryId": "supermarket",
+    "travelTime": {
+      "walk": 25,
+      "bike": 9
+    }
+  },
+  {
+    "id": "bunnpris-buran",
+    "name": "Bunnpris Buran",
+    "categoryId": "hverdagsliv",
+    "address": "Ulstadløkkveien 5",
+    "placeType": "Dagligvare",
+    "icon": "ShoppingCart",
+    "aliases": [
+      "dagligvare",
+      "dagligvarer",
+      "matbutikk",
+      "dagligvarebutikk"
+    ],
+    "status": "existing",
+    "summary": "Dagligvarebutikk på Buran hvor man også kan bruke Post i butikk.",
+    "locationPrecision": "approximate",
+    "locationNote": "Kartpunktet viser adressen, ikke en kontrollert inngang.",
+    "facts": [
+      {
+        "id": "bunnpris-buran-handel-f1",
+        "text": "Bunnpris Buran ligger i Ulstadløkkveien 5.",
+        "sourceId": "handel-20260914-13",
+        "checkedAt": "2026-09-14",
+        "verification": "confirmed"
+      },
+      {
+        "id": "bunnpris-buran-handel-f2",
+        "text": "Butikken oppgir Post i butikk blant sine tjenester.",
+        "sourceId": "handel-20260914-13",
+        "checkedAt": "2026-09-14",
+        "verification": "confirmed"
+      }
+    ],
+    "sourceIds": [
+      "handel-20260914-13",
+      "demo-route",
+      "handel-20260914-21"
+    ],
+    "checkedAt": "2026-09-14",
+    "caveats": [
+      "Sjekk hentemeldingen for hvor en konkret sending skal hentes."
+    ],
+    "coordinates": {
+      "lat": 63.43685740294828,
+      "lng": 10.4241627656946
+    },
+    "poiCategoryId": "supermarket",
+    "travelTime": {
+      "walk": 10,
+      "bike": 4
+    }
+  },
+  {
+    "id": "bunnpris-lade",
+    "name": "Bunnpris Lade",
+    "categoryId": "hverdagsliv",
+    "address": "Håkon Magnussons gate 3",
+    "placeType": "Dagligvare",
+    "icon": "ShoppingCart",
+    "aliases": [
+      "dagligvare",
+      "dagligvarer",
+      "matbutikk",
+      "dagligvarebutikk"
+    ],
+    "status": "existing",
+    "summary": "Dagligvarebutikk på Lade med PostNord-tjeneste i samme butikk.",
+    "locationPrecision": "approximate",
+    "locationNote": "Omtrentlig butikkpunkt fra Placy-databasen; inngangen er ikke kontrollert.",
+    "facts": [
+      {
+        "id": "bunnpris-lade-handel-f1",
+        "text": "Bunnpris Lade ligger i Håkon Magnussons gate 3.",
+        "sourceId": "handel-20260914-14",
+        "checkedAt": "2026-09-14",
+        "verification": "confirmed"
+      },
+      {
+        "id": "bunnpris-lade-handel-f2",
+        "text": "Butikken oppgir PostNord blant sine tjenester.",
+        "sourceId": "handel-20260914-14",
+        "checkedAt": "2026-09-14",
+        "verification": "confirmed"
+      }
+    ],
+    "sourceIds": [
+      "handel-20260914-14",
+      "demo-route"
+    ],
+    "checkedAt": "2026-09-14",
+    "caveats": [
+      "Sjekk hentemeldingen for hvor en konkret sending skal hentes."
+    ],
+    "poiCategoryId": "supermarket",
+    "coordinates": {
+      "lat": 63.4442813,
+      "lng": 10.4403128
+    },
+    "provenance": {
+      "provider": "supabase",
+      "recordId": "google-ChIJCzDwmgUxbUYRbM0LlUcPfu0",
+      "importedAt": "2026-09-14"
+    },
+    "travelTime": {
+      "walk": 22,
+      "bike": 8
+    }
+  },
+  {
+    "id": "extra-lilleby",
+    "name": "Extra Lilleby",
+    "categoryId": "hverdagsliv",
+    "address": "Stjørdalsveien 4",
+    "placeType": "Dagligvare",
+    "icon": "ShoppingCart",
+    "aliases": [
+      "dagligvare",
+      "dagligvarer",
+      "matbutikk",
+      "dagligvarebutikk"
+    ],
+    "status": "existing",
+    "summary": "Dagligvarebutikk på Lilleby med PostNord-tjeneste, som gjør det mulig å kombinere handling med pakkehenting.",
+    "locationPrecision": "approximate",
+    "locationNote": "Kartpunktet viser adressen, ikke en kontrollert inngang.",
+    "facts": [
+      {
+        "id": "extra-lilleby-handel-f1",
+        "text": "Extra Lilleby ligger i Stjørdalsveien 4.",
+        "sourceId": "handel-20260914-15",
+        "checkedAt": "2026-09-14",
+        "verification": "confirmed"
+      },
+      {
+        "id": "extra-lilleby-handel-f2",
+        "text": "PostNord er oppført som en tjeneste i butikken.",
+        "sourceId": "handel-20260914-15",
+        "checkedAt": "2026-09-14",
+        "verification": "confirmed"
+      }
+    ],
+    "sourceIds": [
+      "handel-20260914-15",
+      "demo-route",
+      "handel-20260914-22"
+    ],
+    "checkedAt": "2026-09-14",
+    "caveats": [
+      "Sjekk hentemeldingen for hvor en konkret sending skal hentes."
+    ],
+    "coordinates": {
+      "lat": 63.441918147691474,
+      "lng": 10.435742622554173
+    },
+    "poiCategoryId": "supermarket",
+    "travelTime": {
+      "walk": 16,
+      "bike": 5
+    }
+  },
+  {
+    "id": "h-m-solsiden",
+    "name": "H&M Solsiden",
+    "categoryId": "hverdagsliv",
+    "address": "Beddingen 10",
+    "coordinates": {
+      "lat": 63.43523563981423,
+      "lng": 10.412095335856362
+    },
+    "placeType": "Klær",
+    "icon": "Store",
+    "aliases": [],
+    "status": "existing",
+    "summary": "Klær på Solsiden senter.",
+    "travelTime": {
+      "walk": 11,
+      "bike": 7
+    },
+    "locationPrecision": "approximate",
+    "locationNote": "Kartpunktet og reisetiden viser Solsiden senter, ikke butikkens interne inngang.",
+    "facts": [
+      {
+        "id": "h-m-solsiden-sentermedlemskap",
+        "text": "H&M Solsiden ligger i Solsiden senter.",
+        "sourceId": "handel-20260914-01",
+        "checkedAt": "2026-09-14",
+        "verification": "confirmed"
+      }
+    ],
+    "sourceIds": [
+      "handel-20260914-01",
+      "utv2-20260914-33",
+      "demo-route",
+      "handel-20260914-16"
+    ],
+    "checkedAt": "2026-09-14",
+    "caveats": [],
+    "parentPlaceId": "solsiden-senter",
+    "poiCategoryId": "butikk"
+  },
+  {
+    "id": "apotek-1-city-lade",
+    "name": "Apotek 1 City Lade",
+    "categoryId": "hverdagsliv",
+    "address": "Haakon VII's gate 9",
+    "coordinates": {
+      "lat": 63.444122138837024,
+      "lng": 10.448084301592935
+    },
+    "placeType": "Apotek",
+    "icon": "Pill",
+    "aliases": [],
+    "status": "existing",
+    "summary": "Apotek på City Lade.",
+    "travelTime": {
+      "walk": 27,
+      "bike": 10
+    },
+    "locationPrecision": "approximate",
+    "locationNote": "Kartpunktet og reisetiden viser City Lade, ikke butikkens interne inngang.",
+    "facts": [
+      {
+        "id": "apotek-1-city-lade-sentermedlemskap",
+        "text": "Apotek 1 City Lade ligger i City Lade.",
+        "sourceId": "handel-20260914-02",
+        "checkedAt": "2026-09-14",
+        "verification": "confirmed"
+      }
+    ],
+    "sourceIds": [
+      "handel-20260914-02",
+      "handel-20260914-03",
+      "demo-route",
+      "handel-20260914-17"
+    ],
+    "checkedAt": "2026-09-14",
+    "caveats": [],
+    "parentPlaceId": "city-lade",
+    "poiCategoryId": "pharmacy"
+  },
+  {
+    "id": "rosenborg-bakeri-city-lade",
+    "name": "Rosenborg Bakeri City Lade",
+    "categoryId": "mat-drikke",
+    "address": "Haakon VII's gate 9",
+    "coordinates": {
+      "lat": 63.444122138837024,
+      "lng": 10.448084301592935
+    },
+    "placeType": "Bakeri og kafé",
+    "icon": "Croissant",
+    "aliases": [],
+    "status": "existing",
+    "summary": "Bakeri og kafé på City Lade.",
+    "travelTime": {
+      "walk": 27,
+      "bike": 10
+    },
+    "locationPrecision": "approximate",
+    "locationNote": "Kartpunktet og reisetiden viser City Lade, ikke butikkens interne inngang.",
+    "facts": [
+      {
+        "id": "rosenborg-bakeri-city-lade-sentermedlemskap",
+        "text": "Rosenborg Bakeri City Lade ligger i City Lade.",
+        "sourceId": "handel-20260914-02",
+        "checkedAt": "2026-09-14",
+        "verification": "confirmed"
+      }
+    ],
+    "sourceIds": [
+      "handel-20260914-02",
+      "handel-20260914-03",
+      "demo-route",
+      "handel-20260914-17"
+    ],
+    "checkedAt": "2026-09-14",
+    "caveats": [],
+    "parentPlaceId": "city-lade",
+    "poiCategoryId": "bakery"
+  },
+  {
+    "id": "b-young-city-lade",
+    "name": "B.young City Lade",
+    "categoryId": "hverdagsliv",
+    "address": "Haakon VII's gate 9",
+    "coordinates": {
+      "lat": 63.444122138837024,
+      "lng": 10.448084301592935
+    },
+    "placeType": "Klær",
+    "icon": "Store",
+    "aliases": [],
+    "status": "existing",
+    "summary": "Klær på City Lade.",
+    "travelTime": {
+      "walk": 27,
+      "bike": 10
+    },
+    "locationPrecision": "approximate",
+    "locationNote": "Kartpunktet og reisetiden viser City Lade, ikke butikkens interne inngang.",
+    "facts": [
+      {
+        "id": "b-young-city-lade-sentermedlemskap",
+        "text": "B.young City Lade ligger i City Lade.",
+        "sourceId": "handel-20260914-02",
+        "checkedAt": "2026-09-14",
+        "verification": "confirmed"
+      }
+    ],
+    "sourceIds": [
+      "handel-20260914-02",
+      "handel-20260914-03",
+      "demo-route",
+      "handel-20260914-17"
+    ],
+    "checkedAt": "2026-09-14",
+    "caveats": [],
+    "parentPlaceId": "city-lade",
+    "poiCategoryId": "butikk"
+  },
+  {
+    "id": "barnas-hus-city-lade",
+    "name": "Barnas Hus City Lade",
+    "categoryId": "hverdagsliv",
+    "address": "Haakon VII's gate 9",
+    "coordinates": {
+      "lat": 63.444122138837024,
+      "lng": 10.448084301592935
+    },
+    "placeType": "Barneutstyr og barneklær",
+    "icon": "Store",
+    "aliases": [],
+    "status": "existing",
+    "summary": "Barneutstyr og barneklær på City Lade.",
+    "travelTime": {
+      "walk": 27,
+      "bike": 10
+    },
+    "locationPrecision": "approximate",
+    "locationNote": "Kartpunktet og reisetiden viser City Lade, ikke butikkens interne inngang.",
+    "facts": [
+      {
+        "id": "barnas-hus-city-lade-sentermedlemskap",
+        "text": "Barnas Hus City Lade ligger i City Lade.",
+        "sourceId": "handel-20260914-02",
+        "checkedAt": "2026-09-14",
+        "verification": "confirmed"
+      }
+    ],
+    "sourceIds": [
+      "handel-20260914-02",
+      "handel-20260914-03",
+      "demo-route",
+      "handel-20260914-17"
+    ],
+    "checkedAt": "2026-09-14",
+    "caveats": [],
+    "parentPlaceId": "city-lade",
+    "poiCategoryId": "butikk"
+  },
+  {
+    "id": "anton-sport-city-lade",
+    "name": "Anton Sport City Lade",
+    "categoryId": "hverdagsliv",
+    "address": "Haakon VII's gate 9",
+    "coordinates": {
+      "lat": 63.444122138837024,
+      "lng": 10.448084301592935
+    },
+    "placeType": "Sportsbutikk",
+    "icon": "Store",
+    "aliases": [],
+    "status": "existing",
+    "summary": "Sportsbutikk på City Lade.",
+    "travelTime": {
+      "walk": 27,
+      "bike": 10
+    },
+    "locationPrecision": "approximate",
+    "locationNote": "Kartpunktet og reisetiden viser City Lade, ikke butikkens interne inngang.",
+    "facts": [
+      {
+        "id": "anton-sport-city-lade-sentermedlemskap",
+        "text": "Anton Sport City Lade ligger i City Lade.",
+        "sourceId": "handel-20260914-02",
+        "checkedAt": "2026-09-14",
+        "verification": "confirmed"
+      }
+    ],
+    "sourceIds": [
+      "handel-20260914-02",
+      "handel-20260914-03",
+      "demo-route",
+      "handel-20260914-17"
+    ],
+    "checkedAt": "2026-09-14",
+    "caveats": [],
+    "parentPlaceId": "city-lade",
+    "poiCategoryId": "butikk"
+  },
+  {
+    "id": "vitusapotek-trondheim-torg",
+    "name": "Vitusapotek Trondheim Torg",
+    "categoryId": "hverdagsliv",
+    "address": "Kongens gate 9",
+    "coordinates": {
+      "lat": 63.430362235801326,
+      "lng": 10.39371788317803
+    },
+    "placeType": "Apotek",
+    "icon": "Pill",
+    "aliases": [],
+    "status": "existing",
+    "summary": "Apotek på Trondheim Torg.",
+    "travelTime": {
+      "walk": 26,
+      "bike": 9
+    },
+    "locationPrecision": "approximate",
+    "locationNote": "Kartpunktet og reisetiden viser Trondheim Torg, ikke butikkens interne inngang.",
+    "facts": [
+      {
+        "id": "vitusapotek-trondheim-torg-sentermedlemskap",
+        "text": "Vitusapotek Trondheim Torg ligger i Trondheim Torg.",
+        "sourceId": "handel-20260914-04",
+        "checkedAt": "2026-09-14",
+        "verification": "confirmed"
+      }
+    ],
+    "sourceIds": [
+      "handel-20260914-04",
+      "handel-20260914-05",
+      "handel-20260914-06",
+      "handel-20260914-07",
+      "demo-route",
+      "handel-20260914-18"
+    ],
+    "checkedAt": "2026-09-14",
+    "caveats": [],
+    "parentPlaceId": "trondheim-torg",
+    "poiCategoryId": "pharmacy"
+  },
+  {
+    "id": "h-m-trondheim-torg",
+    "name": "H&M Trondheim Torg",
+    "categoryId": "hverdagsliv",
+    "address": "Kongens gate 9",
+    "coordinates": {
+      "lat": 63.430362235801326,
+      "lng": 10.39371788317803
+    },
+    "placeType": "Klær",
+    "icon": "Store",
+    "aliases": [],
+    "status": "existing",
+    "summary": "Klær på Trondheim Torg.",
+    "travelTime": {
+      "walk": 26,
+      "bike": 9
+    },
+    "locationPrecision": "approximate",
+    "locationNote": "Kartpunktet og reisetiden viser Trondheim Torg, ikke butikkens interne inngang.",
+    "facts": [
+      {
+        "id": "h-m-trondheim-torg-sentermedlemskap",
+        "text": "H&M Trondheim Torg ligger i Trondheim Torg.",
+        "sourceId": "handel-20260914-04",
+        "checkedAt": "2026-09-14",
+        "verification": "confirmed"
+      }
+    ],
+    "sourceIds": [
+      "handel-20260914-04",
+      "handel-20260914-05",
+      "handel-20260914-06",
+      "handel-20260914-07",
+      "demo-route",
+      "handel-20260914-18"
+    ],
+    "checkedAt": "2026-09-14",
+    "caveats": [],
+    "parentPlaceId": "trondheim-torg",
+    "poiCategoryId": "butikk"
+  },
+  {
+    "id": "ark-trondheim-torg",
+    "name": "ARK Trondheim Torg",
+    "categoryId": "hverdagsliv",
+    "address": "Kongens gate 9",
+    "coordinates": {
+      "lat": 63.430362235801326,
+      "lng": 10.39371788317803
+    },
+    "placeType": "Bokhandel",
+    "icon": "Store",
+    "aliases": [],
+    "status": "existing",
+    "summary": "Bokhandel på Trondheim Torg.",
+    "travelTime": {
+      "walk": 26,
+      "bike": 9
+    },
+    "locationPrecision": "approximate",
+    "locationNote": "Kartpunktet og reisetiden viser Trondheim Torg, ikke butikkens interne inngang.",
+    "facts": [
+      {
+        "id": "ark-trondheim-torg-sentermedlemskap",
+        "text": "ARK Trondheim Torg ligger i Trondheim Torg.",
+        "sourceId": "handel-20260914-04",
+        "checkedAt": "2026-09-14",
+        "verification": "confirmed"
+      }
+    ],
+    "sourceIds": [
+      "handel-20260914-04",
+      "handel-20260914-05",
+      "handel-20260914-06",
+      "handel-20260914-07",
+      "demo-route",
+      "handel-20260914-18"
+    ],
+    "checkedAt": "2026-09-14",
+    "caveats": [],
+    "parentPlaceId": "trondheim-torg",
+    "poiCategoryId": "butikk"
+  },
+  {
+    "id": "lekia-trondheim-torg",
+    "name": "Lekia Trondheim Torg",
+    "categoryId": "hverdagsliv",
+    "address": "Kongens gate 9",
+    "coordinates": {
+      "lat": 63.430362235801326,
+      "lng": 10.39371788317803
+    },
+    "placeType": "Lekebutikk",
+    "icon": "Store",
+    "aliases": [],
+    "status": "existing",
+    "summary": "Lekebutikk på Trondheim Torg.",
+    "travelTime": {
+      "walk": 26,
+      "bike": 9
+    },
+    "locationPrecision": "approximate",
+    "locationNote": "Kartpunktet og reisetiden viser Trondheim Torg, ikke butikkens interne inngang.",
+    "facts": [
+      {
+        "id": "lekia-trondheim-torg-sentermedlemskap",
+        "text": "Lekia Trondheim Torg ligger i Trondheim Torg.",
+        "sourceId": "handel-20260914-04",
+        "checkedAt": "2026-09-14",
+        "verification": "confirmed"
+      }
+    ],
+    "sourceIds": [
+      "handel-20260914-04",
+      "handel-20260914-05",
+      "handel-20260914-06",
+      "handel-20260914-07",
+      "demo-route",
+      "handel-20260914-18"
+    ],
+    "checkedAt": "2026-09-14",
+    "caveats": [],
+    "parentPlaceId": "trondheim-torg",
+    "poiCategoryId": "butikk"
+  },
+  {
+    "id": "clas-ohlson-trondheim-torg",
+    "name": "Clas Ohlson Trondheim Torg",
+    "categoryId": "hverdagsliv",
+    "address": "Kongens gate 9",
+    "coordinates": {
+      "lat": 63.430362235801326,
+      "lng": 10.39371788317803
+    },
+    "placeType": "Utstyr til hjemmet",
+    "icon": "Store",
+    "aliases": [],
+    "status": "existing",
+    "summary": "Utstyr til hjemmet på Trondheim Torg.",
+    "travelTime": {
+      "walk": 26,
+      "bike": 9
+    },
+    "locationPrecision": "approximate",
+    "locationNote": "Kartpunktet og reisetiden viser Trondheim Torg, ikke butikkens interne inngang.",
+    "facts": [
+      {
+        "id": "clas-ohlson-trondheim-torg-sentermedlemskap",
+        "text": "Clas Ohlson Trondheim Torg ligger i Trondheim Torg.",
+        "sourceId": "handel-20260914-04",
+        "checkedAt": "2026-09-14",
+        "verification": "confirmed"
+      }
+    ],
+    "sourceIds": [
+      "handel-20260914-04",
+      "handel-20260914-05",
+      "handel-20260914-06",
+      "handel-20260914-07",
+      "demo-route",
+      "handel-20260914-18"
+    ],
+    "checkedAt": "2026-09-14",
+    "caveats": [],
+    "parentPlaceId": "trondheim-torg",
+    "poiCategoryId": "butikk"
+  },
+  {
+    "id": "jordbaerpikene-trondheim-torg",
+    "name": "Jordbærpikene Trondheim Torg",
+    "categoryId": "mat-drikke",
+    "address": "Kongens gate 9",
+    "coordinates": {
+      "lat": 63.430362235801326,
+      "lng": 10.39371788317803
+    },
+    "placeType": "Kafé",
+    "icon": "Coffee",
+    "aliases": [],
+    "status": "existing",
+    "summary": "Kafé på Trondheim Torg.",
+    "travelTime": {
+      "walk": 26,
+      "bike": 9
+    },
+    "locationPrecision": "approximate",
+    "locationNote": "Kartpunktet og reisetiden viser Trondheim Torg, ikke butikkens interne inngang.",
+    "facts": [
+      {
+        "id": "jordbaerpikene-trondheim-torg-sentermedlemskap",
+        "text": "Jordbærpikene Trondheim Torg ligger i Trondheim Torg.",
+        "sourceId": "handel-20260914-04",
+        "checkedAt": "2026-09-14",
+        "verification": "confirmed"
+      }
+    ],
+    "sourceIds": [
+      "handel-20260914-04",
+      "handel-20260914-05",
+      "handel-20260914-06",
+      "handel-20260914-07",
+      "demo-route",
+      "handel-20260914-18"
+    ],
+    "checkedAt": "2026-09-14",
+    "caveats": [],
+    "parentPlaceId": "trondheim-torg",
+    "poiCategoryId": "cafe"
+  },
+  {
+    "id": "vitusapotek-sirkus-shopping",
+    "name": "Vitusapotek Sirkus Shopping",
+    "categoryId": "hverdagsliv",
+    "address": "Falkenborgvegen 1",
+    "coordinates": {
+      "lat": 63.43678643857908,
+      "lng": 10.45502433980722
+    },
+    "placeType": "Apotek",
+    "icon": "Pill",
+    "aliases": [],
+    "status": "existing",
+    "summary": "Apotek på Sirkus Shopping.",
+    "travelTime": {
+      "walk": 34,
+      "bike": 13
+    },
+    "locationPrecision": "approximate",
+    "locationNote": "Kartpunktet og reisetiden viser Sirkus Shopping, ikke butikkens interne inngang.",
+    "facts": [
+      {
+        "id": "vitusapotek-sirkus-shopping-sentermedlemskap",
+        "text": "Vitusapotek Sirkus Shopping ligger i Sirkus Shopping.",
+        "sourceId": "handel-20260914-08",
+        "checkedAt": "2026-09-14",
+        "verification": "confirmed"
+      }
+    ],
+    "sourceIds": [
+      "handel-20260914-08",
+      "handel-20260914-09",
+      "handel-20260914-10",
+      "demo-route",
+      "handel-20260914-19"
+    ],
+    "checkedAt": "2026-09-14",
+    "caveats": [],
+    "parentPlaceId": "sirkus-shopping",
+    "poiCategoryId": "pharmacy"
+  },
+  {
+    "id": "dromedar-sirkus-shopping",
+    "name": "Dromedar Sirkus Shopping",
+    "categoryId": "mat-drikke",
+    "address": "Falkenborgvegen 1",
+    "coordinates": {
+      "lat": 63.43678643857908,
+      "lng": 10.45502433980722
+    },
+    "placeType": "Kaffebar",
+    "icon": "Coffee",
+    "aliases": [],
+    "status": "existing",
+    "summary": "Kaffebar på Sirkus Shopping.",
+    "travelTime": {
+      "walk": 34,
+      "bike": 13
+    },
+    "locationPrecision": "approximate",
+    "locationNote": "Kartpunktet og reisetiden viser Sirkus Shopping, ikke butikkens interne inngang.",
+    "facts": [
+      {
+        "id": "dromedar-sirkus-shopping-sentermedlemskap",
+        "text": "Dromedar Sirkus Shopping ligger i Sirkus Shopping.",
+        "sourceId": "handel-20260914-08",
+        "checkedAt": "2026-09-14",
+        "verification": "confirmed"
+      }
+    ],
+    "sourceIds": [
+      "handel-20260914-08",
+      "handel-20260914-09",
+      "handel-20260914-10",
+      "demo-route",
+      "handel-20260914-19"
+    ],
+    "checkedAt": "2026-09-14",
+    "caveats": [],
+    "parentPlaceId": "sirkus-shopping",
+    "poiCategoryId": "cafe"
+  },
+  {
+    "id": "cubus-sirkus-shopping",
+    "name": "Cubus Sirkus Shopping",
+    "categoryId": "hverdagsliv",
+    "address": "Falkenborgvegen 1",
+    "coordinates": {
+      "lat": 63.43678643857908,
+      "lng": 10.45502433980722
+    },
+    "placeType": "Klær",
+    "icon": "Store",
+    "aliases": [],
+    "status": "existing",
+    "summary": "Klær på Sirkus Shopping.",
+    "travelTime": {
+      "walk": 34,
+      "bike": 13
+    },
+    "locationPrecision": "approximate",
+    "locationNote": "Kartpunktet og reisetiden viser Sirkus Shopping, ikke butikkens interne inngang.",
+    "facts": [
+      {
+        "id": "cubus-sirkus-shopping-sentermedlemskap",
+        "text": "Cubus Sirkus Shopping ligger i Sirkus Shopping.",
+        "sourceId": "handel-20260914-08",
+        "checkedAt": "2026-09-14",
+        "verification": "confirmed"
+      }
+    ],
+    "sourceIds": [
+      "handel-20260914-08",
+      "handel-20260914-09",
+      "handel-20260914-10",
+      "demo-route",
+      "handel-20260914-19"
+    ],
+    "checkedAt": "2026-09-14",
+    "caveats": [],
+    "parentPlaceId": "sirkus-shopping",
+    "poiCategoryId": "butikk"
+  },
+  {
+    "id": "clas-ohlson-sirkus-shopping",
+    "name": "Clas Ohlson Sirkus Shopping",
+    "categoryId": "hverdagsliv",
+    "address": "Falkenborgvegen 1",
+    "coordinates": {
+      "lat": 63.43678643857908,
+      "lng": 10.45502433980722
+    },
+    "placeType": "Utstyr til hjemmet",
+    "icon": "Store",
+    "aliases": [],
+    "status": "existing",
+    "summary": "Utstyr til hjemmet på Sirkus Shopping.",
+    "travelTime": {
+      "walk": 34,
+      "bike": 13
+    },
+    "locationPrecision": "approximate",
+    "locationNote": "Kartpunktet og reisetiden viser Sirkus Shopping, ikke butikkens interne inngang.",
+    "facts": [
+      {
+        "id": "clas-ohlson-sirkus-shopping-sentermedlemskap",
+        "text": "Clas Ohlson Sirkus Shopping ligger i Sirkus Shopping.",
+        "sourceId": "handel-20260914-08",
+        "checkedAt": "2026-09-14",
+        "verification": "confirmed"
+      }
+    ],
+    "sourceIds": [
+      "handel-20260914-08",
+      "handel-20260914-09",
+      "handel-20260914-10",
+      "demo-route",
+      "handel-20260914-19"
+    ],
+    "checkedAt": "2026-09-14",
+    "caveats": [],
+    "parentPlaceId": "sirkus-shopping",
+    "poiCategoryId": "butikk"
+  },
+  {
+    "id": "vinmonopolet-sirkus-shopping",
+    "name": "Vinmonopolet Sirkus Shopping",
+    "categoryId": "hverdagsliv",
+    "address": "Falkenborgvegen 1",
+    "coordinates": {
+      "lat": 63.43678643857908,
+      "lng": 10.45502433980722
+    },
+    "placeType": "Vinmonopol",
+    "icon": "Wine",
+    "aliases": [],
+    "status": "existing",
+    "summary": "Vinmonopol på Sirkus Shopping.",
+    "travelTime": {
+      "walk": 34,
+      "bike": 13
+    },
+    "locationPrecision": "approximate",
+    "locationNote": "Kartpunktet og reisetiden viser Sirkus Shopping, ikke butikkens interne inngang.",
+    "facts": [
+      {
+        "id": "vinmonopolet-sirkus-shopping-sentermedlemskap",
+        "text": "Vinmonopolet Sirkus Shopping ligger i Sirkus Shopping.",
+        "sourceId": "handel-20260914-08",
+        "checkedAt": "2026-09-14",
+        "verification": "confirmed"
+      }
+    ],
+    "sourceIds": [
+      "handel-20260914-08",
+      "handel-20260914-09",
+      "handel-20260914-10",
+      "demo-route",
+      "handel-20260914-19"
+    ],
+    "checkedAt": "2026-09-14",
+    "caveats": [],
+    "parentPlaceId": "sirkus-shopping",
+    "poiCategoryId": "liquor_store"
+  },
+  {
+    "id": "lademoen-stasjon",
+    "name": "Lademoen stasjon",
+    "address": "Dyre Halses gate, Trondheim",
+    "categoryId": "transport",
+    "poiCategoryId": "train",
+    "placeType": "Togstasjon",
+    "icon": "TrainFront",
+    "aliases": [
+      "Lademoen togstasjon",
+      "Lademoen holdeplass",
+      "tog",
+      "togstasjon",
+      "Trønderbanen",
+      "R70"
+    ],
+    "coordinates": {
+      "lat": 63.437226,
+      "lng": 10.416702
+    },
+    "locationPrecision": "approximate",
+    "locationNote": "Stasjonspunkt fra Entur-importen i databasen. Bane NORs veibeskrivelsespunkt ligger omtrent 26 meter unna; kartpunktet er ikke en kontrollert plattforminngang.",
+    "status": "existing",
+    "summary": "Togstopp på Nordlandsbanen, med R70 og forbindelser mot Trondheim S og Steinkjer.",
+    "caveats": [
+      "Sjekk aktuell avgang og eventuelle avvik i Entur eller hos togselskapet."
+    ],
+    "checkedAt": "2026-09-14",
+    "provenance": {
+      "provider": "supabase",
+      "recordId": "entur-NSR-StopPlace-271",
+      "importedAt": "2026-09-14"
+    },
+    "facts": [
+      {
+        "id": "lademoen-stasjon-faktum-1",
+        "text": "Lademoen er en holdeplass på Nordlandsbanen, og Bane NOR oppgir R70 mellom Støren og Steinkjer.",
+        "sourceId": "transport-20260914-01",
+        "checkedAt": "2026-09-14",
+        "verification": "confirmed"
+      },
+      {
+        "id": "lademoen-stasjon-faktum-2",
+        "text": "Stasjonen ligger i Dyre Halses gate og har leskur.",
+        "sourceId": "transport-20260914-01",
+        "checkedAt": "2026-09-14",
+        "verification": "confirmed"
+      }
+    ],
+    "sourceIds": [
+      "transport-20260914-01",
+      "demo-route"
+    ],
+    "travelTime": {
+      "walk": 6,
+      "bike": 3
+    },
+    "enturStopplaceId": "NSR:StopPlace:271"
+  },
+  {
+    "id": "bysykkel-92",
+    "name": "Bysykkel Dora I",
+    "address": "Maskinistgata 1",
+    "categoryId": "transport",
+    "poiCategoryId": "bike",
+    "placeType": "Bysykkelstativ",
+    "icon": "Bike",
+    "aliases": [
+      "Dora I bysykkel",
+      "Trondheim Bysykkel: Dora I",
+      "bysykkel",
+      "bysykkelstativ",
+      "bysykler",
+      "leiesykkel"
+    ],
+    "coordinates": {
+      "lat": 63.43853720980968,
+      "lng": 10.419105291366577
+    },
+    "locationPrecision": "sourced",
+    "status": "existing",
+    "summary": "Bysykkelstativ i Maskinistgata 1 ved Byarkivet.",
+    "caveats": [
+      "Tilgangen på sykler og ledige stativer varierer; sjekk Bysykkel-appen før turen."
+    ],
+    "checkedAt": "2026-09-14",
+    "provenance": {
+      "provider": "supabase",
+      "recordId": "bysykkel-92",
+      "importedAt": "2026-09-14"
+    },
+    "facts": [
+      {
+        "id": "bysykkel-92-faktum-1",
+        "text": "Stativet ligger i Maskinistgata 1 ved Byarkivet.",
+        "sourceId": "transport-20260914-02",
+        "checkedAt": "2026-09-14",
+        "verification": "confirmed"
+      },
+      {
+        "id": "bysykkel-92-faktum-2",
+        "text": "Appen viser ledige sykler og stativer, og sykkelen kan leveres ved en annen bysykkelstasjon.",
+        "sourceId": "transport-20260914-03",
+        "checkedAt": "2026-09-14",
+        "verification": "confirmed"
+      }
+    ],
+    "sourceIds": [
+      "transport-20260914-02",
+      "transport-20260914-03",
+      "demo-route"
+    ],
+    "travelTime": {
+      "walk": 3,
+      "bike": 2
+    },
+    "bysykkelStationId": "92"
+  },
+  {
+    "id": "bysykkel-18",
+    "name": "Bysykkel Møllenberg",
+    "address": "Innherredsveien",
+    "categoryId": "transport",
+    "poiCategoryId": "bike",
+    "placeType": "Bysykkelstativ",
+    "icon": "Bike",
+    "aliases": [
+      "Møllenberg bysykkel",
+      "Trondheim Bysykkel: Møllenberg",
+      "bysykkel",
+      "bysykkelstativ",
+      "bysykler",
+      "leiesykkel"
+    ],
+    "coordinates": {
+      "lat": 63.43593538982745,
+      "lng": 10.419479162128454
+    },
+    "locationPrecision": "sourced",
+    "status": "existing",
+    "summary": "Bysykkelstativ langs Innherredsveien ved Kirkegata.",
+    "caveats": [
+      "Tilgangen på sykler og ledige stativer varierer; sjekk Bysykkel-appen før turen."
+    ],
+    "checkedAt": "2026-09-14",
+    "provenance": {
+      "provider": "supabase",
+      "recordId": "bysykkel-18",
+      "importedAt": "2026-09-14"
+    },
+    "facts": [
+      {
+        "id": "bysykkel-18-faktum-1",
+        "text": "Stativet ligger langs Innherredsveien ved Kirkegata.",
+        "sourceId": "transport-20260914-02",
+        "checkedAt": "2026-09-14",
+        "verification": "confirmed"
+      },
+      {
+        "id": "bysykkel-18-faktum-2",
+        "text": "Appen viser ledige sykler og stativer, og sykkelen kan leveres ved en annen bysykkelstasjon.",
+        "sourceId": "transport-20260914-03",
+        "checkedAt": "2026-09-14",
+        "verification": "confirmed"
+      }
+    ],
+    "sourceIds": [
+      "transport-20260914-02",
+      "transport-20260914-03",
+      "demo-route"
+    ],
+    "travelTime": {
+      "walk": 8,
+      "bike": 6
+    },
+    "bysykkelStationId": "18"
+  },
+  {
+    "id": "bysykkel-108",
+    "name": "Bysykkel Bassengbakken",
+    "address": "Dyre Halses 1",
+    "categoryId": "transport",
+    "poiCategoryId": "bike",
+    "placeType": "Bysykkelstativ",
+    "icon": "Bike",
+    "aliases": [
+      "Bassengbakken bysykkel",
+      "Trondheim Bysykkel: Bassengbakken",
+      "bysykkel",
+      "bysykkelstativ",
+      "bysykler",
+      "leiesykkel"
+    ],
+    "coordinates": {
+      "lat": 63.43592006472795,
+      "lng": 10.414788275957108
+    },
+    "locationPrecision": "sourced",
+    "status": "existing",
+    "summary": "Bysykkelstativ ved Rosenborgbassenget i Dyre Halses gate.",
+    "caveats": [
+      "Tilgangen på sykler og ledige stativer varierer; sjekk Bysykkel-appen før turen."
+    ],
+    "checkedAt": "2026-09-14",
+    "provenance": {
+      "provider": "supabase",
+      "recordId": "bysykkel-108",
+      "importedAt": "2026-09-14"
+    },
+    "facts": [
+      {
+        "id": "bysykkel-108-faktum-1",
+        "text": "Stativet ligger ved Rosenborgbassenget i Dyre Halses gate.",
+        "sourceId": "transport-20260914-02",
+        "checkedAt": "2026-09-14",
+        "verification": "confirmed"
+      },
+      {
+        "id": "bysykkel-108-faktum-2",
+        "text": "Appen viser ledige sykler og stativer, og sykkelen kan leveres ved en annen bysykkelstasjon.",
+        "sourceId": "transport-20260914-03",
+        "checkedAt": "2026-09-14",
+        "verification": "confirmed"
+      }
+    ],
+    "sourceIds": [
+      "transport-20260914-02",
+      "transport-20260914-03",
+      "demo-route"
+    ],
+    "travelTime": {
+      "walk": 8,
+      "bike": 5
+    },
+    "bysykkelStationId": "108"
+  },
+  {
+    "id": "bysykkel-7696",
+    "name": "Bysykkel Lademoparken",
+    "address": "Mellomveien",
+    "categoryId": "transport",
+    "poiCategoryId": "bike",
+    "placeType": "Bysykkelstativ",
+    "icon": "Bike",
+    "aliases": [
+      "Lademoparken bysykkel",
+      "Trondheim Bysykkel: Lademoparken",
+      "bysykkel",
+      "bysykkelstativ",
+      "bysykler",
+      "leiesykkel"
+    ],
+    "coordinates": {
+      "lat": 63.43670185062348,
+      "lng": 10.425908867370282
+    },
+    "locationPrecision": "sourced",
+    "status": "existing",
+    "summary": "Bysykkelstativ langs Mellomveien ved Lademoparken.",
+    "caveats": [
+      "Tilgangen på sykler og ledige stativer varierer; sjekk Bysykkel-appen før turen."
+    ],
+    "checkedAt": "2026-09-14",
+    "provenance": {
+      "provider": "supabase",
+      "recordId": "bysykkel-7696",
+      "importedAt": "2026-09-14"
+    },
+    "facts": [
+      {
+        "id": "bysykkel-7696-faktum-1",
+        "text": "Stativet ligger langs Mellomveien ved Lademoparken.",
+        "sourceId": "transport-20260914-02",
+        "checkedAt": "2026-09-14",
+        "verification": "confirmed"
+      },
+      {
+        "id": "bysykkel-7696-faktum-2",
+        "text": "Appen viser ledige sykler og stativer, og sykkelen kan leveres ved en annen bysykkelstasjon.",
+        "sourceId": "transport-20260914-03",
+        "checkedAt": "2026-09-14",
+        "verification": "confirmed"
+      }
+    ],
+    "sourceIds": [
+      "transport-20260914-02",
+      "transport-20260914-03",
+      "demo-route"
+    ],
+    "travelTime": {
+      "walk": 12,
+      "bike": 4
+    },
+    "bysykkelStationId": "7696"
+  },
+  {
+    "id": "bysykkel-85",
+    "name": "Bysykkel TMV-odden",
+    "address": "Beddingen 14",
+    "categoryId": "transport",
+    "poiCategoryId": "bike",
+    "placeType": "Bysykkelstativ",
+    "icon": "Bike",
+    "aliases": [
+      "TMV-odden bysykkel",
+      "Trondheim Bysykkel: TMV-odden",
+      "bysykkel",
+      "bysykkelstativ",
+      "bysykler",
+      "leiesykkel"
+    ],
+    "coordinates": {
+      "lat": 63.43547778770301,
+      "lng": 10.410569131581866
+    },
+    "locationPrecision": "sourced",
+    "status": "existing",
+    "summary": "Bysykkelstativ i Beddingen 14 ved snuplassen bak Una.",
+    "caveats": [
+      "Tilgangen på sykler og ledige stativer varierer; sjekk Bysykkel-appen før turen."
+    ],
+    "checkedAt": "2026-09-14",
+    "provenance": {
+      "provider": "supabase",
+      "recordId": "bysykkel-85",
+      "importedAt": "2026-09-14"
+    },
+    "facts": [
+      {
+        "id": "bysykkel-85-faktum-1",
+        "text": "Stativet ligger i Beddingen 14 ved snuplassen bak Una.",
+        "sourceId": "transport-20260914-02",
+        "checkedAt": "2026-09-14",
+        "verification": "confirmed"
+      },
+      {
+        "id": "bysykkel-85-faktum-2",
+        "text": "Appen viser ledige sykler og stativer, og sykkelen kan leveres ved en annen bysykkelstasjon.",
+        "sourceId": "transport-20260914-03",
+        "checkedAt": "2026-09-14",
+        "verification": "confirmed"
+      }
+    ],
+    "sourceIds": [
+      "transport-20260914-02",
+      "transport-20260914-03",
+      "demo-route"
+    ],
+    "travelTime": {
+      "walk": 11,
+      "bike": 6
+    },
+    "bysykkelStationId": "85"
+  },
+  {
+    "id": "bysykkel-65",
+    "name": "Bysykkel Strandveikaia",
+    "address": "Stiklestadveien 1",
+    "categoryId": "transport",
+    "poiCategoryId": "bike",
+    "placeType": "Bysykkelstativ",
+    "icon": "Bike",
+    "aliases": [
+      "Strandveikaia bysykkel",
+      "Trondheim Bysykkel: Strandveikaia",
+      "bysykkel",
+      "bysykkelstativ",
+      "bysykler",
+      "leiesykkel"
+    ],
+    "coordinates": {
+      "lat": 63.44208952370503,
+      "lng": 10.427939146757126
+    },
+    "locationPrecision": "sourced",
+    "status": "existing",
+    "summary": "Bysykkelstativ langs Stiklestadveien ved Strandveien.",
+    "caveats": [
+      "Tilgangen på sykler og ledige stativer varierer; sjekk Bysykkel-appen før turen."
+    ],
+    "checkedAt": "2026-09-14",
+    "provenance": {
+      "provider": "supabase",
+      "recordId": "bysykkel-65",
+      "importedAt": "2026-09-14"
+    },
+    "facts": [
+      {
+        "id": "bysykkel-65-faktum-1",
+        "text": "Stativet ligger langs Stiklestadveien ved Strandveien.",
+        "sourceId": "transport-20260914-02",
+        "checkedAt": "2026-09-14",
+        "verification": "confirmed"
+      },
+      {
+        "id": "bysykkel-65-faktum-2",
+        "text": "Appen viser ledige sykler og stativer, og sykkelen kan leveres ved en annen bysykkelstasjon.",
+        "sourceId": "transport-20260914-03",
+        "checkedAt": "2026-09-14",
+        "verification": "confirmed"
+      }
+    ],
+    "sourceIds": [
+      "transport-20260914-02",
+      "transport-20260914-03",
+      "demo-route"
+    ],
+    "travelTime": {
+      "walk": 11,
+      "bike": 4
+    },
+    "bysykkelStationId": "65"
+  },
+  {
+    "id": "lilleby-stasjon",
+    "name": "Lilleby stasjon",
+    "address": "Mellomveien, Trondheim",
+    "categoryId": "transport",
+    "poiCategoryId": "train",
+    "placeType": "Togstasjon",
+    "icon": "TrainFront",
+    "aliases": [
+      "Lilleby togstasjon",
+      "Lilleby holdeplass",
+      "tog",
+      "togstasjon",
+      "Trønderbanen",
+      "R70"
+    ],
+    "coordinates": {
+      "lat": 63.439883,
+      "lng": 10.432629
+    },
+    "locationPrecision": "approximate",
+    "locationNote": "Stasjonspunkt fra Entur-importen i databasen, kontrollert mot Bane NORs veibeskrivelsespunkt omtrent 14 meter unna. Plattforminngangen er ikke kontrollert.",
+    "status": "existing",
+    "summary": "Togstopp på Nordlandsbanen med R70, leskur og sykkelparkering.",
+    "caveats": [
+      "Sjekk aktuell avgang og eventuelle avvik i Entur eller hos togselskapet."
+    ],
+    "checkedAt": "2026-09-14",
+    "provenance": {
+      "provider": "supabase",
+      "recordId": "entur-NSR-StopPlace-62369",
+      "importedAt": "2026-09-14"
+    },
+    "sourceIds": [
+      "aktivitet-20260914-01",
+      "demo-route"
+    ],
+    "facts": [
+      {
+        "id": "lilleby-stasjon-aktivitet-f1",
+        "text": "Lilleby er en holdeplass på Nordlandsbanen, og Bane NOR oppgir R70 mellom Støren og Steinkjer.",
+        "sourceId": "aktivitet-20260914-01",
+        "checkedAt": "2026-09-14",
+        "verification": "confirmed"
+      },
+      {
+        "id": "lilleby-stasjon-aktivitet-f2",
+        "text": "Stasjonen har leskur og sykkelstativ med tak.",
+        "sourceId": "aktivitet-20260914-01",
+        "checkedAt": "2026-09-14",
+        "verification": "confirmed"
+      },
+      {
+        "id": "lilleby-stasjon-aktivitet-f3",
+        "text": "Bane NOR oppgir hinderfri adkomst til plattformen.",
+        "sourceId": "aktivitet-20260914-01",
+        "checkedAt": "2026-09-14",
+        "verification": "confirmed"
+      }
+    ],
+    "travelTime": {
+      "walk": 14,
+      "bike": 8
+    }
+  },
+  {
+    "id": "flex-gym",
+    "name": "Flex Gym",
+    "address": "Ladeveien 23, Trondheim",
+    "categoryId": "trening-aktivitet",
+    "poiCategoryId": "gym",
+    "placeType": "Treningssenter",
+    "icon": "Dumbbell",
+    "aliases": [
+      "FlexGym",
+      "Flex Gym AS",
+      "treningssenter",
+      "styrketrening",
+      "kondisjonstrening",
+      "døgnåpent"
+    ],
+    "coordinates": {
+      "lat": 63.443757399999996,
+      "lng": 10.4362503
+    },
+    "locationPrecision": "approximate",
+    "locationNote": "Bedriftspunkt fra databasen, omtrent 54 meter fra Kartverkets adressepunkt for Ladeveien 23. Inngangen er ikke kontrollert.",
+    "status": "existing",
+    "summary": "Døgnåpent treningssenter på Lade med styrketrening, kondisjonstrening og garderober med dusj.",
+    "caveats": [
+      "Adgang krever medlemskap eller avtale med senteret."
+    ],
+    "checkedAt": "2026-09-14",
+    "provenance": {
+      "provider": "supabase",
+      "recordId": "google-ChIJjWQhOA8xbUYRAUjUe7p7l8Y",
+      "importedAt": "2026-09-14"
+    },
+    "sourceIds": [
+      "aktivitet-20260914-02",
+      "aktivitet-20260914-03",
+      "aktivitet-20260914-04",
+      "demo-route"
+    ],
+    "facts": [
+      {
+        "id": "flex-gym-aktivitet-f1",
+        "text": "Flex Gym er døgnåpent og tilbyr både styrke- og kondisjonstrening.",
+        "sourceId": "aktivitet-20260914-02",
+        "checkedAt": "2026-09-14",
+        "verification": "confirmed"
+      },
+      {
+        "id": "flex-gym-aktivitet-f2",
+        "text": "Senteret har frivekter, treningsapparater og garderober med dusj.",
+        "sourceId": "aktivitet-20260914-02",
+        "checkedAt": "2026-09-14",
+        "verification": "confirmed"
+      },
+      {
+        "id": "flex-gym-aktivitet-f3",
+        "text": "Prøvetime kan avtales med senteret før man bestemmer seg for medlemskap.",
+        "sourceId": "aktivitet-20260914-03",
+        "checkedAt": "2026-09-14",
+        "verification": "confirmed"
+      }
+    ],
+    "travelTime": {
+      "walk": 17,
+      "bike": 6
+    }
+  },
+  {
+    "id": "buld-no",
+    "name": "Buld.no",
+    "address": "Ormen Langes vei 15, Trondheim",
+    "categoryId": "trening-aktivitet",
+    "poiCategoryId": "idrett",
+    "placeType": "Buldresenter",
+    "icon": "Mountain",
+    "aliases": [
+      "Buld",
+      "buld.no",
+      "Utehallen",
+      "Trondheim Buldresenter",
+      "buldring",
+      "klatring",
+      "klatreskole",
+      "klatrekurs"
+    ],
+    "coordinates": {
+      "lat": 63.4454409,
+      "lng": 10.4216272
+    },
+    "locationPrecision": "approximate",
+    "locationNote": "Bedriftspunkt fra databasen ved Ormen Langes vei 15, som er besøksadressen på senterets egen nettside. Inngangen er ikke kontrollert.",
+    "status": "existing",
+    "summary": "Buldresenter i den tidligere Utehallen, med kafé, introduksjonskurs og klatreskole for barn.",
+    "caveats": [
+      "Sjekk kursdatoer, aldersgrenser og påmelding hos senteret."
+    ],
+    "checkedAt": "2026-09-14",
+    "provenance": {
+      "provider": "supabase",
+      "recordId": "google-ChIJFaDCPwkxbUYRO8yvKyDZNaY",
+      "importedAt": "2026-09-14"
+    },
+    "sourceIds": [
+      "aktivitet-20260914-05",
+      "demo-route"
+    ],
+    "facts": [
+      {
+        "id": "buld-no-aktivitet-f1",
+        "text": "Buld.no holder til i Ormen Langes vei 15 og samler UTE.no og Trondheim Buldresenter i den tidligere Utehallen.",
+        "sourceId": "aktivitet-20260914-05",
+        "checkedAt": "2026-09-14",
+        "verification": "confirmed"
+      },
+      {
+        "id": "buld-no-aktivitet-f2",
+        "text": "Senteret har kafé og tilbyr introduksjonskurs i buldring.",
+        "sourceId": "aktivitet-20260914-05",
+        "checkedAt": "2026-09-14",
+        "verification": "confirmed"
+      },
+      {
+        "id": "buld-no-aktivitet-f3",
+        "text": "Klatreskolen for barn omfatter både buldring og tauklatring.",
+        "sourceId": "aktivitet-20260914-05",
+        "checkedAt": "2026-09-14",
+        "verification": "confirmed"
+      }
+    ],
+    "travelTime": {
+      "walk": 16,
+      "bike": 5
+    }
+  },
+  {
+    "id": "trikkestallen",
+    "name": "Trikkestallen skatepark",
+    "address": "Mellomveien 32, Trondheim",
+    "categoryId": "barn-oppvekst",
+    "poiCategoryId": "idrett",
+    "placeType": "Innendørs skatepark",
+    "icon": "Activity",
+    "aliases": [
+      "Trikkestallen",
+      "skatepark",
+      "skating",
+      "skateboard",
+      "BMX",
+      "sparkesykkel",
+      "inlines",
+      "barneaktivitet"
+    ],
+    "coordinates": {
+      "lat": 63.439210700000004,
+      "lng": 10.4311201
+    },
+    "locationPrecision": "approximate",
+    "locationNote": "Bedriftspunkt fra Placy-databasen ved Mellomveien 32, som kommunen oppgir som besøksadresse. Inngangen er ikke kontrollert.",
+    "status": "existing",
+    "summary": "Innendørs skatepark på Lademoen for skateboard, BMX, sparkesykkel og inlines, med streetbaner, bowl og minirampe.",
+    "checkedAt": "2026-09-14",
+    "caveats": [
+      "Sjekk aktuelle åpningstider og kursdatoer hos Trikkestallen før besøket."
+    ],
+    "provenance": {
+      "provider": "supabase",
+      "recordId": "google-ChIJ6xbgVQgxbUYRFVaGYOD2YJQ",
+      "importedAt": "2026-09-14"
+    },
+    "sourceIds": [
+      "aktivitet-20260914-06",
+      "demo-route"
+    ],
+    "facts": [
+      {
+        "id": "trikkestallen-aktivitet-f1",
+        "text": "Trikkestallen har to streetbaner, en bowl og en minirampe innendørs.",
+        "sourceId": "aktivitet-20260914-06",
+        "checkedAt": "2026-09-14",
+        "verification": "confirmed"
+      },
+      {
+        "id": "trikkestallen-aktivitet-f2",
+        "text": "Hallen er åpen for skateboard, BMX, sparkesykkel og inlines.",
+        "sourceId": "aktivitet-20260914-06",
+        "checkedAt": "2026-09-14",
+        "verification": "confirmed"
+      },
+      {
+        "id": "trikkestallen-aktivitet-f3",
+        "text": "Kulturenheten arrangerer kurs for barn med jevne mellomrom.",
+        "sourceId": "aktivitet-20260914-06",
+        "checkedAt": "2026-09-14",
+        "verification": "confirmed"
+      },
+      {
+        "id": "trikkestallen-aktivitet-f4",
+        "text": "Barn under ti år skal ha følge av en voksen.",
+        "sourceId": "aktivitet-20260914-06",
+        "checkedAt": "2026-09-14",
+        "verification": "confirmed"
+      }
+    ],
+    "travelTime": {
+      "walk": 13,
+      "bike": 5
+    }
+  },
+  {
+    "id": "ladesletta",
+    "name": "Ladesletta",
+    "address": "Ved Lade idrettspark, Trondheim",
+    "categoryId": "opplevelser",
+    "poiCategoryId": "konsert",
+    "placeType": "Festivalområde",
+    "icon": "Music",
+    "aliases": [
+      "Ladesletta festivalområde",
+      "NEON",
+      "NEON-festivalen",
+      "Trondheim Rocks",
+      "festival",
+      "festivaler",
+      "sandvolleyball"
+    ],
+    "coordinates": {
+      "lat": 63.4460073,
+      "lng": 10.4489975
+    },
+    "locationPrecision": "approximate",
+    "locationNote": "Omtrentlig orienteringspunkt i Lade idrettspark nær sandvolleyballbanene. Punktet og reisetiden viser nærområdet, ikke festivalinngangen eller festivalområdets avgrensning.",
+    "status": "existing",
+    "summary": "Festivalområde ved Lade idrettspark og sandvolleyballbanene, valgt som ny arena for NEON og Trondheim Rocks i 2026.",
+    "checkedAt": "2026-09-14",
+    "caveats": [
+      "Sjekk årets festivalprogram, billetter og inngang hos arrangøren.",
+      "Sandvolleyballtreningen foregår i idrettsparken og krever egen påmelding; den er ikke en del av festivalbilletten."
+    ],
+    "sourceIds": [
+      "aktivitet-20260914-07",
+      "aktivitet-20260914-08",
+      "aktivitet-20260914-09",
+      "demo-route"
+    ],
+    "facts": [
+      {
+        "id": "ladesletta-aktivitet-f1",
+        "text": "Trondheim Rocks oppgir Ladesletta ved Lade idrettsanlegg og sandvolleyballbanene som sin nye arena i 2026.",
+        "sourceId": "aktivitet-20260914-07",
+        "checkedAt": "2026-09-14",
+        "verification": "confirmed"
+      },
+      {
+        "id": "ladesletta-aktivitet-f2",
+        "text": "Arrangøren Trondheim Stage kunngjorde at NEON flyttet fra Dahls Arena til Ladesletta fra 2026.",
+        "sourceId": "aktivitet-20260914-08",
+        "checkedAt": "2026-09-14",
+        "verification": "confirmed"
+      },
+      {
+        "id": "ladesletta-aktivitet-f3",
+        "text": "I den nærliggende Lade idrettspark organiserer Trondheim Sandvolleyballklubb utendørstrening om sommeren for ulike aldre og nivåer.",
+        "sourceId": "aktivitet-20260914-09",
+        "checkedAt": "2026-09-14",
+        "verification": "confirmed"
+      }
+    ],
+    "travelTime": {
+      "walk": 27,
+      "bike": 10
+    }
   }
 ]

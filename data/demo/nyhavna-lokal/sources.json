@@ -174,5 +174,1253 @@
     "page": "Trondheim S",
     "url": "https://www.banenor.no/reise-og-trafikk/stasjoner/-t-/trondheim-s/",
     "checkedAt": "2026-09-14"
+  },
+  {
+    "id": "demo-lilleby-trinn",
+    "label": "Trondheim kommune",
+    "page": "Lilleby skole – Dagsrytme 1.–7. trinn",
+    "url": "https://www.trondheim.kommune.no/globalassets/10-bilder-og-filer/02-skoler/skoler-g-o/lilleby-skole/dokumenter/timeplaner.pdf",
+    "publisher": "Trondheim kommune",
+    "checkedAt": "2026-09-14"
+  },
+  {
+    "id": "bo-felles",
+    "label": "Nyhavna Utvikling",
+    "page": "Velkommen som beboer på Nyhavna",
+    "url": "https://nyhavna.no/bo/",
+    "publisher": "Nyhavna Utvikling",
+    "checkedAt": "2026-09-14"
+  },
+  {
+    "id": "bo-nyhetsbrev",
+    "label": "Nyhavna Utvikling",
+    "page": "Følg utviklingen på Nyhavna",
+    "url": "https://nyhavna.no/bo/nyhetsbrev/",
+    "publisher": "Nyhavna Utvikling",
+    "checkedAt": "2026-09-14"
+  },
+  {
+    "id": "bo-dora2-adresse",
+    "label": "Kartverket",
+    "page": "Dora 2: Transittgata 15",
+    "url": "https://ws.geonorge.no/adresser/v1/sok?sok=Transittgata%2015&kommunenummer=5001&utkoordsys=4258",
+    "publisher": "Kartverket",
+    "checkedAt": "2026-09-14"
+  },
+  {
+    "id": "bo-bunker-plassering",
+    "label": "Nyhavna Utvikling",
+    "page": "Bunkerkvartalet: Dora II og Transittgata 15",
+    "url": "https://www.nyhavna.no/media/i1rlrrh0/251125-1.pdf",
+    "publisher": "Nyhavna Utvikling",
+    "checkedAt": "2026-09-14"
+  },
+  {
+    "id": "bo-transittkaia",
+    "label": "Nyhavna Utvikling",
+    "page": "Transittkaia",
+    "url": "https://nyhavna.no/bo/transittkaia/",
+    "publisher": "Nyhavna Utvikling",
+    "checkedAt": "2026-09-14"
+  },
+  {
+    "id": "bo-kullkranpiren",
+    "label": "Nyhavna Utvikling",
+    "page": "Kullkranpiren",
+    "url": "https://nyhavna.no/bo/kullkranpiren/",
+    "publisher": "Nyhavna Utvikling",
+    "checkedAt": "2026-09-14"
+  },
+  {
+    "id": "bo-strandveikaia",
+    "label": "Nyhavna Utvikling",
+    "page": "Strandveikaia",
+    "url": "https://nyhavna.no/bo/strandveikaia/",
+    "publisher": "Nyhavna Utvikling",
+    "checkedAt": "2026-09-14"
+  },
+  {
+    "id": "bo-ladehammerkaia",
+    "label": "Nyhavna Utvikling",
+    "page": "Ladehammerkaia",
+    "url": "https://nyhavna.no/bo/ladehammerkaia/",
+    "publisher": "Nyhavna Utvikling",
+    "checkedAt": "2026-09-14"
+  },
+  {
+    "id": "bo-bunkerkvartalet",
+    "label": "Nyhavna Utvikling",
+    "page": "Bunkerkvartalet",
+    "url": "https://nyhavna.no/bo/bunkerkvartalet/",
+    "publisher": "Nyhavna Utvikling",
+    "checkedAt": "2026-09-14"
+  },
+  {
+    "id": "bo-kart-transittkaia",
+    "label": "Kartverket",
+    "page": "Kartverket: Transittkaia",
+    "url": "https://ws.geonorge.no/stedsnavn/v1/navn?sok=Transittkaia&fuzzy=false&utkoordsys=4258",
+    "publisher": "Kartverket",
+    "checkedAt": "2026-09-14"
+  },
+  {
+    "id": "bo-kart-kullkranpiren",
+    "label": "Kartverket",
+    "page": "Kartverket: Kullkranpiren",
+    "url": "https://ws.geonorge.no/stedsnavn/v1/navn?sok=Kullkranpiren&fuzzy=false&utkoordsys=4258",
+    "publisher": "Kartverket",
+    "checkedAt": "2026-09-14"
+  },
+  {
+    "id": "bo-kart-strandveikaia",
+    "label": "Kartverket",
+    "page": "Kartverket: Strandveikaia",
+    "url": "https://ws.geonorge.no/stedsnavn/v1/navn?sok=Strandveikaia&fuzzy=false&utkoordsys=4258",
+    "publisher": "Kartverket",
+    "checkedAt": "2026-09-14"
+  },
+  {
+    "id": "bo-kart-ladehammerkaia",
+    "label": "Kartverket",
+    "page": "Kartverket: Ladehammerkaia",
+    "url": "https://ws.geonorge.no/stedsnavn/v1/navn?sok=Ladehammerkaia&fuzzy=false&utkoordsys=4258",
+    "publisher": "Kartverket",
+    "checkedAt": "2026-09-14"
+  },
+  {
+    "id": "reserve-crossfit-trondheim",
+    "label": "CrossFit Trondheim",
+    "page": "Tilbud og kontakt",
+    "url": "https://www.crossfittrondheim.com/",
+    "publisher": "CrossFit Trondheim",
+    "checkedAt": "2026-09-14"
+  },
+  {
+    "id": "reserve-lilleby-treningssenter",
+    "label": "Lilleby Treningssenter",
+    "page": "Tilbud og kontakt",
+    "url": "https://lillebytreningssenter.no/om-oss/",
+    "publisher": "Lilleby Treningssenter",
+    "checkedAt": "2026-09-14"
+  },
+  {
+    "id": "source-pool-3t-solsiden",
+    "label": "Lagret stedsinformasjon",
+    "page": "3T-Solsiden",
+    "url": "https://www.3t.no/treningssenter/3t-solsiden",
+    "publisher": "Placy – import fra Supabase",
+    "checkedAt": "2026-09-14"
+  },
+  {
+    "id": "source-pool-fresh-fitness-trondheim-sentrum",
+    "label": "Lagret stedsinformasjon",
+    "page": "Fresh Fitness Trondheim Sentrum",
+    "url": "https://www.freshfitness.no/treningssenter/treningssenter-trondheim-sentrum",
+    "publisher": "Placy – import fra Supabase",
+    "checkedAt": "2026-09-14"
+  },
+  {
+    "id": "source-pool-cora-pilates-as",
+    "label": "Lagret stedsinformasjon",
+    "page": "Cora Pilates as.",
+    "url": "https://www.corapilates.no/",
+    "publisher": "Placy – import fra Supabase",
+    "checkedAt": "2026-09-14"
+  },
+  {
+    "id": "source-pool-nidaros-bokseklubb",
+    "label": "Lagret stedsinformasjon",
+    "page": "Nidaros Bokseklubb",
+    "url": "http://nidaros.bokseklubb.no/",
+    "publisher": "Placy – import fra Supabase",
+    "checkedAt": "2026-09-14"
+  },
+  {
+    "id": "source-pool-3t-lade",
+    "label": "Lagret stedsinformasjon",
+    "page": "3T-Lade",
+    "url": "https://www.3t.no/treningssenter/3t-lade",
+    "publisher": "Placy – import fra Supabase",
+    "checkedAt": "2026-09-14"
+  },
+  {
+    "id": "source-pool-3t-leangen",
+    "label": "Lagret stedsinformasjon",
+    "page": "3T-Leangen",
+    "url": "https://www.3t.no/treningssenter/3t-leangen",
+    "publisher": "Placy – import fra Supabase",
+    "checkedAt": "2026-09-14"
+  },
+  {
+    "id": "source-pool-3t-moholt",
+    "label": "Lagret stedsinformasjon",
+    "page": "3T-Moholt",
+    "url": "https://www.3t.no/treningssenter/3t-moholt",
+    "publisher": "Placy – import fra Supabase",
+    "checkedAt": "2026-09-14"
+  },
+  {
+    "id": "source-pool-3t-ilsvika",
+    "label": "Lagret stedsinformasjon",
+    "page": "3T-Ilsvika",
+    "url": "https://www.3t.no/treningssenter/3t-ilsvika",
+    "publisher": "Placy – import fra Supabase",
+    "checkedAt": "2026-09-14"
+  },
+  {
+    "id": "source-pool-3t-ranheim",
+    "label": "Lagret stedsinformasjon",
+    "page": "3T-Ranheim",
+    "url": "https://www.3t.no/treningssenter/3t-ranheim",
+    "publisher": "Placy – import fra Supabase",
+    "checkedAt": "2026-09-14"
+  },
+  {
+    "id": "source-pool-3t-rosten",
+    "label": "Lagret stedsinformasjon",
+    "page": "3T-Rosten",
+    "url": "https://www.3t.no/treningssenter/3t-rosten",
+    "publisher": "Placy – import fra Supabase",
+    "checkedAt": "2026-09-14"
+  },
+  {
+    "id": "source-pool-fresh-fitness-tiller",
+    "label": "Lagret stedsinformasjon",
+    "page": "Fresh Fitness Tiller",
+    "url": "https://www.freshfitness.no/treningssenter/treningssenter-tiller-229",
+    "publisher": "Placy – import fra Supabase",
+    "checkedAt": "2026-09-14"
+  },
+  {
+    "id": "source-pool-3t-fossegrenda",
+    "label": "Lagret stedsinformasjon",
+    "page": "3T-Fossegrenda",
+    "url": "https://www.3t.no/treningssenter/3t-fossegrenda",
+    "publisher": "Placy – import fra Supabase",
+    "checkedAt": "2026-09-14"
+  },
+  {
+    "id": "source-pool-lademoparken",
+    "label": "Lagret stedsinformasjon",
+    "page": "Lademoparken",
+    "url": "https://www.google.com/maps/place/?q=place_id:ChIJQUYtXqcxbUYRnntdZiQYiDE",
+    "publisher": "Placy – import fra Supabase",
+    "checkedAt": "2026-09-14"
+  },
+  {
+    "id": "source-pool-ladeparken",
+    "label": "Lagret stedsinformasjon",
+    "page": "Ladeparken",
+    "url": "https://www.trondheim.kommune.no/ladeparken/",
+    "publisher": "Placy – import fra Supabase",
+    "checkedAt": "2026-09-14"
+  },
+  {
+    "id": "source-pool-korsvika",
+    "label": "Lagret stedsinformasjon",
+    "page": "Korsvika",
+    "url": "https://www.trondheim.kommune.no/tema/kultur-og-fritid/park-og-mark/badeplasser/badeplasser-i-saltvann/korsvika/",
+    "publisher": "Placy – import fra Supabase",
+    "checkedAt": "2026-09-14"
+  },
+  {
+    "id": "source-pool-ntnu-ringve-botaniske-hage",
+    "label": "Lagret stedsinformasjon",
+    "page": "NTNU Ringve botaniske hage",
+    "url": "https://www.ntnu.no/vitenskapsmuseet/ringve-botaniske-hage",
+    "publisher": "Placy – import fra Supabase",
+    "checkedAt": "2026-09-14"
+  },
+  {
+    "id": "source-pool-ilaparken",
+    "label": "Lagret stedsinformasjon",
+    "page": "Ilaparken",
+    "url": "https://www.trondheim.kommune.no/tema/kultur-og-fritid/park-og-mark/parker-og-byrom/ilaparken/",
+    "publisher": "Placy – import fra Supabase",
+    "checkedAt": "2026-09-14"
+  },
+  {
+    "id": "source-pool-rotvollfjra",
+    "label": "Lagret stedsinformasjon",
+    "page": "Rotvollfjæra",
+    "url": "https://www.google.com/maps/place/?q=place_id:ChIJbTaNm7QxbUYR2Ea6H5n7tjo",
+    "publisher": "Placy – import fra Supabase",
+    "checkedAt": "2026-09-14"
+  },
+  {
+    "id": "source-pool-theisendammen-badeplass",
+    "label": "Lagret stedsinformasjon",
+    "page": "Theisendammen badeplass",
+    "url": "https://www.visittrondheim.no/theisendammen",
+    "publisher": "Placy – import fra Supabase",
+    "checkedAt": "2026-09-14"
+  },
+  {
+    "id": "source-pool-haukvatnet",
+    "label": "Lagret stedsinformasjon",
+    "page": "Haukvatnet",
+    "url": "https://www.google.com/maps/search/?api=1&query=63.39467695499999,10.32214954625",
+    "publisher": "Placy – import fra Supabase",
+    "checkedAt": "2026-09-14"
+  },
+  {
+    "id": "source-pool-lianvatnet",
+    "label": "Lagret stedsinformasjon",
+    "page": "Lianvatnet",
+    "url": "https://www.google.com/maps/search/?api=1&query=63.401690412499995,10.314247035",
+    "publisher": "Placy – import fra Supabase",
+    "checkedAt": "2026-09-14"
+  },
+  {
+    "id": "source-pool-burmaklippen",
+    "label": "Lagret stedsinformasjon",
+    "page": "Burmaklippen",
+    "url": "https://www.google.com/maps/place/?q=place_id:ChIJs5ZbvjwwbUYRTFjqEf58oVI",
+    "publisher": "Placy – import fra Supabase",
+    "checkedAt": "2026-09-14"
+  },
+  {
+    "id": "source-pool-hansbakkfjra",
+    "label": "Lagret stedsinformasjon",
+    "page": "Hansbakkfjæra",
+    "url": "https://www.google.com/maps/search/?api=1&query=63.430947417096775,10.541044956774194",
+    "publisher": "Placy – import fra Supabase",
+    "checkedAt": "2026-09-14"
+  },
+  {
+    "id": "s-servering-prove-nyhavna",
+    "label": "Nyhavna Utvikling",
+    "page": "Café og restauranter – Dora Kaffebar",
+    "url": "https://nyhavna.no/leve/cafe-og-restauranter/",
+    "publisher": "Nyhavna Utvikling",
+    "checkedAt": "2026-09-14"
+  },
+  {
+    "id": "s-servering-prove-bistro-meny",
+    "label": "Nyhavna BistroBar",
+    "page": "Meny – småretter og leverandører",
+    "url": "https://www.nyhavnabistrobar.no/our-menu",
+    "publisher": "Nyhavna BistroBar",
+    "checkedAt": "2026-09-14"
+  },
+  {
+    "id": "utv-20260914-01",
+    "url": "https://ecdahls.no/pub-kjokken/",
+    "label": "ecdahls.no",
+    "page": "E.C. Dahls Pub og Kjøkken – pub-kjokken",
+    "publisher": "ecdahls.no",
+    "checkedAt": "2026-09-14"
+  },
+  {
+    "id": "utv-20260914-02",
+    "url": "https://ws.geonorge.no/adresser/v1/sok?sok=Strandveien+71&kommunenummer=5001&utkoordsys=4258&treffPerSide=10",
+    "label": "Kartverket",
+    "page": "Adressepunkt: Strandveien 71",
+    "publisher": "Kartverket",
+    "checkedAt": "2026-09-14"
+  },
+  {
+    "id": "utv-20260914-03",
+    "url": "https://svartlamon.org/virksomheter/",
+    "label": "svartlamon.org",
+    "page": "Ramp Pub & Spiseri – virksomheter",
+    "publisher": "svartlamon.org",
+    "checkedAt": "2026-09-14"
+  },
+  {
+    "id": "utv-20260914-04",
+    "url": "https://virksomhet.brreg.no/nb/oppslag/underenheter/985281246",
+    "label": "virksomhet.brreg.no",
+    "page": "Ramp Pub & Spiseri – 985281246",
+    "publisher": "virksomhet.brreg.no",
+    "checkedAt": "2026-09-14"
+  },
+  {
+    "id": "utv-20260914-05",
+    "url": "https://ws.geonorge.no/adresser/v1/sok?sok=Strandveien+25A&kommunenummer=5001&utkoordsys=4258&treffPerSide=10",
+    "label": "Kartverket",
+    "page": "Adressepunkt: Strandveien 25A",
+    "publisher": "Kartverket",
+    "checkedAt": "2026-09-14"
+  },
+  {
+    "id": "utv-20260914-06",
+    "url": "https://unapizzeria.no/",
+    "label": "unapizzeria.no",
+    "page": "Una Solsiden – ",
+    "publisher": "unapizzeria.no",
+    "checkedAt": "2026-09-14"
+  },
+  {
+    "id": "utv-20260914-07",
+    "url": "https://unapizzeria.no/meny/",
+    "label": "unapizzeria.no",
+    "page": "Una Solsiden – meny",
+    "publisher": "unapizzeria.no",
+    "checkedAt": "2026-09-14"
+  },
+  {
+    "id": "utv-20260914-08",
+    "url": "https://ws.geonorge.no/adresser/v1/sok?sok=Beddingen+14&kommunenummer=5001&utkoordsys=4258&treffPerSide=10",
+    "label": "Kartverket",
+    "page": "Adressepunkt: Beddingen 14",
+    "publisher": "Kartverket",
+    "checkedAt": "2026-09-14"
+  },
+  {
+    "id": "utv-20260914-09",
+    "url": "https://www.godtbrod.no/godt-brod-bakerier/godt-brod-solsiden",
+    "label": "godtbrod.no",
+    "page": "Godt Brød Solsiden – godt-brod-solsiden",
+    "publisher": "godtbrod.no",
+    "checkedAt": "2026-09-14"
+  },
+  {
+    "id": "utv-20260914-10",
+    "url": "https://ws.geonorge.no/adresser/v1/sok?sok=Beddingen+10&kommunenummer=5001&utkoordsys=4258&treffPerSide=10",
+    "label": "Kartverket",
+    "page": "Adressepunkt: Beddingen 10",
+    "publisher": "Kartverket",
+    "checkedAt": "2026-09-14"
+  },
+  {
+    "id": "utv-20260914-11",
+    "url": "https://www.sabrurasushi.no/restauranter/midt-norge/sabrura-solsiden/",
+    "label": "sabrurasushi.no",
+    "page": "Sabrura Solsiden – sabrura-solsiden",
+    "publisher": "sabrurasushi.no",
+    "checkedAt": "2026-09-14"
+  },
+  {
+    "id": "utv-20260914-12",
+    "url": "https://www.sabrurasushi.no/sushibuffet/",
+    "label": "sabrurasushi.no",
+    "page": "Sabrura Solsiden – sushibuffet",
+    "publisher": "sabrurasushi.no",
+    "checkedAt": "2026-09-14"
+  },
+  {
+    "id": "utv-20260914-13",
+    "url": "https://ws.geonorge.no/adresser/v1/sok?sok=Bassengbakken+2&kommunenummer=5001&utkoordsys=4258&treffPerSide=10",
+    "label": "Kartverket",
+    "page": "Adressepunkt: Bassengbakken 2",
+    "publisher": "Kartverket",
+    "checkedAt": "2026-09-14"
+  },
+  {
+    "id": "utv-20260914-14",
+    "url": "https://www.havetarena.no/servering",
+    "label": "havetarena.no",
+    "page": "HAVET Arena – servering",
+    "publisher": "havetarena.no",
+    "checkedAt": "2026-09-14"
+  },
+  {
+    "id": "utv-20260914-15",
+    "url": "https://www.havetarena.no/faq",
+    "label": "havetarena.no",
+    "page": "HAVET Arena – faq",
+    "publisher": "havetarena.no",
+    "checkedAt": "2026-09-14"
+  },
+  {
+    "id": "utv-20260914-16",
+    "url": "https://ws.geonorge.no/adresser/v1/sok?sok=Strandveien+104&kommunenummer=5001&utkoordsys=4258&treffPerSide=10",
+    "label": "Kartverket",
+    "page": "Adressepunkt: Strandveien 104",
+    "publisher": "Kartverket",
+    "checkedAt": "2026-09-14"
+  },
+  {
+    "id": "utv-20260914-17",
+    "url": "https://rosendalteater.no/rosendal-kafe",
+    "label": "rosendalteater.no",
+    "page": "Rosendal Teater og Kafé – rosendal-kafe",
+    "publisher": "rosendalteater.no",
+    "checkedAt": "2026-09-14"
+  },
+  {
+    "id": "utv-20260914-18",
+    "url": "https://rosendalteater.no/om/hva-er-rosendal-teater",
+    "label": "rosendalteater.no",
+    "page": "Rosendal Teater og Kafé – hva-er-rosendal-teater",
+    "publisher": "rosendalteater.no",
+    "checkedAt": "2026-09-14"
+  },
+  {
+    "id": "utv-20260914-19",
+    "url": "https://rosendalteater.no/om/praktisk-info",
+    "label": "rosendalteater.no",
+    "page": "Rosendal Teater og Kafé – praktisk-info",
+    "publisher": "rosendalteater.no",
+    "checkedAt": "2026-09-14"
+  },
+  {
+    "id": "utv-20260914-20",
+    "url": "https://ws.geonorge.no/adresser/v1/sok?sok=Innherredsveien+73&kommunenummer=5001&utkoordsys=4258&treffPerSide=10",
+    "label": "Kartverket",
+    "page": "Adressepunkt: Innherredsveien 73",
+    "publisher": "Kartverket",
+    "checkedAt": "2026-09-14"
+  },
+  {
+    "id": "utv-20260914-21",
+    "url": "https://monkeybrew.no/",
+    "label": "monkeybrew.no",
+    "page": "Monkey Brew – ",
+    "publisher": "monkeybrew.no",
+    "checkedAt": "2026-09-14"
+  },
+  {
+    "id": "utv-20260914-22",
+    "url": "https://monkeybrew.no/shop",
+    "label": "monkeybrew.no",
+    "page": "Monkey Brew – shop",
+    "publisher": "monkeybrew.no",
+    "checkedAt": "2026-09-14"
+  },
+  {
+    "id": "utv-20260914-23",
+    "url": "https://monkeybrew.no/contact",
+    "label": "monkeybrew.no",
+    "page": "Monkey Brew – contact",
+    "publisher": "monkeybrew.no",
+    "checkedAt": "2026-09-14"
+  },
+  {
+    "id": "utv-20260914-24",
+    "url": "https://ws.geonorge.no/adresser/v1/sok?sok=Kobbes+gate+10&kommunenummer=5001&utkoordsys=4258&treffPerSide=10",
+    "label": "Kartverket",
+    "page": "Adressepunkt: Kobbes gate 10",
+    "publisher": "Kartverket",
+    "checkedAt": "2026-09-14"
+  },
+  {
+    "id": "utv-20260914-25",
+    "url": "https://www.trondheim.kommune.no/org/oppvekst/private-barnehager/lademoen-barnehage/",
+    "label": "trondheim.kommune.no",
+    "page": "Lademoen barnehage – lademoen-barnehage",
+    "publisher": "trondheim.kommune.no",
+    "checkedAt": "2026-09-14"
+  },
+  {
+    "id": "utv-20260914-26",
+    "url": "https://ta-lademoen.no/index.html",
+    "label": "ta-lademoen.no",
+    "page": "Lademoen barnehage – index.html",
+    "publisher": "ta-lademoen.no",
+    "checkedAt": "2026-09-14"
+  },
+  {
+    "id": "utv-20260914-27",
+    "url": "https://ta-lademoen.no/pedagogisk-profil.html",
+    "label": "ta-lademoen.no",
+    "page": "Lademoen barnehage – pedagogisk-profil.html",
+    "publisher": "ta-lademoen.no",
+    "checkedAt": "2026-09-14"
+  },
+  {
+    "id": "utv-20260914-28",
+    "url": "https://ws.geonorge.no/adresser/v1/sok?sok=%C3%98stersunds+gate+3&kommunenummer=5001&utkoordsys=4258&treffPerSide=10",
+    "label": "Kartverket",
+    "page": "Adressepunkt: Østersunds gate 3",
+    "publisher": "Kartverket",
+    "checkedAt": "2026-09-14"
+  },
+  {
+    "id": "utv-20260914-29",
+    "url": "https://www.trondheim.kommune.no/org/oppvekst/barnehager/svartlamon-remida-bhg/",
+    "label": "trondheim.kommune.no",
+    "page": "Svartlamon kunst- og kulturbarnehage – svartlamon-remida-bhg",
+    "publisher": "trondheim.kommune.no",
+    "checkedAt": "2026-09-14"
+  },
+  {
+    "id": "utv-20260914-30",
+    "url": "https://virksomhet.brreg.no/nb/oppslag/underenheter/988517585",
+    "label": "virksomhet.brreg.no",
+    "page": "Svartlamon kunst- og kulturbarnehage – 988517585",
+    "publisher": "virksomhet.brreg.no",
+    "checkedAt": "2026-09-14"
+  },
+  {
+    "id": "utv-20260914-31",
+    "url": "https://kunstkultursenteret.no/ressursbase/a-forvandle-en-bilbutikk-til-barnehage-barna-som-aktive-deltakere-i-prosessen/",
+    "label": "kunstkultursenteret.no",
+    "page": "Svartlamon kunst- og kulturbarnehage – a-forvandle-en-bilbutikk-til-barnehage-barna-som-aktive-deltakere-i-prosessen",
+    "publisher": "kunstkultursenteret.no",
+    "checkedAt": "2026-09-14"
+  },
+  {
+    "id": "utv-20260914-32",
+    "url": "https://ws.geonorge.no/adresser/v1/sok?sok=Strandveien+33&kommunenummer=5001&utkoordsys=4258&treffPerSide=10",
+    "label": "Kartverket",
+    "page": "Adressepunkt: Strandveien 33",
+    "publisher": "Kartverket",
+    "checkedAt": "2026-09-14"
+  },
+  {
+    "id": "utv-20260914-33",
+    "url": "https://www.trondheim.kommune.no/tema/kultur-og-fritid/aktivitetstilbudkulturtilbud/fritidsklubber/lade-fritidsklubb/",
+    "label": "trondheim.kommune.no",
+    "page": "Lade fritidsklubb – lade-fritidsklubb",
+    "publisher": "trondheim.kommune.no",
+    "checkedAt": "2026-09-14"
+  },
+  {
+    "id": "utv-20260914-34",
+    "url": "https://ws.geonorge.no/adresser/v1/sok?sok=H%C3%A5kon+Magnussons+gate+5&kommunenummer=5001&utkoordsys=4258&treffPerSide=10",
+    "label": "Kartverket",
+    "page": "Adressepunkt: Håkon Magnussons gate 5",
+    "publisher": "Kartverket",
+    "checkedAt": "2026-09-14"
+  },
+  {
+    "id": "utv-20260914-35",
+    "url": "https://www.trondheim.kommune.no/tema/kultur-og-fritid/park-og-mark/parker-og-byrom/strandveiparken/",
+    "label": "trondheim.kommune.no",
+    "page": "Strandveiparken – strandveiparken",
+    "publisher": "trondheim.kommune.no",
+    "checkedAt": "2026-09-14"
+  },
+  {
+    "id": "utv-20260914-36",
+    "url": "https://kart.trondheim.kommune.no/geoserver/ows?service=WFS&version=1.0.0&request=GetFeature&typeName=anleggsregister%3Av_parker_centroid&outputFormat=application%2Fjson&srsName=EPSG%3A4326",
+    "label": "Trondheim kommune",
+    "page": "Parkregister – kartgeometri og representative senterpunkter",
+    "publisher": "Trondheim kommune",
+    "checkedAt": "2026-09-14"
+  },
+  {
+    "id": "utv-20260914-37",
+    "url": "https://www.trondheim.kommune.no/tema/kultur-og-fritid/park-og-mark/badeplasser/badeplasser-i-saltvann/strandveikaia-nyhavna/",
+    "label": "trondheim.kommune.no",
+    "page": "Strandveikaia badeplass – strandveikaia-nyhavna",
+    "publisher": "trondheim.kommune.no",
+    "checkedAt": "2026-09-14"
+  },
+  {
+    "id": "utv-20260914-38",
+    "url": "https://www.google.com/maps/search/?api=1&query=63.44203222875,10.42498068875",
+    "label": "Lagret kartpunkt",
+    "page": "Strandveikaia badeplass – omtrentlig plassering fra Nyhavna-snapshot",
+    "publisher": "Placy",
+    "checkedAt": "2026-09-14"
+  },
+  {
+    "id": "utv-20260914-39",
+    "url": "https://www.rodekors.no/lokalforeninger/trondelag/trondheim/aktiviteter-og-kurs/sosialinkludering/bua/",
+    "label": "rodekors.no",
+    "page": "BUA Lademoen – bua",
+    "publisher": "rodekors.no",
+    "checkedAt": "2026-09-14"
+  },
+  {
+    "id": "utv-20260914-40",
+    "url": "https://www.rodekors.no/lokalforeninger/trondelag/trondheim/aktuelt/2026/apningsfest/",
+    "label": "rodekors.no",
+    "page": "BUA Lademoen – apningsfest",
+    "publisher": "rodekors.no",
+    "checkedAt": "2026-09-14"
+  },
+  {
+    "id": "utv-20260914-41",
+    "url": "https://ws.geonorge.no/adresser/v1/sok?sok=Innherredsveien+91&kommunenummer=5001&utkoordsys=4258&treffPerSide=10",
+    "label": "Kartverket",
+    "page": "Adressepunkt: Innherredsveien 91",
+    "publisher": "Kartverket",
+    "checkedAt": "2026-09-14"
+  },
+  {
+    "id": "utv-20260914-42",
+    "url": "https://www.trondheim.kommune.no/tema/kultur-og-fritid/park-og-mark/parker-og-byrom/buranbanen/",
+    "label": "trondheim.kommune.no",
+    "page": "Buranbanen – buranbanen",
+    "publisher": "trondheim.kommune.no",
+    "checkedAt": "2026-09-14"
+  },
+  {
+    "id": "utv2-20260914-01",
+    "url": "https://egon.no/restauranter/troendelag/egon-solsiden",
+    "label": "Egon",
+    "page": "Egon Solsiden",
+    "publisher": "Egon",
+    "checkedAt": "2026-09-14"
+  },
+  {
+    "id": "utv2-20260914-02",
+    "url": "https://ws.geonorge.no/adresser/v1/sok?sok=TMV-kaia+21&kommunenummer=5001&utkoordsys=4258&treffPerSide=10",
+    "label": "Kartverket",
+    "page": "Adressepunkt: TMV-kaia 21",
+    "publisher": "Kartverket",
+    "checkedAt": "2026-09-14"
+  },
+  {
+    "id": "utv2-20260914-03",
+    "url": "https://oliviarestauranter.no/restauranter/solsiden/",
+    "label": "Olivia Restauranter",
+    "page": "Olivia Solsiden",
+    "publisher": "Olivia Restauranter",
+    "checkedAt": "2026-09-14"
+  },
+  {
+    "id": "utv2-20260914-04",
+    "url": "https://ws.geonorge.no/adresser/v1/sok?sok=Beddingen+16&kommunenummer=5001&utkoordsys=4258&treffPerSide=10",
+    "label": "Kartverket",
+    "page": "Adressepunkt: Beddingen 16",
+    "publisher": "Kartverket",
+    "checkedAt": "2026-09-14"
+  },
+  {
+    "id": "utv2-20260914-05",
+    "url": "https://cafelokka.no/",
+    "label": "Cafe Løkka",
+    "page": "Cafe Løkka – kontakt og adresse",
+    "publisher": "Cafe Løkka",
+    "checkedAt": "2026-09-14"
+  },
+  {
+    "id": "utv2-20260914-06",
+    "url": "https://cafelokka.no/assets/meny2025okt.png",
+    "label": "Cafe Løkka",
+    "page": "Menybilde – oktober 2025",
+    "publisher": "Cafe Løkka",
+    "checkedAt": "2026-09-14"
+  },
+  {
+    "id": "utv2-20260914-07",
+    "url": "https://ws.geonorge.no/adresser/v1/sok?sok=Dokkgata+8&kommunenummer=5001&utkoordsys=4258&treffPerSide=10",
+    "label": "Kartverket",
+    "page": "Adressepunkt: Dokkgata 8",
+    "publisher": "Kartverket",
+    "checkedAt": "2026-09-14"
+  },
+  {
+    "id": "utv2-20260914-08",
+    "url": "https://dromedar.no/kaffebarer/solsiden/",
+    "label": "Dromedar Kaffebar",
+    "page": "Solsiden",
+    "publisher": "Dromedar Kaffebar",
+    "checkedAt": "2026-09-14"
+  },
+  {
+    "id": "utv2-20260914-09",
+    "url": "https://dromedar.no/kaffe/",
+    "label": "Dromedar Kaffebar",
+    "page": "Kaffe",
+    "publisher": "Dromedar Kaffebar",
+    "checkedAt": "2026-09-14"
+  },
+  {
+    "id": "utv2-20260914-10",
+    "url": "https://www.hectormexican.no/",
+    "label": "Héctor Food & Fiesta",
+    "page": "Héctor – konsept, takeaway og adresse",
+    "publisher": "Héctor Food & Fiesta",
+    "checkedAt": "2026-09-14"
+  },
+  {
+    "id": "utv2-20260914-11",
+    "url": "https://ws.geonorge.no/adresser/v1/sok?sok=TMV-kaia+25&kommunenummer=5001&utkoordsys=4258&treffPerSide=10",
+    "label": "Kartverket",
+    "page": "Adressepunkt: TMV-kaia 25",
+    "publisher": "Kartverket",
+    "checkedAt": "2026-09-14"
+  },
+  {
+    "id": "utv2-20260914-12",
+    "url": "https://tollbua-trondheim.no/om-oss/",
+    "label": "Tollbua",
+    "page": "Om oss – restaurant og Tollboden",
+    "publisher": "Tollbua",
+    "checkedAt": "2026-09-14"
+  },
+  {
+    "id": "utv2-20260914-13",
+    "url": "https://ws.geonorge.no/adresser/v1/sok?sok=Bratt%C3%B8rkaia+13B&kommunenummer=5001&utkoordsys=4258&treffPerSide=10",
+    "label": "Kartverket",
+    "page": "Adressepunkt: Brattørkaia 13B",
+    "publisher": "Kartverket",
+    "checkedAt": "2026-09-14"
+  },
+  {
+    "id": "utv2-20260914-14",
+    "url": "https://www.brorbar.no/",
+    "label": "Bror Solsiden",
+    "page": "Bror – adresse og menyer",
+    "publisher": "Bror Solsiden",
+    "checkedAt": "2026-09-14"
+  },
+  {
+    "id": "utv2-20260914-15",
+    "url": "https://www.brorbar.no/wp-content/uploads/2026/04/Bror-meny-nettsted-3-scaled.png",
+    "label": "Bror Solsiden",
+    "page": "Menybilde – burgere og taco",
+    "publisher": "Bror Solsiden",
+    "checkedAt": "2026-09-14"
+  },
+  {
+    "id": "utv2-20260914-16",
+    "url": "https://ws.geonorge.no/adresser/v1/sok?sok=TMV-kaia+13&kommunenummer=5001&utkoordsys=4258&treffPerSide=10",
+    "label": "Kartverket",
+    "page": "Adressepunkt: TMV-kaia 13",
+    "publisher": "Kartverket",
+    "checkedAt": "2026-09-14"
+  },
+  {
+    "id": "utv2-20260914-17",
+    "url": "https://www.sotbar.no/restauranter/midt-norge/sot-solsiden-trondheim/",
+    "label": "SOT Bar & Burger",
+    "page": "SOT Solsiden – adresse",
+    "publisher": "SOT Bar & Burger",
+    "checkedAt": "2026-09-14"
+  },
+  {
+    "id": "utv2-20260914-18",
+    "url": "https://www.sotbar.no/velkommen/",
+    "label": "SOT Bar & Burger",
+    "page": "Velkommen til SOT Solsiden",
+    "publisher": "SOT Bar & Burger",
+    "checkedAt": "2026-09-14"
+  },
+  {
+    "id": "utv2-20260914-19",
+    "url": "https://www.sotbar.no/take-away/",
+    "label": "SOT Bar & Burger",
+    "page": "Ta med burgeren hjem",
+    "publisher": "SOT Bar & Burger",
+    "checkedAt": "2026-09-14"
+  },
+  {
+    "id": "utv2-20260914-20",
+    "url": "https://ws.geonorge.no/adresser/v1/sok?sok=TMV-kaia+3&kommunenummer=5001&utkoordsys=4258&treffPerSide=10",
+    "label": "Kartverket",
+    "page": "Adressepunkt: TMV-kaia 3",
+    "publisher": "Kartverket",
+    "checkedAt": "2026-09-14"
+  },
+  {
+    "id": "utv2-20260914-21",
+    "url": "https://rockheim.no/hovedutstillingen",
+    "label": "Rockheim – Hovedutstillingen",
+    "page": "Rockheim – Hovedutstillingen",
+    "publisher": "Rockheim / Museene i Sør-Trøndelag",
+    "checkedAt": "2026-09-14"
+  },
+  {
+    "id": "utv2-20260914-22",
+    "url": "https://rockheim.no/slik-finner-du-oss",
+    "label": "Rockheim – Slik finner du oss",
+    "page": "Rockheim – Slik finner du oss",
+    "publisher": "Rockheim / Museene i Sør-Trøndelag",
+    "checkedAt": "2026-09-14"
+  },
+  {
+    "id": "utv2-20260914-23",
+    "url": "https://ws.geonorge.no/adresser/v1/sok?sok=Bratt%C3%B8rkaia+14&kommunenummer=5001&utkoordsys=4258&treffPerSide=20",
+    "label": "Kartverket",
+    "page": "Adressepunkt: Brattørkaia 14",
+    "publisher": "Kartverket",
+    "checkedAt": "2026-09-14"
+  },
+  {
+    "id": "utv2-20260914-24",
+    "url": "https://www.pirbadet.no/badeopplevelser",
+    "label": "Pirbadet – Badeopplevelser",
+    "page": "Pirbadet – Badeopplevelser",
+    "publisher": "Stiftelsen Trondheim Pirbad",
+    "checkedAt": "2026-09-14"
+  },
+  {
+    "id": "utv2-20260914-25",
+    "url": "https://www.pirbadet.no/baderegler",
+    "label": "Pirbadet – Baderegler",
+    "page": "Pirbadet – Baderegler",
+    "publisher": "Stiftelsen Trondheim Pirbad",
+    "checkedAt": "2026-09-14"
+  },
+  {
+    "id": "utv2-20260914-26",
+    "url": "https://ws.geonorge.no/adresser/v1/sok?sok=Havnegata+12&kommunenummer=5001&utkoordsys=4258&treffPerSide=20",
+    "label": "Kartverket",
+    "page": "Adressepunkt: Havnegata 12",
+    "publisher": "Kartverket",
+    "checkedAt": "2026-09-14"
+  },
+  {
+    "id": "utv2-20260914-27",
+    "url": "https://dokkhuset.no/?p=9899&post_type=post",
+    "label": "Dokkhuset – Program",
+    "page": "Dokkhuset – Program",
+    "publisher": "Dokkhuset Scene",
+    "checkedAt": "2026-09-14"
+  },
+  {
+    "id": "utv2-20260914-28",
+    "url": "https://dokkhuset.no/footer/",
+    "label": "Dokkhuset – Besøksadresse",
+    "page": "Dokkhuset – Besøksadresse",
+    "publisher": "Dokkhuset Scene",
+    "checkedAt": "2026-09-14"
+  },
+  {
+    "id": "utv2-20260914-29",
+    "url": "https://ws.geonorge.no/adresser/v1/sok?sok=Dokkparken+4&kommunenummer=5001&utkoordsys=4258&treffPerSide=20",
+    "label": "Kartverket",
+    "page": "Adressepunkt: Dokkparken 4",
+    "publisher": "Kartverket",
+    "checkedAt": "2026-09-14"
+  },
+  {
+    "id": "utv2-20260914-30",
+    "url": "https://www.solsidensenter.no/store/apotek1-solsiden-2/",
+    "label": "Solsiden – Apotek 1 Solsiden",
+    "page": "Solsiden – Apotek 1 Solsiden",
+    "publisher": "Solsiden kjøpesenter",
+    "checkedAt": "2026-09-14"
+  },
+  {
+    "id": "utv2-20260914-31",
+    "url": "https://virksomhet.brreg.no/nb/oppslag/underenheter/913462696",
+    "label": "Apotek 1 Solsiden – Beliggenhetsadresse",
+    "page": "Apotek 1 Solsiden – Beliggenhetsadresse",
+    "publisher": "Brønnøysundregistrene",
+    "checkedAt": "2026-09-14"
+  },
+  {
+    "id": "utv2-20260914-32",
+    "url": "https://www.solsidensenter.no/store/vinmonopolet-solsiden-2/",
+    "label": "Solsiden – Vinmonopolet Solsiden",
+    "page": "Solsiden – Vinmonopolet Solsiden",
+    "publisher": "Solsiden kjøpesenter",
+    "checkedAt": "2026-09-14"
+  },
+  {
+    "id": "utv2-20260914-33",
+    "url": "https://www.solsidensenter.no/finn-frem/",
+    "label": "Solsiden – Finn frem",
+    "page": "Solsiden – Finn frem",
+    "publisher": "Solsiden kjøpesenter",
+    "checkedAt": "2026-09-14"
+  },
+  {
+    "id": "utv2-20260914-34",
+    "url": "https://www.rema.no/emvleverandorer/fakturainformasjon-rema-1000-butikker/",
+    "label": "REMA 1000 – Butikkoversikt og adresser",
+    "page": "REMA 1000 – Butikkoversikt og adresser",
+    "publisher": "REMA 1000",
+    "checkedAt": "2026-09-14"
+  },
+  {
+    "id": "utv2-20260914-35",
+    "url": "https://virksomhet.brreg.no/nn/oppslag/enheter/929958667",
+    "label": "REMA 1000 Solsiden – Virksomhetsopplysninger",
+    "page": "REMA 1000 Solsiden – Virksomhetsopplysninger",
+    "publisher": "Brønnøysundregistrene",
+    "checkedAt": "2026-09-14"
+  },
+  {
+    "id": "utv2-20260914-36",
+    "url": "https://ws.geonorge.no/adresser/v1/sok?sok=Dyre+Halses+gate+1A&kommunenummer=5001&utkoordsys=4258&treffPerSide=20",
+    "label": "Kartverket",
+    "page": "Adressepunkt: Dyre Halses gate 1A",
+    "publisher": "Kartverket",
+    "checkedAt": "2026-09-14"
+  },
+  {
+    "id": "utv2-20260914-37",
+    "url": "https://www.leoslekeland.no/vare-lekeland/trondheim",
+    "label": "Leo's Lekeland – Trondheim",
+    "page": "Leo's Lekeland – Trondheim",
+    "publisher": "Leo's Lekeland",
+    "checkedAt": "2026-09-14"
+  },
+  {
+    "id": "utv2-20260914-38",
+    "url": "https://ws.geonorge.no/adresser/v1/sok?sok=Ladebekken+6&kommunenummer=5001&utkoordsys=4258&treffPerSide=20",
+    "label": "Kartverket",
+    "page": "Adressepunkt: Ladebekken 6",
+    "publisher": "Kartverket",
+    "checkedAt": "2026-09-14"
+  },
+  {
+    "id": "utv2-20260914-39",
+    "url": "https://www.trondheim.kommune.no/tema/kultur-og-fritid/aktivitetstilbudkulturtilbud/fritidsklubber/lade-motor/",
+    "label": "Trondheim kommune – Lade Motor",
+    "page": "Trondheim kommune – Lade Motor",
+    "publisher": "Trondheim kommune",
+    "checkedAt": "2026-09-14"
+  },
+  {
+    "id": "handel-20260914-01",
+    "url": "https://www.solsidensenter.no/butikker-2/",
+    "label": "Butikker på Solsiden",
+    "page": "Butikker på Solsiden",
+    "publisher": "Solsiden senter",
+    "checkedAt": "2026-09-14"
+  },
+  {
+    "id": "handel-20260914-02",
+    "url": "https://citylade.no/butikkoversikt/",
+    "label": "Butikker på City Lade",
+    "page": "Butikker på City Lade",
+    "publisher": "City Lade",
+    "checkedAt": "2026-09-14"
+  },
+  {
+    "id": "handel-20260914-03",
+    "url": "https://citylade.no/",
+    "label": "City Lade – adresse",
+    "page": "City Lade – adresse",
+    "publisher": "City Lade",
+    "checkedAt": "2026-09-14"
+  },
+  {
+    "id": "handel-20260914-04",
+    "url": "https://trondheimtorg.no/butikker/",
+    "label": "Butikker på Trondheim Torg",
+    "page": "Butikker på Trondheim Torg",
+    "publisher": "Trondheim Torg",
+    "checkedAt": "2026-09-14"
+  },
+  {
+    "id": "handel-20260914-05",
+    "url": "https://trondheimtorg.no/",
+    "label": "Trondheim Torg – besøksadresse",
+    "page": "Trondheim Torg – besøksadresse",
+    "publisher": "Trondheim Torg",
+    "checkedAt": "2026-09-14"
+  },
+  {
+    "id": "handel-20260914-06",
+    "url": "https://trondheimtorg.no/klikk-hent/",
+    "label": "Klikk og hent på Trondheim Torg",
+    "page": "Klikk og hent på Trondheim Torg",
+    "publisher": "Trondheim Torg",
+    "checkedAt": "2026-09-14"
+  },
+  {
+    "id": "handel-20260914-07",
+    "url": "https://trondheimtorg.no/butikk/rema-1000/",
+    "label": "REMA 1000 – plassering utenfor hovedinngangen",
+    "page": "REMA 1000 – plassering utenfor hovedinngangen",
+    "publisher": "Trondheim Torg",
+    "checkedAt": "2026-09-14"
+  },
+  {
+    "id": "handel-20260914-08",
+    "url": "https://sirkusshopping.no/butikker/",
+    "label": "Butikker på Sirkus Shopping",
+    "page": "Butikker på Sirkus Shopping",
+    "publisher": "Sirkus Shopping",
+    "checkedAt": "2026-09-14"
+  },
+  {
+    "id": "handel-20260914-09",
+    "url": "https://sirkusshopping.no/praktisk-informasjon/om-senteret/",
+    "label": "Om senteret – adresse og tjenester",
+    "page": "Om senteret – adresse og tjenester",
+    "publisher": "Sirkus Shopping",
+    "checkedAt": "2026-09-14"
+  },
+  {
+    "id": "handel-20260914-10",
+    "url": "https://sirkusshopping.no/butikker/coop-mega/",
+    "label": "Coop Mega på Sirkus Shopping",
+    "page": "Coop Mega på Sirkus Shopping",
+    "publisher": "Sirkus Shopping",
+    "checkedAt": "2026-09-14"
+  },
+  {
+    "id": "handel-20260914-11",
+    "url": "https://www.coop.no/butikker/obs/obs-city-lade-2342",
+    "label": "Coop",
+    "page": "Obs City Lade – butikkadresse",
+    "publisher": "Coop",
+    "checkedAt": "2026-09-14"
+  },
+  {
+    "id": "handel-20260914-12",
+    "url": "https://www.coop.no/butikker/coop-mega/coop-mega-sirkus-shopping-4561",
+    "label": "Coop",
+    "page": "Coop Mega Sirkus Shopping – butikkadresse",
+    "publisher": "Coop",
+    "checkedAt": "2026-09-14"
+  },
+  {
+    "id": "handel-20260914-13",
+    "url": "https://www.bunnpris.no/butikker/bunnpris-buran",
+    "label": "Bunnpris",
+    "page": "Bunnpris Buran – butikk og tjenester",
+    "publisher": "Bunnpris",
+    "checkedAt": "2026-09-14"
+  },
+  {
+    "id": "handel-20260914-14",
+    "url": "https://www.bunnpris.no/butikker/bunnpris-lade",
+    "label": "Bunnpris",
+    "page": "Bunnpris Lade – butikk og tjenester",
+    "publisher": "Bunnpris",
+    "checkedAt": "2026-09-14"
+  },
+  {
+    "id": "handel-20260914-15",
+    "url": "https://www.coop.no/butikker/extra/extra-lilleby-2664",
+    "label": "Coop",
+    "page": "Extra Lilleby – butikk og tjenester",
+    "publisher": "Coop",
+    "checkedAt": "2026-09-14"
+  },
+  {
+    "id": "handel-20260914-16",
+    "url": "https://ws.geonorge.no/adresser/v1/sok?sok=Beddingen+10&kommunenummer=5001&utkoordsys=4258&treffPerSide=20",
+    "label": "Kartverket",
+    "page": "Adressepunkt: Beddingen 10",
+    "publisher": "Kartverket",
+    "checkedAt": "2026-09-14"
+  },
+  {
+    "id": "handel-20260914-17",
+    "url": "https://ws.geonorge.no/adresser/v1/sok?sok=Haakon+VII%27s+gate+9&kommunenummer=5001&utkoordsys=4258&treffPerSide=20",
+    "label": "Kartverket",
+    "page": "Adressepunkt: Haakon VII's gate 9",
+    "publisher": "Kartverket",
+    "checkedAt": "2026-09-14"
+  },
+  {
+    "id": "handel-20260914-18",
+    "url": "https://ws.geonorge.no/adresser/v1/sok?sok=Kongens+gate+9&kommunenummer=5001&utkoordsys=4258&treffPerSide=20",
+    "label": "Kartverket",
+    "page": "Adressepunkt: Kongens gate 9",
+    "publisher": "Kartverket",
+    "checkedAt": "2026-09-14"
+  },
+  {
+    "id": "handel-20260914-19",
+    "url": "https://ws.geonorge.no/adresser/v1/sok?sok=Falkenborgvegen+1&kommunenummer=5001&utkoordsys=4258&treffPerSide=20",
+    "label": "Kartverket",
+    "page": "Adressepunkt: Falkenborgvegen 1",
+    "publisher": "Kartverket",
+    "checkedAt": "2026-09-14"
+  },
+  {
+    "id": "handel-20260914-20",
+    "url": "https://ws.geonorge.no/adresser/v1/sok?sok=Munkegata+22&kommunenummer=5001&utkoordsys=4258&treffPerSide=20",
+    "label": "Kartverket",
+    "page": "Adressepunkt: Munkegata 22",
+    "publisher": "Kartverket",
+    "checkedAt": "2026-09-14"
+  },
+  {
+    "id": "handel-20260914-21",
+    "url": "https://ws.geonorge.no/adresser/v1/sok?sok=Ulstadl%C3%B8kkveien+5&kommunenummer=5001&utkoordsys=4258&treffPerSide=20",
+    "label": "Kartverket",
+    "page": "Adressepunkt: Ulstadløkkveien 5",
+    "publisher": "Kartverket",
+    "checkedAt": "2026-09-14"
+  },
+  {
+    "id": "handel-20260914-22",
+    "url": "https://ws.geonorge.no/adresser/v1/sok?sok=Stj%C3%B8rdalsveien+4&kommunenummer=5001&utkoordsys=4258&treffPerSide=20",
+    "label": "Kartverket",
+    "page": "Adressepunkt: Stjørdalsveien 4",
+    "publisher": "Kartverket",
+    "checkedAt": "2026-09-14"
+  },
+  {
+    "url": "https://www.banenor.no/reise-og-trafikk/stasjoner/-l-/lademoen/",
+    "label": "Bane NOR",
+    "page": "Lademoen stasjon",
+    "publisher": "Bane NOR",
+    "id": "transport-20260914-01",
+    "checkedAt": "2026-09-14"
+  },
+  {
+    "url": "https://gbfs.urbansharing.com/trondheimbysykkel.no/station_information.json",
+    "label": "Trondheim Bysykkel",
+    "page": "Stasjonsinformasjon – offisiell GBFS-feed",
+    "publisher": "Trondheim Bysykkel",
+    "id": "transport-20260914-02",
+    "checkedAt": "2026-09-14"
+  },
+  {
+    "url": "https://trondheimbysykkel.no/slik-virker-det",
+    "label": "Trondheim Bysykkel",
+    "page": "Sånn funker det",
+    "publisher": "Trondheim Bysykkel",
+    "id": "transport-20260914-03",
+    "checkedAt": "2026-09-14"
+  },
+  {
+    "id": "aktivitet-20260914-01",
+    "url": "https://www.banenor.no/reise-og-trafikk/stasjoner/-l-/lilleby/",
+    "label": "Bane NOR",
+    "page": "Lilleby stasjon",
+    "publisher": "Bane NOR",
+    "checkedAt": "2026-09-14"
+  },
+  {
+    "id": "aktivitet-20260914-02",
+    "url": "https://flexgym.no/",
+    "label": "Flex Gym",
+    "page": "Treningstilbud på Flex Gym",
+    "publisher": "Flex Gym",
+    "checkedAt": "2026-09-14"
+  },
+  {
+    "id": "aktivitet-20260914-03",
+    "url": "https://flexgym.no/ofte-stilte-sporsmal/",
+    "label": "Flex Gym",
+    "page": "Ofte stilte spørsmål",
+    "publisher": "Flex Gym",
+    "checkedAt": "2026-09-14"
+  },
+  {
+    "id": "aktivitet-20260914-04",
+    "url": "https://data.brreg.no/enhetsregisteret/api/underenheter/982216850",
+    "label": "Brønnøysundregistrene",
+    "page": "Flex Gym AS – beliggenhetsadresse for underenheten",
+    "publisher": "Brønnøysundregistrene",
+    "checkedAt": "2026-09-14"
+  },
+  {
+    "id": "aktivitet-20260914-05",
+    "url": "https://buld.no/",
+    "label": "Buld.no",
+    "page": "Buld.no – buldresenter, klatreskole og besøksadresse",
+    "publisher": "Buld.no",
+    "checkedAt": "2026-09-14"
+  },
+  {
+    "id": "aktivitet-20260914-06",
+    "url": "https://www.trondheim.kommune.no/tema/kultur-og-fritid/lokaler/trikkestallen/",
+    "label": "Trondheim kommune",
+    "page": "Trikkestallen skatepark – tilbud, adresse og regler",
+    "publisher": "Trondheim kommune",
+    "checkedAt": "2026-09-14"
+  },
+  {
+    "id": "aktivitet-20260914-07",
+    "url": "https://www.trondheimrocks.no/arena",
+    "label": "Trondheim Rocks",
+    "page": "Ladesletta – ny festivalarena i 2026",
+    "publisher": "Trondheim Rocks",
+    "checkedAt": "2026-09-14"
+  },
+  {
+    "id": "aktivitet-20260914-08",
+    "url": "https://no.linkedin.com/posts/trondheim-stage_neon-tar-et-nytt-og-viktig-steg-inn-i-fremtiden-activity-7396890337505538048-vizG",
+    "label": "Trondheim Stage",
+    "page": "NEON flytter til Ladesletta fra 2026",
+    "publisher": "Trondheim Stage",
+    "checkedAt": "2026-09-14"
+  },
+  {
+    "id": "aktivitet-20260914-09",
+    "url": "https://www.tsvk.no/",
+    "label": "Trondheim Sandvolleyballklubb",
+    "page": "Trening i Lade idrettspark",
+    "publisher": "Trondheim Sandvolleyballklubb",
+    "checkedAt": "2026-09-14"
   }
 ]

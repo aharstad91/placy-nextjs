@@ -1,3 +1,4 @@
+import { isAnchorPOI } from "@/lib/board/anchor-poi";
 import "server-only";
 
 import { readFile } from "node:fs/promises";
@@ -115,7 +116,12 @@ export function assertReferences(dataset: LocalDataset): void {
 
   const categoryIds = new Set(dataset.board.categories.map((c) => c.id));
   const sourceIds = new Set(dataset.sources.map((s) => s.id));
-  const placeIds = new Set(dataset.places.map((p) => p.id));
+  const placeById = new Map(dataset.places.map(p => [p.id, p]));
+  const placeIds = new Set(placeById.keys());
+  const childCountByParentId = new Map<string, number>();
+  for (const place of dataset.places) {
+    if (place.parentPlaceId) childCountByParentId.set(place.parentPlaceId, (childCountByParentId.get(place.parentPlaceId) ?? 0) + 1);
+  }
 
   const dupe = (file: string, ids: string[]) => {
     const found = duplicates(ids);
@@ -136,10 +142,31 @@ export function assertReferences(dataset: LocalDataset): void {
     if (category.sourceId) source(`${FILES.board} → kategori «${category.id}»`, [category.sourceId]);
   }
 
+  dupe("board.json → presentation", (dataset.board.presentation ?? []).map(s => s.id));
+  for (const segment of dataset.board.presentation ?? []) {
+    const owner = `board.json → presentation «${segment.id}»`;
+    if (!categoryIds.has(segment.categoryId)) problems.push(`${owner}: ukjent categoryId «${segment.categoryId}».`);
+    for (const id of segment.placeIds) {
+      const place = dataset.places.find(p => p.id === id);
+      if (!place) problems.push(`${owner}: ukjent placeId «${id}».`);
+      else if (place.categoryId !== segment.categoryId) problems.push(`${owner}: stedet «${id}» tilhører kategorien «${place.categoryId}», ikke «${segment.categoryId}».`);
+    }
+    source(owner, segment.sourceIds);
+  }
+
   for (const place of dataset.places) {
     const owner = `${FILES.places} → «${place.id}»`;
     if (!categoryIds.has(place.categoryId)) {
       problems.push(`${owner}: ukjent categoryId «${place.categoryId}» (mangler i ${FILES.board}).`);
+    }
+    if (place.parentPlaceId) {
+      const parent = placeById.get(place.parentPlaceId);
+      if (place.parentPlaceId === place.id || !parent || !isAnchorPOI(parent) || parent.parentPlaceId || isAnchorPOI(place)) {
+        problems.push(`${owner}: parentPlaceId må peke til et annet, selvstendig kjøpesenter.`);
+      }
+    }
+    if (isAnchorPOI(place) && (childCountByParentId.get(place.id) ?? 0) < 4) {
+      problems.push(`${owner}: kjøpesenter må ha minst fire dokumenterte virksomheter.`);
     }
     source(owner, place.sourceIds);
     source(owner, place.facts.map((f) => f.sourceId));

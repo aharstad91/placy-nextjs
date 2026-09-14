@@ -200,11 +200,16 @@ export interface BoardHome {
   /** Undertittel i 3D-prosjektmarkøren (fra reportConfig.pinSubtitle).
    *  Tom streng = bare navnet; undefined = markørens egen default. */
   pinSubtitle?: string;
+  /** Bilde i 3D-prosjektmarkørens skive. Vinner over `assets.pinThumbnail`. */
+  pinImage?: string;
   /** Hjem-spor for audio-tour — kun satt når både url og manus eksisterer. */
   audio?: BoardAudioTrack;
 }
 
 export interface BoardData {
+  /** Curated reserve, omitted from the initial local demo view. */
+  demoReservePlaceIds?: string[];
+  demoRadiusPlaces?: import("@/lib/demo/nyhavna-lokal/radius").RadiusPlace[];
   demoSnapshotId?: string;
   /**
    * Hvilket demo-datasett stemmen skal snakke ut fra.

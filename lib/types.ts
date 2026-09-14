@@ -49,6 +49,12 @@ export interface POI {
   category: Category;
   description?: string;
   featuredImage?: string;
+  /**
+   * Bilde som FYLLER kartmarkøren i stedet for kategori-ikonet, og gjør den
+   * like stor som prosjektpinnen. Egen akse ved siden av `featuredImage`:
+   * Google-foto er kortbilder og skal ikke gjøre hver kafé til en bildepinne.
+   */
+  markerImage?: string;
   galleryImages?: string[];
 
   // Google Places data (for Google Points)

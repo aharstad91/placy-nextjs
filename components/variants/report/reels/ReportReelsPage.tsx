@@ -655,6 +655,7 @@ function ResponsiveLayoutInner({
   /** Ankommet fra embed (`?from=embed`): "Klar"-gate i stedet for velkomst-splash. */
   fromEmbed: boolean;
 }) {
+  const visibleBoard = useBoard().data;
   const home = boardData.home;
   const isDesktop = useMediaQuery("(min-width: 1024px)");
 
@@ -851,7 +852,7 @@ function ResponsiveLayoutInner({
             onLogoClick={handleReopenSplash}
             noBrokers={eventMode || hideBrokerCard}
             eventFilter={eventFilter}
-            categories={boardData.categories}
+            categories={visibleBoard.categories}
             collection={collection}
             onOpenCollection={onOpenCollection}
             renderActiveCard={(i) => <CardRouter cardIndex={i} desktopMode />}
@@ -920,7 +921,7 @@ function ResponsiveLayoutInner({
       <EventMobileSheet
         has3dAddon={has3dAddon}
         eventFilter={eventFilter}
-        categories={boardData.categories}
+        categories={visibleBoard.categories}
         collection={collection}
         onOpenCollection={onOpenCollection}
       />

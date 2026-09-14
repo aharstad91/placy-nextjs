@@ -52,7 +52,7 @@ export type LiveEndReason = "manual" | "limit" | "idle" | "connection" | "error"
 export type LiveContextMessage =
   | { kind: "theme"; id: string; label?: string }
   | { kind: "place"; id: string; name?: string }
-  | { kind: "state"; selected_category_id: string | null; selected_place_id: string | null; travel_mode: string }
+  | { kind: "state"; selected_category_id: string | null; selected_place_id: string | null; travel_mode: string; revealed_place_ids?: string[] }
   | { kind: "text"; text: string };
 
 /** Resultatet av et server-verktøy: det backenden får, og kartdirektiver serveren selv utløser. */
@@ -107,6 +107,7 @@ export interface LiveBoardState {
   selected_category_id: string | null;
   selected_place_id: string | null;
   travel_mode: string;
+  revealed_place_ids?: string[];
 }
 
 /**

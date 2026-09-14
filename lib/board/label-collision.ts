@@ -41,6 +41,8 @@ export interface LabelCandidate {
    * Number.POSITIVE_INFINITY så den aldri kulles.
    */
   priority: number;
+  /** Overstyrer `metrics.offsetX` for denne markøren (større skive → labelen starter lenger ut). */
+  offsetX?: number;
 }
 
 /**
@@ -216,7 +218,8 @@ export function estimateLabelBox(
   const width = Math.min(textW, maxW);
   const lines = textW > maxW ? LABEL_MAX_LINES : 1;
   const height = lines * LABEL_LINE_H * scale;
-  const left = side === "right" ? c.x + offsetX : c.x - offsetX - width;
+  const off = c.offsetX ?? offsetX;
+  const left = side === "right" ? c.x + off : c.x - off - width;
   const top = c.y - height / 2;
   return { left, top, right: left + width, bottom: top + height };
 }

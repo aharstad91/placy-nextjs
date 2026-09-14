@@ -107,7 +107,8 @@ const ACCENT_TINT = "#fbeee8"; // lys shade av aksenten (disc-bakgrunn)
 const HALO = "#ffffff";
 const HALO_W = 3.5;
 
-const DISC = 52; // disc-diameter — POI-pinnene er 32 (PIN_SIZE), så hjemmet
+export const PROJECT_PIN_DISC = 52;
+const DISC = PROJECT_PIN_DISC; // disc-diameter — POI-pinnene er 32 (PIN_SIZE), så hjemmet
                  // leser som klart større uten å bli et kort igjen
 const RING_W = 3;
 const GLOW_W = 3; // myk aksent-glød utenfor ringen

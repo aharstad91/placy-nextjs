@@ -1,19 +1,54 @@
 [
   {
+    "id": "bo-felleskontekst",
+    "title": "Nyhavna som framtidig bydel",
+    "categoryIds": [],
+    "status": "planned",
+    "text": "Nyhavna Utvikling vil gjøre havne- og industriområdet til en bydel hvor boliger, arbeidsplasser, kultur og natur er tett på hverandre. Vannet og krigshistorien skal prege identiteten. Ambisjonen er boliger for kjøp og leie, tilpasset ulike livsfaser, med delte funksjoner som gjesterom og verksted. Promenade, parker og møteplasser skal gjøre uterommene til del av hverdagen. Dette beskriver bydelen som utvikles, ikke et ferdig tilbud i dag.",
+    "keywords": [
+      "bo",
+      "boliger",
+      "beboer",
+      "bydel",
+      "visjon",
+      "fellesrom",
+      "kjøpe",
+      "leie",
+      "utvikling"
+    ],
+    "sourceIds": [
+      "bo-felles"
+    ],
+    "relatedPlaceIds": [
+      "transittkaia",
+      "kullkranpiren",
+      "strandveikaia",
+      "ladehammerkaia",
+      "bunkerkvartalet"
+    ],
+    "checkedAt": "2026-09-14",
+    "caveats": []
+  },
+  {
     "id": "demo-krets",
     "title": "Hvilke skoler er aktuelle?",
     "categoryIds": [
       "barn-oppvekst"
     ],
     "status": "existing",
-    "text": "Lilleby barneskole og Rosenborg ungdomsskole er de aktuelle skolene i planmaterialet for Transittkaia. Skoletilhørigheten må avklares for den aktuelle boligen.",
+    "text": "Lilleby barneskole og Rosenborg ungdomsskole er de aktuelle skolene i planmaterialet for Transittkaia. Skoletilhørigheten må avklares for den aktuelle boligen. Lilleby skole har 1.–7. trinn.",
     "keywords": [
       "Lilleby skole",
-      "Rosenborg skole"
+      "Rosenborg skole",
+      "klassetrinn",
+      "første",
+      "sjuende",
+      "1–7"
     ],
     "sourceIds": [
       "v-planb",
-      "v-krets"
+      "v-krets",
+      "demo-lilleby-trinn"
     ],
     "relatedPlaceIds": [
       "lilleby-skole",
@@ -29,7 +64,7 @@
       "barn-oppvekst"
     ],
     "status": "existing",
-    "text": "Fra demoens markerte punkt er det beregnet cirka 16 minutter å gå til Lilleby skole og 20 minutter til Rosenborg skole. På sykkel er anslagene 6 og 10 minutter. Trykk på skolen for å se ruten.",
+    "text": "Fra demoens markerte punkt er det beregnet cirka 16 minutter å gå til Lilleby skole og 20 minutter til Rosenborg skole. På sykkel er anslagene 6 og 10 minutter. Trykk på skolen for å se ruten. Gangruten til Lilleby er omtrent 1,3 kilometer. Dette er en beregnet rute; kryssingene og tryggheten på stedet er ikke vurdert.",
     "keywords": [
       "Lilleby skole",
       "Rosenborg skole"
@@ -53,7 +88,7 @@
       "barn-oppvekst"
     ],
     "status": "existing",
-    "text": "Nedre Elvehavn og Voldsminde er to kommunale barnehager i nærområdet. Fra demoens punkt er det beregnet rundt 9 og 12 minutter å gå. Se kommunens sider for informasjon og opptak; ledige plasser er ikke undersøkt.",
+    "text": "Nedre Elvehavn og Voldsminde er to kommunale barnehager i nærområdet. Fra Nyhavna er det beregnet rundt 9 og 12 minutter å gå. Se kommunens sider for informasjon og opptak; ledige plasser er ikke undersøkt.",
     "keywords": [
       "Nedre Elvehavn barnehage",
       "Voldsminde barnehage"
@@ -77,7 +112,7 @@
       "opplevelser"
     ],
     "status": "existing",
-    "text": "Dere har blant annet bowling på Dora 1, padel ved E.C. Dahls og turmuligheter langs Ladestien. Bowling ligger rundt 3 minutter til fots fra demoens punkt, padel rundt 8. Se stedskortene for plassering og booking.",
+    "text": "Dere har blant annet bowling på Dora 1, padel ved E.C. Dahls og turmuligheter langs Ladestien. Bowling ligger rundt 3 minutter til fots fra Nyhavna, padel rundt 8. Se stedskortene for plassering og booking.",
     "keywords": [
       "Dora 1 Bowling",
       "Nyhavna Padel",
@@ -104,7 +139,7 @@
       "mat-drikke"
     ],
     "status": "existing",
-    "text": "Dora Kaffebar ligger i Kobbes gate, rundt 2 minutter til fots fra demoens punkt. Snurr i Ladebekken har kaffe, frokost og bakervarer, rundt 15 minutter unna til fots. Åpningstider finner dere på stedenes egne sider.",
+    "text": "Dora Kaffebar ligger i Kobbes gate, rundt 2 minutter til fots fra Nyhavna. Snurr i Ladebekken har kaffe, frokost og bakervarer, rundt 15 minutter unna til fots. Åpningstider finner dere på stedenes egne sider.",
     "keywords": [
       "Dora Kaffebar",
       "Snurr Nyhavna"
@@ -128,7 +163,7 @@
       "mat-drikke"
     ],
     "status": "existing",
-    "text": "Ladejarlen og Nyhavna BistroBar er to alternativer i nærområdet, rundt 8 og 15 minutter til fots fra demoens punkt. På stedskortene finner dere lenker til meny og åpningstider.",
+    "text": "Ladejarlen og Nyhavna BistroBar er to alternativer i nærområdet, rundt 8 og 15 minutter til fots fra Nyhavna. På stedskortene finner dere lenker til meny og åpningstider.",
     "keywords": [
       "Ladejarlen",
       "Nyhavna BistroBar"
@@ -178,7 +213,7 @@
       "hverdagsliv"
     ],
     "status": "existing",
-    "text": "MENY Solsiden og KIWI Lilleby er to alternativer, rundt 11 og 15 minutter til fots fra demoens punkt. KIWI har også utendørs pakkebokser fra Posten og PostNord.",
+    "text": "MENY Solsiden og KIWI Lilleby er to alternativer, rundt 11 og 15 minutter til fots fra Nyhavna. KIWI har også utendørs pakkebokser fra Posten og PostNord.",
     "keywords": [
       "MENY Solsiden",
       "KIWI Lilleby"
@@ -202,14 +237,15 @@
       "transport"
     ],
     "status": "existing",
-    "text": "Av holdeplassene i dette utvalget er Losgata nærmest, rundt 4 minutter til fots fra demoens punkt. Dora ligger rundt 5 minutter unna. Sjekk AtB for riktig retning og avgang.",
+    "text": "Losgata ligger rundt 4 minutter til fots fra Nyhavna, med linje 20 mot Lade, Strindheim og Grilstad. Skal du mot sentrum, bruker du Dora holdeplass, rundt 5 minutter å gå. Sjekk AtB for riktig avgang.",
     "keywords": [
       "Losgata",
       "Dora"
     ],
     "sourceIds": [
       "demo-atb",
-      "demo-route"
+      "demo-route",
+      "demo-line20"
     ],
     "relatedPlaceIds": [
       "losgata",
@@ -225,10 +261,14 @@
       "transport"
     ],
     "status": "existing",
-    "text": "Linje 20 fra Losgata eller Dora går mot Trondheim S og sentrum. Fra Dora går også linje 71 via Solsiden og sentrum. Bruk AtB for avgangen som passer reisen deres. Til Trondheim S er det beregnet rundt 8 minutter på sykkel fra demoens punkt.",
+    "text": "Fra Dora holdeplass går linje 20 mot Trondheim S. Selve bussturen tar rundt 4 minutter i rutetabellen, for eksempel klokken 08.31–08.35 på en hverdag. Til holdeplassen er det rundt 5 minutter å gå fra Nyhavna. Linje 71 fra Dora går også via Solsiden og sentrum.",
     "keywords": [
       "Losgata",
-      "Dora"
+      "Dora",
+      "busstid",
+      "reisetid",
+      "buss",
+      "fire minutter"
     ],
     "sourceIds": [
       "demo-line20",
@@ -237,7 +277,6 @@
       "demo-stasjon"
     ],
     "relatedPlaceIds": [
-      "losgata",
       "dora-holdeplass",
       "trondheim-s"
     ],
@@ -251,7 +290,7 @@
       "transport"
     ],
     "status": "existing",
-    "text": "Trondheim Bilkollektiv har hentested i Mellomveien, rundt 12 minutter til fots fra demoens punkt. Dere trenger medlemskap og reservasjon, og bilen returneres til hentestedet. Se operatørens side for tilgjengelighet og vilkår.",
+    "text": "Trondheim Bilkollektiv har hentested i Mellomveien, rundt 12 minutter til fots fra Nyhavna. Dere trenger medlemskap og reservasjon, og bilen returneres til hentestedet. Se operatørens side for tilgjengelighet og vilkår.",
     "keywords": [
       "Bildeling i Mellomveien"
     ],
@@ -284,5 +323,133 @@
     ],
     "checkedAt": "2026-09-14",
     "caveats": []
+  },
+  {
+    "id": "servering-prove-dora",
+    "title": "Dora Kaffebar: kaffe, bakst og hvem som kan komme innom",
+    "categoryIds": [
+      "mat-drikke"
+    ],
+    "status": "existing",
+    "text": "Dora Kaffebar ligger i første etasje i Kobbes gate 2 og er åpen også for besøkende som ikke jobber i bygget. Nyhavna omtaler brød, søtbakst og håndverkskaffe. Kaffebaren følger byggets åpningstider.",
+    "keywords": [
+      "Dora Kaffebar",
+      "Dora",
+      "kaffe",
+      "bakst",
+      "brød",
+      "ansatte",
+      "besøkende",
+      "åpent for alle"
+    ],
+    "sourceIds": [
+      "s-dora",
+      "s-servering-prove-nyhavna"
+    ],
+    "relatedPlaceIds": [
+      "dora-kaffebar"
+    ],
+    "checkedAt": "2026-09-14",
+    "caveats": [
+      "Eksakte åpningstider er ikke lagt inn. Byggets personalrestaurant og takterrasser er ikke dokumentert som tilbud for kafégjester."
+    ]
+  },
+  {
+    "id": "servering-prove-snurr",
+    "title": "Snurr Nyhavna: frokost, lunsj og et vegansk alternativ",
+    "categoryIds": [
+      "mat-drikke"
+    ],
+    "status": "existing",
+    "text": "Snurr i Ladebekken har frokostretter, påsmurt mat og varme lunsjretter. Menyen viser blant annet croissant med bær, sandwicher og pasta. Tomat og avokado på surdeigsbrød er merket vegansk. Avdelingen har også klikk og hent.",
+    "keywords": [
+      "Snurr",
+      "frokost",
+      "lunsj",
+      "mat",
+      "meny",
+      "vegansk",
+      "veganer",
+      "vegetar",
+      "hente"
+    ],
+    "sourceIds": [
+      "s-snurr"
+    ],
+    "relatedPlaceIds": [
+      "snurr-nyhavna"
+    ],
+    "checkedAt": "2026-09-14",
+    "caveats": [
+      "Menyeksempler kontrollert 14. september 2026; utvalget kan endres. Vegansk menymerking er ikke en garanti om allergenfri tilberedning."
+    ]
+  },
+  {
+    "id": "servering-prove-bistro",
+    "title": "Nyhavna BistroBar: middag med venner, småretter og lokale leverandører",
+    "categoryIds": [
+      "mat-drikke"
+    ],
+    "status": "existing",
+    "text": "Nyhavna BistroBar har småretter som egner seg til forrett eller deling rundt bordet, blant annet tartar og stracciatella. Menyen har også hovedretter som fish and chips. Brødet er oppgitt å komme fra Snurr Håndverksbakeri, og stracciatellaen fra Toddum gård.",
+    "keywords": [
+      "Nyhavna BistroBar",
+      "BistroBar",
+      "bistro",
+      "middag",
+      "venner",
+      "mat",
+      "meny",
+      "småretter",
+      "dele",
+      "deling",
+      "lokale",
+      "leverandører",
+      "brød",
+      "Snurr"
+    ],
+    "sourceIds": [
+      "s-servering-prove-bistro-meny"
+    ],
+    "relatedPlaceIds": [
+      "nyhavna-bistro",
+      "snurr-nyhavna"
+    ],
+    "checkedAt": "2026-09-14",
+    "caveats": [
+      "Menyeksempler kontrollert 14. september 2026; utvalget kan endres. De navngitte leverandørene betyr ikke at alle råvarer er lokale."
+    ]
+  },
+  {
+    "id": "servering-prove-ladejarlen",
+    "title": "Ladejarlen: pizza, middag med barn og takeaway",
+    "categoryIds": [
+      "mat-drikke"
+    ],
+    "status": "existing",
+    "text": "Ladejarlen har pizza og middagsretter, og menyen har barnepizza med valgfri topping for barn under tolv år. Du kan også bestille takeaway for henting. Dette gir et konkret alternativ både når dere vil spise ute og når dere vil hente med mat hjem.",
+    "keywords": [
+      "Ladejarlen",
+      "pizza",
+      "middag",
+      "barn",
+      "barnepizza",
+      "familie",
+      "takeaway",
+      "henting",
+      "hente",
+      "mat",
+      "meny"
+    ],
+    "sourceIds": [
+      "s-ladejarlen"
+    ],
+    "relatedPlaceIds": [
+      "ladejarlen"
+    ],
+    "checkedAt": "2026-09-14",
+    "caveats": [
+      "Aldersvilkåret er under tolv år. Levering til en bestemt adresse, aktuelle kjøkkentider og priser er ikke kontrollert i denne prøven."
+    ]
   }
 ]

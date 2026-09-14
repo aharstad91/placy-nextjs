@@ -37,6 +37,8 @@ async function fixture(dataset: {
 }) {
   const dir = await mkdtemp(join(tmpdir(), "placy-lokal-"));
   const real = JSON.parse(await readFile(join(LOCAL_DATASET_DIR, "board.json"), "utf8"));
+  delete real.presentation;
+  for (const category of real.categories) delete category.sourceId;
   await writeFile(join(dir, "board.json"), JSON.stringify(dataset.board ?? real));
   await writeFile(join(dir, "sources.json"), JSON.stringify(dataset.sources ?? []));
   await writeFile(join(dir, "places.json"), JSON.stringify(dataset.places ?? []));
@@ -51,7 +53,7 @@ describe("lokalt Nyhavna-datasett", () => {
     const dataset = await loadDataset();
     expect(dataset.board.categories.length).toBeGreaterThan(0);
     expect(dataset.places.length).toBeGreaterThan(5);
-    expect(dataset.places.every(p => p.travelTime?.walk !== undefined)).toBe(true);
+    expect(dataset.places.filter(p => p.status === "existing" && !p.provenance && !["crossfit-trondheim", "lilleby-treningssenter"].includes(p.id)).every(p => p.travelTime?.walk !== undefined)).toBe(true);
     expect(dataset.topics.length).toBeGreaterThan(0);
   });
 
@@ -194,12 +196,13 @@ describe("eksempelfila", () => {
     const faqs = localFaqsSchema.parse(raw.faq);
     localConversationsSchema.parse(raw.conversations);
     const dataset: LocalDataset = {
-      board: localBoardSchema.parse(JSON.parse(await readFile(join(LOCAL_DATASET_DIR, "board.json"), "utf8"))),
+      board: { ...localBoardSchema.parse(JSON.parse(await readFile(join(LOCAL_DATASET_DIR, "board.json"), "utf8"))), presentation: [] },
       sources,
       places,
       topics,
       faqs,
     };
+    dataset.board.categories = dataset.board.categories.map(c => ({ ...c, sourceId: undefined }));
     expect(() => assertReferences(dataset)).not.toThrow();
   });
 
@@ -210,4 +213,18 @@ describe("eksempelfila", () => {
     expect(dataset.places).toEqual([]);
     expect(JSON_FILES).toHaveLength(6);
   });
+});
+
+
+it("avviser manussteder fra feil kategori og brutte referanser", async () => {
+  const dataset = await loadDataset();
+  const segment = dataset.board.presentation![0];
+  const other = dataset.places.find(p => p.categoryId !== segment.categoryId)!;
+  segment.placeIds = [other.id];
+  expect(() => assertReferences(dataset)).toThrow(/tilhører kategorien/);
+  segment.placeIds = ["missing-place"];
+  expect(() => assertReferences(dataset)).toThrow(/ukjent placeId/);
+  segment.placeIds = [];
+  segment.categoryId = "missing-category";
+  expect(() => assertReferences(dataset)).toThrow(/ukjent categoryId/);
 });

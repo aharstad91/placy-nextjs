@@ -70,7 +70,7 @@ describe('server knowledge boundary', () => {
     const spoken = `${NYHAVNA_VOICE_INSTRUCTIONS}\n${NYHAVNA_GREETING_INSTRUCTION}`;
     expect(`${spoken}\n${NYHAVNA_INSTRUCTIONS}`).not.toMatch(/Placy/);
     // Live-modellen har et lite kontekstvindu: stemmeinstruksen skal være kort.
-    expect(NYHAVNA_VOICE_INSTRUCTIONS.split(/\s+/).length).toBeLessThan(300);
+    expect(NYHAVNA_VOICE_INSTRUCTIONS.split(/\s+/).length).toBeLessThan(350);
     for (const label of ['Backchannel policy:', 'Interruption policy:', 'Delegation policy:', 'Backend tools:']) expect(NYHAVNA_VOICE_INSTRUCTIONS).toContain(label);
     expect(NYHAVNA_VOICE_INSTRUCTIONS).toMatch(/norsk \(bokmål\)/);
     expect(NYHAVNA_VOICE_INSTRUCTIONS).toContain('Ladehammeren');

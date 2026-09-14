@@ -6,18 +6,15 @@
  * resonnering og får den lange. Ingen Realtime-felt hører hjemme her – Live
  * avviser ukjente felt, og WebRTC forhandler lydformatet selv.
  */
+import type { LiveVoice } from "@/lib/live/voices";
 import type { LiveFunctionTool } from "@/lib/live/types";
 
 const EFFORTS = new Set(["none", "minimal", "low", "medium", "high", "xhigh"]);
 
 export const liveModel = () => process.env.OPENAI_BOARD_LIVE_MODEL || "gpt-live-1";
 export const backendModel = () => process.env.OPENAI_BOARD_BACKEND_MODEL || "gpt-5.6-terra";
-/**
- * Stemmevalget leses fra env så en lyttetest kan bytte stemme med omstart, ikke
- * nytt bygg. Standard `vesper` (Andreas, 2026-09-13): Realtime-stemmene er lagt
- * bort sammen med Realtime-API-et; lyttetesten avgjør om vesper holder norsk.
- */
-export const liveVoice = () => process.env.OPENAI_BOARD_LIVE_VOICE || "vesper";
+/** Serverens standard; en lokal lyttetest kan overstyre per ny samtale. */
+export const liveVoice = () => process.env.OPENAI_BOARD_LIVE_VOICE || "willow";
 
 export function backendEffort(): string {
   const effort = process.env.OPENAI_BOARD_BACKEND_EFFORT || "low";
@@ -26,7 +23,7 @@ export function backendEffort(): string {
   return effort;
 }
 
-export function liveSessionConfig(voiceInstructions: string, backendInstructions: string, tools: LiveFunctionTool[]) {
+export function liveSessionConfig(voiceInstructions: string, backendInstructions: string, tools: LiveFunctionTool[], voice?: LiveVoice) {
   const model = liveModel();
   // Ingen stille fallback til Realtime: en annen modell her ville byttet protokoll
   // uten at noe annet i koden visste det.
@@ -34,7 +31,7 @@ export function liveSessionConfig(voiceInstructions: string, backendInstructions
   return {
     model,
     instructions: voiceInstructions,
-    audio: { output: { voice: liveVoice() } },
+    audio: { output: { voice: voice ?? liveVoice() } },
     delegation: {
       type: "responses",
       responses: {

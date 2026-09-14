@@ -26,6 +26,17 @@ function fixture(): BoardToolEnvironment {
 }
 
 describe("Kartkommandoene i nettleseren", () => {
+  it("følger én omtalt kategori i lokal demo, men lar andre boards og blandede grupper stå", () => {
+    const env = fixture();
+    const onCategory = vi.fn();
+    executeBoardTool("highlight_places", { poi_ids: ["cafe"] }, { ...env, onCategory, followHighlightCategory: true });
+    expect(onCategory).toHaveBeenCalledWith(1);
+    onCategory.mockClear();
+    executeBoardTool("highlight_places", { poi_ids: ["cafe"] }, { ...env, onCategory });
+    executeBoardTool("highlight_places", { poi_ids: ["cafe", "bunker"] }, { ...env, onCategory, followHighlightCategory: true });
+    expect(onCategory).not.toHaveBeenCalled();
+  });
+
   it("avviser oppdiktede ID-er uten å flytte kartet, og svarer bare med kartstatus", () => {
     const env = fixture();
     expect(executeBoardTool("show_place", { poi_id: "invented" }, env)).toHaveProperty("error");
