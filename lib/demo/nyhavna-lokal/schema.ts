@@ -166,6 +166,12 @@ export const localBoardSchema = z
     pinSubtitle: z.string().max(80).default(""),
     /** Kvadratisk bilde i prosjektmarkørens skive (sti under `public/`), f.eks. logoen. */
     pinImage: z.string().regex(/^\/[^\s]+$/).max(200).optional(),
+    /**
+     * Aksentfargen prosjektmarkøren tegnes i — ring, glød og undertittel.
+     * Utbyggerens egen farge der logoen står i skiva; utelatt = Placys
+     * terrakotta.
+     */
+    pinAccent: z.string().regex(/^#[0-9a-fA-F]{6}$/).optional(),
     /** Førstesetningen stemmen sier. Eies av datasettet, ikke av koden. */
     greeting: z.string().min(1).max(400),
     /**

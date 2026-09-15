@@ -200,6 +200,9 @@ export interface BoardHome {
   /** Undertittel i 3D-prosjektmarkøren (fra reportConfig.pinSubtitle).
    *  Tom streng = bare navnet; undefined = markørens egen default. */
   pinSubtitle?: string;
+  /** Aksentfarge for 3D-prosjektmarkøren (fra reportConfig.pinAccent).
+   *  Undefined = markørens egen terrakotta. */
+  pinAccent?: string;
   /** Bilde i 3D-prosjektmarkørens skive. Vinner over `assets.pinThumbnail`. */
   pinImage?: string;
   /** Hjem-spor for audio-tour — kun satt når både url og manus eksisterer. */
@@ -391,6 +394,7 @@ export function adaptBoardData(report: ReportData): BoardData {
       district: report.district,
       city: report.city,
       pinSubtitle: report.pinSubtitle,
+      pinAccent: report.pinAccent,
       audio: pickPlayableAudio(report.heroAudio),
     },
     categories,

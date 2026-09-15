@@ -947,6 +947,15 @@ export interface ReportConfig {
    * ikke har dekning for.
    */
   pinSubtitle?: string;
+  /**
+   * Aksentfargen prosjektmarkøren tegnes i (hex). Utelatt → Placys
+   * terrakotta.
+   *
+   * Prosjektpinnen er kundens eget objekt på kartet; er skiva fylt med
+   * kundens logo, skal ringen rundt den være kundens farge. POI-pinnene rører
+   * den ikke — der er fargen en kategorinøkkel.
+   */
+  pinAccent?: string;
   /** Opt-in for prosjekt-spesifikke asset-filer (brand/illustrasjon/pin). */
   assets?: ProjectAssetFlags;
   /** Path (absolute or /public) til illustrasjon som vises i hero + summary. Optional. */

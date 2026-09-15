@@ -191,6 +191,7 @@ export function buildLocalProject(dataset: LocalDataset): Project {
       ...(dataset.board.intro ? { heroIntro: dataset.board.intro } : {}),
       // Alltid satt, også tom: utelatt felt gir markørens egen standardtekst.
       pinSubtitle: dataset.board.pinSubtitle,
+      ...(dataset.board.pinAccent ? { pinAccent: dataset.board.pinAccent } : {}),
       hideBrokerCard: true,
     },
   };
@@ -296,6 +297,7 @@ export function buildLocalBoard(dataset: LocalDataset): BoardData {
     ...(dataset.board.district ? { district: dataset.board.district } : {}),
     ...(dataset.board.city ? { city: dataset.board.city } : {}),
     pinSubtitle: dataset.board.pinSubtitle,
+    ...(dataset.board.pinAccent ? { pinAccent: dataset.board.pinAccent } : {}),
     ...(dataset.board.pinImage ? { pinImage: dataset.board.pinImage } : {}),
   };
 

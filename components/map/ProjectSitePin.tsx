@@ -1,6 +1,7 @@
 "use client";
 
 import { labelHaloShadow } from "@/lib/board/label-collision";
+import { hexLightTint } from "@/lib/utils/marker-color";
 
 /**
  * SVG-markør for prosjektstedet.
@@ -98,6 +99,20 @@ interface ProjectSitePinProps {
   onHoverChange?: (hovered: boolean) => void;
   /** Peker-markør. Boardets prosjektpinne er bevisst ikke-interaktiv. */
   clickable?: boolean;
+  /**
+   * Aksentfargen chip-en tegnes i — ring, glød, glyph, undertittel og prikken
+   * foran den. Default er Placys redaksjonelle terrakotta ({@link ACCENT}).
+   *
+   * Finnes fordi prosjektpinnen er det ENE punktet på kartet som er kundens
+   * eget objekt: står Nyhavna-logoen i skiva, skal ringen rundt den være
+   * Nyhavnas blå og ikke Placys terrakotta (Andreas, 2026-09-15). POI-pinnene
+   * beholder kategorifargene sine — det er en fargenøkkel leseren bruker, ikke
+   * en avsender.
+   *
+   * Boardet mater den inn fra `reportConfig.pinAccent`; er den usatt er
+   * markøren uendret.
+   */
+  accent?: string;
 }
 
 const FONT = "system-ui,-apple-system,Helvetica Neue,sans-serif";
@@ -203,7 +218,12 @@ export function ProjectSitePin({
   labelScale,
   onHoverChange,
   clickable = false,
+  accent = ACCENT,
 }: ProjectSitePinProps) {
+  // Tinten er ikke en egen prop: den er alltid samme lyse blanding av
+  // aksenten (85 % hvit), akkurat som POI-skivene utleder sin bakgrunn av
+  // kategorifargen. To farger å holde i takt er én for mye.
+  const accentTint = accent === ACCENT ? ACCENT_TINT : hexLightTint(accent);
   const disc = DISC * scale;
   const ring = RING_W * scale;
   const glow = GLOW_W * scale;
@@ -236,7 +256,7 @@ export function ProjectSitePin({
             position: "absolute",
             inset: -glow,
             borderRadius: "50%",
-            border: `${glow}px solid ${ACCENT}`,
+            border: `${glow}px solid ${accent}`,
             opacity: 0.22,
             boxSizing: "border-box",
           }}
@@ -264,8 +284,8 @@ export function ProjectSitePin({
           position: "absolute",
           inset: 0,
           borderRadius: "50%",
-          background: imageSrc ? `${ACCENT_TINT} center/cover url(${imageSrc})` : ACCENT_TINT,
-          border: `${ring}px solid ${muted ? HALO : ACCENT}`,
+          background: imageSrc ? `${accentTint} center/cover url(${imageSrc})` : accentTint,
+          border: `${ring}px solid ${muted ? HALO : accent}`,
           boxShadow: `0 ${1.5 * scale}px ${2 * scale}px rgba(15,29,68,0.35)`,
           boxSizing: "border-box",
           display: "flex",
@@ -273,7 +293,7 @@ export function ProjectSitePin({
           justifyContent: "center",
         }}
       >
-        {!imageSrc && <BuildingGlyph size={27 * scale} opacity={muted ? 0.5 : 1} />}
+        {!imageSrc && <BuildingGlyph size={27 * scale} color={accent} opacity={muted ? 0.5 : 1} />}
       </span>
 
       {/* Navn + undertittel. Haloen er fire-veis text-shadow der SVG-en tegnet
@@ -319,7 +339,7 @@ export function ProjectSitePin({
                 fontSize: SUB_SIZE * textScale,
                 fontWeight: 600,
                 lineHeight: 1.15,
-                color: ACCENT,
+                color: accent,
                 textShadow: haloShadow(HALO_W * textScale),
               }}
             >
@@ -328,7 +348,7 @@ export function ProjectSitePin({
                   width: 6 * textScale,
                   height: 6 * textScale,
                   borderRadius: "50%",
-                  background: ACCENT,
+                  background: accent,
                   flex: "0 0 auto",
                   boxShadow: `0 0 0 ${1.5 * textScale}px rgba(255,255,255,0.95)`,
                 }}
@@ -355,7 +375,11 @@ function haloShadow(w: number): string {
 
 /** Building2 (Lucide) i aksentfargen. Beholdt som SVG — det er TEKSTEN som
  *  trengte DOM, ikke ikonet. */
-function BuildingGlyph({ size, opacity = 1 }: { size: number; opacity?: number }) {
+function BuildingGlyph({
+  size,
+  color = ACCENT,
+  opacity = 1,
+}: { size: number; color?: string; opacity?: number }) {
   return (
     <svg
       width={size}
@@ -365,11 +389,11 @@ function BuildingGlyph({ size, opacity = 1 }: { size: number; opacity?: number }
       aria-hidden="true"
       opacity={opacity === 1 ? undefined : opacity}
     >
-      <rect x="3" y="3" width="12" height="15" rx="1" fill="none" stroke={ACCENT} strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
-      <rect x="7" y="10" width="4" height="8" rx="0.5" fill={ACCENT} />
-      <path d="M3 3L9 0l6 3" fill="none" stroke={ACCENT} strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
-      <line x1="6" y1="7" x2="6" y2="7.01" stroke={ACCENT} strokeWidth="1.6" strokeLinecap="round" />
-      <line x1="12" y1="7" x2="12" y2="7.01" stroke={ACCENT} strokeWidth="1.6" strokeLinecap="round" />
+      <rect x="3" y="3" width="12" height="15" rx="1" fill="none" stroke={color} strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+      <rect x="7" y="10" width="4" height="8" rx="0.5" fill={color} />
+      <path d="M3 3L9 0l6 3" fill="none" stroke={color} strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+      <line x1="6" y1="7" x2="6" y2="7.01" stroke={color} strokeWidth="1.6" strokeLinecap="round" />
+      <line x1="12" y1="7" x2="12" y2="7.01" stroke={color} strokeWidth="1.6" strokeLinecap="round" />
     </svg>
   );
 }

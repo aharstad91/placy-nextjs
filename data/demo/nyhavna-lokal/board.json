@@ -11,7 +11,8 @@
     "lng": 10.41725655026434
   },
   "map3d": true,
-  "pinSubtitle": "Demoens utgangspunkt",
+  "pinSubtitle": "Ny bydel",
+  "pinAccent": "#005ef5",
   "pinImage": "/demo/nyhavna-lokal/bydeler/nyhavna-logo.svg",
   "greeting": "Hei, jeg heter Anja og er din digitale guide på Nyhavna. Jeg kan fortelle om bydelen som vokser fram, og vise deg hva som finnes i nabolaget allerede i dag. Du kan spørre underveis eller trykke på kartet. Vil du først høre om planene for Nyhavna eller om nærområdet slik det er i dag?",
   "projectInfoLabel": "det kildekontrollerte materialet om Nyhavna",

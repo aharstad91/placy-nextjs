@@ -19,6 +19,10 @@ import {
 } from "./story/story-model";
 import { REACH_OUTSIDE_OPACITY } from "@/lib/board/reach";
 import { PROJECT_PIN_DISC } from "@/components/map/ProjectSitePin";
+import {
+  IMAGE_PIN_RING,
+  IMAGE_PIN_RING_W,
+} from "@/components/map/PoiMarkerContent";
 import { prefersReducedMotion } from "@/lib/board/prefers-reduced-motion";
 
 /**
@@ -416,9 +420,16 @@ function BoardMarkerImpl({
             width: containerSize,
             height: containerSize,
             borderRadius: "50%",
-            borderWidth: isActive ? 3 : 2,
+            borderWidth: imageSrc ? IMAGE_PIN_RING_W : isActive ? 3 : 2,
             borderStyle: "solid",
-            borderColor: isActive ? circle.borderColor : inactiveBorder,
+            // Bildepinnen har hvit ring i begge motorer: illustrasjonen har
+            // allerede sagt hva stedet er, så kategorifargen rundt den er bare
+            // en klump. Se `IMAGE_PIN_RING` i `PoiMarkerContent`.
+            borderColor: imageSrc
+              ? IMAGE_PIN_RING
+              : isActive
+                ? circle.borderColor
+                : inactiveBorder,
             backgroundColor: circle.backgroundColor,
             ...(imageSrc
               ? { backgroundImage: `url(${imageSrc})`, backgroundSize: "cover", backgroundPosition: "center" }

@@ -239,6 +239,8 @@ export interface ReportData {
   /** Undertittel i 3D-prosjektmarkøren (fra reportConfig). Tom streng = ingen
    *  undertittel; undefined = markørens egen default. */
   pinSubtitle?: string;
+  /** Aksentfarge for prosjektmarkøren (fra reportConfig). */
+  pinAccent?: string;
   /** Opt-in for prosjekt-spesifikke asset-filer (brand/illustrasjon/pin). */
   assets?: ProjectAssetFlags;
   centerCoordinates: { lat: number; lng: number };
@@ -800,6 +802,7 @@ export function transformToReportData(project: Project, locale: Locale = "no"): 
     district: rc?.district,
     city: rc?.city,
     pinSubtitle: rc?.pinSubtitle,
+    pinAccent: rc?.pinAccent,
     assets: rc?.assets,
     centerCoordinates: project.centerCoordinates,
     heroMetrics,

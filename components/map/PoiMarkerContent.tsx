@@ -217,6 +217,20 @@ export interface PoiMarkerContentProps {
 
 /** Mørk nok til å lese over satellittfoto uansett kategorifarge under. */
 const HIGHLIGHT_RING_COLOR = "#1c1917";
+
+/**
+ * Bildepinnens ring er HVIT, ikke kategorifargen (Andreas, 2026-09-15).
+ *
+ * Kategorifargen står der for å si hvilket tema et sted hører til, og på en
+ * ikon-pinne er ringen det eneste stedet fargen får plass. En bildepinne har
+ * allerede sagt hva den er — utbyggerens egen illustrasjon fyller hele skiva —
+ * så farge-ringen tilfører ingen informasjon, bare en lilla klump rundt bildet.
+ * Hvitt er dessuten samme skille prosjektpinnen bruker mot satellittfoto: en
+ * lys kant løfter disc-en fra underlaget uten å konkurrere med innholdet.
+ */
+export const IMAGE_PIN_RING = "#ffffff";
+/** 3 px som prosjektpinnens ring — samme 52 px disc, samme vekt på kanten. */
+export const IMAGE_PIN_RING_W = 3;
 /**
  * Hvor mye disc-en vokser når stedet er VALGT (2026-09-15). Samme sprang som
  * 2D-markøren tar fra 32 til 44 px når den åpnes — og som der er det BOKSEN
@@ -372,7 +386,9 @@ export function PoiMarkerContent({
               background: imageSrc
                 ? `${backgroundColor} center/cover no-repeat url(${imageSrc})`
                 : backgroundColor,
-              border: `2px solid ${color}`,
+              border: imageSrc
+                ? `${IMAGE_PIN_RING_W}px solid ${IMAGE_PIN_RING}`
+                : `2px solid ${color}`,
               boxShadow: "0 1.5px 3px rgba(0,0,0,0.35)",
               boxSizing: "border-box",
               // Størrelsen skifter ved stoppbytte (og ved kamera-ro): samme

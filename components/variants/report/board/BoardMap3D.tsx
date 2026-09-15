@@ -1031,6 +1031,7 @@ export function BoardMap3D({
           // Undefined lar markøren bruke sin egen default; tom streng skrur
           // undertittelen AV for boards som ikke er ett byggeprosjekt.
           subtitle: data.home.pinSubtitle,
+          accent: data.home.pinAccent,
           imageSrc: data.home.pinImage ?? getProjectPinThumbnail(data.projectSlug, data.assets),
         }}
       />

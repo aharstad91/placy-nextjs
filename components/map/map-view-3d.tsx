@@ -97,6 +97,8 @@ export interface MapView3DProps {
     lng: number;
     name: string;
     subtitle?: string;
+    /** Aksentfarge (hex). Undefined → markørens egen terrakotta. */
+    accent?: string;
     /** Kvadratisk thumbnail (data-URI) for markøren. Undefined → bygnings-glyph. */
     imageSrc?: string;
   };
@@ -545,6 +547,7 @@ function Map3DInner({
             <ProjectSitePin
               name={projectSite.name}
               subtitle={projectSite.subtitle}
+              accent={projectSite.accent}
               imageSrc={projectSite.imageSrc}
               scale={projectPinScale}
             />
