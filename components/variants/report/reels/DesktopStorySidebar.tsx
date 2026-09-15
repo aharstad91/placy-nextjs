@@ -160,6 +160,16 @@ export function StoryColumn({ noBrokers = false }: { noBrokers?: boolean }) {
   // stripen så man innholdet gli forbi over det.
   return (
     <>
+      {/* Samtalen med guiden: en kompakt, fast inngang ØVERST i panelet,
+          direkte under logoen og før kategoriraden og det rullbare innholdet
+          (2026-09-15). Den vokser på samme sted til statusfeltet mens samtalen
+          går. Tilstanden bor fortsatt i provideren, så flyttingen påvirker
+          ikke forbindelsen eller et åpent stedspanel. */}
+      {data.demoSnapshotId && (
+        <div data-story-assistant className="shrink-0 px-6 pb-3">
+          <BoardVoiceControl />
+        </div>
+      )}
       {/* Kategoriraden står FAST under logoen under panel-policyen (2026-09-15,
           Andreas: «vis samme kategorirad rett under logoen både i
           kategorioversikten og når et POI er åpent»). Den ligger utenfor boksen
@@ -176,7 +186,7 @@ export function StoryColumn({ noBrokers = false }: { noBrokers?: boolean }) {
       )}
       {/* Oversikten og stedets side deler ÉN boks (2026-09-15): panelet ligger
           `absolute inset-0` i den, og dekker dermed oversikten — ikke logoen og
-          raden over og ikke samtalen under. Slik holder Anja seg tilgjengelig
+          Anja eller raden over. Slik holder Anja seg tilgjengelig
           med panelet åpent (R11), og laget lukkes uten at samtalen restartes.
           Oversikten beholder scroll-posisjon og stopp bak laget. */}
       <div className="relative flex min-h-0 flex-1 flex-col">
@@ -206,17 +216,6 @@ export function StoryColumn({ noBrokers = false }: { noBrokers?: boolean }) {
         </div>
         <StoryPoiPanel />
       </div>
-      {/* Samtalen med guiden: en kompakt inngang NEDERST i panelet, utenfor
-          scroll-boksen (2026-09-14). Den lå som et stort kort under fanene og
-          skjøv innholdet ned på hvert stopp; her tar den én linje til den
-          brukes, og vokser til statusfeltet mens samtalen går. Den ligger i
-          kolonnens flex-flyt, ikke over noe: den dekker verken innhold eller
-          kontroller, scroll-boksen blir bare så mye kortere. */}
-      {data.demoSnapshotId && (
-        <div data-story-assistant className="shrink-0 border-t border-stone-200 px-6 pb-4 pt-3">
-          <BoardVoiceControl />
-        </div>
-      )}
     </>
   );
 }

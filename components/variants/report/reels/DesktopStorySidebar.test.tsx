@@ -421,16 +421,19 @@ describe("områdestoppet", () => {
 });
 
 describe("samtalen med guiden (2026-09-14)", () => {
-  it("ligger NEDERST i panelet, utenfor scroll-boksen — ikke under fanene", () => {
-    const utils = setup({}, { demoSnapshotId: "snap" });
+  it("ligger ØVERST i panelet, før scroll-boksen — rett under logoen", () => {
+    desktop = true;
+    const utils = setup({}, { demoSnapshotId: "snap" }, { placePanel: true });
     const voice = utils.getByTestId("board-voice");
     const scroll = utils.getByTestId("story-sidebar");
     expect(scroll.contains(voice)).toBe(false);
-    // Etter scroll-boksen i rekkefølgen: innholdet først, inngangen sist.
-    expect(scroll.compareDocumentPosition(voice) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    // Før scroll-boksen i rekkefølgen: inngangen først, temarad og innhold etterpå.
+    expect(voice.compareDocumentPosition(scroll) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
     // Og fortsatt der inne i et tema.
     enterTheme(utils);
     expect(utils.getByTestId("story-sidebar").contains(utils.getByTestId("board-voice"))).toBe(false);
+    const rail = utils.getByTestId("story-rail-slot");
+    expect(voice.compareDocumentPosition(rail) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
   });
 
   it("finnes ikke på boards uten samtale", () => {
