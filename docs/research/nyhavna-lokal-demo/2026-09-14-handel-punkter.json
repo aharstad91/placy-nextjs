@@ -1,0 +1,2087 @@
+{
+  "checkedAt": "2026-09-14",
+  "places": [
+    {
+      "id": "solsiden-senter",
+      "name": "Solsiden senter",
+      "categoryId": "hverdagsliv",
+      "address": "Beddingen 10",
+      "placeType": "Kjøpesenter",
+      "icon": "Store",
+      "aliases": [
+        "kjøpesenter",
+        "kjøpesentre"
+      ],
+      "status": "existing",
+      "summary": "Kjøpesenter på Solsiden med dagligvarer, apotek, klær og steder for kaffe og bakst.",
+      "locationPrecision": "approximate",
+      "locationNote": "Kartpunktet viser adressen, ikke en kontrollert inngang.",
+      "facts": [
+        {
+          "id": "solsiden-senter-handel-f1",
+          "text": "MENY, Apotek 1 og Vinmonopolet ligger på Solsiden senter.",
+          "sourceId": "handel-20260914-01",
+          "checkedAt": "2026-09-14",
+          "verification": "confirmed"
+        },
+        {
+          "id": "solsiden-senter-handel-f2",
+          "text": "Godt Brød og Dromedar gir mulighet for en kafépause, og senteret har også H&M.",
+          "sourceId": "handel-20260914-01",
+          "checkedAt": "2026-09-14",
+          "verification": "confirmed"
+        }
+      ],
+      "sourceIds": [
+        "handel-20260914-01",
+        "utv2-20260914-33",
+        "demo-route",
+        "handel-20260914-16"
+      ],
+      "checkedAt": "2026-09-14",
+      "caveats": [],
+      "coordinates": {
+        "lat": 63.43523563981423,
+        "lng": 10.412095335856362
+      },
+      "poiCategoryId": "shopping",
+      "anchorSummary": "Kjøpesenter på Solsiden med dagligvarer, apotek, klær og steder for kaffe og bakst.",
+      "travelTime": {
+        "walk": 11,
+        "bike": 7
+      }
+    },
+    {
+      "id": "city-lade",
+      "name": "City Lade",
+      "categoryId": "hverdagsliv",
+      "address": "Haakon VII's gate 9",
+      "placeType": "Kjøpesenter",
+      "icon": "Store",
+      "aliases": [
+        "kjøpesenter",
+        "kjøpesentre"
+      ],
+      "status": "existing",
+      "summary": "Kjøpesenter på Lade med dagligvarer, apotek, klær, sports- og barneutstyr og bakeri.",
+      "locationPrecision": "approximate",
+      "locationNote": "Kartpunktet viser adressen, ikke en kontrollert inngang.",
+      "facts": [
+        {
+          "id": "city-lade-handel-f1",
+          "text": "Obs Stormarked og Apotek 1 ligger i andre etasje på City Lade.",
+          "sourceId": "handel-20260914-02",
+          "checkedAt": "2026-09-14",
+          "verification": "confirmed"
+        },
+        {
+          "id": "city-lade-handel-f2",
+          "text": "Senteret har blant annet Anton Sport, Barnas Hus og Rosenborg Bakeri.",
+          "sourceId": "handel-20260914-02",
+          "checkedAt": "2026-09-14",
+          "verification": "confirmed"
+        }
+      ],
+      "sourceIds": [
+        "handel-20260914-02",
+        "handel-20260914-03",
+        "demo-route",
+        "handel-20260914-17"
+      ],
+      "checkedAt": "2026-09-14",
+      "caveats": [],
+      "coordinates": {
+        "lat": 63.444122138837024,
+        "lng": 10.448084301592935
+      },
+      "poiCategoryId": "shopping",
+      "anchorSummary": "Kjøpesenter på Lade med dagligvarer, apotek, klær, sports- og barneutstyr og bakeri.",
+      "travelTime": {
+        "walk": 27,
+        "bike": 10
+      }
+    },
+    {
+      "id": "trondheim-torg",
+      "name": "Trondheim Torg",
+      "categoryId": "hverdagsliv",
+      "address": "Kongens gate 9",
+      "placeType": "Kjøpesenter",
+      "icon": "Store",
+      "aliases": [
+        "kjøpesenter",
+        "kjøpesentre"
+      ],
+      "status": "existing",
+      "summary": "Kjøpesenter i Midtbyen med klær, apotek, bøker, leker, utstyr til hjemmet og kafé.",
+      "locationPrecision": "approximate",
+      "locationNote": "Kartpunktet viser adressen, ikke en kontrollert inngang.",
+      "facts": [
+        {
+          "id": "trondheim-torg-handel-f1",
+          "text": "På Trondheim Torg finner du blant annet Vitusapotek, H&M, ARK, Lekia, Clas Ohlson og Jordbærpikene.",
+          "sourceId": "handel-20260914-04",
+          "checkedAt": "2026-09-14",
+          "verification": "confirmed"
+        },
+        {
+          "id": "trondheim-torg-handel-f2",
+          "text": "Utvalgte butikker på Trondheim Torg tilbyr klikk og hent.",
+          "sourceId": "handel-20260914-06",
+          "checkedAt": "2026-09-14",
+          "verification": "confirmed"
+        }
+      ],
+      "sourceIds": [
+        "handel-20260914-04",
+        "handel-20260914-05",
+        "handel-20260914-06",
+        "handel-20260914-07",
+        "demo-route",
+        "handel-20260914-18"
+      ],
+      "checkedAt": "2026-09-14",
+      "caveats": [],
+      "coordinates": {
+        "lat": 63.430362235801326,
+        "lng": 10.39371788317803
+      },
+      "poiCategoryId": "shopping",
+      "anchorSummary": "Kjøpesenter i Midtbyen med klær, apotek, bøker, leker, utstyr til hjemmet og kafé.",
+      "travelTime": {
+        "walk": 26,
+        "bike": 9
+      }
+    },
+    {
+      "id": "sirkus-shopping",
+      "name": "Sirkus Shopping",
+      "categoryId": "hverdagsliv",
+      "address": "Falkenborgvegen 1",
+      "placeType": "Kjøpesenter",
+      "icon": "Store",
+      "aliases": [
+        "kjøpesenter",
+        "kjøpesentre"
+      ],
+      "status": "existing",
+      "summary": "Kjøpesenter med dagligvarer, apotek, klær og servering, samt posttjenester og stellerom.",
+      "locationPrecision": "approximate",
+      "locationNote": "Kartpunktet viser adressen, ikke en kontrollert inngang.",
+      "facts": [
+        {
+          "id": "sirkus-shopping-handel-f1",
+          "text": "Coop Mega, Vitusapotek, Cubus, Clas Ohlson, Vinmonopolet og Dromedar er blant virksomhetene på Sirkus Shopping.",
+          "sourceId": "handel-20260914-08",
+          "checkedAt": "2026-09-14",
+          "verification": "confirmed"
+        },
+        {
+          "id": "sirkus-shopping-handel-f2",
+          "text": "Ved Informasjonen på P1 finnes posttjenester, og senteret oppgir stellerom og ammesone ved Informasjonen.",
+          "sourceId": "handel-20260914-09",
+          "checkedAt": "2026-09-14",
+          "verification": "confirmed"
+        }
+      ],
+      "sourceIds": [
+        "handel-20260914-08",
+        "handel-20260914-09",
+        "handel-20260914-10",
+        "demo-route",
+        "handel-20260914-19"
+      ],
+      "checkedAt": "2026-09-14",
+      "caveats": [],
+      "coordinates": {
+        "lat": 63.43678643857908,
+        "lng": 10.45502433980722
+      },
+      "poiCategoryId": "shopping",
+      "anchorSummary": "Kjøpesenter med dagligvarer, apotek, klær og servering, samt posttjenester og stellerom.",
+      "travelTime": {
+        "walk": 34,
+        "bike": 13
+      }
+    },
+    {
+      "id": "obs-city-lade",
+      "name": "Obs City Lade",
+      "categoryId": "hverdagsliv",
+      "address": "Haakon VIIs gate 9",
+      "placeType": "Dagligvare",
+      "icon": "ShoppingCart",
+      "aliases": [
+        "dagligvare",
+        "dagligvarer",
+        "matbutikk",
+        "dagligvarebutikk"
+      ],
+      "status": "existing",
+      "summary": "Stormarked på City Lade hvor matinnkjøp kan kombineres med klær, sko og varer til hjemmet.",
+      "locationPrecision": "approximate",
+      "locationNote": "Kartpunktet og reisetiden viser City Lade, ikke butikkens interne inngang.",
+      "facts": [
+        {
+          "id": "obs-city-lade-handel-f1",
+          "text": "Obs Stormarked ligger i andre etasje på City Lade.",
+          "sourceId": "handel-20260914-02",
+          "checkedAt": "2026-09-14",
+          "verification": "confirmed"
+        },
+        {
+          "id": "obs-city-lade-handel-f2",
+          "text": "Vareutvalget omfatter mat, klær, sko og artikler til hjemmet.",
+          "sourceId": "handel-20260914-02",
+          "checkedAt": "2026-09-14",
+          "verification": "confirmed"
+        }
+      ],
+      "sourceIds": [
+        "handel-20260914-02",
+        "handel-20260914-11",
+        "demo-route",
+        "handel-20260914-03",
+        "handel-20260914-17"
+      ],
+      "checkedAt": "2026-09-14",
+      "caveats": [
+        "Utvalget av enkeltvarer kan variere."
+      ],
+      "poiCategoryId": "supermarket",
+      "parentPlaceId": "city-lade",
+      "coordinates": {
+        "lat": 63.444122138837024,
+        "lng": 10.448084301592935
+      },
+      "travelTime": {
+        "walk": 27,
+        "bike": 10
+      }
+    },
+    {
+      "id": "coop-mega-sirkus",
+      "name": "Coop Mega Sirkus Shopping",
+      "categoryId": "hverdagsliv",
+      "address": "Falkenborgvegen 9",
+      "placeType": "Dagligvare",
+      "icon": "ShoppingCart",
+      "aliases": [
+        "dagligvare",
+        "dagligvarer",
+        "matbutikk",
+        "dagligvarebutikk"
+      ],
+      "status": "existing",
+      "summary": "Matbutikk i første etasje på Sirkus Shopping, med andre butikker og spisesteder i samme senter.",
+      "locationPrecision": "approximate",
+      "locationNote": "Kartpunktet og reisetiden viser Sirkus Shopping, ikke butikkens interne inngang.",
+      "facts": [
+        {
+          "id": "coop-mega-sirkus-handel-f1",
+          "text": "Coop Mega ligger i første etasje på Sirkus Shopping.",
+          "sourceId": "handel-20260914-10",
+          "checkedAt": "2026-09-14",
+          "verification": "confirmed"
+        },
+        {
+          "id": "coop-mega-sirkus-handel-f2",
+          "text": "Matinnkjøpet kan kombineres med andre butikker, restauranter og servicetilbud på samme senter.",
+          "sourceId": "handel-20260914-10",
+          "checkedAt": "2026-09-14",
+          "verification": "confirmed"
+        }
+      ],
+      "sourceIds": [
+        "handel-20260914-10",
+        "handel-20260914-12",
+        "demo-route",
+        "handel-20260914-08",
+        "handel-20260914-09",
+        "handel-20260914-19"
+      ],
+      "checkedAt": "2026-09-14",
+      "caveats": [],
+      "poiCategoryId": "supermarket",
+      "parentPlaceId": "sirkus-shopping",
+      "coordinates": {
+        "lat": 63.43678643857908,
+        "lng": 10.45502433980722
+      },
+      "travelTime": {
+        "walk": 34,
+        "bike": 13
+      }
+    },
+    {
+      "id": "rema-1000-torvet",
+      "name": "REMA 1000 Torvet",
+      "categoryId": "hverdagsliv",
+      "address": "Munkegata 22",
+      "placeType": "Dagligvare",
+      "icon": "ShoppingCart",
+      "aliases": [
+        "dagligvare",
+        "dagligvarer",
+        "matbutikk",
+        "dagligvarebutikk"
+      ],
+      "status": "existing",
+      "summary": "Dagligvarebutikk rett utenfor hovedinngangen til Trondheim Torg, relevant når man gjør ærender i Midtbyen.",
+      "locationPrecision": "approximate",
+      "locationNote": "Kartpunktet viser adressen, ikke en kontrollert inngang.",
+      "facts": [
+        {
+          "id": "rema-1000-torvet-handel-f1",
+          "text": "Butikken ligger rett utenfor hovedinngangen til Trondheim Torg.",
+          "sourceId": "handel-20260914-07",
+          "checkedAt": "2026-09-14",
+          "verification": "confirmed"
+        },
+        {
+          "id": "rema-1000-torvet-handel-f2",
+          "text": "Butikkpresentasjonen beskriver frukt og grønnsaker, ferske bakervarer, drikke og lunsjvarer.",
+          "sourceId": "handel-20260914-07",
+          "checkedAt": "2026-09-14",
+          "verification": "confirmed"
+        }
+      ],
+      "sourceIds": [
+        "handel-20260914-07",
+        "utv2-20260914-34",
+        "demo-route",
+        "handel-20260914-20"
+      ],
+      "checkedAt": "2026-09-14",
+      "caveats": [],
+      "coordinates": {
+        "lat": 63.43001133617458,
+        "lng": 10.394722936721704
+      },
+      "poiCategoryId": "supermarket",
+      "travelTime": {
+        "walk": 25,
+        "bike": 9
+      }
+    },
+    {
+      "id": "bunnpris-buran",
+      "name": "Bunnpris Buran",
+      "categoryId": "hverdagsliv",
+      "address": "Ulstadløkkveien 5",
+      "placeType": "Dagligvare",
+      "icon": "ShoppingCart",
+      "aliases": [
+        "dagligvare",
+        "dagligvarer",
+        "matbutikk",
+        "dagligvarebutikk"
+      ],
+      "status": "existing",
+      "summary": "Dagligvarebutikk på Buran hvor man også kan bruke Post i butikk.",
+      "locationPrecision": "approximate",
+      "locationNote": "Kartpunktet viser adressen, ikke en kontrollert inngang.",
+      "facts": [
+        {
+          "id": "bunnpris-buran-handel-f1",
+          "text": "Bunnpris Buran ligger i Ulstadløkkveien 5.",
+          "sourceId": "handel-20260914-13",
+          "checkedAt": "2026-09-14",
+          "verification": "confirmed"
+        },
+        {
+          "id": "bunnpris-buran-handel-f2",
+          "text": "Butikken oppgir Post i butikk blant sine tjenester.",
+          "sourceId": "handel-20260914-13",
+          "checkedAt": "2026-09-14",
+          "verification": "confirmed"
+        }
+      ],
+      "sourceIds": [
+        "handel-20260914-13",
+        "demo-route",
+        "handel-20260914-21"
+      ],
+      "checkedAt": "2026-09-14",
+      "caveats": [
+        "Sjekk hentemeldingen for hvor en konkret sending skal hentes."
+      ],
+      "coordinates": {
+        "lat": 63.43685740294828,
+        "lng": 10.4241627656946
+      },
+      "poiCategoryId": "supermarket",
+      "travelTime": {
+        "walk": 10,
+        "bike": 4
+      }
+    },
+    {
+      "id": "bunnpris-lade",
+      "name": "Bunnpris Lade",
+      "categoryId": "hverdagsliv",
+      "address": "Håkon Magnussons gate 3",
+      "placeType": "Dagligvare",
+      "icon": "ShoppingCart",
+      "aliases": [
+        "dagligvare",
+        "dagligvarer",
+        "matbutikk",
+        "dagligvarebutikk"
+      ],
+      "status": "existing",
+      "summary": "Dagligvarebutikk på Lade med PostNord-tjeneste i samme butikk.",
+      "locationPrecision": "approximate",
+      "locationNote": "Omtrentlig butikkpunkt fra Placy-databasen; inngangen er ikke kontrollert.",
+      "facts": [
+        {
+          "id": "bunnpris-lade-handel-f1",
+          "text": "Bunnpris Lade ligger i Håkon Magnussons gate 3.",
+          "sourceId": "handel-20260914-14",
+          "checkedAt": "2026-09-14",
+          "verification": "confirmed"
+        },
+        {
+          "id": "bunnpris-lade-handel-f2",
+          "text": "Butikken oppgir PostNord blant sine tjenester.",
+          "sourceId": "handel-20260914-14",
+          "checkedAt": "2026-09-14",
+          "verification": "confirmed"
+        }
+      ],
+      "sourceIds": [
+        "handel-20260914-14",
+        "demo-route"
+      ],
+      "checkedAt": "2026-09-14",
+      "caveats": [
+        "Sjekk hentemeldingen for hvor en konkret sending skal hentes."
+      ],
+      "poiCategoryId": "supermarket",
+      "coordinates": {
+        "lat": 63.4442813,
+        "lng": 10.4403128
+      },
+      "provenance": {
+        "provider": "supabase",
+        "recordId": "google-ChIJCzDwmgUxbUYRbM0LlUcPfu0",
+        "importedAt": "2026-09-14"
+      },
+      "travelTime": {
+        "walk": 22,
+        "bike": 8
+      }
+    },
+    {
+      "id": "extra-lilleby",
+      "name": "Extra Lilleby",
+      "categoryId": "hverdagsliv",
+      "address": "Stjørdalsveien 4",
+      "placeType": "Dagligvare",
+      "icon": "ShoppingCart",
+      "aliases": [
+        "dagligvare",
+        "dagligvarer",
+        "matbutikk",
+        "dagligvarebutikk"
+      ],
+      "status": "existing",
+      "summary": "Dagligvarebutikk på Lilleby med PostNord-tjeneste, som gjør det mulig å kombinere handling med pakkehenting.",
+      "locationPrecision": "approximate",
+      "locationNote": "Kartpunktet viser adressen, ikke en kontrollert inngang.",
+      "facts": [
+        {
+          "id": "extra-lilleby-handel-f1",
+          "text": "Extra Lilleby ligger i Stjørdalsveien 4.",
+          "sourceId": "handel-20260914-15",
+          "checkedAt": "2026-09-14",
+          "verification": "confirmed"
+        },
+        {
+          "id": "extra-lilleby-handel-f2",
+          "text": "PostNord er oppført som en tjeneste i butikken.",
+          "sourceId": "handel-20260914-15",
+          "checkedAt": "2026-09-14",
+          "verification": "confirmed"
+        }
+      ],
+      "sourceIds": [
+        "handel-20260914-15",
+        "demo-route",
+        "handel-20260914-22"
+      ],
+      "checkedAt": "2026-09-14",
+      "caveats": [
+        "Sjekk hentemeldingen for hvor en konkret sending skal hentes."
+      ],
+      "coordinates": {
+        "lat": 63.441918147691474,
+        "lng": 10.435742622554173
+      },
+      "poiCategoryId": "supermarket",
+      "travelTime": {
+        "walk": 16,
+        "bike": 5
+      }
+    },
+    {
+      "id": "h-m-solsiden",
+      "name": "H&M Solsiden",
+      "categoryId": "hverdagsliv",
+      "address": "Beddingen 10",
+      "coordinates": {
+        "lat": 63.43523563981423,
+        "lng": 10.412095335856362
+      },
+      "placeType": "Klær",
+      "icon": "Store",
+      "aliases": [],
+      "status": "existing",
+      "summary": "Klær på Solsiden senter.",
+      "travelTime": {
+        "walk": 11,
+        "bike": 7
+      },
+      "locationPrecision": "approximate",
+      "locationNote": "Kartpunktet og reisetiden viser Solsiden senter, ikke butikkens interne inngang.",
+      "facts": [
+        {
+          "id": "h-m-solsiden-sentermedlemskap",
+          "text": "H&M Solsiden ligger i Solsiden senter.",
+          "sourceId": "handel-20260914-01",
+          "checkedAt": "2026-09-14",
+          "verification": "confirmed"
+        }
+      ],
+      "sourceIds": [
+        "handel-20260914-01",
+        "utv2-20260914-33",
+        "demo-route",
+        "handel-20260914-16"
+      ],
+      "checkedAt": "2026-09-14",
+      "caveats": [],
+      "parentPlaceId": "solsiden-senter",
+      "poiCategoryId": "butikk"
+    },
+    {
+      "id": "apotek-1-city-lade",
+      "name": "Apotek 1 City Lade",
+      "categoryId": "hverdagsliv",
+      "address": "Haakon VII's gate 9",
+      "coordinates": {
+        "lat": 63.444122138837024,
+        "lng": 10.448084301592935
+      },
+      "placeType": "Apotek",
+      "icon": "Pill",
+      "aliases": [],
+      "status": "existing",
+      "summary": "Apotek på City Lade.",
+      "travelTime": {
+        "walk": 27,
+        "bike": 10
+      },
+      "locationPrecision": "approximate",
+      "locationNote": "Kartpunktet og reisetiden viser City Lade, ikke butikkens interne inngang.",
+      "facts": [
+        {
+          "id": "apotek-1-city-lade-sentermedlemskap",
+          "text": "Apotek 1 City Lade ligger i City Lade.",
+          "sourceId": "handel-20260914-02",
+          "checkedAt": "2026-09-14",
+          "verification": "confirmed"
+        }
+      ],
+      "sourceIds": [
+        "handel-20260914-02",
+        "handel-20260914-03",
+        "demo-route",
+        "handel-20260914-17"
+      ],
+      "checkedAt": "2026-09-14",
+      "caveats": [],
+      "parentPlaceId": "city-lade",
+      "poiCategoryId": "pharmacy"
+    },
+    {
+      "id": "rosenborg-bakeri-city-lade",
+      "name": "Rosenborg Bakeri City Lade",
+      "categoryId": "mat-drikke",
+      "address": "Haakon VII's gate 9",
+      "coordinates": {
+        "lat": 63.444122138837024,
+        "lng": 10.448084301592935
+      },
+      "placeType": "Bakeri og kafé",
+      "icon": "Croissant",
+      "aliases": [],
+      "status": "existing",
+      "summary": "Bakeri og kafé på City Lade.",
+      "travelTime": {
+        "walk": 27,
+        "bike": 10
+      },
+      "locationPrecision": "approximate",
+      "locationNote": "Kartpunktet og reisetiden viser City Lade, ikke butikkens interne inngang.",
+      "facts": [
+        {
+          "id": "rosenborg-bakeri-city-lade-sentermedlemskap",
+          "text": "Rosenborg Bakeri City Lade ligger i City Lade.",
+          "sourceId": "handel-20260914-02",
+          "checkedAt": "2026-09-14",
+          "verification": "confirmed"
+        }
+      ],
+      "sourceIds": [
+        "handel-20260914-02",
+        "handel-20260914-03",
+        "demo-route",
+        "handel-20260914-17"
+      ],
+      "checkedAt": "2026-09-14",
+      "caveats": [],
+      "parentPlaceId": "city-lade",
+      "poiCategoryId": "bakery"
+    },
+    {
+      "id": "b-young-city-lade",
+      "name": "B.young City Lade",
+      "categoryId": "hverdagsliv",
+      "address": "Haakon VII's gate 9",
+      "coordinates": {
+        "lat": 63.444122138837024,
+        "lng": 10.448084301592935
+      },
+      "placeType": "Klær",
+      "icon": "Store",
+      "aliases": [],
+      "status": "existing",
+      "summary": "Klær på City Lade.",
+      "travelTime": {
+        "walk": 27,
+        "bike": 10
+      },
+      "locationPrecision": "approximate",
+      "locationNote": "Kartpunktet og reisetiden viser City Lade, ikke butikkens interne inngang.",
+      "facts": [
+        {
+          "id": "b-young-city-lade-sentermedlemskap",
+          "text": "B.young City Lade ligger i City Lade.",
+          "sourceId": "handel-20260914-02",
+          "checkedAt": "2026-09-14",
+          "verification": "confirmed"
+        }
+      ],
+      "sourceIds": [
+        "handel-20260914-02",
+        "handel-20260914-03",
+        "demo-route",
+        "handel-20260914-17"
+      ],
+      "checkedAt": "2026-09-14",
+      "caveats": [],
+      "parentPlaceId": "city-lade",
+      "poiCategoryId": "butikk"
+    },
+    {
+      "id": "barnas-hus-city-lade",
+      "name": "Barnas Hus City Lade",
+      "categoryId": "hverdagsliv",
+      "address": "Haakon VII's gate 9",
+      "coordinates": {
+        "lat": 63.444122138837024,
+        "lng": 10.448084301592935
+      },
+      "placeType": "Barneutstyr og barneklær",
+      "icon": "Store",
+      "aliases": [],
+      "status": "existing",
+      "summary": "Barneutstyr og barneklær på City Lade.",
+      "travelTime": {
+        "walk": 27,
+        "bike": 10
+      },
+      "locationPrecision": "approximate",
+      "locationNote": "Kartpunktet og reisetiden viser City Lade, ikke butikkens interne inngang.",
+      "facts": [
+        {
+          "id": "barnas-hus-city-lade-sentermedlemskap",
+          "text": "Barnas Hus City Lade ligger i City Lade.",
+          "sourceId": "handel-20260914-02",
+          "checkedAt": "2026-09-14",
+          "verification": "confirmed"
+        }
+      ],
+      "sourceIds": [
+        "handel-20260914-02",
+        "handel-20260914-03",
+        "demo-route",
+        "handel-20260914-17"
+      ],
+      "checkedAt": "2026-09-14",
+      "caveats": [],
+      "parentPlaceId": "city-lade",
+      "poiCategoryId": "butikk"
+    },
+    {
+      "id": "anton-sport-city-lade",
+      "name": "Anton Sport City Lade",
+      "categoryId": "hverdagsliv",
+      "address": "Haakon VII's gate 9",
+      "coordinates": {
+        "lat": 63.444122138837024,
+        "lng": 10.448084301592935
+      },
+      "placeType": "Sportsbutikk",
+      "icon": "Store",
+      "aliases": [],
+      "status": "existing",
+      "summary": "Sportsbutikk på City Lade.",
+      "travelTime": {
+        "walk": 27,
+        "bike": 10
+      },
+      "locationPrecision": "approximate",
+      "locationNote": "Kartpunktet og reisetiden viser City Lade, ikke butikkens interne inngang.",
+      "facts": [
+        {
+          "id": "anton-sport-city-lade-sentermedlemskap",
+          "text": "Anton Sport City Lade ligger i City Lade.",
+          "sourceId": "handel-20260914-02",
+          "checkedAt": "2026-09-14",
+          "verification": "confirmed"
+        }
+      ],
+      "sourceIds": [
+        "handel-20260914-02",
+        "handel-20260914-03",
+        "demo-route",
+        "handel-20260914-17"
+      ],
+      "checkedAt": "2026-09-14",
+      "caveats": [],
+      "parentPlaceId": "city-lade",
+      "poiCategoryId": "butikk"
+    },
+    {
+      "id": "vitusapotek-trondheim-torg",
+      "name": "Vitusapotek Trondheim Torg",
+      "categoryId": "hverdagsliv",
+      "address": "Kongens gate 9",
+      "coordinates": {
+        "lat": 63.430362235801326,
+        "lng": 10.39371788317803
+      },
+      "placeType": "Apotek",
+      "icon": "Pill",
+      "aliases": [],
+      "status": "existing",
+      "summary": "Apotek på Trondheim Torg.",
+      "travelTime": {
+        "walk": 26,
+        "bike": 9
+      },
+      "locationPrecision": "approximate",
+      "locationNote": "Kartpunktet og reisetiden viser Trondheim Torg, ikke butikkens interne inngang.",
+      "facts": [
+        {
+          "id": "vitusapotek-trondheim-torg-sentermedlemskap",
+          "text": "Vitusapotek Trondheim Torg ligger i Trondheim Torg.",
+          "sourceId": "handel-20260914-04",
+          "checkedAt": "2026-09-14",
+          "verification": "confirmed"
+        }
+      ],
+      "sourceIds": [
+        "handel-20260914-04",
+        "handel-20260914-05",
+        "handel-20260914-06",
+        "handel-20260914-07",
+        "demo-route",
+        "handel-20260914-18"
+      ],
+      "checkedAt": "2026-09-14",
+      "caveats": [],
+      "parentPlaceId": "trondheim-torg",
+      "poiCategoryId": "pharmacy"
+    },
+    {
+      "id": "h-m-trondheim-torg",
+      "name": "H&M Trondheim Torg",
+      "categoryId": "hverdagsliv",
+      "address": "Kongens gate 9",
+      "coordinates": {
+        "lat": 63.430362235801326,
+        "lng": 10.39371788317803
+      },
+      "placeType": "Klær",
+      "icon": "Store",
+      "aliases": [],
+      "status": "existing",
+      "summary": "Klær på Trondheim Torg.",
+      "travelTime": {
+        "walk": 26,
+        "bike": 9
+      },
+      "locationPrecision": "approximate",
+      "locationNote": "Kartpunktet og reisetiden viser Trondheim Torg, ikke butikkens interne inngang.",
+      "facts": [
+        {
+          "id": "h-m-trondheim-torg-sentermedlemskap",
+          "text": "H&M Trondheim Torg ligger i Trondheim Torg.",
+          "sourceId": "handel-20260914-04",
+          "checkedAt": "2026-09-14",
+          "verification": "confirmed"
+        }
+      ],
+      "sourceIds": [
+        "handel-20260914-04",
+        "handel-20260914-05",
+        "handel-20260914-06",
+        "handel-20260914-07",
+        "demo-route",
+        "handel-20260914-18"
+      ],
+      "checkedAt": "2026-09-14",
+      "caveats": [],
+      "parentPlaceId": "trondheim-torg",
+      "poiCategoryId": "butikk"
+    },
+    {
+      "id": "ark-trondheim-torg",
+      "name": "ARK Trondheim Torg",
+      "categoryId": "hverdagsliv",
+      "address": "Kongens gate 9",
+      "coordinates": {
+        "lat": 63.430362235801326,
+        "lng": 10.39371788317803
+      },
+      "placeType": "Bokhandel",
+      "icon": "Store",
+      "aliases": [],
+      "status": "existing",
+      "summary": "Bokhandel på Trondheim Torg.",
+      "travelTime": {
+        "walk": 26,
+        "bike": 9
+      },
+      "locationPrecision": "approximate",
+      "locationNote": "Kartpunktet og reisetiden viser Trondheim Torg, ikke butikkens interne inngang.",
+      "facts": [
+        {
+          "id": "ark-trondheim-torg-sentermedlemskap",
+          "text": "ARK Trondheim Torg ligger i Trondheim Torg.",
+          "sourceId": "handel-20260914-04",
+          "checkedAt": "2026-09-14",
+          "verification": "confirmed"
+        }
+      ],
+      "sourceIds": [
+        "handel-20260914-04",
+        "handel-20260914-05",
+        "handel-20260914-06",
+        "handel-20260914-07",
+        "demo-route",
+        "handel-20260914-18"
+      ],
+      "checkedAt": "2026-09-14",
+      "caveats": [],
+      "parentPlaceId": "trondheim-torg",
+      "poiCategoryId": "butikk"
+    },
+    {
+      "id": "lekia-trondheim-torg",
+      "name": "Lekia Trondheim Torg",
+      "categoryId": "hverdagsliv",
+      "address": "Kongens gate 9",
+      "coordinates": {
+        "lat": 63.430362235801326,
+        "lng": 10.39371788317803
+      },
+      "placeType": "Lekebutikk",
+      "icon": "Store",
+      "aliases": [],
+      "status": "existing",
+      "summary": "Lekebutikk på Trondheim Torg.",
+      "travelTime": {
+        "walk": 26,
+        "bike": 9
+      },
+      "locationPrecision": "approximate",
+      "locationNote": "Kartpunktet og reisetiden viser Trondheim Torg, ikke butikkens interne inngang.",
+      "facts": [
+        {
+          "id": "lekia-trondheim-torg-sentermedlemskap",
+          "text": "Lekia Trondheim Torg ligger i Trondheim Torg.",
+          "sourceId": "handel-20260914-04",
+          "checkedAt": "2026-09-14",
+          "verification": "confirmed"
+        }
+      ],
+      "sourceIds": [
+        "handel-20260914-04",
+        "handel-20260914-05",
+        "handel-20260914-06",
+        "handel-20260914-07",
+        "demo-route",
+        "handel-20260914-18"
+      ],
+      "checkedAt": "2026-09-14",
+      "caveats": [],
+      "parentPlaceId": "trondheim-torg",
+      "poiCategoryId": "butikk"
+    },
+    {
+      "id": "clas-ohlson-trondheim-torg",
+      "name": "Clas Ohlson Trondheim Torg",
+      "categoryId": "hverdagsliv",
+      "address": "Kongens gate 9",
+      "coordinates": {
+        "lat": 63.430362235801326,
+        "lng": 10.39371788317803
+      },
+      "placeType": "Utstyr til hjemmet",
+      "icon": "Store",
+      "aliases": [],
+      "status": "existing",
+      "summary": "Utstyr til hjemmet på Trondheim Torg.",
+      "travelTime": {
+        "walk": 26,
+        "bike": 9
+      },
+      "locationPrecision": "approximate",
+      "locationNote": "Kartpunktet og reisetiden viser Trondheim Torg, ikke butikkens interne inngang.",
+      "facts": [
+        {
+          "id": "clas-ohlson-trondheim-torg-sentermedlemskap",
+          "text": "Clas Ohlson Trondheim Torg ligger i Trondheim Torg.",
+          "sourceId": "handel-20260914-04",
+          "checkedAt": "2026-09-14",
+          "verification": "confirmed"
+        }
+      ],
+      "sourceIds": [
+        "handel-20260914-04",
+        "handel-20260914-05",
+        "handel-20260914-06",
+        "handel-20260914-07",
+        "demo-route",
+        "handel-20260914-18"
+      ],
+      "checkedAt": "2026-09-14",
+      "caveats": [],
+      "parentPlaceId": "trondheim-torg",
+      "poiCategoryId": "butikk"
+    },
+    {
+      "id": "jordbaerpikene-trondheim-torg",
+      "name": "Jordbærpikene Trondheim Torg",
+      "categoryId": "mat-drikke",
+      "address": "Kongens gate 9",
+      "coordinates": {
+        "lat": 63.430362235801326,
+        "lng": 10.39371788317803
+      },
+      "placeType": "Kafé",
+      "icon": "Coffee",
+      "aliases": [],
+      "status": "existing",
+      "summary": "Kafé på Trondheim Torg.",
+      "travelTime": {
+        "walk": 26,
+        "bike": 9
+      },
+      "locationPrecision": "approximate",
+      "locationNote": "Kartpunktet og reisetiden viser Trondheim Torg, ikke butikkens interne inngang.",
+      "facts": [
+        {
+          "id": "jordbaerpikene-trondheim-torg-sentermedlemskap",
+          "text": "Jordbærpikene Trondheim Torg ligger i Trondheim Torg.",
+          "sourceId": "handel-20260914-04",
+          "checkedAt": "2026-09-14",
+          "verification": "confirmed"
+        }
+      ],
+      "sourceIds": [
+        "handel-20260914-04",
+        "handel-20260914-05",
+        "handel-20260914-06",
+        "handel-20260914-07",
+        "demo-route",
+        "handel-20260914-18"
+      ],
+      "checkedAt": "2026-09-14",
+      "caveats": [],
+      "parentPlaceId": "trondheim-torg",
+      "poiCategoryId": "cafe"
+    },
+    {
+      "id": "vitusapotek-sirkus-shopping",
+      "name": "Vitusapotek Sirkus Shopping",
+      "categoryId": "hverdagsliv",
+      "address": "Falkenborgvegen 1",
+      "coordinates": {
+        "lat": 63.43678643857908,
+        "lng": 10.45502433980722
+      },
+      "placeType": "Apotek",
+      "icon": "Pill",
+      "aliases": [],
+      "status": "existing",
+      "summary": "Apotek på Sirkus Shopping.",
+      "travelTime": {
+        "walk": 34,
+        "bike": 13
+      },
+      "locationPrecision": "approximate",
+      "locationNote": "Kartpunktet og reisetiden viser Sirkus Shopping, ikke butikkens interne inngang.",
+      "facts": [
+        {
+          "id": "vitusapotek-sirkus-shopping-sentermedlemskap",
+          "text": "Vitusapotek Sirkus Shopping ligger i Sirkus Shopping.",
+          "sourceId": "handel-20260914-08",
+          "checkedAt": "2026-09-14",
+          "verification": "confirmed"
+        }
+      ],
+      "sourceIds": [
+        "handel-20260914-08",
+        "handel-20260914-09",
+        "handel-20260914-10",
+        "demo-route",
+        "handel-20260914-19"
+      ],
+      "checkedAt": "2026-09-14",
+      "caveats": [],
+      "parentPlaceId": "sirkus-shopping",
+      "poiCategoryId": "pharmacy"
+    },
+    {
+      "id": "dromedar-sirkus-shopping",
+      "name": "Dromedar Sirkus Shopping",
+      "categoryId": "mat-drikke",
+      "address": "Falkenborgvegen 1",
+      "coordinates": {
+        "lat": 63.43678643857908,
+        "lng": 10.45502433980722
+      },
+      "placeType": "Kaffebar",
+      "icon": "Coffee",
+      "aliases": [],
+      "status": "existing",
+      "summary": "Kaffebar på Sirkus Shopping.",
+      "travelTime": {
+        "walk": 34,
+        "bike": 13
+      },
+      "locationPrecision": "approximate",
+      "locationNote": "Kartpunktet og reisetiden viser Sirkus Shopping, ikke butikkens interne inngang.",
+      "facts": [
+        {
+          "id": "dromedar-sirkus-shopping-sentermedlemskap",
+          "text": "Dromedar Sirkus Shopping ligger i Sirkus Shopping.",
+          "sourceId": "handel-20260914-08",
+          "checkedAt": "2026-09-14",
+          "verification": "confirmed"
+        }
+      ],
+      "sourceIds": [
+        "handel-20260914-08",
+        "handel-20260914-09",
+        "handel-20260914-10",
+        "demo-route",
+        "handel-20260914-19"
+      ],
+      "checkedAt": "2026-09-14",
+      "caveats": [],
+      "parentPlaceId": "sirkus-shopping",
+      "poiCategoryId": "cafe"
+    },
+    {
+      "id": "cubus-sirkus-shopping",
+      "name": "Cubus Sirkus Shopping",
+      "categoryId": "hverdagsliv",
+      "address": "Falkenborgvegen 1",
+      "coordinates": {
+        "lat": 63.43678643857908,
+        "lng": 10.45502433980722
+      },
+      "placeType": "Klær",
+      "icon": "Store",
+      "aliases": [],
+      "status": "existing",
+      "summary": "Klær på Sirkus Shopping.",
+      "travelTime": {
+        "walk": 34,
+        "bike": 13
+      },
+      "locationPrecision": "approximate",
+      "locationNote": "Kartpunktet og reisetiden viser Sirkus Shopping, ikke butikkens interne inngang.",
+      "facts": [
+        {
+          "id": "cubus-sirkus-shopping-sentermedlemskap",
+          "text": "Cubus Sirkus Shopping ligger i Sirkus Shopping.",
+          "sourceId": "handel-20260914-08",
+          "checkedAt": "2026-09-14",
+          "verification": "confirmed"
+        }
+      ],
+      "sourceIds": [
+        "handel-20260914-08",
+        "handel-20260914-09",
+        "handel-20260914-10",
+        "demo-route",
+        "handel-20260914-19"
+      ],
+      "checkedAt": "2026-09-14",
+      "caveats": [],
+      "parentPlaceId": "sirkus-shopping",
+      "poiCategoryId": "butikk"
+    },
+    {
+      "id": "clas-ohlson-sirkus-shopping",
+      "name": "Clas Ohlson Sirkus Shopping",
+      "categoryId": "hverdagsliv",
+      "address": "Falkenborgvegen 1",
+      "coordinates": {
+        "lat": 63.43678643857908,
+        "lng": 10.45502433980722
+      },
+      "placeType": "Utstyr til hjemmet",
+      "icon": "Store",
+      "aliases": [],
+      "status": "existing",
+      "summary": "Utstyr til hjemmet på Sirkus Shopping.",
+      "travelTime": {
+        "walk": 34,
+        "bike": 13
+      },
+      "locationPrecision": "approximate",
+      "locationNote": "Kartpunktet og reisetiden viser Sirkus Shopping, ikke butikkens interne inngang.",
+      "facts": [
+        {
+          "id": "clas-ohlson-sirkus-shopping-sentermedlemskap",
+          "text": "Clas Ohlson Sirkus Shopping ligger i Sirkus Shopping.",
+          "sourceId": "handel-20260914-08",
+          "checkedAt": "2026-09-14",
+          "verification": "confirmed"
+        }
+      ],
+      "sourceIds": [
+        "handel-20260914-08",
+        "handel-20260914-09",
+        "handel-20260914-10",
+        "demo-route",
+        "handel-20260914-19"
+      ],
+      "checkedAt": "2026-09-14",
+      "caveats": [],
+      "parentPlaceId": "sirkus-shopping",
+      "poiCategoryId": "butikk"
+    },
+    {
+      "id": "vinmonopolet-sirkus-shopping",
+      "name": "Vinmonopolet Sirkus Shopping",
+      "categoryId": "hverdagsliv",
+      "address": "Falkenborgvegen 1",
+      "coordinates": {
+        "lat": 63.43678643857908,
+        "lng": 10.45502433980722
+      },
+      "placeType": "Vinmonopol",
+      "icon": "Wine",
+      "aliases": [],
+      "status": "existing",
+      "summary": "Vinmonopol på Sirkus Shopping.",
+      "travelTime": {
+        "walk": 34,
+        "bike": 13
+      },
+      "locationPrecision": "approximate",
+      "locationNote": "Kartpunktet og reisetiden viser Sirkus Shopping, ikke butikkens interne inngang.",
+      "facts": [
+        {
+          "id": "vinmonopolet-sirkus-shopping-sentermedlemskap",
+          "text": "Vinmonopolet Sirkus Shopping ligger i Sirkus Shopping.",
+          "sourceId": "handel-20260914-08",
+          "checkedAt": "2026-09-14",
+          "verification": "confirmed"
+        }
+      ],
+      "sourceIds": [
+        "handel-20260914-08",
+        "handel-20260914-09",
+        "handel-20260914-10",
+        "demo-route",
+        "handel-20260914-19"
+      ],
+      "checkedAt": "2026-09-14",
+      "caveats": [],
+      "parentPlaceId": "sirkus-shopping",
+      "poiCategoryId": "liquor_store"
+    }
+  ],
+  "sources": [
+    {
+      "id": "handel-20260914-01",
+      "url": "https://www.solsidensenter.no/butikker-2/",
+      "label": "Butikker på Solsiden",
+      "page": "Butikker på Solsiden",
+      "publisher": "Solsiden senter",
+      "checkedAt": "2026-09-14"
+    },
+    {
+      "id": "handel-20260914-02",
+      "url": "https://citylade.no/butikkoversikt/",
+      "label": "Butikker på City Lade",
+      "page": "Butikker på City Lade",
+      "publisher": "City Lade",
+      "checkedAt": "2026-09-14"
+    },
+    {
+      "id": "handel-20260914-03",
+      "url": "https://citylade.no/",
+      "label": "City Lade – adresse",
+      "page": "City Lade – adresse",
+      "publisher": "City Lade",
+      "checkedAt": "2026-09-14"
+    },
+    {
+      "id": "handel-20260914-04",
+      "url": "https://trondheimtorg.no/butikker/",
+      "label": "Butikker på Trondheim Torg",
+      "page": "Butikker på Trondheim Torg",
+      "publisher": "Trondheim Torg",
+      "checkedAt": "2026-09-14"
+    },
+    {
+      "id": "handel-20260914-05",
+      "url": "https://trondheimtorg.no/",
+      "label": "Trondheim Torg – besøksadresse",
+      "page": "Trondheim Torg – besøksadresse",
+      "publisher": "Trondheim Torg",
+      "checkedAt": "2026-09-14"
+    },
+    {
+      "id": "handel-20260914-06",
+      "url": "https://trondheimtorg.no/klikk-hent/",
+      "label": "Klikk og hent på Trondheim Torg",
+      "page": "Klikk og hent på Trondheim Torg",
+      "publisher": "Trondheim Torg",
+      "checkedAt": "2026-09-14"
+    },
+    {
+      "id": "handel-20260914-07",
+      "url": "https://trondheimtorg.no/butikk/rema-1000/",
+      "label": "REMA 1000 – plassering utenfor hovedinngangen",
+      "page": "REMA 1000 – plassering utenfor hovedinngangen",
+      "publisher": "Trondheim Torg",
+      "checkedAt": "2026-09-14"
+    },
+    {
+      "id": "handel-20260914-08",
+      "url": "https://sirkusshopping.no/butikker/",
+      "label": "Butikker på Sirkus Shopping",
+      "page": "Butikker på Sirkus Shopping",
+      "publisher": "Sirkus Shopping",
+      "checkedAt": "2026-09-14"
+    },
+    {
+      "id": "handel-20260914-09",
+      "url": "https://sirkusshopping.no/praktisk-informasjon/om-senteret/",
+      "label": "Om senteret – adresse og tjenester",
+      "page": "Om senteret – adresse og tjenester",
+      "publisher": "Sirkus Shopping",
+      "checkedAt": "2026-09-14"
+    },
+    {
+      "id": "handel-20260914-10",
+      "url": "https://sirkusshopping.no/butikker/coop-mega/",
+      "label": "Coop Mega på Sirkus Shopping",
+      "page": "Coop Mega på Sirkus Shopping",
+      "publisher": "Sirkus Shopping",
+      "checkedAt": "2026-09-14"
+    },
+    {
+      "id": "handel-20260914-11",
+      "url": "https://www.coop.no/butikker/obs/obs-city-lade-2342",
+      "label": "Coop",
+      "page": "Obs City Lade – butikkadresse",
+      "publisher": "Coop",
+      "checkedAt": "2026-09-14"
+    },
+    {
+      "id": "handel-20260914-12",
+      "url": "https://www.coop.no/butikker/coop-mega/coop-mega-sirkus-shopping-4561",
+      "label": "Coop",
+      "page": "Coop Mega Sirkus Shopping – butikkadresse",
+      "publisher": "Coop",
+      "checkedAt": "2026-09-14"
+    },
+    {
+      "id": "handel-20260914-13",
+      "url": "https://www.bunnpris.no/butikker/bunnpris-buran",
+      "label": "Bunnpris",
+      "page": "Bunnpris Buran – butikk og tjenester",
+      "publisher": "Bunnpris",
+      "checkedAt": "2026-09-14"
+    },
+    {
+      "id": "handel-20260914-14",
+      "url": "https://www.bunnpris.no/butikker/bunnpris-lade",
+      "label": "Bunnpris",
+      "page": "Bunnpris Lade – butikk og tjenester",
+      "publisher": "Bunnpris",
+      "checkedAt": "2026-09-14"
+    },
+    {
+      "id": "handel-20260914-15",
+      "url": "https://www.coop.no/butikker/extra/extra-lilleby-2664",
+      "label": "Coop",
+      "page": "Extra Lilleby – butikk og tjenester",
+      "publisher": "Coop",
+      "checkedAt": "2026-09-14"
+    },
+    {
+      "id": "handel-20260914-16",
+      "url": "https://ws.geonorge.no/adresser/v1/sok?sok=Beddingen+10&kommunenummer=5001&utkoordsys=4258&treffPerSide=20",
+      "label": "Kartverket",
+      "page": "Adressepunkt: Beddingen 10",
+      "publisher": "Kartverket",
+      "checkedAt": "2026-09-14"
+    },
+    {
+      "id": "handel-20260914-17",
+      "url": "https://ws.geonorge.no/adresser/v1/sok?sok=Haakon+VII%27s+gate+9&kommunenummer=5001&utkoordsys=4258&treffPerSide=20",
+      "label": "Kartverket",
+      "page": "Adressepunkt: Haakon VII's gate 9",
+      "publisher": "Kartverket",
+      "checkedAt": "2026-09-14"
+    },
+    {
+      "id": "handel-20260914-18",
+      "url": "https://ws.geonorge.no/adresser/v1/sok?sok=Kongens+gate+9&kommunenummer=5001&utkoordsys=4258&treffPerSide=20",
+      "label": "Kartverket",
+      "page": "Adressepunkt: Kongens gate 9",
+      "publisher": "Kartverket",
+      "checkedAt": "2026-09-14"
+    },
+    {
+      "id": "handel-20260914-19",
+      "url": "https://ws.geonorge.no/adresser/v1/sok?sok=Falkenborgvegen+1&kommunenummer=5001&utkoordsys=4258&treffPerSide=20",
+      "label": "Kartverket",
+      "page": "Adressepunkt: Falkenborgvegen 1",
+      "publisher": "Kartverket",
+      "checkedAt": "2026-09-14"
+    },
+    {
+      "id": "handel-20260914-20",
+      "url": "https://ws.geonorge.no/adresser/v1/sok?sok=Munkegata+22&kommunenummer=5001&utkoordsys=4258&treffPerSide=20",
+      "label": "Kartverket",
+      "page": "Adressepunkt: Munkegata 22",
+      "publisher": "Kartverket",
+      "checkedAt": "2026-09-14"
+    },
+    {
+      "id": "handel-20260914-21",
+      "url": "https://ws.geonorge.no/adresser/v1/sok?sok=Ulstadl%C3%B8kkveien+5&kommunenummer=5001&utkoordsys=4258&treffPerSide=20",
+      "label": "Kartverket",
+      "page": "Adressepunkt: Ulstadløkkveien 5",
+      "publisher": "Kartverket",
+      "checkedAt": "2026-09-14"
+    },
+    {
+      "id": "handel-20260914-22",
+      "url": "https://ws.geonorge.no/adresser/v1/sok?sok=Stj%C3%B8rdalsveien+4&kommunenummer=5001&utkoordsys=4258&treffPerSide=20",
+      "label": "Kartverket",
+      "page": "Adressepunkt: Stjørdalsveien 4",
+      "publisher": "Kartverket",
+      "checkedAt": "2026-09-14"
+    }
+  ],
+  "existingPlacePatches": [
+    {
+      "id": "kiwi-lilleby",
+      "before": {
+        "id": "kiwi-lilleby",
+        "name": "KIWI Lilleby",
+        "categoryId": "hverdagsliv",
+        "address": "Stjørdalsveien 2",
+        "coordinates": {
+          "lat": 63.44228979804275,
+          "lng": 10.433636735423338
+        },
+        "placeType": "Dagligvare",
+        "summary": "Dagligvarebutikk med utendørs pakkebokser fra Posten og PostNord.",
+        "travelTime": {
+          "walk": 15,
+          "bike": 5
+        },
+        "locationPrecision": "approximate",
+        "locationNote": "Kartpunktet viser adressen, ikke en bestemt inngang.",
+        "sourceIds": [
+          "demo-kiwi",
+          "demo-route"
+        ],
+        "checkedAt": "2026-09-14",
+        "status": "existing",
+        "facts": [],
+        "caveats": []
+      },
+      "after": {
+        "id": "kiwi-lilleby",
+        "name": "KIWI Lilleby",
+        "categoryId": "hverdagsliv",
+        "address": "Stjørdalsveien 2",
+        "coordinates": {
+          "lat": 63.44228979804275,
+          "lng": 10.433636735423338
+        },
+        "placeType": "Dagligvare",
+        "summary": "Dagligvarebutikk med utendørs pakkebokser fra Posten og PostNord.",
+        "travelTime": {
+          "walk": 15,
+          "bike": 5
+        },
+        "locationPrecision": "approximate",
+        "locationNote": "Kartpunktet viser adressen, ikke en bestemt inngang.",
+        "sourceIds": [
+          "demo-kiwi",
+          "demo-route"
+        ],
+        "checkedAt": "2026-09-14",
+        "status": "existing",
+        "facts": [],
+        "caveats": [],
+        "poiCategoryId": "supermarket",
+        "aliases": [
+          "dagligvare",
+          "dagligvarer",
+          "matbutikk",
+          "dagligvarebutikk"
+        ]
+      }
+    },
+    {
+      "id": "meny-solsiden",
+      "before": {
+        "id": "meny-solsiden",
+        "name": "MENY Solsiden",
+        "categoryId": "hverdagsliv",
+        "address": "Beddingen 12",
+        "coordinates": {
+          "lat": 63.43520165549338,
+          "lng": 10.410991191893789
+        },
+        "placeType": "Dagligvare",
+        "summary": "Dagligvarebutikk på Solsiden. Se butikkens side for tjenester og åpningstider.",
+        "travelTime": {
+          "walk": 11,
+          "bike": 6
+        },
+        "locationPrecision": "approximate",
+        "locationNote": "Kartpunktet viser adressen, ikke en bestemt inngang.",
+        "sourceIds": [
+          "demo-meny",
+          "demo-route"
+        ],
+        "checkedAt": "2026-09-14",
+        "status": "existing",
+        "facts": [],
+        "caveats": []
+      },
+      "after": {
+        "id": "meny-solsiden",
+        "name": "MENY Solsiden",
+        "categoryId": "hverdagsliv",
+        "address": "Beddingen 12",
+        "coordinates": {
+          "lat": 63.43520165549338,
+          "lng": 10.410991191893789
+        },
+        "placeType": "Dagligvare",
+        "summary": "Dagligvarebutikk på Solsiden. Se butikkens side for tjenester og åpningstider.",
+        "travelTime": {
+          "walk": 11,
+          "bike": 6
+        },
+        "locationPrecision": "approximate",
+        "locationNote": "Kartpunktet viser adressen, ikke en bestemt inngang.",
+        "sourceIds": [
+          "demo-meny",
+          "demo-route",
+          "handel-20260914-01"
+        ],
+        "checkedAt": "2026-09-14",
+        "status": "existing",
+        "facts": [
+          {
+            "id": "meny-solsiden-sentermedlemskap",
+            "text": "MENY Solsiden ligger i Solsiden senter.",
+            "sourceId": "handel-20260914-01",
+            "checkedAt": "2026-09-14",
+            "verification": "confirmed"
+          }
+        ],
+        "caveats": [],
+        "parentPlaceId": "solsiden-senter",
+        "poiCategoryId": "supermarket",
+        "aliases": [
+          "dagligvare",
+          "dagligvarer",
+          "matbutikk",
+          "dagligvarebutikk"
+        ]
+      }
+    },
+    {
+      "id": "godt-brod-solsiden",
+      "before": {
+        "id": "godt-brod-solsiden",
+        "name": "Godt Brød Solsiden",
+        "categoryId": "mat-drikke",
+        "coordinates": {
+          "lat": 63.43523563981423,
+          "lng": 10.412095335856362
+        },
+        "placeType": "Bakeri og kafé",
+        "aliases": [],
+        "status": "existing",
+        "summary": "Bakeverksted på Solsiden med bakervarer, påsmurt mat og kaffe.",
+        "locationPrecision": "approximate",
+        "locationNote": "Kartpunktet viser adressen, ikke en kontrollert inngang.",
+        "facts": [
+          {
+            "id": "godt-brod-solsiden-f1",
+            "text": "Avdelingssiden plasserer bakeverkstedet på Solsiden senter.",
+            "sourceId": "utv-20260914-09",
+            "checkedAt": "2026-09-14",
+            "verification": "confirmed"
+          },
+          {
+            "id": "godt-brod-solsiden-f2",
+            "text": "Stedet beskriver håndbakte, økologiske brød og boller.",
+            "sourceId": "utv-20260914-09",
+            "checkedAt": "2026-09-14",
+            "verification": "confirmed"
+          },
+          {
+            "id": "godt-brod-solsiden-f3",
+            "text": "Avdelingen oppgir påsmurte sandwicher, juice, baristakaffe og kaker.",
+            "sourceId": "utv-20260914-09",
+            "checkedAt": "2026-09-14",
+            "verification": "confirmed"
+          }
+        ],
+        "sourceIds": [
+          "utv-20260914-09",
+          "utv-20260914-10",
+          "demo-route"
+        ],
+        "checkedAt": "2026-09-14",
+        "caveats": [
+          "Utvalget av bakervarer varierer."
+        ],
+        "address": "Beddingen 10",
+        "travelTime": {
+          "walk": 11,
+          "bike": 7
+        }
+      },
+      "after": {
+        "id": "godt-brod-solsiden",
+        "name": "Godt Brød Solsiden",
+        "categoryId": "mat-drikke",
+        "coordinates": {
+          "lat": 63.43523563981423,
+          "lng": 10.412095335856362
+        },
+        "placeType": "Bakeri og kafé",
+        "aliases": [],
+        "status": "existing",
+        "summary": "Bakeverksted på Solsiden med bakervarer, påsmurt mat og kaffe.",
+        "locationPrecision": "approximate",
+        "locationNote": "Kartpunktet viser adressen, ikke en kontrollert inngang.",
+        "facts": [
+          {
+            "id": "godt-brod-solsiden-f1",
+            "text": "Avdelingssiden plasserer bakeverkstedet på Solsiden senter.",
+            "sourceId": "utv-20260914-09",
+            "checkedAt": "2026-09-14",
+            "verification": "confirmed"
+          },
+          {
+            "id": "godt-brod-solsiden-f2",
+            "text": "Stedet beskriver håndbakte, økologiske brød og boller.",
+            "sourceId": "utv-20260914-09",
+            "checkedAt": "2026-09-14",
+            "verification": "confirmed"
+          },
+          {
+            "id": "godt-brod-solsiden-f3",
+            "text": "Avdelingen oppgir påsmurte sandwicher, juice, baristakaffe og kaker.",
+            "sourceId": "utv-20260914-09",
+            "checkedAt": "2026-09-14",
+            "verification": "confirmed"
+          },
+          {
+            "id": "godt-brod-solsiden-sentermedlemskap",
+            "text": "Godt Brød Solsiden ligger i Solsiden senter.",
+            "sourceId": "handel-20260914-01",
+            "checkedAt": "2026-09-14",
+            "verification": "confirmed"
+          }
+        ],
+        "sourceIds": [
+          "utv-20260914-09",
+          "utv-20260914-10",
+          "demo-route",
+          "handel-20260914-01"
+        ],
+        "checkedAt": "2026-09-14",
+        "caveats": [
+          "Utvalget av bakervarer varierer."
+        ],
+        "address": "Beddingen 10",
+        "travelTime": {
+          "walk": 11,
+          "bike": 7
+        },
+        "parentPlaceId": "solsiden-senter",
+        "poiCategoryId": "bakery"
+      }
+    },
+    {
+      "id": "dromedar-solsiden",
+      "before": {
+        "id": "dromedar-solsiden",
+        "name": "Dromedar Kaffebar Solsiden",
+        "categoryId": "mat-drikke",
+        "coordinates": {
+          "lat": 63.43523563981423,
+          "lng": 10.412095335856362
+        },
+        "address": "Beddingen 10",
+        "placeType": "Kaffebar",
+        "aliases": [],
+        "status": "existing",
+        "summary": "Kaffebar på Solsiden i Dromedar-kjeden, med kaffe fra Solberg & Hansen.",
+        "locationPrecision": "approximate",
+        "locationNote": "Kartpunktet viser adressen, ikke en kontrollert inngang.",
+        "facts": [
+          {
+            "id": "dromedar-solsiden-f1",
+            "text": "Dromedar har en egen kaffebar på Solsiden i Beddingen 10.",
+            "sourceId": "utv2-20260914-08",
+            "checkedAt": "2026-09-14",
+            "verification": "confirmed"
+          },
+          {
+            "id": "dromedar-solsiden-f2",
+            "text": "Kjeden oppgir at kaffemenyen bygger på kaffe kjøpt inn og brent av Solberg & Hansen.",
+            "sourceId": "utv2-20260914-09",
+            "checkedAt": "2026-09-14",
+            "verification": "confirmed"
+          }
+        ],
+        "sourceIds": [
+          "utv2-20260914-08",
+          "utv2-20260914-09",
+          "utv-20260914-10",
+          "demo-route"
+        ],
+        "checkedAt": "2026-09-14",
+        "caveats": [
+          "Kaffebeskrivelsen gjelder kjeden. Utvalget på avdelingen kan variere."
+        ],
+        "travelTime": {
+          "walk": 11,
+          "bike": 7
+        }
+      },
+      "after": {
+        "id": "dromedar-solsiden",
+        "name": "Dromedar Kaffebar Solsiden",
+        "categoryId": "mat-drikke",
+        "coordinates": {
+          "lat": 63.43523563981423,
+          "lng": 10.412095335856362
+        },
+        "address": "Beddingen 10",
+        "placeType": "Kaffebar",
+        "aliases": [],
+        "status": "existing",
+        "summary": "Kaffebar på Solsiden i Dromedar-kjeden, med kaffe fra Solberg & Hansen.",
+        "locationPrecision": "approximate",
+        "locationNote": "Kartpunktet viser adressen, ikke en kontrollert inngang.",
+        "facts": [
+          {
+            "id": "dromedar-solsiden-f1",
+            "text": "Dromedar har en egen kaffebar på Solsiden i Beddingen 10.",
+            "sourceId": "utv2-20260914-08",
+            "checkedAt": "2026-09-14",
+            "verification": "confirmed"
+          },
+          {
+            "id": "dromedar-solsiden-f2",
+            "text": "Kjeden oppgir at kaffemenyen bygger på kaffe kjøpt inn og brent av Solberg & Hansen.",
+            "sourceId": "utv2-20260914-09",
+            "checkedAt": "2026-09-14",
+            "verification": "confirmed"
+          },
+          {
+            "id": "dromedar-solsiden-sentermedlemskap",
+            "text": "Dromedar Kaffebar Solsiden ligger i Solsiden senter.",
+            "sourceId": "handel-20260914-01",
+            "checkedAt": "2026-09-14",
+            "verification": "confirmed"
+          }
+        ],
+        "sourceIds": [
+          "utv2-20260914-08",
+          "utv2-20260914-09",
+          "utv-20260914-10",
+          "demo-route",
+          "handel-20260914-01"
+        ],
+        "checkedAt": "2026-09-14",
+        "caveats": [
+          "Kaffebeskrivelsen gjelder kjeden. Utvalget på avdelingen kan variere."
+        ],
+        "travelTime": {
+          "walk": 11,
+          "bike": 7
+        },
+        "parentPlaceId": "solsiden-senter",
+        "poiCategoryId": "cafe"
+      }
+    },
+    {
+      "id": "apotek-1-solsiden",
+      "before": {
+        "id": "apotek-1-solsiden",
+        "name": "Apotek 1 Solsiden",
+        "categoryId": "hverdagsliv",
+        "coordinates": {
+          "lat": 63.43523563981423,
+          "lng": 10.412095335856362
+        },
+        "address": "Beddingen 10",
+        "placeType": "Apotek",
+        "aliases": [],
+        "status": "existing",
+        "summary": "Apotek i første etasje på Solsiden kjøpesenter, som kan inngå i den vanlige handleturen.",
+        "locationPrecision": "approximate",
+        "locationNote": "Kartpunktet viser adressen, ikke en kontrollert inngang.",
+        "facts": [
+          {
+            "id": "apotek-1-solsiden-f1",
+            "text": "Apoteket ligger i første etasje på Solsiden kjøpesenter.",
+            "sourceId": "utv2-20260914-30",
+            "checkedAt": "2026-09-14",
+            "verification": "confirmed"
+          },
+          {
+            "id": "apotek-1-solsiden-f2",
+            "text": "Butikken fører apotekvarer samt blant annet produkter for hud- og hårpleie.",
+            "sourceId": "utv2-20260914-30",
+            "checkedAt": "2026-09-14",
+            "verification": "confirmed"
+          }
+        ],
+        "sourceIds": [
+          "utv2-20260914-30",
+          "utv2-20260914-31",
+          "utv-20260914-10",
+          "demo-route"
+        ],
+        "checkedAt": "2026-09-14",
+        "caveats": [
+          "Lagerstatus og tilgjengelige tjenester må avklares med apoteket."
+        ],
+        "travelTime": {
+          "walk": 11,
+          "bike": 7
+        }
+      },
+      "after": {
+        "id": "apotek-1-solsiden",
+        "name": "Apotek 1 Solsiden",
+        "categoryId": "hverdagsliv",
+        "coordinates": {
+          "lat": 63.43523563981423,
+          "lng": 10.412095335856362
+        },
+        "address": "Beddingen 10",
+        "placeType": "Apotek",
+        "aliases": [],
+        "status": "existing",
+        "summary": "Apotek i første etasje på Solsiden kjøpesenter, som kan inngå i den vanlige handleturen.",
+        "locationPrecision": "approximate",
+        "locationNote": "Kartpunktet viser adressen, ikke en kontrollert inngang.",
+        "facts": [
+          {
+            "id": "apotek-1-solsiden-f1",
+            "text": "Apoteket ligger i første etasje på Solsiden kjøpesenter.",
+            "sourceId": "utv2-20260914-30",
+            "checkedAt": "2026-09-14",
+            "verification": "confirmed"
+          },
+          {
+            "id": "apotek-1-solsiden-f2",
+            "text": "Butikken fører apotekvarer samt blant annet produkter for hud- og hårpleie.",
+            "sourceId": "utv2-20260914-30",
+            "checkedAt": "2026-09-14",
+            "verification": "confirmed"
+          },
+          {
+            "id": "apotek-1-solsiden-sentermedlemskap",
+            "text": "Apotek 1 Solsiden ligger i Solsiden senter.",
+            "sourceId": "handel-20260914-01",
+            "checkedAt": "2026-09-14",
+            "verification": "confirmed"
+          }
+        ],
+        "sourceIds": [
+          "utv2-20260914-30",
+          "utv2-20260914-31",
+          "utv-20260914-10",
+          "demo-route",
+          "handel-20260914-01"
+        ],
+        "checkedAt": "2026-09-14",
+        "caveats": [
+          "Lagerstatus og tilgjengelige tjenester må avklares med apoteket."
+        ],
+        "travelTime": {
+          "walk": 11,
+          "bike": 7
+        },
+        "parentPlaceId": "solsiden-senter",
+        "poiCategoryId": "pharmacy"
+      }
+    },
+    {
+      "id": "vinmonopolet-solsiden",
+      "before": {
+        "id": "vinmonopolet-solsiden",
+        "name": "Vinmonopolet Solsiden",
+        "categoryId": "hverdagsliv",
+        "coordinates": {
+          "lat": 63.43523563981423,
+          "lng": 10.412095335856362
+        },
+        "address": "Beddingen 10",
+        "placeType": "Vinmonopol",
+        "aliases": [],
+        "status": "existing",
+        "summary": "Vinmonopol på Solsiden kjøpesenter, som gir flere typer ærender på samme senter.",
+        "locationPrecision": "approximate",
+        "locationNote": "Kartpunktet viser adressen, ikke en kontrollert inngang.",
+        "facts": [
+          {
+            "id": "vinmonopolet-solsiden-f1",
+            "text": "Vinmonopolet Solsiden ligger i første etasje på kjøpesenteret.",
+            "sourceId": "utv2-20260914-32",
+            "checkedAt": "2026-09-14",
+            "verification": "confirmed"
+          },
+          {
+            "id": "vinmonopolet-solsiden-f2",
+            "text": "Senteret har også apotek og dagligvarebutikk, slik at ulike ærender kan samles på samme sted.",
+            "sourceId": "utv2-20260914-32",
+            "checkedAt": "2026-09-14",
+            "verification": "confirmed"
+          }
+        ],
+        "sourceIds": [
+          "utv2-20260914-32",
+          "utv2-20260914-33",
+          "utv-20260914-10",
+          "demo-route"
+        ],
+        "checkedAt": "2026-09-14",
+        "caveats": [
+          "Senteradressen brukes som kartadresse; den viser ikke butikkens interne inngang.",
+          "Ikke lov bestemt vareutvalg eller lagerstatus."
+        ],
+        "travelTime": {
+          "walk": 11,
+          "bike": 7
+        }
+      },
+      "after": {
+        "id": "vinmonopolet-solsiden",
+        "name": "Vinmonopolet Solsiden",
+        "categoryId": "hverdagsliv",
+        "coordinates": {
+          "lat": 63.43523563981423,
+          "lng": 10.412095335856362
+        },
+        "address": "Beddingen 10",
+        "placeType": "Vinmonopol",
+        "aliases": [],
+        "status": "existing",
+        "summary": "Vinmonopol på Solsiden kjøpesenter, som gir flere typer ærender på samme senter.",
+        "locationPrecision": "approximate",
+        "locationNote": "Kartpunktet viser adressen, ikke en kontrollert inngang.",
+        "facts": [
+          {
+            "id": "vinmonopolet-solsiden-f1",
+            "text": "Vinmonopolet Solsiden ligger i første etasje på kjøpesenteret.",
+            "sourceId": "utv2-20260914-32",
+            "checkedAt": "2026-09-14",
+            "verification": "confirmed"
+          },
+          {
+            "id": "vinmonopolet-solsiden-f2",
+            "text": "Senteret har også apotek og dagligvarebutikk, slik at ulike ærender kan samles på samme sted.",
+            "sourceId": "utv2-20260914-32",
+            "checkedAt": "2026-09-14",
+            "verification": "confirmed"
+          },
+          {
+            "id": "vinmonopolet-solsiden-sentermedlemskap",
+            "text": "Vinmonopolet Solsiden ligger i Solsiden senter.",
+            "sourceId": "handel-20260914-01",
+            "checkedAt": "2026-09-14",
+            "verification": "confirmed"
+          }
+        ],
+        "sourceIds": [
+          "utv2-20260914-32",
+          "utv2-20260914-33",
+          "utv-20260914-10",
+          "demo-route",
+          "handel-20260914-01"
+        ],
+        "checkedAt": "2026-09-14",
+        "caveats": [
+          "Senteradressen brukes som kartadresse; den viser ikke butikkens interne inngang.",
+          "Ikke lov bestemt vareutvalg eller lagerstatus."
+        ],
+        "travelTime": {
+          "walk": 11,
+          "bike": 7
+        },
+        "parentPlaceId": "solsiden-senter",
+        "poiCategoryId": "liquor_store"
+      }
+    },
+    {
+      "id": "rema-1000-solsiden",
+      "before": {
+        "id": "rema-1000-solsiden",
+        "name": "REMA 1000 Solsiden",
+        "categoryId": "hverdagsliv",
+        "coordinates": {
+          "lat": 63.436464299658766,
+          "lng": 10.416563908353693
+        },
+        "address": "Dyre Halses gate 1A",
+        "placeType": "Dagligvare",
+        "aliases": [],
+        "status": "existing",
+        "summary": "Dagligvarebutikk i Dyre Halses gate, et alternativ for matinnkjøp i Solsiden-området.",
+        "locationPrecision": "approximate",
+        "locationNote": "Kartpunktet viser adressen, ikke en kontrollert inngang.",
+        "facts": [
+          {
+            "id": "rema-1000-solsiden-f1",
+            "text": "Butikken ligger i Dyre Halses gate 1A ved Solsiden.",
+            "sourceId": "utv2-20260914-34",
+            "checkedAt": "2026-09-14",
+            "verification": "confirmed"
+          },
+          {
+            "id": "rema-1000-solsiden-f2",
+            "text": "REMA 1000 Solsiden er en dagligvarebutikk.",
+            "sourceId": "utv2-20260914-35",
+            "checkedAt": "2026-09-14",
+            "verification": "confirmed"
+          }
+        ],
+        "sourceIds": [
+          "utv2-20260914-34",
+          "utv2-20260914-35",
+          "utv2-20260914-36",
+          "demo-route"
+        ],
+        "checkedAt": "2026-09-14",
+        "caveats": [
+          "Butikken ligger i Dyre Halses gate, utenfor selve Solsiden kjøpesenter. Tilleggstjenester og søndagsåpning er ikke bekreftet."
+        ],
+        "travelTime": {
+          "walk": 7,
+          "bike": 3
+        }
+      },
+      "after": {
+        "id": "rema-1000-solsiden",
+        "name": "REMA 1000 Solsiden",
+        "categoryId": "hverdagsliv",
+        "coordinates": {
+          "lat": 63.436464299658766,
+          "lng": 10.416563908353693
+        },
+        "address": "Dyre Halses gate 1A",
+        "placeType": "Dagligvare",
+        "aliases": [
+          "dagligvare",
+          "dagligvarer",
+          "matbutikk",
+          "dagligvarebutikk"
+        ],
+        "status": "existing",
+        "summary": "Dagligvarebutikk i Dyre Halses gate, et alternativ for matinnkjøp i Solsiden-området.",
+        "locationPrecision": "approximate",
+        "locationNote": "Kartpunktet viser adressen, ikke en kontrollert inngang.",
+        "facts": [
+          {
+            "id": "rema-1000-solsiden-f1",
+            "text": "Butikken ligger i Dyre Halses gate 1A ved Solsiden.",
+            "sourceId": "utv2-20260914-34",
+            "checkedAt": "2026-09-14",
+            "verification": "confirmed"
+          },
+          {
+            "id": "rema-1000-solsiden-f2",
+            "text": "REMA 1000 Solsiden er en dagligvarebutikk.",
+            "sourceId": "utv2-20260914-35",
+            "checkedAt": "2026-09-14",
+            "verification": "confirmed"
+          }
+        ],
+        "sourceIds": [
+          "utv2-20260914-34",
+          "utv2-20260914-35",
+          "utv2-20260914-36",
+          "demo-route"
+        ],
+        "checkedAt": "2026-09-14",
+        "caveats": [
+          "Butikken ligger i Dyre Halses gate, utenfor selve Solsiden kjøpesenter. Tilleggstjenester og søndagsåpning er ikke bekreftet."
+        ],
+        "travelTime": {
+          "walk": 7,
+          "bike": 3
+        },
+        "poiCategoryId": "supermarket"
+      }
+    }
+  ],
+  "originalHashes": {
+    "board": "ff16c69229d4c3ff2dc8e17245bab547b5c6b15b7f384c72ba2495fda9220870",
+    "places": "dac5c6268948c4c6fbd18f97d24bce6c38c1e904aeecc1abdc409ecb33bd10db",
+    "sources": "5ab1a58a2277eb9052ef97529f3ab84f88bc22772c14bfcacf775058116a21ea",
+    "topics": "158ae20a6f90b54a75d0dad41f6181db2399473fe54237d3eb62d35265af17ca",
+    "faq": "df3e65d6099d8953f16d4e7c97c3faa20a1b7dd4788d76b4708abac1a83b30e6",
+    "conversations": "37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570"
+  },
+  "notes": [
+    "Nye sentermedlemmer bruker senterets adressepunkt og reisetid, ikke egen intern inngang. Coop Megas butikkadresse fra Coop er beholdt; senteret vises på kartet.",
+    "Bunnpris Lade er kontrollert mot Supabase-record google-ChIJCzDwmgUxbUYRbM0LlUcPfu0 med identisk adresse og koordinat.",
+    "Alle 24 medlemskap kontrollert mot senterets egen nettside. REMA 1000 Solsiden og REMA 1000 Torvet beholder selvstendige punkter."
+  ]
+}

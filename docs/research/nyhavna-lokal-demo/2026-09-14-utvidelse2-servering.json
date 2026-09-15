@@ -1,0 +1,283 @@
+{
+  "checkedAt": "2026-09-14",
+  "scope": "Åtte nye, inkluderte serveringssteder med egenkildestøttede besøksadresser og to fakta hver. Ingen aktive filer eller koordinater endret.",
+  "replacement": {
+    "requested": "Pizzabakeren Lade",
+    "includedInstead": "SOT Bar & Burger Solsiden",
+    "reason": "Lade-tilbudet finnes på kjedens Trondheim-side, men besøksadresse kunne ikke leses fra egen avdelingsside. Katalog- og Wolt-adresser ble ikke brukt som egenkilde.",
+    "checkedSource": "https://www.pizzabakeren.no/pizza-trondheim"
+  },
+  "method": "Offisielle nettsider kontrollert med nettsøk. Cafe Løkkas kontaktfelt ble lest fra HTML, og Cafe Løkkas og Brors lenkede menybilder ble lest visuelt. Ingen priser, konkrete åpningstider eller barnemenypåstander importert.",
+  "candidates": [
+    {
+      "id": "egon-solsiden",
+      "name": "Egon Solsiden",
+      "category": "mat-drikke",
+      "address": "TMV-kaia 21",
+      "placeType": "Restaurant",
+      "summary": "Restaurant på Solsidens restaurantrekke, med pizzabuffet, burgere og takeaway.",
+      "facts": [
+        {
+          "text": "Avdelingssiden beskriver pizzabuffet og burgermeny.",
+          "sourceUrl": "https://egon.no/restauranter/troendelag/egon-solsiden"
+        },
+        {
+          "text": "Restauranten tilbyr takeaway og måltider både inne og ute.",
+          "sourceUrl": "https://egon.no/restauranter/troendelag/egon-solsiden"
+        }
+      ],
+      "sources": [
+        {
+          "url": "https://egon.no/restauranter/troendelag/egon-solsiden",
+          "label": "Egon",
+          "page": "Egon Solsiden",
+          "publisher": "Egon"
+        }
+      ],
+      "caveats": [
+        "Buffetdager, priser og barnemeny er ikke kontrollert. Uteservering avhenger av forholdene."
+      ],
+      "checkedAt": "2026-09-14"
+    },
+    {
+      "id": "olivia-solsiden",
+      "name": "Olivia Solsiden",
+      "category": "mat-drikke",
+      "address": "Beddingen 16",
+      "placeType": "Italiensk restaurant",
+      "summary": "Italiensk restaurant på Solsiden med pizza, pasta og inspirasjon fra Firenze.",
+      "facts": [
+        {
+          "text": "Restauranten beskriver pizza stekt i steinovn, pasta og andre italienske retter.",
+          "sourceUrl": "https://oliviarestauranter.no/restauranter/solsiden/"
+        },
+        {
+          "text": "Solsiden-avdelingen er inspirert av Firenze og tilbyr også mat for henting.",
+          "sourceUrl": "https://oliviarestauranter.no/restauranter/solsiden/"
+        }
+      ],
+      "sources": [
+        {
+          "url": "https://oliviarestauranter.no/restauranter/solsiden/",
+          "label": "Olivia Restauranter",
+          "page": "Olivia Solsiden",
+          "publisher": "Olivia Restauranter"
+        }
+      ],
+      "caveats": [
+        "Bruk avdelingssiden med /restauranter/ i URL; den tidligere /restaurant/-lenken feiler. Ingen barnemeny eller aldersvilkår er kontrollert."
+      ],
+      "checkedAt": "2026-09-14"
+    },
+    {
+      "id": "cafe-lokka",
+      "name": "Cafe Løkka",
+      "category": "mat-drikke",
+      "address": "Dokkgata 8",
+      "placeType": "Kafé og restaurant",
+      "summary": "Spisested ved Solsiden med burgere, salater og lunsjretter.",
+      "facts": [
+        {
+          "text": "Den publiserte menyen omfatter burgere, salater, fish and chips og lunsjsandwicher.",
+          "sourceUrl": "https://cafelokka.no/assets/meny2025okt.png"
+        },
+        {
+          "text": "Menyen oppgir at biffburger kan byttes til kyllingfilet eller vegetarburger.",
+          "sourceUrl": "https://cafelokka.no/assets/meny2025okt.png"
+        }
+      ],
+      "sources": [
+        {
+          "url": "https://cafelokka.no/",
+          "label": "Cafe Løkka",
+          "page": "Cafe Løkka – kontakt og adresse",
+          "publisher": "Cafe Løkka"
+        },
+        {
+          "url": "https://cafelokka.no/assets/meny2025okt.png",
+          "label": "Cafe Løkka",
+          "page": "Menybilde – oktober 2025",
+          "publisher": "Cafe Løkka"
+        }
+      ],
+      "caveats": [
+        "Menybildet har oktober 2025 i filnavnet og lenkes fortsatt fra forsiden; dagens rettutvalg må sjekkes. Vegetar betyr ikke vegansk. Adresse er lest i egen nettsides kontaktfelt i HTML."
+      ],
+      "checkedAt": "2026-09-14"
+    },
+    {
+      "id": "dromedar-solsiden",
+      "name": "Dromedar Kaffebar Solsiden",
+      "category": "mat-drikke",
+      "address": "Beddingen 10",
+      "placeType": "Kaffebar",
+      "summary": "Kaffebar på Solsiden i Dromedar-kjeden, med kaffe fra Solberg & Hansen.",
+      "facts": [
+        {
+          "text": "Dromedar har en egen kaffebar på Solsiden i Beddingen 10.",
+          "sourceUrl": "https://dromedar.no/kaffebarer/solsiden/"
+        },
+        {
+          "text": "Kjeden oppgir at kaffemenyen bygger på kaffe kjøpt inn og brent av Solberg & Hansen.",
+          "sourceUrl": "https://dromedar.no/kaffe/"
+        }
+      ],
+      "sources": [
+        {
+          "url": "https://dromedar.no/kaffebarer/solsiden/",
+          "label": "Dromedar Kaffebar",
+          "page": "Solsiden",
+          "publisher": "Dromedar Kaffebar"
+        },
+        {
+          "url": "https://dromedar.no/kaffe/",
+          "label": "Dromedar Kaffebar",
+          "page": "Kaffe",
+          "publisher": "Dromedar Kaffebar"
+        }
+      ],
+      "caveats": [
+        "Kaffeopplysningen er kjedens beskrivelse; konkret utvalg på avdelingen er ikke kontrollert. Samme gateadresse som Godt Brød betyr ikke samme virksomhet eller inngang."
+      ],
+      "checkedAt": "2026-09-14"
+    },
+    {
+      "id": "hector-solsiden",
+      "name": "Héctor Food & Fiesta",
+      "category": "mat-drikke",
+      "address": "TMV-kaia 25",
+      "placeType": "Meksikansk restaurant",
+      "summary": "Restaurant og bar på Solsiden med Cali-Mex-mat og taco som del av konseptet.",
+      "facts": [
+        {
+          "text": "Héctor beskriver sitt matkonsept som Cali-Mex, med taco og margarita.",
+          "sourceUrl": "https://www.hectormexican.no/"
+        },
+        {
+          "text": "Virksomheten tilbyr takeaway i tillegg til restaurantbesøk.",
+          "sourceUrl": "https://www.hectormexican.no/"
+        }
+      ],
+      "sources": [
+        {
+          "url": "https://www.hectormexican.no/",
+          "label": "Héctor Food & Fiesta",
+          "page": "Héctor – konsept, takeaway og adresse",
+          "publisher": "Héctor Food & Fiesta"
+        }
+      ],
+      "caveats": [
+        "Mat og bar har ulike tider. Ukentlige kampanjer, arrangementer og aldersvilkår er ikke del av dette innholdet. Ingen leveringsdekning til en bestemt adresse er kontrollert."
+      ],
+      "checkedAt": "2026-09-14"
+    },
+    {
+      "id": "tollbua",
+      "name": "Tollbua",
+      "category": "mat-drikke",
+      "address": "Brattørkaia 13B",
+      "placeType": "Restaurant",
+      "summary": "Nordisk gourmetbistro i det gamle tollkammeret på Brattøra.",
+      "facts": [
+        {
+          "text": "Restauranten framhever lokale råvarer kombinert med smaker fra ulike deler av verden.",
+          "sourceUrl": "https://tollbua-trondheim.no/om-oss/"
+        },
+        {
+          "text": "Tollbua ligger i Tollboden, som sto ferdig i 1910 og ble tegnet av Karl Norum.",
+          "sourceUrl": "https://tollbua-trondheim.no/om-oss/"
+        }
+      ],
+      "sources": [
+        {
+          "url": "https://tollbua-trondheim.no/om-oss/",
+          "label": "Tollbua",
+          "page": "Om oss – restaurant og Tollboden",
+          "publisher": "Tollbua"
+        }
+      ],
+      "caveats": [
+        "Meny og besøksvilkår må sjekkes for aktuell dato. Selskapsfløyens tilgjengelighet er ikke restaurantens ordinære åpning."
+      ],
+      "checkedAt": "2026-09-14"
+    },
+    {
+      "id": "bror-solsiden",
+      "name": "Bror Solsiden",
+      "category": "mat-drikke",
+      "address": "TMV-kaia 13",
+      "placeType": "Burgerrestaurant",
+      "summary": "Restaurant og bar på Solsiden med burgere, taco og briochebrød fra Snurr.",
+      "facts": [
+        {
+          "text": "Menyen har burgere med valg mellom storfe, kylling og vegetar.",
+          "sourceUrl": "https://www.brorbar.no/wp-content/uploads/2026/04/Bror-meny-nettsted-3-scaled.png"
+        },
+        {
+          "text": "Burgerbrødet oppgis som brioche fra Snurr bakeri; menyen har også taco.",
+          "sourceUrl": "https://www.brorbar.no/wp-content/uploads/2026/04/Bror-meny-nettsted-3-scaled.png"
+        }
+      ],
+      "sources": [
+        {
+          "url": "https://www.brorbar.no/",
+          "label": "Bror Solsiden",
+          "page": "Bror – adresse og menyer",
+          "publisher": "Bror Solsiden"
+        },
+        {
+          "url": "https://www.brorbar.no/wp-content/uploads/2026/04/Bror-meny-nettsted-3-scaled.png",
+          "label": "Bror Solsiden",
+          "page": "Menybilde – burgere og taco",
+          "publisher": "Bror Solsiden"
+        }
+      ],
+      "caveats": [
+        "Menybilde lest visuelt 14. september 2026. Vegetarburger er ikke dokumentasjon av vegansk servering. Ikke bruk selskapets Munkegata-adresse fra kataloger som Solsiden-adresse."
+      ],
+      "checkedAt": "2026-09-14"
+    },
+    {
+      "id": "sot-solsiden",
+      "name": "SOT Bar & Burger Solsiden",
+      "category": "mat-drikke",
+      "address": "TMV-kaia 3",
+      "placeType": "Burgerrestaurant",
+      "summary": "Burgersted på Solsiden med smashburgere og takeaway.",
+      "facts": [
+        {
+          "text": "Solsiden-stedet beskriver smashburgere av storfe i spesiallagde burgerbrød.",
+          "sourceUrl": "https://www.sotbar.no/velkommen/"
+        },
+        {
+          "text": "Stedet tilbyr bestilling av takeaway som kan hentes.",
+          "sourceUrl": "https://www.sotbar.no/take-away/"
+        }
+      ],
+      "sources": [
+        {
+          "url": "https://www.sotbar.no/restauranter/midt-norge/sot-solsiden-trondheim/",
+          "label": "SOT Bar & Burger",
+          "page": "SOT Solsiden – adresse",
+          "publisher": "SOT Bar & Burger"
+        },
+        {
+          "url": "https://www.sotbar.no/velkommen/",
+          "label": "SOT Bar & Burger",
+          "page": "Velkommen til SOT Solsiden",
+          "publisher": "SOT Bar & Burger"
+        },
+        {
+          "url": "https://www.sotbar.no/take-away/",
+          "label": "SOT Bar & Burger",
+          "page": "Ta med burgeren hjem",
+          "publisher": "SOT Bar & Burger"
+        }
+      ],
+      "caveats": [
+        "Restaurant og takeaway har ulike tider. Hjemlevering til en bestemt adresse er ikke kontrollert."
+      ],
+      "checkedAt": "2026-09-14"
+    }
+  ]
+}

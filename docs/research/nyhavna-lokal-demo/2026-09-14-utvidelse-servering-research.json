@@ -1,0 +1,157 @@
+{
+  "checkedAt": "2026-09-14",
+  "status": "Researchforslag; ikke importert i aktiv demo",
+  "method": "Virksomhetenes nettsider er kontrollert med nettlesøk. Tidligere kontroll av E.C. Dahls, HAVET og Monkey Brew samme dag er gjenbrukt. Ramp støttes av Svartlamons virksomhetsomtale og Brønnøysundregistrenes beliggenhetsadresse for underenheten. Kartlenker er bare lagret der egenkilden faktisk lenker dit. Ingen koordinater, gangtider eller inngangspunkter er gjettet.",
+  "sourceLimit": "Nettsøk ga 200 ord oppsummert innhold per side og maksimalt 25 ord direkte sitat. Fakta er korte parafraser. Udaterte tilbudsbeskrivelser dokumenterer ikke ledig kapasitet, dagens åpning eller framtidig drift ved innflytting.",
+  "candidates": [
+    {
+      "name": "E.C. Dahls Pub og Kjøkken",
+      "decision": "inkluder",
+      "category": "mat-drikke",
+      "checkedAt": "2026-09-14",
+      "visitAddress": "Strandveien 71, 7067 Trondheim",
+      "addressSource": "https://ecdahls.no/pub-kjokken/",
+      "summary": "Pub og restaurant på Nyhavna med mat, bryggeritilknytning og organiserte smaksopplevelser.",
+      "facts": [
+        "Puben tilbyr uformell mat og øl, blant annet fra E.C. Dahls Bryggeri.",
+        "Restauranten framhever lokale råvarer og kombinasjoner av mat og øl.",
+        "Virksomheten tilbyr omvisning og ølsmaking etter avtale."
+      ],
+      "caveats": ["Konsertdager kan gi avvik i åpning og matservering.", "Omvisning er et organisert tilbud; ikke lov drop-in eller et arrangement på en bestemt dag."],
+      "sources": ["https://ecdahls.no/pub-kjokken/"],
+      "ownSourceMapLinks": [],
+      "coordinates": null
+    },
+    {
+      "name": "Ramp Pub & Spiseri",
+      "decision": "inkluder",
+      "category": "mat-drikke",
+      "checkedAt": "2026-09-14",
+      "visitAddress": "Strandveien 25A, 7067 Trondheim",
+      "addressSource": "https://virksomhet.brreg.no/nb/oppslag/underenheter/985281246",
+      "addressEvidence": "Beliggenhetsadresse for restaurantens underenhet, ikke postadresse; eksakt inngang er ikke kontrollert.",
+      "summary": "Pub og spiseri på Svartlamon, omtalt av området selv som et uformelt sted for mat og drikke.",
+      "facts": [
+        "Svartlamons virksomhetsoversikt presenterer Ramp som pub og spiseri.",
+        "Omtalen framhever burgere laget av storfe, lam eller kikerter."
+      ],
+      "caveats": ["Matomtalen er udatert. Kjøkkentider fra omtalen er holdt utenfor.", "Virksomhetens lenkede Facebook-side og lamoramp.com ga ikke lesbart innhold ved kontrollen; beskrivelsen har svakere aktualitetsbelegg enn de øvrige kandidatene.", "Kikertburger dokumenterer ikke vegansk tilberedning. Ingen kvalitetsrangering eller universell aldersadgang utledes."],
+      "sources": ["https://svartlamon.org/virksomheter/", "https://virksomhet.brreg.no/nb/oppslag/underenheter/985281246"],
+      "unreadSources": ["https://www.facebook.com/lamoramp/", "https://lamoramp.com/"],
+      "ownSourceMapLinks": [],
+      "coordinates": null
+    },
+    {
+      "name": "Una Solsiden",
+      "decision": "inkluder",
+      "category": "mat-drikke",
+      "checkedAt": "2026-09-14",
+      "visitAddress": "Beddingen 14, 7014 Trondheim",
+      "addressSource": "https://unapizzeria.no/",
+      "summary": "Pizzeria og bar på Solsiden, med pizza, pasta og italienske forretter.",
+      "facts": [
+        "Virksomheten beskriver Solsiden som sin opprinnelige restaurant, etablert i 2014.",
+        "Menyen omfatter pizza, pasta, bruschetta og salater.",
+        "Pizzaen Vegana er oppført med tomat, sopp, oliven, rødløk, paprika og ruccola."
+      ],
+      "caveats": ["Menyeksempler er fra kontrollert meny, ikke lagerstatus.", "Barnetilbud og eksakte aldersvilkår er ikke kontrollert. Menyopplysninger er ingen allergengaranti."],
+      "sources": ["https://unapizzeria.no/", "https://unapizzeria.no/meny/"],
+      "ownSourceMapLinks": [{"url": "https://maps.app.goo.gl/ZBVEmAtNMUDLTVvH8", "source": "https://unapizzeria.no/", "note": "Lenkemål lest i egen nettsides HTML. Kartmålet lot seg ikke åpne i nettsøk."}],
+      "coordinates": null
+    },
+    {
+      "name": "Godt Brød Solsiden",
+      "decision": "inkluder",
+      "category": "mat-drikke",
+      "checkedAt": "2026-09-14",
+      "visitAddress": "Beddingen 10, 7014 Trondheim",
+      "addressSource": "https://www.godtbrod.no/godt-brod-bakerier/godt-brod-solsiden",
+      "summary": "Bakeverksted på Solsiden med bakervarer, påsmurt mat og kaffe.",
+      "facts": [
+        "Avdelingssiden plasserer bakeverkstedet på Solsiden senter.",
+        "Stedet beskriver håndbakte, økologiske brød og boller.",
+        "Avdelingen oppgir påsmurte sandwicher, juice, baristakaffe og kaker."
+      ],
+      "caveats": ["Bruk avdelingsbeskrivelsen som grunnlag; nettbutikkens globale valgte bakeri var Grünerløkka ved kildevisningen.", "Ingen garanti om at en bestemt vare finnes ved besøket."],
+      "sources": ["https://www.godtbrod.no/godt-brod-bakerier/godt-brod-solsiden"],
+      "ownSourceMapLinks": [{"url": "https://www.google.com/maps/search/?api=1&query=Beddingen+10+7014+Trondheim+Norway", "source": "https://www.godtbrod.no/godt-brod-bakerier/godt-brod-solsiden", "note": "Egen avdelingssides Se på kart-lenke; adressesøk, ikke bekreftet inngangspunkt."}],
+      "coordinates": null
+    },
+    {
+      "name": "Sabrura Solsiden",
+      "decision": "inkluder",
+      "category": "mat-drikke",
+      "checkedAt": "2026-09-14",
+      "visitAddress": "Bassengbakken 2, 7042 Trondheim",
+      "addressSource": "https://www.sabrurasushi.no/restauranter/midt-norge/sabrura-solsiden/",
+      "summary": "Sushi- og buffetrestaurant på Solsiden med eget takeawaytilbud.",
+      "facts": [
+        "Avdelingssiden oppgir både restaurant og takeaway som tilbud.",
+        "Kjedens buffetbeskrivelse omfatter sushi og varme retter som dumplings, vårruller og kyllingsticks.",
+        "Kjeden beskriver også à la carte og separat takeawaybestilling."
+      ],
+      "caveats": ["Retningsgivende matutvalg kommer fra kjedens buffetside, som avdelingssiden lenker til; dagens lokale buffetutvalg er ikke kontrollert.", "Restaurant og takeaway har egne tider. Buffetmat skal ikke omtales som mat man kan ta med hjem.", "Ingen pris-, alders- eller allergiløfter inngår."],
+      "sources": ["https://www.sabrurasushi.no/restauranter/midt-norge/sabrura-solsiden/", "https://www.sabrurasushi.no/sushibuffet/"],
+      "ownSourceMapLinks": [],
+      "coordinates": null
+    },
+    {
+      "name": "HAVET Arena",
+      "aliases": ["BarbeintQ", "Heim"],
+      "decision": "inkluder",
+      "category": "opplevelser",
+      "checkedAt": "2026-09-14",
+      "visitAddress": "Strandveien 104, 7067 Trondheim",
+      "addressSource": "https://www.havetarena.no/servering",
+      "summary": "Badstue-, arrangements- og serveringssted på Nyhavna. BarbeintQ inngår i samme stedspost.",
+      "facts": [
+        "HAVET har badstuer, konsert- og arrangementstilbud samt restaurant og bar.",
+        "BarbeintQ bruker vedfyrte smokere og beskriver kjøtt, fisk, vegetariske og veganske alternativer.",
+        "HAVET foreslår restaurantbesøk før eller etter en badstueøkt."
+      ],
+      "caveats": ["Restaurant, bar og badstue har separate åpningstider og vilkår. Ikke lov matservering når bare baren er åpen.", "Aldersregler avhenger av tidspunkt, tilbud og arrangement. Badstue anbefales bestilt på forhånd.", "Ingen badstueplikt for restaurantbesøk utledes. Dagens vannkvalitet og et konkret arrangementsprogram er ikke kontrollert."],
+      "sources": ["https://www.havetarena.no/servering", "https://www.havetarena.no/faq"],
+      "ownSourceMapLinks": [],
+      "coordinates": null
+    },
+    {
+      "name": "Rosendal Teater og Kafé",
+      "aliases": ["Rosendal Teater", "Rosendal Kafé"],
+      "decision": "inkluder",
+      "category": "opplevelser",
+      "checkedAt": "2026-09-14",
+      "visitAddress": "Innherredsveien 73, 7068 Trondheim",
+      "addressSource": "https://rosendalteater.no/rosendal-kafe",
+      "summary": "Scenekunsthus med egen kafé og bar; ett sted for forestillinger, mat og sosiale arrangementer.",
+      "facts": [
+        "Teatret presenterer blant annet teater, dans, konserter og samtalearrangementer.",
+        "Kafeen beskriver suppe og gryte på menyen samt arrangementer som Nabojazz og åpen scene.",
+        "Hovedinngangen ligger i front av glassfasaden på venstre side; foajeen kan også nås via kaféinngangen."
+      ],
+      "caveats": ["Kaféens åpning før forestilling dokumenterer ikke utvidet kjøkkentid.", "Program, billetter, aldersanbefalinger og meny på en bestemt dag må sjekkes separat.", "Teater og kafé beholdes som én stedspost, uten å framstille forestilling og mat som en inkludert pakke."],
+      "sources": ["https://rosendalteater.no/rosendal-kafe", "https://rosendalteater.no/om/hva-er-rosendal-teater", "https://rosendalteater.no/om/praktisk-info"],
+      "ownSourceMapLinks": [],
+      "coordinates": null
+    },
+    {
+      "name": "Monkey Brew",
+      "decision": "inkluder",
+      "category": "opplevelser",
+      "checkedAt": "2026-09-14",
+      "visitAddress": "Kobbes gate 10, Trondheim",
+      "addressSource": "https://nyhavna.no/leve/cafe-og-restauranter/",
+      "entrance": "Utsalget oppgir inngang på byggets østside, overfor HAVET.",
+      "entranceSource": "https://monkeybrew.no/shop",
+      "summary": "Håndverksbryggeri med utsalg og forhåndsavtalte gruppeomvisninger; ikke dokumentert som pub eller restaurant.",
+      "facts": [
+        "Monkey Brew beskriver seg som et lite, uavhengig håndverksbryggeri i Trondheim.",
+        "Bryggeriutsalget på Nyhavna selger øl og profilvarer og lar besøkende få et innblikk i bryggeriet.",
+        "Omvisning med smaking kan avtales for grupper på minst ti personer."
+      ],
+      "caveats": ["Ikke foreslå som pub, drop-in-smaking eller restaurant.", "Adressen kommer fra utbyggers omtale og inngangsbeskrivelsen fra virksomheten selv; eksakt kartpunkt må kontrolleres.", "Utsalgssiden hadde eldre kontaktpersontekst; bruk aktuell kontaktfunksjon. Ingen personkontakt er lagret.", "Nettsøket oppga utsalgssiden som crawlet forrige måned; lesedato er 14. september."],
+      "sources": ["https://monkeybrew.no/", "https://monkeybrew.no/shop", "https://nyhavna.no/leve/cafe-og-restauranter/", "https://monkeybrew.no/contact"],
+      "ownSourceMapLinks": [],
+      "coordinates": null
+    }
+  ]
+}

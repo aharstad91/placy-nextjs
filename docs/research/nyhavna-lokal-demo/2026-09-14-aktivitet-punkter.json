@@ -1,0 +1,576 @@
+{
+  "checkedAt": "2026-09-14",
+  "places": [
+    {
+      "id": "lilleby-stasjon",
+      "name": "Lilleby stasjon",
+      "address": "Mellomveien, Trondheim",
+      "categoryId": "transport",
+      "poiCategoryId": "train",
+      "placeType": "Togstasjon",
+      "icon": "TrainFront",
+      "aliases": [
+        "Lilleby togstasjon",
+        "Lilleby holdeplass",
+        "tog",
+        "togstasjon",
+        "Trønderbanen",
+        "R70"
+      ],
+      "coordinates": {
+        "lat": 63.439883,
+        "lng": 10.432629
+      },
+      "locationPrecision": "approximate",
+      "locationNote": "Stasjonspunkt fra Entur-importen i databasen, kontrollert mot Bane NORs veibeskrivelsespunkt omtrent 14 meter unna. Plattforminngangen er ikke kontrollert.",
+      "status": "existing",
+      "summary": "Togstopp på Nordlandsbanen med R70, leskur og sykkelparkering.",
+      "caveats": [
+        "Sjekk aktuell avgang og eventuelle avvik i Entur eller hos togselskapet."
+      ],
+      "checkedAt": "2026-09-14",
+      "provenance": {
+        "provider": "supabase",
+        "recordId": "entur-NSR-StopPlace-62369",
+        "importedAt": "2026-09-14"
+      },
+      "sourceIds": [
+        "aktivitet-20260914-01",
+        "demo-route"
+      ],
+      "facts": [
+        {
+          "id": "lilleby-stasjon-aktivitet-f1",
+          "text": "Lilleby er en holdeplass på Nordlandsbanen, og Bane NOR oppgir R70 mellom Støren og Steinkjer.",
+          "sourceId": "aktivitet-20260914-01",
+          "checkedAt": "2026-09-14",
+          "verification": "confirmed"
+        },
+        {
+          "id": "lilleby-stasjon-aktivitet-f2",
+          "text": "Stasjonen har leskur og sykkelstativ med tak.",
+          "sourceId": "aktivitet-20260914-01",
+          "checkedAt": "2026-09-14",
+          "verification": "confirmed"
+        },
+        {
+          "id": "lilleby-stasjon-aktivitet-f3",
+          "text": "Bane NOR oppgir hinderfri adkomst til plattformen.",
+          "sourceId": "aktivitet-20260914-01",
+          "checkedAt": "2026-09-14",
+          "verification": "confirmed"
+        }
+      ],
+      "travelTime": {
+        "walk": 14,
+        "bike": 8
+      }
+    },
+    {
+      "id": "flex-gym",
+      "name": "Flex Gym",
+      "address": "Ladeveien 23, Trondheim",
+      "categoryId": "trening-aktivitet",
+      "poiCategoryId": "gym",
+      "placeType": "Treningssenter",
+      "icon": "Dumbbell",
+      "aliases": [
+        "FlexGym",
+        "Flex Gym AS",
+        "treningssenter",
+        "styrketrening",
+        "kondisjonstrening",
+        "døgnåpent"
+      ],
+      "coordinates": {
+        "lat": 63.443757399999996,
+        "lng": 10.4362503
+      },
+      "locationPrecision": "approximate",
+      "locationNote": "Bedriftspunkt fra databasen, omtrent 54 meter fra Kartverkets adressepunkt for Ladeveien 23. Inngangen er ikke kontrollert.",
+      "status": "existing",
+      "summary": "Døgnåpent treningssenter på Lade med styrketrening, kondisjonstrening og garderober med dusj.",
+      "caveats": [
+        "Adgang krever medlemskap eller avtale med senteret."
+      ],
+      "checkedAt": "2026-09-14",
+      "provenance": {
+        "provider": "supabase",
+        "recordId": "google-ChIJjWQhOA8xbUYRAUjUe7p7l8Y",
+        "importedAt": "2026-09-14"
+      },
+      "sourceIds": [
+        "aktivitet-20260914-02",
+        "aktivitet-20260914-03",
+        "aktivitet-20260914-04",
+        "demo-route"
+      ],
+      "facts": [
+        {
+          "id": "flex-gym-aktivitet-f1",
+          "text": "Flex Gym er døgnåpent og tilbyr både styrke- og kondisjonstrening.",
+          "sourceId": "aktivitet-20260914-02",
+          "checkedAt": "2026-09-14",
+          "verification": "confirmed"
+        },
+        {
+          "id": "flex-gym-aktivitet-f2",
+          "text": "Senteret har frivekter, treningsapparater og garderober med dusj.",
+          "sourceId": "aktivitet-20260914-02",
+          "checkedAt": "2026-09-14",
+          "verification": "confirmed"
+        },
+        {
+          "id": "flex-gym-aktivitet-f3",
+          "text": "Prøvetime kan avtales med senteret før man bestemmer seg for medlemskap.",
+          "sourceId": "aktivitet-20260914-03",
+          "checkedAt": "2026-09-14",
+          "verification": "confirmed"
+        }
+      ],
+      "travelTime": {
+        "walk": 17,
+        "bike": 6
+      }
+    },
+    {
+      "id": "buld-no",
+      "name": "Buld.no",
+      "address": "Ormen Langes vei 15, Trondheim",
+      "categoryId": "trening-aktivitet",
+      "poiCategoryId": "idrett",
+      "placeType": "Buldresenter",
+      "icon": "Mountain",
+      "aliases": [
+        "Buld",
+        "buld.no",
+        "Utehallen",
+        "Trondheim Buldresenter",
+        "buldring",
+        "klatring",
+        "klatreskole",
+        "klatrekurs"
+      ],
+      "coordinates": {
+        "lat": 63.4454409,
+        "lng": 10.4216272
+      },
+      "locationPrecision": "approximate",
+      "locationNote": "Bedriftspunkt fra databasen ved Ormen Langes vei 15, som er besøksadressen på senterets egen nettside. Inngangen er ikke kontrollert.",
+      "status": "existing",
+      "summary": "Buldresenter i den tidligere Utehallen, med kafé, introduksjonskurs og klatreskole for barn.",
+      "caveats": [
+        "Sjekk kursdatoer, aldersgrenser og påmelding hos senteret."
+      ],
+      "checkedAt": "2026-09-14",
+      "provenance": {
+        "provider": "supabase",
+        "recordId": "google-ChIJFaDCPwkxbUYRO8yvKyDZNaY",
+        "importedAt": "2026-09-14"
+      },
+      "sourceIds": [
+        "aktivitet-20260914-05",
+        "demo-route"
+      ],
+      "facts": [
+        {
+          "id": "buld-no-aktivitet-f1",
+          "text": "Buld.no holder til i Ormen Langes vei 15 og samler UTE.no og Trondheim Buldresenter i den tidligere Utehallen.",
+          "sourceId": "aktivitet-20260914-05",
+          "checkedAt": "2026-09-14",
+          "verification": "confirmed"
+        },
+        {
+          "id": "buld-no-aktivitet-f2",
+          "text": "Senteret har kafé og tilbyr introduksjonskurs i buldring.",
+          "sourceId": "aktivitet-20260914-05",
+          "checkedAt": "2026-09-14",
+          "verification": "confirmed"
+        },
+        {
+          "id": "buld-no-aktivitet-f3",
+          "text": "Klatreskolen for barn omfatter både buldring og tauklatring.",
+          "sourceId": "aktivitet-20260914-05",
+          "checkedAt": "2026-09-14",
+          "verification": "confirmed"
+        }
+      ],
+      "travelTime": {
+        "walk": 16,
+        "bike": 5
+      }
+    },
+    {
+      "id": "trikkestallen",
+      "name": "Trikkestallen skatepark",
+      "address": "Mellomveien 32, Trondheim",
+      "categoryId": "barn-oppvekst",
+      "poiCategoryId": "idrett",
+      "placeType": "Innendørs skatepark",
+      "icon": "Activity",
+      "aliases": [
+        "Trikkestallen",
+        "skatepark",
+        "skating",
+        "skateboard",
+        "BMX",
+        "sparkesykkel",
+        "inlines",
+        "barneaktivitet"
+      ],
+      "coordinates": {
+        "lat": 63.439210700000004,
+        "lng": 10.4311201
+      },
+      "locationPrecision": "approximate",
+      "locationNote": "Bedriftspunkt fra Placy-databasen ved Mellomveien 32, som kommunen oppgir som besøksadresse. Inngangen er ikke kontrollert.",
+      "status": "existing",
+      "summary": "Innendørs skatepark på Lademoen for skateboard, BMX, sparkesykkel og inlines, med streetbaner, bowl og minirampe.",
+      "checkedAt": "2026-09-14",
+      "caveats": [
+        "Sjekk aktuelle åpningstider og kursdatoer hos Trikkestallen før besøket."
+      ],
+      "provenance": {
+        "provider": "supabase",
+        "recordId": "google-ChIJ6xbgVQgxbUYRFVaGYOD2YJQ",
+        "importedAt": "2026-09-14"
+      },
+      "sourceIds": [
+        "aktivitet-20260914-06",
+        "demo-route"
+      ],
+      "facts": [
+        {
+          "id": "trikkestallen-aktivitet-f1",
+          "text": "Trikkestallen har to streetbaner, en bowl og en minirampe innendørs.",
+          "sourceId": "aktivitet-20260914-06",
+          "checkedAt": "2026-09-14",
+          "verification": "confirmed"
+        },
+        {
+          "id": "trikkestallen-aktivitet-f2",
+          "text": "Hallen er åpen for skateboard, BMX, sparkesykkel og inlines.",
+          "sourceId": "aktivitet-20260914-06",
+          "checkedAt": "2026-09-14",
+          "verification": "confirmed"
+        },
+        {
+          "id": "trikkestallen-aktivitet-f3",
+          "text": "Kulturenheten arrangerer kurs for barn med jevne mellomrom.",
+          "sourceId": "aktivitet-20260914-06",
+          "checkedAt": "2026-09-14",
+          "verification": "confirmed"
+        },
+        {
+          "id": "trikkestallen-aktivitet-f4",
+          "text": "Barn under ti år skal ha følge av en voksen.",
+          "sourceId": "aktivitet-20260914-06",
+          "checkedAt": "2026-09-14",
+          "verification": "confirmed"
+        }
+      ],
+      "travelTime": {
+        "walk": 13,
+        "bike": 5
+      }
+    },
+    {
+      "id": "ladesletta",
+      "name": "Ladesletta",
+      "address": "Ved Lade idrettspark, Trondheim",
+      "categoryId": "opplevelser",
+      "poiCategoryId": "konsert",
+      "placeType": "Festivalområde",
+      "icon": "Music",
+      "aliases": [
+        "Ladesletta festivalområde",
+        "NEON",
+        "NEON-festivalen",
+        "Trondheim Rocks",
+        "festival",
+        "festivaler",
+        "sandvolleyball"
+      ],
+      "coordinates": {
+        "lat": 63.4460073,
+        "lng": 10.4489975
+      },
+      "locationPrecision": "approximate",
+      "locationNote": "Omtrentlig orienteringspunkt i Lade idrettspark nær sandvolleyballbanene. Punktet og reisetiden viser nærområdet, ikke festivalinngangen eller festivalområdets avgrensning.",
+      "status": "existing",
+      "summary": "Festivalområde ved Lade idrettspark og sandvolleyballbanene, valgt som ny arena for NEON og Trondheim Rocks i 2026.",
+      "checkedAt": "2026-09-14",
+      "caveats": [
+        "Sjekk årets festivalprogram, billetter og inngang hos arrangøren.",
+        "Sandvolleyballtreningen foregår i idrettsparken og krever egen påmelding; den er ikke en del av festivalbilletten."
+      ],
+      "sourceIds": [
+        "aktivitet-20260914-07",
+        "aktivitet-20260914-08",
+        "aktivitet-20260914-09",
+        "demo-route"
+      ],
+      "facts": [
+        {
+          "id": "ladesletta-aktivitet-f1",
+          "text": "Trondheim Rocks oppgir Ladesletta ved Lade idrettsanlegg og sandvolleyballbanene som sin nye arena i 2026.",
+          "sourceId": "aktivitet-20260914-07",
+          "checkedAt": "2026-09-14",
+          "verification": "confirmed"
+        },
+        {
+          "id": "ladesletta-aktivitet-f2",
+          "text": "Arrangøren Trondheim Stage kunngjorde at NEON flyttet fra Dahls Arena til Ladesletta fra 2026.",
+          "sourceId": "aktivitet-20260914-08",
+          "checkedAt": "2026-09-14",
+          "verification": "confirmed"
+        },
+        {
+          "id": "ladesletta-aktivitet-f3",
+          "text": "I den nærliggende Lade idrettspark organiserer Trondheim Sandvolleyballklubb utendørstrening om sommeren for ulike aldre og nivåer.",
+          "sourceId": "aktivitet-20260914-09",
+          "checkedAt": "2026-09-14",
+          "verification": "confirmed"
+        }
+      ],
+      "travelTime": {
+        "walk": 27,
+        "bike": 10
+      }
+    }
+  ],
+  "sources": [
+    {
+      "id": "aktivitet-20260914-01",
+      "url": "https://www.banenor.no/reise-og-trafikk/stasjoner/-l-/lilleby/",
+      "label": "Bane NOR",
+      "page": "Lilleby stasjon",
+      "publisher": "Bane NOR",
+      "checkedAt": "2026-09-14"
+    },
+    {
+      "id": "aktivitet-20260914-02",
+      "url": "https://flexgym.no/",
+      "label": "Flex Gym",
+      "page": "Treningstilbud på Flex Gym",
+      "publisher": "Flex Gym",
+      "checkedAt": "2026-09-14"
+    },
+    {
+      "id": "aktivitet-20260914-03",
+      "url": "https://flexgym.no/ofte-stilte-sporsmal/",
+      "label": "Flex Gym",
+      "page": "Ofte stilte spørsmål",
+      "publisher": "Flex Gym",
+      "checkedAt": "2026-09-14"
+    },
+    {
+      "id": "aktivitet-20260914-04",
+      "url": "https://data.brreg.no/enhetsregisteret/api/underenheter/982216850",
+      "label": "Brønnøysundregistrene",
+      "page": "Flex Gym AS – beliggenhetsadresse for underenheten",
+      "publisher": "Brønnøysundregistrene",
+      "checkedAt": "2026-09-14"
+    },
+    {
+      "id": "aktivitet-20260914-05",
+      "url": "https://buld.no/",
+      "label": "Buld.no",
+      "page": "Buld.no – buldresenter, klatreskole og besøksadresse",
+      "publisher": "Buld.no",
+      "checkedAt": "2026-09-14"
+    },
+    {
+      "id": "aktivitet-20260914-06",
+      "url": "https://www.trondheim.kommune.no/tema/kultur-og-fritid/lokaler/trikkestallen/",
+      "label": "Trondheim kommune",
+      "page": "Trikkestallen skatepark – tilbud, adresse og regler",
+      "publisher": "Trondheim kommune",
+      "checkedAt": "2026-09-14"
+    },
+    {
+      "id": "aktivitet-20260914-07",
+      "url": "https://www.trondheimrocks.no/arena",
+      "label": "Trondheim Rocks",
+      "page": "Ladesletta – ny festivalarena i 2026",
+      "publisher": "Trondheim Rocks",
+      "checkedAt": "2026-09-14"
+    },
+    {
+      "id": "aktivitet-20260914-08",
+      "url": "https://no.linkedin.com/posts/trondheim-stage_neon-tar-et-nytt-og-viktig-steg-inn-i-fremtiden-activity-7396890337505538048-vizG",
+      "label": "Trondheim Stage",
+      "page": "NEON flytter til Ladesletta fra 2026",
+      "publisher": "Trondheim Stage",
+      "checkedAt": "2026-09-14"
+    },
+    {
+      "id": "aktivitet-20260914-09",
+      "url": "https://www.tsvk.no/",
+      "label": "Trondheim Sandvolleyballklubb",
+      "page": "Trening i Lade idrettspark",
+      "publisher": "Trondheim Sandvolleyballklubb",
+      "checkedAt": "2026-09-14"
+    }
+  ],
+  "existingPlacePatches": [],
+  "originalHashes": {
+    "board": "ff16c69229d4c3ff2dc8e17245bab547b5c6b15b7f384c72ba2495fda9220870",
+    "places": "3f4a4e725722e55a9715597ff4e7a607b1466332684ddd01845b8d7cab8dd30c",
+    "sources": "745ed22688e1268fe518332e31e2fdbf9ea3728c1d02e0a1ac0bd4f5ef0ae429",
+    "topics": "158ae20a6f90b54a75d0dad41f6181db2399473fe54237d3eb62d35265af17ca",
+    "faq": "df3e65d6099d8953f16d4e7c97c3faa20a1b7dd4788d76b4708abac1a83b30e6",
+    "conversations": "37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570"
+  },
+  "research": [
+    {
+      "id": "trikkestallen",
+      "name": "Trikkestallen skatepark",
+      "address": "Mellomveien 32, Trondheim",
+      "categoryId": "barn-oppvekst",
+      "poiCategoryId": "idrett",
+      "placeType": "Innendørs skatepark",
+      "icon": "Activity",
+      "aliases": [
+        "Trikkestallen",
+        "skatepark",
+        "skating",
+        "skateboard",
+        "BMX",
+        "sparkesykkel",
+        "inlines",
+        "barneaktivitet"
+      ],
+      "coordinates": {
+        "lat": 63.439210700000004,
+        "lng": 10.4311201
+      },
+      "locationPrecision": "approximate",
+      "locationNote": "Bedriftspunkt fra Placy-databasen ved Mellomveien 32, som kommunen oppgir som besøksadresse. Inngangen er ikke kontrollert.",
+      "status": "existing",
+      "summary": "Innendørs skatepark på Lademoen for skateboard, BMX, sparkesykkel og inlines, med streetbaner, bowl og minirampe.",
+      "facts": [
+        {
+          "text": "Trikkestallen har to streetbaner, en bowl og en minirampe innendørs.",
+          "sourceUrl": "https://www.trondheim.kommune.no/tema/kultur-og-fritid/lokaler/trikkestallen/"
+        },
+        {
+          "text": "Hallen er åpen for skateboard, BMX, sparkesykkel og inlines.",
+          "sourceUrl": "https://www.trondheim.kommune.no/tema/kultur-og-fritid/lokaler/trikkestallen/"
+        },
+        {
+          "text": "Kulturenheten arrangerer kurs for barn med jevne mellomrom.",
+          "sourceUrl": "https://www.trondheim.kommune.no/tema/kultur-og-fritid/lokaler/trikkestallen/"
+        },
+        {
+          "text": "Barn under ti år skal ha følge av en voksen.",
+          "sourceUrl": "https://www.trondheim.kommune.no/tema/kultur-og-fritid/lokaler/trikkestallen/"
+        }
+      ],
+      "sources": [
+        {
+          "url": "https://www.trondheim.kommune.no/tema/kultur-og-fritid/lokaler/trikkestallen/",
+          "label": "Trondheim kommune",
+          "page": "Trikkestallen skatepark – tilbud, adresse og regler",
+          "publisher": "Trondheim kommune"
+        }
+      ],
+      "checkedAt": "2026-09-14",
+      "caveats": [
+        "Sjekk aktuelle åpningstider og kursdatoer hos Trikkestallen før besøket."
+      ],
+      "provenance": {
+        "provider": "supabase",
+        "recordId": "google-ChIJ6xbgVQgxbUYRFVaGYOD2YJQ",
+        "importedAt": "2026-09-14"
+      }
+    },
+    {
+      "id": "ladesletta",
+      "name": "Ladesletta",
+      "address": "Ved Lade idrettspark, Trondheim",
+      "categoryId": "opplevelser",
+      "poiCategoryId": "konsert",
+      "placeType": "Festivalområde",
+      "icon": "Music",
+      "aliases": [
+        "Ladesletta festivalområde",
+        "NEON",
+        "NEON-festivalen",
+        "Trondheim Rocks",
+        "festival",
+        "festivaler",
+        "sandvolleyball"
+      ],
+      "coordinates": {
+        "lat": 63.4460073,
+        "lng": 10.4489975
+      },
+      "locationPrecision": "approximate",
+      "locationNote": "Omtrentlig orienteringspunkt i Lade idrettspark nær sandvolleyballbanene. Punktet og reisetiden viser nærområdet, ikke festivalinngangen eller festivalområdets avgrensning.",
+      "status": "existing",
+      "summary": "Festivalområde ved Lade idrettspark og sandvolleyballbanene, valgt som ny arena for NEON og Trondheim Rocks i 2026.",
+      "facts": [
+        {
+          "text": "Trondheim Rocks oppgir Ladesletta ved Lade idrettsanlegg og sandvolleyballbanene som sin nye arena i 2026.",
+          "sourceUrl": "https://www.trondheimrocks.no/arena"
+        },
+        {
+          "text": "Arrangøren Trondheim Stage kunngjorde at NEON flyttet fra Dahls Arena til Ladesletta fra 2026.",
+          "sourceUrl": "https://no.linkedin.com/posts/trondheim-stage_neon-tar-et-nytt-og-viktig-steg-inn-i-fremtiden-activity-7396890337505538048-vizG"
+        },
+        {
+          "text": "I den nærliggende Lade idrettspark organiserer Trondheim Sandvolleyballklubb utendørstrening om sommeren for ulike aldre og nivåer.",
+          "sourceUrl": "https://www.tsvk.no/"
+        }
+      ],
+      "sources": [
+        {
+          "url": "https://www.trondheimrocks.no/arena",
+          "label": "Trondheim Rocks",
+          "page": "Ladesletta – ny festivalarena i 2026",
+          "publisher": "Trondheim Rocks"
+        },
+        {
+          "url": "https://no.linkedin.com/posts/trondheim-stage_neon-tar-et-nytt-og-viktig-steg-inn-i-fremtiden-activity-7396890337505538048-vizG",
+          "label": "Trondheim Stage",
+          "page": "NEON flytter til Ladesletta fra 2026",
+          "publisher": "Trondheim Stage"
+        },
+        {
+          "url": "https://www.tsvk.no/",
+          "label": "Trondheim Sandvolleyballklubb",
+          "page": "Trening i Lade idrettspark",
+          "publisher": "Trondheim Sandvolleyballklubb"
+        }
+      ],
+      "checkedAt": "2026-09-14",
+      "caveats": [
+        "Sjekk årets festivalprogram, billetter og inngang hos arrangøren.",
+        "Sandvolleyballtreningen foregår i idrettsparken og krever egen påmelding; den er ikke en del av festivalbilletten."
+      ]
+    }
+  ],
+  "locationAudit": {
+    "ladesletta": {
+      "pointSourceRecord": {
+        "id": "osm-way-437181228",
+        "name": "Lade idrettspark",
+        "address": null,
+        "lat": 63.4460073,
+        "lng": 10.4489975,
+        "category_id": "idrett",
+        "updated_at": "2026-09-01T20:34:55.169379+00:00"
+      },
+      "method": "Orienteringspunkt fra vestre Lade idrettspark nær sandvolleyballbanene. Arrangørens tekst støtter nærområdet, ikke eksakt festivalinngang eller avgrensning. Derfor approximate og eksplisitt forbehold; ikke importert som direkte festivalrecord fra databasen.",
+      "rejected": "Julianus Holms veg 72 ble funnet i sekundære festivaloversikter, men ikke belagt hos arrangøren og peker mot et annet område. Brukes ikke."
+    }
+  },
+  "validation": {
+    "newPlacesChecked": 5,
+    "newFactsChecked": 16,
+    "duplicates": 0,
+    "routeCount": 10,
+    "maxRouteOffset": 45.7
+  }
+}

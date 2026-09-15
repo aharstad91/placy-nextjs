@@ -160,6 +160,15 @@ Etter lyttetest: fjernet automatisk dagligvarevalg ved brede spørsmål, fast in
 
 ---
 
+## 2026-09-14 — Servering: innholdspakke til Lene-demoen
+
+På Andreas sin bestilling er Servering utarbeidet som første kategori med mer samtaledybde til møtet om Nyhavna 16. september. Egen arbeidskopi `placy-nyhavna-innhold`, gren `docs/nyhavna-servering-demo`, holder arbeidet adskilt fra pågående tekniske endringer i hovedarbeidskopien. Leveransen er et redaksjonelt forslag; aktiv demo er ikke endret.
+
+Pakken har én introduksjon, seks hovedspørsmål, tolv bakgrunnsnotater og seks samtaleprøver med tre spørsmål hver. 8 av 8 valgte virksomheter, 6 av 6 førstesvar og 12 av 12 notater gjennomgått mot 16 leste primær-/eier-/utbyggersider. Fem eksisterende steds-ID-er og planområdet Transittkaia kontrollert mot aktiv lokal JSON. Tre nye stedskoblinger foreslått: HAVET, E.C. Dahls og Monkey Brew; koordinater og ruter er ikke levert. Avgrenset ekstra agentreview av HAVET, Monkey Brew, E.C. Dahls og Dora 1 fant ingen påstandsavvik. Kildereferansene i dokumentet er kontrollert uten brutte referanser. Ingen kodeendring eller faktisk talesamtale.
+
+Leveranse: `docs/research/nyhavna-lokal-demo/2026-09-14-servering-innholdspakke.md`. Åpent: Andreas vurderer nivået før de øvrige kategoriene behandles; etter gjennomgang gjenstår kartkontroll, innholdsimport i gjeldende demo og lyttetest. Ikke erstatt hovedarbeidskopiens nyere JSON med denne grenens basisfiler. Ingen push.
+
+---
 
 ## 2026-09-14 — Nyhavna som framtidig bydel i lokal demo
 
@@ -3028,7 +3037,6 @@ Pluss `vercel.json` med `regions: ["dub1"]` (Dublin = samme region som Supabase 
 - **Verifikasjon:** tsc 0, lint 0 errors, **1 541 tester grønt**, build OK. Live: alle 6 v2-boards 200, redirects verifisert (307/301-kjeder), gamle boards 404-er som forventet (fallbacken død), byggetrinn-4 i nystartet Chrome med 0 relevante console-feil (eneste 404 = pre-eksisterende manglende `intro.mp4`-asset).
 - **Drop-planen oppdatert:** §4 markert UTFØRT; ny **§4b: gjenstående public-lesere** (admin-flaten, (public)-SEO-sidene/lib-public-queries, kart, collections, trust-validate) = drop-sesjonens sjekkliste. Gjenstår før drop: §4b + remap-re-kjøring + Andreas' go + xhigh.
 
-
 **Samme dag, «fortsett» + to Andreas-beslutninger — §4b LUKKET, drop-SQL klar:**
 - **Mekaniske porter (commit cf4a557):** kart/[slug]-redirect → v2.generation_requests; admin-dashboard-tellere → v2; begge trust-validate-rutene → v2 + `updatePOITrustScore` hardt v2-bundet (admin-trust-flyten SKREV public mens boardet leste v2 — tredje funn i samme skjulte-bug-klasse). Migrasjon 073: `v2.collections` (tabell+RLS+6 rader) + category_slugs 58/58 — «Min samling» hel-portet.
 - **Andreas-beslutning 1 (AskUserQuestion): POI-poolen MIGRERES til v2.** 074-utkast skrevet (kjøres i xhigh): ~5 060 POI-er m/ dedup (263 alt i v2; 90 interne duplikater kanoniseres, editorial-rik rad vinner), reverserbar via poi_metadata-tag, fullfører place_knowledge-remappen (114 danglende) og slug-æra-oversettelsene i SAMME transaksjon.
@@ -3419,8 +3427,6 @@ Direkte sesjon (main, dev :3000). Mål: lage en splash-intro-video til Teknostal
 **Deploy:** pushet til main → Vercel produksjons-deploy (build verifisert via GitHub commit-status). Splash-videoen vises på KLP-lenken når deployen er live.
 
 **Åpen tråd — video-vendor-eval (deferred):** Veo bunter lyd vi ikke trenger inn i sekundprisen ($0,40/s). For Auto-tier-volum (Propr ~1700 listinger/år) bør vi evaluere video-only-alternativer (Seedance 2.0, Kling, eller Veo 3.1 Lite no-audio-tier ~$0,03/s) på pris/kvalitet/integrasjon. IKKE nå (prototype-beløp er støy + Veo-prompt-kunnskap er modell-spesifikk eiendel) — gjøres som strategisk spike når video industrialiseres.
-
-
 
 Direkte sesjon (main, dev :3000), verifisert live i Chrome. Ingen kodeendring — ren data-seeding. Mål: tekst + 3 highlight-POIer per kategori på Teknostallen (`http://localhost:3000/eiendom/klp-eiendom/teknostallen/rapport-board`), som matcher nivå-2-drill-in (Overvik). Featuren var allerede bygget; det som manglet var `editorial` på Teknostallens `products.config` i Supabase.
 
@@ -9951,7 +9957,6 @@ Full suite før siste avgrensede rate-limit-retting: 249 filer / 4 062 tester be
 Reell nettleserprøve bekreftet kart/kilder, modusbytte med samme forbindelse, 429 ved konkurrerende start, tom ny samtale og faktisk server-hangup. Langtesten feilet mot prosjektets 40 000 tokens/minutt. Påfølgende retting begrenser kontekst og svar og gir høyst to kontrollerte retries med ventestatus. Andreas påpekte høyt sesjonsforbruk; videre betalte API-tester og agentoppgaver ble stoppet. Siste retting er derfor IKKE live-verifisert. Ingen garantert kostnadsbesparelse eller ferdig generalprøve hevdes.
 
 Se docs/research/nyhavna-leve-demo/validation.md, runbook.md og rehearsal.md. Åpent: kort live-bekreftelse av siste konfigurasjon, sammenhengende samtaler etter kontekstkutt, fysisk Mac/mikrofon/romlyd og uinnvidd prøvebruker før Lene-møtet. Lagres lokalt uten push; samtaleprototype 3102 og hovedrepoet er ikke endret.
-
 
 ---
 

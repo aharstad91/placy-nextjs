@@ -1,0 +1,759 @@
+[
+  {
+    "query": "TMV-kaia 21",
+    "sourceUrl": "https://ws.geonorge.no/adresser/v1/sok?sok=TMV-kaia+21&kommunenummer=5001&utkoordsys=4258&treffPerSide=10",
+    "result": {
+      "metadata": {
+        "treffPerSide": 10,
+        "side": 0,
+        "totaltAntallTreff": 1,
+        "viserFra": 0,
+        "viserTil": 10,
+        "sokeStreng": "sok=TMV-kaia+21&kommunenummer=5001&utkoordsys=4258&treffPerSide=10",
+        "asciiKompatibel": true
+      },
+      "adresser": [
+        {
+          "adressenavn": "Tmv-Kaia",
+          "adressetekst": "Tmv-Kaia 21",
+          "adressetilleggsnavn": null,
+          "adressekode": 7585,
+          "nummer": 21,
+          "bokstav": "",
+          "kommunenummer": "5001",
+          "kommunenavn": "TRONDHEIM",
+          "gardsnummer": 410,
+          "bruksnummer": 658,
+          "festenummer": 0,
+          "undernummer": null,
+          "bruksenhetsnummer": [],
+          "objtype": "Vegadresse",
+          "poststed": "TRONDHEIM",
+          "postnummer": "7042",
+          "adressetekstutenadressetilleggsnavn": "Tmv-Kaia 21",
+          "stedfestingverifisert": false,
+          "representasjonspunkt": {
+            "epsg": "EPSG:4258",
+            "lat": 63.434756095981314,
+            "lon": 10.411570610332323
+          },
+          "oppdateringsdato": "2023-03-01T19:59:43"
+        }
+      ]
+    }
+  },
+  {
+    "query": "Beddingen 16",
+    "sourceUrl": "https://ws.geonorge.no/adresser/v1/sok?sok=Beddingen+16&kommunenummer=5001&utkoordsys=4258&treffPerSide=10",
+    "result": {
+      "metadata": {
+        "treffPerSide": 10,
+        "side": 0,
+        "totaltAntallTreff": 1,
+        "viserFra": 0,
+        "viserTil": 10,
+        "sokeStreng": "sok=Beddingen+16&kommunenummer=5001&utkoordsys=4258&treffPerSide=10",
+        "asciiKompatibel": true
+      },
+      "adresser": [
+        {
+          "adressenavn": "Beddingen",
+          "adressetekst": "Beddingen 16",
+          "adressetilleggsnavn": null,
+          "adressekode": 1097,
+          "nummer": 16,
+          "bokstav": "",
+          "kommunenummer": "5001",
+          "kommunenavn": "TRONDHEIM",
+          "gardsnummer": 410,
+          "bruksnummer": 663,
+          "festenummer": 0,
+          "undernummer": null,
+          "bruksenhetsnummer": [],
+          "objtype": "Vegadresse",
+          "poststed": "TRONDHEIM",
+          "postnummer": "7042",
+          "adressetekstutenadressetilleggsnavn": "Beddingen 16",
+          "stedfestingverifisert": false,
+          "representasjonspunkt": {
+            "epsg": "EPSG:4258",
+            "lat": 63.43554744956133,
+            "lon": 10.409605043155508
+          },
+          "oppdateringsdato": "2023-03-01T19:59:43"
+        }
+      ]
+    }
+  },
+  {
+    "query": "Dokkgata 8",
+    "sourceUrl": "https://ws.geonorge.no/adresser/v1/sok?sok=Dokkgata+8&kommunenummer=5001&utkoordsys=4258&treffPerSide=10",
+    "result": {
+      "metadata": {
+        "treffPerSide": 10,
+        "side": 0,
+        "totaltAntallTreff": 1,
+        "viserFra": 0,
+        "viserTil": 10,
+        "sokeStreng": "sok=Dokkgata+8&kommunenummer=5001&utkoordsys=4258&treffPerSide=10",
+        "asciiKompatibel": true
+      },
+      "adresser": [
+        {
+          "adressenavn": "Dokkgata",
+          "adressetekst": "Dokkgata 8",
+          "adressetilleggsnavn": null,
+          "adressekode": 1325,
+          "nummer": 8,
+          "bokstav": "",
+          "kommunenummer": "5001",
+          "kommunenavn": "TRONDHEIM",
+          "gardsnummer": 409,
+          "bruksnummer": 539,
+          "festenummer": 0,
+          "undernummer": null,
+          "bruksenhetsnummer": [
+            "H0101",
+            "H0201",
+            "H0202",
+            "H0203",
+            "H0204",
+            "H0301",
+            "H0302",
+            "H0303",
+            "H0304",
+            "H0305",
+            "H0306",
+            "H0307",
+            "H0308"
+          ],
+          "objtype": "Vegadresse",
+          "poststed": "TRONDHEIM",
+          "postnummer": "7042",
+          "adressetekstutenadressetilleggsnavn": "Dokkgata 8",
+          "stedfestingverifisert": false,
+          "representasjonspunkt": {
+            "epsg": "EPSG:4258",
+            "lat": 63.4334923737593,
+            "lon": 10.408642165674454
+          },
+          "oppdateringsdato": "2023-03-01T19:59:43"
+        }
+      ]
+    }
+  },
+  {
+    "query": "Beddingen 10",
+    "sourceUrl": "https://ws.geonorge.no/adresser/v1/sok?sok=Beddingen+10&kommunenummer=5001&utkoordsys=4258&treffPerSide=10",
+    "result": {
+      "metadata": {
+        "treffPerSide": 10,
+        "side": 0,
+        "totaltAntallTreff": 1,
+        "viserFra": 0,
+        "viserTil": 10,
+        "sokeStreng": "sok=Beddingen+10&kommunenummer=5001&utkoordsys=4258&treffPerSide=10",
+        "asciiKompatibel": true
+      },
+      "adresser": [
+        {
+          "adressenavn": "Beddingen",
+          "adressetekst": "Beddingen 10",
+          "adressetilleggsnavn": null,
+          "adressekode": 1097,
+          "nummer": 10,
+          "bokstav": "",
+          "kommunenummer": "5001",
+          "kommunenavn": "TRONDHEIM",
+          "gardsnummer": 410,
+          "bruksnummer": 658,
+          "festenummer": 0,
+          "undernummer": null,
+          "bruksenhetsnummer": [
+            "H0601",
+            "H0602",
+            "H0603",
+            "H0604",
+            "H0605"
+          ],
+          "objtype": "Vegadresse",
+          "poststed": "TRONDHEIM",
+          "postnummer": "7042",
+          "adressetekstutenadressetilleggsnavn": "Beddingen 10",
+          "stedfestingverifisert": false,
+          "representasjonspunkt": {
+            "epsg": "EPSG:4258",
+            "lat": 63.43523563981423,
+            "lon": 10.412095335856362
+          },
+          "oppdateringsdato": "2023-03-01T19:59:43"
+        }
+      ]
+    }
+  },
+  {
+    "query": "TMV-kaia 25",
+    "sourceUrl": "https://ws.geonorge.no/adresser/v1/sok?sok=TMV-kaia+25&kommunenummer=5001&utkoordsys=4258&treffPerSide=10",
+    "result": {
+      "metadata": {
+        "treffPerSide": 10,
+        "side": 0,
+        "totaltAntallTreff": 1,
+        "viserFra": 0,
+        "viserTil": 10,
+        "sokeStreng": "sok=TMV-kaia+25&kommunenummer=5001&utkoordsys=4258&treffPerSide=10",
+        "asciiKompatibel": true
+      },
+      "adresser": [
+        {
+          "adressenavn": "Tmv-Kaia",
+          "adressetekst": "Tmv-Kaia 25",
+          "adressetilleggsnavn": null,
+          "adressekode": 7585,
+          "nummer": 25,
+          "bokstav": "",
+          "kommunenummer": "5001",
+          "kommunenavn": "TRONDHEIM",
+          "gardsnummer": 410,
+          "bruksnummer": 658,
+          "festenummer": 0,
+          "undernummer": null,
+          "bruksenhetsnummer": [],
+          "objtype": "Vegadresse",
+          "poststed": "TRONDHEIM",
+          "postnummer": "7042",
+          "adressetekstutenadressetilleggsnavn": "Tmv-Kaia 25",
+          "stedfestingverifisert": false,
+          "representasjonspunkt": {
+            "epsg": "EPSG:4258",
+            "lat": 63.43495941123553,
+            "lon": 10.410979274296379
+          },
+          "oppdateringsdato": "2025-09-03T22:39:59"
+        }
+      ]
+    }
+  },
+  {
+    "query": "Brattørkaia 13B",
+    "sourceUrl": "https://ws.geonorge.no/adresser/v1/sok?sok=Bratt%C3%B8rkaia+13B&kommunenummer=5001&utkoordsys=4258&treffPerSide=10",
+    "result": {
+      "metadata": {
+        "treffPerSide": 10,
+        "side": 0,
+        "totaltAntallTreff": 1,
+        "viserFra": 0,
+        "viserTil": 10,
+        "sokeStreng": "sok=Bratt%C3%B8rkaia+13B&kommunenummer=5001&utkoordsys=4258&treffPerSide=10",
+        "asciiKompatibel": true
+      },
+      "adresser": [
+        {
+          "adressenavn": "Brattørkaia",
+          "adressetekst": "Brattørkaia 13B",
+          "adressetilleggsnavn": null,
+          "adressekode": 1179,
+          "nummer": 13,
+          "bokstav": "B",
+          "kommunenummer": "5001",
+          "kommunenavn": "TRONDHEIM",
+          "gardsnummer": 439,
+          "bruksnummer": 18,
+          "festenummer": 0,
+          "undernummer": null,
+          "bruksenhetsnummer": [],
+          "objtype": "Vegadresse",
+          "poststed": "TRONDHEIM",
+          "postnummer": "7010",
+          "adressetekstutenadressetilleggsnavn": "Brattørkaia 13B",
+          "stedfestingverifisert": false,
+          "representasjonspunkt": {
+            "epsg": "EPSG:4258",
+            "lat": 63.43929630332324,
+            "lon": 10.402632275226042
+          },
+          "oppdateringsdato": "2025-04-07T18:40:02"
+        }
+      ]
+    }
+  },
+  {
+    "query": "TMV-kaia 13",
+    "sourceUrl": "https://ws.geonorge.no/adresser/v1/sok?sok=TMV-kaia+13&kommunenummer=5001&utkoordsys=4258&treffPerSide=10",
+    "result": {
+      "metadata": {
+        "treffPerSide": 10,
+        "side": 0,
+        "totaltAntallTreff": 1,
+        "viserFra": 0,
+        "viserTil": 10,
+        "sokeStreng": "sok=TMV-kaia+13&kommunenummer=5001&utkoordsys=4258&treffPerSide=10",
+        "asciiKompatibel": true
+      },
+      "adresser": [
+        {
+          "adressenavn": "Tmv-Kaia",
+          "adressetekst": "Tmv-Kaia 13",
+          "adressetilleggsnavn": null,
+          "adressekode": 7585,
+          "nummer": 13,
+          "bokstav": "",
+          "kommunenummer": "5001",
+          "kommunenavn": "TRONDHEIM",
+          "gardsnummer": 410,
+          "bruksnummer": 658,
+          "festenummer": 0,
+          "undernummer": null,
+          "bruksenhetsnummer": [],
+          "objtype": "Vegadresse",
+          "poststed": "TRONDHEIM",
+          "postnummer": "7042",
+          "adressetekstutenadressetilleggsnavn": "Tmv-Kaia 13",
+          "stedfestingverifisert": false,
+          "representasjonspunkt": {
+            "epsg": "EPSG:4258",
+            "lat": 63.43456214594917,
+            "lon": 10.41212231024678
+          },
+          "oppdateringsdato": "2023-03-01T19:59:43"
+        }
+      ]
+    }
+  },
+  {
+    "query": "TMV-kaia 3",
+    "sourceUrl": "https://ws.geonorge.no/adresser/v1/sok?sok=TMV-kaia+3&kommunenummer=5001&utkoordsys=4258&treffPerSide=10",
+    "result": {
+      "metadata": {
+        "treffPerSide": 10,
+        "side": 0,
+        "totaltAntallTreff": 1,
+        "viserFra": 0,
+        "viserTil": 10,
+        "sokeStreng": "sok=TMV-kaia+3&kommunenummer=5001&utkoordsys=4258&treffPerSide=10",
+        "asciiKompatibel": true
+      },
+      "adresser": [
+        {
+          "adressenavn": "Tmv-Kaia",
+          "adressetekst": "Tmv-Kaia 3",
+          "adressetilleggsnavn": null,
+          "adressekode": 7585,
+          "nummer": 3,
+          "bokstav": "",
+          "kommunenummer": "5001",
+          "kommunenavn": "TRONDHEIM",
+          "gardsnummer": 410,
+          "bruksnummer": 658,
+          "festenummer": 0,
+          "undernummer": null,
+          "bruksenhetsnummer": [],
+          "objtype": "Vegadresse",
+          "poststed": "TRONDHEIM",
+          "postnummer": "7042",
+          "adressetekstutenadressetilleggsnavn": "Tmv-Kaia 3",
+          "stedfestingverifisert": false,
+          "representasjonspunkt": {
+            "epsg": "EPSG:4258",
+            "lat": 63.43423941904887,
+            "lon": 10.412988368154677
+          },
+          "oppdateringsdato": "2023-03-01T19:59:43"
+        }
+      ]
+    }
+  },
+  {
+    "query": "Brattørkaia 14",
+    "sourceUrl": "https://ws.geonorge.no/adresser/v1/sok?sok=Bratt%C3%B8rkaia+14&kommunenummer=5001&utkoordsys=4258&treffPerSide=20",
+    "result": {
+      "metadata": {
+        "treffPerSide": 20,
+        "side": 0,
+        "totaltAntallTreff": 1,
+        "viserFra": 0,
+        "viserTil": 20,
+        "sokeStreng": "sok=Bratt%C3%B8rkaia+14&kommunenummer=5001&utkoordsys=4258&treffPerSide=20",
+        "asciiKompatibel": true
+      },
+      "adresser": [
+        {
+          "adressenavn": "Brattørkaia",
+          "adressetekst": "Brattørkaia 14",
+          "adressetilleggsnavn": null,
+          "adressekode": 1179,
+          "nummer": 14,
+          "bokstav": "",
+          "kommunenummer": "5001",
+          "kommunenavn": "TRONDHEIM",
+          "gardsnummer": 439,
+          "bruksnummer": 117,
+          "festenummer": 0,
+          "undernummer": null,
+          "bruksenhetsnummer": [],
+          "objtype": "Vegadresse",
+          "poststed": "TRONDHEIM",
+          "postnummer": "7010",
+          "adressetekstutenadressetilleggsnavn": "Brattørkaia 14",
+          "stedfestingverifisert": false,
+          "representasjonspunkt": {
+            "epsg": "EPSG:4258",
+            "lat": 63.43888679492669,
+            "lon": 10.401369302901397
+          },
+          "oppdateringsdato": "2025-04-07T18:40:02"
+        }
+      ]
+    }
+  },
+  {
+    "query": "Havnegata 12",
+    "sourceUrl": "https://ws.geonorge.no/adresser/v1/sok?sok=Havnegata+12&kommunenummer=5001&utkoordsys=4258&treffPerSide=20",
+    "result": {
+      "metadata": {
+        "treffPerSide": 20,
+        "side": 0,
+        "totaltAntallTreff": 1,
+        "viserFra": 0,
+        "viserTil": 20,
+        "sokeStreng": "sok=Havnegata+12&kommunenummer=5001&utkoordsys=4258&treffPerSide=20",
+        "asciiKompatibel": true
+      },
+      "adresser": [
+        {
+          "adressenavn": "Havnegata",
+          "adressetekst": "Havnegata 12",
+          "adressetilleggsnavn": null,
+          "adressekode": 2775,
+          "nummer": 12,
+          "bokstav": "",
+          "kommunenummer": "5001",
+          "kommunenavn": "TRONDHEIM",
+          "gardsnummer": 439,
+          "bruksnummer": 168,
+          "festenummer": 0,
+          "undernummer": null,
+          "bruksenhetsnummer": [],
+          "objtype": "Vegadresse",
+          "poststed": "TRONDHEIM",
+          "postnummer": "7010",
+          "adressetekstutenadressetilleggsnavn": "Havnegata 12",
+          "stedfestingverifisert": false,
+          "representasjonspunkt": {
+            "epsg": "EPSG:4258",
+            "lat": 63.44040109496344,
+            "lon": 10.400701114560139
+          },
+          "oppdateringsdato": "2025-09-04T10:59:41"
+        }
+      ]
+    }
+  },
+  {
+    "query": "Dokkparken 4",
+    "sourceUrl": "https://ws.geonorge.no/adresser/v1/sok?sok=Dokkparken+4&kommunenummer=5001&utkoordsys=4258&treffPerSide=20",
+    "result": {
+      "metadata": {
+        "treffPerSide": 20,
+        "side": 0,
+        "totaltAntallTreff": 1,
+        "viserFra": 0,
+        "viserTil": 20,
+        "sokeStreng": "sok=Dokkparken+4&kommunenummer=5001&utkoordsys=4258&treffPerSide=20",
+        "asciiKompatibel": true
+      },
+      "adresser": [
+        {
+          "adressenavn": "Dokkparken",
+          "adressetekst": "Dokkparken 4",
+          "adressetilleggsnavn": null,
+          "adressekode": 1324,
+          "nummer": 4,
+          "bokstav": "",
+          "kommunenummer": "5001",
+          "kommunenavn": "TRONDHEIM",
+          "gardsnummer": 410,
+          "bruksnummer": 671,
+          "festenummer": 0,
+          "undernummer": null,
+          "bruksenhetsnummer": [],
+          "objtype": "Vegadresse",
+          "poststed": "TRONDHEIM",
+          "postnummer": "7042",
+          "adressetekstutenadressetilleggsnavn": "Dokkparken 4",
+          "stedfestingverifisert": false,
+          "representasjonspunkt": {
+            "epsg": "EPSG:4258",
+            "lat": 63.43420319262855,
+            "lon": 10.41120264724678
+          },
+          "oppdateringsdato": "2025-05-13T09:54:01"
+        }
+      ]
+    }
+  },
+  {
+    "query": "Beddingen 10",
+    "sourceUrl": "https://ws.geonorge.no/adresser/v1/sok?sok=Beddingen+10&kommunenummer=5001&utkoordsys=4258&treffPerSide=10",
+    "result": {
+      "metadata": {
+        "treffPerSide": 10,
+        "side": 0,
+        "totaltAntallTreff": 1,
+        "viserFra": 0,
+        "viserTil": 10,
+        "sokeStreng": "sok=Beddingen+10&kommunenummer=5001&utkoordsys=4258&treffPerSide=10",
+        "asciiKompatibel": true
+      },
+      "adresser": [
+        {
+          "adressenavn": "Beddingen",
+          "adressetekst": "Beddingen 10",
+          "adressetilleggsnavn": null,
+          "adressekode": 1097,
+          "nummer": 10,
+          "bokstav": "",
+          "kommunenummer": "5001",
+          "kommunenavn": "TRONDHEIM",
+          "gardsnummer": 410,
+          "bruksnummer": 658,
+          "festenummer": 0,
+          "undernummer": null,
+          "bruksenhetsnummer": [
+            "H0601",
+            "H0602",
+            "H0603",
+            "H0604",
+            "H0605"
+          ],
+          "objtype": "Vegadresse",
+          "poststed": "TRONDHEIM",
+          "postnummer": "7042",
+          "adressetekstutenadressetilleggsnavn": "Beddingen 10",
+          "stedfestingverifisert": false,
+          "representasjonspunkt": {
+            "epsg": "EPSG:4258",
+            "lat": 63.43523563981423,
+            "lon": 10.412095335856362
+          },
+          "oppdateringsdato": "2023-03-01T19:59:43"
+        }
+      ]
+    }
+  },
+  {
+    "query": "Beddingen 10",
+    "sourceUrl": "https://ws.geonorge.no/adresser/v1/sok?sok=Beddingen+10&kommunenummer=5001&utkoordsys=4258&treffPerSide=10",
+    "result": {
+      "metadata": {
+        "treffPerSide": 10,
+        "side": 0,
+        "totaltAntallTreff": 1,
+        "viserFra": 0,
+        "viserTil": 10,
+        "sokeStreng": "sok=Beddingen+10&kommunenummer=5001&utkoordsys=4258&treffPerSide=10",
+        "asciiKompatibel": true
+      },
+      "adresser": [
+        {
+          "adressenavn": "Beddingen",
+          "adressetekst": "Beddingen 10",
+          "adressetilleggsnavn": null,
+          "adressekode": 1097,
+          "nummer": 10,
+          "bokstav": "",
+          "kommunenummer": "5001",
+          "kommunenavn": "TRONDHEIM",
+          "gardsnummer": 410,
+          "bruksnummer": 658,
+          "festenummer": 0,
+          "undernummer": null,
+          "bruksenhetsnummer": [
+            "H0601",
+            "H0602",
+            "H0603",
+            "H0604",
+            "H0605"
+          ],
+          "objtype": "Vegadresse",
+          "poststed": "TRONDHEIM",
+          "postnummer": "7042",
+          "adressetekstutenadressetilleggsnavn": "Beddingen 10",
+          "stedfestingverifisert": false,
+          "representasjonspunkt": {
+            "epsg": "EPSG:4258",
+            "lat": 63.43523563981423,
+            "lon": 10.412095335856362
+          },
+          "oppdateringsdato": "2023-03-01T19:59:43"
+        }
+      ]
+    }
+  },
+  {
+    "query": "Dyre Halses gate 1A",
+    "sourceUrl": "https://ws.geonorge.no/adresser/v1/sok?sok=Dyre+Halses+gate+1A&kommunenummer=5001&utkoordsys=4258&treffPerSide=20",
+    "result": {
+      "metadata": {
+        "treffPerSide": 20,
+        "side": 0,
+        "totaltAntallTreff": 1,
+        "viserFra": 0,
+        "viserTil": 20,
+        "sokeStreng": "sok=Dyre+Halses+gate+1A&kommunenummer=5001&utkoordsys=4258&treffPerSide=20",
+        "asciiKompatibel": true
+      },
+      "adresser": [
+        {
+          "adressenavn": "Dyre Halses gate",
+          "adressetekst": "Dyre Halses gate 1A",
+          "adressetilleggsnavn": null,
+          "adressekode": 8739,
+          "nummer": 1,
+          "bokstav": "A",
+          "kommunenummer": "5001",
+          "kommunenavn": "TRONDHEIM",
+          "gardsnummer": 410,
+          "bruksnummer": 665,
+          "festenummer": 0,
+          "undernummer": null,
+          "bruksenhetsnummer": [],
+          "objtype": "Vegadresse",
+          "poststed": "TRONDHEIM",
+          "postnummer": "7042",
+          "adressetekstutenadressetilleggsnavn": "Dyre Halses gate 1A",
+          "stedfestingverifisert": true,
+          "representasjonspunkt": {
+            "epsg": "EPSG:4258",
+            "lat": 63.436464299658766,
+            "lon": 10.416563908353693
+          },
+          "oppdateringsdato": "2025-09-02T10:22:22"
+        }
+      ]
+    }
+  },
+  {
+    "query": "Ladebekken 6",
+    "sourceUrl": "https://ws.geonorge.no/adresser/v1/sok?sok=Ladebekken+6&kommunenummer=5001&utkoordsys=4258&treffPerSide=20",
+    "result": {
+      "metadata": {
+        "treffPerSide": 20,
+        "side": 0,
+        "totaltAntallTreff": 1,
+        "viserFra": 0,
+        "viserTil": 20,
+        "sokeStreng": "sok=Ladebekken+6&kommunenummer=5001&utkoordsys=4258&treffPerSide=20",
+        "asciiKompatibel": true
+      },
+      "adresser": [
+        {
+          "adressenavn": "Ladebekken",
+          "adressetekst": "Ladebekken 6",
+          "adressetilleggsnavn": null,
+          "adressekode": 4160,
+          "nummer": 6,
+          "bokstav": "",
+          "kommunenummer": "5001",
+          "kommunenavn": "TRONDHEIM",
+          "gardsnummer": 414,
+          "bruksnummer": 570,
+          "festenummer": 0,
+          "undernummer": null,
+          "bruksenhetsnummer": [
+            "H0101",
+            "H0102",
+            "H0103",
+            "H0104",
+            "H0105",
+            "H0106",
+            "H0201",
+            "H0202",
+            "H0203",
+            "H0204",
+            "H0205",
+            "H0206",
+            "H0301",
+            "H0302",
+            "H0303",
+            "H0304",
+            "H0305",
+            "H0306",
+            "H0401",
+            "H0402",
+            "H0403",
+            "H0404",
+            "H0405",
+            "H0406",
+            "H0501",
+            "H0502",
+            "H0503",
+            "H0504",
+            "H0505",
+            "H0506",
+            "H0601",
+            "H0602",
+            "H0603",
+            "H0604",
+            "H0605",
+            "H0606"
+          ],
+          "objtype": "Vegadresse",
+          "poststed": "TRONDHEIM",
+          "postnummer": "7041",
+          "adressetekstutenadressetilleggsnavn": "Ladebekken 6",
+          "stedfestingverifisert": false,
+          "representasjonspunkt": {
+            "epsg": "EPSG:4258",
+            "lat": 63.44339470487315,
+            "lon": 10.428396381768284
+          },
+          "oppdateringsdato": "2025-04-07T14:40:03"
+        }
+      ]
+    }
+  },
+  {
+    "query": "Håkon Magnussons gate 5",
+    "sourceUrl": "https://ws.geonorge.no/adresser/v1/sok?sok=H%C3%A5kon+Magnussons+gate+5&kommunenummer=5001&utkoordsys=4258&treffPerSide=10",
+    "result": {
+      "metadata": {
+        "treffPerSide": 10,
+        "side": 0,
+        "totaltAntallTreff": 1,
+        "viserFra": 0,
+        "viserTil": 10,
+        "sokeStreng": "sok=H%C3%A5kon+Magnussons+gate+5&kommunenummer=5001&utkoordsys=4258&treffPerSide=10",
+        "asciiKompatibel": true
+      },
+      "adresser": [
+        {
+          "adressenavn": "Håkon Magnussons gate",
+          "adressetekst": "Håkon Magnussons gate 5",
+          "adressetilleggsnavn": null,
+          "adressekode": 3125,
+          "nummer": 5,
+          "bokstav": "",
+          "kommunenummer": "5001",
+          "kommunenavn": "TRONDHEIM",
+          "gardsnummer": 414,
+          "bruksnummer": 399,
+          "festenummer": 0,
+          "undernummer": null,
+          "bruksenhetsnummer": [],
+          "objtype": "Vegadresse",
+          "poststed": "TRONDHEIM",
+          "postnummer": "7041",
+          "adressetekstutenadressetilleggsnavn": "Håkon Magnussons gate 5",
+          "stedfestingverifisert": false,
+          "representasjonspunkt": {
+            "epsg": "EPSG:4258",
+            "lat": 63.443679017389776,
+            "lon": 10.442126415185394
+          },
+          "oppdateringsdato": "2020-06-15T18:01:37"
+        }
+      ]
+    }
+  }
+]

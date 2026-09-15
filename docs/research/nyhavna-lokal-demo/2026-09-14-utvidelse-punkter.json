@@ -1,0 +1,1272 @@
+{
+  "checkedAt": "2026-09-14",
+  "places": [
+    {
+      "id": "ec-dahls",
+      "name": "E.C. Dahls Pub og Kjøkken",
+      "categoryId": "mat-drikke",
+      "coordinates": {
+        "lat": 63.44087738940128,
+        "lng": 10.427008893459815
+      },
+      "placeType": "Pub og restaurant",
+      "aliases": [],
+      "status": "existing",
+      "summary": "Pub og restaurant på Nyhavna med mat, bryggeritilknytning og organiserte smaksopplevelser.",
+      "locationPrecision": "approximate",
+      "locationNote": "Kartpunktet viser adressen, ikke en kontrollert inngang.",
+      "facts": [
+        {
+          "id": "ec-dahls-f1",
+          "text": "Puben tilbyr uformell mat og øl, blant annet fra E.C. Dahls Bryggeri.",
+          "sourceId": "utv-20260914-01",
+          "checkedAt": "2026-09-14",
+          "verification": "confirmed"
+        },
+        {
+          "id": "ec-dahls-f2",
+          "text": "Restauranten framhever lokale råvarer og kombinasjoner av mat og øl.",
+          "sourceId": "utv-20260914-01",
+          "checkedAt": "2026-09-14",
+          "verification": "confirmed"
+        },
+        {
+          "id": "ec-dahls-f3",
+          "text": "Virksomheten tilbyr omvisning og ølsmaking etter avtale.",
+          "sourceId": "utv-20260914-01",
+          "checkedAt": "2026-09-14",
+          "verification": "confirmed"
+        }
+      ],
+      "sourceIds": [
+        "utv-20260914-01",
+        "utv-20260914-02",
+        "demo-route"
+      ],
+      "checkedAt": "2026-09-14",
+      "caveats": [
+        "Omvisning og smaking må avtales. Konsertdager kan gi andre serveringstider."
+      ],
+      "address": "Strandveien 71",
+      "travelTime": {
+        "walk": 8,
+        "bike": 3
+      }
+    },
+    {
+      "id": "ramp",
+      "name": "Ramp Pub & Spiseri",
+      "categoryId": "mat-drikke",
+      "coordinates": {
+        "lat": 63.43802337857259,
+        "lng": 10.421551819906638
+      },
+      "placeType": "Pub og spiseri",
+      "aliases": [],
+      "status": "existing",
+      "summary": "Pub og spiseri på Svartlamon, omtalt av området selv som et uformelt sted for mat og drikke.",
+      "locationPrecision": "approximate",
+      "locationNote": "Kartpunktet viser adressen, ikke en kontrollert inngang.",
+      "facts": [
+        {
+          "id": "ramp-f1",
+          "text": "Svartlamons virksomhetsoversikt presenterer Ramp som pub og spiseri.",
+          "sourceId": "utv-20260914-03",
+          "checkedAt": "2026-09-14",
+          "verification": "confirmed"
+        },
+        {
+          "id": "ramp-f2",
+          "text": "Omtalen framhever burgere laget av storfe, lam eller kikerter.",
+          "sourceId": "utv-20260914-03",
+          "checkedAt": "2026-09-14",
+          "verification": "confirmed"
+        }
+      ],
+      "sourceIds": [
+        "utv-20260914-03",
+        "utv-20260914-04",
+        "utv-20260914-05",
+        "demo-route"
+      ],
+      "checkedAt": "2026-09-14",
+      "caveats": [
+        "Matomtalen hos Svartlamon er udatert; sjekk aktuell meny og åpning hos Ramp."
+      ],
+      "address": "Strandveien 25A",
+      "travelTime": {
+        "walk": 6,
+        "bike": 3
+      }
+    },
+    {
+      "id": "una-solsiden",
+      "name": "Una Solsiden",
+      "categoryId": "mat-drikke",
+      "coordinates": {
+        "lat": 63.43525224659627,
+        "lng": 10.410412377188472
+      },
+      "placeType": "Pizzeria",
+      "aliases": [],
+      "status": "existing",
+      "summary": "Pizzeria og bar på Solsiden, med pizza, pasta og italienske forretter.",
+      "locationPrecision": "approximate",
+      "locationNote": "Kartpunktet viser adressen, ikke en kontrollert inngang.",
+      "facts": [
+        {
+          "id": "una-solsiden-f1",
+          "text": "Virksomheten beskriver Solsiden som sin opprinnelige restaurant, etablert i 2014.",
+          "sourceId": "utv-20260914-06",
+          "checkedAt": "2026-09-14",
+          "verification": "confirmed"
+        },
+        {
+          "id": "una-solsiden-f2",
+          "text": "Menyen omfatter pizza, pasta, bruschetta og salater.",
+          "sourceId": "utv-20260914-07",
+          "checkedAt": "2026-09-14",
+          "verification": "confirmed"
+        },
+        {
+          "id": "una-solsiden-f3",
+          "text": "Pizzaen Vegana er oppført med tomat, sopp, oliven, rødløk, paprika og ruccola.",
+          "sourceId": "utv-20260914-07",
+          "checkedAt": "2026-09-14",
+          "verification": "confirmed"
+        }
+      ],
+      "sourceIds": [
+        "utv-20260914-06",
+        "utv-20260914-07",
+        "utv-20260914-08",
+        "demo-route"
+      ],
+      "checkedAt": "2026-09-14",
+      "caveats": [
+        "Menyen kan endres. Avklar allergener direkte med restauranten."
+      ],
+      "address": "Beddingen 14",
+      "travelTime": {
+        "walk": 11,
+        "bike": 6
+      }
+    },
+    {
+      "id": "godt-brod-solsiden",
+      "name": "Godt Brød Solsiden",
+      "categoryId": "mat-drikke",
+      "coordinates": {
+        "lat": 63.43523563981423,
+        "lng": 10.412095335856362
+      },
+      "placeType": "Bakeri og kafé",
+      "aliases": [],
+      "status": "existing",
+      "summary": "Bakeverksted på Solsiden med bakervarer, påsmurt mat og kaffe.",
+      "locationPrecision": "approximate",
+      "locationNote": "Kartpunktet viser adressen, ikke en kontrollert inngang.",
+      "facts": [
+        {
+          "id": "godt-brod-solsiden-f1",
+          "text": "Avdelingssiden plasserer bakeverkstedet på Solsiden senter.",
+          "sourceId": "utv-20260914-09",
+          "checkedAt": "2026-09-14",
+          "verification": "confirmed"
+        },
+        {
+          "id": "godt-brod-solsiden-f2",
+          "text": "Stedet beskriver håndbakte, økologiske brød og boller.",
+          "sourceId": "utv-20260914-09",
+          "checkedAt": "2026-09-14",
+          "verification": "confirmed"
+        },
+        {
+          "id": "godt-brod-solsiden-f3",
+          "text": "Avdelingen oppgir påsmurte sandwicher, juice, baristakaffe og kaker.",
+          "sourceId": "utv-20260914-09",
+          "checkedAt": "2026-09-14",
+          "verification": "confirmed"
+        }
+      ],
+      "sourceIds": [
+        "utv-20260914-09",
+        "utv-20260914-10",
+        "demo-route"
+      ],
+      "checkedAt": "2026-09-14",
+      "caveats": [
+        "Utvalget av bakervarer varierer."
+      ],
+      "address": "Beddingen 10",
+      "travelTime": {
+        "walk": 11,
+        "bike": 7
+      }
+    },
+    {
+      "id": "sabrura-solsiden",
+      "name": "Sabrura Solsiden",
+      "categoryId": "mat-drikke",
+      "coordinates": {
+        "lat": 63.43565021871486,
+        "lng": 10.416465567510546
+      },
+      "placeType": "Sushi og buffet",
+      "aliases": [],
+      "status": "existing",
+      "summary": "Sushi- og buffetrestaurant på Solsiden med eget takeawaytilbud.",
+      "locationPrecision": "approximate",
+      "locationNote": "Kartpunktet viser adressen, ikke en kontrollert inngang.",
+      "facts": [
+        {
+          "id": "sabrura-solsiden-f1",
+          "text": "Avdelingssiden oppgir både restaurant og takeaway som tilbud.",
+          "sourceId": "utv-20260914-11",
+          "checkedAt": "2026-09-14",
+          "verification": "confirmed"
+        },
+        {
+          "id": "sabrura-solsiden-f2",
+          "text": "Kjedens buffetbeskrivelse omfatter sushi og varme retter som dumplings, vårruller og kyllingsticks.",
+          "sourceId": "utv-20260914-12",
+          "checkedAt": "2026-09-14",
+          "verification": "confirmed"
+        },
+        {
+          "id": "sabrura-solsiden-f3",
+          "text": "Kjeden beskriver også à la carte og separat takeawaybestilling.",
+          "sourceId": "utv-20260914-12",
+          "checkedAt": "2026-09-14",
+          "verification": "confirmed"
+        }
+      ],
+      "sourceIds": [
+        "utv-20260914-11",
+        "utv-20260914-12",
+        "utv-20260914-13",
+        "demo-route"
+      ],
+      "checkedAt": "2026-09-14",
+      "caveats": [
+        "Buffetutvalget er beskrevet på kjedenivå og kan variere lokalt. Takeaway bestilles separat."
+      ],
+      "address": "Bassengbakken 2",
+      "travelTime": {
+        "walk": 8,
+        "bike": 3
+      }
+    },
+    {
+      "id": "havet-arena",
+      "name": "HAVET Arena",
+      "categoryId": "opplevelser",
+      "coordinates": {
+        "lat": 63.441461519275904,
+        "lng": 10.42501538435317
+      },
+      "placeType": "Badstue og kultur",
+      "aliases": [
+        "BarbeintQ",
+        "Heim"
+      ],
+      "status": "existing",
+      "summary": "Badstuer, konserter og servering ved vannet på Nyhavna, med BarbeintQ som restaurant.",
+      "locationPrecision": "approximate",
+      "locationNote": "Kartpunktet viser adressen, ikke en kontrollert inngang.",
+      "facts": [
+        {
+          "id": "havet-arena-f1",
+          "text": "HAVET har badstuer, konsert- og arrangementstilbud samt restaurant og bar.",
+          "sourceId": "utv-20260914-15",
+          "checkedAt": "2026-09-14",
+          "verification": "confirmed"
+        },
+        {
+          "id": "havet-arena-f2",
+          "text": "BarbeintQ bruker vedfyrte smokere og beskriver kjøtt, fisk, vegetariske og veganske alternativer.",
+          "sourceId": "utv-20260914-14",
+          "checkedAt": "2026-09-14",
+          "verification": "confirmed"
+        },
+        {
+          "id": "havet-arena-f3",
+          "text": "HAVET foreslår restaurantbesøk før eller etter en badstueøkt.",
+          "sourceId": "utv-20260914-15",
+          "checkedAt": "2026-09-14",
+          "verification": "confirmed"
+        }
+      ],
+      "sourceIds": [
+        "utv-20260914-14",
+        "utv-20260914-15",
+        "utv-20260914-16",
+        "demo-route"
+      ],
+      "checkedAt": "2026-09-14",
+      "caveats": [
+        "Badstue, restaurant og arrangementer har ulike tider, bestilling og aldersvilkår. Sjekk det aktuelle tilbudet."
+      ],
+      "address": "Strandveien 104",
+      "travelTime": {
+        "walk": 8,
+        "bike": 3
+      }
+    },
+    {
+      "id": "rosendal-teater",
+      "name": "Rosendal Teater og Kafé",
+      "categoryId": "opplevelser",
+      "coordinates": {
+        "lat": 63.43668599265991,
+        "lng": 10.432509045023487
+      },
+      "placeType": "Teater og kafé",
+      "aliases": [
+        "Rosendal Teater",
+        "Rosendal Kafé"
+      ],
+      "status": "existing",
+      "summary": "Scenekunsthus med egen kafé og bar; ett sted for forestillinger, mat og sosiale arrangementer.",
+      "locationPrecision": "approximate",
+      "locationNote": "Kartpunktet viser adressen, ikke en kontrollert inngang.",
+      "facts": [
+        {
+          "id": "rosendal-teater-f1",
+          "text": "Teatret presenterer blant annet teater, dans, konserter og samtalearrangementer.",
+          "sourceId": "utv-20260914-18",
+          "checkedAt": "2026-09-14",
+          "verification": "confirmed"
+        },
+        {
+          "id": "rosendal-teater-f2",
+          "text": "Kafeen beskriver suppe og gryte på menyen samt arrangementer som Nabojazz og åpen scene.",
+          "sourceId": "utv-20260914-17",
+          "checkedAt": "2026-09-14",
+          "verification": "confirmed"
+        },
+        {
+          "id": "rosendal-teater-f3",
+          "text": "Hovedinngangen ligger i front av glassfasaden på venstre side; foajeen kan også nås via kaféinngangen.",
+          "sourceId": "utv-20260914-19",
+          "checkedAt": "2026-09-14",
+          "verification": "confirmed"
+        }
+      ],
+      "sourceIds": [
+        "utv-20260914-17",
+        "utv-20260914-18",
+        "utv-20260914-19",
+        "utv-20260914-20",
+        "demo-route"
+      ],
+      "checkedAt": "2026-09-14",
+      "caveats": [
+        "Program, billetter og aldersanbefalinger avhenger av arrangement. Kaféens kjøkkentider sjekkes separat."
+      ],
+      "address": "Innherredsveien 73",
+      "travelTime": {
+        "walk": 16,
+        "bike": 6
+      }
+    },
+    {
+      "id": "monkey-brew",
+      "name": "Monkey Brew",
+      "categoryId": "opplevelser",
+      "coordinates": {
+        "lat": 63.44057097990753,
+        "lng": 10.420818632252876
+      },
+      "placeType": "Bryggeri og utsalg",
+      "aliases": [],
+      "status": "existing",
+      "summary": "Håndverksbryggeri på Nyhavna med eget utsalg og gruppeomvisninger etter avtale.",
+      "locationPrecision": "approximate",
+      "locationNote": "Kartpunktet viser adressen, ikke en kontrollert inngang. Utsalget oppgir inngang på østsiden, overfor HAVET.",
+      "facts": [
+        {
+          "id": "monkey-brew-f1",
+          "text": "Monkey Brew beskriver seg som et lite, uavhengig håndverksbryggeri i Trondheim.",
+          "sourceId": "utv-20260914-21",
+          "checkedAt": "2026-09-14",
+          "verification": "confirmed"
+        },
+        {
+          "id": "monkey-brew-f2",
+          "text": "Bryggeriutsalget på Nyhavna selger øl og profilvarer og lar besøkende få et innblikk i bryggeriet.",
+          "sourceId": "utv-20260914-22",
+          "checkedAt": "2026-09-14",
+          "verification": "confirmed"
+        },
+        {
+          "id": "monkey-brew-f3",
+          "text": "Omvisning med smaking kan avtales for grupper på minst ti personer.",
+          "sourceId": "utv-20260914-22",
+          "checkedAt": "2026-09-14",
+          "verification": "confirmed"
+        }
+      ],
+      "sourceIds": [
+        "utv-20260914-21",
+        "utv-20260914-22",
+        "s-servering-prove-nyhavna",
+        "utv-20260914-23",
+        "utv-20260914-24",
+        "demo-route"
+      ],
+      "checkedAt": "2026-09-14",
+      "caveats": [
+        "Dette er bryggeri og utsalg; omvisning med smaking må avtales og er ikke et drop-in-tilbud."
+      ],
+      "address": "Kobbes gate 10",
+      "travelTime": {
+        "walk": 4,
+        "bike": 2
+      }
+    },
+    {
+      "id": "lademoen-bhg",
+      "name": "Lademoen barnehage",
+      "categoryId": "barn-oppvekst",
+      "coordinates": {
+        "lat": 63.436869354029895,
+        "lng": 10.42115643733528
+      },
+      "placeType": "Barnehage",
+      "aliases": [],
+      "status": "existing",
+      "summary": "Privat barnehage på Lademoen, med vekt på lek og bruk av nærmiljøet.",
+      "locationPrecision": "approximate",
+      "locationNote": "Kartpunktet viser adressen, ikke en kontrollert inngang.",
+      "facts": [
+        {
+          "id": "lademoen-bhg-f1",
+          "text": "Eies og drives av Trondhjems Asylselskap.",
+          "sourceId": "utv-20260914-25",
+          "checkedAt": "2026-09-14",
+          "verification": "confirmed"
+        },
+        {
+          "id": "lademoen-bhg-f2",
+          "text": "Holder til i en bygning fra 1893.",
+          "sourceId": "utv-20260914-26",
+          "checkedAt": "2026-09-14",
+          "verification": "confirmed"
+        },
+        {
+          "id": "lademoen-bhg-f3",
+          "text": "Barnehagen beskriver lek, fysisk aktivitet og barns medvirkning som deler av sin pedagogiske profil.",
+          "sourceId": "utv-20260914-27",
+          "checkedAt": "2026-09-14",
+          "verification": "confirmed"
+        }
+      ],
+      "sourceIds": [
+        "utv-20260914-25",
+        "utv-20260914-26",
+        "utv-20260914-27",
+        "utv-20260914-28",
+        "demo-route"
+      ],
+      "checkedAt": "2026-09-14",
+      "caveats": [
+        "Barnehageplass krever søknad og opptak. Nærhet gir ingen garanti om plass."
+      ],
+      "address": "Østersunds gate 3",
+      "travelTime": {
+        "walk": 8,
+        "bike": 3
+      }
+    },
+    {
+      "id": "svartlamon-bhg",
+      "name": "Svartlamon kunst- og kulturbarnehage",
+      "categoryId": "barn-oppvekst",
+      "coordinates": {
+        "lat": 63.43862109341741,
+        "lng": 10.422826993232965
+      },
+      "placeType": "Barnehage",
+      "aliases": [],
+      "status": "existing",
+      "summary": "Kommunal kunst- og kulturbarnehage på Svartlamon, i en tidligere bilbutikk.",
+      "locationPrecision": "approximate",
+      "locationNote": "Kartpunktet viser adressen, ikke en kontrollert inngang.",
+      "facts": [
+        {
+          "id": "svartlamon-bhg-f1",
+          "text": "Kommunens enhet heter Svartlamon kunst- og kulturbarnehage og ReMida.",
+          "sourceId": "utv-20260914-29",
+          "checkedAt": "2026-09-14",
+          "verification": "confirmed"
+        },
+        {
+          "id": "svartlamon-bhg-f2",
+          "text": "Den tidligere bilbutikken Strandveien Auto ble omgjort til barnehage; barna deltok i utviklingsprosjektet.",
+          "sourceId": "utv-20260914-31",
+          "checkedAt": "2026-09-14",
+          "verification": "confirmed"
+        },
+        {
+          "id": "svartlamon-bhg-f3",
+          "text": "Dette prosjektet vant den nasjonale barnehageprisen for kunst og kultur i 2008.",
+          "sourceId": "utv-20260914-31",
+          "checkedAt": "2026-09-14",
+          "verification": "confirmed"
+        }
+      ],
+      "sourceIds": [
+        "utv-20260914-29",
+        "utv-20260914-30",
+        "utv-20260914-31",
+        "utv-20260914-32",
+        "demo-route"
+      ],
+      "checkedAt": "2026-09-14",
+      "caveats": [
+        "Barnehageplass krever søknad og opptak. ReMida er ikke dokumentert som et fritt drop-in-tilbud."
+      ],
+      "address": "Strandveien 33",
+      "travelTime": {
+        "walk": 6,
+        "bike": 4
+      }
+    },
+    {
+      "id": "lade-fritidsklubb",
+      "name": "Lade fritidsklubb",
+      "categoryId": "barn-oppvekst",
+      "coordinates": {
+        "lat": 63.443679017389776,
+        "lng": 10.442126415185394
+      },
+      "placeType": "Fritidsklubb",
+      "aliases": [],
+      "status": "existing",
+      "summary": "Kommunalt kultur- og fritidstilbud for ungdom, med møteplass og særlig vekt på gaming.",
+      "locationPrecision": "approximate",
+      "locationNote": "Kartpunktet viser adressen, ikke en kontrollert inngang.",
+      "facts": [
+        {
+          "id": "lade-fritidsklubb-f1",
+          "text": "Holder til i Dagskolens lokaler på Lade.",
+          "sourceId": "utv-20260914-33",
+          "checkedAt": "2026-09-14",
+          "verification": "confirmed"
+        },
+        {
+          "id": "lade-fritidsklubb-f2",
+          "text": "Har gamingrom, aktivitetsrom og gymsal.",
+          "sourceId": "utv-20260914-33",
+          "checkedAt": "2026-09-14",
+          "verification": "confirmed"
+        },
+        {
+          "id": "lade-fritidsklubb-f3",
+          "text": "Ungdom er med på å bestemme aktivitetene; gamingtilbudet bruker påmelding.",
+          "sourceId": "utv-20260914-33",
+          "checkedAt": "2026-09-14",
+          "verification": "confirmed"
+        }
+      ],
+      "sourceIds": [
+        "utv-20260914-33",
+        "utv-20260914-34",
+        "demo-route"
+      ],
+      "checkedAt": "2026-09-14",
+      "caveats": [
+        "Gaming bruker påmelding. Avklar besøksalder og aktuelle tider med klubben."
+      ],
+      "address": "Håkon Magnussons gate 5",
+      "travelTime": {
+        "walk": 23,
+        "bike": 8
+      }
+    },
+    {
+      "id": "strandveiparken",
+      "name": "Strandveiparken",
+      "categoryId": "barn-oppvekst",
+      "coordinates": {
+        "lat": 63.436710288130335,
+        "lng": 10.41793924845744
+      },
+      "placeType": "Park og lekeplass",
+      "aliases": [],
+      "status": "existing",
+      "summary": "Park med lekegate, grøntområder og aktiviteter som gjør den relevant for både små og større barn.",
+      "locationPrecision": "approximate",
+      "locationNote": "Kartpunktet viser parkens representative senter fra kommunens parkregister, ikke en kontrollert inngang.",
+      "facts": [
+        {
+          "id": "strandveiparken-f1",
+          "text": "Utvidet og oppgradert med ferdigstillelse i mai 2025.",
+          "sourceId": "utv-20260914-35",
+          "checkedAt": "2026-09-14",
+          "verification": "confirmed"
+        },
+        {
+          "id": "strandveiparken-f2",
+          "text": "Lekegaten har små hus inspirert av bygninger i bydelen.",
+          "sourceId": "utv-20260914-35",
+          "checkedAt": "2026-09-14",
+          "verification": "confirmed"
+        },
+        {
+          "id": "strandveiparken-f3",
+          "text": "Har flerbruksområde for blant annet ballspill og parkour, samt plen og sitteplasser.",
+          "sourceId": "utv-20260914-35",
+          "checkedAt": "2026-09-14",
+          "verification": "confirmed"
+        }
+      ],
+      "sourceIds": [
+        "utv-20260914-35",
+        "utv-20260914-36",
+        "demo-route"
+      ],
+      "checkedAt": "2026-09-14",
+      "caveats": [
+        "Kommunen oppgir nærmeste toalett i Lademoparken."
+      ],
+      "travelTime": {
+        "walk": 6,
+        "bike": 3
+      }
+    },
+    {
+      "id": "strandveikaia-badeplass",
+      "name": "Strandveikaia badeplass",
+      "categoryId": "opplevelser",
+      "coordinates": {
+        "lat": 63.44203222875,
+        "lng": 10.42498068875
+      },
+      "placeType": "Offentlig badeplass",
+      "aliases": [],
+      "status": "existing",
+      "summary": "Eksisterende offentlig badebrygge med stupetårn på Nyhavna.",
+      "locationPrecision": "approximate",
+      "locationNote": "Omtrentlig punkt ved badebryggen. Nøyaktig adkomst er ikke kontrollert.",
+      "facts": [
+        {
+          "id": "strandveikaia-badeplass-f1",
+          "text": "Badebryggen er åpen for alle.",
+          "sourceId": "utv-20260914-37",
+          "checkedAt": "2026-09-14",
+          "verification": "confirmed"
+        },
+        {
+          "id": "strandveikaia-badeplass-f2",
+          "text": "Ligger ved HAVET, med adkomst fra Strandveien.",
+          "sourceId": "utv-20260914-37",
+          "checkedAt": "2026-09-14",
+          "verification": "confirmed"
+        },
+        {
+          "id": "strandveikaia-badeplass-f3",
+          "text": "Kommunen henviser til HAVET for garderobe, badstue og servering.",
+          "sourceId": "utv-20260914-37",
+          "checkedAt": "2026-09-14",
+          "verification": "confirmed"
+        }
+      ],
+      "sourceIds": [
+        "utv-20260914-37",
+        "utv-20260914-38",
+        "demo-route"
+      ],
+      "checkedAt": "2026-09-14",
+      "caveats": [
+        "Kommunen varsler at vannkvaliteten kan være nedsatt etter store nedbørsmengder. Sjekk aktuelle baderåd. HAVETs badstue og garderobe har egne vilkår."
+      ],
+      "travelTime": {
+        "walk": 9,
+        "bike": 3
+      }
+    },
+    {
+      "id": "bua-lademoen",
+      "name": "BUA Lademoen",
+      "categoryId": "hverdagsliv",
+      "coordinates": {
+        "lat": 63.43696180715256,
+        "lng": 10.437057690417996
+      },
+      "placeType": "Utstyrsutlån",
+      "aliases": [],
+      "status": "existing",
+      "summary": "Utlånssentral for sports- og friluftsutstyr hos Trondheim Røde Kors.",
+      "locationPrecision": "approximate",
+      "locationNote": "Kartpunktet viser adressen, ikke en kontrollert inngang.",
+      "facts": [
+        {
+          "id": "bua-lademoen-f1",
+          "text": "Låner ut sports- og friluftsutstyr.",
+          "sourceId": "utv-20260914-39",
+          "checkedAt": "2026-09-14",
+          "verification": "confirmed"
+        },
+        {
+          "id": "bua-lademoen-f2",
+          "text": "Utlånstilbudet er for alle, med mål om å gjøre aktivitet tilgjengelig for barn og unge.",
+          "sourceId": "utv-20260914-39",
+          "checkedAt": "2026-09-14",
+          "verification": "confirmed"
+        },
+        {
+          "id": "bua-lademoen-f3",
+          "text": "Tidligere BUA Leangen flyttet til Innherredsveien 91 og åpnet som BUA Lademoen 27. mai 2026.",
+          "sourceId": "utv-20260914-40",
+          "checkedAt": "2026-09-14",
+          "verification": "confirmed"
+        }
+      ],
+      "sourceIds": [
+        "utv-20260914-39",
+        "utv-20260914-40",
+        "utv-20260914-41",
+        "demo-route"
+      ],
+      "checkedAt": "2026-09-14",
+      "caveats": [
+        "Utstyr må være tilgjengelig, og utlån følger BUA sine vilkår."
+      ],
+      "address": "Innherredsveien 91",
+      "travelTime": {
+        "walk": 19,
+        "bike": 7
+      }
+    },
+    {
+      "id": "buranbanen",
+      "name": "Buranbanen",
+      "categoryId": "barn-oppvekst",
+      "coordinates": {
+        "lat": 63.43532549125392,
+        "lng": 10.423033695576043
+      },
+      "placeType": "Aktivitetspark",
+      "aliases": [
+        "Buran aktivitetspark"
+      ],
+      "status": "existing",
+      "summary": "Aktivitetspark med lek for yngre barn og muligheter for ballspill, trening og sykkel eller sparkesykkel.",
+      "locationPrecision": "approximate",
+      "locationNote": "Kartpunktet viser parkens representative senter fra kommunens parkregister, ikke en kontrollert inngang.",
+      "facts": [
+        {
+          "id": "buranbanen-f1",
+          "text": "Oppgradert fra grusbane til aktivitetspark i 2023.",
+          "sourceId": "utv-20260914-42",
+          "checkedAt": "2026-09-14",
+          "verification": "confirmed"
+        },
+        {
+          "id": "buranbanen-f2",
+          "text": "Har blant annet basket, trimpark og asfalterte humper for sykkel og sparkesykkel.",
+          "sourceId": "utv-20260914-42",
+          "checkedAt": "2026-09-14",
+          "verification": "confirmed"
+        },
+        {
+          "id": "buranbanen-f3",
+          "text": "Lekeskulpturene Buranus er laget av gjenbruksmaterialer.",
+          "sourceId": "utv-20260914-42",
+          "checkedAt": "2026-09-14",
+          "verification": "confirmed"
+        }
+      ],
+      "sourceIds": [
+        "utv-20260914-42",
+        "utv-20260914-36",
+        "demo-route"
+      ],
+      "checkedAt": "2026-09-14",
+      "caveats": [
+        "Parken har ikke eget toalett. Vinterbruk avhenger av forholdene."
+      ],
+      "travelTime": {
+        "walk": 11,
+        "bike": 5
+      }
+    }
+  ],
+  "sources": [
+    {
+      "id": "utv-20260914-01",
+      "url": "https://ecdahls.no/pub-kjokken/",
+      "label": "ecdahls.no",
+      "page": "E.C. Dahls Pub og Kjøkken – pub-kjokken",
+      "publisher": "ecdahls.no",
+      "checkedAt": "2026-09-14"
+    },
+    {
+      "id": "utv-20260914-02",
+      "url": "https://ws.geonorge.no/adresser/v1/sok?sok=Strandveien+71&kommunenummer=5001&utkoordsys=4258&treffPerSide=10",
+      "label": "Kartverket",
+      "page": "Adressepunkt: Strandveien 71",
+      "publisher": "Kartverket",
+      "checkedAt": "2026-09-14"
+    },
+    {
+      "id": "utv-20260914-03",
+      "url": "https://svartlamon.org/virksomheter/",
+      "label": "svartlamon.org",
+      "page": "Ramp Pub & Spiseri – virksomheter",
+      "publisher": "svartlamon.org",
+      "checkedAt": "2026-09-14"
+    },
+    {
+      "id": "utv-20260914-04",
+      "url": "https://virksomhet.brreg.no/nb/oppslag/underenheter/985281246",
+      "label": "virksomhet.brreg.no",
+      "page": "Ramp Pub & Spiseri – 985281246",
+      "publisher": "virksomhet.brreg.no",
+      "checkedAt": "2026-09-14"
+    },
+    {
+      "id": "utv-20260914-05",
+      "url": "https://ws.geonorge.no/adresser/v1/sok?sok=Strandveien+25A&kommunenummer=5001&utkoordsys=4258&treffPerSide=10",
+      "label": "Kartverket",
+      "page": "Adressepunkt: Strandveien 25A",
+      "publisher": "Kartverket",
+      "checkedAt": "2026-09-14"
+    },
+    {
+      "id": "utv-20260914-06",
+      "url": "https://unapizzeria.no/",
+      "label": "unapizzeria.no",
+      "page": "Una Solsiden – ",
+      "publisher": "unapizzeria.no",
+      "checkedAt": "2026-09-14"
+    },
+    {
+      "id": "utv-20260914-07",
+      "url": "https://unapizzeria.no/meny/",
+      "label": "unapizzeria.no",
+      "page": "Una Solsiden – meny",
+      "publisher": "unapizzeria.no",
+      "checkedAt": "2026-09-14"
+    },
+    {
+      "id": "utv-20260914-08",
+      "url": "https://ws.geonorge.no/adresser/v1/sok?sok=Beddingen+14&kommunenummer=5001&utkoordsys=4258&treffPerSide=10",
+      "label": "Kartverket",
+      "page": "Adressepunkt: Beddingen 14",
+      "publisher": "Kartverket",
+      "checkedAt": "2026-09-14"
+    },
+    {
+      "id": "utv-20260914-09",
+      "url": "https://www.godtbrod.no/godt-brod-bakerier/godt-brod-solsiden",
+      "label": "godtbrod.no",
+      "page": "Godt Brød Solsiden – godt-brod-solsiden",
+      "publisher": "godtbrod.no",
+      "checkedAt": "2026-09-14"
+    },
+    {
+      "id": "utv-20260914-10",
+      "url": "https://ws.geonorge.no/adresser/v1/sok?sok=Beddingen+10&kommunenummer=5001&utkoordsys=4258&treffPerSide=10",
+      "label": "Kartverket",
+      "page": "Adressepunkt: Beddingen 10",
+      "publisher": "Kartverket",
+      "checkedAt": "2026-09-14"
+    },
+    {
+      "id": "utv-20260914-11",
+      "url": "https://www.sabrurasushi.no/restauranter/midt-norge/sabrura-solsiden/",
+      "label": "sabrurasushi.no",
+      "page": "Sabrura Solsiden – sabrura-solsiden",
+      "publisher": "sabrurasushi.no",
+      "checkedAt": "2026-09-14"
+    },
+    {
+      "id": "utv-20260914-12",
+      "url": "https://www.sabrurasushi.no/sushibuffet/",
+      "label": "sabrurasushi.no",
+      "page": "Sabrura Solsiden – sushibuffet",
+      "publisher": "sabrurasushi.no",
+      "checkedAt": "2026-09-14"
+    },
+    {
+      "id": "utv-20260914-13",
+      "url": "https://ws.geonorge.no/adresser/v1/sok?sok=Bassengbakken+2&kommunenummer=5001&utkoordsys=4258&treffPerSide=10",
+      "label": "Kartverket",
+      "page": "Adressepunkt: Bassengbakken 2",
+      "publisher": "Kartverket",
+      "checkedAt": "2026-09-14"
+    },
+    {
+      "id": "utv-20260914-14",
+      "url": "https://www.havetarena.no/servering",
+      "label": "havetarena.no",
+      "page": "HAVET Arena – servering",
+      "publisher": "havetarena.no",
+      "checkedAt": "2026-09-14"
+    },
+    {
+      "id": "utv-20260914-15",
+      "url": "https://www.havetarena.no/faq",
+      "label": "havetarena.no",
+      "page": "HAVET Arena – faq",
+      "publisher": "havetarena.no",
+      "checkedAt": "2026-09-14"
+    },
+    {
+      "id": "utv-20260914-16",
+      "url": "https://ws.geonorge.no/adresser/v1/sok?sok=Strandveien+104&kommunenummer=5001&utkoordsys=4258&treffPerSide=10",
+      "label": "Kartverket",
+      "page": "Adressepunkt: Strandveien 104",
+      "publisher": "Kartverket",
+      "checkedAt": "2026-09-14"
+    },
+    {
+      "id": "utv-20260914-17",
+      "url": "https://rosendalteater.no/rosendal-kafe",
+      "label": "rosendalteater.no",
+      "page": "Rosendal Teater og Kafé – rosendal-kafe",
+      "publisher": "rosendalteater.no",
+      "checkedAt": "2026-09-14"
+    },
+    {
+      "id": "utv-20260914-18",
+      "url": "https://rosendalteater.no/om/hva-er-rosendal-teater",
+      "label": "rosendalteater.no",
+      "page": "Rosendal Teater og Kafé – hva-er-rosendal-teater",
+      "publisher": "rosendalteater.no",
+      "checkedAt": "2026-09-14"
+    },
+    {
+      "id": "utv-20260914-19",
+      "url": "https://rosendalteater.no/om/praktisk-info",
+      "label": "rosendalteater.no",
+      "page": "Rosendal Teater og Kafé – praktisk-info",
+      "publisher": "rosendalteater.no",
+      "checkedAt": "2026-09-14"
+    },
+    {
+      "id": "utv-20260914-20",
+      "url": "https://ws.geonorge.no/adresser/v1/sok?sok=Innherredsveien+73&kommunenummer=5001&utkoordsys=4258&treffPerSide=10",
+      "label": "Kartverket",
+      "page": "Adressepunkt: Innherredsveien 73",
+      "publisher": "Kartverket",
+      "checkedAt": "2026-09-14"
+    },
+    {
+      "id": "utv-20260914-21",
+      "url": "https://monkeybrew.no/",
+      "label": "monkeybrew.no",
+      "page": "Monkey Brew – ",
+      "publisher": "monkeybrew.no",
+      "checkedAt": "2026-09-14"
+    },
+    {
+      "id": "utv-20260914-22",
+      "url": "https://monkeybrew.no/shop",
+      "label": "monkeybrew.no",
+      "page": "Monkey Brew – shop",
+      "publisher": "monkeybrew.no",
+      "checkedAt": "2026-09-14"
+    },
+    {
+      "id": "utv-20260914-23",
+      "url": "https://monkeybrew.no/contact",
+      "label": "monkeybrew.no",
+      "page": "Monkey Brew – contact",
+      "publisher": "monkeybrew.no",
+      "checkedAt": "2026-09-14"
+    },
+    {
+      "id": "utv-20260914-24",
+      "url": "https://ws.geonorge.no/adresser/v1/sok?sok=Kobbes+gate+10&kommunenummer=5001&utkoordsys=4258&treffPerSide=10",
+      "label": "Kartverket",
+      "page": "Adressepunkt: Kobbes gate 10",
+      "publisher": "Kartverket",
+      "checkedAt": "2026-09-14"
+    },
+    {
+      "id": "utv-20260914-25",
+      "url": "https://www.trondheim.kommune.no/org/oppvekst/private-barnehager/lademoen-barnehage/",
+      "label": "trondheim.kommune.no",
+      "page": "Lademoen barnehage – lademoen-barnehage",
+      "publisher": "trondheim.kommune.no",
+      "checkedAt": "2026-09-14"
+    },
+    {
+      "id": "utv-20260914-26",
+      "url": "https://ta-lademoen.no/index.html",
+      "label": "ta-lademoen.no",
+      "page": "Lademoen barnehage – index.html",
+      "publisher": "ta-lademoen.no",
+      "checkedAt": "2026-09-14"
+    },
+    {
+      "id": "utv-20260914-27",
+      "url": "https://ta-lademoen.no/pedagogisk-profil.html",
+      "label": "ta-lademoen.no",
+      "page": "Lademoen barnehage – pedagogisk-profil.html",
+      "publisher": "ta-lademoen.no",
+      "checkedAt": "2026-09-14"
+    },
+    {
+      "id": "utv-20260914-28",
+      "url": "https://ws.geonorge.no/adresser/v1/sok?sok=%C3%98stersunds+gate+3&kommunenummer=5001&utkoordsys=4258&treffPerSide=10",
+      "label": "Kartverket",
+      "page": "Adressepunkt: Østersunds gate 3",
+      "publisher": "Kartverket",
+      "checkedAt": "2026-09-14"
+    },
+    {
+      "id": "utv-20260914-29",
+      "url": "https://www.trondheim.kommune.no/org/oppvekst/barnehager/svartlamon-remida-bhg/",
+      "label": "trondheim.kommune.no",
+      "page": "Svartlamon kunst- og kulturbarnehage – svartlamon-remida-bhg",
+      "publisher": "trondheim.kommune.no",
+      "checkedAt": "2026-09-14"
+    },
+    {
+      "id": "utv-20260914-30",
+      "url": "https://virksomhet.brreg.no/nb/oppslag/underenheter/988517585",
+      "label": "virksomhet.brreg.no",
+      "page": "Svartlamon kunst- og kulturbarnehage – 988517585",
+      "publisher": "virksomhet.brreg.no",
+      "checkedAt": "2026-09-14"
+    },
+    {
+      "id": "utv-20260914-31",
+      "url": "https://kunstkultursenteret.no/ressursbase/a-forvandle-en-bilbutikk-til-barnehage-barna-som-aktive-deltakere-i-prosessen/",
+      "label": "kunstkultursenteret.no",
+      "page": "Svartlamon kunst- og kulturbarnehage – a-forvandle-en-bilbutikk-til-barnehage-barna-som-aktive-deltakere-i-prosessen",
+      "publisher": "kunstkultursenteret.no",
+      "checkedAt": "2026-09-14"
+    },
+    {
+      "id": "utv-20260914-32",
+      "url": "https://ws.geonorge.no/adresser/v1/sok?sok=Strandveien+33&kommunenummer=5001&utkoordsys=4258&treffPerSide=10",
+      "label": "Kartverket",
+      "page": "Adressepunkt: Strandveien 33",
+      "publisher": "Kartverket",
+      "checkedAt": "2026-09-14"
+    },
+    {
+      "id": "utv-20260914-33",
+      "url": "https://www.trondheim.kommune.no/tema/kultur-og-fritid/aktivitetstilbudkulturtilbud/fritidsklubber/lade-fritidsklubb/",
+      "label": "trondheim.kommune.no",
+      "page": "Lade fritidsklubb – lade-fritidsklubb",
+      "publisher": "trondheim.kommune.no",
+      "checkedAt": "2026-09-14"
+    },
+    {
+      "id": "utv-20260914-34",
+      "url": "https://ws.geonorge.no/adresser/v1/sok?sok=H%C3%A5kon+Magnussons+gate+5&kommunenummer=5001&utkoordsys=4258&treffPerSide=10",
+      "label": "Kartverket",
+      "page": "Adressepunkt: Håkon Magnussons gate 5",
+      "publisher": "Kartverket",
+      "checkedAt": "2026-09-14"
+    },
+    {
+      "id": "utv-20260914-35",
+      "url": "https://www.trondheim.kommune.no/tema/kultur-og-fritid/park-og-mark/parker-og-byrom/strandveiparken/",
+      "label": "trondheim.kommune.no",
+      "page": "Strandveiparken – strandveiparken",
+      "publisher": "trondheim.kommune.no",
+      "checkedAt": "2026-09-14"
+    },
+    {
+      "id": "utv-20260914-36",
+      "url": "https://kart.trondheim.kommune.no/geoserver/ows?service=WFS&version=1.0.0&request=GetFeature&typeName=anleggsregister%3Av_parker_centroid&outputFormat=application%2Fjson&srsName=EPSG%3A4326",
+      "label": "Trondheim kommune",
+      "page": "Parkregister – kartgeometri og representative senterpunkter",
+      "publisher": "Trondheim kommune",
+      "checkedAt": "2026-09-14"
+    },
+    {
+      "id": "utv-20260914-37",
+      "url": "https://www.trondheim.kommune.no/tema/kultur-og-fritid/park-og-mark/badeplasser/badeplasser-i-saltvann/strandveikaia-nyhavna/",
+      "label": "trondheim.kommune.no",
+      "page": "Strandveikaia badeplass – strandveikaia-nyhavna",
+      "publisher": "trondheim.kommune.no",
+      "checkedAt": "2026-09-14"
+    },
+    {
+      "id": "utv-20260914-38",
+      "url": "https://www.google.com/maps/search/?api=1&query=63.44203222875,10.42498068875",
+      "label": "Lagret kartpunkt",
+      "page": "Strandveikaia badeplass – omtrentlig plassering fra Nyhavna-snapshot",
+      "publisher": "Placy",
+      "checkedAt": "2026-09-14"
+    },
+    {
+      "id": "utv-20260914-39",
+      "url": "https://www.rodekors.no/lokalforeninger/trondelag/trondheim/aktiviteter-og-kurs/sosialinkludering/bua/",
+      "label": "rodekors.no",
+      "page": "BUA Lademoen – bua",
+      "publisher": "rodekors.no",
+      "checkedAt": "2026-09-14"
+    },
+    {
+      "id": "utv-20260914-40",
+      "url": "https://www.rodekors.no/lokalforeninger/trondelag/trondheim/aktuelt/2026/apningsfest/",
+      "label": "rodekors.no",
+      "page": "BUA Lademoen – apningsfest",
+      "publisher": "rodekors.no",
+      "checkedAt": "2026-09-14"
+    },
+    {
+      "id": "utv-20260914-41",
+      "url": "https://ws.geonorge.no/adresser/v1/sok?sok=Innherredsveien+91&kommunenummer=5001&utkoordsys=4258&treffPerSide=10",
+      "label": "Kartverket",
+      "page": "Adressepunkt: Innherredsveien 91",
+      "publisher": "Kartverket",
+      "checkedAt": "2026-09-14"
+    },
+    {
+      "id": "utv-20260914-42",
+      "url": "https://www.trondheim.kommune.no/tema/kultur-og-fritid/park-og-mark/parker-og-byrom/buranbanen/",
+      "label": "trondheim.kommune.no",
+      "page": "Buranbanen – buranbanen",
+      "publisher": "trondheim.kommune.no",
+      "checkedAt": "2026-09-14"
+    }
+  ],
+  "coordinateAudit": [
+    {
+      "id": "ec-dahls",
+      "coordinates": {
+        "lat": 63.44087738940128,
+        "lng": 10.427008893459815
+      },
+      "sourceId": "utv-20260914-02",
+      "note": "Kartpunktet viser adressen, ikke en kontrollert inngang."
+    },
+    {
+      "id": "ramp",
+      "coordinates": {
+        "lat": 63.43802337857259,
+        "lng": 10.421551819906638
+      },
+      "sourceId": "utv-20260914-05",
+      "note": "Kartpunktet viser adressen, ikke en kontrollert inngang."
+    },
+    {
+      "id": "una-solsiden",
+      "coordinates": {
+        "lat": 63.43525224659627,
+        "lng": 10.410412377188472
+      },
+      "sourceId": "utv-20260914-08",
+      "note": "Kartpunktet viser adressen, ikke en kontrollert inngang."
+    },
+    {
+      "id": "godt-brod-solsiden",
+      "coordinates": {
+        "lat": 63.43523563981423,
+        "lng": 10.412095335856362
+      },
+      "sourceId": "utv-20260914-10",
+      "note": "Kartpunktet viser adressen, ikke en kontrollert inngang."
+    },
+    {
+      "id": "sabrura-solsiden",
+      "coordinates": {
+        "lat": 63.43565021871486,
+        "lng": 10.416465567510546
+      },
+      "sourceId": "utv-20260914-13",
+      "note": "Kartpunktet viser adressen, ikke en kontrollert inngang."
+    },
+    {
+      "id": "havet-arena",
+      "coordinates": {
+        "lat": 63.441461519275904,
+        "lng": 10.42501538435317
+      },
+      "sourceId": "utv-20260914-16",
+      "note": "Kartpunktet viser adressen, ikke en kontrollert inngang."
+    },
+    {
+      "id": "rosendal-teater",
+      "coordinates": {
+        "lat": 63.43668599265991,
+        "lng": 10.432509045023487
+      },
+      "sourceId": "utv-20260914-20",
+      "note": "Kartpunktet viser adressen, ikke en kontrollert inngang."
+    },
+    {
+      "id": "monkey-brew",
+      "coordinates": {
+        "lat": 63.44057097990753,
+        "lng": 10.420818632252876
+      },
+      "sourceId": "utv-20260914-24",
+      "note": "Kartpunktet viser adressen, ikke en kontrollert inngang. Utsalget oppgir inngang på østsiden, overfor HAVET."
+    },
+    {
+      "id": "lademoen-bhg",
+      "coordinates": {
+        "lat": 63.436869354029895,
+        "lng": 10.42115643733528
+      },
+      "sourceId": "utv-20260914-28",
+      "note": "Kartpunktet viser adressen, ikke en kontrollert inngang."
+    },
+    {
+      "id": "svartlamon-bhg",
+      "coordinates": {
+        "lat": 63.43862109341741,
+        "lng": 10.422826993232965
+      },
+      "sourceId": "utv-20260914-32",
+      "note": "Kartpunktet viser adressen, ikke en kontrollert inngang."
+    },
+    {
+      "id": "lade-fritidsklubb",
+      "coordinates": {
+        "lat": 63.443679017389776,
+        "lng": 10.442126415185394
+      },
+      "sourceId": "utv-20260914-34",
+      "note": "Kartpunktet viser adressen, ikke en kontrollert inngang."
+    },
+    {
+      "id": "strandveiparken",
+      "coordinates": {
+        "lat": 63.436710288130335,
+        "lng": 10.41793924845744
+      },
+      "sourceId": "utv-20260914-36",
+      "note": "Kartpunktet viser parkens representative senter fra kommunens parkregister, ikke en kontrollert inngang."
+    },
+    {
+      "id": "strandveikaia-badeplass",
+      "coordinates": {
+        "lat": 63.44203222875,
+        "lng": 10.42498068875
+      },
+      "sourceId": "utv-20260914-38",
+      "note": "Omtrentlig punkt fra demoens lagrede kartgrunnlag. Kommunen bekrefter badeplassen ved HAVET; nøyaktig adkomst er ikke kontrollert."
+    },
+    {
+      "id": "bua-lademoen",
+      "coordinates": {
+        "lat": 63.43696180715256,
+        "lng": 10.437057690417996
+      },
+      "sourceId": "utv-20260914-41",
+      "note": "Kartpunktet viser adressen, ikke en kontrollert inngang."
+    },
+    {
+      "id": "buranbanen",
+      "coordinates": {
+        "lat": 63.43532549125392,
+        "lng": 10.423033695576043
+      },
+      "sourceId": "utv-20260914-36",
+      "note": "Kartpunktet viser parkens representative senter fra kommunens parkregister, ikke en kontrollert inngang."
+    }
+  ]
+}

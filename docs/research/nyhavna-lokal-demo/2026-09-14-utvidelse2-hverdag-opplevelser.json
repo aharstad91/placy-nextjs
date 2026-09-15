@@ -1,0 +1,302 @@
+{
+  "checkedAt": "2026-09-14",
+  "reviewed": 8,
+  "included": 8,
+  "replaced": 0,
+  "scope": "Research for åtte nye steder. Ingen aktiv demoendring; koordinater og ruter håndteres ved integrasjon.",
+  "candidates": [
+    {
+      "id": "rockheim",
+      "name": "Rockheim",
+      "category": "opplevelser",
+      "placeType": "Museum",
+      "address": "Brattørkaia 14",
+      "summary": "Musikkmuseum på Brattøra der man kan utforske norsk populærmusikk gjennom en interaktiv hovedutstilling.",
+      "facts": [
+        {
+          "text": "Rockheim er det nasjonale museet for populærmusikk.",
+          "sourceUrl": "https://rockheim.no/slik-finner-du-oss"
+        },
+        {
+          "text": "Den faste hovedutstillingen følger norsk populærmusikk fra 1950-tallet til nyere tid, med interaktive innslag som inviterer publikum til å delta.",
+          "sourceUrl": "https://rockheim.no/hovedutstillingen"
+        }
+      ],
+      "sources": [
+        {
+          "url": "https://rockheim.no/hovedutstillingen",
+          "label": "Rockheim – Hovedutstillingen",
+          "page": "Rockheim – Hovedutstillingen",
+          "publisher": "Rockheim / Museene i Sør-Trøndelag"
+        },
+        {
+          "url": "https://rockheim.no/slik-finner-du-oss",
+          "label": "Rockheim – Slik finner du oss",
+          "page": "Rockheim – Slik finner du oss",
+          "publisher": "Rockheim / Museene i Sør-Trøndelag"
+        }
+      ],
+      "caveats": [
+        "Program, særutstillinger og omvisninger må sjekkes for besøksdatoen.",
+        "Kildeteksten ble kontrollert via primærkildens søkeindekserte fulltekst; direkte open returnerte 403."
+      ],
+      "checkedAt": "2026-09-14",
+      "decision": "inkluder"
+    },
+    {
+      "id": "pirbadet",
+      "name": "Pirbadet",
+      "category": "opplevelser",
+      "placeType": "Badeanlegg",
+      "address": "Havnegata 12",
+      "summary": "Innendørs badeanlegg ved fjorden, med tilbud for både lek og svømming.",
+      "facts": [
+        {
+          "text": "Anlegget har bølgebasseng, vannsklier og et 50-meters idrettsbasseng.",
+          "sourceUrl": "https://www.pirbadet.no/badeopplevelser"
+        },
+        {
+          "text": "Småbarnsområdet er formet som Selbusjøen, Nidelva og Trondheimsfjorden og har leker og vannkanoner.",
+          "sourceUrl": "https://www.pirbadet.no/badeopplevelser"
+        }
+      ],
+      "sources": [
+        {
+          "url": "https://www.pirbadet.no/badeopplevelser",
+          "label": "Pirbadet – Badeopplevelser",
+          "page": "Pirbadet – Badeopplevelser",
+          "publisher": "Stiftelsen Trondheim Pirbad"
+        },
+        {
+          "url": "https://www.pirbadet.no/baderegler",
+          "label": "Pirbadet – Baderegler",
+          "page": "Pirbadet – Baderegler",
+          "publisher": "Stiftelsen Trondheim Pirbad"
+        }
+      ],
+      "caveats": [
+        "Barn under 10 år skal ifølge Pirbadets regler følges av en badende voksen over 16 år.",
+        "Attraksjoner og bassengbaner kan være reservert eller midlertidig utilgjengelige; ikke lov tilgang til alle tilbud ved et bestemt besøk."
+      ],
+      "checkedAt": "2026-09-14",
+      "decision": "inkluder"
+    },
+    {
+      "id": "dokkhuset",
+      "name": "Dokkhuset",
+      "category": "opplevelser",
+      "placeType": "Konsertscene",
+      "address": "Dokkparken 4",
+      "summary": "Konsertscene på Solsiden med jazz, kammermusikk og flere andre musikalske uttrykk.",
+      "facts": [
+        {
+          "text": "Konsertprogrammet omfatter blant annet jazz og kammermusikk.",
+          "sourceUrl": "https://dokkhuset.no/?p=9899&post_type=post"
+        },
+        {
+          "text": "Programmet inneholder også familieforestillinger; aldersgrensen oppgis for hvert arrangement.",
+          "sourceUrl": "https://dokkhuset.no/?p=9899&post_type=post"
+        }
+      ],
+      "sources": [
+        {
+          "url": "https://dokkhuset.no/?p=9899&post_type=post",
+          "label": "Dokkhuset – Program",
+          "page": "Dokkhuset – Program",
+          "publisher": "Dokkhuset Scene"
+        },
+        {
+          "url": "https://dokkhuset.no/footer/",
+          "label": "Dokkhuset – Besøksadresse",
+          "page": "Dokkhuset – Besøksadresse",
+          "publisher": "Dokkhuset Scene"
+        }
+      ],
+      "caveats": [
+        "Sjekk program, billetter og aldersgrense for det enkelte arrangement.",
+        "Ikke presenter en familieforestilling som et daglig eller fast ukentlig tilbud."
+      ],
+      "checkedAt": "2026-09-14",
+      "decision": "inkluder"
+    },
+    {
+      "id": "apotek-1-solsiden",
+      "name": "Apotek 1 Solsiden",
+      "category": "hverdagsliv",
+      "placeType": "Apotek",
+      "address": "Beddingen 10",
+      "summary": "Apotek i første etasje på Solsiden kjøpesenter, som kan inngå i den vanlige handleturen.",
+      "facts": [
+        {
+          "text": "Apoteket ligger i første etasje på Solsiden kjøpesenter.",
+          "sourceUrl": "https://www.solsidensenter.no/store/apotek1-solsiden-2/"
+        },
+        {
+          "text": "Butikken fører apotekvarer samt blant annet produkter for hud- og hårpleie.",
+          "sourceUrl": "https://www.solsidensenter.no/store/apotek1-solsiden-2/"
+        }
+      ],
+      "sources": [
+        {
+          "url": "https://www.solsidensenter.no/store/apotek1-solsiden-2/",
+          "label": "Solsiden – Apotek 1 Solsiden",
+          "page": "Solsiden – Apotek 1 Solsiden",
+          "publisher": "Solsiden kjøpesenter"
+        },
+        {
+          "url": "https://virksomhet.brreg.no/nb/oppslag/underenheter/913462696",
+          "label": "Apotek 1 Solsiden – Beliggenhetsadresse",
+          "page": "Apotek 1 Solsiden – Beliggenhetsadresse",
+          "publisher": "Brønnøysundregistrene"
+        }
+      ],
+      "caveats": [
+        "Ingen garanti om lagerført medisin eller tilgjengelig kapasitet til tjenester.",
+        "Eldre helse- og smittevernråd på senterets side er ikke tatt inn som innhold."
+      ],
+      "checkedAt": "2026-09-14",
+      "decision": "inkluder"
+    },
+    {
+      "id": "vinmonopolet-solsiden",
+      "name": "Vinmonopolet Solsiden",
+      "category": "hverdagsliv",
+      "placeType": "Vinmonopol",
+      "address": "Beddingen 10",
+      "summary": "Vinmonopol på Solsiden kjøpesenter, som gir flere typer ærender på samme senter.",
+      "facts": [
+        {
+          "text": "Vinmonopolet Solsiden ligger i første etasje på kjøpesenteret.",
+          "sourceUrl": "https://www.solsidensenter.no/store/vinmonopolet-solsiden-2/"
+        },
+        {
+          "text": "Senteret har også apotek og dagligvarebutikk, slik at ulike ærender kan samles på samme sted.",
+          "sourceUrl": "https://www.solsidensenter.no/store/vinmonopolet-solsiden-2/"
+        }
+      ],
+      "sources": [
+        {
+          "url": "https://www.solsidensenter.no/store/vinmonopolet-solsiden-2/",
+          "label": "Solsiden – Vinmonopolet Solsiden",
+          "page": "Solsiden – Vinmonopolet Solsiden",
+          "publisher": "Solsiden kjøpesenter"
+        },
+        {
+          "url": "https://www.solsidensenter.no/finn-frem/",
+          "label": "Solsiden – Finn frem",
+          "page": "Solsiden – Finn frem",
+          "publisher": "Solsiden kjøpesenter"
+        }
+      ],
+      "caveats": [
+        "Senteradressen brukes som kartadresse; den viser ikke butikkens interne inngang.",
+        "Ikke lov bestemt vareutvalg eller lagerstatus."
+      ],
+      "checkedAt": "2026-09-14",
+      "decision": "inkluder"
+    },
+    {
+      "id": "rema-1000-solsiden",
+      "name": "REMA 1000 Solsiden",
+      "category": "hverdagsliv",
+      "placeType": "Dagligvare",
+      "address": "Dyre Halses gate 1A",
+      "summary": "Dagligvarebutikk i Dyre Halses gate, et alternativ for matinnkjøp i Solsiden-området.",
+      "facts": [
+        {
+          "text": "REMA 1000s egen butikkoversikt oppgir Solsiden-butikken i Dyre Halses gate 1A.",
+          "sourceUrl": "https://www.rema.no/emvleverandorer/fakturainformasjon-rema-1000-butikker/"
+        },
+        {
+          "text": "Virksomheten er registrert for detaljhandel med bredt vareutvalg, med hovedvekt på mat- og drikkevarer.",
+          "sourceUrl": "https://virksomhet.brreg.no/nn/oppslag/enheter/929958667"
+        }
+      ],
+      "sources": [
+        {
+          "url": "https://www.rema.no/emvleverandorer/fakturainformasjon-rema-1000-butikker/",
+          "label": "REMA 1000 – Butikkoversikt og adresser",
+          "page": "REMA 1000 – Butikkoversikt og adresser",
+          "publisher": "REMA 1000"
+        },
+        {
+          "url": "https://virksomhet.brreg.no/nn/oppslag/enheter/929958667",
+          "label": "REMA 1000 Solsiden – Virksomhetsopplysninger",
+          "page": "REMA 1000 Solsiden – Virksomhetsopplysninger",
+          "publisher": "Brønnøysundregistrene"
+        }
+      ],
+      "caveats": [
+        "Ikke presenter butikken som en del av selve Solsiden kjøpesenter i Beddingen.",
+        "Søndagsåpning, pakkehenting og andre tilleggstjenester er ikke bekreftet i primærkildene og er utelatt."
+      ],
+      "checkedAt": "2026-09-14",
+      "decision": "inkluder"
+    },
+    {
+      "id": "leos-lekeland-trondheim",
+      "name": "Leo's Lekeland Trondheim",
+      "category": "barn-oppvekst",
+      "placeType": "Lekeland",
+      "address": "Ladebekken 6",
+      "summary": "Innendørs lekeland på Lade for aktiv lek og familiebesøk.",
+      "facts": [
+        {
+          "text": "Lekelandet legger til rette for blant annet løping, hopping og klatring innendørs.",
+          "sourceUrl": "https://www.leoslekeland.no/vare-lekeland/trondheim"
+        },
+        {
+          "text": "Har bistro og mulighet for å bestille barnebursdag.",
+          "sourceUrl": "https://www.leoslekeland.no/vare-lekeland/trondheim"
+        }
+      ],
+      "sources": [
+        {
+          "url": "https://www.leoslekeland.no/vare-lekeland/trondheim",
+          "label": "Leo's Lekeland – Trondheim",
+          "page": "Leo's Lekeland – Trondheim",
+          "publisher": "Leo's Lekeland"
+        }
+      ],
+      "caveats": [
+        "Barn er under foresattes ansvar og kan ikke være alene i lekelandet.",
+        "Besøk og bursdager må følge lekelandets booking- og besøksvilkår.",
+        "Siden har en åpenbar Bergen-tekstfeil i bursdagsavsnittet; bare tilbudet som også bekreftes i Trondheim-sidens øvrige innhold er brukt."
+      ],
+      "checkedAt": "2026-09-14",
+      "decision": "inkluder"
+    },
+    {
+      "id": "lade-motor",
+      "name": "Lade Motor",
+      "category": "barn-oppvekst",
+      "placeType": "Fritidstilbud",
+      "address": "Håkon Magnussons gate 5",
+      "summary": "Kommunalt fritidstilbud for ungdom fra 13 år som vil delta fast i bilcross og mekanikk.",
+      "facts": [
+        {
+          "text": "Ungdommene arbeider med service og reparasjon av løpsbiler på verkstedet og deltar i bilcrossløp i sesongen.",
+          "sourceUrl": "https://www.trondheim.kommune.no/tema/kultur-og-fritid/aktivitetstilbudkulturtilbud/fritidsklubber/lade-motor/"
+        },
+        {
+          "text": "Tilbudet er for ungdom fra 13 år og bygger på fast deltakelse over tid; rekruttering skjer i samarbeid med skole, andre fritidstilbud eller Barne- og familietjenesten.",
+          "sourceUrl": "https://www.trondheim.kommune.no/tema/kultur-og-fritid/aktivitetstilbudkulturtilbud/fritidsklubber/lade-motor/"
+        }
+      ],
+      "sources": [
+        {
+          "url": "https://www.trondheim.kommune.no/tema/kultur-og-fritid/aktivitetstilbudkulturtilbud/fritidsklubber/lade-motor/",
+          "label": "Trondheim kommune – Lade Motor",
+          "page": "Trondheim kommune – Lade Motor",
+          "publisher": "Trondheim kommune"
+        }
+      ],
+      "caveats": [
+        "Dette er en forpliktende aktivitet, ikke generell drop-in. Kontakt tilbudet for å avklare deltakelse.",
+        "Deler bygg med Lade fritidsklubb, men har andre besøks- og deltakelsesvilkår."
+      ],
+      "checkedAt": "2026-09-14",
+      "decision": "inkluder"
+    }
+  ]
+}

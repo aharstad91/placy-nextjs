@@ -1,0 +1,40 @@
+{
+  "before": {
+    "id": "trening",
+    "categoryId": "trening-aktivitet",
+    "placeIds": [
+      "nyhavna-padel",
+      "crossfit-trondheim",
+      "pool-3t-solsiden"
+    ],
+    "text": "Hvis du vil trene, finnes det flere ulike tilbud i nærheten. Hos Nyhavna Padel ved E.C. Dahls kan du spille padel, omtrent åtte minutter å gå fra Nyhavna. CrossFit Trondheim tilbyr CrossFit, og 3T-Solsiden er et alternativ hvis du ser etter et treningssenter. Dette er noen av treningsmulighetene i nærheten.",
+    "sourceIds": [
+      "demo-padel",
+      "demo-route",
+      "reserve-crossfit-trondheim",
+      "source-pool-3t-solsiden"
+    ],
+    "checkedAt": "2026-09-14"
+  },
+  "after": {
+    "id": "trening",
+    "categoryId": "trening-aktivitet",
+    "placeIds": [
+      "nyhavna-padel",
+      "crossfit-trondheim",
+      "pool-3t-solsiden",
+      "flex-gym",
+      "buld-no"
+    ],
+    "text": "Hvis du vil trene, finnes det flere ulike tilbud i nærheten. Hos Nyhavna Padel ved E.C. Dahls kan du spille padel, omtrent åtte minutter å gå fra Nyhavna. CrossFit Trondheim tilbyr CrossFit, og 3T-Solsiden er et alternativ hvis du ser etter et treningssenter. Flex Gym er et døgnåpent treningssenter på Lade. Buld.no i Ormen Langes vei har buldring og klatreskole for barn.",
+    "sourceIds": [
+      "demo-padel",
+      "demo-route",
+      "reserve-crossfit-trondheim",
+      "source-pool-3t-solsiden",
+      "aktivitet-20260914-02",
+      "aktivitet-20260914-05"
+    ],
+    "checkedAt": "2026-09-14"
+  }
+}

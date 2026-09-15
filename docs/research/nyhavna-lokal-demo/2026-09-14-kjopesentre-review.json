@@ -1,0 +1,354 @@
+{
+  "status": "complete",
+  "verdict": "Ready with fixes",
+  "scope": {
+    "base": "123bba4830af66205b44f61555054345c6c008e8",
+    "branch": "main",
+    "head_sha": "123bba4830af66205b44f61555054345c6c008e8",
+    "pr_url": null,
+    "files_changed": 7
+  },
+  "intent": "Represent shopping centres as one map destination with documented members, while preserving individual searchable voice facts and centre map IDs. Full directory in owning theme; matching members in other themes.",
+  "intent_confidence": "explicit",
+  "reviewers": [
+    "correctness",
+    "project-standards",
+    "testing",
+    "maintainability",
+    "performance",
+    "agent-native",
+    "adversarial-claude"
+  ],
+  "findings": [
+    {
+      "#": 1,
+      "autofix_class": "gated_auto",
+      "confidence": 75,
+      "evidence": [
+        "lib/demo/nyhavna-lokal/board.ts:232 -- matches.set(destination.id, scoped ? { ...destination, childPOIs: scoped } : destination);",
+        "lib/realtime/board-tools.ts:82 -- const poi = typeof args.poi_id === \"string\" ? findBoardPOI(data.categories, args.poi_id) : null;",
+        "components/variants/report/board/board-data.ts:291-293 -- `preferCategoryId` velger kopien fra den kategorien brukeren faktisk st\u00e5r i; uten den fikk man alltid den f\u00f8rste i kategori-rekkef\u00f8lgen",
+        "lib/demo/nyhavna-lokal/presentation.ts:78 -- directives: [{ name: \"highlight_places\", args: { poi_ids: mapIds([target.id]) } }, { name: \"show_place\", args: { poi_id: mapIdByPlace.get(target.id) ?? target.id } }],",
+        "lib/realtime/board-tools.ts:56 calls findBoardPOI(data.categories, id), and lines 61-64 select the category of that first match when followHighlightCategory is enabled. Lines 82 and 86 repeat the unqualified lookup and category navigation for show_place.",
+        "components/variants/report/board/board-data.ts:299-316 already supports preferCategoryId explicitly because centre copies carry different scoped registers; without it the function iterates from the first category.",
+        "components/variants/report/board/voice/board-voice.tsx:147 passes followHighlightCategory: localDemo, so the local demo actually executes the category switch. The shopping-centres fixture creates both Hverdag and Servering copies but its tests do not execute the browser directives."
+      ],
+      "file": "lib/demo/nyhavna-lokal/board.ts",
+      "first_evidence": "lib/demo/nyhavna-lokal/board.ts:232 -- matches.set(destination.id, scoped ? { ...destination, childPOIs: scoped } : destination);",
+      "independent_reviewers": [
+        "agent-native",
+        "correctness"
+      ],
+      "line": 232,
+      "owner": "downstream-resolver",
+      "pre_existing": false,
+      "requires_verification": true,
+      "reviewers": [
+        "agent-native",
+        "correctness"
+      ],
+      "severity": "P1",
+      "suggested_fix": "Pass the active theme into findBoardPOI for highlight_places and show_place in executeBoardTool, using the existing preferCategoryId argument, and keep boardToolTargets consistent with that resolved theme. When a presentation directive needs to select a different theme, carry the intended category explicitly or ensure the browser's current theme is updated before resolution. Add a regression that executes find_similar_places directives for a centre caf\u00e9 while Servering is active and asserts that Servering and its scoped member register remain selected.",
+      "title": "Preserve the active theme when showing centre members",
+      "why_it_matters": "Opening a centre from a food-theme answer can move the user to the first category containing that centre and display that category's child register. The UI already models centre copies as category-scoped and `findBoardPOI` supports a preferred category, so passing the current category lets the agent open the same centre card the user would see in that context.",
+      "validation_status": "confirmed",
+      "validation_reason": "When a centre ID exists in both Hverdagsliv and Servering and Servering is active, lib/realtime/board-tools.ts:56 and :82 omit state.activeCategoryId from findBoardPOI, whose documented fallback at components/variants/report/board/board-data.ts:311-314 returns the first category copy and then navigates there at board-tools.ts:61-64/:86; the shopping fixture makes this state reachable, although no browser-directive test measures it.",
+      "protected_subject": null
+    },
+    {
+      "#": 3,
+      "autofix_class": "manual",
+      "confidence": 75,
+      "evidence": [
+        "lib/demo/nyhavna-lokal/presentation.ts:77 \u2014 `result: { matches: 1, place: target, ... }` \u2014 same leak on the similar-places path; only the directives were mapped (line 78).",
+        "lib/demo/nyhavna-lokal/voice.ts:301 \u2014 `STEDER OG REISETIDER (data): ${JSON.stringify(dataset.places.map(p => ({ id: p.id, ... })))}` \u2014 the instruction hands the model every store id as a first-class place id; buildCuratedProvider (voice.ts:186-189) was updated to carry `map_poi_id` but this block was not.",
+        "Consequence path: board-tools.ts:60 `return { error: `Ukjente kart-ID-er: ${rejected.join(\", \")}. Ingen steder ble fremhevet. ...` }` \u2014 the whole highlight fails when every requested id is a member id.",
+        "Before this change these ids were valid board POI ids, so the same model behaviour succeeded; the regression is introduced by removing members from `poisById`/`categories[].pois` (board.ts:307).",
+        "Direct inspection: radius.ts DISCOVERY_CATEGORIES contains only trening-aktivitet and natur-friluftsliv; current shopping members belong to Hverdag/Servering, so nearby/reveal examples are excluded from this claim."
+      ],
+      "file": "lib/demo/nyhavna-lokal/presentation.ts",
+      "first_evidence": "lib/demo/nyhavna-lokal/presentation.ts:78 -- directives: [{ name: \"highlight_places\", args: { poi_ids: mapIds([target.id]) } }, { name: \"show_place\", args: { poi_id: mapIdByPlace.get(target.id) ?? target.id } }],",
+      "independent_reviewers": [
+        "adversarial-claude"
+      ],
+      "line": 78,
+      "owner": "downstream-resolver",
+      "pre_existing": false,
+      "requires_verification": true,
+      "reviewers": [
+        "adversarial-claude"
+      ],
+      "severity": "P2",
+      "suggested_fix": "Expose map_poi_id alongside child knowledge IDs in similar().place and the STEDER OG REISETIDER prompt using parentPlaceId ?? id, matching buildCuratedProvider. Add a test that both emitted model-facing objects preserve child id and expose the parent map id.",
+      "title": "Model-facing result payloads still carry non-map child ids",
+      "why_it_matters": "Shopping members lose their standalone map markers, but find_similar_places returns the child object without map_poi_id and the STEDER OG REISETIDER prompt lists child IDs without their map identity. A follow-up model-authored highlight using those IDs is rejected by board-tools.ts. The generated immediate directives are mapped correctly; the missing mapping affects follow-up actions from these model-facing data surfaces. Actual model incidence was not measured. Radius-only nearby/reveal payloads do not include the current shopping categories.",
+      "validation_status": "confirmed",
+      "validation_reason": "For a shopping child returned by find_similar_places, lib/demo/nyhavna-lokal/presentation.ts:77 exposes only the child id while :78 maps only the immediate directives, and voice.ts:301 likewise exposes child ids without map_poi_id even though board-tools.ts:56-60 rejects those ids after children were removed from board lookup; actual model-authored follow-up incidence was not measured.",
+      "protected_subject": null
+    },
+    {
+      "#": 4,
+      "autofix_class": "gated_auto",
+      "confidence": 75,
+      "evidence": [
+        "lib/demo/nyhavna-lokal/presentation.ts:78:       directives: [{ name: \"highlight_places\", args: { poi_ids: mapIds([target.id]) } }, { name: \"show_place\", args: { poi_id: mapIdByPlace.get(target.id) ?? target.id } }],",
+        "lib/demo/nyhavna-lokal/shopping-centres.test.ts:55:     expect(tour.execute('present_neighbourhood', { action: 'next' }).directives).toContainEqual({ name: 'highlight_places', args: { poi_ids: ['senter'] } });"
+      ],
+      "file": "lib/demo/nyhavna-lokal/presentation.ts",
+      "first_evidence": "lib/demo/nyhavna-lokal/presentation.ts:78:       directives: [{ name: \"highlight_places\", args: { poi_ids: mapIds([target.id]) } }, { name: \"show_place\", args: { poi_id: mapIdByPlace.get(target.id) ?? target.id } }],",
+      "independent_reviewers": [
+        "testing"
+      ],
+      "line": 78,
+      "owner": "downstream-resolver",
+      "pre_existing": false,
+      "requires_verification": true,
+      "reviewers": [
+        "testing"
+      ],
+      "severity": "P2",
+      "suggested_fix": "Add a shopping-centres test that executes find_similar_places with a source whose next similar target is a child store, then assert the returned highlight_places and show_place directives both use the parent centre ID. Arrange the fixture so this path deterministically selects the child target.",
+      "title": "Parent mapping lacks similar-place coverage",
+      "why_it_matters": "The similar-place path has its own map directives, so a regression here can highlight or open a child store ID that no longer exists in poisById even while the presentation-path test remains green. Users asking for a similar shop would then receive correct store narration but a missing or stale map selection.",
+      "validation_status": "confirmed",
+      "validation_reason": "The new shopping-centres test at lib/demo/nyhavna-lokal/shopping-centres.test.ts:51-56 exercises only present_neighbourhood, while find_similar_places follows the separate presentation.ts:66-79 branch and no test selects a child target to assert both mapped directives; targeted tests could not run because this frozen tree has no vitest executable.",
+      "protected_subject": null
+    }
+  ],
+  "actionable_findings": [
+    {
+      "#": 1,
+      "autofix_class": "gated_auto",
+      "confidence": 75,
+      "evidence": [
+        "lib/demo/nyhavna-lokal/board.ts:232 -- matches.set(destination.id, scoped ? { ...destination, childPOIs: scoped } : destination);",
+        "lib/realtime/board-tools.ts:82 -- const poi = typeof args.poi_id === \"string\" ? findBoardPOI(data.categories, args.poi_id) : null;",
+        "components/variants/report/board/board-data.ts:291-293 -- `preferCategoryId` velger kopien fra den kategorien brukeren faktisk st\u00e5r i; uten den fikk man alltid den f\u00f8rste i kategori-rekkef\u00f8lgen",
+        "lib/demo/nyhavna-lokal/presentation.ts:78 -- directives: [{ name: \"highlight_places\", args: { poi_ids: mapIds([target.id]) } }, { name: \"show_place\", args: { poi_id: mapIdByPlace.get(target.id) ?? target.id } }],",
+        "lib/realtime/board-tools.ts:56 calls findBoardPOI(data.categories, id), and lines 61-64 select the category of that first match when followHighlightCategory is enabled. Lines 82 and 86 repeat the unqualified lookup and category navigation for show_place.",
+        "components/variants/report/board/board-data.ts:299-316 already supports preferCategoryId explicitly because centre copies carry different scoped registers; without it the function iterates from the first category.",
+        "components/variants/report/board/voice/board-voice.tsx:147 passes followHighlightCategory: localDemo, so the local demo actually executes the category switch. The shopping-centres fixture creates both Hverdag and Servering copies but its tests do not execute the browser directives."
+      ],
+      "file": "lib/demo/nyhavna-lokal/board.ts",
+      "first_evidence": "lib/demo/nyhavna-lokal/board.ts:232 -- matches.set(destination.id, scoped ? { ...destination, childPOIs: scoped } : destination);",
+      "independent_reviewers": [
+        "agent-native",
+        "correctness"
+      ],
+      "line": 232,
+      "owner": "downstream-resolver",
+      "pre_existing": false,
+      "requires_verification": true,
+      "reviewers": [
+        "agent-native",
+        "correctness"
+      ],
+      "severity": "P1",
+      "suggested_fix": "Pass the active theme into findBoardPOI for highlight_places and show_place in executeBoardTool, using the existing preferCategoryId argument, and keep boardToolTargets consistent with that resolved theme. When a presentation directive needs to select a different theme, carry the intended category explicitly or ensure the browser's current theme is updated before resolution. Add a regression that executes find_similar_places directives for a centre caf\u00e9 while Servering is active and asserts that Servering and its scoped member register remain selected.",
+      "title": "Preserve the active theme when showing centre members",
+      "why_it_matters": "Opening a centre from a food-theme answer can move the user to the first category containing that centre and display that category's child register. The UI already models centre copies as category-scoped and `findBoardPOI` supports a preferred category, so passing the current category lets the agent open the same centre card the user would see in that context.",
+      "validation_status": "confirmed",
+      "validation_reason": "When a centre ID exists in both Hverdagsliv and Servering and Servering is active, lib/realtime/board-tools.ts:56 and :82 omit state.activeCategoryId from findBoardPOI, whose documented fallback at components/variants/report/board/board-data.ts:311-314 returns the first category copy and then navigates there at board-tools.ts:61-64/:86; the shopping fixture makes this state reachable, although no browser-directive test measures it.",
+      "protected_subject": null
+    },
+    {
+      "#": 3,
+      "autofix_class": "manual",
+      "confidence": 75,
+      "evidence": [
+        "lib/demo/nyhavna-lokal/presentation.ts:77 \u2014 `result: { matches: 1, place: target, ... }` \u2014 same leak on the similar-places path; only the directives were mapped (line 78).",
+        "lib/demo/nyhavna-lokal/voice.ts:301 \u2014 `STEDER OG REISETIDER (data): ${JSON.stringify(dataset.places.map(p => ({ id: p.id, ... })))}` \u2014 the instruction hands the model every store id as a first-class place id; buildCuratedProvider (voice.ts:186-189) was updated to carry `map_poi_id` but this block was not.",
+        "Consequence path: board-tools.ts:60 `return { error: `Ukjente kart-ID-er: ${rejected.join(\", \")}. Ingen steder ble fremhevet. ...` }` \u2014 the whole highlight fails when every requested id is a member id.",
+        "Before this change these ids were valid board POI ids, so the same model behaviour succeeded; the regression is introduced by removing members from `poisById`/`categories[].pois` (board.ts:307).",
+        "Direct inspection: radius.ts DISCOVERY_CATEGORIES contains only trening-aktivitet and natur-friluftsliv; current shopping members belong to Hverdag/Servering, so nearby/reveal examples are excluded from this claim."
+      ],
+      "file": "lib/demo/nyhavna-lokal/presentation.ts",
+      "first_evidence": "lib/demo/nyhavna-lokal/presentation.ts:78 -- directives: [{ name: \"highlight_places\", args: { poi_ids: mapIds([target.id]) } }, { name: \"show_place\", args: { poi_id: mapIdByPlace.get(target.id) ?? target.id } }],",
+      "independent_reviewers": [
+        "adversarial-claude"
+      ],
+      "line": 78,
+      "owner": "downstream-resolver",
+      "pre_existing": false,
+      "requires_verification": true,
+      "reviewers": [
+        "adversarial-claude"
+      ],
+      "severity": "P2",
+      "suggested_fix": "Expose map_poi_id alongside child knowledge IDs in similar().place and the STEDER OG REISETIDER prompt using parentPlaceId ?? id, matching buildCuratedProvider. Add a test that both emitted model-facing objects preserve child id and expose the parent map id.",
+      "title": "Model-facing result payloads still carry non-map child ids",
+      "why_it_matters": "Shopping members lose their standalone map markers, but find_similar_places returns the child object without map_poi_id and the STEDER OG REISETIDER prompt lists child IDs without their map identity. A follow-up model-authored highlight using those IDs is rejected by board-tools.ts. The generated immediate directives are mapped correctly; the missing mapping affects follow-up actions from these model-facing data surfaces. Actual model incidence was not measured. Radius-only nearby/reveal payloads do not include the current shopping categories.",
+      "validation_status": "confirmed",
+      "validation_reason": "For a shopping child returned by find_similar_places, lib/demo/nyhavna-lokal/presentation.ts:77 exposes only the child id while :78 maps only the immediate directives, and voice.ts:301 likewise exposes child ids without map_poi_id even though board-tools.ts:56-60 rejects those ids after children were removed from board lookup; actual model-authored follow-up incidence was not measured.",
+      "protected_subject": null
+    },
+    {
+      "#": 4,
+      "autofix_class": "gated_auto",
+      "confidence": 75,
+      "evidence": [
+        "lib/demo/nyhavna-lokal/presentation.ts:78:       directives: [{ name: \"highlight_places\", args: { poi_ids: mapIds([target.id]) } }, { name: \"show_place\", args: { poi_id: mapIdByPlace.get(target.id) ?? target.id } }],",
+        "lib/demo/nyhavna-lokal/shopping-centres.test.ts:55:     expect(tour.execute('present_neighbourhood', { action: 'next' }).directives).toContainEqual({ name: 'highlight_places', args: { poi_ids: ['senter'] } });"
+      ],
+      "file": "lib/demo/nyhavna-lokal/presentation.ts",
+      "first_evidence": "lib/demo/nyhavna-lokal/presentation.ts:78:       directives: [{ name: \"highlight_places\", args: { poi_ids: mapIds([target.id]) } }, { name: \"show_place\", args: { poi_id: mapIdByPlace.get(target.id) ?? target.id } }],",
+      "independent_reviewers": [
+        "testing"
+      ],
+      "line": 78,
+      "owner": "downstream-resolver",
+      "pre_existing": false,
+      "requires_verification": true,
+      "reviewers": [
+        "testing"
+      ],
+      "severity": "P2",
+      "suggested_fix": "Add a shopping-centres test that executes find_similar_places with a source whose next similar target is a child store, then assert the returned highlight_places and show_place directives both use the parent centre ID. Arrange the fixture so this path deterministically selects the child target.",
+      "title": "Parent mapping lacks similar-place coverage",
+      "why_it_matters": "The similar-place path has its own map directives, so a regression here can highlight or open a child store ID that no longer exists in poisById even while the presentation-path test remains green. Users asking for a similar shop would then receive correct store narration but a missing or stale map selection.",
+      "validation_status": "confirmed",
+      "validation_reason": "The new shopping-centres test at lib/demo/nyhavna-lokal/shopping-centres.test.ts:51-56 exercises only present_neighbourhood, while find_similar_places follows the separate presentation.ts:66-79 branch and no test selects a child target to assert both mapped directives; targeted tests could not run because this frozen tree has no vitest executable.",
+      "protected_subject": null
+    }
+  ],
+  "triage_groups": [],
+  "pre_existing_findings": [],
+  "requirements_completeness": null,
+  "learnings": [],
+  "agent_native_gaps": [
+    {
+      "title": "Opening theme-scoped centre cards",
+      "note": "The action-parity gap is represented by finding #1; search and individual facts remain accessible."
+    }
+  ],
+  "deployment_notes": [],
+  "residual_risks": [],
+  "testing_gaps": [
+    "The frozen review tree has no vitest executable. Runtime validation of the parent checkout is separate from this review; browser-directive execution and similar-child mapping need regression coverage."
+  ],
+  "coverage": {
+    "notes": [
+      "Review cwd /tmp/nyhavna-shopping-review-tree. 7 changed files, 148 executable changed lines.",
+      "CLAUDE.md and AGENTS.md are fallback standards.",
+      "Runtime verification is performed by parent on main, not this isolated review copy.",
+      "Data integration is not in frozen scope.",
+      "The scratch copy originally lacked untracked radius.ts and reserve.ts; these have now been supplied for context-only verification and remain excluded from diff. Radius discovery is limited to training/nature; current shopping members use Hverdag/Servering.",
+      "No single unambiguous shopping plan matched; settlement suppression not evaluated.",
+      "Cross-model route claude; requested claude-opus-5/high; receipt_supported true; actual model claude-opus-5; actual effort unverified; independence_verified true.",
+      "All three findings concern internal theme/map identity or test coverage; none alleges a protected-subject failure. No source edits were made. Parent fixes after the frozen patch are not evaluated here."
+    ],
+    "suppressed_by_confidence": {
+      "50": 2
+    },
+    "first_evidence_backfilled": 1,
+    "quote_gate_demoted": 0,
+    "malformed_findings": 0,
+    "malformed_returns": 0,
+    "mode_aware_demotions": 0,
+    "semantic_duplicates_merged": 1,
+    "rejected_claims": [
+      {
+        "title": "Information Leakage: map identity policy is duplicated",
+        "reason": "Four identical, one-expression field defaults do not establish a material maintenance burden in this bounded adapter; an additional helper is optional style here."
+      },
+      {
+        "title": "Repeated find_similar_places inside one centre never moves the map",
+        "reason": "The explicit intent retains individual searchable business facts with a shared centre map destination. Distinct businesses at one destination are valid alternatives; map movement is not a required outcome, and removing them would reduce intended breadth."
+      },
+      {
+        "title": "Reserve reveal emits absorbed store ids the map rejects",
+        "reason": "The supplied radius.ts filters to training and nature. Current shopping members use Hverdag/Servering, so the asserted trigger is absent; a hypothetical future training member is outside the frozen content scope."
+      },
+      {
+        "title": "New fixture co-locates all places, hiding the reveal regression",
+        "reason": "This assumes shopping members participate in radius discovery; category filtering excludes them regardless of coordinates. The proposed coordinate offsets cannot exercise the alleged failure."
+      },
+      {
+        "title": "poiCategoryId on a standalone place breaks theme-id fallbacks",
+        "reason": "The claimed shopping-centre reveal affordance has no available radius options even with a valid Hverdag theme because radius discovery only supports training and nature. No consequential current trigger established."
+      },
+      {
+        "title": "Additional peer residual claims",
+        "reason": "Unwired hiddenIds filter and hypothetical future poisById consumers lack reachable present consequences; numbered references describe map destinations and do not establish loss of transcript referents. Not retained as residual risks."
+      }
+    ],
+    "settlement_suppression_evaluated": false,
+    "validator_shortcut_skipped": 0,
+    "validator_shortcut_evidence": "No retained finding has both ordinary and independently verified cross-model corroboration. Same-model agreement on #1 is not sufficient.",
+    "failed_reviewers": [],
+    "cross_model_outcome": "folded",
+    "validator": {
+      "outcome": "verdicts",
+      "batches": 1,
+      "confirmed": 3,
+      "rejected": 0,
+      "unresolved": 0,
+      "malformed": 0,
+      "failed": 0,
+      "shortcut_skipped": 0,
+      "bound_exceeded": false,
+      "verdicts": [
+        {
+          "#": 1,
+          "status": "confirmed",
+          "protected_subject": null,
+          "reason": "When a centre ID exists in both Hverdagsliv and Servering and Servering is active, lib/realtime/board-tools.ts:56 and :82 omit state.activeCategoryId from findBoardPOI, whose documented fallback at components/variants/report/board/board-data.ts:311-314 returns the first category copy and then navigates there at board-tools.ts:61-64/:86; the shopping fixture makes this state reachable, although no browser-directive test measures it."
+        },
+        {
+          "#": 3,
+          "status": "confirmed",
+          "protected_subject": null,
+          "reason": "For a shopping child returned by find_similar_places, lib/demo/nyhavna-lokal/presentation.ts:77 exposes only the child id while :78 maps only the immediate directives, and voice.ts:301 likewise exposes child ids without map_poi_id even though board-tools.ts:56-60 rejects those ids after children were removed from board lookup; actual model-authored follow-up incidence was not measured."
+        },
+        {
+          "#": 4,
+          "status": "confirmed",
+          "protected_subject": null,
+          "reason": "The new shopping-centres test at lib/demo/nyhavna-lokal/shopping-centres.test.ts:51-56 exercises only present_neighbourhood, while find_similar_places follows the separate presentation.ts:66-79 branch and no test selects a child target to assert both mapped directives; targeted tests could not run because this frozen tree has no vitest executable."
+        }
+      ]
+    },
+    "protected_subject_reclassifications": [],
+    "validation_degraded_blockers": [],
+    "compound_packs": {
+      "roots": [],
+      "errors": [],
+      "warnings": []
+    },
+    "reviewer_selection": [
+      {
+        "reviewer": "correctness",
+        "tier": "session",
+        "reason": "always-on"
+      },
+      {
+        "reviewer": "project-standards",
+        "tier": "mid",
+        "reason": "CLAUDE and AGENTS criteria fallback"
+      },
+      {
+        "reviewer": "testing",
+        "tier": "mid",
+        "reason": "new tests and runtime behavior"
+      },
+      {
+        "reviewer": "maintainability",
+        "tier": "mid",
+        "reason": "structural board/voice identity boundary"
+      },
+      {
+        "reviewer": "performance",
+        "tier": "mid",
+        "reason": "dataset and board transforms"
+      },
+      {
+        "reviewer": "agent-native",
+        "tier": "mid",
+        "reason": "voice tools and UI share map identities"
+      }
+    ]
+  },
+  "artifact_path": "/tmp/compound-engineering-501/ce-code-review/20260914-shopping",
+  "run_id": "20260914-shopping",
+  "verdict_reason": "Fix #1 first so centre actions preserve the active theme, then expose parent map IDs on model-facing payloads (#3) and cover similar-place directives (#4). All three are confirmed by independent static inspection; model-authored follow-up incidence was not measured."
+}

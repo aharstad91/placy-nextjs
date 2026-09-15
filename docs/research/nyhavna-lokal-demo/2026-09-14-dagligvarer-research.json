@@ -1,0 +1,229 @@
+{
+  "checkedAt": "2026-09-14",
+  "scope": "Seks nye dagligvarebutikker for Nyhavna-demo. Ingen aktive filer endret. Tolv fakta kontrollert mot primærkilder.",
+  "included": 6,
+  "factsChecked": 12,
+  "method": "Egne butikk- og senterprofiler. Bunnpris-profilene også hentet som HTML via curl fordi webverktøyets direkte åpning feilet. Ingen registerfraser, priser eller åpningstider brukes.",
+  "candidates": [
+    {
+      "id": "obs-city-lade",
+      "name": "Obs City Lade",
+      "address": "Haakon VIIs gate 9",
+      "category": "hverdagsliv",
+      "placeType": "Dagligvare",
+      "summary": "Stormarked på City Lade hvor matinnkjøp kan kombineres med klær, sko og varer til hjemmet.",
+      "facts": [
+        {
+          "text": "Obs Stormarked ligger i andre etasje på City Lade.",
+          "sourceUrl": "https://citylade.no/butikkoversikt/"
+        },
+        {
+          "text": "Vareutvalget omfatter mat, klær, sko og artikler til hjemmet.",
+          "sourceUrl": "https://citylade.no/butikkoversikt/"
+        }
+      ],
+      "sources": [
+        {
+          "url": "https://citylade.no/butikkoversikt/",
+          "label": "City Lade",
+          "page": "City Lade – butikkoversikt, Obs Stormarked",
+          "publisher": "City Lade"
+        },
+        {
+          "url": "https://www.coop.no/butikker/obs/obs-city-lade-2342",
+          "label": "Coop",
+          "page": "Obs City Lade – butikkadresse",
+          "publisher": "Coop"
+        }
+      ],
+      "caveats": [
+        "Utvalget av enkeltvarer kan variere."
+      ],
+      "checkedAt": "2026-09-14",
+      "shoppingCentreId": "city-lade",
+      "centreMembershipEvidence": {
+        "sourceUrl": "https://citylade.no/butikkoversikt/",
+        "text": "Obs Stormarked er oppført som butikk i City Lades butikkoversikt, 2. etasje."
+      }
+    },
+    {
+      "id": "coop-mega-sirkus",
+      "name": "Coop Mega Sirkus Shopping",
+      "address": "Falkenborgvegen 9",
+      "category": "hverdagsliv",
+      "placeType": "Dagligvare",
+      "summary": "Matbutikk i første etasje på Sirkus Shopping, med andre butikker og spisesteder i samme senter.",
+      "facts": [
+        {
+          "text": "Coop Mega ligger i første etasje på Sirkus Shopping.",
+          "sourceUrl": "https://sirkusshopping.no/butikker/coop-mega/"
+        },
+        {
+          "text": "Matinnkjøpet kan kombineres med andre butikker, restauranter og servicetilbud på samme senter.",
+          "sourceUrl": "https://sirkusshopping.no/butikker/coop-mega/"
+        }
+      ],
+      "sources": [
+        {
+          "url": "https://sirkusshopping.no/butikker/coop-mega/",
+          "label": "Sirkus Shopping",
+          "page": "Sirkus Shopping – Coop Mega",
+          "publisher": "Sirkus Shopping"
+        },
+        {
+          "url": "https://www.coop.no/butikker/coop-mega/coop-mega-sirkus-shopping-4561",
+          "label": "Coop",
+          "page": "Coop Mega Sirkus Shopping – butikkadresse",
+          "publisher": "Coop"
+        }
+      ],
+      "caveats": [],
+      "checkedAt": "2026-09-14",
+      "shoppingCentreId": "sirkus-shopping",
+      "centreMembershipEvidence": {
+        "sourceUrl": "https://sirkusshopping.no/butikker/coop-mega/",
+        "text": "Senterets butikkprofil oppgir Coop Mega som matvarebutikk på Sirkus Shopping i etasje 1."
+      },
+      "researchNote": "Adressekonflikt: Coops egen butikkprofil oppgir Falkenborgvegen 9, senterets butikkprofil Falkenborgvegen 5. Begge oppgir telefon 73 90 70 10. Her prioriteres egen butikkadresse; integrasjonen må kontrollere kart/inngang. Dette er et researchnotat og ikke taleinnhold."
+    },
+    {
+      "id": "rema-1000-torvet",
+      "name": "REMA 1000 Torvet",
+      "address": "Munkegata 22",
+      "category": "hverdagsliv",
+      "placeType": "Dagligvare",
+      "summary": "Dagligvarebutikk rett utenfor hovedinngangen til Trondheim Torg, relevant når man gjør ærender i Midtbyen.",
+      "facts": [
+        {
+          "text": "Butikken ligger rett utenfor hovedinngangen til Trondheim Torg.",
+          "sourceUrl": "https://trondheimtorg.no/butikk/rema-1000/"
+        },
+        {
+          "text": "Butikkpresentasjonen beskriver frukt og grønnsaker, ferske bakervarer, drikke og lunsjvarer.",
+          "sourceUrl": "https://trondheimtorg.no/butikk/rema-1000/"
+        }
+      ],
+      "sources": [
+        {
+          "url": "https://trondheimtorg.no/butikk/rema-1000/",
+          "label": "Trondheim Torg",
+          "page": "Trondheim Torg – REMA 1000",
+          "publisher": "Trondheim Torg"
+        },
+        {
+          "url": "https://www.rema.no/emvleverandorer/fakturainformasjon-rema-1000-butikker/",
+          "label": "REMA 1000",
+          "page": "REMA 1000 – butikkoversikt og adresser",
+          "publisher": "REMA 1000"
+        }
+      ],
+      "caveats": [],
+      "checkedAt": "2026-09-14",
+      "centreRelationship": "utenfor-hovedinngang",
+      "nearbyShoppingCentreId": "trondheim-torg",
+      "centreMembershipEvidence": {
+        "sourceUrl": "https://trondheimtorg.no/butikk/rema-1000/",
+        "exactQuote": "REMA 1000 Torvet ligger utenfor hovedinngangen til Trondheim Torg.",
+        "interpretation": "Senteret har en butikkprofil, men oppgir fysisk plassering utenfor. Behold separat kartmarkør, uten parentPlaceId/shoppingCentreId."
+      }
+    },
+    {
+      "id": "bunnpris-buran",
+      "name": "Bunnpris Buran",
+      "address": "Ulstadløkkveien 5",
+      "category": "hverdagsliv",
+      "placeType": "Dagligvare",
+      "summary": "Dagligvarebutikk på Buran hvor man også kan bruke Post i butikk.",
+      "facts": [
+        {
+          "text": "Bunnpris Buran ligger i Ulstadløkkveien 5.",
+          "sourceUrl": "https://www.bunnpris.no/butikker/bunnpris-buran"
+        },
+        {
+          "text": "Butikken oppgir Post i butikk blant sine tjenester.",
+          "sourceUrl": "https://www.bunnpris.no/butikker/bunnpris-buran"
+        }
+      ],
+      "sources": [
+        {
+          "url": "https://www.bunnpris.no/butikker/bunnpris-buran",
+          "label": "Bunnpris",
+          "page": "Bunnpris Buran – butikk og tjenester",
+          "publisher": "Bunnpris"
+        }
+      ],
+      "caveats": [
+        "Sjekk hentemeldingen for hvor en konkret sending skal hentes."
+      ],
+      "checkedAt": "2026-09-14"
+    },
+    {
+      "id": "bunnpris-lade",
+      "name": "Bunnpris Lade",
+      "address": "Håkon Magnussons gate 3",
+      "category": "hverdagsliv",
+      "placeType": "Dagligvare",
+      "summary": "Dagligvarebutikk på Lade med PostNord-tjeneste i samme butikk.",
+      "facts": [
+        {
+          "text": "Bunnpris Lade ligger i Håkon Magnussons gate 3.",
+          "sourceUrl": "https://www.bunnpris.no/butikker/bunnpris-lade"
+        },
+        {
+          "text": "Butikken oppgir PostNord blant sine tjenester.",
+          "sourceUrl": "https://www.bunnpris.no/butikker/bunnpris-lade"
+        }
+      ],
+      "sources": [
+        {
+          "url": "https://www.bunnpris.no/butikker/bunnpris-lade",
+          "label": "Bunnpris",
+          "page": "Bunnpris Lade – butikk og tjenester",
+          "publisher": "Bunnpris"
+        }
+      ],
+      "caveats": [
+        "Sjekk hentemeldingen for hvor en konkret sending skal hentes."
+      ],
+      "checkedAt": "2026-09-14",
+      "researchNote": "Egenkilden forkorter adressen som Håkon Magnussonsgt 3; her normalisert til Håkon Magnussons gate 3. Medisinutsalg og Norsk Tipping er ikke tatt inn i innholdet."
+    },
+    {
+      "id": "extra-lilleby",
+      "name": "Extra Lilleby",
+      "address": "Stjørdalsveien 4",
+      "category": "hverdagsliv",
+      "placeType": "Dagligvare",
+      "summary": "Dagligvarebutikk på Lilleby med PostNord-tjeneste, som gjør det mulig å kombinere handling med pakkehenting.",
+      "facts": [
+        {
+          "text": "Extra Lilleby ligger i Stjørdalsveien 4.",
+          "sourceUrl": "https://www.coop.no/butikker/extra/extra-lilleby-2664"
+        },
+        {
+          "text": "PostNord er oppført som en tjeneste i butikken.",
+          "sourceUrl": "https://www.coop.no/butikker/extra/extra-lilleby-2664"
+        }
+      ],
+      "sources": [
+        {
+          "url": "https://www.coop.no/butikker/extra/extra-lilleby-2664",
+          "label": "Coop",
+          "page": "Extra Lilleby – butikk og tjenester",
+          "publisher": "Coop"
+        }
+      ],
+      "caveats": [
+        "Sjekk hentemeldingen for hvor en konkret sending skal hentes."
+      ],
+      "checkedAt": "2026-09-14"
+    }
+  ],
+  "consideredNotIncluded": [
+    {
+      "name": "Extra Rosenborg",
+      "sourceUrl": "https://www.coop.no/butikker/extra/extra-rosenborg-2578",
+      "reason": "Eksistens og adresse kontrollert; valgt ut fordi de seks andre gir mer relevant spredning og mer konkret hverdagsinformasjon. Ikke funn om stenging."
+    }
+  ]
+}

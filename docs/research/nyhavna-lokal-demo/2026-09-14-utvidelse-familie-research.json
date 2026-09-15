@@ -1,0 +1,213 @@
+{
+  "checkedAt": "2026-09-14",
+  "scope": "7 av 7 kandidater kontrollert mot primærkilder. Research, ingen aktiv demoendring.",
+  "totals": {
+    "reviewed": 7,
+    "include": 7,
+    "hold": 0,
+    "renamed": 1
+  },
+  "mappingCaveat": "Innholdet kan brukes; kartplassering og reiseruter må kontrolleres før punktimport. Ingen koordinater er gjettet.",
+  "candidates": [
+    {
+      "candidate": "Lademoen barnehage",
+      "name": "Lademoen barnehage",
+      "decision": "inkluder",
+      "category": "barn-oppvekst",
+      "visitingAddress": "Østersunds gate 3, 7067 Trondheim",
+      "summary": "Privat barnehage på Lademoen, med vekt på lek og bruk av nærmiljøet.",
+      "facts": [
+        "Eies og drives av Trondhjems Asylselskap.",
+        "Holder til i en bygning fra 1893.",
+        "Barnehagen beskriver lek, fysisk aktivitet og barns medvirkning som deler av sin pedagogiske profil."
+      ],
+      "caveats": [
+        "Plass krever søknad og opptak; nærhet betyr ikke ledig plass.",
+        "Ikke bruk historisk Grønt Flagg-status som bevis på dagens sertifisering."
+      ],
+      "sources": [
+        "https://www.trondheim.kommune.no/org/oppvekst/private-barnehager/lademoen-barnehage/",
+        "https://ta-lademoen.no/index.html",
+        "https://ta-lademoen.no/pedagogisk-profil.html"
+      ],
+      "mapEvidence": {
+        "url": "https://www.trondheim.kommune.no/org/oppvekst/private-barnehager/lademoen-barnehage/#singlemap",
+        "rawAttributes": {
+          "data-street": "Østersunds gate 3",
+          "data-city": "TRONDHEIM",
+          "unit_id": "012541"
+        },
+        "note": "Kommunens kart geokoder adressen; ingen eksplisitte koordinater funnet i HTML."
+      },
+      "checkedAt": "2026-09-14"
+    },
+    {
+      "candidate": "Svartlamon kunst- og kulturbarnehage",
+      "name": "Svartlamon kunst- og kulturbarnehage",
+      "decision": "inkluder",
+      "category": "barn-oppvekst",
+      "visitingAddress": "Strandveien 33, 7067 Trondheim",
+      "summary": "Kommunal kunst- og kulturbarnehage på Svartlamon med dokumentert historie for skapende arbeid med barn.",
+      "facts": [
+        "Kommunens enhet heter Svartlamon kunst- og kulturbarnehage og ReMida.",
+        "Den tidligere bilbutikken Strandveien Auto ble omgjort til barnehage; barna deltok i utviklingsprosjektet.",
+        "Dette prosjektet vant den nasjonale barnehageprisen for kunst og kultur i 2008."
+      ],
+      "caveats": [
+        "Plass krever søknad og opptak; ingen garanti om plass.",
+        "Pris og bilbutikkprosjekt er historikk, ikke beskrivelse av et tilgjengelig kurs i dag.",
+        "Ikke presenter ReMida som fritt drop-in-tilbud; egne vilkår er ikke kontrollert."
+      ],
+      "sources": [
+        "https://www.trondheim.kommune.no/org/oppvekst/barnehager/svartlamon-remida-bhg/",
+        "https://virksomhet.brreg.no/nb/oppslag/underenheter/988517585",
+        "https://kunstkultursenteret.no/ressursbase/a-forvandle-en-bilbutikk-til-barnehage-barna-som-aktive-deltakere-i-prosessen/"
+      ],
+      "mapEvidence": {
+        "url": "https://www.trondheim.kommune.no/org/oppvekst/barnehager/svartlamon-remida-bhg/#singlemap",
+        "rawAttributes": {
+          "data-street": "Strandveien 33",
+          "data-city": "TRONDHEIM",
+          "unit_id": "012116"
+        },
+        "note": "Ingen eksplisitte koordinater i kommunens HTML; adressen er også bekreftet som beliggenhetsadresse i Brønnøysundregistrene."
+      },
+      "checkedAt": "2026-09-14"
+    },
+    {
+      "candidate": "Lade fritidsklubb",
+      "name": "Lade fritidsklubb",
+      "decision": "inkluder",
+      "category": "barn-oppvekst",
+      "visitingAddress": "Håkon Magnussons gate 5, 7041 Trondheim",
+      "summary": "Kommunalt kultur- og fritidstilbud for ungdom, med møteplass og særlig vekt på gaming.",
+      "facts": [
+        "Holder til i Dagskolens lokaler på Lade.",
+        "Har gamingrom, aktivitetsrom og gymsal.",
+        "Ungdom er med på å bestemme aktivitetene; gamingtilbudet bruker påmelding."
+      ],
+      "caveats": [
+        "Besøksalder er ikke presist avklart; oppgitte aldersgrenser på dataspill er ikke klubbens besøksregler.",
+        "Kilden har motstridende gaming-ukedag; ikke oppgi fast ukedag.",
+        "Ikke slå sammen åpent ungdomstilbud og gaming med påmelding."
+      ],
+      "sources": [
+        "https://www.trondheim.kommune.no/tema/kultur-og-fritid/aktivitetstilbudkulturtilbud/fritidsklubber/lade-fritidsklubb/"
+      ],
+      "mapEvidence": null,
+      "checkedAt": "2026-09-14"
+    },
+    {
+      "candidate": "Strandveiparken",
+      "name": "Strandveiparken",
+      "decision": "inkluder",
+      "category": "barn-oppvekst",
+      "secondaryCategory": "natur-friluftsliv",
+      "visitingAddress": null,
+      "locationDescription": "Mellom Lademoen togstasjon og Strandveien.",
+      "summary": "Park med lekegate, grøntområder og aktiviteter som gjør den relevant for både små og større barn.",
+      "facts": [
+        "Utvidet og oppgradert med ferdigstillelse i mai 2025.",
+        "Lekegaten har små hus inspirert av bygninger i bydelen.",
+        "Har flerbruksområde for blant annet ballspill og parkour, samt plen og sitteplasser."
+      ],
+      "caveats": [
+        "Ingen gateadresse oppgitt på parksiden; bruk kommunens kartlenke.",
+        "Ikke viderefør tidligere stengt-status.",
+        "Kommunen oppgir nærmeste toalett i Lademoparken."
+      ],
+      "sources": [
+        "https://www.trondheim.kommune.no/tema/kultur-og-fritid/park-og-mark/parker-og-byrom/strandveiparken/"
+      ],
+      "mapEvidence": {
+        "url": "https://kart.trondheim.kommune.no/trondheimskartet/#layers=Norges_grunnkart_graatone/v/1/s/0/o/100,origo-mask/v/1/s/0/o/25,Kvikkleireomr/v/0/s/1/o/70,KvikkleireRisiko/v/0/s/1/o/50,KvikkleireFaregrad/v/0/s/1/o/50,v_grunnboringer_dypbde_til_fjell/v/0/s/1/o/100,v_parker_centroid/v/1/s/0/o/100&center=570883,7035243&zoom=8.843672238471772&legend=expanded&feature=v_parker_centroid.31336&pin=570716,7034949&map=trondheimskartet",
+        "rawPin": "570716,7034949",
+        "rawFeature": "v_parker_centroid.31336",
+        "note": "Rå kartlenke fra egenkilden; CRS og faktisk plassering må kontrolleres før transformasjon/import. Kartet lot seg ikke åpne i webverktøyet."
+      },
+      "checkedAt": "2026-09-14"
+    },
+    {
+      "candidate": "Strandveikaia badeplass",
+      "name": "Strandveikaia badeplass",
+      "decision": "inkluder",
+      "category": "natur-friluftsliv",
+      "visitingAddress": null,
+      "locationDescription": "Ved kaia utenfor HAVET på Nyhavna; adkomst via Strandveien.",
+      "summary": "Eksisterende offentlig badebrygge med stupetårn på Nyhavna.",
+      "facts": [
+        "Badebryggen er åpen for alle.",
+        "Ligger ved HAVET, med adkomst fra Strandveien.",
+        "Kommunen henviser til HAVET for garderobe, badstue og servering."
+      ],
+      "caveats": [
+        "Kommunen varsler at badevannskvaliteten kan være nedsatt etter store nedbørsmengder; sjekk aktuelle råd før bading.",
+        "Ikke kall dette det framtidige sjøbadet eller presenter alle HAVET-fasiliteter som inkludert.",
+        "Ikke gi generell anbefaling om egnethet for småbarn."
+      ],
+      "sources": [
+        "https://www.trondheim.kommune.no/tema/kultur-og-fritid/park-og-mark/badeplasser/badeplasser-i-saltvann/strandveikaia-nyhavna/"
+      ],
+      "mapEvidence": {
+        "url": "https://kart.trondheim.kommune.no/trondheimskartet/?mapStateId=b3a10c97-d9ce-4fd6-8227-40c396a39850",
+        "note": "Kommunens mapStateId-lenke. Ingen koordinater hentet ut; kartet lot seg ikke åpne i webverktøyet."
+      },
+      "checkedAt": "2026-09-14",
+      "followupSource": "https://www.trondheim.kommune.no/tema/klima-miljo-og-naring/skogbruk/badevannskvalitet/"
+    },
+    {
+      "candidate": "BUA Lade",
+      "name": "BUA Lademoen",
+      "decision": "inkluder",
+      "decisionNote": "Bruk korrigert navn BUA Lademoen; BUA Lade er ikke dokumentert som eget tilbud.",
+      "category": "hverdagsliv",
+      "secondaryCategory": "barn-oppvekst",
+      "visitingAddress": "Innherredsveien 91, Trondheim",
+      "summary": "Utlånssentral for sports- og friluftsutstyr hos Trondheim Røde Kors.",
+      "facts": [
+        "Låner ut sports- og friluftsutstyr.",
+        "Utlånstilbudet er for alle, med mål om å gjøre aktivitet tilgjengelig for barn og unge.",
+        "Tidligere BUA Leangen flyttet til Innherredsveien 91 og åpnet som BUA Lademoen 27. mai 2026."
+      ],
+      "caveats": [
+        "Utstyr må være tilgjengelig og lånevilkårene må følges; ikke lov bestemt utstyr.",
+        "Ikke bruk Leangen-adressen eller opprett en udokumentert separat BUA Lade."
+      ],
+      "sources": [
+        "https://www.rodekors.no/lokalforeninger/trondelag/trondheim/aktiviteter-og-kurs/sosialinkludering/bua/",
+        "https://www.rodekors.no/lokalforeninger/trondelag/trondheim/aktuelt/2026/apningsfest/"
+      ],
+      "mapEvidence": null,
+      "checkedAt": "2026-09-14"
+    },
+    {
+      "candidate": "Buranbanen",
+      "name": "Buranbanen",
+      "decision": "inkluder",
+      "category": "trening-aktivitet",
+      "secondaryCategory": "barn-oppvekst",
+      "visitingAddress": null,
+      "locationDescription": "Mellom Gamle Kirkevei og Gamle Kongevei på Buran.",
+      "summary": "Aktivitetspark med lek for yngre barn og muligheter for ballspill, trening og sykkel eller sparkesykkel.",
+      "facts": [
+        "Oppgradert fra grusbane til aktivitetspark i 2023.",
+        "Har blant annet basket, trimpark og asfalterte humper for sykkel og sparkesykkel.",
+        "Lekeskulpturene Buranus er laget av gjenbruksmaterialer."
+      ],
+      "caveats": [
+        "Ingen gateadresse oppgitt; bruk kommunens kartlenke.",
+        "Vinterbruk avhenger av forhold; ikke lov is eller akeføre.",
+        "Kommunen oppgir at parken ikke har eget toalett."
+      ],
+      "sources": [
+        "https://www.trondheim.kommune.no/tema/kultur-og-fritid/park-og-mark/parker-og-byrom/buranbanen/"
+      ],
+      "mapEvidence": {
+        "url": "https://kart.trondheim.kommune.no/trondheimskartet/#layers=Norges_grunnkart_graatone/v/1/s/0/o/100,origo-mask/v/1/s/0/o/25,prisbellonnetarkitektur/v/0/s/1/o/100,ArealressursFlate/v/0/s/1/o/60/th/Fulldyrka jord~Overflatedyrka jord~Innmarksbeite~Skog~Myr~Åpen fastmark~Ferskvann~Hav~Bre~Bebygd~Samferdsel~Ikke kartlagt,fjernvarmeomrade/v/0/s/1/o/100,v_barneskolekrets/v/0/s/1/o/100,skolekapasitet/v/0/s/1/o/100,parker/v/1/s/0/o/100&center=570967,7034919&zoom=10.054478482497641&legend=expanded&pin=571044,7034914&map=trondheimskartet",
+        "rawPin": "571044,7034914",
+        "note": "Rå kartlenke fra egenkilden; CRS og faktisk plassering må kontrolleres før transformasjon/import. Kartet lot seg ikke åpne i webverktøyet."
+      },
+      "checkedAt": "2026-09-14"
+    }
+  ]
+}

@@ -1,0 +1,494 @@
+{
+  "checkedAt": "2026-09-14",
+  "scope": "Tre forespurte steder: Lilleby stasjon, Flex Gym og Buld.no. Ingen aktive filer endret.",
+  "included": 3,
+  "factsChecked": 9,
+  "activeDatasetDuplicateCheck": "Ingen av de tre finnes i aktiv places.json; samtlige 15 eksisterende trening-aktivitet-punkter kontrollert.",
+  "candidates": [
+    {
+      "id": "lilleby-stasjon",
+      "name": "Lilleby stasjon",
+      "address": "Mellomveien, Trondheim",
+      "categoryId": "transport",
+      "poiCategoryId": "train",
+      "placeType": "Togstasjon",
+      "icon": "TrainFront",
+      "aliases": [
+        "Lilleby togstasjon",
+        "Lilleby holdeplass",
+        "tog",
+        "togstasjon",
+        "Trønderbanen",
+        "R70"
+      ],
+      "coordinates": {
+        "lat": 63.439883,
+        "lng": 10.432629
+      },
+      "locationPrecision": "approximate",
+      "locationNote": "Stasjonspunkt fra Entur-importen i databasen, kontrollert mot Bane NORs veibeskrivelsespunkt omtrent 14 meter unna. Plattforminngangen er ikke kontrollert.",
+      "status": "existing",
+      "summary": "Togstopp på Nordlandsbanen med R70, leskur og sykkelparkering.",
+      "facts": [
+        {
+          "text": "Lilleby er en holdeplass på Nordlandsbanen, og Bane NOR oppgir R70 mellom Støren og Steinkjer.",
+          "sourceUrl": "https://www.banenor.no/reise-og-trafikk/stasjoner/-l-/lilleby/"
+        },
+        {
+          "text": "Stasjonen har leskur og sykkelstativ med tak.",
+          "sourceUrl": "https://www.banenor.no/reise-og-trafikk/stasjoner/-l-/lilleby/"
+        },
+        {
+          "text": "Bane NOR oppgir hinderfri adkomst til plattformen.",
+          "sourceUrl": "https://www.banenor.no/reise-og-trafikk/stasjoner/-l-/lilleby/"
+        }
+      ],
+      "sources": [
+        {
+          "url": "https://www.banenor.no/reise-og-trafikk/stasjoner/-l-/lilleby/",
+          "label": "Bane NOR",
+          "page": "Lilleby stasjon",
+          "publisher": "Bane NOR"
+        }
+      ],
+      "caveats": [
+        "Sjekk aktuell avgang og eventuelle avvik i Entur eller hos togselskapet."
+      ],
+      "checkedAt": "2026-09-14",
+      "provenance": {
+        "provider": "supabase",
+        "recordId": "entur-NSR-StopPlace-62369",
+        "importedAt": "2026-09-14"
+      },
+      "researchMetadata": {
+        "databaseUpdatedAt": "2026-07-06T06:44:31.246848+00:00",
+        "enturStopplaceId": "NSR:StopPlace:62369",
+        "baneNorWalkingDestination": {
+          "lat": 63.43999,
+          "lng": 10.43278
+        },
+        "excludedDuplicateDbIds": [
+          "92767f7a-55c2-41ce-8584-bc8f9e70c2e8"
+        ]
+      }
+    },
+    {
+      "id": "flex-gym",
+      "name": "Flex Gym",
+      "address": "Ladeveien 23, Trondheim",
+      "categoryId": "trening-aktivitet",
+      "poiCategoryId": "gym",
+      "placeType": "Treningssenter",
+      "icon": "Dumbbell",
+      "aliases": [
+        "FlexGym",
+        "Flex Gym AS",
+        "treningssenter",
+        "styrketrening",
+        "kondisjonstrening",
+        "døgnåpent"
+      ],
+      "coordinates": {
+        "lat": 63.443757399999996,
+        "lng": 10.4362503
+      },
+      "locationPrecision": "approximate",
+      "locationNote": "Bedriftspunkt fra databasen, omtrent 54 meter fra Kartverkets adressepunkt for Ladeveien 23. Inngangen er ikke kontrollert.",
+      "status": "existing",
+      "summary": "Døgnåpent treningssenter på Lade med styrketrening, kondisjonstrening og garderober med dusj.",
+      "facts": [
+        {
+          "text": "Flex Gym er døgnåpent og tilbyr både styrke- og kondisjonstrening.",
+          "sourceUrl": "https://flexgym.no/"
+        },
+        {
+          "text": "Senteret har frivekter, treningsapparater og garderober med dusj.",
+          "sourceUrl": "https://flexgym.no/"
+        },
+        {
+          "text": "Prøvetime kan avtales med senteret før man bestemmer seg for medlemskap.",
+          "sourceUrl": "https://flexgym.no/ofte-stilte-sporsmal/"
+        }
+      ],
+      "sources": [
+        {
+          "url": "https://flexgym.no/",
+          "label": "Flex Gym",
+          "page": "Treningstilbud på Flex Gym",
+          "publisher": "Flex Gym"
+        },
+        {
+          "url": "https://flexgym.no/ofte-stilte-sporsmal/",
+          "label": "Flex Gym",
+          "page": "Ofte stilte spørsmål",
+          "publisher": "Flex Gym"
+        },
+        {
+          "url": "https://data.brreg.no/enhetsregisteret/api/underenheter/982216850",
+          "label": "Brønnøysundregistrene",
+          "page": "Flex Gym AS – beliggenhetsadresse for underenheten",
+          "publisher": "Brønnøysundregistrene"
+        }
+      ],
+      "caveats": [
+        "Adgang krever medlemskap eller avtale med senteret."
+      ],
+      "checkedAt": "2026-09-14",
+      "provenance": {
+        "provider": "supabase",
+        "recordId": "google-ChIJjWQhOA8xbUYRAUjUe7p7l8Y",
+        "importedAt": "2026-09-14"
+      },
+      "researchMetadata": {
+        "databaseUpdatedAt": "2026-07-06T06:44:31.246848+00:00",
+        "originalDatabaseAddress": "Ladebekken 7041, Trondheim",
+        "addressSourceUrl": "https://data.brreg.no/enhetsregisteret/api/underenheter/982216850",
+        "addressVerification": "Beliggenhetsadressen for underenhet 982216850 er Ladeveien 23; ikke bare juridisk forretningsadresse.",
+        "kartverketAddress": {
+          "lat": 63.44333893783492,
+          "lng": 10.435706501369518
+        }
+      }
+    },
+    {
+      "id": "buld-no",
+      "name": "Buld.no",
+      "address": "Ormen Langes vei 15, Trondheim",
+      "categoryId": "trening-aktivitet",
+      "poiCategoryId": "idrett",
+      "placeType": "Buldresenter",
+      "icon": "Mountain",
+      "aliases": [
+        "Buld",
+        "buld.no",
+        "Utehallen",
+        "Trondheim Buldresenter",
+        "buldring",
+        "klatring",
+        "klatreskole",
+        "klatrekurs"
+      ],
+      "coordinates": {
+        "lat": 63.4454409,
+        "lng": 10.4216272
+      },
+      "locationPrecision": "approximate",
+      "locationNote": "Bedriftspunkt fra databasen ved Ormen Langes vei 15, som er besøksadressen på senterets egen nettside. Inngangen er ikke kontrollert.",
+      "status": "existing",
+      "summary": "Buldresenter i den tidligere Utehallen, med kafé, introduksjonskurs og klatreskole for barn.",
+      "facts": [
+        {
+          "text": "Buld.no holder til i Ormen Langes vei 15 og samler UTE.no og Trondheim Buldresenter i den tidligere Utehallen.",
+          "sourceUrl": "https://buld.no/"
+        },
+        {
+          "text": "Senteret har kafé og tilbyr introduksjonskurs i buldring.",
+          "sourceUrl": "https://buld.no/"
+        },
+        {
+          "text": "Klatreskolen for barn omfatter både buldring og tauklatring.",
+          "sourceUrl": "https://buld.no/"
+        }
+      ],
+      "sources": [
+        {
+          "url": "https://buld.no/",
+          "label": "Buld.no",
+          "page": "Buld.no – buldresenter, klatreskole og besøksadresse",
+          "publisher": "Buld.no"
+        }
+      ],
+      "caveats": [
+        "Sjekk kursdatoer, aldersgrenser og påmelding hos senteret."
+      ],
+      "checkedAt": "2026-09-14",
+      "provenance": {
+        "provider": "supabase",
+        "recordId": "google-ChIJFaDCPwkxbUYRO8yvKyDZNaY",
+        "importedAt": "2026-09-14"
+      },
+      "researchMetadata": {
+        "databaseUpdatedAt": "2026-09-01T20:36:56.583213+00:00",
+        "excludedOldLocationDbIds": [
+          "osm-node-7022866242",
+          "f59ef692-56bb-4f2f-b242-75eef013688e"
+        ],
+        "oldLocation": {
+          "lat": 63.4414237,
+          "lng": 10.4300632
+        },
+        "researchNote": "Egen nettside har uferdige maltekster og motstridende butikkåpningstider. Bare tydelige adresser og navngitte tilbud brukes; ingen rangeringer, priser eller butikkåpningstider. Ikke opprett et separat gammelt Trondheim Buldresenter-punkt."
+      }
+    }
+  ],
+  "verificationAudit": {
+    "databaseRowsRead": 20,
+    "selectedDatabaseRows": [
+      {
+        "id": "entur-NSR-StopPlace-62369",
+        "name": "Lilleby stasjon",
+        "lat": 63.439883,
+        "lng": 10.432629,
+        "address": null,
+        "category_id": "train",
+        "updated_at": "2026-07-06T06:44:31.246848+00:00"
+      },
+      {
+        "id": "google-ChIJjWQhOA8xbUYRAUjUe7p7l8Y",
+        "name": "Flex Gym AS",
+        "lat": 63.443757399999996,
+        "lng": 10.4362503,
+        "address": "Ladebekken 7041, Trondheim",
+        "category_id": "gym",
+        "updated_at": "2026-07-06T06:44:31.246848+00:00"
+      },
+      {
+        "id": "google-ChIJFaDCPwkxbUYRO8yvKyDZNaY",
+        "name": "Buld.no",
+        "lat": 63.4454409,
+        "lng": 10.4216272,
+        "address": "Ormen Langes vei 15, Trondheim",
+        "category_id": "idrett",
+        "updated_at": "2026-09-01T20:36:56.583213+00:00"
+      }
+    ],
+    "flexAddressLookup": {
+      "brregUrl": "https://data.brreg.no/enhetsregisteret/api/underenheter/982216850",
+      "brreg": {
+        "organisasjonsnummer": "982216850",
+        "navn": "FLEX GYM AS",
+        "organisasjonsform": {
+          "kode": "BEDR",
+          "beskrivelse": "Underenhet til næringsdrivende og offentlig forvaltning",
+          "_links": {
+            "self": {
+              "href": "https://data.brreg.no/enhetsregisteret/api/organisasjonsformer/BEDR"
+            }
+          }
+        },
+        "historiskeNavn": [],
+        "registreringsdatoEnhetsregisteret": "2000-07-19",
+        "registrertIMvaregisteret": false,
+        "naeringskode1": {
+          "kode": "93.130",
+          "beskrivelse": "Treningssentervirksomhet"
+        },
+        "harRegistrertAntallAnsatte": false,
+        "overordnetEnhet": "982213371",
+        "telefon": "73 84 77 66",
+        "oppstartsdato": "2000-09-01",
+        "beliggenhetsadresse": {
+          "land": "Norge",
+          "landkode": "NO",
+          "postnummer": "7066",
+          "poststed": "TRONDHEIM",
+          "adresse": [
+            "Ladeveien 23"
+          ],
+          "kommune": "TRONDHEIM",
+          "kommunenummer": "5001"
+        },
+        "_links": {
+          "self": {
+            "href": "https://data.brreg.no/enhetsregisteret/api/underenheter/982216850"
+          },
+          "overordnetEnhet": {
+            "href": "https://data.brreg.no/enhetsregisteret/api/enheter/982213371"
+          }
+        },
+        "respons_klasse": "Underenhet"
+      },
+      "geonorgeUrl": "https://ws.geonorge.no/adresser/v1/sok?sok=Ladeveien+23&kommunenummer=5001&utkoordsys=4258&treffPerSide=10",
+      "geonorge": {
+        "metadata": {
+          "treffPerSide": 10,
+          "side": 0,
+          "totaltAntallTreff": 1,
+          "viserFra": 0,
+          "viserTil": 10,
+          "sokeStreng": "sok=Ladeveien+23&kommunenummer=5001&utkoordsys=4258&treffPerSide=10",
+          "asciiKompatibel": true
+        },
+        "adresser": [
+          {
+            "adressenavn": "Ladeveien",
+            "adressetekst": "Ladeveien 23",
+            "adressetilleggsnavn": null,
+            "adressekode": 4210,
+            "nummer": 23,
+            "bokstav": "",
+            "kommunenummer": "5001",
+            "kommunenavn": "TRONDHEIM",
+            "gardsnummer": 415,
+            "bruksnummer": 46,
+            "festenummer": 0,
+            "undernummer": null,
+            "bruksenhetsnummer": [],
+            "objtype": "Vegadresse",
+            "poststed": "TRONDHEIM",
+            "postnummer": "7066",
+            "adressetekstutenadressetilleggsnavn": "Ladeveien 23",
+            "stedfestingverifisert": false,
+            "representasjonspunkt": {
+              "epsg": "EPSG:4258",
+              "lat": 63.44333893783492,
+              "lon": 10.435706501369518
+            },
+            "oppdateringsdato": "2025-04-07T18:40:02"
+          }
+        ]
+      }
+    }
+  },
+  "additionalDatabaseMetadata": [
+    {
+      "id": "e4971c01-79a7-4308-8a51-2ea91f387685",
+      "name": "Ladesletta barnehage",
+      "address": null,
+      "lat": 63.44239,
+      "lng": 10.46583,
+      "category_id": "barnehage",
+      "updated_at": "2026-06-11T12:06:58.845508+00:00"
+    },
+    {
+      "id": "osm-way-112442103",
+      "name": "Trikkestallen",
+      "address": null,
+      "lat": 63.4394445,
+      "lng": 10.4316215,
+      "category_id": "idrett",
+      "updated_at": "2026-06-02T08:33:38.809925+00:00"
+    },
+    {
+      "id": "osm-way-437181228",
+      "name": "Lade idrettspark",
+      "address": null,
+      "lat": 63.4460073,
+      "lng": 10.4489975,
+      "category_id": "idrett",
+      "updated_at": "2026-09-01T20:34:55.169379+00:00"
+    },
+    {
+      "id": "osm-node-8765182379",
+      "name": "Ladesletta barnehage",
+      "address": null,
+      "lat": 63.4423788,
+      "lng": 10.4660513,
+      "category_id": "barnehage",
+      "updated_at": "2026-08-14T07:08:02.74044+00:00"
+    },
+    {
+      "id": "osm-way-5107254",
+      "name": "Lade idrettspark",
+      "address": null,
+      "lat": 63.444981,
+      "lng": 10.449706,
+      "category_id": "idrett",
+      "updated_at": "2026-08-24T20:49:12.45334+00:00"
+    },
+    {
+      "id": "osm-way-1293567124",
+      "name": "Lade idrettsanlegg",
+      "address": null,
+      "lat": 63.4454307,
+      "lng": 10.4510007,
+      "category_id": "idrett",
+      "updated_at": "2026-08-24T20:49:12.45334+00:00"
+    },
+    {
+      "id": "google-ChIJ6xbgVQgxbUYRFVaGYOD2YJQ",
+      "name": "Trikkestallen Skatepark",
+      "address": "Mellomveien 32, Trondheim",
+      "lat": 63.439210700000004,
+      "lng": 10.4311201,
+      "category_id": "idrett",
+      "updated_at": "2026-09-01T20:36:56.583213+00:00"
+    },
+    {
+      "id": "d82a89ae-2f87-4742-beac-20971b11b826",
+      "name": "Trikkestallen skatepark",
+      "address": null,
+      "lat": 63.4394445,
+      "lng": 10.4316215,
+      "category_id": "idrett",
+      "updated_at": "2026-02-27T23:07:34.646221+00:00"
+    },
+    {
+      "id": "7b366450-7965-432c-baa2-e1589d1959a9",
+      "name": "Trikkestallen",
+      "address": null,
+      "lat": 63.4394445,
+      "lng": 10.4316215,
+      "category_id": "idrett",
+      "updated_at": "2026-04-18T06:47:13.926488+00:00"
+    },
+    {
+      "id": "e4afb4ee-2d21-422f-873e-fa4361e47b73",
+      "name": "Lade idrettspark",
+      "address": null,
+      "lat": 63.444981,
+      "lng": 10.449706,
+      "category_id": "idrett",
+      "updated_at": "2026-04-18T06:47:18.532733+00:00"
+    },
+    {
+      "id": "bus-lade-idrettsanlegg",
+      "name": "Lade idrettsanlegg bussholdeplass",
+      "address": null,
+      "lat": 63.444071,
+      "lng": 10.448982,
+      "category_id": "bus",
+      "updated_at": "2026-06-11T12:06:10.861939+00:00"
+    },
+    {
+      "id": "bysykkel-1884",
+      "name": "Trondheim Bysykkel: Lade Idrettsanlegg øst",
+      "address": "Haakon VIIs gate 60",
+      "lat": 63.44392020314541,
+      "lng": 10.450038946779586,
+      "category_id": "bike",
+      "updated_at": "2026-07-06T06:44:31.246848+00:00"
+    },
+    {
+      "id": "bysykkel-236",
+      "name": "Trondheim Bysykkel: Lade idrettsanlegg vest",
+      "address": "Haakon VII gate 3",
+      "lat": 63.446059058709096,
+      "lng": 10.443941575866347,
+      "category_id": "bike",
+      "updated_at": "2026-07-06T06:44:31.246848+00:00"
+    },
+    {
+      "id": "bysykkel-95",
+      "name": "Trondheim Bysykkel: Trikkestallen på Lademoen",
+      "address": "Mellomveien 13",
+      "lat": 63.4387315071045,
+      "lng": 10.430732667446136,
+      "category_id": "bike",
+      "updated_at": "2026-07-06T06:44:31.246848+00:00"
+    },
+    {
+      "id": "google-ChIJT0YOcxcxbUYRZBo4cT8t4VA",
+      "name": "Lade idrettsanlegg sandvolleyballbane",
+      "address": "Trondheim",
+      "lat": 63.4463414,
+      "lng": 10.446188,
+      "category_id": "idrett",
+      "updated_at": "2026-09-01T20:36:56.583213+00:00"
+    },
+    {
+      "id": "google-ChIJT1rhobcxbUYRzEt66Zq1CMg",
+      "name": "Lade idrettspark",
+      "address": "Haakon VIIs gt., Trondheim",
+      "lat": 63.444370400000004,
+      "lng": 10.4535687,
+      "category_id": "idrett",
+      "updated_at": "2026-08-24T20:48:58.630159+00:00"
+    }
+  ],
+  "integrationNotes": [
+    "Legg til kilde-IDer, fakta-IDer og beregn ruter; fjern researchMetadata før validering.",
+    "Alle tre ønskes synlige fra start; Flex Gym og Buld.no må ikke automatisk havne i treningsreserve.",
+    "Behold Buld.no som ett punkt; gamle Trondheim Buldresenter-koordinater viser tidligere lokale."
+  ]
+}
