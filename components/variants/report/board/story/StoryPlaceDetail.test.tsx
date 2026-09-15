@@ -131,7 +131,7 @@ const GEMINI: Partial<POI> = {
   },
 };
 
-function boardData(): BoardData {
+function boardData(extraPlaces: BoardPOI[] = []): BoardData {
   return {
     projectSlug: "ranheim",
     home: {
@@ -171,6 +171,7 @@ function boardData(): BoardData {
           // Det tomme stedet: bare navn, kategori og minutter.
           poi("Bua", { extra: { travelTime: { walk: 4, bike: 2 } } }),
           anchor(),
+          ...extraPlaces,
         ],
         topRankedPois: [],
       },
@@ -198,10 +199,10 @@ function Probe({ onBegin }: { onBegin: (fn: () => void) => void }) {
   return null;
 }
 
-function setup(opts: { placePanel?: boolean } = {}) {
+function setup(opts: { placePanel?: boolean; places?: BoardPOI[] } = {}) {
   let start = () => {};
   const utils = render(
-    <BoardProvider data={boardData()} placePanel={opts.placePanel}>
+    <BoardProvider data={boardData(opts.places)} placePanel={opts.placePanel}>
       <StoryTourProvider>
         <Probe onBegin={(fn) => (start = fn)} />
         <StoryCard variant="column" />
@@ -399,11 +400,65 @@ describe("det felles detaljpanelet (2026-09-15)", () => {
     expect(document.activeElement).toBe(trigger);
     act(() => fireEvent.click(trigger));
     const panel = getByTestId("story-poi-panel");
-    const region = panel.querySelector('[role="region"]')!;
-    expect(region.getAttribute("aria-labelledby")).toBe(panel.querySelector("h2")!.id);
+    expect(panel.getAttribute("role")).toBe("region");
+    expect(panel.getAttribute("aria-labelledby")).toBe(panel.querySelector("h2")!.id);
     expect(panel.querySelector('[role="dialog"]')).toBeNull();
     expect(document.activeElement).toBe(getByTestId("story-poi-panel-close"));
     act(() => fireEvent.click(getByTestId("story-poi-panel-close")));
     expect(document.activeElement).toBe(trigger);
+  });
+});
+
+describe("kolonnen skifter innhold — ikke et kort over den (2026-09-15)", () => {
+  it("er én flat flate: ingen skygge, ring, radius eller innrykk, og ingen dimmet bakgrunn", () => {
+    const { getByTestId } = setup();
+    openInPanel("Bua");
+    const panel = getByTestId("story-poi-panel");
+    expect(panel.className).toContain("inset-0");
+    expect(panel.className).not.toMatch(/shadow|ring-|rounded|inset-x-|inset-y-|backdrop/);
+    expect(panel.querySelector("[class*='backdrop-blur']")).toBeNull();
+  });
+
+  it("tilbakeknappen sier hvor du kommer tilbake — temaets navn", () => {
+    const { getByTestId } = setup();
+    openInPanel("Bua");
+    expect(getByTestId("story-poi-panel-close").textContent).toBe("Tilbake til Mat & drikke");
+  });
+
+  it("«Se mer på Google» er en rad blant lenkene i faktalista, ikke en egen knapp nederst", () => {
+    const { getByTestId, queryByTestId } = setup();
+    openInPanel("Kiosken");
+    const link = getByTestId("poi-search-link");
+    expect(link.textContent).toBe("Se mer på Google");
+    expect(link.closest('[data-testid="poi-facts"]')).not.toBeNull();
+    expect(getByTestId("story-poi-panel").querySelectorAll("a[href*='google.com/search']")).toHaveLength(1);
+    // Med grounded narrativ er kildelenkene utveien — ingen Google-rad.
+    openInPanel("Osteria");
+    expect(queryByTestId("poi-search-link")).toBeNull();
+  });
+
+  it("forbeholdet om kartpunktet ligger bak et infoikon ved adressen, ikke som egen linje", () => {
+    const { getByTestId, queryByTestId } = setup({
+      places: [
+        poi("Brygga", {
+          extra: {
+            address: "Kaia 1",
+            locationPrecision: "approximate",
+            locationNote: "Plassert omtrentlig ut fra kildens beskrivelse.",
+          },
+        }),
+      ],
+    });
+    openInPanel("Brygga");
+    expect(queryByTestId("precision-note")).toBeNull();
+    const toggle = getByTestId("story-poi-panel-note-toggle");
+    expect(toggle.getAttribute("aria-expanded")).toBe("false");
+    act(() => fireEvent.click(toggle));
+    expect(getByTestId("precision-note").textContent).toContain("omtrentlig");
+    expect(toggle.getAttribute("aria-expanded")).toBe("true");
+    // Et sted uten forbehold har ikke ikonet.
+    openInPanel("Bua");
+    expect(queryByTestId("story-poi-panel-note-toggle")).toBeNull();
+    expect(queryByTestId("precision-note")).toBeNull();
   });
 });

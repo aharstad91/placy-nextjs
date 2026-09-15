@@ -170,7 +170,15 @@ export function StoryColumn({ noBrokers = false }: { noBrokers?: boolean }) {
           data-testid="story-sidebar"
           inert={covered}
           aria-hidden={covered || undefined}
-          className="flex min-h-0 flex-1 flex-col overflow-y-auto px-6 pb-10 pt-0 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+          className={cn(
+            "flex min-h-0 flex-1 flex-col overflow-y-auto px-6 pb-10 pt-0 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden",
+            /* Innholdsbyttet (2026-09-15): når stedet dekker oversikten glir
+               den litt til venstre og fader ut, stedet kommer inn fra høyre
+               (i StoryPoiPanel). Ved retur reverseres det. Bare innholdet
+               beveger seg — logo og Anja står fast. */
+            "transition-[transform,opacity] duration-[260ms] ease-out motion-reduce:transition-none",
+            covered ? "-translate-x-2 opacity-0" : "translate-x-0 opacity-100",
+          )}
         >
           <StoryCard
             variant="column"

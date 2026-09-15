@@ -94,7 +94,10 @@
   --voice-radius: 6px;
 }
 
-/* Stedets side over kolonnen: tittelen er en overskrift på hvitt kort, ikke en del av kolonnens kremflate. */
+/* Stedets side i kolonnen: samme kremflate som resten av kolonnen, så det leses som at kolonnen skifter innhold, ikke som et kort over den. */
+.nyhavna-board [data-testid="story-poi-panel"] {
+  background-color: var(--nyhavna-cream);
+}
 .nyhavna-board [data-testid="story-poi-panel"] h2 {
   background: transparent;
 }

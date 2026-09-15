@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import Image from "next/image";
-import { BookOpen, Clock, Globe, Phone } from "lucide-react";
+import { BookOpen, Clock, ExternalLink, Globe, Phone } from "lucide-react";
 import { GoogleRating } from "@/components/ui/GoogleRating";
 import { computeIsOpen } from "@/lib/hooks/useOpeningHours";
 import { cn } from "@/lib/utils";
@@ -199,7 +199,17 @@ export function PoiGallery({
 
 /** Google-faktaene: vurdering, dagens åpningstid, telefon, nettside — og
  *  kilden, når teksten over er hentet et sted fra. */
-export function PoiFacts({ poi }: { poi: BoardPOI }) {
+export function PoiFacts({
+  poi,
+  searchUrl,
+}: {
+  poi: BoardPOI;
+  /** «Se mer på Google» som en rad blant de andre lenkene (2026-09-15). Eid
+   *  av kallstedet: panelet vil ha den her, ved nettside og kilde, og ikke
+   *  som en stor knapp nederst — den knappen fikk flaten til å lese som en
+   *  dialogboks. Modalen beholder sin egen knapp. */
+  searchUrl?: string | null;
+}) {
   const r = poi.raw;
   const weekdayText = r.openingHoursJson?.weekday_text;
 
@@ -232,7 +242,7 @@ export function PoiFacts({ poi }: { poi: BoardPOI }) {
     sourceUrl && sourceLabel ? { label: sourceLabel, url: sourceUrl } : undefined;
 
   const hasAnything =
-    r.googleRating || today || r.googleWebsite || r.googlePhone || source;
+    r.googleRating || today || r.googleWebsite || r.googlePhone || source || searchUrl;
   if (!hasAnything) return null;
 
   return (
@@ -287,6 +297,21 @@ export function PoiFacts({ poi }: { poi: BoardPOI }) {
           <BookOpen aria-hidden className="h-3.5 w-3.5 flex-none text-stone-400" />
           <span className="flex-none text-stone-500">Omtalt på</span>
           <SourceLink source={source} testId="poi-source-link" />
+        </div>
+      )}
+
+      {searchUrl && (
+        <div className="flex items-center gap-2 text-[13.5px] text-stone-600">
+          <ExternalLink aria-hidden className="h-3.5 w-3.5 flex-none text-stone-400" />
+          <a
+            href={searchUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            data-testid="poi-search-link"
+            className="hover:underline"
+          >
+            Se mer på Google
+          </a>
         </div>
       )}
     </div>
@@ -375,11 +400,18 @@ export function PoiDetailBody({
   galleryClassName,
   emptyText,
   showStatus = true,
+  showPrecisionNote = true,
+  searchUrl,
 }: {
   poi: BoardPOI;
   galleryClassName?: string;
   emptyText?: string;
   showStatus?: boolean;
+  /** Stedspanelet legger forbeholdet bak et infoikon ved adressen (2026-09-15)
+   *  og vil ikke ha det som egen linje her også. Alle andre flater viser det. */
+  showPrecisionNote?: boolean;
+  /** Se `PoiFacts`. */
+  searchUrl?: string | null;
 }) {
   const narrative = poiNarrativeText(poi);
   const images = poi.raw.galleryImages ?? [];
@@ -413,13 +445,13 @@ export function PoiDetailBody({
           godt vi vet hvor stedet ligger, og det er noe annet enn åpningstid og
           telefonnummer. Gaten er `approximate` og ikke bare «har en note» — en
           note uten flagget ville tatt forbehold om en koordinat som er belagt. */}
-      {poi.raw.locationPrecision === "approximate" && (
+      {showPrecisionNote && poi.raw.locationPrecision === "approximate" && (
         <PrecisionNote note={poi.raw.locationNote} />
       )}
 
       <AnchorRegister poi={poi} />
 
-      <PoiFacts poi={poi} />
+      <PoiFacts poi={poi} searchUrl={searchUrl} />
 
       {poiShowsAttribution(poi) && generated && <PoiAttribution generated={generated} />}
     </>

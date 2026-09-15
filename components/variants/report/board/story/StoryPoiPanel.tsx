@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import Image from "next/image";
-import { ArrowLeft, ExternalLink } from "lucide-react";
+import { ArrowLeft, Info } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useEngagement } from "@/lib/instrumentation/engagement-scope";
 import type { TravelMode } from "@/lib/types";
@@ -13,6 +13,7 @@ import type { BoardPOI } from "../board-data";
 import { useActivePOI, useBoard } from "../board-state";
 import { useDesktopPlacePanel } from "../use-popup-mode";
 import { storyMinutes } from "./story-model";
+import { useStoryTourOptional } from "./story-tour";
 
 /**
  * Stedets EGEN side, over sidekolonnen (2026-08-28, utvidet 2026-09-15).
@@ -37,11 +38,27 @@ import { storyMinutes } from "./story-model";
  *
  * Omvisningen står bak og skal stå der. Panelet ligger `absolute inset-0` i
  * oversiktens egen boks (den `relative` flex-boksen i `StoryColumn` som holder
- * scroll-lista, 2026-09-15 — før det hele `<aside>`), så det dekker bare
- * oversikten, ikke logoen over eller Anja-linja under, og kolonnen beholder
- * scroll-posisjonen sin, det åpne stoppet og den åpne raden — tilbakeknappen
- * legger bare laget bort igjen. Kartet er urørt hele veien: punktet ble åpnet
- * av trykket som førte hit, og panelet flytter aldri kameraet.
+ * scroll-lista), så det dekker bare oversikten, ikke logoen over eller
+ * Anja-linja under, og kolonnen beholder scroll-posisjonen sin, det åpne
+ * stoppet og den åpne raden — tilbakeknappen legger bare laget bort igjen.
+ * Kartet er urørt hele veien: punktet ble åpnet av trykket som førte hit, og
+ * panelet flytter aldri kameraet.
+ *
+ * ## Hvorfor det ikke ser ut som et kort (2026-09-15)
+ *
+ * Første versjon var et hvitt kort med skygge, ring, radius og innrykk over
+ * en dimmet oversikt. Andreas: «nå ser det ut som et kort oppå sidebaren …
+ * jeg ville latt det føles som at sidebaren skifter innhold når du velger et
+ * sted». Derfor: ingen skygge, ramme eller innrykk. Flaten fyller boksen og
+ * har samme bakgrunn som kolonnen (Nyhavna overstyrer til krem i
+ * `nyhavna-brand.css`), logo og Anja står fast, og bare innholdet mellom dem
+ * skifter. Overgangen er en kort forskyvning med fading — oversikten glir litt
+ * til venstre og ut (i `StoryColumn`), stedet kommer inn fra høyre; ved retur
+ * reverseres det. Hele flaten beveger seg ikke, bare innholdet.
+ *
+ * Tilbakeknappen sier hvor du kommer tilbake («Tilbake til Oppvekst» på et
+ * tema, «Tilbake til oversikten» på området), og «Se mer på Google» er en rad
+ * blant de andre lenkene i faktalista, ikke en stor knapp nederst.
  *
  * ## Hvorfor det ikke er modalen
  *
@@ -69,6 +86,8 @@ export function StoryPoiPanel() {
   const activePoi = useActivePOI();
   const engagement = useEngagement();
   const placePanel = useDesktopPlacePanel();
+  const tour = useStoryTourOptional();
+  const stopName = tour?.stop?.label ?? null;
 
   const open = state.exploreOpen && activePoi !== null;
 
@@ -113,11 +132,10 @@ export function StoryPoiPanel() {
     if (visible && !wasOpen.current) {
       const prev = document.activeElement;
       restoreRef.current = prev instanceof HTMLElement ? prev : null;
-      // `preventScroll`: kortet står på `translate-x-[110%]` i den framen fokus
-      // flyttes (overgangen inn har ikke begynt), og et vanlig `focus()` fikk
-      // nettleseren til å rulle hele det innrammede skallet sidelengs for å
-      // vise knappen — kolonnen forsvant ut til venstre (målt i Chrome
-      // 2026-09-15). Fokus skal flyttes, ikke utsnittet.
+      // `preventScroll`: da flaten gled inn fra `translate-x-[110%]` fikk et
+      // vanlig `focus()` nettleseren til å rulle hele det innrammede skallet
+      // sidelengs for å vise knappen (målt i Chrome 2026-09-15). Forskyvningen
+      // er nå 8 px, men fokus skal fortsatt flyttes uten å røre utsnittet.
       backRef.current?.focus({ preventScroll: true });
     } else if (!visible && wasOpen.current) {
       const prev = restoreRef.current;
@@ -140,6 +158,15 @@ export function StoryPoiPanel() {
      bildet for B, og et bilde for A som lander sent skal ikke vises i B —
      `key` på bildeboksen sørger for at elementet byttes, ikke gjenbrukes. */
   const [brokenImageId, setBrokenImageId] = useState<string | null>(null);
+
+  /* Forbeholdet om kartpunktets presisjon ligger bak et infoikon ved adressen
+     (2026-09-15): som egen linje tok det nesten like mye plass som beskrivelsen.
+     Panelet er desktop-only, så «bak et ikon» er ikke «borte på mobil» her.
+     Lukkes ved bytte av sted. */
+  const [noteOpen, setNoteOpen] = useState(false);
+  useEffect(() => {
+    setNoteOpen(false);
+  }, [shownId]);
 
   /* Moat 2-signalet. Samme kontrakt som modalens: ÉN gang per åpning, i en
      effekt, med `poi.id` som nøkkel så et bytte av sted mens laget står åpent
@@ -189,14 +216,18 @@ export function StoryPoiPanel() {
   const circle = markerCircleStyle(shown.color);
   const minutes = storyMinutes(shown, state.travelMode);
   const headingId = `story-poi-panel-title-${shownId}`;
+  const noteId = `story-poi-panel-note-${shownId}`;
+  const precisionNote =
+    shown.raw.locationPrecision === "approximate" ? shown.raw.locationNote : undefined;
   // Ekstern lenke KUN når vi ikke har grounded narrativ — har vi det, er
   // kildelenkene i attribusjonsblokken utveien, og en ekstra «gå til Google»
   // ville undergravd poenget med å beholde leseren.
-  const fallbackUrl = hasGroundedNarrative(shown.raw.grounding)
+  const searchUrl = hasGroundedNarrative(shown.raw.grounding)
     ? null
     : `https://www.google.com/search?udm=50&q=${encodeURIComponent(
         shown.address ? `${shown.name} ${shown.address}` : shown.name,
       )}`;
+  const backLabel = stopName ? `Tilbake til ${stopName}` : "Tilbake til oversikten";
 
   return (
     <div
@@ -207,146 +238,128 @@ export function StoryPoiPanel() {
          UT, og uten dette kunne du tabbe deg inn i et panel som ligger utenfor
          skjermen. */
       inert={!open}
-      className={cn("absolute inset-0 z-30", !open && "pointer-events-none")}
+      role="region"
+      aria-labelledby={headingId}
+      className={cn(
+        /* Samme flate som kolonnen: ingen skygge, ring, radius eller innrykk.
+           `bg-white` er kolonnens egen farge i omvisningen; Nyhavna overstyrer
+           begge til krem i nyhavna-brand.css. */
+        "absolute inset-0 z-30 flex flex-col bg-white",
+        /* Kort forskyvning med fading, ikke en flate som glir inn. 8 px er nok
+           til at retningen leses (fra høyre inn, tilbake til høyre ut) uten at
+           det blir en bevegelse man venter på. */
+        "transition-[transform,opacity] duration-[260ms] ease-out motion-reduce:transition-none",
+        open ? "translate-x-0 opacity-100" : "pointer-events-none translate-x-2 opacity-0",
+      )}
     >
-      {/* Skyggen kortet kaster NEDOVER på omvisningen — og grunnen til at rammen
-          rundt kortet i det hele tatt leses. Uten den er kortet hvitt på hvitt, og
-          rammen ser ut som luft i én og samme flate.
-
-          Uskarpheten gjør den andre halvparten av jobben: en tekstlinje som er
-          kuttet på midten av kortets kant ser ut som en feil så lenge den er
-          skarp, og som bakgrunn i det den er myk. Da er det tydelig HVA som
-          ligger under — omvisningen, fortsatt der du forlot den — uten at den
-          konkurrerer om blikket. */}
-      <div
-        aria-hidden
-        className={cn(
-          /* Ingen radius her: boksen panelet ligger i (oversikten mellom
-             logoen og Anja-linja, 2026-09-15) er ikke avrundet selv. */
-          "absolute inset-0 bg-stone-900/[0.18] backdrop-blur-[3px]",
-          "transition-opacity [transition-duration:420ms] motion-reduce:transition-none",
-          open ? "opacity-100" : "opacity-0",
-        )}
-      />
-
-      {/* Selve kortet: litt mindre enn boksen på alle kanter, så du SER
-          omvisningen ligge under det hele veien rundt (Andreas, 2026-08-28:
-          «kunne vi fått en slags layered look, så vi ser at den ligger over»).
-
-          2026-09-15: panelet monteres nå i oversiktens egen boks (mellom logoen
-          og Anja-linja), ikke over hele kolonnen. Boksen har ingen avrundede
-          hjørner, så det er ikke lenger noen kolonneradius å løpe konsentrisk
-          med — kortet får sin egen 14 px, og innrykket er 12 px i sidene og
-          8 px oppe/nede så det ikke stjeler høyde fra en boks som alt er
-          klemt mellom to andre.
-
-          Hvorfor MINDRE og ikke større: et kort som stikker utenfor ville måttet
-          bryte ut av boksens `overflow-hidden`, og du ville fortsatt ikke sett
-          flaten det ligger på — bare kartet. Det er nettopp omvisningen som skal
-          være synlig under. */}
-      <div
-        role="region"
-        aria-labelledby={headingId}
-        className={cn(
-          "absolute inset-x-3 inset-y-2 flex flex-col overflow-hidden rounded-[14px] bg-white",
-          "shadow-[0_16px_40px_-8px_rgba(28,25,23,0.45)] ring-1 ring-black/[0.06]",
-          "transition-transform [transition-duration:420ms] motion-reduce:transition-none",
-          "[transition-timing-function:cubic-bezier(0.32,0.72,0,1)]",
-          open ? "translate-x-0" : "translate-x-[110%]",
-        )}
-      >
-        {/* Fast topp: bare tilbakeknappen. Den scroller ikke med, så veien ut
-            er alltid på samme sted uansett hvor langt ned leseren har kommet. */}
-        <div className="flex shrink-0 items-center px-4 pb-2 pt-4">
-          <button
-            ref={backRef}
-            type="button"
-            data-testid="story-poi-panel-close"
-            onClick={close}
-            aria-label="Tilbake til oversikten"
-            className="flex h-9 w-9 items-center justify-center rounded-full bg-stone-900/[0.05] text-stone-600 transition-colors duration-150 hover:bg-stone-900/10 hover:text-stone-900 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-stone-400"
-          >
-            <ArrowLeft size={18} />
-          </button>
-        </div>
-
-        <div
-          ref={scrollRef}
-          className="min-h-0 flex-1 overflow-y-auto px-6 pb-8 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+      {/* Fast topp: tilbakeknappen med navnet på stedet du kommer tilbake til.
+          Den scroller ikke med, så veien ut er alltid på samme sted uansett hvor
+          langt ned leseren har kommet. */}
+      <div className="flex shrink-0 items-center px-6 pb-1 pt-1">
+        <button
+          ref={backRef}
+          type="button"
+          data-testid="story-poi-panel-close"
+          onClick={close}
+          className="-ml-2 inline-flex items-center gap-1.5 rounded-full py-1.5 pl-2 pr-3 text-[13.5px] font-medium text-stone-600 transition-colors duration-150 hover:bg-stone-900/[0.05] hover:text-stone-900 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-stone-400"
         >
-          {showImage && featuredImage && (
-            <div
-              key={shownId}
-              data-testid="story-poi-panel-image"
-              className="relative mb-4 aspect-[16/10] w-full overflow-hidden rounded-[10px] bg-stone-100"
-            >
-              <Image
-                src={featuredImage}
-                alt={shown.name}
-                fill
-                sizes="438px"
-                className="object-cover"
-                onError={() => setBrokenImageId(shownId)}
-              />
-            </div>
-          )}
+          <ArrowLeft size={16} aria-hidden />
+          <span>{backLabel}</span>
+        </button>
+      </div>
 
-          {/* Hodet er det ALLE steder har. Et sted uten bilde og tekst er
-              ferdig etter disse linjene, og skal se ferdig ut. */}
-          <h2
-            id={headingId}
-            className="text-[21px] font-bold leading-[1.2] tracking-[-0.02em] text-stone-900"
+      <div
+        ref={scrollRef}
+        className="min-h-0 flex-1 overflow-y-auto px-6 pb-8 pt-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+      >
+        {showImage && featuredImage && (
+          <div
+            key={shownId}
+            data-testid="story-poi-panel-image"
+            className="relative mb-4 aspect-[16/10] w-full overflow-hidden rounded-[6px] bg-stone-100"
           >
-            {shown.name}
-          </h2>
-          <p className="mt-1.5 flex flex-wrap items-center gap-x-1.5 gap-y-1 text-[13.5px] text-stone-500">
-            <span
-              aria-hidden
-              className="inline-block h-2.5 w-2.5 flex-none rounded-full border-2"
-              style={{
-                borderColor: circle.borderColor,
-                backgroundColor: circle.backgroundColor,
-              }}
+            <Image
+              src={featuredImage}
+              alt={shown.name}
+              fill
+              sizes="438px"
+              className="object-cover"
+              onError={() => setBrokenImageId(shownId)}
             />
-            <span>{shown.raw.category.name}</span>
-            {shown.address && (
-              <>
-                <span aria-hidden>·</span>
-                <span className="min-w-0 truncate">{shown.address}</span>
-              </>
-            )}
-            <StatusBadge status={shown.raw.developmentStatus} />
-          </p>
-          {minutes !== undefined && (
-            <p
-              data-testid="story-poi-panel-minutes"
-              className="mt-3 text-[13.5px] font-medium text-stone-700"
-            >
-              {minutes} min {TRAVEL_LABEL[state.travelMode]}
-            </p>
-          )}
-
-          {/* Uten `emptyText`: har stedet ikke tekst, står hodet alene. Merket
-              «Planlagt» bæres av kategorilinja over, så kroppen skal ikke
-              gjenta det. */}
-          <div className="mt-4">
-            <PoiDetailBody poi={bodyPoi} galleryClassName="-mx-6 px-6" showStatus={false} />
-          </div>
-        </div>
-
-        {fallbackUrl && (
-          <div className="shrink-0 border-t border-stone-200/80 px-6 py-3">
-            <a
-              href={fallbackUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex w-full items-center justify-center gap-1.5 rounded-full bg-stone-100 px-3 py-2.5 text-[13px] font-medium text-stone-700 transition hover:bg-stone-200"
-            >
-              <ExternalLink aria-hidden className="h-3.5 w-3.5" />
-              Se mer på Google
-            </a>
           </div>
         )}
+
+        {/* Hodet er det ALLE steder har, samlet tett under tittelen: kategori
+            og adresse på én linje, minuttene rett under. Et sted uten bilde og
+            tekst er ferdig etter disse linjene, og skal se ferdig ut. */}
+        <h2
+          id={headingId}
+          className="text-[21px] font-bold leading-[1.2] tracking-[-0.02em] text-stone-900"
+        >
+          {shown.name}
+        </h2>
+        <p className="mt-1 flex flex-wrap items-center gap-x-1.5 gap-y-0.5 text-[13.5px] text-stone-500">
+          <span
+            aria-hidden
+            className="inline-block h-2.5 w-2.5 flex-none rounded-full border-2"
+            style={{
+              borderColor: circle.borderColor,
+              backgroundColor: circle.backgroundColor,
+            }}
+          />
+          <span>{shown.raw.category.name}</span>
+          {shown.address && (
+            <>
+              <span aria-hidden>·</span>
+              <span className="min-w-0 truncate">{shown.address}</span>
+            </>
+          )}
+          {precisionNote && (
+            <button
+              type="button"
+              data-testid="story-poi-panel-note-toggle"
+              aria-label="Om kartpunktets plassering"
+              aria-expanded={noteOpen}
+              aria-controls={noteId}
+              onClick={() => setNoteOpen((v) => !v)}
+              className="inline-flex h-5 w-5 flex-none items-center justify-center rounded-full text-stone-400 transition-colors hover:text-stone-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-stone-400"
+            >
+              <Info size={14} aria-hidden />
+            </button>
+          )}
+          <StatusBadge status={shown.raw.developmentStatus} />
+        </p>
+        {minutes !== undefined && (
+          <p
+            data-testid="story-poi-panel-minutes"
+            className="mt-0.5 text-[13.5px] font-medium text-stone-700"
+          >
+            {minutes} min {TRAVEL_LABEL[state.travelMode]}
+          </p>
+        )}
+        {precisionNote && noteOpen && (
+          <p
+            id={noteId}
+            data-testid="precision-note"
+            className="mt-2 rounded-[6px] bg-stone-900/[0.04] px-3 py-2 text-[13px] leading-[1.5] text-stone-600"
+          >
+            {precisionNote}
+          </p>
+        )}
+
+        {/* Uten `emptyText`: har stedet ikke tekst, står hodet alene. Merket
+            «Planlagt» bæres av kategorilinja over, så kroppen skal ikke
+            gjenta det. Forbeholdet ligger bak infoikonet over, og Google-lenka
+            går inn blant de andre lenkene i faktalista. */}
+        <div className="mt-4">
+          <PoiDetailBody
+            poi={bodyPoi}
+            galleryClassName="-mx-6 px-6"
+            showStatus={false}
+            showPrecisionNote={false}
+            searchUrl={searchUrl}
+          />
+        </div>
       </div>
     </div>
   );
