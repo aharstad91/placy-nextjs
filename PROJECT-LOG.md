@@ -6,6 +6,20 @@
 
 ---
 
+## 2026-09-15 — Lillebytunet: satellitt og 3D tilbake etter omlasting
+
+Riktig board var `/eiendom/skanska/lillebytunet/rapport-board`, ikke Overvik. Databasen og ferske produksjonsdata hadde allerede `has3dAddon=true`, men den åpne Chrome-fanen viste bare Mapbox og reisemåte. Etter omlasting viste den 2D-kart, Satellitt ovenfra og 3D-kart. Satellitt var valgt fra start; 3D ble valgt og bekreftet i nettleseren med Google Maps og aktivt 3D-valg. Ingen kode eller databaseendring nødvendig. Forrige Overvik-undersøkelse skyldtes assistentens misforståelse.
+
+---
+
+## 2026-09-15 — Overvik: gammel cache skjulte satellitt og 3D
+
+Assistenten tolket feilaktig brukerens melding som Overvik; brukeren presiserte etterpå at den gjaldt Lillebytunet. Overvik ble undersøkt ved en feil. Read-only oppslag viste `v2.projects.id=intern_overvik`, `has_3d_addon=true`, mens første produksjonsrespons fra `/eiendom/intern/overvik/rapport-board` inneholdt `has3dAddon:false`. Neste uthenting leverte `true`: siden ble oppdatert gjennom ordinær cache-revalidering. Begge kartvalgene styres av dette flagget i `BoardMap.tsx` (`showViewToggle={has3dAddon}`). Ingen kode eller databaseinnstillinger endret.
+
+Verifisert før/etter i produksjonens sidedata; visuell nettleserkontroll var utilgjengelig (ingen tilkoblet nettleser). Åpent: GET `/api/revalidate` svarte 500 fordi `REVALIDATE_SECRET` ikke er konfigurert i produksjon. Dette forsøket oppdaterte ikke cachen; undersøk eksisterende `/api/admin/revalidate` ved senere behov for manuell invalidering. Ingen deploy/push.
+
+---
+
 ## 2026-09-14 — Bildepinner for delområdene, logo i utgangspunktet, alt merget til main
 
 De fem delområdene fra nyhavna.no/bo (Transittkaia, Kullkranpiren, Ladehammerkaia, Strandveikaia, Bunkerkvartalet) tegnes nå som sirkler fylt med utbyggerens hero-illustrasjon (256 px webp-utsnitt i `public/demo/nyhavna-lokal/bydeler/`), like store som prosjektpinnen (52 px, delt konstant `PROJECT_PIN_DISC` → `IMAGE_PIN_SIZE`). Utgangspunkt-pinnen viser Nyhavna-logomerket (`pinImage` på board). Temafargen står igjen som ring, ikonet faller bort. Andreas: nybyggene skal skilles fra stedene som finnes i dag, og være «like store som selve objekt-sirkelen».
@@ -10182,3 +10196,43 @@ Verifisert: tsc 0, lint 0 feil, 274 filer / 4 383 tester grønne (8 nye: 5 i `St
 ### Runde 3b (2026-09-15): kartklikk følger stedets kategori
 
 Andreas trykket på Nedre Elvehavn barnehage (Oppvekst) fra Hverdag: raden sto på Hverdag og «Lignende steder» viste dagligvare. Bestillingen «kartklikk skal beholde gjeldende kategorikontekst» gjelder altså bare når stedet LIGGER i den; ellers skal raden og lista følge stedet. Ny `StoryTourApi.followPlace(poiId)`: ingenting hvis stedet er i stoppet du står i (et sted i flere kategorier beholder den du kom fra), ellers flyttes steget til stedets kategori uten `clearOpen`/`BACK_TO_DEFAULT` (panelet står) og uten kamera. `useMapPinClick` kaller den under policyen i stedet for `revealFromMap`. Testen som sa det motsatte er byttet ut med to (samme tema beholdes / annet tema følges). Verifisert i Chrome: Hverdag → barnehage-pinne → «Oppvekst» markert, «Tilbake til Oppvekst», lista = Strandveiparken, Svartlamon bhg, Lademoen bhg, Buranbanen, Leo's (6/6/8/11/12 min); pinne i samme tema beholder det. 4 384 tester grønne, tsc/lint rene. Bilde `j1-bhg.png`.
+
+---
+
+## 2026-09-14 — Propr-sporet vurdert på nytt: nabolagspakke som tilleggsprodukt
+
+**Status:** Mulighet til vurdering, ingen beslutning om å prioritere sporet, starte pilot eller kontakte Propr. Andreas ba eksplisitt om å føre samtalen i worklogen. Propr ble tidligere valgt som distribusjonsspor i april, senere parkert til fordel for kjede/utbygger; denne samtalen endrer ikke prioriteringen formelt. Tidligere grunnlag: `docs/brainstorms/2026-04-30-propr-distribusjons-pilot-brainstorm.md` og `docs/strategy/aktor-map.md`.
+
+**Utgangspunkt.** Andreas viste Proprs bestillingsflyt med foto/plantegning, dokumentasjon, FINN-annonse og plattformbruk som separate poster, samt prospektet for Langes gate 3 i Drammen (320277). Beliggenhetsteksten er generell; nabolagskartet leder i skjermbildene til en koordinatvisning i Google Maps. Det er ikke verifisert hvem som skriver teksten eller hvilken skrivehjelp Propr tilbyr. En mer moden Placy-pipeline for stedsfunn og research gjør det aktuelt å vurdere en ferdig nabolagspakke som tilleggsprodukt i samme kjøpsflyt.
+
+**Produktidé.** Én bestilling gir beliggenhetstekst til annonse og salgsoppgave, interaktivt nabolagskart med utvalgte steder og gangavstander, samt lenke/QR fra PDF. Selgeren får hjelp til presentasjonen; kjøperen kan utforske hverdagen rundt boligen. Teksten kan utløse kjøpet, mens kartet viser merverdien. Foreslått demonstrasjon er dagens Langes gate 3-prospekt sammenlignet med en ferdig Placy-pakke og en konkret bestillingslinje. Ingen demo bygget i denne sesjonen.
+
+**Prishypotese.** Test 1 990 kr inkl. mva. per boligsalg, som engangsbetaling med avtalt varighet i annonseperioden. 990 kr ble vurdert som mulig introduksjons-/volumpris, 2 990 kr som et senere testpunkt. Dette er forslag, ikke vedtatt prisliste eller validert betalingsvilje. Med en illustrativ partnerandel på 30 % av beløpet eks. mva. blir Proprs andel 477,60 kr og beløpet til Placy 1 114,40 kr per bestilling, før produksjon, drift og support. Fordelingen er ikke forhandlet. Produksjonstid og behov for manuell gjennomgang må måles.
+
+**Offentlig research, sjekket 14.09.2026.** Proff viser for Propr AS (926 312 537):
+
+| Regnskapsår | Salgsinntekter | Sum driftsinntekter | Driftsresultat |
+|---|---:|---:|---:|
+| 2023 | 16,438 mill. kr | 18,024 mill. kr | 1,959 mill. kr |
+| 2024 | 22,168 mill. kr | 24,824 mill. kr | 3,847 mill. kr |
+| 2025 | 31,765 mill. kr | 39,240 mill. kr | 9,850 mill. kr |
+
+Salgsinntektene vokste ca. 43 % i 2025. Samlede driftsinntekter inkluderer 7,475 mill. kr andre driftsinntekter og kan ikke uten videre deles på pakkepris for å utlede antall boligsalg. Finansavisen oppga 1 016 solgte boliger i 2019 og 1 401 i 2020. Proprs forside viser nå 18 767 kunder totalt; dette er ikke et årstall for fullførte salg eller nye annonser. Ingen bekreftet årsserie for 2024/2025 ble funnet. **Korreksjon til eldre planmateriale: ca. 1 700/år var et historisk gjennomsnittsanslag, ikke dokumentert nåværende salgsvolum.** For Placy er nye annonser, eksklusive rene oppgjørsoppdrag, riktig beregningsgrunnlag.
+
+**Scenario for Placy.** Ved 1 990 kr inkl. mva. og 30 % partnerandel:
+
+| Antatte aktuelle annonser/år | 10 % kjøper | 20 % kjøper | 30 % kjøper |
+|---|---:|---:|---:|
+| 1 500 | 167 160 kr | 334 320 kr | 501 480 kr |
+| 2 000 | 222 880 kr | 445 760 kr | 668 640 kr |
+| 3 000 | 334 320 kr | 668 640 kr | 1 002 960 kr |
+
+Alle volum og kjøpsandeler er forutsetninger, ikke verifiserte Propr-tall. Beløpene er til Placy eks. mva. etter partnerandel, før egne kostnader, under en antatt videresalgmodell. Arbeidsanslaget i samtalen var 2 000 annonser × 15–20 % kjøpsandel = 300–400 leveranser og ca. 334–446 000 kr årlig. Et bredere intervall på 200–500 000 kr ble vurdert som mulig ved etablert samarbeid; første år kan bli lavere. Ca. én million krever rundt 900 bestillinger og er et oppsidescenario. Verken volum, kjøpsandel eller lønnsomhet er validert.
+
+**Åpent / mulig neste steg.** Avklar Proprs antall nye boligannonser siste 12 måneder uten rene oppgjørsoppdrag; lag en konkret før/etter-demo dersom sporet prioriteres; mål produksjonstid; test faktiske betalte bestillinger og avklar partnerandel og leveringsvarighet. Ingen kontakt, pilot, avtale eller ny utviklingsoppgave opprettet.
+
+**Kilder:**
+- Proff: https://www.proff.no/regnskap/propr-as/oslo/dataprogramvare-og-utvikling/IFBI3BT009O
+- Proprs kundeteller: https://propr.no/
+- Prospekt: https://propr.no/prospekt/320277
+- Historiske salgstall: https://www.finansavisen.no/nyheter/bolig/2021/04/29/7664893/selger-flere-boliger-men-taper-penger-pa-femte-aret
