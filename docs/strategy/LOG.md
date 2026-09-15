@@ -14,6 +14,18 @@
 
 ---
 
+## 2026-09-15 — Skanska: Thomas bekrefter kontaktrollen og ber om demo
+
+**Status:** Thomas Borg Rasmussen (`thomas.rasmussen@skanska.no`) svarte 15.09 kl. 13:51 på Andreas' e-post fra 09.09: «Det er nok meg som er riktig kontaktperson for sånt, send meg gjerne demoen så kan jeg ta en titt.» Direkte dialog er etablert; ingen møte, pilot, pris eller kjøpsforpliktelse er avtalt. Utsendelse av Lillebytunet-demoen er ikke bekreftet.
+
+**Avklart:** Andreas er registrert som interessent på Ranheim Senter. Thomas beklager feilen ved registreringen og har bedt systemleverandøren undersøke den. Dette bekrefter registreringen, men ikke at feilen er rettet eller den tekniske årsaken fastslått.
+
+**Neste:** Verifiser og send Lillebytunet-demoen til Thomas. Planen fra 10.09 om å kontakte Gro Elisabeth ved fortsatt stillhet er erstattet av direkte oppfølging med Thomas. [Skanska-kortet](https://trello.com/c/e3jst1Mp) er flyttet til I dialog og oppdatert med 16.09 som intern oppfølgingsdato, ikke en avtalt frist. Aktørkartet er oppdatert.
+
+**Kilde:** E-post delt av Andreas, emne «Sv: Interesselisten for Ranheim Senter – kom registreringen gjennom?», 15.09.2026 kl. 13:51.
+
+---
+
 ## 2026-09-14 — Emera: første meglerkjede med åpen objektside
 
 **Funn:** Emera Eiendomsmegling kjører Vitec Next som meglersystem, men har **egenutviklet Next.js-nettside på Vercel med Sanity som CMS** — uten CSP og uten X-Frame-Options. Objektsiden har koordinater og adresse i sitt eget datalag, så en Placy-komponent kan bygge board-URL per objekt uten Vitec-integrasjon. Én kodeendring vil dekke alle ~700 aktive annonser. Dette er motsatt av EM1/SpareBank 1s felles frontend (2026-08-04), der verken iframe eller lenke overlevde.
@@ -117,6 +129,8 @@
 **Beslutning:** Avvent svar fra Thomas Borg Rasmussen til mandag 14. september. Hvis han fortsatt ikke har svart, går vi videre til Gro Elisabeth hos Skanska med en egen Placy-mail og demo for Lillebytunet. Interesseregistreringen på Ranheim Senter og manglende svar fra Thomas trekkes ikke inn i denne henvendelsen.
 
 **Status:** Thomas har ikke svart på e-posten om interesseregistrering og Lillebytunet-demo. Ingen ny henvendelse sendt. Dette erstatter vurderingsdato 16. september for Skanska i pipeline-planen; Trello-datoen er ikke oppdatert i denne loggføringen.
+
+Supersedert 2026-09-15 — Thomas har svart og ber om demo; se dagens Skanska-entry.
 
 ---
 
