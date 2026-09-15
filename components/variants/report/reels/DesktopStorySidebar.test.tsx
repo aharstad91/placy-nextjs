@@ -667,12 +667,23 @@ describe("ett panel for alle steder — desktop-policyen (2026-09-15)", () => {
     expect(activeStop(utils)).toBe(other.textContent);
   });
 
-  it("et kartklikk beholder temaet du står i — kategorien utledes ikke fra stedet", () => {
+  it("et kartklikk på et sted i temaet du står i beholder temaet", () => {
     const utils = openTheme();
     const before = activeStop(utils);
     act(() => pin.click("apotek"));
     expect(panel(utils).getAttribute("data-open")).toBe("true");
     expect(activeStop(utils)).toBe(before);
+  });
+
+  it("et kartklikk på et sted i et ANNET tema flytter raden dit — panelet står, lista viser stedets kategori", () => {
+    const utils = openTheme();
+    expect(activeStop(utils)).toBe("Hverdagsliv");
+    act(() => pin.click("fjaera"));
+    expect(panel(utils).getAttribute("data-open")).toBe("true");
+    expect(spy.activePOIId).toBe("fjaera");
+    expect(activeStop(utils)).toBe("Natur & Friluftsliv");
+    expect(utils.getByTestId("story-poi-panel-close").textContent).toBe("Tilbake til Natur & Friluftsliv");
+    expect(utils.camera.flyToPoint).not.toHaveBeenCalled();
   });
 
   it("lukking slipper punktet og gir oversikten tilbake med samme stopp", () => {

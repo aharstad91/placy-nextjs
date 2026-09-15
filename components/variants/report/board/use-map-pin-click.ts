@@ -62,7 +62,10 @@ export function useMapPinClick(): (poiId: string) => void {
         poiId: String(found.id),
         payload: { category_id: cat.id },
       });
-      if (!placePanel) story?.revealFromMap(id);
+      // Policyen: flaten er alt åpnet i dispatchen over; raden følger stedets
+      // kategori hvis det ikke ligger i den du står i (`followPlace`).
+      if (placePanel) story?.followPlace(id);
+      else story?.revealFromMap(id);
       return;
     }
   }, []);

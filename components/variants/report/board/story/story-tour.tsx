@@ -184,6 +184,13 @@ interface StoryTourApi {
    * verken punktet eller kameraet: den flytter flaten.
    */
   revealFromMap: (poiId: string) => void;
+  /** Panel-policyen (2026-09-15): et sted åpnet fra kartet skal stå i SIN
+   *  kategori. Ligger stedet i stoppet du står i, skjer ingenting (et sted i
+   *  flere kategorier beholder den du kom fra); ellers flyttes raden til
+   *  stedets kategori — uten å lukke panelet, uten kamerabevegelse. Andreas
+   *  2026-09-15: «her er det ikke bytte til riktig kategori i kategori-tab,
+   *  samt er det feil kategori-punkter som vises i lista». */
+  followPlace: (poiId: string) => void;
   togglePlace: (poi: BoardPOI) => void;
   /** Markørens vekt, eller null når omvisningen er av ELLER står på området
    *  (kartet er da urørt — området ER overblikket). */
@@ -500,6 +507,20 @@ export function StoryTourProvider({ children }: { children: ReactNode }) {
     [cancelPending, emitStop, on, placePanel, step, stop, stops],
   );
 
+  const followPlace = useCallback(
+    (poiId: string) => {
+      if (!on) return;
+      const id = String(poiId);
+      if (stop?.pois.some((p) => String(p.id) === id)) return;
+      const idx = stops.findIndex((c) => c.pois.some((p) => String(p.id) === id));
+      if (idx < 0 || idx === step) return;
+      cancelPending();
+      setTour((prev) => (prev ? { step: idx, pane: "about" } : prev));
+      emitStop(stops[idx]);
+    },
+    [cancelPending, emitStop, on, step, stop, stops],
+  );
+
   const isPlaceOpen = useCallback(
     (poiId: string) => openPoiIds.has(String(poiId)),
     [openPoiIds],
@@ -531,10 +552,12 @@ export function StoryTourProvider({ children }: { children: ReactNode }) {
       showPlace,
       togglePlace,
       revealFromMap,
+      followPlace,
       emphasisOf,
     }),
     [
       begin,
+      followPlace,
       emphasisOf,
       end,
       focusPoiId,
