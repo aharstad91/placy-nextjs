@@ -142,7 +142,7 @@ interface Props {
  * overblikket, og det var det indeksen viste.
  */
 export function StoryColumn({ noBrokers = false }: { noBrokers?: boolean }) {
-  const { available, on, begin } = useStoryTour();
+  const { available, on, onArea, begin } = useStoryTour();
   const { data, state } = useBoard();
   const placePanel = useDesktopPlacePanel();
   // Panelet står over oversikten. Da skal oversikten ikke kunne tabbes inn i
@@ -160,10 +160,24 @@ export function StoryColumn({ noBrokers = false }: { noBrokers?: boolean }) {
   // stripen så man innholdet gli forbi over det.
   return (
     <>
+      {/* Kategoriraden står FAST under logoen under panel-policyen (2026-09-15,
+          Andreas: «vis samme kategorirad rett under logoen både i
+          kategorioversikten og når et POI er åpent»). Den ligger utenfor boksen
+          panelet dekker, så den er synlig og klikkbar med et sted åpent: valgt
+          tema forblir markert (konteksten du kom fra), og et trykk på et annet
+          tema går via `goto` → BACK_TO_DEFAULT, som lukker stedet og viser den
+          nye oversikten. På områdestoppet finnes ingen rad (StoryRail returnerer
+          null der), og da skal heller ikke luften stå. Uten policy ligger raden
+          som før i kortets festede hode. */}
+      {placePanel && !onArea && (
+        <div data-testid="story-rail-slot" className="shrink-0 px-6 pb-3">
+          <StoryRail variant="flow" />
+        </div>
+      )}
       {/* Oversikten og stedets side deler ÉN boks (2026-09-15): panelet ligger
-          `absolute inset-0` i den, og dekker dermed oversikten — ikke logoen
-          over og ikke samtalen under. Slik holder Anja seg tilgjengelig med
-          panelet åpent (R11), og laget lukkes uten at samtalen restartes.
+          `absolute inset-0` i den, og dekker dermed oversikten — ikke logoen og
+          raden over og ikke samtalen under. Slik holder Anja seg tilgjengelig
+          med panelet åpent (R11), og laget lukkes uten at samtalen restartes.
           Oversikten beholder scroll-posisjon og stopp bak laget. */}
       <div className="relative flex min-h-0 flex-1 flex-col">
         <div
@@ -175,14 +189,14 @@ export function StoryColumn({ noBrokers = false }: { noBrokers?: boolean }) {
             /* Innholdsbyttet (2026-09-15): når stedet dekker oversikten glir
                den litt til venstre og fader ut, stedet kommer inn fra høyre
                (i StoryPoiPanel). Ved retur reverseres det. Bare innholdet
-               beveger seg — logo og Anja står fast. */
+               beveger seg — logo, rad og Anja står fast. */
             "transition-[transform,opacity] duration-[260ms] ease-out motion-reduce:transition-none",
             covered ? "-translate-x-2 opacity-0" : "translate-x-0 opacity-100",
           )}
         >
           <StoryCard
             variant="column"
-            head={<StoryRail variant="flow" />}
+            head={placePanel ? undefined : <StoryRail variant="flow" />}
             // Kortet kommer ETTER innholdet og skyves til bunnen når innholdet er
             // kort (områdestoppet i en demo med lite tekst, 2026-09-14). Det er
             // ikke festet: ruller du i et langt tema, kommer det til slutt, som

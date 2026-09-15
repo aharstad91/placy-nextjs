@@ -641,6 +641,40 @@ describe("ett panel for alle steder — desktop-policyen (2026-09-15)", () => {
     expect(utils.getAllByTestId("story-poi-panel")).toHaveLength(1);
   });
 
+  it("kategoriraden står FAST under logoen — utenfor oversikten, synlig og klikkbar med et sted åpent", () => {
+    const utils = openTheme();
+    const slot = utils.getByTestId("story-rail-slot");
+    expect(slot.contains(rail(utils))).toBe(true);
+    expect(board(utils).contains(rail(utils))).toBe(false);
+    fireEvent.click(utils.getAllByTestId("story-row")[0]);
+    expect(panel(utils).getAttribute("data-open")).toBe("true");
+    expect(board(utils).hasAttribute("inert")).toBe(true);
+    expect(rail(utils).closest("[inert]")).toBeNull();
+    // Konteksten du kom fra er fortsatt markert.
+    expect(activeStop(utils)).toBe("Hverdagsliv");
+    expect(utils.getByTestId("story-poi-panel-close").textContent).toBe("Tilbake til Hverdagsliv");
+  });
+
+  it("et trykk på et annet tema lukker stedet og viser den nye oversikten", () => {
+    const utils = openTheme();
+    fireEvent.click(utils.getAllByTestId("story-row")[0]);
+    expect(spy.exploreOpen).toBe(true);
+    const other = within(rail(utils)).getAllByRole("tab").find((t) => t.getAttribute("aria-current") !== "true")!;
+    act(() => fireEvent.click(other));
+    expect(spy.exploreOpen).toBe(false);
+    expect(spy.activePOIId).toBeNull();
+    expect(board(utils).hasAttribute("inert")).toBe(false);
+    expect(activeStop(utils)).toBe(other.textContent);
+  });
+
+  it("et kartklikk beholder temaet du står i — kategorien utledes ikke fra stedet", () => {
+    const utils = openTheme();
+    const before = activeStop(utils);
+    act(() => pin.click("apotek"));
+    expect(panel(utils).getAttribute("data-open")).toBe("true");
+    expect(activeStop(utils)).toBe(before);
+  });
+
   it("lukking slipper punktet og gir oversikten tilbake med samme stopp", () => {
     const utils = openTheme();
     fireEvent.click(utils.getAllByTestId("story-row")[0]);

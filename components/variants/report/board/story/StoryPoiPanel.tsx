@@ -2,17 +2,19 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import Image from "next/image";
-import { ArrowLeft, Info } from "lucide-react";
+import { ArrowLeft, ChevronRight, Info } from "lucide-react";
+import { getIcon } from "@/lib/utils/map-icons";
 import { cn } from "@/lib/utils";
 import { useEngagement } from "@/lib/instrumentation/engagement-scope";
 import type { TravelMode } from "@/lib/types";
 import { markerCircleStyle } from "../marker-style";
 import { PoiDetailBody, hasGroundedNarrative } from "../PoiDetail";
 import { StatusBadge } from "../SourcedContent";
-import type { BoardPOI } from "../board-data";
+import type { BoardCategory, BoardPOI } from "../board-data";
+import { findBoardCategoryOf } from "../board-data";
 import { useActivePOI, useBoard } from "../board-state";
 import { useDesktopPlacePanel } from "../use-popup-mode";
-import { storyMinutes } from "./story-model";
+import { byMinutesThenName, storyMinutes } from "./story-model";
 import { useStoryTourOptional } from "./story-tour";
 
 /**
@@ -82,7 +84,7 @@ const TRAVEL_LABEL: Record<TravelMode, string> = {
 };
 
 export function StoryPoiPanel() {
-  const { state, dispatch } = useBoard();
+  const { state, dispatch, data } = useBoard();
   const activePoi = useActivePOI();
   const engagement = useEngagement();
   const placePanel = useDesktopPlacePanel();
@@ -210,6 +212,23 @@ export function StoryPoiPanel() {
       raw: { ...shown.raw, galleryImages: gallery.filter((u) => u !== featuredImage) },
     };
   }, [shown, featuredImage]);
+
+  /* «Lignende steder» (2026-09-15): veien videre uten å gå tilbake til
+     oversikten. Steder fra GJELDENDE kategori — stoppet du står i, som er
+     konteksten du kom fra, ikke stedets egen kategori utledet på nytt. Står
+     du på området (ingen kategori), brukes stedets egen. Sortert på lagret
+     reisetid for valgt reisemåte, steder uten tid sist (byMinutesThenName),
+     valgt sted utelatt, maks fem. Ingen ny datainnhenting, ingen rangering
+     utover reisetiden vi alt har. */
+  const similarCategory: BoardCategory | null =
+    tour?.stop ?? (shown ? findBoardCategoryOf(data.categories, shown) : null);
+  const similar = useMemo(() => {
+    if (!shown || !similarCategory) return [];
+    return similarCategory.pois
+      .filter((p) => p.id !== shown.id)
+      .sort(byMinutesThenName(state.travelMode))
+      .slice(0, 5);
+  }, [shown, similarCategory, state.travelMode]);
 
   if (!shown || !bodyPoi) return null;
 
@@ -360,6 +379,68 @@ export function StoryPoiPanel() {
             searchUrl={searchUrl}
           />
         </div>
+
+        {/* Etter beskrivelse, fakta og kilder, med moderat avstand — IKKE
+            skjøvet til bunnen for å fylle skjermen (`mt-8`, ikke `mt-auto`).
+            Kompakte rader med pil fram, ingen utfolding: et trykk bytter sted i
+            samme flate (`showPlace` → OPEN_POI med detail), markøren følger, og
+            scroll-effekten over starter innholdet på toppen. Kategorien i raden
+            forblir den du står i. Skjult når kategorien ikke har andre steder,
+            og finnes BARE under panel-policyen: ankerpanelet på andre boards
+            skal stå som det er (R13). */}
+        {placePanel && similar.length > 0 && similarCategory && (
+          <section
+            data-testid="story-poi-panel-similar"
+            aria-labelledby={`${headingId}-similar`}
+            className="mt-8"
+          >
+            <h3
+              id={`${headingId}-similar`}
+              className="text-[12px] font-semibold uppercase tracking-[0.06em] text-stone-500"
+            >
+              Lignende steder
+            </h3>
+            <ul className="mt-2 -mx-2">
+              {similar.map((p) => {
+                const Icon = getIcon(p.raw.category.icon);
+                const min = storyMinutes(p, state.travelMode);
+                return (
+                  <li key={String(p.id)}>
+                    <button
+                      type="button"
+                      data-testid="story-similar-row"
+                      data-poi={String(p.id)}
+                      onClick={() => {
+                        // `showPlace` åpner punkt og panel i én dispatch under
+                        // policyen (og flyr kameraet med holdFrame). Uten
+                        // omvisning finnes ikke seksjonen — se gaten over.
+                        tour?.showPlace(p);
+                      }}
+                      className="flex w-full items-center gap-3 rounded-[8px] px-2 py-2 text-left transition-colors duration-150 hover:bg-stone-900/[0.04] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-stone-400"
+                    >
+                      <span
+                        aria-hidden
+                        className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-white"
+                        style={{ backgroundColor: similarCategory.color }}
+                      >
+                        <Icon size={14} />
+                      </span>
+                      <span className="min-w-0 flex-1 truncate text-[14.5px] font-medium text-stone-900">
+                        {p.name}
+                      </span>
+                      {min !== undefined && (
+                        <span className="shrink-0 text-[13px] tabular-nums text-stone-500">
+                          {min} min
+                        </span>
+                      )}
+                      <ChevronRight size={16} className="shrink-0 text-stone-400" aria-hidden />
+                    </button>
+                  </li>
+                );
+              })}
+            </ul>
+          </section>
+        )}
       </div>
     </div>
   );

@@ -192,7 +192,16 @@ export function StoryCard({
       )}
     >
       {/* `contents` på mobil — se doccen over. */}
-      <div data-story-heading className="contents lg:sticky lg:top-0 lg:z-[4] lg:-mx-6 lg:block lg:bg-white lg:px-6 lg:pb-2 lg:pt-3">
+      <div
+        data-story-heading
+        className={cn(
+          "contents lg:sticky lg:top-0 lg:z-[4] lg:-mx-6 lg:block lg:bg-white lg:px-6 lg:pb-2 lg:pt-3",
+          /* Under panel-policyen på et tema er hodet tomt (raden står i
+             StoryColumn, overskriften bare på området, fanene finnes ikke):
+             da skal det ikke stå igjen som 20 px luft over innholdet. */
+          panelMode && !onArea && !head && !assistant && "lg:hidden",
+        )}
+      >
         {/* Utgangen finnes bare på MOBIL. Der ligger indeksen (nabolagslista,
             boardets FAQ, inngangen) bak omvisningen, og krysset er veien
             tilbake til den — øverst til høyre, der en lukkeknapp alltid har
@@ -207,7 +216,10 @@ export function StoryCard({
             inne i rekkefølgen ennå, og temaene ligger som rutenett i innholdet
             (`StoryThemeGrid`). Raden kommer inn når et tema er valgt. */}
         {head && !onArea && <div className="mb-3">{head}</div>}
-        {!head && (
+        {/* `!column` og ikke `!head` (2026-09-15): under panel-policyen sender
+            kolonnen ingen `head` (raden står fast under logoen i StoryColumn),
+            og utgangen skal fortsatt bare finnes på mobil. */}
+        {!column && (
           <div className="sticky top-0 z-[3] flex h-0 justify-end">
             <button
               type="button"

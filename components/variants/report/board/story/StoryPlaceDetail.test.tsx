@@ -132,6 +132,10 @@ const GEMINI: Partial<POI> = {
 };
 
 function boardData(extraPlaces: BoardPOI[] = []): BoardData {
+  const solo = {
+    ...poi("Ensom kiosk", { extra: { travelTime: { walk: 9 } } }),
+    categoryId: "solo" as BoardPOI["categoryId"],
+  } as BoardPOI;
   return {
     projectSlug: "ranheim",
     home: {
@@ -175,6 +179,17 @@ function boardData(extraPlaces: BoardPOI[] = []): BoardData {
         ],
         topRankedPois: [],
       },
+      {
+        id: "solo" as never,
+        label: "Alene",
+        question: "Er det noe mer?",
+        lead: "Ett sted.",
+        body: "",
+        icon: "MapPin",
+        color: "#3355cc",
+        pois: [solo],
+        topRankedPois: [],
+      },
     ],
     poisById: new Map(),
     audioTourEnabled: false,
@@ -186,11 +201,13 @@ const spy = {
   phase: "default" as string,
   activePOIId: null as string | null,
   dispatch: (() => {}) as (a: BoardAction) => void,
+  goto: (() => {}) as (n: number) => void,
 };
 
 function Probe({ onBegin }: { onBegin: (fn: () => void) => void }) {
   const { state, dispatch } = useBoard();
-  const { begin } = useStoryTour();
+  const { begin, goto } = useStoryTour();
+  spy.goto = goto;
   spy.exploreOpen = state.exploreOpen;
   spy.phase = state.phase;
   spy.activePOIId = state.activePOIId ? String(state.activePOIId) : null;
@@ -460,5 +477,82 @@ describe("kolonnen skifter innhold — ikke et kort over den (2026-09-15)", () =
     openInPanel("Bua");
     expect(queryByTestId("story-poi-panel-note-toggle")).toBeNull();
     expect(queryByTestId("precision-note")).toBeNull();
+  });
+});
+
+describe("«Lignende steder» under stedsinnholdet (2026-09-15)", () => {
+  const rows = (utils: ReturnType<typeof setup>) =>
+    [...utils.container.querySelectorAll('[data-testid="story-similar-row"]')] as HTMLElement[];
+
+  it("viser opptil fem andre steder fra gjeldende kategori, sortert på reisetid og navn, uten det valgte", () => {
+    desktop = true;
+    const utils = setup({ placePanel: true });
+    openInPanel("Bua");
+    const list = rows(utils);
+    expect(list).toHaveLength(5);
+    expect(list.map((r) => r.getAttribute("data-poi"))).toEqual([
+      "Flipper Kafe",
+      "Grilstad mall",
+      "Kaia",
+      "Kiosken",
+      "Osteria",
+    ]);
+    expect(list.map((r) => r.getAttribute("data-poi"))).not.toContain("Bua");
+    expect(list[0].textContent).toContain("5 min");
+    // Ingen utfolding — radene er innganger.
+    expect(list[0].getAttribute("aria-expanded")).toBeNull();
+  });
+
+  it("sorterer på valgt reisemåte, og viser ikke tider vi mangler", () => {
+    desktop = true;
+    const utils = setup({
+      placePanel: true,
+      places: [poi("Tidløs", { extra: { travelTime: {} } })],
+    });
+    act(() => spy.dispatch({ type: "SET_TRAVEL_MODE", mode: "bike" }));
+    openInPanel("Flipper Kafe");
+    const list = rows(utils);
+    // Bua har 2 min på sykkel og går først; de andre har ingen sykkeltid og
+    // sorteres på navn etterpå — uten estimat.
+    expect(list[0].getAttribute("data-poi")).toBe("Bua");
+    expect(list[0].textContent).toContain("2 min");
+    expect(list[1].textContent).not.toMatch(/\d+ min/);
+  });
+
+  it("et trykk bytter sted i samme panel, beholder kategorien og starter på toppen", () => {
+    desktop = true;
+    const utils = setup({ placePanel: true });
+    openInPanel("Bua");
+    const scroller = utils.getByTestId("story-poi-panel").querySelector(".overflow-y-auto") as HTMLElement;
+    scroller.scrollTop = 150;
+    act(() => fireEvent.click(rows(utils)[0]));
+    expect(spy.activePOIId).toBe("Flipper Kafe");
+    expect(spy.exploreOpen).toBe(true);
+    expect(utils.getByTestId("story-poi-panel").querySelector("h2")?.textContent).toBe("Flipper Kafe");
+    expect(utils.getByTestId("story-poi-panel-close").textContent).toBe("Tilbake til Mat & drikke");
+    expect(scroller.scrollTop).toBe(0);
+    expect(rows(utils).map((r) => r.getAttribute("data-poi"))).toContain("Bua");
+  });
+
+  it("finnes ikke uten policyen — ankerpanelet på andre boards er urørt", () => {
+    const utils = setup();
+    openInPanel("Bua");
+    expect(utils.queryByTestId("story-poi-panel-similar")).toBeNull();
+  });
+
+  it("skjules når kategorien ikke har andre steder", () => {
+    desktop = true;
+    const utils = setup({ placePanel: true });
+    act(() => spy.goto(1));
+    act(() =>
+      spy.dispatch({
+        type: "OPEN_POI",
+        id: "Ensom kiosk" as BoardPOI["id"],
+        categoryId: "solo" as BoardPOI["categoryId"],
+        detail: true,
+      }),
+    );
+    expect(utils.getByTestId("story-poi-panel").querySelector("h2")?.textContent).toBe("Ensom kiosk");
+    expect(utils.queryByTestId("story-poi-panel-similar")).toBeNull();
   });
 });
