@@ -104,6 +104,9 @@ class Bridge implements MapBridge {
   }
 }
 
+/** A connection-owned bridge, independent of the local demo registry. */
+export function createMapBridge(): MapBridge { return new Bridge(); }
+
 const globals = globalThis as typeof globalThis & { placyMapBridges?: Map<string, MapBridge> };
 
 export function getMapBridge(token: string): MapBridge {

@@ -1,0 +1,346 @@
+[
+  {
+    "at": "2026-09-16T19:55:46.341Z",
+    "label": "long",
+    "type": "open"
+  },
+  {
+    "at": "2026-09-16T19:55:46.346Z",
+    "label": "long",
+    "connection": "a161de02-69eb-4c22-b95b-f50ce48ec4a8",
+    "elapsed": 0
+  },
+  {
+    "at": "2026-09-16T19:55:46.354Z",
+    "label": "short",
+    "type": "open"
+  },
+  {
+    "at": "2026-09-16T19:55:46.355Z",
+    "label": "short",
+    "connection": "99790806-8ef5-4eeb-b5ab-ec27d67b913b",
+    "elapsed": 0
+  },
+  {
+    "at": "2026-09-16T19:55:46.415Z",
+    "label": "long",
+    "connection": "a161de02-69eb-4c22-b95b-f50ce48ec4a8",
+    "elapsed": 92,
+    "echo": "long"
+  },
+  {
+    "at": "2026-09-16T19:55:46.420Z",
+    "label": "short",
+    "connection": "99790806-8ef5-4eeb-b5ab-ec27d67b913b",
+    "elapsed": 66,
+    "echo": "short"
+  },
+  {
+    "at": "2026-09-16T19:56:05.212Z",
+    "label": "long",
+    "connection": "a161de02-69eb-4c22-b95b-f50ce48ec4a8",
+    "elapsed": 18890,
+    "echo": "long"
+  },
+  {
+    "at": "2026-09-16T19:56:05.217Z",
+    "label": "short",
+    "connection": "99790806-8ef5-4eeb-b5ab-ec27d67b913b",
+    "elapsed": 18863,
+    "echo": "short"
+  },
+  {
+    "at": "2026-09-16T19:56:15.235Z",
+    "label": "short",
+    "type": "close",
+    "code": 1000,
+    "maxElapsed": 20001
+  },
+  {
+    "at": "2026-09-16T19:56:25.211Z",
+    "label": "long",
+    "connection": "a161de02-69eb-4c22-b95b-f50ce48ec4a8",
+    "elapsed": 38890,
+    "echo": "long"
+  },
+  {
+    "at": "2026-09-16T19:56:45.213Z",
+    "label": "long",
+    "connection": "a161de02-69eb-4c22-b95b-f50ce48ec4a8",
+    "elapsed": 58892,
+    "echo": "long"
+  },
+  {
+    "at": "2026-09-16T19:57:05.215Z",
+    "label": "long",
+    "connection": "a161de02-69eb-4c22-b95b-f50ce48ec4a8",
+    "elapsed": 78895,
+    "echo": "long"
+  },
+  {
+    "at": "2026-09-16T19:57:25.218Z",
+    "label": "long",
+    "connection": "a161de02-69eb-4c22-b95b-f50ce48ec4a8",
+    "elapsed": 98896,
+    "echo": "long"
+  },
+  {
+    "at": "2026-09-16T19:57:45.218Z",
+    "label": "long",
+    "connection": "a161de02-69eb-4c22-b95b-f50ce48ec4a8",
+    "elapsed": 118899,
+    "echo": "long"
+  },
+  {
+    "at": "2026-09-16T19:58:05.218Z",
+    "label": "long",
+    "connection": "a161de02-69eb-4c22-b95b-f50ce48ec4a8",
+    "elapsed": 138899,
+    "echo": "long"
+  },
+  {
+    "at": "2026-09-16T19:58:25.222Z",
+    "label": "long",
+    "connection": "a161de02-69eb-4c22-b95b-f50ce48ec4a8",
+    "elapsed": 158901,
+    "echo": "long"
+  },
+  {
+    "at": "2026-09-16T19:58:45.224Z",
+    "label": "long",
+    "connection": "a161de02-69eb-4c22-b95b-f50ce48ec4a8",
+    "elapsed": 178902,
+    "echo": "long"
+  },
+  {
+    "at": "2026-09-16T19:59:05.220Z",
+    "label": "long",
+    "connection": "a161de02-69eb-4c22-b95b-f50ce48ec4a8",
+    "elapsed": 198903,
+    "echo": "long"
+  },
+  {
+    "at": "2026-09-16T19:59:25.224Z",
+    "label": "long",
+    "connection": "a161de02-69eb-4c22-b95b-f50ce48ec4a8",
+    "elapsed": 218907,
+    "echo": "long"
+  },
+  {
+    "at": "2026-09-16T19:59:45.223Z",
+    "label": "long",
+    "connection": "a161de02-69eb-4c22-b95b-f50ce48ec4a8",
+    "elapsed": 238906,
+    "echo": "long"
+  },
+  {
+    "at": "2026-09-16T20:00:05.225Z",
+    "label": "long",
+    "connection": "a161de02-69eb-4c22-b95b-f50ce48ec4a8",
+    "elapsed": 258908,
+    "echo": "long"
+  },
+  {
+    "at": "2026-09-16T20:00:25.224Z",
+    "label": "long",
+    "connection": "a161de02-69eb-4c22-b95b-f50ce48ec4a8",
+    "elapsed": 278908,
+    "echo": "long"
+  },
+  {
+    "at": "2026-09-16T20:00:45.226Z",
+    "label": "long",
+    "connection": "a161de02-69eb-4c22-b95b-f50ce48ec4a8",
+    "elapsed": 298910,
+    "echo": "long"
+  },
+  {
+    "at": "2026-09-16T20:01:05.225Z",
+    "label": "long",
+    "connection": "a161de02-69eb-4c22-b95b-f50ce48ec4a8",
+    "elapsed": 318910,
+    "echo": "long"
+  },
+  {
+    "at": "2026-09-16T20:01:25.226Z",
+    "label": "long",
+    "connection": "a161de02-69eb-4c22-b95b-f50ce48ec4a8",
+    "elapsed": 338911,
+    "echo": "long"
+  },
+  {
+    "at": "2026-09-16T20:01:45.227Z",
+    "label": "long",
+    "connection": "a161de02-69eb-4c22-b95b-f50ce48ec4a8",
+    "elapsed": 358913,
+    "echo": "long"
+  },
+  {
+    "at": "2026-09-16T20:02:05.228Z",
+    "label": "long",
+    "connection": "a161de02-69eb-4c22-b95b-f50ce48ec4a8",
+    "elapsed": 378914,
+    "echo": "long"
+  },
+  {
+    "at": "2026-09-16T20:02:25.234Z",
+    "label": "long",
+    "connection": "a161de02-69eb-4c22-b95b-f50ce48ec4a8",
+    "elapsed": 398919,
+    "echo": "long"
+  },
+  {
+    "at": "2026-09-16T20:02:45.233Z",
+    "label": "long",
+    "connection": "a161de02-69eb-4c22-b95b-f50ce48ec4a8",
+    "elapsed": 418919,
+    "echo": "long"
+  },
+  {
+    "at": "2026-09-16T20:03:05.234Z",
+    "label": "long",
+    "connection": "a161de02-69eb-4c22-b95b-f50ce48ec4a8",
+    "elapsed": 438920,
+    "echo": "long"
+  },
+  {
+    "at": "2026-09-16T20:03:25.232Z",
+    "label": "long",
+    "connection": "a161de02-69eb-4c22-b95b-f50ce48ec4a8",
+    "elapsed": 458920,
+    "echo": "long"
+  },
+  {
+    "at": "2026-09-16T20:03:45.234Z",
+    "label": "long",
+    "connection": "a161de02-69eb-4c22-b95b-f50ce48ec4a8",
+    "elapsed": 478922,
+    "echo": "long"
+  },
+  {
+    "at": "2026-09-16T20:04:05.235Z",
+    "label": "long",
+    "connection": "a161de02-69eb-4c22-b95b-f50ce48ec4a8",
+    "elapsed": 498923,
+    "echo": "long"
+  },
+  {
+    "at": "2026-09-16T20:04:25.238Z",
+    "label": "long",
+    "connection": "a161de02-69eb-4c22-b95b-f50ce48ec4a8",
+    "elapsed": 518926,
+    "echo": "long"
+  },
+  {
+    "at": "2026-09-16T20:04:45.244Z",
+    "label": "long",
+    "connection": "a161de02-69eb-4c22-b95b-f50ce48ec4a8",
+    "elapsed": 538927,
+    "echo": "long"
+  },
+  {
+    "at": "2026-09-16T20:05:05.242Z",
+    "label": "long",
+    "connection": "a161de02-69eb-4c22-b95b-f50ce48ec4a8",
+    "elapsed": 558929,
+    "echo": "long"
+  },
+  {
+    "at": "2026-09-16T20:05:25.241Z",
+    "label": "long",
+    "connection": "a161de02-69eb-4c22-b95b-f50ce48ec4a8",
+    "elapsed": 578931,
+    "echo": "long"
+  },
+  {
+    "at": "2026-09-16T20:05:45.244Z",
+    "label": "long",
+    "connection": "a161de02-69eb-4c22-b95b-f50ce48ec4a8",
+    "elapsed": 598933,
+    "echo": "long"
+  },
+  {
+    "at": "2026-09-16T20:06:05.243Z",
+    "label": "long",
+    "connection": "a161de02-69eb-4c22-b95b-f50ce48ec4a8",
+    "elapsed": 618934,
+    "echo": "long"
+  },
+  {
+    "at": "2026-09-16T20:06:25.243Z",
+    "label": "long",
+    "connection": "a161de02-69eb-4c22-b95b-f50ce48ec4a8",
+    "elapsed": 638935,
+    "echo": "long"
+  },
+  {
+    "at": "2026-09-16T20:06:45.248Z",
+    "label": "long",
+    "connection": "a161de02-69eb-4c22-b95b-f50ce48ec4a8",
+    "elapsed": 658939,
+    "echo": "long"
+  },
+  {
+    "at": "2026-09-16T20:07:05.245Z",
+    "label": "long",
+    "connection": "a161de02-69eb-4c22-b95b-f50ce48ec4a8",
+    "elapsed": 678937,
+    "echo": "long"
+  },
+  {
+    "at": "2026-09-16T20:07:25.247Z",
+    "label": "long",
+    "connection": "a161de02-69eb-4c22-b95b-f50ce48ec4a8",
+    "elapsed": 698939,
+    "echo": "long"
+  },
+  {
+    "at": "2026-09-16T20:07:45.247Z",
+    "label": "long",
+    "connection": "a161de02-69eb-4c22-b95b-f50ce48ec4a8",
+    "elapsed": 718940,
+    "echo": "long"
+  },
+  {
+    "at": "2026-09-16T20:08:05.250Z",
+    "label": "long",
+    "connection": "a161de02-69eb-4c22-b95b-f50ce48ec4a8",
+    "elapsed": 738941,
+    "echo": "long"
+  },
+  {
+    "at": "2026-09-16T20:08:25.272Z",
+    "label": "long",
+    "connection": "a161de02-69eb-4c22-b95b-f50ce48ec4a8",
+    "elapsed": 758966,
+    "echo": "long"
+  },
+  {
+    "at": "2026-09-16T20:08:45.251Z",
+    "label": "long",
+    "connection": "a161de02-69eb-4c22-b95b-f50ce48ec4a8",
+    "elapsed": 778944,
+    "echo": "long"
+  },
+  {
+    "at": "2026-09-16T20:09:05.252Z",
+    "label": "long",
+    "connection": "a161de02-69eb-4c22-b95b-f50ce48ec4a8",
+    "elapsed": 798946,
+    "echo": "long"
+  },
+  {
+    "at": "2026-09-16T20:09:25.255Z",
+    "label": "long",
+    "connection": "a161de02-69eb-4c22-b95b-f50ce48ec4a8",
+    "elapsed": 818948,
+    "echo": "long"
+  },
+  {
+    "at": "2026-09-16T20:09:30.233Z",
+    "label": "long",
+    "type": "close",
+    "code": 1000,
+    "maxElapsed": 820017
+  }
+]

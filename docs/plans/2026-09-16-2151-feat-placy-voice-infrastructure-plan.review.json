@@ -1,0 +1,358 @@
+{
+  "mode": "non-interactive",
+  "document": "2026-09-16-2151-feat-placy-voice-infrastructure-plan.md",
+  "document_type": "unified-plan",
+  "reviewed_sha256": "ec5b1618f8895c867229b8db26215d9d4dd3efb660ded2de520115678789da00",
+  "resolved_sha256": "19440edef6fbab603b02c8d95e45440f31439975a27ed29312dbac9c687651db",
+  "packs": {
+    "roots": [],
+    "warnings": [],
+    "errors": []
+  },
+  "local_reviewers": [
+    {
+      "reviewer": "coherence",
+      "findings": [],
+      "residual_risks": [],
+      "deferred_questions": []
+    },
+    {
+      "reviewer": "feasibility",
+      "findings": [],
+      "residual_risks": [],
+      "deferred_questions": []
+    },
+    {
+      "reviewer": "security-lens",
+      "findings": [],
+      "residual_risks": [],
+      "deferred_questions": []
+    },
+    {
+      "reviewer": "adversarial",
+      "findings": [],
+      "residual_risks": [],
+      "deferred_questions": []
+    },
+    {
+      "reviewer": "product-lens",
+      "findings": [],
+      "residual_risks": [],
+      "deferred_questions": []
+    },
+    {
+      "reviewer": "design-lens",
+      "findings": [],
+      "residual_risks": [],
+      "deferred_questions": []
+    },
+    {
+      "reviewer": "runtime-security-independent",
+      "findings": [
+        {
+          "title": "Exclude conversation content from hosted runtime logs",
+          "severity": "P2",
+          "section": "U3 — Hosted conversation ownership and browser integration",
+          "why_it_matters": "The current sideband timing logger writes spoken excerpts and tool arguments to stdout. Hosting it would retain conversation content in Vercel logs even though the accounting ledger excludes transcripts.",
+          "finding_type": "omission",
+          "autofix_class": "gated_auto",
+          "suggested_fix": "Allowlist numeric timing, usage and operational identifiers; exclude spoken excerpts, tool arguments and free-form provider errors, verified with sentinel content.",
+          "confidence": 75,
+          "evidence": [
+            "do not store raw transcripts in the accounting ledger",
+            "Customer-facing insight analytics, transcript retention and automated invoicing are separate product work.",
+            "Persist normalized numeric usage and allowlisted raw usage metadata, never response content."
+          ]
+        }
+      ],
+      "residual_risks": [],
+      "deferred_questions": []
+    },
+    {
+      "reviewer": "admission-security-independent",
+      "findings": [],
+      "residual_risks": [],
+      "deferred_questions": []
+    }
+  ],
+  "cross_model_reviewers": [
+    {
+      "reviewer": "security-lens-claude",
+      "cross_model_route": "claude",
+      "cross_model_target": "claude",
+      "cross_model_harness": "claude",
+      "serving_family": "claude",
+      "independence_verified": true,
+      "model_requested": "claude-opus-5",
+      "model_actual": "claude-opus-5",
+      "effort_requested": "high",
+      "findings": [
+        {
+          "title": "Public demo has rate caps but no cumulative spend ceiling",
+          "severity": "P1",
+          "section": "U4 - Recovery and release controls (bounded admission), against R8",
+          "why_it_matters": "Anyone who receives the shareable demo link can keep starting paid OpenAI voice calls indefinitely: the plan's only bounds are per-tenant concurrency and rate caps, which limit velocity but not total spend, so R8's \"Public access cannot create unlimited paid sessions\" is not actually delivered by any implementation unit. The plan already knows how to do this - KTD6 gives the benchmark \"an explicit finite run count and spend ceiling\" - but the hosted demo, which is the surface exposed to unauthenticated visitors, gets no equivalent. The project's own cited source (the Google API runtime cost-leakage postmortem) is this exact failure mode. A cumulative budget checked at admission closes the gap because admission is already the single fail-closed chokepoint the plan commits to.",
+          "finding_type": "omission",
+          "autofix_class": "gated_auto",
+          "suggested_fix": "In U4's approach, extend bounded admission with a durable cumulative budget for the demo identity: a configured ceiling on total paid session-seconds/USD per rolling window that admission checks alongside the concurrency and rate caps, plus an operator kill switch that denies all new paid admissions without redeploying. Add a test scenario \"cumulative budget exhausted denies admission\" and state in R8's coverage that unlimited paid sessions are prevented by budget exhaustion, not rate alone.",
+          "confidence": 75,
+          "evidence": [
+            "**R8:** Public access cannot create unlimited paid sessions. Session controls require ownership, metering fails closed at admission",
+            "Atomic reservation/lease operations enforce per-tenant concurrency and rate caps across instances.",
+            "Paid execution has an explicit finite run count and spend ceiling, saved even on failure.",
+            "Fail closed when durable reservation fails. Configure keys and demo access without enabling admin."
+          ]
+        },
+        {
+          "title": "Conversation content excluded from ledger but not from logs",
+          "severity": "P2",
+          "section": "KTD4 - Event evidence precedes totals (content-retention rules)",
+          "why_it_matters": "Demo visitors' spoken conversation content can end up in Vercel function logs even though the plan deliberately keeps it out of the durable ledger. KTD4 bars response content from persisted usage rows and R4 bars raw transcripts from the accounting ledger, but the control WebSocket and sideband carry UI context, map directives and provider events that embed user utterances, and U3 implementers debugging a brand-new hosted transport will log those frames by default. The result is speech-derived personal data sitting in a log store with different access control and retention than the ledger the plan carefully restricted. Extending the existing content rule to the log path applies the stance the plan already committed to rather than inventing a new one.",
+          "finding_type": "omission",
+          "autofix_class": "gated_auto",
+          "suggested_fix": "Extend KTD4's content rule to logging: state that control-plane, sideband and error logging records message types, IDs and normalized usage only, never transcript, response content or raw control payloads, and add \"no conversation content in logs\" to U3's verification alongside the existing hosted two-browser check.",
+          "confidence": 75,
+          "evidence": [
+            "do not store raw transcripts in the accounting ledger",
+            "Persist normalized numeric usage and allowlisted raw usage metadata, never response content.",
+            "keep secrets out of URLs and logs",
+            "thread validated control messages through the pinned connection"
+          ]
+        },
+        {
+          "title": "Demo access mechanism has no rotation or revocation path",
+          "severity": "P3",
+          "section": "KTD5 - Operator access starts server-side (demo access mechanism)",
+          "why_it_matters": "If the shareable link or its demo access secret is forwarded beyond Lene, there is no documented way to cut off the leaked access short of a redeploy, because \"bounded demo access mechanism\" never says what bounds it - origin, a shared secret, an expiry, or all three. The runbook U4 produces is the natural place to fix this, and a rotatable server-side secret gives the operator a same-day response to a leaked link instead of leaving revocation undefined during the demo window.",
+          "finding_type": "omission",
+          "autofix_class": "gated_auto",
+          "suggested_fix": "In KTD5, specify the demo access mechanism as a server-side environment-configured shared secret validated at admission alongside same-origin checks, and require U4's runbook to document the rotation step that invalidates a leaked link.",
+          "confidence": 50,
+          "evidence": [
+            "Use a bounded demo access mechanism and same-origin validation; keep secrets out of URLs and logs.",
+            "A preview requiring Andreas's Vercel login is not a usable handoff to Lene.",
+            "**Files:** scheduled recovery route, admission/access validation, vercel.json, runbook."
+          ]
+        }
+      ],
+      "residual_risks": [
+        "The protocol step \"attach sideband -> return SDP\" implies the server mediates the WebRTC offer/answer with OpenAI so no provider credential reaches the browser, but the plan never states this explicitly; if an implementer instead hands the browser an OpenAI client secret, its scope and TTL are undefined and the demo link becomes a path to provider credentials. U6's \"provider-key restrictions\" check is the only backstop.",
+        "Admission \"resolves tenant/demo server-side\" without naming the key that anonymous demo visitors are metered against. If all visitors collapse into one demo identity, a single abusive visitor can exhaust the shared concurrency and rate caps and lock Lene out of the validation session; if the key is browser-supplied, the caps are trivially bypassed."
+      ],
+      "deferred_questions": [
+        "What is the cumulative spend ceiling for the hosted public demo, and who is authorized to trigger the kill switch that denies further paid admissions?",
+        "Which identity does demo admission meter against for unauthenticated visitors - one shared demo tenant, or a server-issued per-visitor identity?"
+      ]
+    },
+    {
+      "reviewer": "product-lens-claude",
+      "cross_model_route": "claude",
+      "cross_model_target": "claude",
+      "cross_model_harness": "claude",
+      "serving_family": "claude",
+      "independence_verified": true,
+      "model_requested": "claude-opus-5",
+      "model_actual": "claude-opus-5",
+      "effort_requested": "high",
+      "findings": [
+        {
+          "title": "Demo exposure assumption absent; sizes the largest unit",
+          "severity": "P1",
+          "section": "Product Contract requirements R3 (concurrent independent users) and R8 (public-access spend protection)",
+          "why_it_matters": "An implementer cannot tell whether the hosted link is reachable by a handful of named invitees or by anyone with the URL, and that single unstated fact decides whether U2's cross-instance atomic admission ledger is necessary infrastructure or weeks of over-build. The stated consumers are one validator (Lene) and one operator (Andreas), yet R3 and R8 read as if for open public traffic, and KTD3 commits to per-tenant concurrency enforcement across instances to satisfy them. If the real exposure is a bounded invite list, a per-session access token plus a hard provider spend ceiling and session deadline — both already contemplated under KTD5's 'bounded demo access mechanism' — delivers the same protection at a fraction of the surface a solo maintainer carries afterwards.",
+          "finding_type": "omission",
+          "autofix_class": "manual",
+          "suggested_fix": "Add an exposure line to the Product Contract's Problem Frame stating who can reach the hosted link (named-invitee token versus open URL) and the maximum expected concurrent sessions, then state in R3 and R8 whether that exposure requires cross-instance atomic admission or whether a bounded token plus provider spend ceiling satisfies them. Andreas must supply the exposure figure; the two answers lead to materially different sizing for U2.",
+          "confidence": 75,
+          "evidence": [
+            "Lene can validate the complete Nyhavna demo through a stable hosted link",
+            "**R3:** Independent users can converse concurrently without mixing session controls, maps, context or usage. Shared admission limits survive cold starts and deployments.",
+            "**R8:** Public access cannot create unlimited paid sessions.",
+            "Atomic reservation/lease operations enforce per-tenant concurrency and rate caps across instances."
+          ]
+        },
+        {
+          "title": "Shareable demo URL gated behind the operator cost CLI",
+          "severity": "P2",
+          "section": "U6 — Repeated audio measurements and hosted handoff",
+          "why_it_matters": "The plan's primary deliverable — a working shareable URL Lene can use — cannot ship until the operator CSV report is finished, because U6 bundles the hosted handoff with the benchmark matrix and declares a dependency on U5 (the credentialed cost CLI). Nothing about serving the demo link needs the reporting tool; the coupling means any slip in U5 withholds the demo objective entirely, even when U3 and U4 have already produced a usable hosted deployment. Splitting the unit along the two objectives the Goal Capsule already distinguishes lets the validation deliverable land as soon as transport and recovery work is proven.",
+          "finding_type": "error",
+          "autofix_class": "gated_auto",
+          "suggested_fix": "Split U6 into U6a — hosted handoff (confirm mobile layout, demo access and provider-key restrictions, deploy the intended demo, produce the working shareable URL), depending on U3/U4 only — and U6b — the KTD6 benchmark matrix, repeated hosted evidence and cost distribution report, depending on U5 and U6a. Update the Definition of Done to reference both units.",
+          "confidence": 75,
+          "evidence": [
+            "**Goal / requirements:** R1/R2/R7. Depends on U3–U5.",
+            "**Verification:** Mechanical checks, repeated hosted evidence, working shareable URL and honest cost distribution report.",
+            "**Goal / requirements:** R4–R6; KTD4/KTD5. Depends on U2."
+          ]
+        },
+        {
+          "title": "Objective promises pricing the plan's own guardrails forbid",
+          "severity": "P2",
+          "section": "Goal Capsule — Objective",
+          "why_it_matters": "A reader will finish this plan expecting customer pricing to be settled, when the plan forbids exactly that conclusion from the only evidence it produces. Every measurement source here is synthetic — the KTD6 scenario matrix plus a single real conversation used to reconcile U5's report — while R7 and U6's verification both insist synthetic runs be distinguished from real customer averages and that pricing not be finalized from them. Restating the objective as evidence sufficient to inform pricing keeps the deliverable honest and matches the Definition of Done, which asks only for benchmark counts and limitations rather than a settled price.",
+          "finding_type": "error",
+          "autofix_class": "gated_auto",
+          "suggested_fix": "Reword the Objective to: 'Lene can validate the complete Nyhavna demo through a stable hosted link, and Andreas can inspect measured conversation costs and obtain repeatable cost evidence sufficient to inform customer pricing, with synthetic-versus-real-usage limitations stated.'",
+          "confidence": 75,
+          "evidence": [
+            "Andreas can inspect measured conversation costs and price customer service from repeatable evidence.",
+            "No claim that customer pricing is finalized solely by synthetic tests.",
+            "Run repeated scenarios and durations, report sample count, median/p95/max and incomplete records separately, and distinguish synthetic tests from real customer averages."
+          ]
+        },
+        {
+          "title": "No fallback deliverable if the beta transport proof fails",
+          "severity": "P2",
+          "section": "U1 — Prove hosted control transport, and Risks and Dependencies",
+          "why_it_matters": "If U1's probe shows Vercel cannot hold the control connection past the ordinary ceiling, execution stops at unit one with nothing delivered against the primary objective — Lene has no way to validate the demo at all. The plan names this as a live risk (the features are beta), names platform refusal as a blocker, and contemplates KTD1 invalidation in Scope Boundaries, but nowhere states what Lene receives in that branch. Naming the interim validation path now means a platform refusal costs a detour rather than the whole objective.",
+          "finding_type": "omission",
+          "autofix_class": "manual",
+          "suggested_fix": "Add a line to Risks and Dependencies naming the interim validation path if U1 blocks — for example a time-boxed, access-bounded session against a locally run instance, scheduled with Lene — so a platform refusal delays the hosted link without withdrawing the validation deliverable. Andreas must choose the acceptable interim path, since it affects what a customer-facing validator is shown.",
+          "confidence": 75,
+          "evidence": [
+            "The WebSocket and extended-duration features are beta: deploy a small transport proof before invasive transport changes; test beyond the ordinary 800-second ceiling.",
+            "**Test scenarios:** echo; two clients; disconnect; connection surviving beyond 800 seconds. Platform refusal is a blocker with exact evidence.",
+            "**Stop conditions:** Provider or platform evidence contradicts the hosting decision"
+          ]
+        }
+      ],
+      "residual_risks": [
+        "The plan commits a small team to long-term maintenance of a new metering subsystem — v2 tables with explicit RLS grants, a scheduled reaper, recovery leases and an operator CLI — for a product that has not yet converted a customer. If the Nyhavna demo does not convert, that surface remains as carrying cost, and the document does not examine that compounding direction.",
+        "KTD4's evidence rigor (response-ID deduplication, monotonic voice maximum, versioned tariff snapshots, unresolved-state propagation) is invoice-grade, while Scope Boundaries explicitly disclaims invoice reconciliation. The rigor may be right for data hygiene, but the document does not state which parts are load-bearing for the pricing decision versus anticipatory of billing work declared out of scope."
+      ],
+      "deferred_questions": [
+        "Who can reach the hosted demo link — a named invite list or anyone with the URL — and what is the maximum expected concurrent session count? This determines whether U2's cross-instance atomic admission is required or whether a bounded token plus provider spend ceiling satisfies R3 and R8.",
+        "What does Lene receive as an interim validation path if U1 proves Vercel cannot sustain the control connection for the required duration?",
+        "How many real (non-synthetic) customer conversations does Andreas need before the pricing question is actually answerable, and is obtaining them in scope for a follow-on effort?"
+      ]
+    },
+    {
+      "reviewer": "whole-doc-claude",
+      "cross_model_route": "claude",
+      "cross_model_target": "claude",
+      "cross_model_harness": "claude",
+      "serving_family": "claude",
+      "independence_verified": true,
+      "model_requested": "claude-opus-5",
+      "model_actual": "claude-opus-5",
+      "effort_requested": "high",
+      "findings": [
+        {
+          "title": "Paid benchmark spend ceiling required but never given a value",
+          "severity": "P2",
+          "section": "KTD6 - Benchmark real hearing (Planning Contract), with U6 - Repeated audio measurements and hosted handoff",
+          "why_it_matters": "The executor cannot start the paid benchmark batch without inventing a budget, because the plan mandates a spend ceiling while supplying only the run count. KTD6 (the real-audio benchmark decision) fixes the matrix at 18 short sessions plus 5-minute, 15-minute, near-limit, concurrent and failure runs, and U6's test scenarios include a 'fail-fast spend limit' that has no threshold to fail against. Money is Andreas's call, not a derivable implementation detail, and the whole plan exists to control conversation cost - guessing here risks either an aborted run or an unbudgeted realtime-audio bill.",
+          "finding_type": "omission",
+          "autofix_class": "manual",
+          "suggested_fix": "Record Andreas's confirmed USD ceiling as an explicit value in KTD6, and state in U6 that the runner reads that ceiling from a required environment variable and aborts the batch once cumulative estimated spend reaches it, persisting results collected so far.",
+          "confidence": 75,
+          "evidence": [
+            "Paid execution has an explicit finite run count and spend ceiling, saved even on failure.",
+            "Initial target: at least three repetitions of six scenarios (18 short sessions), plus 5-minute, 15-minute and near-limit calls, two concurrent calls, disconnect and forced-owner-loss cases.",
+            "fail-fast spend limit; mid-run failure retains results"
+          ]
+        },
+        {
+          "title": "Demo access mechanism for Lene left undefined and constrained",
+          "severity": "P2",
+          "section": "KTD5 - Operator access starts server-side (Planning Contract), with the Goal Capsule objective and Verification Contract",
+          "why_it_matters": "Lene may end up with a link she cannot open, which fails the plan's primary objective. The plan requires a shareable HTTPS link, forbids a Vercel-login preview, and simultaneously bars secrets from URLs - which removes the obvious tokenised-link implementation without naming a replacement, so the executor reaches U6's handoff step with no agreed gate. Naming one mechanism up front lets U4 configure it and U6 verify it, matching how the plan already pins other access decisions (service_role grants, same-origin validation).",
+          "finding_type": "omission",
+          "autofix_class": "gated_auto",
+          "suggested_fix": "In KTD5, specify the bounded demo access mechanism as a same-origin shared-passphrase gate that sets a short-lived HttpOnly cookie, with Vercel deployment protection disabled for the demo alias and the passphrase delivered to Andreas out of band; reference that mechanism from U4's admission/access validation and U6's 'browser access without operator login' scenario.",
+          "confidence": 75,
+          "evidence": [
+            "Use a bounded demo access mechanism and same-origin validation; keep secrets out of URLs and logs.",
+            "A preview requiring Andreas's Vercel login is not a usable handoff to Lene.",
+            "Check deployment from an unauthenticated browser with its intended demo access."
+          ]
+        },
+        {
+          "title": "Deploy path conflicts with the no-push authority constraint",
+          "severity": "P2",
+          "section": "Goal Capsule Authority, with U1 - Prove hosted control transport and U6 - Repeated audio measurements and hosted handoff",
+          "why_it_matters": "The very first unit stalls on an unanswered question: U1 demands actual deployed evidence from an isolated checkout, while the Authority forbids pushing without Andreas asking, and U6 muddies it further by only prohibiting pushes of 'unrelated work'. An implementer must either push against a standing instruction or block U1 (and with it U3, U4, U6). Naming a direct CLI deploy from the isolated checkout satisfies the authorized deployment without touching the remote, and keeps the two statements consistent.",
+          "finding_type": "error",
+          "autofix_class": "gated_auto",
+          "suggested_fix": "State in the Authority paragraph that hosted deployments are made with the Vercel CLI directly from the isolated checkout (no git push required), and reword U6's step to 'Commit locally; deploy the intended demo via CLI without pushing to the remote.'",
+          "confidence": 75,
+          "evidence": [
+            "Work in an isolated checkout; do not push without Andreas requesting it. The existing request authorizes deployment of the Nyhavna demo.",
+            "Deploy an authenticated/bounded WebSocket probe using the current official Functions API, Node24 and extended duration.",
+            "Commit locally; deploy intended demo without pushing unrelated work."
+          ]
+        },
+        {
+          "title": "No unit owns removing the superseded local transport",
+          "severity": "P2",
+          "section": "Definition of Done, with KTD2 - One control connection owns a conversation",
+          "why_it_matters": "The project reaches the end of U6 unable to declare done, because KTD2 defers removal of the old transport paths until after parity is proven and no unit's approach schedules that removal. U1 explicitly retires its probe, so probe cleanup is owned; the dual-path transport code is not. Without an owner this becomes either shipped dead code or unplanned rework after every unit is marked complete. Assigning it to U6 is the natural home, since U6 is where hosted parity is actually demonstrated.",
+          "finding_type": "omission",
+          "autofix_class": "gated_auto",
+          "suggested_fix": "Add to U6's approach: 'After hosted parity is demonstrated, remove the superseded local transport paths per KTD2 and re-run the Verification Contract checks.'",
+          "confidence": 75,
+          "evidence": [
+            "Keep the local transport working until the hosted replacement is proven; remove superseded paths after parity.",
+            "Abandoned probes and superseded code are removed.",
+            "Remove probe after testing."
+          ]
+        }
+      ],
+      "residual_risks": [
+        "Rate provenance for USD cost is implicit: KTD4 says to 'reuse audited arithmetic in lib/live/usage.ts' and to 'version tariff snapshots', but no unit states where the current GPT-Live-1 / GPT-5.6-Terra published rates come from or when they were last confirmed. If the existing module's rates are stale or absent, every row in U5's operator report renders as incomplete and the pricing objective is not met. Could not verify the module's contents from this review context.",
+        "U1 proves duration only 'beyond 800 seconds', while KTD6 requires near-limit calls against the 1800-second Pro ceiling. If extended duration degrades somewhere between those bounds, the failure surfaces late in U6 rather than at the U1 gate.",
+        "Reaper cadence is unspecified in U4; the interval directly bounds how long an orphaned paid provider session keeps billing after instance loss, which is the cost exposure this plan exists to measure."
+      ],
+      "deferred_questions": [
+        "What USD ceiling should the paid benchmark batch in U6 abort at, and who approves exceeding it mid-run?",
+        "Which passphrase or credential does Lene receive for the bounded demo gate, and through what channel, given the executor is instructed not to message her?"
+      ]
+    }
+  ],
+  "cross_model_adversarial": {
+    "state": "timeout",
+    "reason": "Reaped on request before completion after local adversarial and whole-document cross-model review completed; additive result no longer needed.",
+    "job": "20260916T195330Z-cbd94aec"
+  },
+  "applied": [
+    {
+      "id": "F1",
+      "title": "Hosted logs exclude conversation content",
+      "reviewers": [
+        "runtime-security-independent",
+        "security-lens-claude"
+      ],
+      "confidence": 100,
+      "promotion": "+1 anchor from independent local code evidence and verified cross-model agreement",
+      "authority": "Caller authorizes implementation corrections preserving R1-R8; transcript retention remains outside scope.",
+      "verification": "Logging allowlist and U3 sentinel scenario present."
+    }
+  ],
+  "caller_directed_changes": [
+    {
+      "title": "Durable daily spend budget includes in-flight liability",
+      "authority": "Root explicitly requested this implementation constraint after reading current server admission and sideband code.",
+      "verification": "High-Level Technical Design and U4 cover atomic budget reservations, incomplete liability and exhausted budget denial."
+    }
+  ],
+  "proposed_fixes": [],
+  "decisions": [],
+  "rejected_peer_claims": [
+    {
+      "reviewer": "product-lens-claude",
+      "reason": "Exposure-based scope reduction contradicts settled shared limits and customer infrastructure. Early handoff before benchmark is an alternate release preference. Objective does not promise finalized pricing. Beta failure is already an explicit execution gate; interim local validation is new scope. Residual maintenance concerns reopen settled investment decision."
+    },
+    {
+      "reviewer": "whole-doc-claude",
+      "reason": "Exact finite spend settings, passphrase mechanism, CLI deployment and cleanup assignment are derivable implementation details. Deployment has already succeeded without git push. Rate verification and near-limit tests are already in plan; no extra requirements needed."
+    },
+    {
+      "reviewer": "security-lens-claude",
+      "reason": "Rotation and visitor identity choices are derivable under existing server admission boundary. Ephemeral browser credential risk contradicts stated server-owned SDP protocol. Budget implementation clarified by explicit caller directive, not falsely counted as independent peer corroboration."
+    }
+  ],
+  "release_blockers": [
+    "No new review blocker. Existing U1 deployed duration proof, hosted lifecycle evidence, migrations, repeated paid benchmarks and final shareable-access checks remain execution gates."
+  ]
+}

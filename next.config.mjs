@@ -36,6 +36,11 @@ function localDevOrigins() {
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  outputFileTracingIncludes: {
+    '/demo/nyhavna-lokal': ['./data/demo/nyhavna-lokal/*.json'],
+    '/api/prototype/live': ['./data/demo/nyhavna-lokal/*.json'],
+    '/api/live/control': ['./data/demo/nyhavna-lokal/*.json'],
+  },
   allowedDevOrigins: [...localDevOrigins(), "*.ngrok-free.app", "*.ngrok.app"],
   // Aktiver eksperimentelle funksjoner for bedre ytelse
   experimental: {

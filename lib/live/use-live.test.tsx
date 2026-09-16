@@ -325,3 +325,163 @@ describe("Stopp og opprydding", () => {
     expect(peer.sender.track).toBe(microphone);
   });
 });
+
+class FakeControl {
+  static OPEN = 1;
+  static instances: FakeControl[] = [];
+  readyState = 0;
+  onopen: (() => void) | null = null;
+  onmessage: ((event: { data: string }) => void) | null = null;
+  onclose: (() => void) | null = null;
+  onerror: (() => void) | null = null;
+  send = vi.fn();
+  close = vi.fn(() => { this.readyState = 3; });
+  constructor(readonly url: URL) { FakeControl.instances.push(this); }
+  open() { this.readyState = 1; this.onopen?.(); }
+  emit(payload: unknown) { this.onmessage?.({ data: JSON.stringify(payload) }); }
+  frames() { return this.send.mock.calls.map(([value]) => JSON.parse(value)); }
+}
+
+describe("Hosted control ownership", () => {
+  beforeEach(() => {
+    FakeControl.instances = [];
+    vi.stubGlobal("WebSocket", FakeControl);
+    const localFetch = vi.mocked(fetch).getMockImplementation()!;
+    vi.mocked(fetch).mockImplementation(async (url, init) => {
+      if (!init?.method) return { ok: true, json: async () => ({ configured: true, protocol: "live", snapshotId: "snapshot-test", transport: "websocket", warningMs: 1560000 }) } as Response;
+      return localFetch(url, init);
+    });
+  });
+
+  async function hosted(hookOptions = options(), ready = true) {
+    const view = renderHook(() => useLive(hookOptions));
+    let started!: Promise<void>;
+    await act(async () => { started = view.result.current.start(); });
+    const control = FakeControl.instances.at(-1)!;
+    const peer = FakePeer.instances.at(-1)!;
+    expect(control).toBeDefined();
+    await act(async () => { control.open(); });
+    if (ready) await act(async () => {
+      control.emit({ type: "ready", sdp: "v=0\r\nhosted", sessionId: "hosted", warningMs: 1560000 });
+      peer.channel.emit({ type: "session.started" });
+      await started;
+    });
+    return { ...view, control, peer, started };
+  }
+
+  it("routes SDP, context and map results over one same-origin socket", async () => {
+    const { control, peer, result } = await hosted({ ...options(), testRunId: "run-1", scenarioId: "scenario-1" } as LiveOptions);
+    expect(control.url.pathname).toBe("/api/live/control");
+    expect(control.url.host).toBe(window.location.host);
+    expect(control.frames()[0]).toMatchObject({ type: "start", sdp: "v=0\r\nlocal", snapshotId: "snapshot-test", testRunId: "run-1", scenarioId: "scenario-1" });
+    expect(peer.setRemoteDescription).toHaveBeenCalledWith({ type: "answer", sdp: "v=0\r\nhosted" });
+    expect(control.frames()).toContainEqual({ type: "context", message: { kind: "state", selected_category_id: "mat", selected_place_id: null, travel_mode: "walk" } });
+    await act(async () => { control.emit({ type: "map", directive: { id: "m1", name: "show_place", args: { poi_id: "dora" } } }); });
+    expect(control.frames()).toContainEqual({ type: "map_result", id: "m1", output: { ok: true } });
+    expect(result.current.status).toBe("listening");
+    expect(FakeEventSource.instances).toHaveLength(0);
+    expect(vi.mocked(fetch).mock.calls.every(([, init]) => !init?.method)).toBe(true);
+  });
+
+  it("isolates concurrent hooks and refuses invalid map commands", async () => {
+    const firstTool = vi.fn(() => ({ ok: true }));
+    const secondTool = vi.fn(() => ({ ok: true }));
+    const first = await hosted(options(firstTool));
+    const second = await hosted(options(secondTool));
+    await act(async () => { first.control.emit({ type: "map", directive: { id: "m1", name: "show_place", args: { poi_id: "dora" } } }); second.control.emit({ type: "map", directive: { id: "bad", name: "read_secret", args: {} } }); });
+    expect(firstTool).toHaveBeenCalledOnce();
+    expect(secondTool).not.toHaveBeenCalled();
+    expect(first.control.frames().filter(frame => frame.type === "map_result")).toEqual([{ type: "map_result", id: "m1", output: { ok: true } }]);
+    expect(second.control.frames().find(frame => frame.type === "map_result").output.error).toBeTruthy();
+  });
+
+  it("mutes immediately but drains final usage until ended", async () => {
+    const { result, control, peer } = await hosted();
+    act(() => result.current.stop());
+    expect(result.current.status).toBe("idle");
+    expect(microphone.enabled).toBe(false);
+    expect(control.frames().at(-1)).toEqual({ type: "stop" });
+    expect(peer.close).not.toHaveBeenCalled();
+    act(() => peer.channel.emit({ type: "session.usage.updated", usage: { seconds: 51 } }));
+    expect(result.current.usage.voiceSeconds).toBe(51);
+    act(() => control.emit({ type: "ended", reason: "client", message: "Stopped" }));
+    expect(peer.close).toHaveBeenCalledOnce();
+    expect(control.close).toHaveBeenCalledOnce();
+    expect(result.current.status).toBe("idle");
+  });
+
+  it("bounds drainage to eight seconds", async () => {
+    vi.useFakeTimers();
+    const { result, peer } = await hosted();
+    act(() => result.current.stop());
+    act(() => vi.advanceTimersByTime(7999));
+    expect(peer.close).not.toHaveBeenCalled();
+    act(() => vi.advanceTimersByTime(1));
+    expect(peer.close).toHaveBeenCalledOnce();
+  });
+
+  it("stops an in-flight creation and ignores a late ready", async () => {
+    const { result, peer, control, started } = await hosted(options(), false);
+    await act(async () => { result.current.stop(); await started; });
+    expect(control.frames().at(-1)).toEqual({ type: "stop" });
+    act(() => control.emit({ type: "ready", sdp: "late", sessionId: "late" }));
+    expect(peer.setRemoteDescription).not.toHaveBeenCalled();
+    act(() => control.emit({ type: "ended", reason: "client", message: "Stopped" }));
+    expect(peer.close).toHaveBeenCalledOnce();
+  });
+
+  it("warns at the hosted deadline and keeps greeting behavior", async () => {
+    vi.useFakeTimers();
+    const { result, peer } = await hosted();
+    const greeting = peer.channel.events().find(event => event.type === "session.instructions.append");
+    expect(greeting?.content).toBe("Si hei på norsk.");
+    act(() => peer.channel.emit({ type: "session.instructions.appended", client_event_id: greeting?.event_id }));
+    expect(peer.channel.events().filter(event => event.type === "session.commentary.append")).toHaveLength(1);
+    act(() => vi.advanceTimersByTime(1560000));
+    expect(result.current.notice).toContain("to minutter");
+  });
+
+  it("closes a connecting socket without sending a paid start", async () => {
+    const view = renderHook(() => useLive(options()));
+    let started!: Promise<void>;
+    await act(async () => { started = view.result.current.start(); });
+    const control = FakeControl.instances[0];
+    await act(async () => { view.result.current.stop(); await started; });
+    act(() => control.open());
+    expect(control.close).toHaveBeenCalledOnce();
+    expect(control.frames()).toHaveLength(0);
+  });
+
+  it("ignores old map results after an explicit restart", async () => {
+    let finish!: (value: unknown) => void;
+    const oldTool = vi.fn(() => new Promise(resolve => { finish = resolve; }));
+    const first = await hosted(options(oldTool));
+    act(() => first.control.emit({ type: "map", directive: { id: "slow", name: "show_place", args: {} } }));
+    act(() => first.result.current.stop());
+    let restarted!: Promise<void>;
+    await act(async () => { restarted = first.result.current.start(); });
+    expect(FakeControl.instances).toHaveLength(1);
+    await act(async () => first.control.emit({ type: "ended", reason: "client", message: "Stopped" }));
+    expect(FakeControl.instances).toHaveLength(2);
+    const next = FakeControl.instances[1];
+    const nextPeer = FakePeer.instances[1];
+    await act(async () => {
+      next.open(); next.emit({ type: "ready", sdp: "next", sessionId: "next" });
+      nextPeer.channel.emit({ type: "session.started" }); await restarted;
+      finish({ ok: true });
+      first.control.emit({ type: "ended", reason: "late", message: "Late" });
+    });
+    expect(first.result.current.status).toBe("listening");
+    expect(next.frames().filter(frame => frame.type === "map_result")).toHaveLength(0);
+    expect(nextPeer.close).not.toHaveBeenCalled();
+  });
+
+  it("makes lost control explicit without reconnecting or creating another paid session", async () => {
+    const { result, control, peer } = await hosted();
+    act(() => control.onclose?.());
+    expect(result.current.status).toBe("error");
+    expect(result.current.error).toContain("Trykk start");
+    expect(peer.close).toHaveBeenCalledOnce();
+    expect(FakeControl.instances).toHaveLength(1);
+  });
+});

@@ -166,7 +166,14 @@ function BoardVoiceSession({ children }: { children: ReactNode }) {
     return result;
   }, [data, state, dispatch, mapCamera, story, localDemo, stopId, activePoiId, revealPlaces, reserveData, revealedPlaceIds, placePanel]);
 
+  const [benchmarkLabels, setBenchmarkLabels] = useState<{ testRunId?: string; scenarioId?: string }>({});
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.has(DEV_FLAG)) setBenchmarkLabels({ testRunId: params.get("voiceRun") ?? undefined, scenarioId: params.get("voiceScenario") ?? undefined });
+  }, []);
+
   const live = useLive({
+    ...benchmarkLabels,
     // Hilsenen og datagrunnlaget følger BOARDET, ikke koden: to demoer deler
     // denne flaten med hvert sitt innhold, og guiden skal si stedets egen
     // åpning og svare ut av stedets egne data.

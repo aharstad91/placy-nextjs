@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
+import { hostedVoiceEnabled, requestDemoAccess } from '@/lib/live/hosted-access';
 import { LIVE_VOICES } from '@/lib/live/voices';
 import { backendModel, liveModel, liveSessionConfig, liveVoice } from '@/lib/live/session-config';
 import { createLiveSession, LiveSessionError } from '@/lib/live/create-session';
@@ -33,13 +34,15 @@ function requestedDataset(value: string | null | undefined) {
 
 
 export async function GET(request: NextRequest) {
-  if (!localRequest(request)) return new NextResponse(null, { status: 404 });
+  const hosted = hostedVoiceEnabled();
+  if (hosted ? !requestDemoAccess(request) : !localRequest(request)) return new NextResponse(null, { status: 404 });
   const dataset = requestedDataset(request.nextUrl.searchParams.get('dataset'));
+  if (hosted && dataset !== 'nyhavna-lokal') return new NextResponse(null, { status: 404 });
   if (!dataset) return NextResponse.json({ error: 'Ukjent datasett.' }, { status: 400 });
   try {
     const demo = await loadLiveDemo(dataset);
     return NextResponse.json(
-      { configured: Boolean(process.env.OPENAI_API_KEY), voiceModel: liveModel(), voice: liveVoice(), backendModel: backendModel(), dataset: demo.id, snapshotId: demo.snapshotId, protocol: 'live' },
+      { configured: Boolean(process.env.OPENAI_API_KEY), voiceModel: liveModel(), voice: liveVoice(), backendModel: backendModel(), dataset: demo.id, snapshotId: demo.snapshotId, protocol: 'live', ...(hosted ? { transport: 'websocket', warningMs: 26 * 60 * 1000 } : {}) },
       { headers: { 'Cache-Control': 'no-store' } },
     );
   } catch (error) {

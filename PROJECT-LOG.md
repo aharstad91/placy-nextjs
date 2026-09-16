@@ -6,6 +6,24 @@
 
 ---
 
+## 2026-09-16 — Nyhavna på Vercel Pro, samtaleregnskap og WIP-overlevering
+
+Brukeren bekreftet full demo med Anja, kun Vercel + Supabase, og oppgraderte Vercel til Pro. Arbeidet ligger isolert på `feat/voice-infrastructure` i `../placy-voice-infrastructure`; hovedrepoets eksisterende lokale endringer er urørt. Brukeren ba om lokal commit og kontobytte før jobben var ferdig. Ingen push.
+
+**Levert teknisk, fortsatt under validering:** Egen Vercel-app `placy-nyhavna`, https://placy-nyhavna.vercel.app/demo/nyhavna-lokal, tilgangskode og signert cookie; Anja bruker GPT-Live-1 + GPT-5.6-Terra + Willow. Én Vercel WebSocket eier hver samtales verktøy/kart, direkte WebRTC-lyd til OpenAI. Supabase-migrasjoner **093 og 094 er kjørt og verifisert live**: varig forbruksregnskap, atomisk opptaksgrense/budsjett, eierlease og cron-opprydding hvert minutt. Maksimal mediefrist 27,5 minutter inkludert oppstart; 30 sekunders ekstra lease for sluttregnskap. Admin er deaktivert. Kostnads-CLI og endelig avgrenset ekte-lyd-benchmark er implementert. Se `docs/research/voice-infrastructure/operations.md` for drift/tilgang, `cost-report.md` og `benchmark.md` for verktøy.
+
+**Bevis:** Vercel-forbindelse testet utover 800 sekunder (825 s) med to isolerte forbindelser. Alle 4 430 tester i daværende fullsuite besto; lint 0 feil (eksisterende advarsler), typecheck og produksjonsbygg besto. Senere 15 fokuserte controller/recovery/benchmark-tester og typecheck besto. PGlite bekreftet 093+094 inklusive deadline-drain. Live databaseprøve: to runder à seks samtidige opptak ga ett godkjent opptak per runde, recovery tok én eier per runde, alle 30 anon/auth-grantkombinasjoner nektet. Desktop/mobil og Google-kart visuelt verifisert. Skoletest: tre backend-kall, kartdirektiv, komplett kostnad $0,194805. Midlertidig Vercel-echo-deploy er slettet.
+
+**Stopp ved kontobytte:** Tre pågående betalte benchmarkprosesser ble avbrutt med SIGINT; WebSocket-oppryddingen avsluttet samtalene. Etterpå viste kostnadsrapporten **7 av 7 samtaler komplett, samlet beregnet API-kostnad $0,990974**, ingen uavsluttet samtale i rapporten. Recovery-endepunkt svarte 200 med 0 claims. Dette er blandede smoke-/deltester, ikke en kundesamtalepris. 18-scenario-matrisen og 5/15/26-minutterstestene er **ikke fullført**. Rå delrapporter i lokal `.context/voice-benchmark/` må ikke behandles som ferdige tester. Snapshot `docs/research/voice-infrastructure/handoff-cost-snapshot.json` dokumenterer avslutningen.
+
+**Åpent for neste økt:** Fullfør betalte testmatriser og kontrollerte disconnect/concurrency/owner-loss-prøver; avstem eksport og merk komplette/incomplete separat; fullfør CE-kodereview og alle begrunnede funn; kjør endelige mekaniske sjekker og sluttdeploy ved kodeendringer. CE-plan/doc-review ferdig, simplify ferdig (to forenklinger), kodereview startet men avbrutt på brukerens ønske. Review-run lokalt `/tmp/compound-engineering-501/ce-code-review/20260916-voice-81337c94`. Ikke erklær demoen klar til Lene før disse portene er fullført. Ikke send noe til Lene automatisk. Behold High til kritisk verifisering er ferdig.
+
+**Unngå gjentatte feil:** TSX/esbuild setter `__name` inn i funksjoner sendt til Playwright `addInitScript`; runner bruker nå ren JS-streng. Tester må åpne velkomstskjermen, vente på ferdig hilsen og 3 s stabil lytting, og la 8,5 s slutt-drain gå før nettleseren lukkes. `.vercelignore` trenger negasjon uten slutt-skråstrek pluss `/**` for WAV-mappen. Live test av roller via transaction-pooler må bruke transaksjon + `SET LOCAL ROLE`, aldri løs `SET ROLE`.
+
+Secrets finnes kun i Vercel og lokal ignorert `.context/voice-hosted.env` (0600). Ikke kopier hele filen til kunde eller git. Strategiloggen er ikke endret. Plan: `docs/plans/2026-09-16-2151-feat-placy-voice-infrastructure-plan.md`.
+
+---
+
 ## 2026-09-15 — Lillebytunet: satellitt og 3D tilbake etter omlasting
 
 Riktig board var `/eiendom/skanska/lillebytunet/rapport-board`, ikke Overvik. Databasen og ferske produksjonsdata hadde allerede `has3dAddon=true`, men den åpne Chrome-fanen viste bare Mapbox og reisemåte. Etter omlasting viste den 2D-kart, Satellitt ovenfra og 3D-kart. Satellitt var valgt fra start; 3D ble valgt og bekreftet i nettleseren med Google Maps og aktivt 3D-valg. Ingen kode eller databaseendring nødvendig. Forrige Overvik-undersøkelse skyldtes assistentens misforståelse.

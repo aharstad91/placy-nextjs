@@ -1,0 +1,70 @@
+# Dependencies
+node_modules/
+
+# Next.js
+.next/
+out/
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# Debug
+npm-debug.log*
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# TypeScript
+*.tsbuildinfo
+
+# Misc
+*.log
+
+# Local files
+screenshots/
+tmp/
+.claude/*
+!.claude/skills/
+!.claude/commands/
+
+# Agent-kjøringsartefakter (ce-code-review-persona-output o.l. — lokal støy)
+.context/
+
+# Research output (generated, not committed)
+data/research/
+
+# Dolt database files (added by bd init)
+.dolt/
+*.db
+.mcp.json
+backups/
+.curation-staging/
+.audio-staging/
+.tmp-screenshots/
+.spike-debug/
+build-logs/
+.vercel
+
+# Lokale skjermbilde-/testartefakter (skal ikke sjekkes inn)
+test-results/
+luffu-capture/
+
+# API-forbruksregnskap (lib/api-budget.ts) — lokalt, ikke delt
+.api-usage/
+
+# Prototype-miljøet (prototypes/) — genererte artefakter
+prototypes/_data/
+prototypes/_shared/env.js
+.backups/
+public/dev/*
+!public/dev/nyhavna-tts
+!public/dev/nyhavna-tts/**

@@ -1,45 +1,42 @@
 import { notFound } from "next/navigation";
+import { cookies } from "next/headers";
+import { DEMO_ACCESS_COOKIE, hostedVoiceEnabled, verifyDemoAccess } from "@/lib/live/hosted-access";
 import { loadDataset } from "@/lib/demo/nyhavna-lokal/dataset";
 import { buildLocalBoard, buildLocalProject } from "@/lib/demo/nyhavna-lokal/board";
-import LokalBoardGate from "./lokal-board-gate";
+import LokalBoardGate from "@/app/demo/nyhavna-lokal/lokal-board-gate";
 
-/**
- * Den lokale Nyhavna-demoen — ren ramme, lokalt innhold (2026-09-13).
- *
- * ## Hva denne ruta er
- *
- * Samme board-komponenter som resten av Placy, men med JSON-filene i
- * `data/demo/nyhavna-lokal/` som ENESTE kilde til faginnhold. Ingen Supabase,
- * ingen POI-pool, ingen arv fra den eksisterende Nyhavna-demoen på
- * `/eiendom/nyhavna-utvikling/nyhavna/leve` — den står uendret.
- *
- * Formålet er å kunne fylle demoen med kontrollert innhold etter hvert som
- * samtaleøvelsene viser hva folk faktisk spør om. Derfor starter den tom: hver
- * markør, hvert fakta og hver kilde som dukker opp, har noen lagt inn med vilje.
- *
- * ## Hvorfor ingen ISR
- *
- * `dynamic = "force-dynamic"`: JSON-filene redigeres mens serveren kjører, og en
- * cachet side ville vist gårsdagens innhold ved siden av en guide som svarer ut
- * av dagens. Én kilde, én sannhet — også mellom to lesinger.
- *
- * ## Hvorfor bare lokalt
- *
- * Ruta finnes for demo og læring. Datasettet ligger i repoet og kan inneholde
- * innhold som ikke er kontrollert ennå; den skal ikke være en publisert side.
- */
+/** Curated Nyhavna content, available locally and through explicit hosted demo access. */
 export const dynamic = "force-dynamic";
 
 export const metadata = {
-  title: "Nyhavna — lokal demo",
-  description: "Placy-board for Nyhavna, bygd på lokale JSON-filer.",
+  title: "Nyhavna — demo",
+  description: "Utforsk Nyhavna med kart og samtaleguiden Anja.",
   robots: { index: false, follow: false },
 };
 
-export default async function NyhavnaLokalPage() {
-  // Bare i utvikling. Datasettet ligger i repoet og kan inneholde innhold som
-  // ikke er kontrollert ennå; det skal ikke kunne nås fra et offentlig domene.
-  if (process.env.NODE_ENV === "production") notFound();
+export default async function NyhavnaLokalPage({ searchParams }: { searchParams: Promise<{ access?: string }> }) {
+  if (process.env.NODE_ENV === "production" || hostedVoiceEnabled()) {
+    if (!hostedVoiceEnabled()) notFound();
+    const access = verifyDemoAccess((await cookies()).get(DEMO_ACCESS_COOKIE)?.value);
+    if (!access) {
+      const failed = (await searchParams).access === "failed";
+      return (
+        <main className="min-h-dvh bg-[#f5f2eb] px-6 py-24 text-[#153b57]">
+          <div className="mx-auto max-w-sm">
+            <p className="mb-3 text-sm uppercase tracking-widest">Nyhavna · Placy</p>
+            <h1 className="mb-4 text-3xl font-semibold">Velkommen til demoen</h1>
+            <p className="mb-8">Utforsk nabolaget sammen med Anja. Skriv inn tilgangskoden du har fått.</p>
+            <form action="/api/demo/access" method="post" className="space-y-4">
+              <label htmlFor="demo-code" className="block text-sm font-medium">Tilgangskode</label>
+              <input id="demo-code" name="code" type="password" autoComplete="current-password" required maxLength={256} className="w-full rounded-xl border border-[#153b57]/30 bg-white p-3 text-base" />
+              {failed && <p role="alert" className="text-sm text-red-800">Koden stemmer ikke. Prøv igjen.</p>}
+              <button type="submit" className="w-full rounded-xl bg-[#153b57] p-3 font-medium text-white">Åpne demoen</button>
+            </form>
+          </div>
+        </main>
+      );
+    }
+  }
 
   // Feilen fra lasteren peker på fil, felt og hva som manglet, og får boble opp
   // som den er. En demo som stille faller tilbake til noe annet er verdiløs.
