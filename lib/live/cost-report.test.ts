@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
-import { buildCostReport, costRow, costRowsCsv, csvCell, readCostRows, SESSION_COLUMNS, type CostSession, type CostEvent, type CostReader } from '@/lib/live/cost-report';
+import { buildCostReport, costRow, costRowsCsv, csvCell, readCostRows, readAdmissionSnapshot, SESSION_COLUMNS, ADMISSION_COLUMNS, type CostSession, type CostEvent, type CostReader, type AdmissionSession } from '@/lib/live/cost-report';
+import type { VoiceAdmissionPolicy } from '@/lib/live/metering/types';
 const cutoff = '2026-09-17T00:00:00Z';
 function session(overrides: Partial<CostSession> = {}): CostSession {
   return { id: '001', tenant_id: 'nyhavna', customer_id: null, project_id: null, internal_demo_id: 'nyhavna', provider_session_id: 'provider-1',
@@ -42,6 +43,79 @@ describe('cost evidence and statistics', () => {
     expect(SESSION_COLUMNS).not.toContain('owner_token'); expect(JSON.stringify(row)).not.toContain('SECRET'); expect(costRowsCsv([row])).not.toContain('owner_token');
   });
 });
+describe('shared platform reporting', () => {
+  const policy = (scope_type: VoiceAdmissionPolicy['scope_type'], scope_id: string, overrides: Partial<VoiceAdmissionPolicy> = {}): VoiceAdmissionPolicy => ({ scope_type, scope_id, enabled: true, max_concurrent: 5, max_per_hour: 10, max_per_day: 20, daily_budget_usd: 10, ...overrides });
+  const admission = (overrides: Partial<AdmissionSession> = {}): AdmissionSession => ({ id: '001', customer_id: 'customer', project_id: 'project-a', created_at: '2026-09-16T23:30:00Z', state: 'closed', accounting_status: 'complete', reservation_usd: 5, known_cost_usd: 1, ...overrides });
+  it('aggregates two children exactly once and preserves purpose as an independent cohort', () => {
+    const rows = ['project-a', 'project-b'].map((project_id, i) => costRow(session({ id: String(i), customer_id: 'customer', project_id, purpose: i ? 'internal' : 'public' }), [event]));
+    const report = buildCostReport(rows, cutoff);
+    expect(report.selectedTotals.platform).toMatchObject({ attemptedCount: 2 });
+    expect(report.selectedTotals.platform.completeTotalUsd).toBeCloseTo(0.24);
+    expect(report.selectedTotals.customers).toEqual([expect.objectContaining({ customer: 'customer', attemptedCount: 2 })]);
+    expect(report.selectedTotals.customers[0].completeTotalUsd).toBeCloseTo(0.24);
+    expect(report.selectedTotals.projects).toHaveLength(2);
+    expect(report.groups.map(g => g.purpose)).toEqual(['public', 'internal']);
+    expect(costRow(session(), [event]).purpose).toBe('legacy');
+    expect(costRowsCsv(rows)).toContain('"purpose"');
+  });
+  it('keeps empty filtered use empty while global exposure counts other projects, purposes and old incomplete history', () => {
+    const snapshot = { policies: [policy('platform', 'platform'), policy('customer', 'customer'), policy('project', 'project-a')], sessions: [
+      admission(), admission({ id: '002', project_id: 'project-b', state: 'active', accounting_status: 'provisional', known_cost_usd: 7 }),
+      admission({ id: '003', customer_id: null, project_id: null, created_at: '2020-01-01T00:00:00Z', accounting_status: 'incomplete', reservation_usd: 2, known_cost_usd: 0.5 }),
+      admission({ id: '004', created_at: '2020-01-01T00:00:00Z', known_cost_usd: 100 }),
+    ] };
+    const report = buildCostReport([], cutoff, { project: 'missing', purpose: 'public' }, snapshot);
+    expect(report.selectedTotals.platform).toMatchObject({ attemptedCount: 0, completeTotalUsd: 0 });
+    expect(report.selectedTotals.projects).toEqual([]);
+    expect(report.operational!.scopes.find(s => s.scopeType === 'platform')).toMatchObject({ activeCalls: 1, attemptsLastHour: 2, attemptsLast24Hours: 2, completeLast24HoursUsd: 1, unresolvedReservationUsd: 7, unresolvedExposureUsd: 9, oldIncompleteExposureUsd: 2, exposureUsd: 10, budgetRemainingUsd: 0, status: 'limit_reached' });
+    expect(report.operational!.scopes.find(s => s.scopeType === 'customer')).toMatchObject({ exposureUsd: 8, budgetRemainingUsd: 2, status: 'warning' });
+    expect(report.operational!.scopes.find(s => s.scopeId === 'project-a')).toMatchObject({ exposureUsd: 1, status: 'ok' });
+    expect(report.operational!.scopes.find(s => s.scopeId === 'project-b')).toMatchObject({ policy: null, status: 'missing_policy', budgetRemainingUsd: null });
+  });
+  it('matches strict SQL time boundaries, counts failed attempts, and retains old nonclosed calls', () => {
+    const report = buildCostReport([], cutoff, {}, { policies: [policy('platform', 'platform', { max_concurrent: 1 })], sessions: [
+      admission({ created_at: '2026-09-16T23:00:00Z' }),
+      admission({ id: '002', created_at: '2026-09-16T00:00:00Z' }),
+      admission({ id: '003', created_at: '2020-01-01T00:00:00Z', state: 'unresolved', accounting_status: 'incomplete' }),
+    ] });
+    expect(report.operational!.scopes[0]).toMatchObject({ attemptsLastHour: 0, attemptsLast24Hours: 1, activeCalls: 1, concurrentRemaining: 0, hourlyRemaining: 10, dailyRemaining: 19, exposureUsd: 6, status: 'limit_reached' });
+  });
+  it('does not claim known headroom without its independent read; disabled policies are explicit', () => {
+    expect(buildCostReport([], cutoff).operational).toBeNull();
+    const report = buildCostReport([], cutoff, {}, { sessions: [], policies: [policy('platform', 'platform', { enabled: false })] });
+    expect(report.operational!.scopes[0].status).toBe('disabled');
+  });
+  it('reads all admission rows and policies across server caps without selecting owner capabilities or events', async () => {
+    const sessions = Array.from({ length: 1001 }, (_, i) => admission({ id: String(i).padStart(4, '0') }));
+    const policies = [policy('platform', 'platform'), policy('customer', 'customer'), policy('project', 'project-a')];
+    const reader = {
+      sessions: vi.fn(async (r: { after?: string; cutoff: string }) => { expect(r.cutoff).toBe(cutoff); expect(r).not.toHaveProperty('filters'); return sessions.filter(s => !r.after || s.id > r.after).slice(0, 500); }),
+      policies: vi.fn(async (r: { offset: number }) => policies.slice(r.offset, r.offset + 1)),
+    };
+    const snapshot = await readAdmissionSnapshot(reader, cutoff);
+    expect(snapshot.sessions).toHaveLength(1001); expect(snapshot.policies).toEqual(policies);
+    expect(reader.sessions).toHaveBeenCalledTimes(4); expect(reader.policies).toHaveBeenCalledTimes(4);
+    expect(ADMISSION_COLUMNS).not.toContain('owner_token');
+  });
+  it('fails the independent snapshot when policy permissions fail', async () => {
+    await expect(readAdmissionSnapshot({ sessions: async () => [], policies: async () => { throw new Error('42501'); } }, cutoff)).rejects.toThrow('42501');
+  });
+  it('keeps an unmatched purpose/project selection empty without fetching any usage events', async () => {
+    const reader: CostReader = {
+      sessions: vi.fn(async request => { expect(request.filters).toEqual({ project: 'project-a', purpose: 'benchmark' }); return []; }),
+      events: vi.fn(async () => []),
+    };
+    const rows = await readCostRows(reader, { project: 'project-a', purpose: 'benchmark' }, cutoff);
+    expect(rows).toEqual([]); expect(reader.events).not.toHaveBeenCalled();
+    const report = buildCostReport(rows, cutoff, { project: 'project-a', purpose: 'benchmark' }, { sessions: [admission()], policies: [policy('platform', 'platform')] });
+    expect(report.selectedTotals.platform.attemptedCount).toBe(0);
+    expect(report.operational!.scopes[0].exposureUsd).toBe(1);
+  });
+  it('refuses repeated admission pages rather than returning an incomplete or duplicated export', async () => {
+    await expect(readAdmissionSnapshot({ sessions: async () => [admission()], policies: async () => [] }, cutoff)).rejects.toThrow('Admission pagination did not advance');
+    await expect(readAdmissionSnapshot({ sessions: async () => [], policies: async () => [policy('platform', 'platform')] }, cutoff)).rejects.toThrow('Policy pagination did not advance');
+  });
+});
 describe('complete keyset reads', () => {
   it('bounds concurrent event reads and keeps session order despite reversed completion', async () => {
     const sessions = Array.from({ length: 23 }, (_, i) => session({ id: String(i).padStart(3, '0') }));
@@ -77,7 +151,7 @@ describe('complete keyset reads', () => {
   it('reads 1001 sessions and 1001 events even with a lower server page cap; forwards filters and fixed cutoff', async () => {
     const sessions = Array.from({ length: 1001 }, (_, i) => session({ id: String(i).padStart(4, '0') }));
     const events = Array.from({ length: 1001 }, (_, i) => ({ ...event, response_id: String(i).padStart(4, '0') }));
-    const filters = { tenant: 'nyhavna', customer: 'customer', environment: 'test', testRun: 'run-1' };
+    const filters = { tenant: 'nyhavna', customer: 'customer', project: 'project', purpose: 'public' as const, environment: 'test', testRun: 'run-1' };
     const reader: CostReader = {
       sessions: vi.fn(async r => { expect(r.filters).toEqual(filters); expect(r.cutoff).toBe(cutoff); return sessions.filter(s => !r.after || s.id > r.after).slice(0, 500); }),
       events: vi.fn(async r => { expect(r.cutoff).toBe(cutoff); return r.sessionId === '0000' ? events.filter(e => !r.after || e.response_id > r.after).slice(0, 500) : []; }),

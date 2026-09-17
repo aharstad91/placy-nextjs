@@ -1,6 +1,9 @@
-/** Public accounting projection: never select/spread a ledger session or its owner capability. */
+import type { VoiceAdmissionPolicy, VoicePurpose, VoiceSession } from '@/lib/live/metering/types';
+
+/** Accounting projection: never select/spread a ledger session or its owner capability. */
 export interface CostSession {
   id: string; tenant_id: string; customer_id: string | null; project_id: string | null;
+  purpose?: VoicePurpose | null;
   internal_demo_id: string | null; provider_session_id: string | null;
   environment: string; test_run_id: string | null; scenario_id: string | null;
   created_at: string; ended_at: string | null; config_version: string; dataset_version: string;
@@ -12,9 +15,39 @@ export interface CostEvent {
   response_id: string; model: string; input_tokens: number | null; cached_tokens: number | null;
   output_tokens: number | null; cost_usd: number | null; evidence_status: string;
 }
-export const SESSION_COLUMNS = 'id,tenant_id,customer_id,project_id,internal_demo_id,provider_session_id,environment,test_run_id,scenario_id,created_at,ended_at,config_version,dataset_version,models,rate_snapshot,voice_seconds,backend_cost_usd,known_cost_usd,accounting_status,termination_reason';
+export const SESSION_COLUMNS = 'id,tenant_id,customer_id,project_id,purpose,internal_demo_id,provider_session_id,environment,test_run_id,scenario_id,created_at,ended_at,config_version,dataset_version,models,rate_snapshot,voice_seconds,backend_cost_usd,known_cost_usd,accounting_status,termination_reason';
 export const EVENT_COLUMNS = 'response_id,model,input_tokens,cached_tokens,output_tokens,cost_usd,evidence_status';
-export interface CostFilters { tenant?: string; customer?: string; environment?: string; testRun?: string }
+export interface CostFilters { tenant?: string; customer?: string; project?: string; purpose?: VoicePurpose | 'legacy'; environment?: string; testRun?: string }
+export type AdmissionSession = Pick<VoiceSession, 'id' | 'customer_id' | 'project_id' | 'created_at' | 'state' | 'accounting_status' | 'reservation_usd' | 'known_cost_usd'>;
+export const ADMISSION_COLUMNS = 'id,customer_id,project_id,created_at,state,accounting_status,reservation_usd,known_cost_usd';
+export const POLICY_COLUMNS = 'scope_type,scope_id,enabled,max_concurrent,max_per_hour,max_per_day,daily_budget_usd';
+export interface AdmissionSnapshot { sessions: AdmissionSession[]; policies: VoiceAdmissionPolicy[] }
+export interface AdmissionReader {
+  // Deliberately no filters: operational limits include every purpose/environment.
+  sessions(request: { after?: string; cutoff: string; limit: number }): Promise<AdmissionSession[]>;
+  policies(request: { offset: number; limit: number }): Promise<VoiceAdmissionPolicy[]>;
+}
+export async function readAdmissionSnapshot(reader: AdmissionReader, cutoff: string): Promise<AdmissionSnapshot> {
+  const sessions: AdmissionSession[] = [], policies: VoiceAdmissionPolicy[] = [];
+  let after: string | undefined;
+  for (;;) {
+    const page = await reader.sessions({ after, cutoff, limit: 1000 });
+    if (!page.length) break;
+    if (after === page.at(-1)!.id) throw new Error('Admission pagination did not advance');
+    sessions.push(...page); after = page.at(-1)!.id;
+  }
+  const seen = new Set<string>();
+  for (;;) {
+    const page = await reader.policies({ offset: policies.length, limit: 1000 });
+    if (!page.length) break;
+    for (const policy of page) {
+      const key = JSON.stringify([policy.scope_type, policy.scope_id]);
+      if (seen.has(key)) throw new Error('Policy pagination did not advance');
+      seen.add(key); policies.push(policy);
+    }
+  }
+  return { sessions, policies };
+}
 export interface CostReader {
   sessions(request: { after?: string; cutoff: string; limit: number; filters: CostFilters }): Promise<CostSession[]>;
   events(request: { sessionId: string; after?: string; cutoff: string; limit: number }): Promise<CostEvent[]>;
@@ -60,7 +93,7 @@ export function costRow(s: CostSession, events: CostEvent[]) {
   const evidenceMissing = voiceCost === null || !label(rates.version) || events.some(e => e.evidence_status !== 'valid' || !validNumber(e.cost_usd) || !validNumber(e.input_tokens) || !validNumber(e.cached_tokens) || !validNumber(e.output_tokens));
   const status = s.accounting_status === 'complete' && (evidenceMissing || !reconciles) ? 'incomplete' : s.accounting_status;
   return {
-    sessionId: s.id, tenant: s.tenant_id, customer: s.customer_id, project: s.project_id, internalDemo: s.internal_demo_id,
+    sessionId: s.id, tenant: s.tenant_id, customer: s.customer_id, project: s.project_id, purpose: s.purpose ?? 'legacy', internalDemo: s.internal_demo_id,
     providerSessionId: s.provider_session_id, environment: s.environment, testRunId: s.test_run_id, scenario: s.scenario_id,
     startedAt: s.created_at, endedAt: s.ended_at,
     durationSeconds: s.ended_at ? Math.max(0, (Date.parse(s.ended_at) - Date.parse(s.created_at)) / 1000) : null,
@@ -90,16 +123,93 @@ function summary(rows: CostRow[]) {
     p95Usd: n ? costs[Math.ceil(n * 0.95)-1] : null, maxUsd: n ? costs[n-1] : null,
   };
 }
-export function buildCostReport(rows: CostRow[], cutoff: string, filters: CostFilters = {}) {
-  const groups = new Map<string, { identity: { tenant: string; customer: string | null; project: string | null; internalDemo: string | null; environment: string; testRunId: string | null; scenario: string | null }; rows: CostRow[] }>();
+function selectedScopeTotals(rows: CostRow[]) {
+  const customers = new Map<string, CostRow[]>(), projects = new Map<string, CostRow[]>();
   for (const row of rows) {
-    const { tenant, customer, project, internalDemo, environment, testRunId, scenario } = row;
-    const identity = { tenant, customer, project, internalDemo, environment, testRunId, scenario };
+    if (row.customer !== null) {
+      const items = customers.get(row.customer) ?? []; items.push(row); customers.set(row.customer, items);
+    }
+    if (row.project !== null) {
+      const items = projects.get(row.project) ?? []; items.push(row); projects.set(row.project, items);
+    }
+  }
+  return {
+    basis: 'Selected rows only; scopes overlap and must not be added together. This is not operational exposure.',
+    platform: summary(rows),
+    customers: [...customers].map(([customer, items]) => ({ customer, ...summary(items) })),
+    projects: [...projects].map(([project, items]) => ({ project, ...summary(items) })),
+    unattributed: summary(rows.filter(row => row.customer === null || row.project === null)),
+  };
+}
+
+/** Mirror voice_reserve's ledger projection, not event-reconciled reporting rows. */
+function operationalReport(snapshot: AdmissionSnapshot, cutoff: string) {
+  const now = Date.parse(cutoff);
+  if (!Number.isFinite(now)) throw new Error('Invalid admission cutoff');
+  const scopeMap = new Map<string, { scopeType: VoiceAdmissionPolicy['scope_type']; scopeId: string; policy: VoiceAdmissionPolicy | null; sessions: AdmissionSession[] }>();
+  const scope = (scopeType: VoiceAdmissionPolicy['scope_type'], scopeId: string) => {
+    const key = JSON.stringify([scopeType, scopeId]);
+    let item = scopeMap.get(key);
+    if (!item) { item = { scopeType, scopeId, policy: null, sessions: [] }; scopeMap.set(key, item); }
+    return item;
+  };
+  scope('platform', 'platform');
+  for (const policy of snapshot.policies) scope(policy.scope_type, policy.scope_id).policy = policy;
+  for (const session of snapshot.sessions) {
+    scope('platform', 'platform').sessions.push(session);
+    if (session.customer_id !== null) scope('customer', session.customer_id).sessions.push(session);
+    if (session.project_id !== null) scope('project', session.project_id).sessions.push(session);
+  }
+  const warningThreshold = 0.8;
+  const scopes = [...scopeMap.values()].map(({ scopeType, scopeId, policy, sessions }) => {
+    let activeCalls = 0, attemptsLastHour = 0, attemptsLast24Hours = 0, completeLast24HoursUsd = 0;
+    let unresolvedReservationUsd = 0, unresolvedKnownLowerBoundUsd = 0, unresolvedExposureUsd = 0, oldIncompleteExposureUsd = 0;
+    for (const session of sessions) {
+      const started = Date.parse(session.created_at);
+      if (!Number.isFinite(started) || !validNumber(session.reservation_usd) || !validNumber(session.known_cost_usd)) throw new Error('Invalid admission ledger evidence');
+      if (started > now) throw new Error('Admission ledger exceeds report cutoff');
+      if (session.state !== 'closed') activeCalls++;
+      if (started > now - 3_600_000) attemptsLastHour++;
+      const inDay = started > now - 86_400_000;
+      if (inDay) attemptsLast24Hours++;
+      if (session.accounting_status !== 'complete') {
+        const liability = Math.max(session.reservation_usd, session.known_cost_usd);
+        unresolvedReservationUsd += session.reservation_usd;
+        unresolvedKnownLowerBoundUsd += session.known_cost_usd;
+        unresolvedExposureUsd += liability;
+        if (!inDay && session.accounting_status === 'incomplete') oldIncompleteExposureUsd += liability;
+      } else if (inDay) completeLast24HoursUsd += session.known_cost_usd;
+    }
+    const exposureUsd = completeLast24HoursUsd + unresolvedExposureUsd;
+    const ratios = policy ? [activeCalls / policy.max_concurrent, attemptsLastHour / policy.max_per_hour, attemptsLast24Hours / policy.max_per_day, exposureUsd / policy.daily_budget_usd] : [];
+    const status = !policy ? 'missing_policy' : !policy.enabled ? 'disabled' : ratios.some(r => r >= 1) ? 'limit_reached' : ratios.some(r => r >= warningThreshold) ? 'warning' : 'ok';
+    return {
+      scopeType, scopeId, policy, activeCalls, attemptsLastHour, attemptsLast24Hours,
+      completeLast24HoursUsd, unresolvedReservationUsd, unresolvedKnownLowerBoundUsd, unresolvedExposureUsd, oldIncompleteExposureUsd, exposureUsd,
+      concurrentRemaining: policy ? Math.max(0, policy.max_concurrent - activeCalls) : null,
+      hourlyRemaining: policy ? Math.max(0, policy.max_per_hour - attemptsLastHour) : null,
+      dailyRemaining: policy ? Math.max(0, policy.max_per_day - attemptsLast24Hours) : null,
+      budgetRemainingUsd: policy ? Math.max(0, policy.daily_budget_usd - exposureUsd) : null,
+      status,
+    };
+  });
+  return {
+    basis: 'Unfiltered ledger across all purposes, environments and history. Separate REST reads, not a transactional snapshot or admission guarantee; tenant limits and the next call reservation also apply.',
+    window: 'Strictly newer than cutoff minus 1 hour/24 hours by created_at. Incomplete/provisional liability and nonclosed calls never age out.',
+    warningThreshold, scopes,
+  };
+}
+
+export function buildCostReport(rows: CostRow[], cutoff: string, filters: CostFilters = {}, admission?: AdmissionSnapshot) {
+  const groups = new Map<string, { identity: Pick<CostRow, 'tenant' | 'customer' | 'project' | 'purpose' | 'internalDemo' | 'environment' | 'testRunId' | 'scenario'>; rows: CostRow[] }>();
+  for (const row of rows) {
+    const { tenant, customer, project, purpose, internalDemo, environment, testRunId, scenario } = row;
+    const identity = { tenant, customer, project, purpose, internalDemo, environment, testRunId, scenario };
     const key = JSON.stringify(identity);
     const group = groups.get(key) ?? { identity, rows: [] };
     group.rows.push(row); groups.set(key, group);
   }
-  return { cutoff, filters, currency: 'USD', basis: 'Calculated provider estimates; incomplete/provisional amounts are known lower bounds. Fixed Vercel/Supabase costs excluded.', rows, groups: [...groups.values()].map(g => ({ ...g.identity, ...summary(g.rows) })) };
+  return { cutoff, filters, currency: 'USD', basis: 'Calculated provider estimates, not invoices or customer prices; incomplete/provisional amounts are known lower bounds. Vercel, Supabase and maps costs/allocation are unmeasured and excluded.', rows, groups: [...groups.values()].map(g => ({ ...g.identity, ...summary(g.rows) })), selectedTotals: selectedScopeTotals(rows), operational: admission ? operationalReport(admission, cutoff) : null };
 }
 /** Quote every field; neutralize spreadsheet formulas even after leading whitespace. */
 export function csvCell(value: unknown) {
@@ -109,7 +219,7 @@ export function csvCell(value: unknown) {
 }
 export function costRowsCsv(rows: CostRow[]) {
   const headers: (keyof CostRow)[] = [
-    'sessionId', 'tenant', 'customer', 'project', 'internalDemo', 'providerSessionId',
+    'sessionId', 'tenant', 'customer', 'project', 'purpose', 'internalDemo', 'providerSessionId',
     'environment', 'testRunId', 'scenario', 'startedAt', 'endedAt', 'durationSeconds',
     'voiceSeconds', 'inputTokens', 'cachedTokens', 'outputTokens', 'usageEventCount',
     'unknownUsageEvents', 'knownVoiceUsd', 'knownBackendUsd', 'knownTotalUsd',
