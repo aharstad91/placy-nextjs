@@ -1,6 +1,6 @@
 # Shared platform migration — verification
 
-Status: implementation in progress, not yet deployed. Date: 2026-09-17.
+Status: database migration applied and verified; application migration in progress, not yet deployed. Date: 2026-09-17.
 
 ## Plan review
 
@@ -33,6 +33,8 @@ Real database proof passed with independent PostgreSQL connections against a uni
 
 The initial certificate check required Supabase's CA. The successful proof used the downloaded Supabase Root 2021 CA and `sslmode=verify-full`; no database SSL setting changed.
 
+Production migration 095 then applied successfully. A before/after comparison confirmed all 60 existing rows retained their IDs, tenant/internal/customer/project identity, model/rate snapshot, accounting status and known cost; their new purpose field is null. The live read-only verifier confirmed Nyhavna's canonical registry, enabled public/benchmark tenants, all three required scope policies and denied anon/authenticated privileges. Existing public health still returned 200 with GPT-Live-1, Terra and Willow after the database change. Old tenants remain enabled only until the new application is proven and cut over.
+
 ## Model cost clarification
 
 Andreas asked specifically about a lighter GPT-Live voice model. Official model catalog and GPT-Live documentation checked 2026-09-17 show GPT-Live-1 and no documented Live Mini/Light. Realtime Mini is a different protocol/integration. The proposed Luna backend change was canceled on clarification; public and benchmark configuration remain unchanged. Technical infrastructure tests make no paid AI calls; the release gate remains one short bounded real call, not a repeat of the prior long benchmark campaign.
@@ -41,4 +43,4 @@ Sources: [model catalog](https://developers.openai.com/api/docs/models/all), [GP
 
 ## Remaining gates
 
-Production database migration/live permissions, application checks, independent code review, candidate publication, real anonymous audio/ledger proof, alias cutover and final map update remain required. Do not treat this document's presence as a deployment receipt.
+Application checks, independent code review, candidate publication, real anonymous audio/ledger proof, alias cutover and final map update remain required. Do not treat this document's presence as an application deployment receipt.
