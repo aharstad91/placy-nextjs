@@ -7,7 +7,8 @@ Released 2026-09-17: [hosted validation and measured costs](hosted-validation-20
 ## Deployment and access
 
 - Project: `placy-nyhavna`, in the existing Vercel Pro team. This separate project isolates releases from the existing `placy` app while keeping one account.
-- Public entry: https://placy-nyhavna.vercel.app/demo/nyhavna-lokal
+- Share link: https://placy.no/nyhavna — project-level 307 redirect on `placy`, version `86ff97bf-9e0f-4f74-9fae-019474c38f6c`. The apex first redirects to www; the short path then opens the hosted demo.
+- Hosted entry: https://placy-nyhavna.vercel.app/demo/nyhavna-lokal
 - Code checkout: `feat/voice-infrastructure`. Deployments use the local checkout; no Git push is implied.
 - Node 24, Fluid Compute, function region `dub1`. The control route explicitly declares `maxDuration=1800`. Browser audio connects directly to OpenAI over WebRTC; one pinned Vercel WebSocket owns server-side tools and map messages for each conversation.
 - The media deadline is 1,650 seconds from reservation (27.5 minutes, including startup), with a browser notice about two minutes before that deadline. There is no promise of a full 30-minute conversation. A bounded 30-second owner lease margin allows final usage to drain after the media deadline.

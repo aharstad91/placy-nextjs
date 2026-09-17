@@ -6,6 +6,10 @@
 
 ---
 
+## 2026-09-17 — Kort Nyhavna-lenke på placy.no
+
+Andreas ba om en placy.no-lenke. **https://placy.no/nyhavna** er nå publisert som prosjektstyrt 307-videresending i Vercel-prosjektet `placy` (versjon `86ff97bf-9e0f-4f74-9fae-019474c38f6c`). Den eksisterende apex→www-videresendingen beholdes, og `/nyhavna` åpner så stemmen på `placy-nyhavna.vercel.app/demo/nyhavna-lokal`. Hele kjeden kontrollert anonymt: 307 → 307 → 200, `noindex, nofollow` på målsiden, ingen kodeskjerm. Ingen kode-deploy, DNS-endring eller Git-push nødvendig.
+
 ## 2026-09-17 — Nyhavna åpnes direkte uten adgangskode
 
 Andreas ba om å fjerne kodefriksjonen og beholde noindex for direkte deling. Kodeskjermen er fjernet; anonym stemmetilgang bruker demo-tenantens eksisterende forbruks-, samtidighets- og samtalegrenser. Intern benchmark krever fortsatt signert tilgang. `noindex, nofollow` finnes både i HTML og HTTP-header; robots.txt lar søkemotorer hente akkurat demosiden for å lese direktivet.
