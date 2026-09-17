@@ -6,6 +6,20 @@
 
 ---
 
+## 2026-09-17 — Direkte prosjektadresser på placy.no som felles standard
+
+**Levert:** https://placy.no/nyhavna svarer direkte med 200, og adressen blir stående. Alle nye prosjekter skal følge `https://placy.no/<slug>` i samme runtime og prosjektregister; globalt unik slug og reserverte navn valideres sentralt. Standarden er lagt i `CLAUDE.md` og onboarding-oppskriften. Anonym tilgang og noindex/nofollow er beholdt. Dette erstatter tidligere mål om `app.placy.no` og Vercel-lenker som delingsadresse.
+
+**Publisering:** `dpl_3o3VM6GjRr2u2rxwCH67Eyvps8Ar`, fra applikasjonstreet lagret i `c0a0b19`. Apex ble flyttet til fellesprosjektet; www beholder hovednettstedets uendrede `dpl_ENuhYMxhiAeAEtdSDxvLGQESZY1k`. Eksisterende apex→www-domenevideresending måtte fjernes før Vercels move-API aksepterte flyttingen. Ingen DNS-endring. www `/nyhavna` går nå til apex, versjon `0022f206-e95b-4024-b653-10690fd999c9`. Gamle `/p/`- og demo-innganger virker med bevarte parametre. Andre demoer på tekniske aliaser beholdes; bare apex sender hovednettstedets navnerom videre til www.
+
+**Verifisert:** 10 av 10 HTTP-sjekker, 3 av 3 WebSocket-sjekker, 6 av 6 tilgangssjekker og desktop/mobil bestått på faktisk domene. 3 av 3 gamle www-sider har uendret status/tittel. Sluttbygget: 4 586 tester bestått i 285 filer, én valgfri PGlite-test hoppet over på Vercel (bestått lokalt tidligere); lint 0 feil / 59 eksisterende advarsler, TypeScript og bygg bestått. Alias-regresjon først reprodusert, så rettet; 123 fokuserte tester grønne. Full kodereview med uavhengig Claude-pass gjennomført. Systemkartet er oppdatert og kontrollert på desktop/mobil; selvstendig HTML ligger i Downloads.
+
+**Forbruk:** Én betalt prøve for denne URL-publiseringen, på faktisk `placy.no/nyhavna`. Anja hørte lyd, svarte, oppdaterte kartet og stoppet normalt. 78 stemmesekunder, $0.065 stemme + $0.120168 backend = **$0.185168** beregnet leverandørkostnad. Regnskapsrad `01d3b07f-0e99-46f8-8fc1-2c806ce3ed9d` er closed/complete og avstemt til riktig kunde/prosjekt. Ingen åpne samtaler i etterkontrollen. Ingen nye betalte prøver ved gjenopptak etter pause. Historiske rader og tidligere ufullstendige poster er beholdt.
+
+**Avgrensning:** Ukjente gyldige rot-slugs kan gi ett indeksert registeroppslag før 404; reviewets eksplisitte overvåkingsalternativ er valgt og dokumentert. Ingen målt høy-lastgaranti. Kundepris, fordeling av hosting/database/kartkostnader, historisk provider-avstemming og menneskelig stemmekvalitetsprøve står fortsatt åpne. Ingen Git-push. Kode og dokumentasjon er lagret lokalt på `feat/voice-infrastructure` i `placy-voice-infrastructure`.
+
+Bevis: [URL-verifisering og rollback](docs/research/voice-infrastructure/project-url-validation.md), [maskinlesbar publiseringsrapport](docs/research/voice-infrastructure/project-url-release-2026-09-17.json), [oppdatert arkitektur](docs/architecture/shared-platform.md).
+
 ## 2026-09-17 — Nyhavna flyttet til felles Placy-plattform
 
 Nyhavna er publisert på **https://placy-platform.vercel.app/p/nyhavna**, deployment `dpl_8RtoKwB491jQzDtwTPFCsRRwH6nZ`, kodecommit `11c78d1`. Eksisterende https://placy.no/nyhavna og gammel demo-URL virker fortsatt som videresendinger. Anonym tilgang og noindex er beholdt. Hovedprosjektet `placy` er fortsatt på `dpl_ENuhYMxhiAeAEtdSDxvLGQESZY1k`; ingen uvedkommende nettsideendringer, DNS-endring eller Git-push er publisert.

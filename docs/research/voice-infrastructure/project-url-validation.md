@@ -1,6 +1,6 @@
 # Canonical project URLs — 2026-09-17
 
-Status: candidate validation; production domain cutover not yet recorded.
+Status: complete. Canonical apex live; browser, voice and project accounting verified. Deployment `dpl_3o3VM6GjRr2u2rxwCH67Eyvps8Ar`; application tree recorded in `c0a0b19`.
 
 ## Contract and architecture
 
@@ -24,7 +24,20 @@ Local first-pass full suite: 4,586 tests passed in 285 files; lint, TypeScript a
 
 The first candidate passed ten HTTP routing/header checks, same-origin WebSocket upgrade (101), hostile/missing origin rejection (404), desktop/mobile UI, maps/images, reload, unknown project 404, noindex and legacy query preservation. Robots and empty sitemap returned 200. These socket checks sent no paid start message.
 
-The final compatibility correction was first reproduced by a failing regression test (307 instead of 200 on a neutral-alias demo). All 123 focused tests then passed. A final candidate repeats the full release gates. Final deployment/domain/browser/call receipts are added below after actual cutover.
+The final compatibility correction was first reproduced by a failing regression test (307 instead of 200 on a neutral-alias demo). All 123 focused tests then passed. The final candidate passed all release gates: 4,586 tests passed in 285 files, one optional PGlite test skipped; lint had zero errors and 59 existing warnings, TypeScript and production build passed.
+
+## Final production verification
+
+Machine-readable evidence: [project-url-release-2026-09-17.json](project-url-release-2026-09-17.json).
+
+- The actual apex passed all ten HTTP and three WebSocket checks. `/nyhavna` returns 200 without Location, with canonical metadata and noindex/nofollow. Correct-origin WebSocket upgrades return 101; missing/foreign origins return 404 without paid start.
+- Desktop and mobile on `https://placy.no/nyhavna` retained the URL, loaded maps and visible images, and had no JavaScript errors, failed local resources or horizontal overflow. Reload, legacy query preservation and unknown-project 404 passed.
+- One anonymous real voice call heard injected test audio, replied, produced two map frames and stopped normally with restart available. Session `01d3b07f-0e99-46f8-8fc1-2c806ce3ed9d` is closed/complete and reconciles to `nyhavna-utvikling` / `nyhavna-utvikling_nyhavna`, purpose public: 78 voice seconds, $0.065 voice + $0.120168 backend = **$0.185168** estimated provider cost. Two usage events, zero unknown usage. This is a synthetic release test, not a customer average or invoice. Models were unchanged. No additional paid call was made after the pause.
+- All six access/security checks passed. The post-call ledger had 62 sessions, none open. All 60 historical sessions and their existing incomplete liabilities remain unchanged.
+- `www.placy.no` remains on `dpl_ENuhYMxhiAeAEtdSDxvLGQESZY1k`. All three before/after website HTTP/title checks matched (root and Lillebytunet 200; the already-missing Nyhavna website demo remains 404 on www). The new www short redirect preserves repeated query parameters. The final read-only check at 13:42 UTC confirmed direct apex 200, noindex, robots 200 without slug enumeration, and empty sitemap 200.
+- The standalone system map in `~/Downloads/placy-systemkart.html` reflects the actual domain split. Desktop and mobile passed all three tabs, the cost slider and overflow/error checks; screenshots were visually inspected.
+
+No DNS change or Git push was made. The URL contract and onboarding standard are recorded in `CLAUDE.md` and `docs/architecture/shared-platform.md`. Physical microphone/speaker and subjective voice quality, customer pricing, other-provider cost allocation, historical incomplete accounting, and high-load validation remain outside this URL release.
 
 ## Review disposition
 
@@ -38,7 +51,7 @@ Simplification applied one improvement: constrain output tracing to the literal 
 ## Cutover and rollback
 
 1. Validate the immutable candidate, including anonymous native WebSocket and assets. Promote it in the shared project and point the neutral technical alias at the same deployment.
-2. Move apex with Vercel's domain-move API in one operation, explicitly setting `redirect: null`, `gitBranch: null`, and `redirectStatusCode: null`. Do not remove/add the domain or alter DNS.
+2. Clear the existing domain-level apex → www redirect first with the project-domain PATCH API. The move API rejected the initial attempt while this old redirect remained, despite explicit nulls in its move payload. Then move apex with Vercel's domain-move API, explicitly setting `redirect: null`, `gitBranch: null`, and `redirectStatusCode: null`. Do not remove/add the domain or alter DNS.
 3. Verify first response at `https://placy.no/nyhavna` is 200 without Location; recheck noindex, canonical metadata, maps, Server Actions, control socket and one bounded real voice call with complete project accounting.
 4. Update the old www `/nyhavna` redirect to the canonical apex URL. Recheck query preservation, existing www pages and unchanged deployment assignment.
 5. If reverting the domain after step 4, first restore www's previous redirect version `86ff97bf-9e0f-4f74-9fae-019474c38f6c`, then move apex back to the older project with `redirect: "www.placy.no"`. The neutral/legacy aliases continue serving relative compatibility paths, avoiding a redirect loop. Keep the ledger and shared-admission configuration intact. A pre-root-route application rollback also needs this domain rollback so `/nyhavna` does not point at an app that only supports `/p/nyhavna`.

@@ -6,15 +6,15 @@ Dette er driftskartet for arbeidet med felles plattform. Den interaktive oversik
 
 | System | Oppgave | Hva er felles? |
 |---|---|---|
-| placy.no / www.placy.no | Eksisterende nettsted, Vercel-prosjekt `placy` | Egen, eldre publisering. `/nyhavna` videresender til stemmeappen. |
-| Felles Placy-app | Prosjektsider, kartstyring og stemmens kontrollforbindelse | `placy-platform.vercel.app/p/nyhavna`, Vercel-prosjektets interne navn er fortsatt `placy-nyhavna`. Samme runtime for nye prosjekter. |
+| www.placy.no | Eksisterende hovednettsted, Vercel-prosjekt `placy` | Egen, eldre publisering. Prosjekter deles på placy.no. |
+| Felles Placy-app | Prosjektsider, kartstyring og stemmens kontrollforbindelse | `placy.no/<slug>`, med Nyhavna på `placy.no/nyhavna`. Adressen beholdes i nettleseren. Vercel-prosjektets interne navn er fortsatt `placy-nyhavna`. Samme runtime for nye prosjekter. |
 | Supabase | Kunder, prosjekter, steder og varig samtaleregnskap | Samme database. Nye samtaler får eksisterende kunde/prosjekt og eget formål. Historiske demoer beholdes uendret. |
 | OpenAI | Talesamtale og modellarbeid som velger/verifiserer verktøy | Felles leverandørintegrasjon. Nettleseren sender lyd direkte over WebRTC. |
 | Google / Mapbox | Kart, bilder og kartdata avhengig av visning | Integrasjoner brukes på tvers; bruk er en separat kostnad. |
 | Repo og kuraterte datafiler | Programvare, Nyhavna-fakta og versjonert innhold | Ny publisering inkluderer de valgte filene. Ikke alt innhold ligger i Supabase. |
-| PRO ISP / DNS | Kobler domenenavn til hosting | `placy.no` bruker eksterne navneservere; Vercel-tilgang alene gir ikke DNS-skrivetilgang. |
+| PRO ISP / DNS | Kobler domenenavn til hosting | `placy.no` bruker fortsatt PRO ISP-navneservere. Domenet pekte allerede på Vercel; flyttingen til felles app krevde ingen DNS-endring. |
 
-Hovedsiden kjører produksjonscommit `bef9ae2`. Stemmeappen bygger på en nyere kodebase. Å erstatte hovedsiden med hele denne grenen ville også publisert uvedkommende endringer. Overgangen bruker derfor den kjørende stemmeappen som felles tjeneste og beholder hovedsiden inntil en egen, kontrollert sammenslåing.
+Hovedsiden kjører produksjonscommit `bef9ae2`. Stemmeappen bygger på en nyere kodebase. Å erstatte hovedsiden med hele denne grenen ville også publisert uvedkommende endringer. Den felles appen eier nå placy.no, mens hovedsiden beholder www.placy.no. Forsiden og gamle nettsider videresendes til www; prosjektsider, ressurser, API og stemme betjenes direkte av plattformen.
 
 ## Plattformens skille mellom felles og eget
 
@@ -53,7 +53,7 @@ Databasemigrasjoner er et eget steg. En Vercel-publisering oppgraderer ikke auto
 
 Registeret, opptaksreglene og appen er publisert. Nyhavna er første aktiverte prosjekt; neste prosjekt krever kontrollert klargjøring og eierskapskontroll.
 
-1. Finn eller opprett kunden, prosjektet og report-produktet gjennom eksisterende provisjoneringsløp. Kontroller hvem som eier prosjektet; ikke flytt en demokunde til en reell kunde ved gjetning.
+1. Velg en globalt unik slug for `https://placy.no/<slug>`. Kontroller den med `isPublicProjectSlug` i `lib/project-paths.ts`; reserverte app- og ressursnavn kan ikke brukes. Ingen ny domeneregel eller Vercel-app skal opprettes. Finn eller opprett kunden, prosjektet og report-produktet gjennom eksisterende provisjoneringsløp. Kontroller hvem som eier prosjektet; ikke flytt en demokunde til en reell kunde ved gjetning.
 2. Klargjør prosjektets fakta, steder, profil og støttede innholdskilde. Dagens kuraterte filkilder følger en kodepublisering. Nytt innhold kan kreve en slik publisering, men aldri en kopi av appen eller et nytt Vercel-prosjekt per kunde.
 3. Sett kundens og prosjektets operasjonelle grenser. Velg bruksformål for offentlig tilgang og autoriserte interne tester. Registrer prosjektet som deaktivert mens det klargjøres.
 4. Kontroller at side, stemme og regnskap bruker samme prosjekt, og at ukjente eller deaktiverte prosjekter ikke kan starte betalt bruk.
@@ -71,9 +71,9 @@ Detaljert driftsoppskrift og dokumenterte prøver: [stemmeoperasjon](../research
 
 ## Publiseringsbevis og gjenstående avgrensninger
 
-Nyhavna kjører på `dpl_8RtoKwB491jQzDtwTPFCsRRwH6nZ` (kode `11c78d1`). Felles lenke: https://placy-platform.vercel.app/p/nyhavna. Eksisterende https://placy.no/nyhavna virker fortsatt som videresending. Ingen kode eller innlogging kreves; noindex beholdes. De to gamle demo-tilgangene er deaktivert for nye samtaler, mens historikk og recovery beholdes.
+Nyhavna kjører på `dpl_3o3VM6GjRr2u2rxwCH67Eyvps8Ar`, fra kodetreet lagret i `c0a0b19`. Felles lenke: https://placy.no/nyhavna. Siden svarer direkte på dette domenet; `/p/<slug>` er kun en kompatibilitetsadresse. Alle nye prosjekter følger samme rot-slug-standard. Se [domene- og URL-verifisering](../research/voice-infrastructure/project-url-validation.md). Ingen kode eller innlogging kreves; noindex beholdes. De to gamle demo-tilgangene er deaktivert for nye samtaler, mens historikk og recovery beholdes.
 
-Én anonym verifiseringssamtale ga 73 stemmesekunder, normalt stopp, kartoppdateringer og komplett regnskap på Nyhavna: 0,060833 USD stemme + 0,119898 USD svarmodell = 0,180731 USD beregnet leverandørkostnad. Dette er en dokumentert syntetisk test, ikke et kundegjennomsnitt eller en faktura. Alle 60 historiske rader beholdes. Se [sluttverifisering](../research/voice-infrastructure/shared-platform-validation.md).
+Den første fellesplattform-prøven før domeneflyttingen ga 73 stemmesekunder, normalt stopp, kartoppdateringer og komplett regnskap på Nyhavna: 0,060833 USD stemme + 0,119898 USD svarmodell = 0,180731 USD beregnet leverandørkostnad. Dette er en dokumentert syntetisk test, ikke et kundegjennomsnitt eller en faktura. Alle 60 historiske rader beholdes. Se [sluttverifisering](../research/voice-infrastructure/shared-platform-validation.md).
 
-- Førstepartsadressen `app.placy.no` krever en egen DNS-post hos eksisterende leverandør. Ingen flytting av navneservere er nødvendig. [Vercels veiledning](https://vercel.com/docs/domains/set-up-custom-domain).
+- `placy.no/<slug>` er førstepartsstandarden. `app.placy.no` er ikke lenger målbildet. Tekniske Vercel-aliaser finnes for kompatibilitet og drift; del prosjekter med placy.no-adressen. Ukjente rot-slugs kan utløse et registeroppslag før 404; følg request-/databasebruk uten å publisere en liste over kundeslugs.
 - Endelig kundepris, automatisk fakturering og full kostnadsfordeling for øvrige leverandører er ikke besluttet i denne migreringen.
