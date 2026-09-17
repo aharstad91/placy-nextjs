@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { NextRequest } from 'next/server';
 const mocks = vi.hoisted(() => ({ reserve: vi.fn(), attach: vi.fn(), end: vi.fn(), blockUnknown: vi.fn(), isActive: vi.fn(), connect: vi.fn(), resolveProject: vi.fn() }));
-vi.mock('@/lib/live/projects', () => ({resolveVoiceProject: mocks.resolveProject}));
+vi.mock('@/lib/live/projects', async importOriginal => ({...await importOriginal<typeof import('@/lib/live/projects')>(),resolveVoiceProject: mocks.resolveProject}));
 vi.mock('@/lib/live/supervisor', () => ({ getLiveSupervisor: () => mocks }));
 vi.mock('@/lib/live/sideband', () => ({ connectLiveSideband: mocks.connect, getLiveSideband: () => undefined }));
 vi.mock('@/lib/demo/nyhavna-leve/snapshot', () => ({ getNyhavnaSnapshot: async () => ({ snapshotId: 'snapshot-test', project: {}, board: { categories: [] } }) }));
@@ -10,6 +10,7 @@ vi.mock('@/lib/live/voice-instructions', () => ({ NYHAVNA_VOICE_INSTRUCTIONS: 't
 vi.mock('@/lib/realtime/nyhavna-conversation', () => ({ createNyhavnaConversation: () => ({}), nyhavnaTools: [] }));
 vi.mock('@/lib/realtime/nyhavna-project-info', () => ({ nyhavnaProjectInfo: { forTheme: () => [], search: () => [] } }));
 import { issueDemoAccess } from '@/lib/live/hosted-access';
+import { VoiceProjectError } from '@/lib/live/projects';
 import { loadLiveDemo } from '@/lib/live/demos';
 import { LOCAL_VOICE_INSTRUCTIONS } from '@/lib/demo/nyhavna-lokal/voice-instructions';
 import { GET, POST, DELETE } from '@/app/api/prototype/live/route';
@@ -135,10 +136,19 @@ describe('shared project health',()=>{
     const response=await GET(new NextRequest('https://platform.example/api/prototype/live?dataset=nyhavna-lokal'));
     expect(response.status).toBe(200);
     expect(mocks.resolveProject).toHaveBeenCalledWith({dataset:'nyhavna-lokal'},'public');
-    mocks.resolveProject.mockRejectedValueOnce(new Error('secret registry credentials'));
+    mocks.resolveProject.mockRejectedValueOnce(new VoiceProjectError());
     const denied=await GET(new NextRequest('https://platform.example/api/prototype/live?project=missing'));
     expect(denied.status).toBe(404);expect(await denied.text()).not.toContain('secret');
     expect(fetch).not.toHaveBeenCalled();
+  });
+  it.each([new VoiceProjectError('unavailable'), new Error('secret registry credentials')])('returns safe retryable health on dependency failure',async error=>{
+    mocks.resolveProject.mockRejectedValueOnce(error);
+    const response=await GET(new NextRequest('https://platform.example/api/prototype/live?project=nyhavna'));
+    expect(response.status).toBe(503);
+    expect(response.headers.get('cache-control')).toBe('no-store');
+    expect(await response.json()).toEqual({error:'Prosjektet er midlertidig utilgjengelig. Prøv igjen om litt.'});
+    expect(fetch).not.toHaveBeenCalled();
+    expect(mocks.reserve).not.toHaveBeenCalled();
   });
   it('derives benchmark purpose only from the existing signed cookie',async()=>{
     vi.stubEnv('PLACY_DEMO_COOKIE_SECRET','test-signing-key-at-least-thirty-two-characters');

@@ -1,7 +1,8 @@
 import { describe, expect, it, vi } from 'vitest';
+import * as supabase from '@/lib/supabase/client';
 import { parseLogEventInput } from '@/lib/instrumentation/event-schema';
 import { loadLiveDemo } from '@/lib/live/demos';
-import { resolveVoiceProject, VoiceProjectError, type VoiceProjectDependencies } from '@/lib/live/projects';
+import { resolveVoiceProject, type VoiceProjectDependencies } from '@/lib/live/projects';
 import type { VoiceProject, VoiceTenant } from '@/lib/live/metering/types';
 
 const bindings: Record<string, VoiceProject> = {
@@ -54,7 +55,7 @@ describe('server project resolution', () => {
     ['unknown', {project:'missing'}], ['missing selector', {}], ['invalid slug', {project:'../nyhavna'}],
     ['unknown legacy source',{dataset:'nyhavna-leve'}], ['mismatched source',{project:'fixture',dataset:'nyhavna-lokal'}],
   ])('rejects %s', async (_name, selection) => {
-    await expect(resolveVoiceProject(selection,'public',dependencies())).rejects.toBeInstanceOf(VoiceProjectError);
+    await expect(resolveVoiceProject(selection,'public',dependencies())).rejects.toMatchObject({ kind: 'not_found' });
   });
   it.each(['disabled','owner','product-owner','product-type','source','tenant-owner','tenant-purpose','tenant-disabled','policy-missing','policy-disabled','read-failed'])('fails closed before loading content for %s', async reason => {
     const deps=dependencies();
@@ -79,9 +80,25 @@ describe('server project resolution', () => {
       await expect(resolveVoiceProject({project:'nyhavna'},'public',deps)).rejects.toThrow('Voice project unavailable');
     }
   });
+  it.each(['readBinding','readProject','readProduct','readTenant','readPolicy','loadDemo'] as const)('classifies %s rejection as retryable without dependency details', async method => {
+    const deps=dependencies();
+    vi.mocked(deps[method]).mockRejectedValue(new Error('secret database URL /private/file'));
+    await expect(resolveVoiceProject({project:'nyhavna'},'public',deps)).rejects.toMatchObject({kind:'unavailable',message:'Voice project unavailable'});
+  });
+  it('distinguishes Supabase registry errors from an absent registry row', async () => {
+    const maybeSingle=vi.fn().mockResolvedValue({data:null,error:{message:'private database details'}});
+    const query={select:vi.fn().mockReturnThis(),eq:vi.fn().mockReturnThis(),abortSignal:vi.fn().mockReturnThis(),maybeSingle};
+    const client={schema:vi.fn().mockReturnThis(),from:vi.fn().mockReturnValue(query)};
+    const spy=vi.spyOn(supabase,'createServerClient').mockReturnValue(client as unknown as ReturnType<typeof supabase.createServerClient>);
+    try {
+      await expect(resolveVoiceProject({project:'nyhavna'})).rejects.toMatchObject({kind:'unavailable',message:'Voice project unavailable'});
+      maybeSingle.mockResolvedValue({data:null,error:null});
+      await expect(resolveVoiceProject({project:'missing'})).rejects.toMatchObject({kind:'not_found'});
+    } finally { spy.mockRestore(); }
+  });
   it('only selects a configured benchmark tenant for trusted purpose', async () => {
     const deps=dependencies();
     expect((await resolveVoiceProject({project:'nyhavna'},'benchmark',deps)).tenant.id).toBe('a-benchmark');
-    await expect(resolveVoiceProject({project:'fixture'},'benchmark',deps)).rejects.toBeInstanceOf(VoiceProjectError);
+    await expect(resolveVoiceProject({project:'fixture'},'benchmark',deps)).rejects.toMatchObject({ kind: 'not_found' });
   });
 });

@@ -10,7 +10,7 @@ import { LIVE_SESSION_ID } from '@/lib/live/hangup';
 import { NYHAVNA_VOICE_INSTRUCTIONS } from '@/lib/live/voice-instructions';
 import { localRequest } from '@/lib/live/local-request';
 import { DEFAULT_LIVE_DATASET, isLiveDataset, loadLiveDemo, type LiveDemo } from '@/lib/live/demos';
-import { resolveVoiceProject } from '@/lib/live/projects';
+import { resolveVoiceProject, VoiceProjectError } from '@/lib/live/projects';
 import { nyhavnaTools } from '@/lib/realtime/nyhavna-conversation';
 
 export const runtime = 'nodejs';
@@ -50,8 +50,12 @@ export async function GET(request: NextRequest) {
       },access?.role==='benchmark'?'benchmark':'public');
       demo=resolved.demo;
       project=resolved.slug;
-    } catch {
-      return new NextResponse(null, { status: 404, headers: { 'Cache-Control': 'no-store' } });
+    } catch (error) {
+      const headers = { 'Cache-Control': 'no-store' };
+      if (error instanceof VoiceProjectError && error.kind === 'not_found') {
+        return new NextResponse(null, { status: 404, headers });
+      }
+      return NextResponse.json({ error: 'Prosjektet er midlertidig utilgjengelig. Prøv igjen om litt.' }, { status: 503, headers });
     }
   } else {
     const dataset=requestedDataset(request.nextUrl.searchParams.get('dataset'));

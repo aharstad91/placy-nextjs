@@ -17,7 +17,7 @@ const getProject = cache(async (slug: string) => {
   try {
     return await resolveVoiceProject({ project: slug });
   } catch (error) {
-    if (error instanceof VoiceProjectError) notFound();
+    if (error instanceof VoiceProjectError && error.kind === 'not_found') notFound();
     throw error;
   }
 });

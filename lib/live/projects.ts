@@ -25,34 +25,34 @@ export interface ResolvedVoiceProject {
 }
 /** Do not expose database errors, registry IDs, credentials or local file paths. */
 export class VoiceProjectError extends Error {
-  constructor() { super('Voice project unavailable'); }
+  constructor(readonly kind: 'not_found' | 'unavailable' = 'not_found') { super('Voice project unavailable'); }
 }
 function defaultDependencies(): VoiceProjectDependencies {
   const client = createServerClient().schema('v2');
   return {
     async readBinding(slug) {
       const {data,error}=await client.from('voice_projects').select('*').eq('slug',slug).abortSignal(AbortSignal.timeout(8000)).maybeSingle();
-      if(error) throw new VoiceProjectError();
+      if(error) throw new VoiceProjectError('unavailable');
       return data;
     },
     async readProject(id) {
       const {data,error}=await client.from('projects').select('id,customer_id,url_slug').eq('id',id).abortSignal(AbortSignal.timeout(8000)).maybeSingle();
-      if(error) throw new VoiceProjectError();
+      if(error) throw new VoiceProjectError('unavailable');
       return data;
     },
     async readProduct(projectId) {
       const {data,error}=await client.from('products').select('id,project_id,product_type').eq('project_id',projectId).eq('product_type','report').abortSignal(AbortSignal.timeout(8000)).maybeSingle();
-      if(error) throw new VoiceProjectError();
+      if(error) throw new VoiceProjectError('unavailable');
       return data;
     },
     async readTenant(id) {
       const {data,error}=await client.from('voice_tenants').select('*').eq('id',id).abortSignal(AbortSignal.timeout(8000)).maybeSingle();
-      if(error) throw new VoiceProjectError();
+      if(error) throw new VoiceProjectError('unavailable');
       return data;
     },
     async readPolicy(scope,id) {
       const {data,error}=await client.from('voice_admission_policies').select('*').eq('scope_type',scope).eq('scope_id',id).abortSignal(AbortSignal.timeout(8000)).maybeSingle();
-      if(error) throw new VoiceProjectError();
+      if(error) throw new VoiceProjectError('unavailable');
       return data;
     },
     loadDemo: loadLiveDemo,
@@ -86,7 +86,7 @@ export async function resolveVoiceProject(selection: VoiceProjectSelection, purp
       || tenant.internal_demo_id!==null || tenant.purpose!==purpose
       || policies.some((policy,index)=>!policy?.enabled || policy.scope_type!==scopes[index][0] || policy.scope_id!==scopes[index][1])) throw new VoiceProjectError();
     const loaded=await deps.loadDemo(binding.content_source);
-    if(loaded.id!==binding.content_source || !loaded.snapshotId || !loaded.project || !loaded.board) throw new VoiceProjectError();
+    if(loaded.id!==binding.content_source || !loaded.snapshotId || !loaded.project || !loaded.board) throw new VoiceProjectError('unavailable');
     // Even projects temporarily sharing a trusted source have distinct rendered versions.
     const snapshotId=`project-${createHash('sha256').update(JSON.stringify([slug,binding.customer_id,binding.project_id,binding.content_source,loaded.snapshotId])).digest('hex').slice(0,32)}`;
     // The existing renderer uses Project.id for the product UUID (analytics).
@@ -95,5 +95,9 @@ export async function resolveVoiceProject(selection: VoiceProjectSelection, purp
     // projectSlug is deliberately source-specific: existing images/3D assets use it.
     const demo={...loaded,project,snapshotId,board:{...loaded.board,demoSnapshotId:snapshotId}};
     return {slug,project,demo,tenant};
-  } catch { throw new VoiceProjectError(); }
+  } catch (error) {
+    if (error instanceof VoiceProjectError) throw error;
+    // Dependency/loader failures are retryable; never attach raw errors or causes.
+    throw new VoiceProjectError('unavailable');
+  }
 }
