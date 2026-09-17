@@ -6,6 +6,20 @@
 
 ---
 
+## 2026-09-17 — OpenAI-avstemming klargjort, administratortilgang gjenstår
+
+Andreas ønsker at agenten har nødvendig driftsinnsyn, inkludert avstemming mot OpenAI. Modelltilgangen er allerede i bruk, men ingen `OPENAI_ADMIN_KEY` ble funnet i prosessmiljøet eller de aktuelle lokale miljøfilene. Nettleserverktøyet meldte at ingen nettleser var tilgjengelig. Andreas er bedt om å legge en Admin API key i lokal ignorert `.env.local`, uten å dele den i chat. Ingen organisasjonsrettigheter eller nye nøkler er opprettet av agenten.
+
+**Klargjort lokalt:** `scripts/openai-reconcile.ts` kan liste OpenAI-prosjekter og hente alle sider med dagskostnader for et eksplisitt `proj_...` og UTC-intervall. Sammenligner med en ufiltrert eksport fra eksisterende `voice-costs.ts`. Fast OpenAI-origin og GET, separat adminnøkkel, saniterte feil, validerte beløp/valuta/prosjekt/dager/paginering. Komplett stemmeestimat, ufullstendig kjent beløp og samtaler over periodegrensen skilles. Forskjellen betegnes ufordelt, og status er alltid `needs_review`: OpenAI-prosjektet kan inneholde annen bruk, og leverandøridentiteten for historiske stemmesamtaler er ikke bevist. Verktøyet endrer aldri regnskapsstatus, reservasjoner, budsjetter eller kundebelastning.
+
+**Verifisert:** 14 nye tester, samlet 4 601 tester i 286 filer bestått; lint 0 feil / 59 eksisterende advarsler, TypeScript og produksjonsbygg bestått. CLI-hjelp og kontrollert manglende-adminnøkkel-feil verifisert. Fersk, ufiltrert databaseeksport 17.09 kl. 14:02 UTC inneholder 63 rader (61 komplette, to ufullstendige); parseren aksepterte den mot et tydelig syntetisk provider-fixture. Dette er ikke et faktisk avstemmingsresultat. Første databaseeksport feilet i et usage-oppslag; omkjøringen lyktes uten delrapport eller datamutasjon. Ingen betalt modelltest.
+
+**Review-rettelse:** Én bekreftet P2-feil: eksportens `cutoff` er ikke et transaksjonsøyeblikksbilde. Samtaler som avsluttes under lesingen aksepteres nå med eksplisitt varsel, i stedet for å velte hele rapporten. Ny regresjon først rød, så 34 relevante tester grønne (15 nye + 19 eksisterende). Fullsuite/bygg over er fra før denne avgrensede rettelsen; målrettet lint og TypeScript er kjørt på nytt. Full kodereview med seks lokale perspektiver og uavhengig validering fullført (`20260917-160147-10d52c80`); ett av ett funn rettet. To ekstra tester dekker transportfeil og ugyldig JSON uten lekkasje av feildetaljer. Endelig målrettet resultat: **36 bestått** (17 provider + 19 eksisterende regnskap).
+
+**Åpent:** Første autentiserte prosjekt-/kostnadslesing hos OpenAI, bekreftelse av riktig konto/prosjekt/API-nøkler og Live-linjeposter, deretter sammenligning av samme bruk og tidsrom. Døgnsummer kan ikke brukes som bevis for sluttforbruket i de to historiske ufullstendige samtalene. Ingen automatisk tidsplan eller offentlig driftsflate er satt opp, og produksjon er ikke endret. Arbeidet ligger i `placy-voice-infrastructure`; ingen Git-push.
+
+Driftsoppskrift: [OpenAI-avstemming](docs/research/voice-infrastructure/openai-reconciliation.md).
+
 ## 2026-09-17 — Direkte prosjektadresser på placy.no som felles standard
 
 **Levert:** https://placy.no/nyhavna svarer direkte med 200, og adressen blir stående. Alle nye prosjekter skal følge `https://placy.no/<slug>` i samme runtime og prosjektregister; globalt unik slug og reserverte navn valideres sentralt. Standarden er lagt i `CLAUDE.md` og onboarding-oppskriften. Anonym tilgang og noindex/nofollow er beholdt. Dette erstatter tidligere mål om `app.placy.no` og Vercel-lenker som delingsadresse.

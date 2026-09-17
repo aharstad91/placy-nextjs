@@ -1,0 +1,187 @@
+{
+  "status": "complete",
+  "verdict": "Ready with fixes",
+  "verdict_reason": "Finding #1 is a confirmed P2 in the saved snapshot: a session closing during export can block historical comparison. Accommodate post-cutoff closure conservatively and verify the regression. Subsequent caller changes require their own verification.",
+  "scope": {
+    "base": "f972d52693a42d998e8a2632a287023dbc09c6cd",
+    "branch": "feat/voice-infrastructure",
+    "head_sha": "f972d52693a42d998e8a2632a287023dbc09c6cd",
+    "pr_url": null,
+    "files_changed": 3,
+    "reviewed_snapshot": "/tmp/compound-engineering-501/ce-code-review/20260917-160147-10d52c80/full.diff"
+  },
+  "intent": "Compare read-only OpenAI project costs with an existing unfiltered voice-costs JSON export. Provider project mapping remains unverified, the difference stays unallocated and every report requires review; no public runtime, ledger or budget mutation.",
+  "intent_confidence": "explicit",
+  "reviewers": [
+    "correctness",
+    "project-standards",
+    "testing",
+    "security",
+    "reliability",
+    "adversarial"
+  ],
+  "findings": [
+    {
+      "#": 1,
+      "autofix_class": "manual",
+      "confidence": 100,
+      "evidence": [
+        "lib/live/provider-costs.ts:149 --     if (began > cutoff || (ended !== null && (ended < began || ended > cutoff))) throw new Error('Ledger timestamps contradict its observation cutoff');",
+        "scripts/voice-costs.ts:19 establishes cutoff before loading environment, reading admission data, and reading cost rows; its sessions query filters created_at <= cutoff without a snapshot or ended_at restriction.",
+        "lib/live/cost-report.ts:98 --     startedAt: s.created_at, endedAt: s.ended_at,",
+        "lib/live/provider-costs.ts:150 excludes out-of-period rows only after the rejection at line 149.",
+        "Read-only local reproduction: buildCostReport with cutoff 2026-09-17T12:00:00Z and a session starting 2026-09-17T11:59:00Z, ending 2026-09-17T12:00:01Z; compareProviderCosts for 2026-09-16 through 2026-09-17 throws 'Ledger timestamps contradict its observation cutoff' even though this session began after the requested period."
+      ],
+      "file": "lib/live/provider-costs.ts",
+      "first_evidence": "lib/live/provider-costs.ts:149 --     if (began > cutoff || (ended !== null && (ended < began || ended > cutoff))) throw new Error('Ledger timestamps contradict its observation cutoff');",
+      "independent_reviewers": [
+        "adversarial"
+      ],
+      "line": 149,
+      "owner": "downstream-resolver",
+      "pre_existing": false,
+      "requires_verification": true,
+      "reviewers": [
+        "adversarial"
+      ],
+      "severity": "P2",
+      "suggested_fix": "Retain the impossible-timestamp guards for startedAt after cutoff and endedAt before startedAt, but accommodate closure after cutoff: exclude sessions starting at or beyond period.end before that check, and treat endedAt after cutoff as an open/boundary session at the cutoff instead of rejecting the entire export. Add a regression using buildCostReport output where an unrelated session closes one second after cutoff while comparing the previous UTC day.",
+      "title": "Concurrent session closure blocks historical cost comparisons",
+      "why_it_matters": "A normal unfiltered voice-costs export can prevent any historical comparison when a session closes during the export. The exporter fixes cutoff before its asynchronous reads, filters sessions only by created_at, and copies their current ended_at; the new importer rejects endedAt after cutoff before excluding unrelated dates. Treating these sessions as still open at cutoff, and excluding sessions starting outside the selected window first, preserves conservative accounting without making unrelated live activity invalidate the entire report.",
+      "validation_status": "confirmed",
+      "validation_reason": "When a session created before the export cutoff closes between cutoff capture and the session query, scripts/voice-costs.ts:19,26,64-66 and lib/live/cost-report.ts:98,212 emit its later endedAt, which the newly added lib/live/provider-costs.ts:149 rejects before excluding unrelated periods at line 150; a read-only Node v23.3.0 reproduction using costRow/buildCostReport confirmed that a session closing one second after cutoff blocks the previous UTC day's comparison while the same still-open session is excluded successfully, although production incidence was not measured.",
+      "protected_subject": "concurrency"
+    }
+  ],
+  "actionable_findings": [
+    {
+      "#": 1,
+      "autofix_class": "manual",
+      "confidence": 100,
+      "evidence": [
+        "lib/live/provider-costs.ts:149 --     if (began > cutoff || (ended !== null && (ended < began || ended > cutoff))) throw new Error('Ledger timestamps contradict its observation cutoff');",
+        "scripts/voice-costs.ts:19 establishes cutoff before loading environment, reading admission data, and reading cost rows; its sessions query filters created_at <= cutoff without a snapshot or ended_at restriction.",
+        "lib/live/cost-report.ts:98 --     startedAt: s.created_at, endedAt: s.ended_at,",
+        "lib/live/provider-costs.ts:150 excludes out-of-period rows only after the rejection at line 149.",
+        "Read-only local reproduction: buildCostReport with cutoff 2026-09-17T12:00:00Z and a session starting 2026-09-17T11:59:00Z, ending 2026-09-17T12:00:01Z; compareProviderCosts for 2026-09-16 through 2026-09-17 throws 'Ledger timestamps contradict its observation cutoff' even though this session began after the requested period."
+      ],
+      "file": "lib/live/provider-costs.ts",
+      "first_evidence": "lib/live/provider-costs.ts:149 --     if (began > cutoff || (ended !== null && (ended < began || ended > cutoff))) throw new Error('Ledger timestamps contradict its observation cutoff');",
+      "independent_reviewers": [
+        "adversarial"
+      ],
+      "line": 149,
+      "owner": "downstream-resolver",
+      "pre_existing": false,
+      "requires_verification": true,
+      "reviewers": [
+        "adversarial"
+      ],
+      "severity": "P2",
+      "suggested_fix": "Retain the impossible-timestamp guards for startedAt after cutoff and endedAt before startedAt, but accommodate closure after cutoff: exclude sessions starting at or beyond period.end before that check, and treat endedAt after cutoff as an open/boundary session at the cutoff instead of rejecting the entire export. Add a regression using buildCostReport output where an unrelated session closes one second after cutoff while comparing the previous UTC day.",
+      "title": "Concurrent session closure blocks historical cost comparisons",
+      "why_it_matters": "A normal unfiltered voice-costs export can prevent any historical comparison when a session closes during the export. The exporter fixes cutoff before its asynchronous reads, filters sessions only by created_at, and copies their current ended_at; the new importer rejects endedAt after cutoff before excluding unrelated dates. Treating these sessions as still open at cutoff, and excluding sessions starting outside the selected window first, preserves conservative accounting without making unrelated live activity invalidate the entire report.",
+      "validation_status": "confirmed",
+      "validation_reason": "When a session created before the export cutoff closes between cutoff capture and the session query, scripts/voice-costs.ts:19,26,64-66 and lib/live/cost-report.ts:98,212 emit its later endedAt, which the newly added lib/live/provider-costs.ts:149 rejects before excluding unrelated periods at line 150; a read-only Node v23.3.0 reproduction using costRow/buildCostReport confirmed that a session closing one second after cutoff blocks the previous UTC day's comparison while the same still-open session is excluded successfully, although production incidence was not measured.",
+      "protected_subject": "concurrency"
+    }
+  ],
+  "triage_groups": [],
+  "pre_existing_findings": [],
+  "requirements_completeness": null,
+  "learnings": [],
+  "agent_native_gaps": [],
+  "deployment_notes": [],
+  "residual_risks": [
+    "Authenticated OpenAI Admin API permissions, response shapes and pagination remain unverified because no Admin key is configured; current evidence consists of mocked provider responses and a real ledger export."
+  ],
+  "testing_gaps": [
+    "The original provider-failure test covers HTTP errors but not fetch rejection or a successful response with invalid JSON. Mock these branches and assert sanitized errors without credential text or a partial report (lib/live/provider-costs.ts:55-62)."
+  ],
+  "coverage": {
+    "depth": "full",
+    "reviewer_selection": [
+      {
+        "reviewer": "correctness",
+        "tier": "session",
+        "reason": "always-on"
+      },
+      {
+        "reviewer": "project-standards",
+        "tier": "mid",
+        "reason": "CLAUDE and AGENTS govern scoped files"
+      },
+      {
+        "reviewer": "testing",
+        "tier": "mid",
+        "reason": "new branch-sensitive fixtures and failure cases"
+      },
+      {
+        "reviewer": "security",
+        "tier": "session",
+        "reason": "Admin key handling and provider transport"
+      },
+      {
+        "reviewer": "reliability",
+        "tier": "mid",
+        "reason": "pagination, error handling and timeout"
+      },
+      {
+        "reviewer": "adversarial",
+        "tier": "session",
+        "reason": "provider/export composition and money comparison"
+      }
+    ],
+    "cross_model": "Cross-model pass not run: mandated git-diff-base route excludes the explicitly requested untracked-only files and Git mutation is forbidden. Local adversarial reviewer covers the lens; no external egress or persisted peer job.",
+    "peer_outcome": "in-process-fallback",
+    "validator": {
+      "outcome": "verdicts",
+      "batch_count": 1,
+      "selected": 1,
+      "confirmed": 1,
+      "rejected": 0,
+      "unresolved": 0,
+      "malformed": 0,
+      "failed": 0,
+      "shortcut_skipped": 0,
+      "bound_exceeded": false,
+      "protected_subject_reclassifications": 0,
+      "degraded_blockers": [],
+      "reason": "One independent validator confirmed #1 with a read-only reproduction; production incidence was not measured. No shortcut qualified because no independent cross-model corroboration was available."
+    },
+    "suppressed_by_confidence": {},
+    "mode_aware_demotions": 0,
+    "first_evidence_backfilled": 0,
+    "missing_first_evidence_demotions": 0,
+    "malformed_findings": 0,
+    "malformed_returns": 0,
+    "settlement_suppression_evaluated": false,
+    "failed_reviewers": [],
+    "timed_out_reviewers": [],
+    "compound_packs": {
+      "roots": [],
+      "warnings": [],
+      "errors": []
+    },
+    "notes": [
+      "All three requested untracked files are included via explicit scope; no prior platform change reviewed. The scope helper sees zero tracked changed lines; full depth chosen from the actual Admin-credential and financial-reporting boundaries.",
+      "Standards use root CLAUDE.md and AGENTS.md as instruction-file fallback; no CODING_STANDARDS.md or nested governing files.",
+      "No matching plan discovered for this added reconciliation request; the broader voice-infrastructure plan is outside the bounded change.",
+      "Host capacity limited reviewer concurrency; queued lenses were retried after active reviewers completed.",
+      "Caller reports authoritative checks passed: npm test 4601 tests across 286 files, lint zero errors and 59 existing warnings, TypeScript and production build.",
+      "Caller reports live unfiltered voice-costs export succeeded after one transient usage-read failure: 63 rows, 61 complete and 2 incomplete. The parser accepted it with synthetic provider data, not actual OpenAI cost evidence.",
+      "Admin key absent; caller verified --list-projects fails with controlled missing-key message. No live provider fetch verified.",
+      "All six local reviewer launches completed, with one substantive candidate from adversarial. No local reviewer failed or exceeded its wait bound.",
+      "Cross-model pass not run: mandated git-diff-base route excludes the explicitly requested untracked-only files and Git mutation is forbidden. Local adversarial reviewer covers the lens; no external egress or persisted peer job.",
+      "No plan was discovered; settlement suppression was not evaluated.",
+      "Suppressed findings: 0; malformed findings: 0; malformed returns: 0; mode-aware demotions: 0; first_evidence_backfilled: 0; missing-first-evidence demotions: 0.",
+      "Validator shortcut skipped 0 findings: no independent cross-model corroboration is available. One actionable P2 is selected for the single validator batch.",
+      "Review uses the saved full.diff original 14-test snapshot. Caller subsequently added a red regression while leaving production unchanged; that test is outside this review, and caller owns the subsequent fix/regression after this receipt.",
+      "The receipt covers saved full.diff with original 14 provider tests. Caller later added an unreviewed regression for the concurrent closure candidate; production source is unchanged and the caller owns the subsequent fix.",
+      "Caller reports the added regression failed at provider-costs.ts:149 with Ledger timestamps contradict its observation cutoff, while the original 14 cases passed. This is follow-up evidence, not a broadened review scope.",
+      "During report generation, the caller changed provider-costs.ts after the saved full.diff snapshot. This receipt reports the pre-fix snapshot only; subsequent source changes and regression tests are not reviewed or certified as resolved here."
+    ]
+  },
+  "artifact_path": "/tmp/compound-engineering-501/ce-code-review/20260917-160147-10d52c80",
+  "run_id": "20260917-160147-10d52c80"
+}
