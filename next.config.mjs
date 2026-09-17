@@ -34,12 +34,19 @@ function localDevOrigins() {
   return [...new Set([...measured, ...privateRanges])];
 }
 
+const voiceContentFiles = [
+  './data/demo/nyhavna-lokal/*.json',
+  './data/demo/nyhavna-snapshot.json',
+  './data/demo/nyhavna-review-ledger.json',
+];
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   outputFileTracingIncludes: {
     '/demo/nyhavna-lokal': ['./data/demo/nyhavna-lokal/*.json'],
-    '/api/prototype/live': ['./data/demo/nyhavna-lokal/*.json'],
-    '/api/live/control': ['./data/demo/nyhavna-lokal/*.json'],
+    '/p/*': voiceContentFiles,
+    '/api/prototype/live': voiceContentFiles,
+    '/api/live/control': voiceContentFiles,
   },
   allowedDevOrigins: [...localDevOrigins(), "*.ngrok-free.app", "*.ngrok.app"],
   // Aktiver eksperimentelle funksjoner for bedre ytelse
@@ -103,6 +110,10 @@ const nextConfig = {
       },
       {
         source: "/demo/nyhavna-lokal/:path*",
+        headers: [{ key: "X-Robots-Tag", value: "noindex, nofollow" }],
+      },
+      {
+        source: "/p/:path*",
         headers: [{ key: "X-Robots-Tag", value: "noindex, nofollow" }],
       },
       {

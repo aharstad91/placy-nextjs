@@ -1,4 +1,4 @@
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { hostedVoiceEnabled } from "@/lib/live/hosted-access";
 import { loadDataset } from "@/lib/demo/nyhavna-lokal/dataset";
 import { buildLocalBoard, buildLocalProject } from "@/lib/demo/nyhavna-lokal/board";
@@ -13,8 +13,18 @@ export const metadata = {
   robots: { index: false, follow: false },
 };
 
-export default async function NyhavnaLokalPage() {
+export default async function NyhavnaLokalPage({ searchParams }: {
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+}) {
   if (process.env.NODE_ENV === "production" && !hostedVoiceEnabled()) notFound();
+  if (hostedVoiceEnabled()) {
+    const query = new URLSearchParams();
+    for (const [key, value] of Object.entries(await searchParams)) {
+      if (Array.isArray(value)) value.forEach(item => query.append(key, item));
+      else if (value !== undefined) query.append(key, value);
+    }
+    redirect(`/p/nyhavna${query.size ? `?${query}` : ""}`);
+  }
 
   // Feilen fra lasteren peker på fil, felt og hva som manglet, og får boble opp
   // som den er. En demo som stille faller tilbake til noe annet er verdiløs.

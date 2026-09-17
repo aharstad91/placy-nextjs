@@ -29,13 +29,13 @@ export default function robots(): MetadataRoute.Robots {
     rules: [
       {
         userAgent: SOCIAL_PREVIEW_BOTS,
-        allow: ["/eiendom/", "/event/", "/demo/nyhavna-lokal"],
+        allow: ["/eiendom/", "/event/", "/demo/nyhavna-lokal", "/p/"],
         disallow: "/",
       },
       {
         userAgent: "*",
         // Crawlers must reach the shared demo to read its noindex meta/header.
-        allow: "/demo/nyhavna-lokal",
+        allow: ["/demo/nyhavna-lokal", "/p/"],
         disallow: "/",
       },
     ],

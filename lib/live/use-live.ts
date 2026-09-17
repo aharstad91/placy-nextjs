@@ -59,6 +59,8 @@ const GREETING_KICK = "Begynn samtalen nå: si hilsenen slik instruksjonen sier,
 
 export interface LiveOptions {
   voice?: LiveVoice;
+  /** Public registry slug; the server resolves ownership and accounting. */
+  project?: string;
   /** Internal benchmark labels; authorization is checked by the server. */
   testRunId?: string;
   scenarioId?: string;
@@ -278,8 +280,12 @@ export function useLive(options: LiveOptions) {
 
       // Sjekk oppsettet før vi ber om mikrofontillatelse.
       const dataset = latestOptions.current.dataset;
+      const project = latestOptions.current.project;
       const selectedVoice = latestOptions.current.voice;
-      const health = await fetch(`/api/prototype/live${dataset ? `?dataset=${encodeURIComponent(dataset)}` : ""}`, { cache: "no-store" });
+      const selection = new URLSearchParams();
+      if (project) selection.set("project", project);
+      if (dataset) selection.set("dataset", dataset);
+      const health = await fetch(`/api/prototype/live${selection.size ? `?${selection}` : ""}`, { cache: "no-store" });
       if (run !== generation.current) return;
       if (!health.ok) throw new Error("Samtalen er ikke tilgjengelig. Kontroller tilgangen og prøv igjen.");
       const configured = await health.json() as { configured?: boolean; protocol?: string; snapshotId?: string; transport?: string; warningMs?: number };
@@ -575,7 +581,7 @@ export function useLive(options: LiveOptions) {
           method: "POST", headers: { "Content-Type": "application/json", "X-Placy-Session": current.sessionToken }, body: JSON.stringify(result),
         }).catch(() => {});
       };
-      const request = { sdp: pc.localDescription?.sdp ?? offer.sdp, snapshotId, ...(dataset ? { dataset } : {}), ...(selectedVoice ? { voice: selectedVoice } : {}) };
+      const request = { sdp: pc.localDescription?.sdp ?? offer.sdp, snapshotId, ...(project ? { project } : {}), ...(dataset ? { dataset } : {}), ...(selectedVoice ? { voice: selectedVoice } : {}) };
       let sdp: string | undefined;
       if (configured.transport === "websocket") {
         const url = new URL("/api/live/control", window.location.href);

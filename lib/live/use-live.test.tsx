@@ -405,6 +405,16 @@ describe("Hosted control ownership", () => {
     expect(vi.mocked(fetch).mock.calls.every(([, init]) => !init?.method)).toBe(true);
   });
 
+  it("keeps the rendered project selection on readiness and paid start", async () => {
+    const { control } = await hosted({ ...options(), project: "fixture-project", dataset: "nyhavna-lokal" });
+    const healthCall = vi.mocked(fetch).mock.calls.find(([, init]) => !init?.method);
+    const healthUrl = new URL(String(healthCall?.[0]), window.location.origin);
+    expect(healthUrl.pathname).toBe("/api/prototype/live");
+    expect(healthUrl.searchParams.get("project")).toBe("fixture-project");
+    expect(healthUrl.searchParams.get("dataset")).toBe("nyhavna-lokal");
+    expect(control.frames()[0]).toMatchObject({ type: "start", project: "fixture-project", dataset: "nyhavna-lokal", snapshotId: "snapshot-test" });
+  });
+
   it("does not spend the media acknowledgement timeout waiting for microphone permission", async () => {
     vi.useFakeTimers();
     let grant!: (stream: MediaStream) => void;

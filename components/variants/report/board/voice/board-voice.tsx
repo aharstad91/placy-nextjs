@@ -179,6 +179,7 @@ function BoardVoiceSession({ children }: { children: ReactNode }) {
     // åpning og svare ut av stedets egne data.
     greeting: (data.demoGreeting ? greetingInstruction(data.demoGreeting) : NYHAVNA_GREETING_INSTRUCTION) + (localDemo ? `\n${LOCAL_VOICE_PACING}` : ""),
     dataset: data.demoDataset,
+    project: data.voiceProjectSlug,
     getContext: () => ({ selected_category_id: stopId ?? (state.activeCategoryId ? String(state.activeCategoryId) : null), selected_place_id: activePoiId, travel_mode: state.travelMode, ...(localDemo ? { revealed_place_ids: [...(revealedPlaceIds ?? [])] } : {}) }),
     executeTool: runBoardTool,
     snapshotId: data.demoSnapshotId,
