@@ -25,6 +25,11 @@ const SOCIAL_PREVIEW_BOTS = [
 ];
 
 export default function robots(): MetadataRoute.Robots {
+  // Hosted project pages carry noindex. Crawlers must be allowed to read it;
+  // unlike /p/*, arbitrary root slugs cannot use a fixed robots allow prefix.
+  if (process.env.PLACY_HOSTED_VOICE === "true") {
+    return { rules: [{ userAgent: "*", allow: "/", disallow: ["/api/", "/dev/"] }] };
+  }
   return {
     rules: [
       {

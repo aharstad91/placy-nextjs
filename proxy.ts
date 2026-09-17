@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
+import { WEBSITE_NAMESPACES, isPublicProjectSlug } from "@/lib/project-paths";
 
 /**
  * Proxy (Next 16-navnet på middleware) for routing og legacy-redirects.
@@ -34,6 +35,18 @@ const KNOWN_CUSTOMERS = [
 export function proxy(request: NextRequest) {
   const { pathname, search } = request.nextUrl;
   const segments = pathname.split("/").filter(Boolean);
+
+  // Apex belongs to the shared platform. Existing website pages still run on
+  // their unchanged www deployment; platform assets, APIs and actions stay here.
+  if (process.env.PLACY_HOSTED_VOICE === "true") {
+    if (segments[0] === "p" && segments.length === 2 && isPublicProjectSlug(segments[1])) {
+      return NextResponse.redirect(new URL(`/${segments[1]}${search}`, request.url));
+    }
+    const websitePage = segments.length === 0
+      || (WEBSITE_NAMESPACES as readonly string[]).includes(segments[0])
+      || (segments[0] === "demo" && segments[1] !== "nyhavna-lokal");
+    if (websitePage && request.nextUrl.hostname === "placy.no") return NextResponse.redirect(new URL(`${pathname}${search}`, "https://www.placy.no"));
+  }
 
   if (segments.length === 0) return NextResponse.next();
 

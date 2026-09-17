@@ -23,11 +23,12 @@ const getProject = cache(async (slug: string) => {
 });
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
-  const { project, demo } = await getProject((await params).slug);
+  const { slug, project, demo } = await getProject((await params).slug);
   return {
     title: `${project.name} — Placy`,
     description: `Utforsk ${project.name} med kart og samtaleguiden Anja.`,
     robots: { index: false, follow: false },
+    alternates: { canonical: `https://placy.no/${slug}` },
     ...(demo.id === "nyhavna-lokal" ? { icons: { icon: "/demo/nyhavna-nettside/symbol.svg" } } : {}),
   };
 }

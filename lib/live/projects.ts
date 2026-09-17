@@ -4,6 +4,7 @@ import { createServerClient } from '@/lib/supabase/client';
 import { isLiveDataset, loadLiveDemo, type LiveDemo } from '@/lib/live/demos';
 import type { VoiceAdmissionPolicy, VoiceProject, VoiceTenant } from '@/lib/live/metering/types';
 import type { Project } from '@/lib/types';
+import { isPublicProjectSlug } from '@/lib/project-paths';
 
 export interface VoiceProjectSelection { project?: string; dataset?: string }
 type HostedPurpose = 'public' | 'benchmark';
@@ -67,7 +68,7 @@ function defaultDependencies(): VoiceProjectDependencies {
 export async function resolveVoiceProject(selection: VoiceProjectSelection, purpose: HostedPurpose = 'public', dependencies?: VoiceProjectDependencies): Promise<ResolvedVoiceProject> {
   try {
     const slug=selection.project ?? (selection.dataset==='nyhavna-lokal'?'nyhavna':undefined);
-    if(!slug || !/^[a-z0-9][a-z0-9-]{0,79}$/.test(slug) || !['public','benchmark'].includes(purpose)) throw new VoiceProjectError();
+    if(!slug || !isPublicProjectSlug(slug) || !['public','benchmark'].includes(purpose)) throw new VoiceProjectError();
     const deps=dependencies ?? defaultDependencies();
     const binding=await deps.readBinding(slug);
     if(!binding?.enabled || binding.slug!==slug || !isLiveDataset(binding.content_source)

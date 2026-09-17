@@ -23,7 +23,7 @@ export default async function NyhavnaLokalPage({ searchParams }: {
       if (Array.isArray(value)) value.forEach(item => query.append(key, item));
       else if (value !== undefined) query.append(key, value);
     }
-    redirect(`/p/nyhavna${query.size ? `?${query}` : ""}`);
+    redirect(`/nyhavna${query.size ? `?${query}` : ""}`);
   }
 
   // Feilen fra lasteren peker på fil, felt og hva som manglet, og får boble opp

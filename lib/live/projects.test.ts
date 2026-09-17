@@ -20,6 +20,11 @@ function dependencies(): VoiceProjectDependencies {
   };
 }
 describe('server project resolution', () => {
+  it.each(['api','admin','demo','p','eiendom','midtbyen','kart','prototype','event','pitch','portefolje','generer','for','dev','scandic','_next'])('rejects reserved project slug %s before querying the registry', async slug => {
+    const deps=dependencies();
+    await expect(resolveVoiceProject({project:slug},'public',deps)).rejects.toMatchObject({kind:'not_found'});
+    expect(deps.readBinding).not.toHaveBeenCalled();
+  });
   it('loads two real, distinct content sources with canonical identity and fresh conversations', async () => {
     const deps=dependencies();
     const a=await resolveVoiceProject({project:'nyhavna'},'public',deps);
