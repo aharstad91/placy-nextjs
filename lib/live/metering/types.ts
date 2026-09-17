@@ -1,6 +1,10 @@
+export type VoicePurpose = 'public' | 'internal' | 'benchmark';
+
 export interface VoiceSession {
   id: string;
   tenant_id: string;
+  /** Absent/null only for pre-platform records and legacy fixtures. */
+  purpose?: VoicePurpose | null;
   internal_demo_id: string | null;
   customer_id: string | null;
   project_id: string | null;
@@ -32,6 +36,8 @@ export interface VoiceSession {
 }
 export interface VoiceTenant {
   id: string;
+  /** Null legacy tenants produce new sessions with internal purpose. */
+  purpose?: VoicePurpose | null;
   internal_demo_id: string | null;
   customer_id: string | null;
   project_id: string | null;
@@ -53,4 +59,28 @@ export interface VoiceUsageEvent {
   cost_usd: number | null;
   evidence_status: 'valid' | 'invalid' | 'unknown_rate';
   received_at: string;
+}
+
+/** Service-only binding; content_source selects an allowlisted server loader. */
+export interface VoiceProject {
+  slug: string;
+  customer_id: string;
+  project_id: string;
+  content_source: string;
+  enabled: boolean;
+  public_tenant_id: string;
+  benchmark_tenant_id: string | null;
+  internal_tenant_id: string | null;
+}
+
+export interface VoiceAdmissionPolicy {
+  scope_type: 'platform' | 'customer' | 'project';
+  /** The platform singleton uses scope_id=platform. */
+  scope_id: string;
+  enabled: boolean;
+  max_concurrent: number;
+  max_per_hour: number;
+  max_per_day: number;
+  /** Rolling 24-hour known cost plus all unfinished liability, not a sales quota. */
+  daily_budget_usd: number;
 }
