@@ -37,8 +37,14 @@ Long tests inject a real fixture approximately every 45 seconds to avoid the two
 
 Every execution creates a fresh run ID and an atomic JSON report under `.context/voice-benchmark/` (override using `--output`). The report is written before paid work and after each batch, including on failure. Browser/setup failures are finite attempts, never automatic paid retries. Exit status is nonzero for failures or blocked execution. No screenshots, browser traces, provider frames, SDP or raw errors are retained.
 
+Startup allows 120 seconds around the asynchronous dev hook, including health/ICE and the server/media limits. Authored failure codes distinguish missing map/audio evidence, early termination, unexpected silence termination and failed peer isolation; unknown errors remain redacted. Isolation requires the first peer to have completed successfully before its stop can be evidence. If a ledger read fails, distributions and groups are null; previously fetched rows are not presented as current financial statistics.
+
+Reply/quiet observations use the latest assistant message identity and fragment length, not summed transcript length. The UI keeps only 100 messages, so a valid new response can make that sum shrink. Cursor functions are serialized into the browser and tested against rolling-history replacement; no spoken words leave the browser. Reports retain a fixed phase label for failed waits.
+
+The final `11-stopp` clip asks for silence: success requires three seconds of stable listening (`quietAfterStop`), not a new spoken response. The preceding interruption/question is still injected while speaking and requires a response. Requiring speech after an explicit stop contradicts the product's voice policy.
+
 Report attempted/passed/failed counts alongside complete/incomplete accounting. `distribution` and scenario `groups` provide sample count, median, nearest-rank p95 and max calculated USD for **closed complete** sessions only. Incomplete sessions remain visible with their last-known usage and reservations. A passed browser interaction is not proof of complete accounting or correct answers. Observation booleans establish that speech/map events happened, not that their meaning was correct. Use the operator cost CLI for normalized component/token exports and reconciliation by run ID.
 
 Keep short, long, concurrent and failure samples separate when discussing pricing. These fixtures are synthetic measurements, not a customer average or invoice reconciliation. Fixed Vercel/Supabase expenses are separate. The 26-minute test must remain active for its requested duration; if the hosted safety deadline ends it earlier, the runner marks it failed and the hosted configuration/evidence must explain that limit.
 
-No paid execution has been performed merely by implementing this runner. Hosted results must be attached after an authorized real run.
+Authorized hosted executions, failures, version limits, cost reconciliation and final results are attached in [the September 17 validation](hosted-validation-2026-09-17.md) and its JSON/CSV evidence.

@@ -106,6 +106,28 @@ beforeEach(() => {
 afterEach(() => { cleanup(); vi.useRealTimers(); vi.unstubAllGlobals(); vi.restoreAllMocks(); });
 
 describe("Live-oppkobling", () => {
+  it.each(["Stopp!", "Vent litt."])("viser lytting etter %s uten å vente på et svar som ikke skal komme", async text => {
+    vi.useFakeTimers();
+    const { result, peer } = await connect();
+    act(() => { peer.channel.emit({ type: "session.input_transcript.delta", delta: text, start_ms: 100, end_ms: 500 }); });
+    await act(async () => { vi.advanceTimersByTime(5000); });
+    expect(result.current.status).toBe("listening");
+    act(() => { peer.channel.emit({ type: "session.input_transcript.delta", delta: "Hva med kaféer?", start_ms: 6000, end_ms: 6500 }); });
+    await act(async () => { vi.advanceTimersByTime(2000); });
+    expect(result.current.status).toBe("thinking");
+  });
+
+  it("venter på svar når et avbrudd fortsetter med et spørsmål i neste fragment", async () => {
+    vi.useFakeTimers();
+    const { result, peer } = await connect();
+    act(() => { peer.channel.emit({ type: "session.input_transcript.delta", delta: "Stopp.", start_ms: 100, end_ms: 500 }); });
+    await act(async () => { vi.advanceTimersByTime(2000); });
+    expect(result.current.status).toBe("listening");
+    act(() => { peer.channel.emit({ type: "session.input_transcript.delta", delta: " Hva med kaféer?", start_ms: 550, end_ms: 900 }); });
+    await act(async () => { vi.advanceTimersByTime(2000); });
+    expect(result.current.status).toBe("thinking");
+  });
+
   it("varsler før lokal tidsgrense og rydder varselet ved stopp", async () => {
     vi.useFakeTimers();
     const { result, peer } = await connect();

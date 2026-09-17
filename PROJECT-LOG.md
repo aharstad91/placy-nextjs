@@ -6,6 +6,24 @@
 
 ---
 
+## 2026-09-17 — Nyhavna-stemmen ferdig validert og publisert på Vercel
+
+Andreas ba om å fortsette stemmearbeidet for Nyhavna og få det live. Arbeidet er gjort i `placy-voice-infrastructure`, `feat/voice-infrastructure`, uten å berøre parallelle demoer eller pushe Git. Den faste adressen er **https://placy-nyhavna.vercel.app/demo/nyhavna-lokal**, nå på deployment `dpl_4ARVwaVQVPUTPhSFVGDJ1axr6191`. Demo-koden ligger alene i lokal ignorert `.context/nyhavna-demo-access.txt` (0600); ikke del hele secrets-filen. Ingen melding sendt til Lene.
+
+**Rettet:** separate tidsgrenser for serveroppstart og lydkvittering; recovery fungerer selv når nye opptak skrus av; kostnadseksport leser i avgrensede parallelle bolker. Testverktøyet krever faktisk startet/bestått medbruker før isolasjonsbevis, viser ukjent statistikk ved manglende regnskap og beholder konkrete, ufarlige feilkoder. Langtesten avdekket en tellerfeil når transkripthistorikken rullet etter 100 meldinger; siste svar-ID/lengde erstatter totalsummen. Stopp-prøven avdekket både feil testforventning og en faktisk UI-feil: ren «Stopp!»/«Vent litt» skal gi «Lytter», ikke bli stående på «Undersøker». Spørsmål etter avbrudd gjenoppretter vanlig ventestatus. Kodereview og tilleggsgjennomganger er lukket uten gjenværende kodefunn.
+
+**Verifisert:** tre beståtte ekte lydgjennomføringer i hvert av seks korte scenarioer, 5/15/26-minutters samtaler, to samtidige nettlesere på den publiserte adressen, nettverksbrudd, stillhet og kontrollert tap av eier/lease med faktisk provider-opprydding. Eiertapet var en kontrollert simulering, ikke fysisk prosessdrap. 26-minutterstesten hadde 35 lydklipp og 1 583 målte stemmesekunder, komplett regnskap, og fortsatte gjennom nye deployer og publisering. Varighetstestene har eksplisitt versjonsavgrensning; stopp-rettelsen ble prøvd separat på sluttbygget. Desktop/mobil visuelt kontrollert med innlastet kart, null JS-feil. Tilgangskontroll, deaktivert admin og recovery hvert minutt bekreftet.
+
+**Sjekker:** sluttbygget kjørte lint (0 feil / 53 eksisterende advarsler), alle **4 452 tester i 281 filer**, TypeScript og produksjonsbygg på Vercel. Lokal fullsuite ble stoppet etter ressursrelaterte tidsavbrudd og regnes ikke som bestått; den komplette eksterne suiten er sjekkbeviset. To tester fikk eksplisitt miljøisolasjon etter feil under produksjonsvariabler. Lokale målrettede regresjoner og hook-sjekker besto.
+
+**Kostnader og sporbarhet:** 53 scenarioforsøk inkludert ett oppsettsforsøk uten betalt start; **52 betalte samtaler**, alle avsluttet og avstemt mot komponentposter. 50 komplette summerer til **$12,659459**, to ufullstendige har kjent nedre grense **$0,129208**. Den endelige korte matrisen har 18 beståtte interaksjoner, 17 komplette kostnadsprøver og én ufullstendig; median **$0,131547**, p95/maks **$0,205989** for de komplette. Dette er syntetiske tester, ikke kundegjennomsnitt eller fakturabeløp. Tidligere mislykkede oppstarts-, varighets- og stoppforsøk beholdes separat i bevisene.
+
+**Åpent operasjonelt:** To avsluttede samtaler mangler bekreftet sluttforbruk: den bevisste eiertapstesten og én ordinær kildeprøve. De er korrekt merket incomplete og beholder samlet $10 i opptaksreservasjoner. Avstem mot uavhengig provider-fakturagrunnlag når det finnes; ikke slett eller omklassifiser for å frigjøre budsjett. Fysisk mikrofon/høyttaler og menneskelig vurdering av norsk stemmekvalitet må fortsatt prøves av Andreas. Ingen åpne benchmark-samtaler ved sluttkontroll; recovery svarte 200 med 0 claims/unresolved.
+
+Leveranse og eksakte kjøringer: `docs/research/voice-infrastructure/hosted-validation-2026-09-17.md`, `hosted-evidence-2026-09-17.json` og `hosted-costs-2026-09-17.csv`. Driftsoppskrift, benchmarkbeskrivelse og kodereview oppdatert i samme mappe. Første rettelsescommit: `2c55f70`; den siste samlede committen inneholder pause-/observatørrettelsene og denne avslutningen.
+
+---
+
 ## 2026-09-16 — Nyhavna på Vercel Pro, samtaleregnskap og WIP-overlevering
 
 Brukeren bekreftet full demo med Anja, kun Vercel + Supabase, og oppgraderte Vercel til Pro. Arbeidet ligger isolert på `feat/voice-infrastructure` i `../placy-voice-infrastructure`; hovedrepoets eksisterende lokale endringer er urørt. Brukeren ba om lokal commit og kontobytte før jobben var ferdig. Ingen push.

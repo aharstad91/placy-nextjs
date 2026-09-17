@@ -102,7 +102,8 @@ interface Connection {
   loudAt: number;
   lastAssistantAt: number;
   lastUserAt: number;
-  transcript: { role: "user" | "assistant"; id: string; endMs: number } | null;
+  pauseRequested: boolean;
+  transcript: { role: "user" | "assistant"; id: string; endMs: number; text: string } | null;
 }
 
 interface LiveEvent {
@@ -300,7 +301,7 @@ export function useLive(options: LiveOptions) {
       const current: Connection = {
         generation: run, pc, channel, audio, transceiver, abort: new AbortController(),
         started: false, ended: false, greetingEventId: `greeting-${crypto.randomUUID()}`, greetingKicked: false, speaking: false, loudAt: 0,
-        lastAssistantAt: 0, lastUserAt: 0, transcript: null, warningMs: configured.warningMs,
+        lastAssistantAt: 0, lastUserAt: 0, pauseRequested: false, transcript: null, warningMs: configured.warningMs,
       };
       connection.current = current;
       const active = () => connection.current === current && run === generation.current;
@@ -315,7 +316,7 @@ export function useLive(options: LiveOptions) {
         // hverken ord eller lyd ute, og siste ord i rommet var brukerens.
         // Den lille pausen etter brukerens siste fragment holder etiketten på
         // «lytter» mens hen fortsatt snakker.
-        const waiting = current.lastUserAt > current.lastAssistantAt
+        const waiting = !current.pauseRequested && current.lastUserAt > current.lastAssistantAt
           && now - current.lastAssistantAt > THINKING_AFTER_MS
           && now - current.lastUserAt > USER_SETTLE_MS;
         setStatus(waiting ? "thinking" : "listening");
@@ -401,7 +402,11 @@ export function useLive(options: LiveOptions) {
         // eller det er en tydelig pause i den samme talerens tidslinje.
         const fresh = !previous || previous.role !== role || (startMs !== null && startMs - previous.endMs > TRANSCRIPT_GAP_MS);
         const id = fresh ? `${role}-${crypto.randomUUID()}` : previous.id;
-        current.transcript = { role, id, endMs: event.end_ms ?? startMs ?? (fresh ? 0 : previous.endMs) };
+        const text = fresh ? delta : previous.text + delta;
+        current.transcript = { role, id, text, endMs: event.end_ms ?? startMs ?? (fresh ? 0 : previous.endMs) };
+        // A pure pause request deliberately needs no answer. Additional words
+        // (including a question appended in later fragments) restore waiting.
+        if (role === "user") current.pauseRequested = /^(?:stopp|vent(?: litt)?)[.!?,…]*$/iu.test(text.trim());
         addMessage({ id, role, text: delta }, !fresh);
         settle();
       };

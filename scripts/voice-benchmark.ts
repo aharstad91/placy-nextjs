@@ -5,15 +5,16 @@ import { mkdir, writeFile, rename } from 'node:fs/promises';
 import { dirname, resolve } from 'node:path';
 import type { Browser, BrowserContext, Page } from 'playwright';
 import type { LiveMessage, LiveStatus } from '@/lib/live/types';
+import { benchmarkIsQuiet, benchmarkReplyArrived, readAssistantCursor } from '@/lib/live/benchmark-observation';
 import { BENCHMARK_SCENARIOS, admitBenchmark, benchmarkFailureReason, costDistribution, expandScenarios, liabilityUsd, type BenchmarkLedgerRow, type BenchmarkScenario } from '@/lib/live/benchmark-scenarios';
 
 interface VoiceHook { start(): void; stop(): void; play(url: string): Promise<void>; status(): LiveStatus; messages(): LiveMessage[] }
-declare global { interface Window { placyVoice?: VoiceHook; placyBenchmarkQuiet?: { count: number; since: number } } }
+declare global { interface Window { placyVoice?: VoiceHook } }
 interface Attempt {
   label: string; scenario: string; status: 'pending' | 'starting' | 'running' | 'passed' | 'failed' | 'blocked';
   startedAt?: string; endedAt?: string; reason?: string;
   audioClips: number; heardUser: boolean; heardAssistant: boolean; observedMapDirective: boolean;
-  interruptedWhileSpeaking: boolean; isolatedAfterPeerStop?: boolean; sessions: BenchmarkLedgerRow[];
+  interruptedWhileSpeaking: boolean; quietAfterStop?: boolean; isolatedAfterPeerStop?: boolean; sessions: BenchmarkLedgerRow[];
   endReason?: string;
   stage?: 'startup' | 'greeting' | 'playback' | 'response' | 'quiet' | 'duration' | 'peer-stop' | 'stop';
 }
@@ -134,26 +135,21 @@ async function main() {
     };
     const waitForQuiet = async (page: Page, attempt: Attempt) => {
       attempt.stage = 'quiet';
-      await page.waitForFunction(() => {
-        const voice = window.placyVoice!;
-        const count = voice.messages().filter(m => m.role === 'assistant').reduce((sum, m) => sum + m.text.length, 0);
-        const prior = window.placyBenchmarkQuiet;
-        if (!prior || prior.count !== count || voice.status() !== 'listening') {
-          window.placyBenchmarkQuiet = { count, since: Date.now() };
-          return false;
-        }
-        return Date.now() - prior.since >= 3_000;
-      }, undefined, { timeout: 60_000 });
+      // A silent stop may not change the transcript: measure a fresh interval
+      // instead of reusing the previous answer's already-satisfied quiet timer.
+      await page.evaluate(() => { Reflect.deleteProperty(window, 'placyBenchmarkQuiet'); });
+      await page.waitForFunction(benchmarkIsQuiet, undefined, { timeout: 60_000 });
     };
     const play = async (page: Page, attempt: Attempt, fixture: string, waitResponse = true) => {
-      // Only an aggregate count leaves the browser, never spoken words.
-      const before = await page.evaluate(() => window.placyVoice!.messages().filter(m => m.role === 'assistant').reduce((n, m) => n + m.text.length, 0));
+      // A rolling history's total text length can shrink. Track the latest
+      // assistant identity and fragment length, never spoken words.
+      const before = await page.evaluate(readAssistantCursor);
       attempt.stage = 'playback';
       await page.evaluate(f => window.placyVoice!.play(`/dev/nyhavna-tts/${f}.wav`), fixture);
       attempt.audioClips++;
       if (waitResponse) {
         attempt.stage = 'response';
-        await page.waitForFunction(n => window.placyVoice!.messages().filter(m => m.role === 'assistant').reduce((sum, m) => sum + m.text.length, 0) > n, before, { timeout: 45_000 });
+        await page.waitForFunction(benchmarkReplyArrived, before, { timeout: 45_000 });
         await waitForQuiet(page, attempt);
       }
       await observe(page, attempt);
@@ -191,7 +187,14 @@ async function main() {
               await page.waitForFunction(() => window.placyVoice!.status() === 'speaking', undefined, { timeout: 30_000 });
               attempt.interruptedWhileSpeaking = true;
             }
-            await play(page, attempt, scenario.fixtures[i], !(scenario.mode === 'interrupt' && i === 0));
+            const asksForSilence = scenario.fixtures[i] === '11-stopp';
+            await play(page, attempt, scenario.fixtures[i], !asksForSilence && !(scenario.mode === 'interrupt' && i === 0));
+            if (asksForSilence) {
+              // The voice policy intentionally waits after "stopp". A new
+              // spoken response is not required; stable listening is.
+              await waitForQuiet(page, attempt);
+              attempt.quietAfterStop = true;
+            }
           }
         }
         if (scenario.mode !== 'silence' && (!attempt.heardUser || !attempt.heardAssistant)) throw new Error('missing_audio_observation');

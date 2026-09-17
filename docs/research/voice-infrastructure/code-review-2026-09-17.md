@@ -35,3 +35,29 @@ The deployment workflow must attach completed repeated audio scenarios and durat
 Supplemental validation was source/test inspection. The root workflow reported targeted passing tests; reviewers did not independently rerun those tests, make paid provider requests, or deploy. Proposals to release unknown liabilities or infer provider closure were rejected because the explicit plan requires fail-closed retention.
 
 Detailed local receipts: `/tmp/compound-engineering-501/ce-code-review/20260917-voice-b34062d6/` (`review.json`, `metadata.json`, `supplemental-validation.json`). The complete staged review log and receipt were written; no detached review jobs remain.
+
+## Supplemental review: rolling transcript observation
+
+Reviewed all three working-tree changes against `2c55f70e1343a68bad7daee5c3fc4f262f6b9743`: new `lib/live/benchmark-observation.ts`, its test file, and the runner's observation replacements. No new code findings.
+
+The new cursor uses the latest assistant message ID and its fragment length, so evicting older entries from `useLive`'s 100-message history cannot hide a shorter new reply. Same-message appended fragments also advance the cursor; user-only changes do not. Quiet detection resets for a changed assistant identity or length and while status is not listening. All runner call sites use the new functions.
+
+Loaded the helpers through the runner's `node --import tsx` path and inspected their actual serialized function bodies: they contain no module-local dependencies or injected helper references. Type-only imports disappear; each function uses browser globals and its serializable argument. The cursor exports only generated message identity and numeric length, not transcript text. Inspected the three regression tests and the root-produced test log: both observation/scenario files passed, seven tests total. Actual-browser rollover verification and the near-limit rerun remain owned by root.
+
+The prior 26-minute attempt that failed during response observation after 31 clips and 1,425 metered seconds remains a failed duration test with complete accounting. This source correction does not retroactively mark that attempt, or earlier failed attempts, passed.
+
+## Supplemental review: stop-fixture expectation
+
+Reviewed the runner-only correction for `11-stopp` against the existing voice policy: a pure stop requests waiting, so requiring a new spoken reply was incorrect. The corrected branch requires a fresh three-second stable-listening interval and records `quietAfterStop=true` only after it succeeds. The separate `09-avbrudd` fixture still waits for speaking before injection and requires a new assistant reply; that interruption assertion is unchanged.
+
+Review found and reproduced a stale quiet-timer gap: an unchanged cursor from the previous reply could satisfy the stop observation immediately. The final runner clears `placyBenchmarkQuiet` before every quiet wait. Reinspection and an offline deterministic reproduction confirmed false at zero and 2,999 ms, then true at 3,000 ms for an unchanged listening cursor. Root additionally reports actual-browser verification with a 60-second-old prior cursor. No remaining code finding in this correction.
+
+Earlier failed interruption attempts remain failed. The intermediate batch started before the fresh-window correction retains that observation limitation and cannot supply the final stop-silence evidence. Root owns the new three-repeat run and its recorded results.
+
+## Supplemental review: listening after a pure pause request
+
+Reviewed the subsequent `lib/live/use-live.ts` and hook-test diff against `2c55f70e1343a68bad7daee5c3fc4f262f6b9743`. The accumulated current transcript recognizes only pure Norwegian `stopp`, `vent` or `vent litt` with optional punctuation. A pause suppresses the inferred thinking state; it neither closes the provider session nor changes voice instructions, metering or admission. Appended question text and a new non-pause utterance clear the flag. The flag starts false for every connection, and active-connection guards remain intact.
+
+Actual received-audio speaking and its existing linger check still take precedence over the pause flag, so the change cannot label audible speech as listening merely because a stop was requested. Inspected three parameterized/test cases covering the pure commands, the next utterance and a question appended in a later fragment. No new code finding; test execution and the newly deployed real-audio interruption check remain with root.
+
+This addresses the observed UI state that otherwise remained thinking indefinitely when the voice correctly gave no answer to a stop. Prior quiet-stage failures remain failed. Long-duration results from the earlier build remain scoped to that build's transport and accounting behavior and do not verify this later status correction.

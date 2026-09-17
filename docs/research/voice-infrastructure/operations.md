@@ -2,16 +2,18 @@
 
 The delivery includes the complete Nyhavna demo and Anja. Hosting stays on Vercel + Supabase. OpenAI provides voice/backend inference; Google Maps/Places and Mapbox remain external map APIs.
 
+Released 2026-09-17: [hosted validation and measured costs](hosted-validation-2026-09-17.md). Repeated short, 5/15/26-minute and concurrency/recovery checks have explicit revision limits. Two closed benchmark calls retain incomplete final-usage liabilities; review that report before adjusting budgets.
+
 ## Deployment and access
 
 - Project: `placy-nyhavna`, in the existing Vercel Pro team. This separate project isolates releases from the existing `placy` app while keeping one account.
 - Public entry: https://placy-nyhavna.vercel.app/demo/nyhavna-lokal
 - Code checkout: `feat/voice-infrastructure`. Deployments use the local checkout; no Git push is implied.
 - Node 24, Fluid Compute, function region `dub1`. The control route explicitly declares `maxDuration=1800`. Browser audio connects directly to OpenAI over WebRTC; one pinned Vercel WebSocket owns server-side tools and map messages for each conversation.
-- The media deadline is 1,650 seconds from reservation (27.5 minutes, including startup), with a browser notice at 26 minutes. There is no promise of a full 30-minute conversation. A bounded 30-second owner lease margin allows final usage to drain after the media deadline.
+- The media deadline is 1,650 seconds from reservation (27.5 minutes, including startup), with a browser notice about two minutes before that deadline. There is no promise of a full 30-minute conversation. A bounded 30-second owner lease margin allows final usage to drain after the media deadline.
 - Demo and benchmark use separate long random access codes and signed HTTP-only cookies. `ADMIN_ENABLED=false`. No OpenAI/service-role secret reaches the browser.
 - Secrets are configured in Vercel. The operator's local copy is `.context/voice-hosted.env` (ignored, mode 0600). Never commit or send that file. Share only `PLACY_DEMO_ACCESS_CODE` with the demo link; the benchmark code and signing/cron keys stay private.
-- Rotate a role's access code to invalidate its outstanding cookies. Rotate the signing secret to invalidate all access. Set `PLACY_HOSTED_VOICE=false` and redeploy to disable new hosted starts; also disable tenant admission in Supabase for an immediate block on new paid starts.
+- Rotate a role's access code to invalidate its outstanding cookies. Rotate the signing secret to invalidate all access. Set `PLACY_HOSTED_VOICE=false` and redeploy to disable new hosted starts; also disable tenant admission in Supabase for an immediate block on new paid starts. Keep `CRON_SECRET` configured: authenticated recovery remains available independently of the admission flag, so old paid sessions can still be cleaned up.
 
 The WebSocket and extended-duration Vercel features are beta. The hosted echo proof verifies >800 seconds and connection isolation; real-audio evidence must additionally establish the integrated behavior. Redeploying does not terminate existing pinned connections automatically.
 
@@ -34,7 +36,9 @@ Incomplete conversations keep at least their reservation against later admission
 
 The production Vercel cron calls `/api/live/recover` every minute with `CRON_SECRET`. Each active connection heartbeats every 20 seconds; the usual lease is 60 seconds. Stale claims atomically replace the owner capability. Recovery hangs up known provider IDs; unknown creation outcomes stay unresolved. Database or provider failures remain retryable through durable leases.
 
-Monitor fixed allowlisted log markers `voice_recovery_failed`, `voice_recovery_unresolved`, and `voice_finalize_failed` together with ledger state. Do not add raw errors, transcript snippets or provider payloads to hosted logs. Check `/api/prototype/live?dataset=nyhavna-lokal` using a valid demo cookie for model/transport health; a 404 without access is expected.
+Monitor fixed allowlisted log markers `voice_recovery_failed`, `voice_recovery_unresolved`, and `voice_finalization_pending` together with ledger state. Do not add raw errors, transcript snippets or provider payloads to hosted logs. Check `/api/prototype/live?dataset=nyhavna-lokal` using a valid demo cookie for model/transport health; a 404 without access is expected.
+
+Startup has separate limits: up to 75 seconds for hosted admission/provider/control setup, then 15 seconds for the media acknowledgement after SDP is available. Time spent granting microphone permission does not consume the media limit. Stop cancels the current attempt; failures never automatically create another paid conversation.
 
 During internal validation, Andreas owns the demo. Check the ledger after each initial Lene test and daily while the link is in use. Unexpected unresolved sessions, missing final usage, repeated admission rejection or cross-session map behavior require investigation before broader distribution. Disable tenant admission immediately for uncontrolled paid creation or session cross-talk; let known active calls close and run recovery. Roll back the dedicated Vercel app if a new deployment breaks a previously verified flow. Preserve the ledger and additive schema during rollback.
 
