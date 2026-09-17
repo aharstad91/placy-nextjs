@@ -43,6 +43,37 @@ describe('cost evidence and statistics', () => {
   });
 });
 describe('complete keyset reads', () => {
+  it('bounds concurrent event reads and keeps session order despite reversed completion', async () => {
+    const sessions = Array.from({ length: 23 }, (_, i) => session({ id: String(i).padStart(3, '0') }));
+    let active = 0, peak = 0, issued = 0;
+    const pending: (() => void)[] = [];
+    const reader: CostReader = {
+      sessions: async r => r.after ? [] : sessions,
+      events: async () => {
+        active++; issued++; peak = Math.max(peak, active);
+        await new Promise<void>(resolve => {
+          pending.push(resolve);
+          if (issued % 10 === 0 || issued === sessions.length) {
+            queueMicrotask(() => { for (const finish of pending.splice(0).reverse()) finish(); });
+          }
+        });
+        active--;
+        return [];
+      },
+    };
+    const rows = await readCostRows(reader, {}, cutoff);
+    expect(peak).toBe(10);
+    expect(rows.map(row => row.sessionId)).toEqual(sessions.map(s => s.id));
+  });
+  it('does not schedule later event batches after a read fails', async () => {
+    const sessions = Array.from({ length: 23 }, (_, i) => session({ id: String(i) }));
+    const reader: CostReader = {
+      sessions: async () => sessions,
+      events: vi.fn(async () => { throw new Error('event_read_failed'); }),
+    };
+    await expect(readCostRows(reader, {}, cutoff)).rejects.toThrow('event_read_failed');
+    expect(reader.events).toHaveBeenCalledTimes(10);
+  });
   it('reads 1001 sessions and 1001 events even with a lower server page cap; forwards filters and fixed cutoff', async () => {
     const sessions = Array.from({ length: 1001 }, (_, i) => session({ id: String(i).padStart(4, '0') }));
     const events = Array.from({ length: 1001 }, (_, i) => ({ ...event, response_id: String(i).padStart(4, '0') }));

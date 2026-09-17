@@ -1,7 +1,14 @@
 import { describe, expect, it } from 'vitest';
-import { admitBenchmark, costDistribution, expandScenarios, liabilityUsd, type BenchmarkLedgerRow } from '@/lib/live/benchmark-scenarios';
+import { admitBenchmark, benchmarkFailureReason, costDistribution, expandScenarios, liabilityUsd, type BenchmarkLedgerRow } from '@/lib/live/benchmark-scenarios';
 const row = (extra: Partial<BenchmarkLedgerRow> = {}): BenchmarkLedgerRow => ({ id: 'id', scenario_id: 'quiet', state: 'closed', accounting_status: 'complete', reservation_usd: 5, known_cost_usd: .3, voice_seconds: 60, backend_cost_usd: .1, invalid_usage: false, provider_closed: true, final_usage_confirmed: true, termination_reason: 'stop', ...extra });
 describe('finite audio benchmark', () => {
+  it('keeps authored failure evidence while withholding unknown error content', () => {
+    for (const reason of ['concurrency_peer_failed', 'concurrency_isolation_failed', 'missing_map_observation', 'ended_before_requested_duration', 'unexpected_silence_termination']) {
+      expect(benchmarkFailureReason(new Error(reason), 'audio_or_response_failed')).toBe(reason);
+    }
+    expect(benchmarkFailureReason(new Error('private provider response'), 'audio_or_response_failed')).toBe('audio_or_response_failed');
+    expect(benchmarkFailureReason('private browser content', 'setup_or_start_failed')).toBe('setup_or_start_failed');
+  });
   it('defaults to 18 short calls and only opts into long tests explicitly', () => {
     expect(expandScenarios('short', 3)).toHaveLength(18);
     expect(expandScenarios('short', 3).every(s => !s.durationSeconds)).toBe(true);

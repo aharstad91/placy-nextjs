@@ -1,4 +1,14 @@
 export const BENCHMARK_RESERVATION_USD = 5;
+const benchmarkFailures = new Set([
+  'access_denied', 'audio_fixture_unavailable', 'spend_ceiling_reached',
+  'unexpected_silence_termination', 'ended_before_requested_duration',
+  'missing_audio_observation', 'missing_map_observation',
+  'concurrency_peer_failed', 'concurrency_isolation_failed',
+]);
+/** Only authored codes may enter reports; provider/browser errors can contain content. */
+export function benchmarkFailureReason(error: unknown, fallback: string) {
+  return error instanceof Error && benchmarkFailures.has(error.message) ? error.message : fallback;
+}
 export interface BenchmarkScenario {
   id: string;
   fixtures: string[];

@@ -383,6 +383,56 @@ describe("Hosted control ownership", () => {
     expect(vi.mocked(fetch).mock.calls.every(([, init]) => !init?.method)).toBe(true);
   });
 
+  it("does not spend the media acknowledgement timeout waiting for microphone permission", async () => {
+    vi.useFakeTimers();
+    let grant!: (stream: MediaStream) => void;
+    vi.mocked(navigator.mediaDevices.getUserMedia).mockImplementationOnce(() => new Promise(resolve => { grant = resolve; }));
+    const view = renderHook(() => useLive(options()));
+    let started!: Promise<void>;
+    await act(async () => { started = view.result.current.start(); });
+    await act(async () => { await vi.advanceTimersByTimeAsync(25_000); });
+    expect(FakeControl.instances).toHaveLength(0);
+    await act(async () => { grant({ getTracks: () => [microphone], getAudioTracks: () => [microphone] } as unknown as MediaStream); });
+    const control = FakeControl.instances[0];
+    await act(async () => {
+      control.open(); control.emit({ type: "ready", sdp: "answer" });
+      FakePeer.instances[0].channel.emit({ type: "session.started" });
+      await started;
+    });
+    expect(view.result.current.status).toBe("listening");
+  });
+
+  it("allows slow hosted admission before starting the separate media timeout", async () => {
+    vi.useFakeTimers();
+    const { result, control, peer, started } = await hosted(options(), false);
+    await act(async () => { await vi.advanceTimersByTimeAsync(40_000); });
+    expect(result.current.status).toBe("connecting");
+    expect(control.close).not.toHaveBeenCalled();
+    await act(async () => { control.emit({ type: "ready", sdp: "answer" }); });
+    await act(async () => { await vi.advanceTimersByTimeAsync(10_000); });
+    await act(async () => { peer.channel.emit({ type: "session.started" }); await started; });
+    expect(result.current.status).toBe("listening");
+  });
+
+  it("still stops a hosted handshake that never returns", async () => {
+    vi.useFakeTimers();
+    const { result, control, peer, started } = await hosted(options(), false);
+    await act(async () => { await vi.advanceTimersByTimeAsync(75_000); await started; });
+    expect(result.current.status).toBe("error");
+    expect(control.frames().at(-1)).toEqual({ type: "stop" });
+    expect(peer.close).toHaveBeenCalledOnce();
+  });
+
+  it("stops if media never acknowledges after the hosted SDP is ready", async () => {
+    vi.useFakeTimers();
+    const { result, control, peer, started } = await hosted(options(), false);
+    await act(async () => { control.emit({ type: "ready", sdp: "answer" }); });
+    await act(async () => { await vi.advanceTimersByTimeAsync(15_000); await started; });
+    expect(result.current.status).toBe("error");
+    expect(control.frames().at(-1)).toEqual({ type: "stop" });
+    expect(peer.close).toHaveBeenCalledOnce();
+  });
+
   it("isolates concurrent hooks and refuses invalid map commands", async () => {
     const firstTool = vi.fn(() => ({ ok: true }));
     const secondTool = vi.fn(() => ({ ok: true }));

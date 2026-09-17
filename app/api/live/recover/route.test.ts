@@ -23,8 +23,19 @@ describe('hosted recovery boundary', () => {
     expect((await GET(request('Bearer wrong'))).status).toBe(401);
     expect(mocks.claim).not.toHaveBeenCalled();
   });
-  it('disables recovery when hosted voice is off', async () => {
+  it('still recovers old paid sessions when new hosted starts are disabled', async () => {
     vi.stubEnv('PLACY_HOSTED_VOICE', 'false');
+    mocks.claim.mockResolvedValue([{ id: 'session-a', provider_session_id: 'live_test', provider_closed: false }]);
+    const response = await GET(request());
+    expect(response.status).toBe(200);
+    expect(mocks.hangup).toHaveBeenCalledWith('live_test');
+    expect(mocks.finalize).toHaveBeenCalledWith(expect.objectContaining({ providerClosed: true, finalUsageConfirmed: false }));
+    expect((await GET(request(''))).status).toBe(401);
+  });
+  it('disables recovery when its authentication secret is not configured', async () => {
+    vi.stubEnv('CRON_SECRET', '');
+    expect((await GET(request())).status).toBe(404);
+    vi.stubEnv('CRON_SECRET', 'short');
     expect((await GET(request())).status).toBe(404);
     expect(mocks.claim).not.toHaveBeenCalled();
   });

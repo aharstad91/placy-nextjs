@@ -5,7 +5,7 @@ import { mkdir, writeFile, rename } from 'node:fs/promises';
 import { dirname, resolve } from 'node:path';
 import type { Browser, BrowserContext, Page } from 'playwright';
 import type { LiveMessage, LiveStatus } from '@/lib/live/types';
-import { BENCHMARK_SCENARIOS, admitBenchmark, costDistribution, expandScenarios, liabilityUsd, type BenchmarkLedgerRow, type BenchmarkScenario } from '@/lib/live/benchmark-scenarios';
+import { BENCHMARK_SCENARIOS, admitBenchmark, benchmarkFailureReason, costDistribution, expandScenarios, liabilityUsd, type BenchmarkLedgerRow, type BenchmarkScenario } from '@/lib/live/benchmark-scenarios';
 
 interface VoiceHook { start(): void; stop(): void; play(url: string): Promise<void>; status(): LiveStatus; messages(): LiveMessage[] }
 declare global { interface Window { placyVoice?: VoiceHook; placyBenchmarkQuiet?: { count: number; since: number } } }
@@ -15,6 +15,7 @@ interface Attempt {
   audioClips: number; heardUser: boolean; heardAssistant: boolean; observedMapDirective: boolean;
   interruptedWhileSpeaking: boolean; isolatedAfterPeerStop?: boolean; sessions: BenchmarkLedgerRow[];
   endReason?: string;
+  stage?: 'startup' | 'greeting' | 'playback' | 'response' | 'quiet' | 'duration' | 'peer-stop' | 'stop';
 }
 const { values } = parseArgs({ options: {
   list: { type: 'boolean' }, url: { type: 'string' }, scenarios: { type: 'string', default: 'short' },
@@ -46,8 +47,8 @@ async function main() {
       maxUsd: ceiling, deadlineAt: new Date(deadline).toISOString(), updatedAt: new Date().toISOString(),
       failure, ledgerReadable, knownLiabilityUsd: ledgerReadable ? liabilityUsd(rows) : null,
       attempted: attempts.filter(a => a.startedAt).length, passed: attempts.filter(a => a.status === 'passed').length,
-      failed: attempts.filter(a => a.status === 'failed').length, distribution: costDistribution(rows),
-      groups: Object.fromEntries([...new Set(attempts.map(a => a.scenario))].map(id => [id, costDistribution(rows.filter(r => attempts.some(a => a.scenario === id && a.label === r.scenario_id)))])),
+      failed: attempts.filter(a => a.status === 'failed').length, distribution: ledgerReadable ? costDistribution(rows) : null,
+      groups: ledgerReadable ? Object.fromEntries([...new Set(attempts.map(a => a.scenario))].map(id => [id, costDistribution(rows.filter(r => attempts.some(a => a.scenario === id && a.label === r.scenario_id)))])) : null,
       attempts, limitations: ['Synthetic audio fixtures are not a measured customer distribution.', 'Calculated provider costs exclude fixed platform costs.', 'Response/map booleans do not establish semantic correctness.', 'Forced owner loss requires separate controlled deployment/recovery evidence.'],
     }, null, 2), { mode: 0o600 });
     await rename(`${output}.tmp`, output);
@@ -131,7 +132,8 @@ async function main() {
       }));
       attempt.heardUser ||= seen.user; attempt.heardAssistant ||= seen.assistant;
     };
-    const waitForQuiet = async (page: Page) => {
+    const waitForQuiet = async (page: Page, attempt: Attempt) => {
+      attempt.stage = 'quiet';
       await page.waitForFunction(() => {
         const voice = window.placyVoice!;
         const count = voice.messages().filter(m => m.role === 'assistant').reduce((sum, m) => sum + m.text.length, 0);
@@ -146,36 +148,44 @@ async function main() {
     const play = async (page: Page, attempt: Attempt, fixture: string, waitResponse = true) => {
       // Only an aggregate count leaves the browser, never spoken words.
       const before = await page.evaluate(() => window.placyVoice!.messages().filter(m => m.role === 'assistant').reduce((n, m) => n + m.text.length, 0));
+      attempt.stage = 'playback';
       await page.evaluate(f => window.placyVoice!.play(`/dev/nyhavna-tts/${f}.wav`), fixture);
       attempt.audioClips++;
       if (waitResponse) {
+        attempt.stage = 'response';
         await page.waitForFunction(n => window.placyVoice!.messages().filter(m => m.role === 'assistant').reduce((sum, m) => sum + m.text.length, 0) > n, before, { timeout: 45_000 });
-        await waitForQuiet(page);
+        await waitForQuiet(page, attempt);
       }
       await observe(page, attempt);
     };
-    const drive = async (page: Page, context: BrowserContext, attempt: Attempt, scenario: BenchmarkScenario, peerStopped?: Promise<void>) => {
+    const drive = async (page: Page, context: BrowserContext, attempt: Attempt, scenario: BenchmarkScenario, peer?: { stopped: Promise<void>; attempt: Attempt }) => {
       try {
-        await page.waitForFunction(() => ['listening', 'thinking', 'speaking'].includes(window.placyVoice!.status()));
+        attempt.stage = 'startup';
+        // The dev hook starts asynchronously: include health, ICE and the hosted
+        // 75s handshake plus 15s media acknowledgement in this outer bound.
+        await page.waitForFunction(() => ['listening', 'thinking', 'speaking'].includes(window.placyVoice!.status()), undefined, { timeout: 120_000 });
         attempt.status = 'running';
         if (scenario.mode === 'silence') {
           await page.waitForFunction(() => ['idle','error'].includes(window.placyVoice!.status()), undefined, { timeout: 150_000 });
           if (attempt.endReason !== 'idle') throw new Error('unexpected_silence_termination');
         } else if (scenario.durationSeconds) {
+          attempt.stage = 'greeting';
           await page.waitForFunction(() => window.placyVoice!.messages().some(m => m.role === 'assistant'), undefined, { timeout: 45_000 });
-          await waitForQuiet(page);
+          await waitForQuiet(page, attempt);
           const until = Date.now() + scenario.durationSeconds * 1000;
           let clip = 0;
           while (Date.now() < until) {
             const turnStart = Date.now();
             await play(page, attempt, scenario.fixtures[clip++ % scenario.fixtures.length]);
+            attempt.stage = 'duration';
             await sleep(Math.max(0, Math.min(until - Date.now(), 45_000 - (Date.now() - turnStart))));
             if (await page.evaluate(() => ['idle', 'error'].includes(window.placyVoice!.status()))) throw new Error('ended_before_requested_duration');
           }
         } else {
           // Finish the greeting before measuring replies to the injected user audio.
+          attempt.stage = 'greeting';
           await page.waitForFunction(() => window.placyVoice!.messages().some(m => m.role === 'assistant'), undefined, { timeout: 45_000 });
-          await waitForQuiet(page);
+          await waitForQuiet(page, attempt);
           for (let i = 0; i < scenario.fixtures.length; i++) {
             if (scenario.mode === 'interrupt' && i === 1) {
               await page.waitForFunction(() => window.placyVoice!.status() === 'speaking', undefined, { timeout: 30_000 });
@@ -187,11 +197,14 @@ async function main() {
         if (scenario.mode !== 'silence' && (!attempt.heardUser || !attempt.heardAssistant)) throw new Error('missing_audio_observation');
         if (scenario.id === 'tool-heavy' && !attempt.observedMapDirective) throw new Error('missing_map_observation');
         if (scenario.mode === 'concurrent' && attempt.label.endsWith('-2')) {
-          await peerStopped;
+          attempt.stage = 'peer-stop';
+          await peer?.stopped;
+          if (!peer?.attempt.startedAt || peer.attempt.status !== 'passed') throw new Error('concurrency_peer_failed');
           await sleep(1_000);
           attempt.isolatedAfterPeerStop = await page.evaluate(() => !['idle', 'error', 'connecting'].includes(window.placyVoice!.status()));
           if (!attempt.isolatedAfterPeerStop) throw new Error('concurrency_isolation_failed');
         }
+        attempt.stage = 'stop';
         if (scenario.mode === 'disconnect') await context.close();
         else {
           await page.evaluate(() => window.placyVoice!.stop());
@@ -199,8 +212,8 @@ async function main() {
           await sleep(8_500);
         }
         attempt.status = 'passed';
-      } catch {
-        attempt.status = 'failed'; attempt.reason = failure === 'deadline_reached' ? failure : 'audio_or_response_failed';
+      } catch (error) {
+        attempt.status = 'failed'; attempt.reason = failure === 'deadline_reached' ? failure : benchmarkFailureReason(error, 'audio_or_response_failed');
       } finally {
         if (!page.isClosed()) {
           await page.evaluate(() => window.placyVoice?.stop()).catch(() => {});
@@ -226,9 +239,9 @@ async function main() {
         await save();
         await Promise.all(prepared.map(({ page }) => page.evaluate(() => window.placyVoice!.start())));
         const first = drive(prepared[0].page, prepared[0].context, batch[0], scenario);
-        await Promise.all([first, ...prepared.slice(1).map(({ page, context }, i) => drive(page, context, batch[i + 1], scenario, first))]);
-      } catch {
-        for (const attempt of batch) { attempt.status = 'failed'; attempt.reason ??= 'setup_or_start_failed'; attempt.endedAt = new Date().toISOString(); }
+        await Promise.all([first, ...prepared.slice(1).map(({ page, context }, i) => drive(page, context, batch[i + 1], scenario, { stopped: first, attempt: batch[0] }))]);
+      } catch (error) {
+        for (const attempt of batch) { attempt.status = 'failed'; attempt.reason ??= benchmarkFailureReason(error, 'setup_or_start_failed'); attempt.endedAt = new Date().toISOString(); }
       } finally {
         await Promise.all(prepared.map(p => p.context.close().catch(() => {})));
         await save();

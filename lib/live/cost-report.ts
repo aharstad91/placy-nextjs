@@ -26,17 +26,22 @@ export async function readCostRows(reader: CostReader, filters: CostFilters, cut
     const sessions = await reader.sessions({ after, cutoff, limit: 1000, filters });
     if (!sessions.length) break;
     if (after === sessions.at(-1)!.id) throw new Error('Session pagination did not advance');
-    for (const session of sessions) {
-      const events: CostEvent[] = [];
-      let eventAfter: string | undefined;
-      for (;;) {
-        const page = await reader.events({ sessionId: session.id, after: eventAfter, cutoff, limit: 1000 });
-        if (!page.length) break;
-        if (eventAfter === page.at(-1)!.response_id) throw new Error('Event pagination did not advance');
-        events.push(...page);
-        eventAfter = page.at(-1)!.response_id;
-      }
-      rows.push(costRow(session, events));
+    // Bound database pressure and preserve session order even when reads finish
+    // out of order. A failed batch prevents any later batch from being issued.
+    for (let offset = 0; offset < sessions.length; offset += 10) {
+      const batch = await Promise.all(sessions.slice(offset, offset + 10).map(async session => {
+        const events: CostEvent[] = [];
+        let eventAfter: string | undefined;
+        for (;;) {
+          const page = await reader.events({ sessionId: session.id, after: eventAfter, cutoff, limit: 1000 });
+          if (!page.length) break;
+          if (eventAfter === page.at(-1)!.response_id) throw new Error('Event pagination did not advance');
+          events.push(...page);
+          eventAfter = page.at(-1)!.response_id;
+        }
+        return costRow(session, events);
+      }));
+      rows.push(...batch);
     }
     after = sessions.at(-1)!.id;
   }

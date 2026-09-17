@@ -52,6 +52,8 @@ const HEARING_RMS = 0.015;
 const HEARING_HOLD_MS = 250;
 const ICE_TIMEOUT_MS = 10000;
 const SESSION_START_TIMEOUT_MS = 15000;
+/** Cold start, durable admission, provider creation and sideband attach precede media. */
+const HOSTED_HANDSHAKE_TIMEOUT_MS = 75000;
 /** Puffet som får stemmen til å si hilsenen med én gang (se `session.instructions.appended`-casen). */
 const GREETING_KICK = "Begynn samtalen nå: si hilsenen slik instruksjonen sier, og vent så på brukeren.";
 
@@ -441,10 +443,14 @@ export function useLive(options: LiveOptions) {
       // `session.started` er kvitteringen på at Live-sesjonen lever. Den kommer
       // på datakanalen, så ventingen må stå klar før den første meldingen.
       let sessionStarted: () => void = () => {};
+      let armSessionStartTimeout: () => void = () => {};
       let startedTimeout: ReturnType<typeof setTimeout> | undefined;
       const startedPromise = new Promise<void>((resolve, reject) => {
-        sessionStarted = resolve;
-        startedTimeout = setTimeout(() => reject(new Error("Samtalen svarte ikke i tide. Prøv igjen.")), SESSION_START_TIMEOUT_MS);
+        sessionStarted = () => { clearTimeout(startedTimeout); resolve(); };
+        // Permission and server setup are not time spent waiting for WebRTC media.
+        armSessionStartTimeout = () => {
+          if (!current.started) startedTimeout = setTimeout(() => reject(new Error("Samtalen svarte ikke i tide. Prøv igjen.")), SESSION_START_TIMEOUT_MS);
+        };
         current.abort.signal.addEventListener("abort", () => {
           clearTimeout(startedTimeout);
           reject(new DOMException("Cancelled", "AbortError"));
@@ -572,7 +578,7 @@ export function useLive(options: LiveOptions) {
         const control = new WebSocket(url);
         current.control = control;
         sdp = await new Promise<string>((resolve, reject) => {
-          const timeout = setTimeout(() => reject(new Error("Samtalen svarte ikke i tide. Prøv igjen.")), SESSION_START_TIMEOUT_MS);
+          const timeout = setTimeout(() => reject(new Error("Samtalen svarte ikke i tide. Prøv igjen.")), HOSTED_HANDSHAKE_TIMEOUT_MS);
           const fail = (message: string) => {
             clearTimeout(timeout);
             reject(new Error(message));
@@ -618,6 +624,7 @@ export function useLive(options: LiveOptions) {
       }
       if (!active()) return;
       if (!sdp) throw new Error("Serveren svarte uten lydforbindelse. Prøv igjen.");
+      armSessionStartTimeout();
       await pc.setRemoteDescription({ type: "answer", sdp });
       if (!active()) return;
       await startedPromise;

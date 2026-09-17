@@ -19,6 +19,7 @@ function request(url = 'http://localhost:3101/api/prototype/live', origin?: stri
 }
 beforeEach(() => {
   vi.stubEnv('NODE_ENV', 'development'); vi.stubEnv('OPENAI_API_KEY', key);
+  vi.stubEnv('PLACY_HOSTED_VOICE', 'false');
   for (const fn of Object.values(mocks)) fn.mockReset();
   mocks.reserve.mockResolvedValue('session-token'); mocks.end.mockResolvedValue(true); mocks.blockUnknown.mockResolvedValue(undefined);
   vi.stubGlobal('fetch', vi.fn(async () => created()));

@@ -1,7 +1,7 @@
 import { randomUUID } from 'node:crypto';
 import { createVoiceLedger } from '@/lib/live/metering';
 import { liveHangup, LIVE_SESSION_ID } from '@/lib/live/hangup';
-import { constantTimeEqual, hostedVoiceEnabled } from '@/lib/live/hosted-access';
+import { constantTimeEqual } from '@/lib/live/hosted-access';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -9,7 +9,8 @@ export const maxDuration = 60;
 
 export async function GET(request: Request) {
   const secret = process.env.CRON_SECRET;
-  if (!hostedVoiceEnabled() || !secret || secret.length < 32) return new Response(null,{status:404});
+  // Admission may be disabled while old deployments still own paid sessions.
+  if (!secret || secret.length < 32) return new Response(null,{status:404});
   if(!constantTimeEqual(request.headers.get('authorization') ?? '', `Bearer ${secret}`)) return new Response(null,{status:401});
   const ledger = createVoiceLedger();
   try {
