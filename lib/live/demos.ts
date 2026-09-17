@@ -2,7 +2,7 @@ import "server-only";
 
 import type { BoardData } from "@/components/variants/report/board/board-data";
 import { getNyhavnaSnapshot } from "@/lib/demo/nyhavna-leve/snapshot";
-import { buildLocalBoard, datasetId } from "@/lib/demo/nyhavna-lokal/board";
+import { buildLocalBoard, buildLocalProject, datasetId } from "@/lib/demo/nyhavna-lokal/board";
 import { loadDataset, LOCAL_DATASET_ID } from "@/lib/demo/nyhavna-lokal/dataset";
 import { buildVoiceDeps, buildLocalInstructions } from "@/lib/demo/nyhavna-lokal/voice";
 import { createNyhavnaConversation, type NyhavnaConversation } from "@/lib/realtime/nyhavna-conversation";
@@ -10,6 +10,7 @@ import { nyhavnaInstructions } from "@/lib/realtime/nyhavna-knowledge";
 import { nyhavnaProjectInfo } from "@/lib/realtime/nyhavna-project-info";
 import { createPresentation, presentationTool, similarPlacesTool, morePlacesTool } from "@/lib/demo/nyhavna-lokal/presentation";
 import { LOCAL_VOICE_INSTRUCTIONS } from "@/lib/demo/nyhavna-lokal/voice-instructions";
+import type { Project } from "@/lib/types";
 import type { RealtimeTool } from "@/lib/realtime/types";
 
 /**
@@ -45,6 +46,7 @@ export interface LiveDemo {
   /** Innholds-ID-en flaten må bære for å få snakke med dette grunnlaget. */
   snapshotId: string;
   board: BoardData;
+  project: Project;
   /** Den lange instruksen til Responses-backenden: regler, temaer, katalog. */
   backendInstructions: string;
   voiceInstructions?: string;
@@ -60,6 +62,7 @@ async function leveDemo(): Promise<LiveDemo> {
     id: DEFAULT_LIVE_DATASET,
     snapshotId: snapshot.snapshotId,
     board: snapshot.board,
+    project: snapshot.project,
     backendInstructions: nyhavnaInstructions(snapshot.board),
     createConversation: () =>
       createNyhavnaConversation(snapshot.board, { projectInfo: nyhavnaProjectInfo }),
@@ -74,6 +77,7 @@ async function lokalDemo(): Promise<LiveDemo> {
     id: LOCAL_DATASET_ID,
     snapshotId: datasetId(dataset),
     board,
+    project: buildLocalProject(dataset),
     backendInstructions: buildLocalInstructions(dataset, board),
     voiceInstructions: LOCAL_VOICE_INSTRUCTIONS,
     additionalTools: [presentationTool, similarPlacesTool, morePlacesTool],

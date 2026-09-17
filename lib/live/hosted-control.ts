@@ -7,7 +7,7 @@ import { createLiveSession, LiveSessionError } from '@/lib/live/create-session';
 import { liveHangup, LIVE_SESSION_ID } from '@/lib/live/hangup';
 import { createMapBridge } from '@/lib/live/map-bridge';
 import { connectLiveSideband, type LiveSidebandHandle, type SidebandMeteringEvent } from '@/lib/live/sideband';
-import { loadLiveDemo } from '@/lib/live/demos';
+import { resolveVoiceProject } from '@/lib/live/projects';
 import { backendModel, liveModel, liveSessionConfig, liveVoice } from '@/lib/live/session-config';
 import { nyhavnaTools } from '@/lib/realtime/nyhavna-conversation';
 import type { DemoAccess } from '@/lib/live/hosted-access';
@@ -20,7 +20,7 @@ const contextSchema = z.discriminatedUnion('kind', [
   z.object({ kind: z.literal('text'), text: z.string().max(2000) }),
 ]);
 const label = z.string().regex(/^[a-zA-Z0-9_.:-]{1,100}$/);
-const startSchema = z.object({ type: z.literal('start'), sdp: z.string().startsWith('v=0').max(32000), snapshotId: z.string().max(150), dataset: z.literal('nyhavna-lokal'), voice: z.literal('willow').optional(), testRunId: label.optional(), scenarioId: label.optional() }).strict();
+const startSchema = z.object({ type: z.literal('start'), sdp: z.string().startsWith('v=0').max(32000), snapshotId: z.string().max(150), project: z.string().regex(/^[a-z0-9][a-z0-9-]{0,79}$/).optional(), dataset: z.string().max(100).optional(), voice: z.literal('willow').optional(), testRunId: label.optional(), scenarioId: label.optional() }).strict();
 const messageSchema = z.discriminatedUnion('type', [
   startSchema,
   z.object({ type: z.literal('context'), message: contextSchema }).strict(),
@@ -38,12 +38,12 @@ export interface HostedControlDependencies {
   createSession: typeof createLiveSession;
   hangup: typeof liveHangup;
   connect: typeof connectLiveSideband;
-  loadDemo: typeof loadLiveDemo;
+  resolveProject: typeof resolveVoiceProject;
 }
 
 /** Each upgraded connection owns its tools and map bridge; only the ledger is shared. */
 export function runHostedControl(socket: WebSocket, access: DemoAccess, overrides: Partial<HostedControlDependencies> = {}): Promise<void> {
-  const deps: HostedControlDependencies = { ledger:createVoiceLedger(),createSession:createLiveSession,hangup:liveHangup,connect:connectLiveSideband,loadDemo:loadLiveDemo,...overrides };
+  const deps: HostedControlDependencies = { ledger:createVoiceLedger(),createSession:createLiveSession,hangup:liveHangup,connect:connectLiveSideband,resolveProject:resolveVoiceProject,...overrides };
   const ownerToken = randomUUID();
   const bridge = createMapBridge();
   let session: VoiceSession | undefined;
@@ -144,16 +144,17 @@ export function runHostedControl(socket: WebSocket, access: DemoAccess, override
 
   async function start(input: z.infer<typeof startSchema>) {
     clearTimeout(admissionTimer);
-    const demo = await deps.loadDemo('nyhavna-lokal');
+    if (access.role !== 'benchmark' && (input.testRunId || input.scenarioId)) throw new Error('test_authorization');
+    const resolved = await deps.resolveProject({...(input.project === undefined ? {} : {project:input.project}),...(input.dataset === undefined ? {} : {dataset:input.dataset})},access.role === 'benchmark' ? 'benchmark' : 'public');
+    const demo = resolved.demo;
     if (closing) return;
     if (demo.snapshotId !== input.snapshotId) throw new Error('snapshot');
     if (liveModel() !== 'gpt-live-1' || backendModel() !== 'gpt-5.6-terra' || liveVoice() !== 'willow') throw new Error('model_config');
-    if (access.role !== 'benchmark' && (input.testRunId || input.scenarioId)) throw new Error('test_authorization');
     const configuration = liveSessionConfig(demo.voiceInstructions ?? '',demo.backendInstructions,[...nyhavnaTools,...(demo.additionalTools ?? [])]);
     configuration.delegation.responses.parallel_tool_calls = demo.parallelTools ?? true;
     const configVersion = createHash('sha256').update(JSON.stringify(configuration)).digest('hex');
     const environment = process.env.VERCEL_ENV === 'production' ? 'production' : process.env.VERCEL_ENV === 'preview' ? 'preview' : 'development';
-    session = await deps.ledger.reserve({tenantId:access.role === 'benchmark' ? 'nyhavna-lokal-benchmark' : 'nyhavna-lokal-demo',ownerToken,environment,configVersion,datasetVersion:demo.snapshotId,
+    session = await deps.ledger.reserve({tenantId:resolved.tenant.id,ownerToken,environment,configVersion,datasetVersion:demo.snapshotId,
       models:{voice:'gpt-live-1',backend:'gpt-5.6-terra',speaker:'willow'},testRunId:input.testRunId,scenarioId:input.scenarioId});
     if (closing) { await finish(); return; }
     await deps.ledger.markCreating(owned());

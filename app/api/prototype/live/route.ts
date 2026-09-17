@@ -10,6 +10,7 @@ import { LIVE_SESSION_ID } from '@/lib/live/hangup';
 import { NYHAVNA_VOICE_INSTRUCTIONS } from '@/lib/live/voice-instructions';
 import { localRequest } from '@/lib/live/local-request';
 import { DEFAULT_LIVE_DATASET, isLiveDataset, loadLiveDemo, type LiveDemo } from '@/lib/live/demos';
+import { resolveVoiceProject } from '@/lib/live/projects';
 import { nyhavnaTools } from '@/lib/realtime/nyhavna-conversation';
 
 export const runtime = 'nodejs';
@@ -35,22 +36,36 @@ function requestedDataset(value: string | null | undefined) {
 
 export async function GET(request: NextRequest) {
   const hosted = hostedVoiceEnabled();
-  if (hosted ? !requestDemoAccess(request) : !localRequest(request)) return new NextResponse(null, { status: 404 });
-  const dataset = requestedDataset(request.nextUrl.searchParams.get('dataset'));
-  if (hosted && dataset !== 'nyhavna-lokal') return new NextResponse(null, { status: 404 });
-  if (!dataset) return NextResponse.json({ error: 'Ukjent datasett.' }, { status: 400 });
-  try {
-    const demo = await loadLiveDemo(dataset);
-    return NextResponse.json(
-      { configured: Boolean(process.env.OPENAI_API_KEY), voiceModel: liveModel(), voice: liveVoice(), backendModel: backendModel(), dataset: demo.id, snapshotId: demo.snapshotId, protocol: 'live', ...(hosted ? { transport: 'websocket', warningMs: 26 * 60 * 1000 } : {}) },
-      { headers: { 'Cache-Control': 'no-store' } },
-    );
-  } catch (error) {
-    // Datasettets egne feilmeldinger peker på fil og felt; de er verdt å se i
-    // terminalen når demoen fylles med innhold.
-    console.error('live_dataset_load_failed', error);
-    return NextResponse.json({ error: 'Demoens datagrunnlag kunne ikke lastes.' }, { status: 503 });
+  const access = hosted ? requestDemoAccess(request) : null;
+  if (hosted ? !access : !localRequest(request)) return new NextResponse(null, { status: 404 });
+  let demo: LiveDemo;
+  let project: string | undefined;
+  if (hosted) {
+    const selectedProject=request.nextUrl.searchParams.get('project');
+    const selectedDataset=request.nextUrl.searchParams.get('dataset');
+    try {
+      const resolved=await resolveVoiceProject({
+        ...(selectedProject===null?{}:{project:selectedProject}),
+        ...(selectedDataset===null?{}:{dataset:selectedDataset}),
+      },access?.role==='benchmark'?'benchmark':'public');
+      demo=resolved.demo;
+      project=resolved.slug;
+    } catch {
+      return new NextResponse(null, { status: 404, headers: { 'Cache-Control': 'no-store' } });
+    }
+  } else {
+    const dataset=requestedDataset(request.nextUrl.searchParams.get('dataset'));
+    if (!dataset) return NextResponse.json({ error: 'Ukjent datasett.' }, { status: 400 });
+    try { demo=await loadLiveDemo(dataset); }
+    catch (error) {
+      console.error('live_dataset_load_failed', error);
+      return NextResponse.json({ error: 'Demoens datagrunnlag kunne ikke lastes.' }, { status: 503 });
+    }
   }
+  return NextResponse.json(
+    { configured: Boolean(process.env.OPENAI_API_KEY), voiceModel: liveModel(), voice: liveVoice(), backendModel: backendModel(), dataset: demo.id, snapshotId: demo.snapshotId, protocol: 'live', ...(hosted ? { project, transport: 'websocket', warningMs: 26 * 60 * 1000 } : {}) },
+    { headers: { 'Cache-Control': 'no-store' } },
+  );
 }
 
 export async function DELETE(request: NextRequest) {

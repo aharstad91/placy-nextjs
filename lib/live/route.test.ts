@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { NextRequest } from 'next/server';
-const mocks = vi.hoisted(() => ({ reserve: vi.fn(), attach: vi.fn(), end: vi.fn(), blockUnknown: vi.fn(), isActive: vi.fn(), connect: vi.fn() }));
+const mocks = vi.hoisted(() => ({ reserve: vi.fn(), attach: vi.fn(), end: vi.fn(), blockUnknown: vi.fn(), isActive: vi.fn(), connect: vi.fn(), resolveProject: vi.fn() }));
+vi.mock('@/lib/live/projects', () => ({resolveVoiceProject: mocks.resolveProject}));
 vi.mock('@/lib/live/supervisor', () => ({ getLiveSupervisor: () => mocks }));
 vi.mock('@/lib/live/sideband', () => ({ connectLiveSideband: mocks.connect, getLiveSideband: () => undefined }));
 vi.mock('@/lib/demo/nyhavna-leve/snapshot', () => ({ getNyhavnaSnapshot: async () => ({ snapshotId: 'snapshot-test', project: {}, board: { categories: [] } }) }));
@@ -8,6 +9,7 @@ vi.mock('@/lib/realtime/nyhavna-knowledge', async (importOriginal) => ({ ...awai
 vi.mock('@/lib/live/voice-instructions', () => ({ NYHAVNA_VOICE_INSTRUCTIONS: 'trusted-voice-instructions' }));
 vi.mock('@/lib/realtime/nyhavna-conversation', () => ({ createNyhavnaConversation: () => ({}), nyhavnaTools: [] }));
 vi.mock('@/lib/realtime/nyhavna-project-info', () => ({ nyhavnaProjectInfo: { forTheme: () => [], search: () => [] } }));
+import { issueDemoAccess } from '@/lib/live/hosted-access';
 import { loadLiveDemo } from '@/lib/live/demos';
 import { LOCAL_VOICE_INSTRUCTIONS } from '@/lib/demo/nyhavna-lokal/voice-instructions';
 import { GET, POST, DELETE } from '@/app/api/prototype/live/route';
@@ -112,5 +114,38 @@ describe('local GPT-Live session route', () => {
     expect(await health.json()).toMatchObject({ protocol: 'live', voiceModel: 'gpt-live-1', backendModel: 'gpt-5.6-terra', snapshotId: 'snapshot-test', configured: true });
     expect((await DELETE(new NextRequest('http://localhost:3101/api/prototype/live', { method: 'DELETE', headers: { 'X-Placy-Session': 'session-token' } }))).status).toBe(200);
     expect(mocks.end).toHaveBeenCalledWith('session-token', 'manual');
+  });
+});
+
+
+describe('shared project health',()=>{
+  beforeEach(()=>{
+    vi.stubEnv('PLACY_HOSTED_VOICE','true');
+    mocks.resolveProject.mockResolvedValue({slug:'nyhavna',demo:{id:'nyhavna-lokal',snapshotId:'project-snapshot'}});
+  });
+  it('uses the same server project resolver and exposes only public readiness',async()=>{
+    const response=await GET(new NextRequest('https://platform.example/api/prototype/live?project=nyhavna'));
+    expect(response.status).toBe(200);
+    expect(mocks.resolveProject).toHaveBeenCalledWith({project:'nyhavna'},'public');
+    expect(await response.json()).toMatchObject({project:'nyhavna',dataset:'nyhavna-lokal',snapshotId:'project-snapshot',configured:true,transport:'websocket'});
+    expect(response.headers.get('cache-control')).toBe('no-store');
+    expect(fetch).not.toHaveBeenCalled();
+  });
+  it('routes the legacy dataset through the registry without a fallback',async()=>{
+    const response=await GET(new NextRequest('https://platform.example/api/prototype/live?dataset=nyhavna-lokal'));
+    expect(response.status).toBe(200);
+    expect(mocks.resolveProject).toHaveBeenCalledWith({dataset:'nyhavna-lokal'},'public');
+    mocks.resolveProject.mockRejectedValueOnce(new Error('secret registry credentials'));
+    const denied=await GET(new NextRequest('https://platform.example/api/prototype/live?project=missing'));
+    expect(denied.status).toBe(404);expect(await denied.text()).not.toContain('secret');
+    expect(fetch).not.toHaveBeenCalled();
+  });
+  it('derives benchmark purpose only from the existing signed cookie',async()=>{
+    vi.stubEnv('PLACY_DEMO_COOKIE_SECRET','test-signing-key-at-least-thirty-two-characters');
+    vi.stubEnv('PLACY_BENCHMARK_ACCESS_CODE','benchmark-secret-access-code');
+    const token=issueDemoAccess('benchmark-secret-access-code');
+    expect(token).toBeTruthy();
+    await GET(new NextRequest('https://platform.example/api/prototype/live?project=nyhavna',{headers:{cookie:`placy_demo_access=${token}`}}));
+    expect(mocks.resolveProject).toHaveBeenCalledWith({project:'nyhavna'},'benchmark');
   });
 });
