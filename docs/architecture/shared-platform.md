@@ -2,13 +2,13 @@
 
 Dette er driftskartet for arbeidet med felles plattform. Den interaktive oversikten ligger i `placy-systemkart.html`. Status kontrolleres mot faktisk publisering; en planlagt kobling er ikke en aktiv kobling.
 
-## Før overgangen — kontrollert 17. september 2026
+## Publisert — kontrollert 17. september 2026
 
 | System | Oppgave | Hva er felles? |
 |---|---|---|
 | placy.no / www.placy.no | Eksisterende nettsted, Vercel-prosjekt `placy` | Egen, eldre publisering. `/nyhavna` videresender til stemmeappen. |
-| Nyhavna-appen | Side, kartstyring og stemmens kontrollforbindelse | Vercel-prosjekt `placy-nyhavna`; skal bli runtime for flere prosjekter. |
-| Supabase | Kunder, prosjekter, steder og varig samtaleregnskap | Samme database. Stemmen bruker foreløpig interne demoidentiteter. |
+| Felles Placy-app | Prosjektsider, kartstyring og stemmens kontrollforbindelse | `placy-platform.vercel.app/p/nyhavna`, Vercel-prosjektets interne navn er fortsatt `placy-nyhavna`. Samme runtime for nye prosjekter. |
+| Supabase | Kunder, prosjekter, steder og varig samtaleregnskap | Samme database. Nye samtaler får eksisterende kunde/prosjekt og eget formål. Historiske demoer beholdes uendret. |
 | OpenAI | Talesamtale og modellarbeid som velger/verifiserer verktøy | Felles leverandørintegrasjon. Nettleseren sender lyd direkte over WebRTC. |
 | Google / Mapbox | Kart, bilder og kartdata avhengig av visning | Integrasjoner brukes på tvers; bruk er en separat kostnad. |
 | Repo og kuraterte datafiler | Programvare, Nyhavna-fakta og versjonert innhold | Ny publisering inkluderer de valgte filene. Ikke alt innhold ligger i Supabase. |
@@ -30,6 +30,8 @@ Hovedsiden kjører produksjonscommit `bef9ae2`. Stemmeappen bygger på en nyere 
 
 Besøk er ikke det samme som talesamtaler. Et besøk kan bruke sidelevering, kart og bilder uten å starte stemmen. Stemmens variable bruk består av lyd og modellarbeid. Samtaletid alene gir derfor ikke hele leverandørkostnaden.
 
+Anja bruker fortsatt GPT-Live-1 med GPT-5.6-Terra som svarmodell. GPT-Live koster 0,05 USD per tilkoblet minutt, avregnet per sekund; modellarbeid og verktøy kommer i tillegg. Ingen egen Live Light/Mini er dokumentert ved kontroll 17. september 2026. Realtime Mini er en annen integrasjon og er ikke en direkte modellinnstilling for dagens app. [OpenAIs Live-priser](https://developers.openai.com/api/docs/models/gpt-live-1), [Realtime Mini](https://developers.openai.com/api/docs/models/gpt-realtime-2.1-mini).
+
 Regnskapet skiller mellom:
 
 - **Komplett beregnet leverandørkostnad:** mottatt forbruk med kjent prisgrunnlag og bekreftet avslutning.
@@ -49,13 +51,17 @@ Databasemigrasjoner er et eget steg. En Vercel-publisering oppgraderer ikke auto
 
 ## Slik tas neste prosjekt inn
 
-Denne fremgangsmåten er målet for migreringen; de konkrete registerfeltene og kommandoene må kontrolleres mot sluttverifiseringen før bruk.
+Registeret, opptaksreglene og appen er publisert. Nyhavna er første aktiverte prosjekt; neste prosjekt krever kontrollert klargjøring og eierskapskontroll.
 
-1. Finn eller opprett kunden og prosjektet gjennom eksisterende provisjoneringsløp. Kontroller hvem som eier prosjektet; ikke flytt en demokunde til en reell kunde ved gjetning.
+1. Finn eller opprett kunden, prosjektet og report-produktet gjennom eksisterende provisjoneringsløp. Kontroller hvem som eier prosjektet; ikke flytt en demokunde til en reell kunde ved gjetning.
 2. Klargjør prosjektets fakta, steder, profil og støttede innholdskilde. Dagens kuraterte filkilder følger en kodepublisering. Nytt innhold kan kreve en slik publisering, men aldri en kopi av appen eller et nytt Vercel-prosjekt per kunde.
 3. Sett kundens og prosjektets operasjonelle grenser. Velg bruksformål for offentlig tilgang og autoriserte interne tester. Registrer prosjektet som deaktivert mens det klargjøres.
 4. Kontroller at side, stemme og regnskap bruker samme prosjekt, og at ukjente eller deaktiverte prosjekter ikke kan starte betalt bruk.
 5. Aktiver prosjektet, prøv den offentlige lenken uten innlogging, og bekreft en avgrenset samtale i regnskapet. Kontroller noindex, kart og bilder.
+
+Teknisk bruker dette `v2.voice_projects` (offentlig slug → eksisterende kunde/prosjekt, støttet innholdskilde og formålstilganger), `v2.voice_tenants` (offentlig/test/intern tilgang) og `v2.voice_admission_policies` (plattform/kunde/prosjekt). Nye koblinger skrives av server eller operatør med service-tilgang. Nettleseren har ikke skrivetilgang. Slug, kunde og prosjektidentitet kan ikke endres på eksisterende koblinger eller historiske samtaler; opprett en ny korrekt kobling ved et faktisk eierskifte.
+
+Operatøren henter prosjektbruk med `npx tsx scripts/voice-costs.ts --project nyhavna-utvikling_nyhavna --purpose public`. Rapporten skiller valgte samtaler fra plattformens samlede driftsbelastning. Interne tester kan filtreres separat, men slipper ikke unna de felles grensene.
 
 Et prosjekt kan stenges for nye samtaler uten å slette innhold eller regnskap. Eksisterende samtaler må fortsatt få avslutte og rapportere sluttforbruk; recovery må bli stående på.
 
@@ -63,9 +69,11 @@ Ved tilbakeføring etter overgangen må appversjonen fortsatt bruke prosjektregi
 
 Detaljert driftsoppskrift og dokumenterte prøver: [stemmeoperasjon](../research/voice-infrastructure/operations.md), [kostnadsrapport](../research/voice-infrastructure/cost-report.md) og [migreringsplan](../plans/2026-09-17-1212-feat-shared-placy-platform-plan.md).
 
-## Åpent under gjennomføring
+## Publiseringsbevis og gjenstående avgrensninger
 
-- Felles prosjektregister, samlede opptaksgrenser og kundekoblet rapportering implementeres og verifiseres før produksjonsovergangen.
-- Eksakt felles adresse, aktive grenser og tilbakeføringsprosedyre fylles inn etter verifisert publisering.
+Nyhavna kjører på `dpl_8RtoKwB491jQzDtwTPFCsRRwH6nZ` (kode `11c78d1`). Felles lenke: https://placy-platform.vercel.app/p/nyhavna. Eksisterende https://placy.no/nyhavna virker fortsatt som videresending. Ingen kode eller innlogging kreves; noindex beholdes. De to gamle demo-tilgangene er deaktivert for nye samtaler, mens historikk og recovery beholdes.
+
+Én anonym verifiseringssamtale ga 73 stemmesekunder, normalt stopp, kartoppdateringer og komplett regnskap på Nyhavna: 0,060833 USD stemme + 0,119898 USD svarmodell = 0,180731 USD beregnet leverandørkostnad. Dette er en dokumentert syntetisk test, ikke et kundegjennomsnitt eller en faktura. Alle 60 historiske rader beholdes. Se [sluttverifisering](../research/voice-infrastructure/shared-platform-validation.md).
+
 - Førstepartsadressen `app.placy.no` krever en egen DNS-post hos eksisterende leverandør. Ingen flytting av navneservere er nødvendig. [Vercels veiledning](https://vercel.com/docs/domains/set-up-custom-domain).
 - Endelig kundepris, automatisk fakturering og full kostnadsfordeling for øvrige leverandører er ikke besluttet i denne migreringen.

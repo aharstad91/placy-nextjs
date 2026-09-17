@@ -8,6 +8,8 @@ execution: code
 ---
 # Shared Placy Platform - Plan
 
+**Completed 2026-09-17:** U1–U6 and R1–R10 verified. Shared runtime is live at `https://placy-platform.vercel.app/p/nyhavna`, deployment `dpl_8RtoKwB491jQzDtwTPFCsRRwH6nZ`. [Release evidence](../research/voice-infrastructure/shared-platform-validation.md) records the anonymous paid proof, old tenant disablement, unchanged main production, final map and explicit DNS/commercial boundaries. Work remains locally committed; no Git push.
+
 ## Goal Capsule
 
 - Objective: Nyhavna runs on a reusable Placy platform, and Andreas can identify its customer, project, usage and operating limits without managing a separate customer application.

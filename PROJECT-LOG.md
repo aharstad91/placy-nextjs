@@ -6,6 +6,20 @@
 
 ---
 
+## 2026-09-17 — Nyhavna flyttet til felles Placy-plattform
+
+Nyhavna er publisert på **https://placy-platform.vercel.app/p/nyhavna**, deployment `dpl_8RtoKwB491jQzDtwTPFCsRRwH6nZ`, kodecommit `11c78d1`. Eksisterende https://placy.no/nyhavna og gammel demo-URL virker fortsatt som videresendinger. Anonym tilgang og noindex er beholdt. Hovedprosjektet `placy` er fortsatt på `dpl_ENuhYMxhiAeAEtdSDxvLGQESZY1k`; ingen uvedkommende nettsideendringer, DNS-endring eller Git-push er publisert.
+
+**Felles infrastruktur:** Migrasjon 095 knytter offentlig prosjektslug til eksisterende kunde/prosjekt og en godkjent innholdskilde. Nyhavna bruker `nyhavna-utvikling` / `nyhavna-utvikling_nyhavna`. Nye samtaler får eget formål (public/internal/benchmark); historiske demoer blir ikke kundebruk. Alle opptak går gjennom atomiske grenser for plattform → kunde → prosjekt → tilgang. En privat rapport skiller prosjektbruk fra samlet driftsbelastning og viser ufullstendig forbruk/reservasjoner. De to gamle Nyhavna-tilgangene er deaktivert for nye samtaler etter verifisert overgang. Koteng/Leangen er ikke aktivert eller flyttet til ny eier.
+
+**Verifisert:** 6 av 6 enheter og 10 av 10 krav gjennomgått. 4 511 tester bestått, én valgfri PGlite-test hoppet over på Vercel; separate reelle PostgreSQL-forbindelser har allerede bevist opptaksracer, eierskap og rettigheter. Lint (0 feil / 54 advarsler), TypeScript og bygg bestått. Kodereview fullført med ti lokale perspektiver og uavhengig Claude-gjennomgang; analytics-identitet og feilklassifisering ved databasebrudd rettet, ingen gjenværende kodefunn. Desktop/mobil, kart/bilder, noindex og tilgangsgrenser kontrollert på kandidat og felles adresse. Interaktivt systemkart og driftsoppskrift oppdatert og visuelt kontrollert.
+
+**Kostnadsbevis:** Én kort, anonym lydsamtale i denne migreringen, med svar og kartoppdateringer, normalt stopp og klar startknapp igjen. Regnskapsrad `49645796-4e46-4d28-a823-def54c880b74` er closed/complete og riktig kundekoblet: 73 stemmesekunder, $0.060833 stemme + $0.119898 backend = **$0.180731** beregnet leverandørkostnad. Dette var en syntetisk publiseringsprøve, ikke kundegjennomsnitt/faktura. Ingen aktive samtaler ved sluttkontroll. Alle 60 historiske rader beholdes; de to gamle ufullstendige samtalene beholder $10 i samlet eksponering. Ingen modellendring: GPT-Live-1 / GPT-5.6-Terra / Willow. OpenAI har ingen dokumentert Live Light/Mini; stemmen koster $0.05 per tilkoblet minutt, svarmodellen separat.
+
+**Åpent og avgrenset:** `app.placy.no` krever én DNS-kobling hos PRO ISP; ingen tilgjengelig DNS-skrivetilgang i økten. Kundepris, automatisk fakturering og prosjektfordeling av Vercel/Supabase/kartkostnader er ikke besluttet. Ingen høy-lastsertifisering. Historisk manglende sluttforbruk skal avstemmes mot provider-fakturagrunnlag uten å slette eller omklassifisere historikk. Fysisk mikrofon/høyttaler og menneskelig stemmekvalitet er fortsatt Andreas' praktiske prøve.
+
+Dokumentasjon: [sluttverifisering](docs/research/voice-infrastructure/shared-platform-validation.md), [maskinlesbart bevis](docs/research/voice-infrastructure/shared-platform-release-2026-09-17.json), [systemer og drift](docs/architecture/shared-platform.md). Kode og dokumentasjon lagres lokalt i `feat/voice-infrastructure`, worktree `placy-voice-infrastructure`.
+
 ## 2026-09-17 — Kort Nyhavna-lenke på placy.no
 
 Andreas ba om en placy.no-lenke. **https://placy.no/nyhavna** er nå publisert som prosjektstyrt 307-videresending i Vercel-prosjektet `placy` (versjon `86ff97bf-9e0f-4f74-9fae-019474c38f6c`). Den eksisterende apex→www-videresendingen beholdes, og `/nyhavna` åpner så stemmen på `placy-nyhavna.vercel.app/demo/nyhavna-lokal`. Hele kjeden kontrollert anonymt: 307 → 307 → 200, `noindex, nofollow` på målsiden, ingen kodeskjerm. Ingen kode-deploy, DNS-endring eller Git-push nødvendig.

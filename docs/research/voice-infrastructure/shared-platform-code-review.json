@@ -1,0 +1,384 @@
+{
+  "status": "complete",
+  "verdict": "Ready with fixes",
+  "verdict_reason": "One confirmed P2 remains: distinguish temporary registry outages from unknown projects (#1). The analytics defect was repaired and independently refuted at 4c1e609. Benchmark-purpose refusal is intentional and remains unchanged. This is a code-review receipt, not release approval: the explicitly deferred U5 paid-call/cutover and U6 map gates still require completion.",
+  "scope": {
+    "base": "e58e39c",
+    "branch": "feat/voice-infrastructure",
+    "head_sha": "a86cad615085edc4d62f8fb472aa4b0874532f21",
+    "reviewed_revision": "4c1e609154ed71bd295115ff8ed218ceb3593bee",
+    "pr_url": null,
+    "files_changed": 32,
+    "mode": "standalone",
+    "supplemental_diff": "fix-4c1e609.diff",
+    "note": "head_sha preserves dispatch provenance; final validation includes the parent analytics repair and supplemental provision.test.ts isolation."
+  },
+  "intent": "Migrate Nyhavna to one reusable server-resolved Placy runtime with canonical customer/project/purpose attribution, mandatory atomic platform/customer/project/tenant admission, immutable historical accounting, and private usage/headroom reporting. Preserve anonymous noindex same-origin pages, legacy links, Nyhavna content and model configuration without republishing unrelated main-site changes.",
+  "intent_confidence": "explicit",
+  "reviewers": [
+    "correctness",
+    "project-standards",
+    "testing",
+    "maintainability",
+    "learnings",
+    "security",
+    "performance",
+    "api-contract",
+    "data-migration",
+    "reliability",
+    "adversarial-claude"
+  ],
+  "findings": [
+    {
+      "#": 1,
+      "autofix_class": "manual",
+      "confidence": 75,
+      "evidence": [
+        "app/p/[slug]/page.tsx:20: if (error instanceof VoiceProjectError) notFound();",
+        "lib/live/projects.ts:98: } catch { throw new VoiceProjectError(); }",
+        "lib/live/projects.ts:34-36: readBinding uses AbortSignal.timeout(8000) and throws VoiceProjectError on Supabase error.",
+        "app/demo/nyhavna-lokal/page.tsx redirects hosted requests to /p/nyhavna before the bundled loader."
+      ],
+      "file": "app/p/[slug]/page.tsx",
+      "first_evidence": "app/p/[slug]/page.tsx:20: `if (error instanceof VoiceProjectError) notFound();`",
+      "independent_reviewers": [
+        "adversarial-claude"
+      ],
+      "line": 20,
+      "owner": "downstream-resolver",
+      "pre_existing": false,
+      "requires_verification": true,
+      "reviewers": [
+        "adversarial-claude"
+      ],
+      "severity": "P2",
+      "suggested_fix": "Keep invalid, disabled and unknown projects as 404; distinguish registry transport failures internally and render a generic retryable unavailable page/status without exposing database detail. Add a page-level outage versus unknown-slug test.",
+      "title": "Registry DB outage turns both the new and legacy project pages into 404s",
+      "why_it_matters": "A registry transport failure is converted to VoiceProjectError and rendered as notFound() on both the canonical route and the hosted legacy redirect. Visitors see a missing-project page for a temporary dependency outage; a retryable unavailable response would preserve the fail-closed admission boundary without misclassifying the failure.",
+      "validation_status": "confirmed",
+      "validation_reason": "With hosted voice enabled and a registry read failing, lib/live/projects.ts:34-35,98 converts the dependency failure into VoiceProjectError and app/p/[slug]/page.tsx:20 renders notFound(), while the newly added app/demo/nyhavna-lokal/page.tsx:26 redirect exposes the legacy page to the same failure; the read-failed resolver test passes at 4c1e609, but production outage incidence was not measured.",
+      "protected_subject": "public-contract"
+    }
+  ],
+  "actionable_findings": [
+    {
+      "#": 1,
+      "autofix_class": "manual",
+      "confidence": 75,
+      "evidence": [
+        "app/p/[slug]/page.tsx:20: if (error instanceof VoiceProjectError) notFound();",
+        "lib/live/projects.ts:98: } catch { throw new VoiceProjectError(); }",
+        "lib/live/projects.ts:34-36: readBinding uses AbortSignal.timeout(8000) and throws VoiceProjectError on Supabase error.",
+        "app/demo/nyhavna-lokal/page.tsx redirects hosted requests to /p/nyhavna before the bundled loader."
+      ],
+      "file": "app/p/[slug]/page.tsx",
+      "first_evidence": "app/p/[slug]/page.tsx:20: `if (error instanceof VoiceProjectError) notFound();`",
+      "independent_reviewers": [
+        "adversarial-claude"
+      ],
+      "line": 20,
+      "owner": "downstream-resolver",
+      "pre_existing": false,
+      "requires_verification": true,
+      "reviewers": [
+        "adversarial-claude"
+      ],
+      "severity": "P2",
+      "suggested_fix": "Keep invalid, disabled and unknown projects as 404; distinguish registry transport failures internally and render a generic retryable unavailable page/status without exposing database detail. Add a page-level outage versus unknown-slug test.",
+      "title": "Registry DB outage turns both the new and legacy project pages into 404s",
+      "why_it_matters": "A registry transport failure is converted to VoiceProjectError and rendered as notFound() on both the canonical route and the hosted legacy redirect. Visitors see a missing-project page for a temporary dependency outage; a retryable unavailable response would preserve the fail-closed admission boundary without misclassifying the failure.",
+      "validation_status": "confirmed",
+      "validation_reason": "With hosted voice enabled and a registry read failing, lib/live/projects.ts:34-35,98 converts the dependency failure into VoiceProjectError and app/p/[slug]/page.tsx:20 renders notFound(), while the newly added app/demo/nyhavna-lokal/page.tsx:26 redirect exposes the legacy page to the same failure; the read-failed resolver test passes at 4c1e609, but production outage incidence was not measured.",
+      "protected_subject": "public-contract"
+    }
+  ],
+  "triage_groups": [],
+  "pre_existing_findings": [],
+  "requirements_completeness": {
+    "plan": "docs/plans/2026-09-17-1212-feat-shared-placy-platform-plan.md",
+    "source": "explicit",
+    "requirements": [
+      {
+        "id": "R1",
+        "status": "met",
+        "evidence": "Registry, canonical ownership and report-product resolution implemented; repaired product UUID checked at 4c1e609."
+      },
+      {
+        "id": "R2",
+        "status": "met",
+        "evidence": "Page, readiness and paid start share the fail-closed resolver; browser accounting fields remain server-owned. Finding #1 concerns outage presentation."
+      },
+      {
+        "id": "R3",
+        "status": "met",
+        "evidence": "Two distinct content fixtures test content, conversation and accounting isolation; candidate desktop/mobile checks passed. Final paid-call release verification remains in U5."
+      },
+      {
+        "id": "R4",
+        "status": "met",
+        "evidence": "Immutable canonical identity and explicit purpose are added for new sessions; historical rows retain their meaning."
+      },
+      {
+        "id": "R5",
+        "status": "met",
+        "evidence": "Platform/customer/project/tenant admission uses fixed-order locks; independent PostgreSQL race and role proof passed."
+      },
+      {
+        "id": "R6",
+        "status": "met",
+        "evidence": "Fencing, recovery, final usage draining and old incomplete liabilities remain enforced."
+      },
+      {
+        "id": "R7",
+        "status": "met",
+        "evidence": "Private paginated usage and headroom reports distinguish purpose, known supplier cost, incomplete exposure and unknown external allocations."
+      },
+      {
+        "id": "R8",
+        "status": "partially addressed",
+        "evidence": "Shared routes, legacy redirects and anonymous/noindex behavior implemented and candidate-tested. Alias promotion/cutover intentionally awaits U5; unrelated main-site deployment remains protected."
+      },
+      {
+        "id": "R9",
+        "status": "partially addressed",
+        "evidence": "Repeatable ownership-preserving seeds and mandatory aggregate admission implemented. Disable old public admission after candidate proof during the planned cutover."
+      },
+      {
+        "id": "R10",
+        "status": "partially addressed",
+        "evidence": "Interactive current/target map exists and initial interaction/visual checks passed; update and recheck actual topology after cutover in U6."
+      }
+    ],
+    "implementation_units": [
+      {
+        "id": "U1",
+        "status": "met",
+        "evidence": "Migration and independent database race/role/immutability proof complete."
+      },
+      {
+        "id": "U2",
+        "status": "met",
+        "evidence": "Shared resolver and hosted start isolation implemented; analytics repair independently validated."
+      },
+      {
+        "id": "U3",
+        "status": "met",
+        "evidence": "Shared page and browser protocol implemented; one P2 outage presentation fix remains (#1)."
+      },
+      {
+        "id": "U4",
+        "status": "met",
+        "evidence": "Filtered usage, unfiltered operational headroom and pagination implemented and tested."
+      },
+      {
+        "id": "U5",
+        "status": "partially addressed",
+        "evidence": "Candidate browser and mechanical evidence recorded. Bounded anonymous paid-call/ledger proof, final rebuild after repair, promotion/shared alias and old admission disablement remain intentional release gates."
+      },
+      {
+        "id": "U6",
+        "status": "partially addressed",
+        "evidence": "Onboarding, operations and current/target documentation exist. Final live topology/map refresh and verification follow U5."
+      }
+    ],
+    "intentional_remaining_work": "U5 and the post-cutover part of U6 are explicitly deferred release work in the invocation, not undisclosed omissions or new code-review findings."
+  },
+  "learnings": [
+    {
+      "type": "known_pattern",
+      "title": "Preserve JSONB keys during seed changes",
+      "citation": "docs/solutions/database-issues/jsonb-merge-vs-overwrite-seed-scripts-20260413.md",
+      "note": "Fresh immutable snapshots and ON CONFLICT DO NOTHING avoid overwriting existing configuration."
+    },
+    {
+      "type": "known_pattern",
+      "title": "Vercel cache survives deployments",
+      "citation": "docs/solutions/integration-issues/vercel-data-cache-stale-across-deployments-20260215.md",
+      "note": "Dynamic routes and no-store readiness follow the documented pattern; deployment verification should confirm live registry changes are observed."
+    },
+    {
+      "type": "known_pattern",
+      "title": "Dynamic server pages for mutable data",
+      "citation": "docs/solutions/architecture-patterns/nextjs-server-component-caching-force-dynamic-20260208.md",
+      "note": "The shared route is force-dynamic and React cache deduplicates only within a request."
+    },
+    {
+      "type": "known_pattern",
+      "title": "Read-only reports still need complete pagination",
+      "citation": "docs/solutions/performance-issues/dry-run-koster-fullt-i-places-backfill.md",
+      "note": "Session/event cursors and policy pagination reject non-advancing pages; tests exceed 1,000 rows and report reads make no provider calls."
+    },
+    {
+      "type": "known_pattern",
+      "title": "Preserve compatibility during route migration",
+      "citation": "docs/solutions/architecture-patterns/eiendom-url-arkitektur-migration-20260307.md",
+      "note": "The hosted legacy redirect preserves query parameters and the new route declares noindex while remaining crawlable."
+    }
+  ],
+  "agent_native_gaps": [],
+  "deployment_notes": [],
+  "residual_risks": [],
+  "testing_gaps": [
+    "Default npm/Vercel tests can skip optional PGlite, and the PGlite branch is sequential. Independent PostgreSQL race/role checks have passed for this migration but must be rerun when admission SQL changes; do not interpret the default test banner as a new cross-connection proof.",
+    "Remaining explicit U5 gate: one bounded anonymous real call with stop/restart behavior and ledger customer/project/public-purpose reconciliation, followed by shared alias promotion and old public tenant disablement. Parent owns this release verification."
+  ],
+  "coverage": {
+    "depth": "full",
+    "reviewer_selection": [
+      {
+        "reviewer": "correctness",
+        "tier": "session",
+        "reason": "always-on"
+      },
+      {
+        "reviewer": "project-standards",
+        "tier": "mid-tier",
+        "reason": "root CLAUDE and AGENTS govern changes"
+      },
+      {
+        "reviewer": "testing",
+        "tier": "mid-tier",
+        "reason": "changed tests, DB race verifier and browser protocol"
+      },
+      {
+        "reviewer": "maintainability",
+        "tier": "mid-tier",
+        "reason": "shared resolver/report/SQL abstractions and 756 executable changed lines"
+      },
+      {
+        "reviewer": "learnings",
+        "tier": "mid-tier",
+        "reason": "matching cache, seed preservation and pagination/cost learnings"
+      },
+      {
+        "reviewer": "security",
+        "tier": "session",
+        "reason": "public project input and service-only accounting boundary"
+      },
+      {
+        "reviewer": "performance",
+        "tier": "mid-tier",
+        "reason": "aggregate SQL queries and paginated operational report"
+      },
+      {
+        "reviewer": "api-contract",
+        "tier": "mid-tier",
+        "reason": "health/start query and WebSocket contract changes"
+      },
+      {
+        "reviewer": "data-migration",
+        "tier": "mid-tier",
+        "reason": "migration 095 adds schema and replaces reserve"
+      },
+      {
+        "reviewer": "reliability",
+        "tier": "mid-tier",
+        "reason": "fail-closed readiness and admission, timeouts and recovery boundary"
+      },
+      {
+        "reviewer": "adversarial-claude",
+        "tier": "cross-model",
+        "reason": "money, persistence, concurrency and public contract boundaries"
+      }
+    ],
+    "standards": {
+      "criteria": [
+        {
+          "path": "CLAUDE.md",
+          "governs": "all changed files"
+        },
+        {
+          "path": "AGENTS.md",
+          "governs": "all changed files"
+        }
+      ],
+      "fallback_named": true,
+      "not_run_reason": null
+    },
+    "compound_packs": {
+      "roots": [],
+      "warnings": [],
+      "errors": []
+    },
+    "cross_model_outcome": "folded",
+    "cross_model": "Independent cross-model adversarial review via claude route: requested claude-opus-5 at high; model_actual=claude-opus-5, effort_actual=unverified, receipt_supported=true, independence_verified=true. Five candidate findings enter merge and validation.",
+    "peer_cleanup": "All peer jobs terminal and job directories deleted, as recorded by dispatch.",
+    "validation": {
+      "outcome": "verdicts",
+      "selected": 3,
+      "confirmed": 2,
+      "rejected": 1,
+      "unresolved": 0,
+      "malformed": 0,
+      "failed": 0,
+      "shortcut_skipped": 0,
+      "bound_exceeded": false,
+      "shortcut_basis": "No retained candidate had both ordinary-reviewer and independently verified cross-model corroboration; all three entered one validator batch.",
+      "verdicts": [
+        {
+          "#": 1,
+          "status": "confirmed",
+          "protected_subject": "public-contract",
+          "reason": "With hosted voice enabled and a registry read failing, lib/live/projects.ts:34-35,98 converts the dependency failure into VoiceProjectError and app/p/[slug]/page.tsx:20 renders notFound(), while the newly added app/demo/nyhavna-lokal/page.tsx:26 redirect exposes the legacy page to the same failure; the read-failed resolver test passes at 4c1e609, but production outage incidence was not measured."
+        },
+        {
+          "#": 2,
+          "status": "confirmed",
+          "protected_subject": "authorization-authentication",
+          "reason": "A valid signed benchmark cookie is preserved by lib/live/hosted-access.ts:57 and forces benchmark resolution in app/api/prototype/live/route.ts:50 and lib/live/hosted-control.ts:148, so a public-enabled project with benchmark_tenant_id=null fails at lib/live/projects.ts:75-76 despite its page resolving publicly at app/p/[slug]/page.tsx:18; passing tests at 4c1e609 exercise the signed-cookie selection and public-only fixture rejection separately, and production incidence was not measured."
+        },
+        {
+          "#": 3,
+          "status": "rejected",
+          "protected_subject": "public-contract",
+          "reason": "The alleged container-ID-as-product-ID trigger is removed in 4c1e609: lib/live/projects.ts:44,84,94 reads the project's report product, verifies ownership/type, and assigns id:product.id; an independent Vitest 3.2.6 run on Node v23.3.0 using the repository jsdom configuration and --no-cache passed lib/live/projects.test.ts:22-32, exercising two distinct canonical project IDs with report UUIDs and asserting real parseLogEventInput acceptance plus unchanged tenant project attribution, directly refuting the original mapping failure."
+        }
+      ],
+      "rejection_checked": "Report leaf inspected 4c1e609 lib/live/projects.ts:44,84,94 and projects.test.ts:22-32. The report UUID is separate from tenant.project_id and the real event parser is asserted to accept both fixtures. The protected #3 rejection is supported by the cited repair and discriminating validator test.",
+      "protected_subject_reclassifications": [],
+      "degraded_blockers": []
+    },
+    "contract_reconciliations": [
+      {
+        "#": 2,
+        "validator_status": "confirmed",
+        "final_disposition": "suppressed after explicit contract clarification",
+        "protected_subject": "authorization-authentication",
+        "reason": "The validator confirmed the signed benchmark-cookie behavior, not a violation of the intended accounting contract. The invoking constraint explicitly requires purpose to derive from the signed role and missing benchmark admission to fail closed. lib/live/projects.test.ts:82-85 asserts that refusal; lib/live/hosted-access.ts:55-58 preserves signed identity and supplies public access when no valid cookie exists. Silent public fallback would misclassify internal tests. The operator can clear placy_demo_access for the shared host or use a fresh browser session to exercise anonymous public access; docs/research/voice-infrastructure/operations.md:44 already specifies health checks without a cookie. No authorization change is requested. Any more explicit cookie-reset guidance belongs to the planned U6 operations update, not a P2 access defect."
+      }
+    ],
+    "suppressed_by_confidence": {},
+    "mode_aware_demotions": 1,
+    "first_evidence_backfilled": 0,
+    "first_evidence_demoted": 0,
+    "malformed_findings": 0,
+    "malformed_returns": 0,
+    "failed_reviewers": [],
+    "timed_out_reviewers": [],
+    "rejected_during_merge": [
+      {
+        "title": "Platform budget never ages out; one tenant's stuck sessions deny all customers",
+        "reason": "Incompatible with explicit R6/AE4/KTD5 retention of unresolved platform liability."
+      },
+      {
+        "title": "Cover isochrone failure forwarding",
+        "reason": "Unchanged provisioning behavior; supplementary dependency isolation does not create the claimed regression."
+      }
+    ],
+    "notes": [
+      "Full spine required by migration and executable diff size; root CLAUDE.md and AGENTS.md used as the standards fallback.",
+      "All ten local reviewers and the independent Claude peer completed. Testing artifact leading-plus formatting was normalized from its valid compact return; raw original retained.",
+      "No local apply authorized. Report leaf made no project edits, git writes, provider calls or deployments.",
+      "Findings #1 and #2 were confirmed on code evidence; production incidence was not measured. #2 is removed from the defect/actionable set after reconciling the explicit signed-purpose contract. #3 is removed after verified repair. Stable #1 is retained; the now-single-item triage group is pruned.",
+      "Parent reports candidate suite 4495 passed and one explicitly optional PGlite skip, plus TypeScript and production build success. Independent PostgreSQL connection race/role proof and local PGlite passed. The default test command alone does not repeat the concurrency proof.",
+      "Parent reports 91 focused tests passed after analytics repair 4c1e609; full candidate rebuild after that repair remains parent-owned.",
+      "Parent reports candidate dpl_7z8xRdGPxjFvVbgRjhJGUiJietoM verified at desktop 1440x900 and mobile 390x844: maps/assets/branding loaded, no JS/local HTTP errors, no overflow, noindex, refresh, unknown-project 404 and legacy query-preserving redirect 200.",
+      "Parent reports anonymous health 200 without a cookie, wrong-origin control 404, recovery 401, admin 307 and local POST 404. Paid voice behavior and canonical completed-ledger attribution still require the bounded U5 call.",
+      "Supplemental provision.test.ts dependency isolation included; production provision.ts is unchanged against e58e39c. Generated next-env churn was restored and excluded.",
+      "Age-based removal of unresolved liability was rejected because R6/AE4/KTD5 explicitly retain it. Speculative pool exhaustion, future-history lock saturation and malformed-row risks were not admitted without a demonstrated harmful trigger.",
+      "No agent-native, PR-comment or Swift/iOS review applies; no deployment-verification specialist was dispatched. Deployment notes array is therefore empty; planned release verification is recorded in requirements and testing gaps."
+    ]
+  },
+  "artifact_path": "/tmp/compound-engineering-501/ce-code-review/20260917-125511-f980b544",
+  "run_id": "20260917-125511-f980b544"
+}

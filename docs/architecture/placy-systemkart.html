@@ -18,7 +18,7 @@
     }
   </style>
   <h2>Placy · systemkart</h2>
-  <div class="viz-row text-small"><span class="viz-badge">Kontrollert 17. september 2026</span><span>Felles plattform: under planlegging</span></div>
+  <div class="viz-row text-small"><span class="viz-badge">Kontrollert 17. september 2026</span><span>Nyhavna er live på felles plattform</span></div>
   <div class="nav nav-pills" role="tablist" aria-label="Systemvisning">
     <button type="button" class="nav-link active" id="placy-now-tab" role="tab" aria-controls="placy-now-panel" aria-selected="true">Slik er det nå</button>
     <button type="button" class="nav-link" id="placy-next-tab" role="tab" aria-controls="placy-next-panel" aria-selected="false">Felles plattform</button>
@@ -29,7 +29,7 @@
     <div class="map-detail" aria-live="polite" data-detail="now"></div>
   </div>
   <div id="placy-next-panel" role="tabpanel" aria-labelledby="placy-next-tab" hidden>
-    <div class="system-diagram" data-diagram="next" aria-label="Foreslått felles plattform. Dette er ikke implementert ennå."></div>
+    <div class="system-diagram" data-diagram="next" aria-label="Felles plattform og prosjektgrenser. Neste kunde er ikke aktivert."></div>
     <div class="map-detail" aria-live="polite" data-detail="next"></div>
   </div>
   <div id="placy-cost-panel" role="tabpanel" aria-labelledby="placy-cost-tab" hidden>
@@ -43,7 +43,7 @@
       <span class="cost-arrow" aria-hidden="true">→</span>
       <div class="cost-stage"><span>Samtaler / år</span><output id="placy-call-count" class="tabular-nums">5 000</output><span class="text-small">Oppstart og AI-arbeid</span></div>
       <span class="cost-arrow" aria-hidden="true">→</span>
-      <div class="cost-stage"><span>Stemmeminutter / år</span><output id="placy-minute-count" class="tabular-nums">15 000</output><span class="text-small">Målt lydbruk + separat AI-arbeid</span></div>
+      <div class="cost-stage"><span>Tilkoblede stemmeminutter / år</span><output id="placy-minute-count" class="tabular-nums">15 000</output><span class="text-small">GPT-Live: <output id="placy-voice-cost" class="tabular-nums">750 USD</output> + separat AI-arbeid</span></div>
     </div>
     <span class="viz-badge">Regneeksempel · ikke målt trafikk eller pristilbud</span>
     <hr>
@@ -60,11 +60,11 @@
         now: {
           nodes: [
             ['browser','Besøkende','Nettleser og mikrofon',1,0,'Besøkende','Viser siden og kartet. Lyd går direkte til OpenAI; Placy styrer innhold, kart og forbruksgrenser.'],
-            ['main','placy.no','Eksisterende Vercel-app',0,1,'Placy-hovedsiden','Kjører separat fra Nyhavna. /nyhavna er i dag en videresending til demoens Vercel-adresse.'],
-            ['voice','Nyhavna-demo','Egen Vercel-app',1,2,'Nyhavna-appen','Serverer demoen, starter samtaler, utfører verktøy og styrer kartet. Maks 5 samtidige offentlige demosamtaler.'],
+            ['main','placy.no','Eksisterende Vercel-app',0,1,'Placy-hovedsiden','Eldre nettsted på egen publisering. /nyhavna videresender til stemmeappen. DNS ligger hos PRO ISP; app.placy.no er ikke koblet til ennå.'],
+            ['voice','Felles Placy-app','Vercel · Nyhavna først',1,2,'Felles runtime','Live på placy-platform.vercel.app/p/nyhavna. Samme app kan ta inn flere prosjekter. Maks 5 offentlige Nyhavna-samtaler og 8 totalt; dette er grenser, ikke en full lasttest.'],
             ['maps','Google / Mapbox','Kart og kartdata',2,1,'Karttjenestene','Nettleseren henter kart fra Google eller Mapbox avhengig av kartvisning. Kartbruk er en egen kostnad.'],
-            ['live','GPT-Live + AI-modell','OpenAI',2,3,'OpenAI','GPT-Live-1 håndterer talesamtalen. GPT-5.6-Terra arbeider med spørsmål og verktøy. Begge delene koster.'],
-            ['db','Supabase','Felles database',0,3,'Databasen','Har kunder, prosjekter og samtaleregnskap. Stemmens nye kundekobling mangler fortsatt; dagens bruk er intern demo.'],
+            ['live','GPT-Live + AI-modell','OpenAI',2,3,'OpenAI','GPT-Live-1 koster 0,05 USD per tilkoblet minutt. GPT-5.6-Terra besvarer spørsmål og bruker verktøy, med separat tokenkostnad. Ingen Live Light er dokumentert.'],
+            ['db','Supabase','Felles database',0,3,'Databasen','Felles prosjektregister, kundeidentitet og samtaleregnskap. Nye samtaler knyttes til kunde, prosjekt og formål. Historiske demoer beholdes separat.'],
             ['files','Nyhavna-filer','Kuraterte fakta og bilder',1,4,'Kunnskapsgrunnlaget','Demoens kuraterte fakta ligger i versjonerte filer i kodebasen og følger publiseringen. De ligger ikke alle i databasen.']
           ],
           edges:[['browser','main'],['main','voice'],['browser','voice'],['browser','maps'],['browser','live'],['voice','live'],['voice','db'],['files','voice']],
@@ -73,13 +73,13 @@
         next: {
           nodes:[
             ['nyhavna','Nyhavna','Kunde → prosjekt',0,0,'Nyhavna','Første prosjekt på felles plattform. Eksisterende kunde- og prosjektidentitet brukes i innhold og regnskap.'],
-            ['koteng','Koteng / Leangen','Neste kunde · ikke aktivert',2,0,'Neste kunde','Opprettes som konfigurasjon og innhold i samme plattform. Ingen ny kodekopi eller egen kundeserver.'],
-            ['platform','Felles Placy-app','Vercel · samme programvare',1,1,'Felles Placy','Samme kart, stemmemotor og oppdateringer for alle prosjekter. Publiserings- og domeneløsningen må fortsatt ferdigstilles.'],
+            ['koteng','Neste prosjekter','Koteng · Leangen',2,0,'Ikke aktivert','Nye prosjekter tas inn i samme app. Koteng er ikke opprettet her; Leangenbukta står fortsatt under demokunden placy-demo. Eierskap må bekreftes før aktivering.'],
+            ['platform','Felles Placy-app','Vercel · samme programvare',1,1,'Felles Placy','Samme kart, stemmemotor og oppdateringer for alle prosjekter. Nyhavna er første binding. Førstepartsadressen app.placy.no gjenstår hos DNS-leverandøren.'],
             ['knowledge','Innhold per prosjekt','Fakta, profil og funksjoner',0,2,'Prosjektinnhold','Felles steder kan gjenbrukes. Prosjektets egne fakta og innstillinger holdes adskilt og velges på serveren.'],
-            ['limits','Grenser før oppstart','Placy → kunde → prosjekt',2,2,'Forbruksgrenser','Planlagt: sjekk felles kapasitet og kundens/prosjektets budsjett før betalt oppstart. Ett prosjekt skal ikke tømme alles kapasitet.'],
-            ['providers','Felles leverandører','OpenAI · Google · Mapbox',2,3,'Leverandørtjenester','Alle prosjekter bruker samme integrasjoner. Tilgangsnøkler oppbevares på serveren; kundene får ingen hemmelige nøkler.'],
+            ['limits','Grenser før oppstart','Placy → kunde → prosjekt',2,2,'Forbruksgrenser','Databasen kontrollerer alle grensene samlet før betalt start. Placy: 8 samtidige og 200 USD i rullerende eksponering. Interne tester og uavklart forbruk teller også.'],
+            ['providers','Felles leverandører','OpenAI · Google · Mapbox',2,3,'Leverandørtjenester','Felles integrasjoner. OpenAI- og databasehemmeligheter ligger på serveren. Kart har også egne nettlesernøkler. Kartkostnader er ennå ikke fordelt per prosjekt.'],
             ['ledger','Felles Supabase','Identitet + forbruksregnskap',0,3,'Forbruksregnskap','Hver samtale får kunde, prosjekt og bruksformål. Kundebruk og interne tester kan skilles i rapportene.'],
-            ['operator','Andreas / drift','Oversikt per kunde og totalt',1,4,'Driftsoversikt','Skal vise målt forbruk, beregnet kostnad, ufullstendige målinger og gjenværende kapasitet. Prisavtaler er et separat lag.']
+            ['operator','Andreas / drift','Oversikt per kunde og totalt',1,4,'Driftsoversikt','Privat rapport viser prosjektbruk, beregnet kostnad, ufullstendige målinger og gjenværende kapasitet. Foreløpig et operatørverktøy, ikke et kundedashboard. Prisavtaler bestemmes separat.']
           ],
           edges:[['nyhavna','platform'],['koteng','platform'],['knowledge','platform'],['platform','limits'],['limits','providers'],['platform','ledger'],['providers','ledger'],['ledger','operator']],
           selected:'platform'
@@ -119,7 +119,7 @@
       const fmt=n=>new Intl.NumberFormat('nb-NO').format(n);
       function updateCosts(){
         const v=Number(root.querySelector('#placy-visits').value),s=Number(root.querySelector('#placy-share').value),m=Number(root.querySelector('#placy-length').value),calls=Math.round(v*s/100);
-        const vals={'placy-visits-out':fmt(v),'placy-share-out':s+' %','placy-length-out':String(m),'placy-visit-count':fmt(v),'placy-call-count':fmt(calls),'placy-minute-count':fmt(calls*m)};
+        const vals={'placy-visits-out':fmt(v),'placy-share-out':s+' %','placy-length-out':String(m),'placy-visit-count':fmt(v),'placy-call-count':fmt(calls),'placy-minute-count':fmt(calls*m),'placy-voice-cost':fmt(calls*m*0.05)+' USD'};
         Object.entries(vals).forEach(([id,val])=>root.querySelector('#'+id).textContent=val);
       }
       root.querySelectorAll('input').forEach(input=>input.addEventListener('input',updateCosts));draw('now');updateCosts();
