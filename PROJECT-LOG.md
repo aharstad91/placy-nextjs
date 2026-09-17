@@ -6,6 +6,12 @@
 
 ---
 
+## 2026-09-17 — Nyhavna åpnes direkte uten adgangskode
+
+Andreas ba om å fjerne kodefriksjonen og beholde noindex for direkte deling. Kodeskjermen er fjernet; anonym stemmetilgang bruker demo-tenantens eksisterende forbruks-, samtidighets- og samtalegrenser. Intern benchmark krever fortsatt signert tilgang. `noindex, nofollow` finnes både i HTML og HTTP-header; robots.txt lar søkemotorer hente akkurat demosiden for å lese direktivet.
+
+Publisert på **https://placy-nyhavna.vercel.app/demo/nyhavna-lokal**, deployment `dpl_3CcKcvs7pw8zTkDDVEDnRsLUGYxw`. Lint, 4 454 tester, TypeScript og bygg bestått. Anonym nettleser gjennomførte ekte lydsamtale uten cookie: svar, kartoppdatering og normal avslutning, 69 stemmesekunder og komplett regnskap ($0.177338 beregnet provider-kostnad). Origin-kontroll, recovery-autentisering og deaktivert admin kontrollert. Den lokale demo-informasjonsfilen har nå bare lenken og beskjed om at kode ikke trengs. [Verifisering](docs/research/voice-infrastructure/public-access-2026-09-17.md). Ingen Git-push; tidligere regnskapsavvik er uendret dokumentert i første publiseringsrapport.
+
 ## 2026-09-17 — Nyhavna-stemmen ferdig validert og publisert på Vercel
 
 Andreas ba om å fortsette stemmearbeidet for Nyhavna og få det live. Arbeidet er gjort i `placy-voice-infrastructure`, `feat/voice-infrastructure`, uten å berøre parallelle demoer eller pushe Git. Den faste adressen er **https://placy-nyhavna.vercel.app/demo/nyhavna-lokal**, nå på deployment `dpl_4ARVwaVQVPUTPhSFVGDJ1axr6191`. Demo-koden ligger alene i lokal ignorert `.context/nyhavna-demo-access.txt` (0600); ikke del hele secrets-filen. Ingen melding sendt til Lene.

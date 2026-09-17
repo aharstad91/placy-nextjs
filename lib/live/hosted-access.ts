@@ -50,8 +50,13 @@ export function verifyDemoAccess(token: string | undefined, now = Date.now()): D
 }
 
 export function requestDemoAccess(request: Request, now = Date.now()): DemoAccess | null {
+  if (!hostedVoiceEnabled()) return null;
   const token = request.headers.get('cookie')?.split(';').map(part => part.trim()).find(part => part.startsWith(`${DEMO_ACCESS_COOKIE}=`))?.slice(DEMO_ACCESS_COOKIE.length + 1);
-  return verifyDemoAccess(token, now);
+  // Shared demo links need no login. Only a signed cookie can grant the
+  // separate benchmark role; paid admission remains controlled by the ledger.
+  return verifyDemoAccess(token, now) ?? {
+    role: 'demo', visitorId: randomUUID(), expiresAt: now + DEMO_ACCESS_MAX_AGE * 1000, version: 'public-demo-v1',
+  };
 }
 
 export function sameOrigin(request: Request) {

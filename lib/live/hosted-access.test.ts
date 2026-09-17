@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { issueDemoAccess, verifyDemoAccess, hasHostedAccess, DEMO_ACCESS_COOKIE } from '@/lib/live/hosted-access';
+import { issueDemoAccess, verifyDemoAccess, requestDemoAccess, hasHostedAccess, DEMO_ACCESS_COOKIE } from '@/lib/live/hosted-access';
 
 afterEach(() => vi.unstubAllEnvs());
 function configure() {
@@ -8,6 +8,27 @@ function configure() {
   vi.stubEnv('PLACY_DEMO_COOKIE_SECRET', 'a-signing-key-with-at-least-32-characters');
 }
 describe('hosted demo access', () => {
+  it('opens ordinary demo access without cookies while preserving origin and shutdown checks', () => {
+    configure();
+    vi.stubEnv('PLACY_DEMO_ACCESS_CODE', '');
+    const request = new Request('https://demo.example/api/live/control', { headers: { origin: 'https://demo.example' } });
+    expect(requestDemoAccess(request)?.role).toBe('demo');
+    expect(hasHostedAccess(request)).toBe(true);
+    expect(hasHostedAccess(new Request(request.url))).toBe(false);
+    expect(hasHostedAccess(new Request(request.url, { headers: { origin: 'https://other.example' } }))).toBe(false);
+    vi.stubEnv('PLACY_HOSTED_VOICE', 'false');
+    expect(requestDemoAccess(request)).toBeNull();
+    expect(hasHostedAccess(request)).toBe(false);
+  });
+  it('does not let an unsigned or expired benchmark cookie elevate public demo access', () => {
+    configure();
+    vi.stubEnv('PLACY_BENCHMARK_ACCESS_CODE', 'separate-test-code');
+    const token = issueDemoAccess('separate-test-code', 1000)!;
+    const request = (cookie: string) => new Request('https://demo.example', { headers: { cookie: `${DEMO_ACCESS_COOKIE}=${cookie}` } });
+    expect(requestDemoAccess(request(token), 1001)?.role).toBe('benchmark');
+    expect(requestDemoAccess(request(token + 'tampered'), 1001)?.role).toBe('demo');
+    expect(requestDemoAccess(request(token), 1000 + 15 * 86400000)?.role).toBe('demo');
+  });
   it('accepts an issued cookie only for same-origin requests', () => {
     configure();
     const token = issueDemoAccess('a-demo-code-with-enough-entropy', 1000)!;

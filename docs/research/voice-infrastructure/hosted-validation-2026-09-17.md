@@ -1,5 +1,7 @@
 # Nyhavna hosted voice validation — 2026-09-17
 
+Follow-up: the shared demo now opens without an access code and declares `noindex, nofollow`. See [public-access verification](public-access-2026-09-17.md). The authenticated tests below describe the initial release.
+
 Nyhavna is live for internal demo use at https://placy-nyhavna.vercel.app/demo/nyhavna-lokal. All six short scenarios have three passing executions; duration checks passed at 5/15/26 minutes, along with concurrent isolation, disconnect, silence and controlled ownership loss. Access requires the demo code. This is automated functional evidence, not human voice-quality validation or production reliability at scale.
 
 ## Revision and deployment
