@@ -32,6 +32,9 @@ export async function writeTestDemo(options: {
   const directory = await mkdtemp(join(tmpdir(), `placy-${id}-`));
   const board = {
     schemaVersion: 1,
+    // Boligprosjekt er den eneste implementerte profilen; en test som trenger
+    // en annen setter den selv gjennom `board`.
+    profile: "housing-development",
     id,
     name,
     center: { lat: 63.44, lng: 10.47 },

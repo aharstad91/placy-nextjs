@@ -104,6 +104,28 @@ export interface POI {
    */
   locationNote?: string;
 
+  /**
+   * Strukturert utviklingsopplysning om stedet: status, åpning, tidspunkt,
+   * adgang — og forbeholdene som følger dem.
+   *
+   * Eget felt og ikke et avsnitt i `editorialHook`, av samme grunn som
+   * `locationNote` er det: teksten om stedet er redaksjonell prosa, dette er
+   * opplysninger med hvert sitt felt og hver sin kilde. Blandet inn i prosaen
+   * ville «åpning ikke oppgitt» lest som en beskrivelse av stedet i stedet for
+   * som det den er — en opplysning om hva kilden IKKE sier.
+   *
+   * `developmentStatus` over er kartets grove skille (her nå / kommer) og kan
+   * ikke bære dette: et ferdig bygg med et uåpnet treningsrom er `existing` i
+   * kartet og «ikke åpnet» i opplysningene, samtidig.
+   *
+   * Fylles av `lib/demo/local-board/development.ts`. Tom liste = ingen linje;
+   * en manglende opplysning skal aldri vises som en falsk negativ.
+   */
+  development?: {
+    facts: Array<{ label: string; value: string }>;
+    caveats: string[];
+  };
+
   // Trust validation
   trustScore?: number;
   trustFlags?: string[];

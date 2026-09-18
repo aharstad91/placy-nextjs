@@ -39,6 +39,8 @@
 
 import { z } from "zod";
 
+import { BOARD_PROFILE_IDS } from "@/lib/demo/local-board/profiles";
+
 /** ISO-dato (YYYY-MM-DD). Kontrolldato skal være en dag, ikke et tidspunkt. */
 const isoDate = z
   .string()
@@ -187,9 +189,18 @@ export const localVoiceSchema = z
   .strict();
 export type LocalVoice = z.infer<typeof localVoiceSchema>;
 
+/** Datasettets domeneprofil. Se `profiles.ts` for hvorfor den er sitt eget felt. */
+export const boardProfileSchema = z.enum(BOARD_PROFILE_IDS);
+
 export const localBoardSchema = z
   .object({
     schemaVersion: z.literal(1),
+    /**
+     * Hvilken slags kunnskap datasettet bærer — IKKE hvilken flate som vises.
+     * Påkrevd, uten standardverdi: et datasett som ikke har tatt stilling ville
+     * arvet boligprosjektets begreper uten å ha innholdet som gir dem mening.
+     */
+    profile: boardProfileSchema,
     id: stableId,
     name: z.string().min(1).max(120),
     /** Kan være tom: demoen er et områdekart, ikke en boligannonse. */
@@ -306,6 +317,125 @@ export const localPlaceSchema = z
 export type LocalPlace = z.infer<typeof localPlaceSchema>;
 
 /**
+ * Strukturert prosjektkunnskap for ETT objekt (2026-09-18).
+ *
+ * ## Hvorfor byggestatus, åpning, tidspunkt og adgang er fire felt
+ *
+ * Fordi de er fire forskjellige påstander, og sammenblandingen er den dyre
+ * feilen på et halvferdig boligprosjekt: at bygget står ferdig sier ingenting
+ * om treningsrommet er åpent, at en åpning er ventet i 2027 sier ingenting om
+ * hvem som får bruke det, og en oppgitt innflyttingsdato er ikke en bekreftelse
+ * på at fasiliteten finnes da. Ett samlefelt ville tvunget den som skriver
+ * innhold til å velge hvilken av dem som «vinner» — og stemmen ville sagt
+ * valget som om det var kilden.
+ *
+ * ## Datoer endrer ingenting av seg selv
+ *
+ * `timing` er hva kilden sier, i kildens egen presisjon («Q2 2027», «høsten
+ * 2027»). Ingen kode her sammenligner den med dagens dato: en passert
+ * forventning gjør ikke et tilbud åpent, den gjør forventningen gammel.
+ * `checkedAt` på en påstand er da NOEN KONTROLLERTE den, aldri en åpningsdato.
+ *
+ * ## Innflyttingskoblingen gjelder ett navngitt bygg
+ *
+ * `moveInLinks` er den eneste måten å si «tilgjengelig ved innflytting», og den
+ * peker på ett bygg og én kilde. Bygg B arver ikke bygg As bekreftelse — det er
+ * hele grunnen til at koblingen er en liste med bygg-ID og kilde, og ikke et
+ * ja/nei-flagg på objektet.
+ */
+export const developmentObjectType = z.enum(["project", "building", "facility", "outdoor-area"]);
+export type DevelopmentObjectType = z.infer<typeof developmentObjectType>;
+
+/** Byggets egen status. Sier ingenting om åpning eller adgang. */
+export const developmentBuildStatus = z.enum([
+  "existing",
+  "under-construction",
+  "planned",
+  "adopted-plan",
+  "vision",
+  "unresolved",
+]);
+export type DevelopmentBuildStatus = z.infer<typeof developmentBuildStatus>;
+
+/** Er tilbudet åpnet? Knyttet til den konkrete fasiliteten, ikke til bygget. */
+export const developmentAvailability = z.enum(["open", "not-open", "expected", "unknown"]);
+export type DevelopmentAvailability = z.infer<typeof developmentAvailability>;
+
+const developmentTimingSchema = z
+  .object({
+    /** Kildens egen presisjon: «Q2 2027», «høsten 2027», «2027». Aldri normalisert. */
+    text: z.string().min(1).max(80),
+    qualifier: z.enum(["expected", "confirmed"]),
+    /** Påstanden tidspunktet står i, så et sammendrag kan spores. */
+    claimId: stableId.optional(),
+  })
+  .strict();
+
+const developmentAccessSchema = z
+  .object({
+    scope: z.enum(["all-residents", "named-buildings", "public", "unresolved"]),
+    /** Byggene adgangen gjelder. Bare med `scope: "named-buildings"`. */
+    buildingIds: z.array(stableId).max(40).default([]),
+    /** Dokumenterte vilkår i klartekst, f.eks. «mot tillegg i felleskostnadene». */
+    conditions: z.string().min(1).max(400).optional(),
+    claimId: stableId.optional(),
+  })
+  .strict();
+
+const developmentMoveInLinkSchema = z
+  .object({
+    /** Temaet med `objectType: "building"` bekreftelsen gjelder. */
+    buildingId: stableId,
+    /** Kilden som uttrykkelig sier det. Ingen kilde = ingen kobling. */
+    confirmedBy: stableId,
+    claimId: stableId.optional(),
+  })
+  .strict();
+
+const developmentConflictSchema = z
+  .object({
+    /** De motstridende påstandene. Minst to — én påstand kan ikke være uenig med seg selv. */
+    claimIds: z.array(stableId).min(2).max(10),
+    /** Hva uenigheten går ut på. Ingen rangering: begge sider blir stående. */
+    note: z.string().min(1).max(600),
+  })
+  .strict();
+
+const developmentMapAnchorSchema = z
+  .object({
+    /** Kontrollert koordinat: stedet i `places.json` objektet hører til. */
+    placeId: stableId.optional(),
+    /** Eksplisitt omtrentlig anker i klartekst når koordinaten ikke er belagt. */
+    approximateArea: z.string().min(1).max(200).optional(),
+  })
+  .strict()
+  .refine((anchor) => Boolean(anchor.placeId || anchor.approximateArea), {
+    message: "mapAnchor må ha placeId eller approximateArea — utelat feltet hvis objektet ikke kan plasseres",
+  });
+
+export const localDevelopmentSchema = z
+  .object({
+    objectType: developmentObjectType,
+    buildStatus: developmentBuildStatus,
+    /** Påstanden byggestatusen hviler på. */
+    buildStatusClaimId: stableId.optional(),
+    availability: developmentAvailability,
+    /** Påkrevd når `availability` er `open` — se `assertReferences`. */
+    availabilityClaimId: stableId.optional(),
+    timing: developmentTimingSchema.optional(),
+    /** Uttrykkelige bekreftelser per navngitt bygg. Tom = ingen slik bekreftelse. */
+    moveInLinks: z.array(developmentMoveInLinkSchema).max(20).default([]),
+    access: developmentAccessSchema,
+    conflicts: z.array(developmentConflictSchema).max(10).default([]),
+    /** Kartreferansen. Utelatt = kunnskap uten plassering, som er lovlig. */
+    mapAnchor: developmentMapAnchorSchema.optional(),
+    /** Objektets egne påstander. Feltene over peker hit med `claimId`. */
+    claims: z.array(localFactSchema).max(40).default([]),
+  })
+  .strict();
+export type LocalDevelopment = z.infer<typeof localDevelopmentSchema>;
+
+/**
  * Temakunnskap: det som ikke naturlig hører til ETT sted — hvordan området
  * henger sammen, hva som er vedtatt, hvordan hverdagen ser ut.
  *
@@ -327,6 +457,16 @@ export const localTopicSchema = z
     relatedPlaceIds: z.array(stableId).max(40).default([]),
     checkedAt: isoDate,
     caveats: z.array(z.string().min(1).max(400)).max(20).default([]),
+    /**
+     * Strukturert prosjektkunnskap når temaet ER et objekt i utbyggingen.
+     *
+     * Ligger på temaet og ikke i en sjette runtime-fil fordi et bygg eller en
+     * fasilitet allerede ER temakunnskap: en tittel, en tekst, kilder og en
+     * kontrolldato. Det som mangler for et boligprosjekt er skillet mellom
+     * byggestatus, åpning, tidspunkt og adgang — og det er nettopp det dette
+     * objektet bærer. Utelatt = et vanlig tema.
+     */
+    development: localDevelopmentSchema.optional(),
   })
   .strict();
 export type LocalTopic = z.infer<typeof localTopicSchema>;

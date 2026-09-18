@@ -8,8 +8,10 @@ import {
   localFaqsSchema,
   localPlacesSchema,
   localSourcesSchema,
+  localTopicsSchema,
   type LocalDataset,
 } from "@/lib/demo/local-board/schema";
+import { buildProjectInfo } from "@/lib/demo/local-board/voice";
 
 import { getLocalDemo } from "@/lib/demo/local-board/registry";
 import { writeTestDemo } from "@/lib/demo/local-board/__fixtures__/test-demo";
@@ -245,5 +247,82 @@ describe("to datasett på samme kjerne", () => {
     const narrow = { ...dataset, board: { ...dataset.board, discoveryCategoryIds: [] } };
     expect(buildLocalBoard(narrow, NYHAVNA).demoRadiusPlaces).toEqual([]);
     expect(buildLocalBoard(narrow, NYHAVNA).demoReservePlaceIds).toEqual([]);
+  });
+});
+
+/**
+ * Prosjektkunnskapen på stedsflaten (2026-09-18).
+ *
+ * Adapterens `developmentStatus` er og blir en KARTKLASSIFISERING: her nå, eller
+ * kommer. Den kan ikke bære at et ferdig bygg har et uåpnet treningsrom, og
+ * testene under låser at den ikke prøver — det detaljerte grunnlaget ligger ved
+ * siden av, med de samme ordene stemmen bruker.
+ */
+describe("utbyggingsobjekter på stedsflaten", () => {
+  const sources = localSourcesSchema.parse([
+    { id: "kilde-a", label: "eksempel.no", page: "Prosjektet", url: "https://eksempel.no/prosjektet/", publisher: "Eksempel", checkedAt: "2026-09-18" },
+  ]);
+  const places = localPlacesSchema.parse([
+    {
+      id: "bygg-a-sted", name: "Bygg A", categoryId: "mat-drikke",
+      coordinates: { lat: 63.44, lng: 10.42 }, summary: "Første byggetrinn.",
+      travelTime: { walk: 1 }, sourceIds: ["kilde-a"], checkedAt: "2026-09-18",
+    },
+    {
+      id: "vanlig-sted", name: "Vanlig Sted", categoryId: "mat-drikke",
+      coordinates: { lat: 63.45, lng: 10.43 }, travelTime: { walk: 3 }, checkedAt: "2026-09-18",
+    },
+  ]);
+  const withDevelopment = async (development: Record<string, unknown>): Promise<LocalDataset> => ({
+    ...(await emptyDataset()),
+    sources,
+    places,
+    topics: localTopicsSchema.parse([
+      {
+        id: "bygg-a", title: "Bygg A", status: "existing", text: "Bygg A.", checkedAt: "2026-09-18",
+        sourceIds: ["kilde-a"],
+        development: {
+          objectType: "building", buildStatus: "existing", availability: "unknown",
+          access: { scope: "unresolved" }, mapAnchor: { placeId: "bygg-a-sted" }, ...development,
+        },
+      },
+    ]),
+  });
+
+  it("legger status, åpning og adgang ved siden av kartklassifiseringen", async () => {
+    const project = buildLocalProject(await withDevelopment({}), NYHAVNA);
+    const poi = project.pois.find((p) => p.id === "bygg-a-sted")!;
+    expect(poi.developmentStatus).toBe("existing");
+    expect(poi.development!.facts).toContainEqual({ label: "Status", value: "eksisterende" });
+    expect(poi.development!.facts).toContainEqual({ label: "Åpning", value: "åpning ikke oppgitt" });
+    expect(poi.development!.caveats).toContain(
+      "Kildene sier ikke om «Bygg A» er åpen. Ikke slutt at den er åpen.",
+    );
+  });
+
+  it("lar et sted uten objekt stå uten linjer — ingen falsk negativ", async () => {
+    const project = buildLocalProject(await withDevelopment({}), NYHAVNA);
+    expect(project.pois.find((p) => p.id === "vanlig-sted")!.development).toBeUndefined();
+  });
+
+  it("bruker samme ord som stemmen om samme objekt", async () => {
+    const dataset = await withDevelopment({ timing: { text: "Q1 2027", qualifier: "expected" } });
+    const poi = buildLocalProject(dataset, NYHAVNA).pois.find((p) => p.id === "bygg-a-sted")!;
+    const spoken = buildProjectInfo(dataset).search("Bygg A", [], 1)[0];
+    for (const fact of poi.development!.facts) expect(spoken.text).toContain(`${fact.label}: ${fact.value}`);
+    for (const caveat of poi.development!.caveats) expect(spoken.text).toContain(caveat);
+  });
+});
+
+describe("domeneprofilen i innholds-hashen", () => {
+  it("gir et nytt datasett-ID når profilen endres", async () => {
+    const dataset = await emptyDataset();
+    const resale: LocalDataset = { ...dataset, board: { ...dataset.board, profile: "resale" } };
+    expect(datasetId(resale, NYHAVNA)).not.toBe(datasetId(dataset, NYHAVNA));
+  });
+
+  it("er med i hashen fordi den ligger i datasettet, ikke fordi noen listet den opp", async () => {
+    const dataset = await emptyDataset();
+    expect(JSON.stringify(dataset.board)).toContain('"profile":"housing-development"');
   });
 });

@@ -6,6 +6,7 @@ import { join } from "node:path";
 import type { ZodType } from "zod";
 import type { LocalDemoDescriptor } from "@/lib/demo/local-board/registry";
 import { LocalDatasetError } from "@/lib/demo/local-board/errors";
+import { BOARD_PROFILES, IMPLEMENTED_PROFILES, isImplementedProfile } from "@/lib/demo/local-board/profiles";
 import {
   localBoardSchema,
   localConversationsSchema,
@@ -15,6 +16,7 @@ import {
   localTopicsSchema,
   type LocalConversation,
   type LocalDataset,
+  type LocalTopic,
 } from "@/lib/demo/local-board/schema";
 
 /**
@@ -98,6 +100,79 @@ function duplicates(ids: readonly string[]): string[] {
   return [...twice].sort();
 }
 
+
+/**
+ * Referansesjekken for ETT utbyggingsobjekt.
+ *
+ * Tre av reglene finnes fordi betydningen ellers stille ville forsvunnet:
+ * en `claimId` som ikke treffer en påstand gjør sammendraget usporbart, en
+ * `buildingId` som peker på noe annet enn et bygg gjør innflyttingskoblingen
+ * til en påstand om ingenting, og `availability: "open"` uten påstand er
+ * nøyaktig det ene svaret demoen ikke har lov til å gi uten kilde.
+ */
+function developmentProblems(
+  topic: LocalTopic,
+  owner: string,
+  known: { sourceIds: ReadonlySet<string>; placeIds: ReadonlySet<string>; buildingIds: ReadonlySet<string> },
+): string[] {
+  const development = topic.development;
+  if (!development) return [];
+  const problems: string[] = [];
+  const claimIds = new Set(development.claims.map((c) => c.id));
+
+  const dupeClaims = duplicates(development.claims.map((c) => c.id));
+  if (dupeClaims.length) problems.push(`${owner} → development.claims: ID-en(e) ${dupeClaims.join(", ")} finnes flere ganger.`);
+  for (const claim of development.claims) {
+    if (!known.sourceIds.has(claim.sourceId)) {
+      problems.push(`${owner} → development.claims «${claim.id}»: ukjent sourceId «${claim.sourceId}» (mangler i ${FILES.sources}).`);
+    }
+  }
+
+  const claim = (field: string, id: string | undefined) => {
+    if (id && !claimIds.has(id)) problems.push(`${owner} → development.${field}: ukjent claimId «${id}» (mangler i objektets egne claims).`);
+  };
+  claim("buildStatusClaimId", development.buildStatusClaimId);
+  claim("availabilityClaimId", development.availabilityClaimId);
+  claim("timing.claimId", development.timing?.claimId);
+  claim("access.claimId", development.access.claimId);
+
+  if (development.availability === "open" && !development.availabilityClaimId) {
+    problems.push(`${owner} → development.availability: «open» krever availabilityClaimId — at noe er åpent må ha en påstand med kilde.`);
+  }
+
+  const building = (field: string, id: string) => {
+    if (id === topic.id) problems.push(`${owner} → development.${field}: «${id}» peker på objektet selv.`);
+    else if (!known.buildingIds.has(id)) problems.push(`${owner} → development.${field}: «${id}» er ikke et tema med objectType «building».`);
+  };
+  if (development.access.scope === "named-buildings") {
+    if (!development.access.buildingIds.length) {
+      problems.push(`${owner} → development.access: scope «named-buildings» krever minst én buildingId.`);
+    }
+    for (const id of development.access.buildingIds) building("access.buildingIds", id);
+  } else if (development.access.buildingIds.length) {
+    problems.push(`${owner} → development.access: buildingIds gjelder bare scope «named-buildings».`);
+  }
+
+  for (const link of development.moveInLinks) {
+    building("moveInLinks.buildingId", link.buildingId);
+    if (!known.sourceIds.has(link.confirmedBy)) {
+      problems.push(`${owner} → development.moveInLinks: ukjent confirmedBy «${link.confirmedBy}» (mangler i ${FILES.sources}).`);
+    }
+    claim("moveInLinks.claimId", link.claimId);
+  }
+
+  for (const conflict of development.conflicts) {
+    for (const id of conflict.claimIds) claim("conflicts.claimIds", id);
+  }
+
+  const placeId = development.mapAnchor?.placeId;
+  if (placeId && !known.placeIds.has(placeId)) {
+    problems.push(`${owner} → development.mapAnchor: ukjent placeId «${placeId}» (mangler i ${FILES.places}).`);
+  }
+
+  return problems;
+}
+
 /**
  * Referansesjekken.
  *
@@ -106,7 +181,22 @@ function duplicates(ids: readonly string[]): string[] {
  * for hånd: en skrivefeil i en `categoryId`, en `sourceId` som ble hetende noe
  * annet, to steder med samme ID.
  */
+export function assertProfile(dataset: LocalDataset): void {
+  const profile = dataset.board.profile;
+  if (isImplementedProfile(profile)) return;
+  // Egen feil, ikke en linje i referanselista: dette er ikke en skrivefeil som
+  // kan rettes i datasettet, det er en profil koden ennå ikke bærer begrepene
+  // for. Å laste den som et boligprosjekt ville gitt en demo som later som den
+  // har kunnskap den aldri har definert.
+  throw new LocalDatasetError(
+    `Profilen «${profile}» (${BOARD_PROFILES[profile].label}) er dokumentert men ikke implementert. ` +
+      `Implementerte profiler: ${IMPLEMENTED_PROFILES.join(", ")}. ` +
+      `Kunnskapsbehovet står i docs/demos/board-profiler.md: ${BOARD_PROFILES[profile].knowledgeNeeds}`,
+  );
+}
+
 export function assertReferences(dataset: LocalDataset, descriptor: LocalDemoDescriptor): void {
+  assertProfile(dataset);
   const problems: string[] = [];
 
   const categoryIds = new Set(dataset.board.categories.map((c) => c.id));
@@ -175,6 +265,9 @@ export function assertReferences(dataset: LocalDataset, descriptor: LocalDemoDes
     }
   }
 
+  const buildingIds = new Set(
+    dataset.topics.filter((t) => t.development?.objectType === "building").map((t) => t.id),
+  );
   for (const topic of dataset.topics) {
     const owner = `${FILES.topics} → «${topic.id}»`;
     for (const id of topic.categoryIds) {
@@ -184,6 +277,7 @@ export function assertReferences(dataset: LocalDataset, descriptor: LocalDemoDes
       if (!placeIds.has(id)) problems.push(`${owner}: ukjent relatedPlaceId «${id}» (mangler i ${FILES.places}).`);
     }
     source(owner, topic.sourceIds);
+    if (topic.development) problems.push(...developmentProblems(topic, owner, { sourceIds, placeIds, buildingIds }));
   }
 
   dupe(FILES.faq, dataset.faqs.map((f) => f.id));

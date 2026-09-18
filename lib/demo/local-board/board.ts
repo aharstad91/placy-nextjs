@@ -1,5 +1,6 @@
 import { isAnchorPOI } from "@/lib/board/anchor-poi";
 import { radiusPlaces } from "@/lib/demo/local-board/radius";
+import { buildingNames, developmentByPlaceId, projectDevelopment } from "@/lib/demo/local-board/development";
 import { createHash } from "node:crypto";
 import type {
   BoardCategory,
@@ -57,7 +58,12 @@ function toCategory(category: LocalCategory): Category {
  * rendrer som stedets egen tekst. `editorialSources` bærer kilde-URL-ene, som
  * er det kortet viser under teksten.
  */
-function toPoi(place: LocalPlace, category: Category, urlBySourceId: ReadonlyMap<string, string>): POI {
+function toPoi(
+  place: LocalPlace,
+  category: Category,
+  urlBySourceId: ReadonlyMap<string, string>,
+  development?: { facts: Array<{ label: string; value: string }>; caveats: string[] },
+): POI {
   const subCategory: Category = {
     ...category,
     id: place.poiCategoryId ?? category.id,
@@ -78,6 +84,10 @@ function toPoi(place: LocalPlace, category: Category, urlBySourceId: ReadonlyMap
     ...(place.image ? { featuredImage: place.image, markerImage: place.image } : {}),
     ...(place.travelTime ? { travelTime: place.travelTime } : {}),
     developmentStatus: isExisting(place.status) ? "existing" : "planned",
+    // Kartklassifiseringen over er uendret: `developmentStatus` er «her nå» mot
+    // «kommer», og den kan ikke bære at et ferdig bygg har en uåpnet fasilitet.
+    // Det detaljerte grunnlaget ligger ved siden av, i sitt eget felt.
+    ...(development ? { development } : {}),
     locationPrecision: place.locationPrecision,
     ...(place.locationNote ? { locationNote: place.locationNote } : {}),
     editorialSources: place.sourceIds
@@ -165,7 +175,21 @@ export function buildLocalProject(dataset: LocalDataset, descriptor: LocalDemoDe
   const categories = dataset.board.categories.map(toCategory);
   const byId = new Map(categories.map((c) => [c.id, c]));
   const urlBySourceId = new Map(dataset.sources.map((s) => [s.id, s.url]));
-  const pois = dataset.places.map((place) => toPoi(place, byId.get(place.categoryId)!, urlBySourceId));
+  // Utbyggingsobjektene som er forankret i et sted. Samme projeksjon som
+  // stemmen bruker (`voice.ts`), så kortet og guiden ikke kan si hver sin ting
+  // om samme fasilitet.
+  const names = buildingNames(dataset.topics);
+  const anchored = developmentByPlaceId(dataset.topics);
+  const pois = dataset.places.map((place) => {
+    const topic = anchored.get(place.id);
+    const projection = topic ? projectDevelopment(topic, names) : null;
+    return toPoi(
+      place,
+      byId.get(place.categoryId)!,
+      urlBySourceId,
+      projection ? { facts: projection.facts, caveats: projection.caveats } : undefined,
+    );
+  });
   return {
     demoSnapshotId: datasetId(dataset, descriptor),
     id: dataset.board.id,

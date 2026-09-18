@@ -255,3 +255,108 @@ describe("spørsmål og svar er felles for sidebar og stemme", () => {
   });
 
 });
+
+/**
+ * Prosjektkunnskapen i samtalen (2026-09-18).
+ *
+ * Skjermen og stemmen leser samme projeksjon (`development.ts`), så testene her
+ * kontrollerer den ENE oversettelsen som kan gi et løfte demoen ikke har
+ * dekning for: fra strukturert evidens til noe guiden kan si høyt.
+ */
+describe("prosjektkunnskap i stemmens grunnlag", () => {
+  const sources = localSourcesSchema.parse([
+    { id: "kilde-a", label: "eksempel.no", page: "Prosjektet", url: "https://eksempel.no/prosjektet/", publisher: "Eksempel", checkedAt: "2026-09-18" },
+  ]);
+  const places = localPlacesSchema.parse([
+    {
+      id: "bygg-a-sted", name: "Bygg A", categoryId: "mat-drikke",
+      coordinates: { lat: 63.44, lng: 10.42 }, summary: "Første byggetrinn.",
+      travelTime: { walk: 1 }, sourceIds: ["kilde-a"], checkedAt: "2026-09-18",
+    },
+  ]);
+  const topics = localTopicsSchema.parse([
+    {
+      id: "bygg-a", title: "Bygg A", categoryIds: ["mat-drikke"], status: "existing",
+      text: "Bygg A er ferdigstilt.", checkedAt: "2026-09-18", sourceIds: ["kilde-a"],
+      development: {
+        objectType: "building", buildStatus: "existing", availability: "open", availabilityClaimId: "c-a",
+        access: { scope: "all-residents" }, mapAnchor: { placeId: "bygg-a-sted" },
+        claims: [{ id: "c-a", text: "Bygg A er overtatt av beboerne.", sourceId: "kilde-a", checkedAt: "2026-09-18" }],
+      },
+    },
+    {
+      id: "treningsrom", title: "Treningsrommet", categoryIds: [], status: "unresolved",
+      text: "Treningsrommet ligger i første etasje.", checkedAt: "2026-09-18", sourceIds: ["kilde-a"],
+      keywords: ["trene", "trening"],
+      development: {
+        objectType: "facility", buildStatus: "existing", availability: "unknown",
+        access: { scope: "unresolved" },
+        timing: { text: "Q1 2027", qualifier: "expected" },
+        claims: [
+          { id: "c-prospekt", text: "Treningsrom i bygg A.", sourceId: "kilde-a", checkedAt: "2026-01-02" },
+          { id: "c-nett", text: "Treningsrom i bygg B.", sourceId: "kilde-a", checkedAt: "2026-09-01" },
+        ],
+        conflicts: [{ claimIds: ["c-prospekt", "c-nett"], note: "Kildene plasserer det i hvert sitt bygg." }],
+      },
+    },
+  ]);
+  const withDevelopment = async (): Promise<LocalDataset> => ({
+    ...(await emptyDataset()),
+    sources,
+    places,
+    topics,
+  });
+
+  it("AE2: get_place_facts sier ikke at fasiliteten er åpen", async () => {
+    const dataset = await withDevelopment();
+    const facts = result(dataset, "get_place_facts", { poi_id: "bygg-a-sted" });
+    // Bygget er overtatt, og det er belagt.
+    expect(facts.status).toBe("existing");
+    // Fasiliteten i bygget er et eget objekt, og den er ikke sagt å være åpen.
+    const info = result(dataset, "find_project_info", { query: "treningsrom" });
+    const results = info.results as Array<{ status: string; text: string }>;
+    expect(results[0].status).toBe("eksisterende, åpning ikke oppgitt");
+    expect(results[0].text).toContain("Kildene sier ikke om «Treningsrommet» er åpen.");
+    // Den ene setningen som ville vært et svar uten dekning finnes ikke:
+    // åpningslinja sier at kilden ikke har oppgitt noe.
+    expect(results[0].text).toContain("Åpning: åpning ikke oppgitt.");
+    expect(results[0].text).not.toContain("Åpning: åpnet");
+    expect(results[0].text).not.toMatch(/Ikke slutt at den er åpen\.[\s\S]*Åpning: åpnet/);
+  });
+
+  it("AE3: forventet tidspunkt kommer med forbeholdet, aldri som et løfte", async () => {
+    const info = result(await withDevelopment(), "find_project_info", { query: "treningsrom" });
+    const [first] = info.results as Array<{ text: string }>;
+    expect(first.text).toContain("Forventet tidspunkt: Q1 2027");
+    expect(first.text).toContain("er en forventning fra kilden, ikke en bekreftet dato");
+    expect(first.text).toContain("Ingen kilde bekrefter at «Treningsrommet» er tilgjengelig ved innflytting.");
+  });
+
+  it("AE4: begge de motstridende påstandene følger svaret", async () => {
+    const info = result(await withDevelopment(), "find_project_info", { query: "treningsrom" });
+    const [first] = info.results as Array<{ text: string }>;
+    expect(first.text).toContain("Treningsrom i bygg A.");
+    expect(first.text).toContain("Treningsrom i bygg B.");
+    expect(first.text).toContain("Kildene plasserer det i hvert sitt bygg.");
+  });
+
+  it("gjør et objekt uten kartanker søkbart uten å finne på et sted", async () => {
+    const dataset = await withDevelopment();
+    const info = result(dataset, "find_project_info", { query: "trening" });
+    expect((info.results as Array<{ id: string }>).map((r) => r.id)).toContain("treningsrom");
+    // Ingen markør er laget for fasiliteten: kartet har bare stedet i places.json.
+    const board = buildLocalBoard(dataset, NYHAVNA);
+    expect(board.categories.flatMap((c) => c.pois).map((p) => String(p.id))).toEqual(["bygg-a-sted"]);
+  });
+
+  it("legger reglene om prosjektstatus i instruksen bare når datasettet har objekter", async () => {
+    const dataset = await withDevelopment();
+    const instructions = buildLocalInstructions(dataset, buildLocalBoard(dataset, NYHAVNA));
+    expect(instructions).toContain("PROSJEKTSTATUS:");
+    expect(instructions).toContain("En bekreftelse som gjelder ett navngitt bygg gjelder ikke de andre byggene.");
+    expect(instructions).toContain("PROSJEKTOBJEKTER (data):");
+
+    const plain = await emptyDataset();
+    expect(buildLocalInstructions(plain, buildLocalBoard(plain, NYHAVNA))).not.toContain("PROSJEKTSTATUS:");
+  });
+});

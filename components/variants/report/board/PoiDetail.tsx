@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import Image from "next/image";
-import { BookOpen, Clock, ExternalLink, Globe, Phone } from "lucide-react";
+import { BookOpen, Clock, ExternalLink, Globe, Info, Phone } from "lucide-react";
 import { GoogleRating } from "@/components/ui/GoogleRating";
 import { computeIsOpen } from "@/lib/hooks/useOpeningHours";
 import { cn } from "@/lib/utils";
@@ -319,6 +319,55 @@ export function PoiFacts({
 }
 
 /**
+ * Statusen, tidspunktet og adgangen — de opplysningene et halvferdig
+ * boligprosjekt ikke har lov til å blande sammen (2026-09-18).
+ *
+ * ## Hvorfor en egen liten blokk og ikke en linje i teksten
+ *
+ * Fordi de fire opplysningene er fire forskjellige påstander med hver sin
+ * kilde: at bygget står ferdig, at fasiliteten ikke har åpnet, at åpningen er
+ * ventet til et tidspunkt, og hvem som får bruke den. Skrevet inn i prosaen
+ * ville leseren fått dem som én setning om stedet, og forskjellen mellom «ikke
+ * åpnet» og «ikke oppgitt» ville forsvunnet i språket.
+ *
+ * ## Hvorfor forbeholdene står under og ikke i verdiene
+ *
+ * Verdiene er hva kilden sier. Forbeholdene er hva leseren må ta hensyn til.
+ * De er visuelt svakere, men de er ikke valgfrie: det er de som hindrer at «Q1
+ * 2027» leses som et løfte.
+ *
+ * Rendrer ingenting uten data — en manglende opplysning er ingen linje, aldri
+ * en falsk negativ.
+ */
+export function PoiDevelopment({ poi }: { poi: BoardPOI }) {
+  const development = poi.raw.development;
+  if (!development || (!development.facts.length && !development.caveats.length)) return null;
+  return (
+    <div
+      data-testid="poi-development"
+      className="mt-4 space-y-1.5 border-t border-stone-200/80 pt-4"
+    >
+      {development.facts.map((fact) => (
+        <div key={fact.label} className="flex gap-2 text-[13.5px] leading-[1.5]">
+          <span className="flex-none text-stone-500">{fact.label}</span>
+          <span className="text-stone-700">{fact.value}</span>
+        </div>
+      ))}
+      {development.caveats.map((caveat) => (
+        <p
+          key={caveat}
+          data-testid="poi-development-caveat"
+          className="flex items-start gap-1.5 text-[13px] leading-[1.5] text-stone-500"
+        >
+          <Info size={14} strokeWidth={2.25} className="mt-[3px] shrink-0 text-stone-400" aria-hidden />
+          <span>{caveat}</span>
+        </p>
+      ))}
+    </div>
+  );
+}
+
+/**
  * Attribusjonsblokken velges av `generated.provider`. Én variant i dag; når
  * Googles generativeSummary dekker Norge kommer den inn som en ny gren her,
  * uten at resten av flaten røres.
@@ -448,6 +497,11 @@ export function PoiDetailBody({
       {showPrecisionNote && poi.raw.locationPrecision === "approximate" && (
         <PrecisionNote note={poi.raw.locationNote} />
       )}
+
+      {/* Står FØR Google-faktaene: om fasiliteten har åpnet er svaret på «hva
+          er dette stedet», mens åpningstid og telefonnummer er detaljer om et
+          sted som allerede finnes. */}
+      <PoiDevelopment poi={poi} />
 
       <AnchorRegister poi={poi} />
 

@@ -1,5 +1,6 @@
 {
   "schemaVersion": 1,
+  "profile": "housing-development",
   "id": "nyhavna-lokal",
   "name": "Nyhavna",
   "address": "",

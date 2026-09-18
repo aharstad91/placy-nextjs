@@ -104,6 +104,7 @@ describe("lokalt Nyhavna-datasett", () => {
 describe("referansesjekken", () => {
   const board: LocalDataset["board"] = localBoardSchema.parse({
     schemaVersion: 1,
+    profile: "housing-development",
     id: "test",
     name: "Test",
     center: { lat: 63.4, lng: 10.4 },
@@ -267,5 +268,119 @@ describe("et annet lokalt datasett", () => {
   it("leser samtaleeksemplene fra demoens egen mappe", async () => {
     const other = await writeTestDemo();
     await expect(loadConversations(other)).resolves.toEqual([]);
+  });
+});
+
+/**
+ * Profilen og den strukturerte prosjektkunnskapen (2026-09-18).
+ *
+ * Profilen sier hva slags KUNNSKAP datasettet bærer. Å la en udokumentert eller
+ * uimplementert profil laste ville gitt en demo som later som den har begreper
+ * ingen har bygd — derfor stopper lasteren, med en feil som sier hvorfor.
+ */
+describe("domeneprofilen", () => {
+  it("laster boligprosjektprofilen, som er den implementerte", async () => {
+    const dataset = await loadDataset(NYHAVNA);
+    expect(dataset.board.profile).toBe("housing-development");
+  });
+
+  it("avviser en dokumentert, men uimplementert profil", async () => {
+    const other = await writeTestDemo({ board: { profile: "resale" } });
+    const error = await loadDataset(other).then(() => null, (e: Error) => e);
+    expect(error).toBeInstanceOf(LocalDatasetError);
+    expect(error!.message).toContain("«resale»");
+    expect(error!.message).toContain("dokumentert men ikke implementert");
+    expect(error!.message).toContain("housing-development");
+  });
+
+  it("avviser en profil som ikke finnes i katalogen", async () => {
+    const other = await writeTestDemo({ board: { profile: "hyttefelt" } });
+    await expect(loadDataset(other)).rejects.toThrow(/board\.json/);
+  });
+
+  it("krever at profilen er oppgitt", async () => {
+    const other = await writeTestDemo();
+    const raw = JSON.parse(await readFile(join(other.directory, "board.json"), "utf8"));
+    delete raw.profile;
+    await writeFile(join(other.directory, "board.json"), JSON.stringify(raw));
+    await expect(loadDataset(other)).rejects.toThrow(/profile/);
+  });
+});
+
+describe("referansesjekken for prosjektkunnskap", () => {
+  const board: LocalDataset["board"] = localBoardSchema.parse({
+    schemaVersion: 1,
+    profile: "housing-development",
+    id: "test",
+    name: "Test",
+    center: { lat: 63.4, lng: 10.4 },
+    greeting: "Hei.",
+    projectInfoLabel: "eksempel.no",
+    categories: [{ id: "kat-a", name: "Kategori A", icon: "MapPin", color: "#112233" }],
+  });
+  const sources = localSourcesSchema.parse([
+    { id: "kilde-a", label: "eksempel.no", page: "Side", url: "https://eksempel.no/side/", publisher: "Eksempel", checkedAt: "2026-09-18" },
+  ]);
+  const claim = { id: "c1", text: "En påstand.", sourceId: "kilde-a", checkedAt: "2026-09-18" };
+  const dataset = (development: Record<string, unknown>, extra: Record<string, unknown>[] = []): LocalDataset => ({
+    board,
+    sources,
+    places: [],
+    topics: localTopicsSchema.parse([
+      ...extra,
+      {
+        id: "treningsrom", title: "Treningsrommet", status: "existing", text: "Noe.", checkedAt: "2026-09-18",
+        development: { objectType: "facility", buildStatus: "existing", availability: "unknown", access: { scope: "unresolved" }, ...development },
+      },
+    ]),
+    faqs: [],
+  });
+  const building = {
+    id: "bygg-a", title: "Bygg A", status: "existing", text: "A.", checkedAt: "2026-09-18",
+    development: { objectType: "building", buildStatus: "existing", availability: "unknown", access: { scope: "unresolved" } },
+  };
+
+  it("krever en påstand med kilde før noe kan være åpent", () => {
+    expect(() => assertReferences(dataset({ availability: "open" }), NYHAVNA)).toThrow(/availabilityClaimId/);
+    expect(() =>
+      assertReferences(dataset({ availability: "open", availabilityClaimId: "c1", claims: [claim] }), NYHAVNA),
+    ).not.toThrow();
+  });
+
+  it("krever at innflyttingskoblingen peker på et bygg", () => {
+    expect(() =>
+      assertReferences(dataset({ moveInLinks: [{ buildingId: "bygg-a", confirmedBy: "kilde-a" }] }), NYHAVNA),
+    ).toThrow(/ikke et tema med objectType «building»/);
+    expect(() =>
+      assertReferences(dataset({ moveInLinks: [{ buildingId: "bygg-a", confirmedBy: "kilde-a" }] }, [building]), NYHAVNA),
+    ).not.toThrow();
+  });
+
+  it("krever kilde på innflyttingskoblingen", () => {
+    expect(() =>
+      assertReferences(dataset({ moveInLinks: [{ buildingId: "bygg-a", confirmedBy: "ukjent" }] }, [building]), NYHAVNA),
+    ).toThrow(/ukjent confirmedBy «ukjent»/);
+  });
+
+  it("fanger en claimId som ikke finnes blant objektets egne påstander", () => {
+    expect(() => assertReferences(dataset({ buildStatusClaimId: "borte" }), NYHAVNA)).toThrow(/ukjent claimId «borte»/);
+    expect(() =>
+      assertReferences(dataset({ conflicts: [{ claimIds: ["c1", "borte"], note: "Spriker." }], claims: [claim] }), NYHAVNA),
+    ).toThrow(/ukjent claimId «borte»/);
+  });
+
+  it("fanger et kartanker som peker på et sted som ikke finnes", () => {
+    expect(() => assertReferences(dataset({ mapAnchor: { placeId: "borte" } }), NYHAVNA)).toThrow(/ukjent placeId «borte»/);
+  });
+
+  it("holder navngitte bygg og adgangsomfang i samsvar", () => {
+    expect(() => assertReferences(dataset({ access: { scope: "named-buildings" } }), NYHAVNA)).toThrow(/krever minst én buildingId/);
+    expect(() =>
+      assertReferences(dataset({ access: { scope: "all-residents", buildingIds: ["bygg-a"] } }, [building]), NYHAVNA),
+    ).toThrow(/gjelder bare scope «named-buildings»/);
+  });
+
+  it("godtar et objekt uten kartanker", () => {
+    expect(() => assertReferences(dataset({}), NYHAVNA)).not.toThrow();
   });
 });
