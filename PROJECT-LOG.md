@@ -6,6 +6,26 @@
 
 ---
 
+## 2026-09-18 — Lærdommer fra å populere Leangenbukta
+
+Leangenbukta avklarte at et godt områdeboard trenger to kunnskapsnivåer samtidig. Researchlaget gir dybde: kildekontrollerte fakta, redaksjonelle vurderinger, forbehold og svar Anja kan begrunne. Registerlaget gir bredde: navn, type, adresse, kartanker og lagret reisetid for det langt større antallet steder som faktisk finnes i området. Valget står derfor ikke mellom 26 grundig undersøkte steder og 800 rå POI-er. Riktig modell er et bredt kart med en eksplisitt og maskinelt håndhevet grense for hva Anja får si om hvert sted.
+
+**Tetthet styres først med geografi og presentasjon.** Det provisjonerte produksjonsboardet hadde 812 steder i en vid geografi som også trakk inn store deler av Midtbyen. En radius på 2 km ga 358 aktuelle kildeankre og 357 kartankre etter sammenslåing; den eksisterende visningspolitikken viste 304 i første oversikt. Det bekrefter at råtallet alene ikke avgjør om kartet blir godt. Radius, kategorifilter, kollisjonshåndtering, reservepunkter og zoomnivå må vurderes samlet. Neste prosjekt bør begynne med en eksplisitt dekningsradius og en visuell tetthetsprøve før redaksjonen bestemmer startutvalget.
+
+**Kartdekning og redaksjonell prioritet er forskjellige oppgaver.** Registersteder kan fylle kartet uten å få lov til å fortrenge reviderte høydepunkter. Avstandssortering alene gjorde ellers tilfeldige, nærmere registersteder til hovedanbefalinger. Kuraterte steder må derfor ha en egen presentasjonsprioritet, mens registeret fortsatt er søkbart og synlig. Kartet kan vise at et område har mye å tilby uten at Placy implisitt rangerer alle tilbudene.
+
+**Anker–medlem-strukturen er nødvendig.** Kjøpesentre, idrettsparker og andre samleanlegg bør være kartankre, mens butikker, serveringssteder og aktiviteter under dem er egne søkbare medlemmer som peker tilbake til ankerets kart-ID. Uten dette blir kartet overfylt; uten søkbare medlemmer mister Anja store deler av den praktiske områdedekningen. Leangenbukta avdekket begge sidene: første import bevarte strukturen visuelt, men medlemmene måtte i tillegg gjøres eksplisitt adresserbare i kunnskapsverktøyene.
+
+**Anjas kartkunnskap må skilles fra faktakunnskap.** For alle registersteder kan hun si at stedet finnes i registeret, hva det heter, hvilken type det er, adressen og hvor kartankeret ligger. Hun skal ikke utlede åpningstider, pris, kvalitet, tilbud eller anbefalinger fra selve POI-importen. Denne grensen må ligge i datastruktur, verktøysvar og tester; en instruks i prompten alene er for svak. Samtidig bør registeret holdes ute av den faste promptkonteksten, slik at hundrevis av steder ikke øker kontekst og svartid før de faktisk etterspørres.
+
+**Full research er ikke nødvendig for hvert kartpunkt.** De åtte researchrundene bør dekke prosjektfakta, kjøperspørsmål, redaksjonelle ankre, konfliktfylte påstander og tilbud som Anja skal kunne forklare. Det brede registeret dekker orientering og oppslag. Et registersted kan senere oppgraderes til `audited` når bruk, salg eller produktbehov tilsier det. Dette gjør kvaliteten skalerbar uten å kreve at hvert nytt boligprosjekt starter med hundrevis av manuelle kildekontroller.
+
+**Importen må være reproduserbar og etterprøvbar.** En engangsimport er ikke en harness. Neste prosjekt skal kunne kjøres med parametre for kunde, kildeboard, lokal datasetmappe, radius og kontrolldato, først som dry-run og deretter med `--write`. Kvitteringen må vise kildeantall, treff mot reviderte steder, duplikater, barn som ble erstattet, sluttall og hvilke objekter som inngår i hver gruppe. Da kan registeret oppdateres senere uten å overskrive researchlaget eller miste redaksjonelle beslutninger.
+
+**Standardløp for Lilleby og senere boards:** provisjoner et bredt kildeboard; velg radius gjennom kartprøve; importer registerlaget; gjennomfør research på de åtte temaene; legg reviderte steder oppå registeret; kontroller duplikater og anker–medlem-forhold i kvitteringen; test Anja-grensen maskinelt; prøv faktisk tetthet, filtrering, søk, kartklikk og redaksjonelle høydepunkter i nettleseren. Neste tekniske forbedring bør være å splitte dagens store `places.json` i en håndredigert `places-audited.json` og en generert `places-register.json`, slik at eierskap og regenerering blir tydeligere.
+
+---
+
 ## 2026-09-18 — Leangenbukta: bredt POI-register med avgrenset Anja-kunnskap
 
 Gren `feat/leangenbukta-board` i worktree `../placy-leangenbukta`. Ikke pushet. Det eksisterende provisjonerte Leangenbukta-boardet er importert som et eget `register`-lag innen 2 km fra prosjektpunktet. De 56 kildekontrollerte stedene er bevart uendret som `audited`; importen legger til 504 registersteder. Resultatet er 560 steder totalt og 357 kartankre. Første kartutsnitt viser 304 på grunn av den eksisterende radius-/reservepolitikken for Natur og Trening. Importkvitteringen ligger i `docs/research/leangenbukta-lokal-demo/register-import-report.json` og navngir alle 21 treff mot reviderte ankre, 6 duplikate registerrøtter og 8 barn som ble erstattet av reviderte steder.
