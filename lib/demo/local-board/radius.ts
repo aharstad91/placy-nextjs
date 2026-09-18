@@ -10,6 +10,17 @@ export interface RadiusPlace { id: string; categoryId: string; distanceKm: numbe
  * ikke fra en liste i koden: at trening og natur tåler «litt lenger unna» er en
  * egenskap ved innholdet på ett sted, ikke ved motoren.
  */
+/**
+ * Stedene manuset alt navngir, eller `undefined` når datasettet ikke har noe
+ * manus. Skillet er ikke pynt: uten manus er «det som vises først» rent
+ * avstandsstyrt (alt innen 2 km), MED manus er det manusets steder pluss de
+ * tre nærmeste per kategori. Boardet og guiden må lese det likt, ellers kan
+ * guiden avdekke steder kartet alt viser – eller motsatt.
+ */
+export function curatedInitialIds(segments: readonly { placeIds: readonly string[] }[] | undefined): string[] | undefined {
+  return segments?.length ? segments.flatMap(s => s.placeIds) : undefined;
+}
+
 export function radiusPlaces(places: readonly { id: string; categoryId: string; coordinates: { lat: number; lng: number } }[], center: { lat: number; lng: number }, discoveryCategoryIds: readonly string[], initialIds?: readonly string[]): RadiusPlace[] {
   const sorted = places.filter(p => discoveryCategoryIds.includes(p.categoryId))
     .map(p => ({ id: p.id, categoryId: p.categoryId, distanceKm: calculateDistance(center.lat, center.lng, p.coordinates.lat, p.coordinates.lng) / 1000 }))

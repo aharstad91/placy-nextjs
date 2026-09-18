@@ -1,4 +1,4 @@
-import { radiusOptions, radiusPlaces, type RadiusPlace } from "@/lib/demo/local-board/radius";
+import { curatedInitialIds, radiusOptions, radiusPlaces, type RadiusPlace } from "@/lib/demo/local-board/radius";
 import type { LocalCategory, LocalPlace, PresentationSegment } from "@/lib/demo/local-board/schema";
 import type { NyhavnaConversation } from "@/lib/realtime/nyhavna-conversation";
 import type { RealtimeTool } from "@/lib/realtime/types";
@@ -57,7 +57,7 @@ export function createPresentation(base: NyhavnaConversation, options: Presentat
   const mapIds = (ids: readonly string[]) => [...new Set(ids.map(id => mapIdByPlace.get(id) ?? id))];
   const visited = new Set<string>();
   const revealed = new Set<string>();
-  const distances: RadiusPlace[] = center ? radiusPlaces(places, center, discoveryCategoryIds, segments.flatMap(s => s.placeIds)) : [];
+  const distances: RadiusPlace[] = center ? radiusPlaces(places, center, discoveryCategoryIds, curatedInitialIds(segments)) : [];
   const optionsFor = (categoryId: string) => radiusOptions(distances, categoryId, revealed);
   const moreInvitation = (categoryId: string, farther = false) => {
     const noun = categoryById.get(categoryId)?.moreNoun ?? "steder";

@@ -1,5 +1,5 @@
 import { isAnchorPOI } from "@/lib/board/anchor-poi";
-import { radiusPlaces } from "@/lib/demo/local-board/radius";
+import { curatedInitialIds, radiusPlaces } from "@/lib/demo/local-board/radius";
 import { buildingNames, developmentByPlaceId, projectDevelopment } from "@/lib/demo/local-board/development";
 import { createHash } from "node:crypto";
 import type {
@@ -324,7 +324,7 @@ export function buildLocalBoard(
     };
   });
 
-  const radius = radiusPlaces(dataset.places, dataset.board.center, dataset.board.discoveryCategoryIds, dataset.board.presentation?.flatMap(s => s.placeIds));
+  const radius = radiusPlaces(dataset.places, dataset.board.center, dataset.board.discoveryCategoryIds, curatedInitialIds(dataset.board.presentation));
 
   const home: BoardHome = {
     name: dataset.board.name,
