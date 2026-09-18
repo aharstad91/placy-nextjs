@@ -1,0 +1,155 @@
+/*
+ * Våre tillegg til Leangenbukta-replikaen. Kundens eget stilark ligger urørt i
+ * `original.css`. Ingen global Placy-CSS er endret.
+ */
+
+.leangenbukta-site {
+  min-height: 100vh;
+  overflow: clip;
+  background: #ffffff;
+  color: #2a2c2e;
+}
+
+/* Tailwind-preflighten i Placy nullstiller typografi globalt. Salient regner med
+   nettleserens standardmarginer på overskrifter og lister, så vi gir dem tilbake
+   innenfor replikaen — og bare der. */
+.leangenbukta-site ul,
+.leangenbukta-site ol {
+  list-style: none;
+}
+.leangenbukta-site img,
+.leangenbukta-site svg,
+.leangenbukta-site video {
+  display: block;
+  max-width: 100%;
+  height: auto;
+}
+.leangenbukta-site button,
+.leangenbukta-site input,
+.leangenbukta-site textarea,
+.leangenbukta-site select {
+  font: inherit;
+  color: inherit;
+}
+
+/* Salient setter `material-ocm-open` på <body> og har regler der body-klassen
+   er FORFAR til bakteppet. Her er klassen på selve wrapperen, så de tre
+   reglene må gjentas med klassen slått sammen med scope-klassen. */
+.leangenbukta-site.material-ocm-open #slide-out-widget-area-bg.slide-out-from-right {
+  visibility: visible;
+}
+.leangenbukta-site.material-ocm-open .container-wrap {
+  pointer-events: none;
+}
+.leangenbukta-site.material-ocm-open #ajax-content-wrap {
+  cursor: pointer;
+}
+
+/* Salient animerer seksjoner inn med waypoints i `init.js`. Vi importerer ikke
+   temaets skript, så elementene ville blitt stående i start-tilstanden sin —
+   forskjøvet og gjennomsiktige. Her settes de rett i ferdig tilstand. */
+.leangenbukta-site .has-animation[data-animation],
+.leangenbukta-site .img-with-animation,
+.leangenbukta-site .img-with-aniamtion-wrap .hover-wrap,
+.leangenbukta-site .img-with-aniamtion-wrap .inner,
+.leangenbukta-site .wpb_animate_when_almost_visible,
+.leangenbukta-site .animated-item,
+.leangenbukta-site .nectar-fancy-box.has-animation {
+  transform: none !important;
+  opacity: 1 !important;
+  filter: none !important;
+}
+
+/* Helten: originalen lar jarallax sette inn filmen. Her er den et ekte
+   <video>-element som dekker raden på samme måte. */
+.leangenbukta-site .demo-hero-video {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  z-index: 0;
+}
+.leangenbukta-site .demo-hero-video .nk-awb-inner {
+  position: absolute;
+  inset: 0;
+}
+.leangenbukta-site .demo-hero-video video {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  min-width: 100%;
+  min-height: 100%;
+  width: auto;
+  height: auto;
+  transform: translate(-50%, -50%);
+  object-fit: cover;
+}
+
+/* Lukkeknappen i mobilmenyen. Salient tegner sin egen med JS vi ikke kjører,
+   så replikaen har en enkel X som ikke er avhengig av temaets klasser. */
+.leangenbukta-site #slide-out-widget-area > .inner-wrap {
+  position: static !important;
+}
+.leangenbukta-site .demo-menu-close {
+  position: absolute;
+  top: 22px;
+  right: 22px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  font-size: 34px;
+  line-height: 1;
+  color: inherit;
+  z-index: 10;
+}
+
+/* Placy-inngangen. */
+.leangenbukta-site .demo-placy-block {
+  max-width: 760px;
+  /* `.wpb_wrapper` nullstiller margin i temaets CSS, derfor !important her. */
+  margin-inline: auto !important;
+}
+.leangenbukta-site .demo-placy-cta {
+  margin-bottom: 0.4em;
+}
+.leangenbukta-site .demo-new-tab {
+  font-size: 0.85em;
+  opacity: 0.7;
+}
+
+/* Beliggenhetssiden. */
+.leangenbukta-site .demo-breadcrumb {
+  margin-bottom: 1.6em;
+  font-size: 0.8em;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+.leangenbukta-site .demo-breadcrumb span {
+  margin: 0 0.5em;
+  opacity: 0.6;
+}
+.leangenbukta-site .demo-location-image {
+  display: block;
+  position: relative;
+}
+.leangenbukta-site .demo-location-image img {
+  width: 100%;
+  height: auto;
+}
+.leangenbukta-site .demo-image-caption {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.6em;
+  padding: 1.2em 0 0;
+  font-size: 0.95em;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #2a2c2e;
+}
+.leangenbukta-site .demo-image-caption svg {
+  width: 26px;
+  height: 26px;
+  fill: currentColor;
+}
