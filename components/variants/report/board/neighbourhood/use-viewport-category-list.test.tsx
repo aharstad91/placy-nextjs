@@ -266,7 +266,7 @@ describe("useViewportCategoryList — reisemodus", () => {
 
 
 it("beholder hele det kuraterte utvalget i den lokale demoen selv utenfor kartutsnittet", () => {
-  render(<BoardProvider data={{ ...boardData(), demoDataset: "nyhavna-lokal" }}>
+  render(<BoardProvider data={{ ...boardData(), demoFeatures: { unscopedCategoryList: true, faqProgress: false, revealPlaces: false, followHighlightCategory: false, narrationFocus: false, voicePacing: false } }}>
     <Probe rect={RECT} category={MAT} />
   </BoardProvider>);
   expect(list().rows.map(row => row.poi.id)).toEqual(["naer", "mellom", "langt"]);

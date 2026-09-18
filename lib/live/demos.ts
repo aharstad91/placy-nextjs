@@ -7,7 +7,8 @@ import { loadDataset } from "@/lib/demo/local-board/dataset";
 import { getLocalDemo, isLocalDemoId, LOCAL_DEMO_IDS, type LocalDemoDescriptor } from "@/lib/demo/local-board/registry";
 import { LocalDatasetError } from "@/lib/demo/local-board/errors";
 import { buildVoiceDeps, buildLocalInstructions } from "@/lib/demo/local-board/voice";
-import { createNyhavnaConversation, type NyhavnaConversation } from "@/lib/realtime/nyhavna-conversation";
+import { conversationTools, createNyhavnaConversation, type NyhavnaConversation } from "@/lib/realtime/nyhavna-conversation";
+import { NYHAVNA_LABELS, type ConversationLabels } from "@/lib/realtime/conversation-labels";
 import { nyhavnaInstructions } from "@/lib/realtime/nyhavna-knowledge";
 import { nyhavnaProjectInfo } from "@/lib/realtime/nyhavna-project-info";
 import { createPresentation, presentationTool, similarPlacesTool, morePlacesTool } from "@/lib/demo/local-board/presentation";
@@ -50,7 +51,12 @@ export interface LiveDemo {
   /** Den lange instruksen til Responses-backenden: regler, temaer, katalog. */
   backendInstructions: string;
   voiceInstructions?: string;
-  additionalTools?: RealtimeTool[];
+  /**
+   * HELE verktøylista sesjonen får. Ligger på demoen og ikke i ruta fordi
+   * beskrivelsene navngir stedet: en global liste ville sagt «Nyhavna» til
+   * enhver demo (`ConversationLabels`).
+   */
+  tools: RealtimeTool[];
   parallelTools?: boolean;
   /** Fabrikken lager en FERSK samtaletilstand per sesjon — aldri delt. */
   createConversation: () => NyhavnaConversation;
@@ -63,22 +69,31 @@ async function leveDemo(): Promise<LiveDemo> {
     snapshotId: snapshot.snapshotId,
     board: snapshot.board,
     backendInstructions: nyhavnaInstructions(snapshot.board),
+    // Navnene sendes EKSPLISITT, ikke som standard: snapshotet er frosset, og
+    // teksten modellen leser skal ikke kunne endres av en standardverdi.
+    tools: conversationTools(NYHAVNA_LABELS),
     createConversation: () =>
-      createNyhavnaConversation(snapshot.board, { projectInfo: nyhavnaProjectInfo }),
+      createNyhavnaConversation(snapshot.board, { projectInfo: nyhavnaProjectInfo, labels: NYHAVNA_LABELS }),
   };
 }
 
 async function lokalDemo(descriptor: LocalDemoDescriptor): Promise<LiveDemo> {
   const dataset = await loadDataset(descriptor);
   const board = buildLocalBoard(dataset, descriptor);
-  const deps = buildVoiceDeps(dataset);
+  // Stedsnavnet og kildematerialet kommer fra datasettets `board.json`, så
+  // verktøytekstene omtaler det boardet faktisk viser.
+  const labels: ConversationLabels = {
+    areaName: dataset.board.name,
+    projectInfoLabel: dataset.board.projectInfoLabel,
+  };
+  const deps = { ...buildVoiceDeps(dataset), labels };
   return {
     id: descriptor.id,
     snapshotId: datasetId(dataset, descriptor),
     board,
     backendInstructions: buildLocalInstructions(dataset, board),
     voiceInstructions: buildLocalVoiceInstructions(dataset),
-    additionalTools: [presentationTool, similarPlacesTool, morePlacesTool],
+    tools: [...conversationTools(labels), presentationTool, similarPlacesTool, morePlacesTool],
     parallelTools: false,
     createConversation: () => createPresentation(createNyhavnaConversation(board, deps), {
       segments: dataset.board.presentation ?? [],

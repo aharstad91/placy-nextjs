@@ -6,7 +6,7 @@ vi.mock('@/lib/live/sideband', () => ({ connectLiveSideband: mocks.connect, getL
 vi.mock('@/lib/demo/nyhavna-leve/snapshot', () => ({ getNyhavnaSnapshot: async () => ({ snapshotId: 'snapshot-test', project: {}, board: { categories: [] } }) }));
 vi.mock('@/lib/realtime/nyhavna-knowledge', async (importOriginal) => ({ ...await importOriginal<typeof import('@/lib/realtime/nyhavna-knowledge')>(), nyhavnaInstructions: () => 'trusted-backend-instructions' }));
 vi.mock('@/lib/live/voice-instructions', () => ({ NYHAVNA_VOICE_INSTRUCTIONS: 'trusted-voice-instructions' }));
-vi.mock('@/lib/realtime/nyhavna-conversation', () => ({ createNyhavnaConversation: () => ({}), nyhavnaTools: [] }));
+vi.mock('@/lib/realtime/nyhavna-conversation', () => ({ createNyhavnaConversation: () => ({}), conversationTools: () => [] }));
 vi.mock('@/lib/realtime/nyhavna-project-info', () => ({ nyhavnaProjectInfo: { forTheme: () => [], search: () => [] } }));
 import { isLiveDataset, loadLiveDemo } from '@/lib/live/demos';
 import { buildLocalVoiceInstructions } from '@/lib/demo/local-board/voice-instructions';
@@ -74,6 +74,19 @@ describe('local GPT-Live session route', () => {
     expect(isLiveDataset('finnes-ikke')).toBe(false);
     // Ingen tilbakefall til snapshotet: lasteren kaster i stedet for å svare.
     await expect(loadLiveDemo('finnes-ikke')).rejects.toThrow(/Ukjent datasett «finnes-ikke»/);
+  });
+
+  it('holds the same limits for a registered local demo as for the frozen snapshot', async () => {
+    // AE6 og U4-scenario 3: versjonsavvik, produksjonskall og «én aktiv samtale»
+    // gjelder hver registrert demo, ikke bare den ene ruta kjente først.
+    const local = { dataset: 'nyhavna-lokal' };
+    expect((await POST(request(undefined, undefined, { ...local, snapshotId: 'stale' }))).status).toBe(409);
+    expect(mocks.reserve).not.toHaveBeenCalled();
+    expect(fetch).not.toHaveBeenCalled();
+    const demo = await loadLiveDemo('nyhavna-lokal');
+    mocks.reserve.mockRejectedValueOnce(new Error('opptatt'));
+    expect((await POST(request(undefined, undefined, { ...local, snapshotId: demo.snapshotId }))).status).toBe(429);
+    expect((await POST(request('https://example.com', undefined, local))).status).toBe(404);
   });
 
   it('rejects foreign origin, nonloopback and production without opt-in', async () => {

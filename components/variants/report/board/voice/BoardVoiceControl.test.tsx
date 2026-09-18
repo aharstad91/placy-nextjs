@@ -4,8 +4,15 @@ import { BoardVoiceControl } from "@/components/variants/report/board/voice/Boar
 import { FAQSection } from "@/components/variants/report/board/FAQSection";
 import { BoardVoiceProvider } from "@/components/variants/report/board/voice/board-voice";
 import { NYHAVNA_GREETING_INSTRUCTION } from "@/lib/realtime/nyhavna-greeting";
+import { LOCAL_VOICE_PACING } from "@/lib/demo/local-board/voice-instructions";
 
 const mount = () => render(<BoardVoiceProvider><BoardVoiceControl /></BoardVoiceProvider>);
+
+/** Funksjonsflaggene den lokale demoen har på; ingen av dem leses av slug-en. */
+const LOCAL_FEATURES = {
+  faqProgress: true, revealPlaces: true, followHighlightCategory: true,
+  unscopedCategoryList: true, narrationFocus: true, voicePacing: true, guidedPersona: true,
+};
 
 const dispatch = vi.fn();
 const flyToPoint = vi.fn();
@@ -211,12 +218,13 @@ describe("BoardVoiceControl", () => {
 describe("lokal FAQ, stemme og kart", () => {
   const faq = { id: "kaffe", question: "Hvor finner vi kaffe?", answer: "Se [Dora Kaffebar](poi:dora-kaffebar).", source: "curated" as const };
   const renderLocal = () => {
-    Object.assign(data, { demoDataset: "nyhavna-lokal" });
+    Object.assign(data, { demoDataset: "nyhavna-lokal", demoFeatures: LOCAL_FEATURES });
     Object.assign(category, { editorial: { faq: [faq] } });
     return render(<BoardVoiceProvider><FAQSection entries={[faq]} poisById={data.poisById} categoryIds={["mat"]} /></BoardVoiceProvider>);
   };
   afterEach(() => {
     Reflect.deleteProperty(data, "demoDataset");
+    Reflect.deleteProperty(data, "demoFeatures");
     Reflect.deleteProperty(category, "editorial");
   });
   it("åpner tekst og fremhever kartsteder uten å starte mikrofonen", () => {
@@ -250,5 +258,67 @@ describe("lokal FAQ, stemme og kart", () => {
     // forblir uavkrysset til samtalen faktisk har besvart den.
     await act(async () => { await expect(tool("highlight_places", { poi_ids: ["dora-kaffebar"], answered_faq_ids: ["kaffe"] })).resolves.toMatchObject({ ok: true }); });
     expect(screen.queryByLabelText("Utforsket")).toBeNull();
+  });
+});
+
+
+/**
+ * Hvert funksjonsflagg for seg (`LocalDemoFeatures`). Før dette avgjorde
+ * datasett-navnet alle seks samtidig, og et nytt datasett måtte arve enten alt
+ * eller ingenting. Testene slår derfor på ETT flagg om gangen og sjekker at
+ * bare den funksjonen slår ut.
+ */
+describe("funksjonsflagg styrer samtalen, ikke datasett-navnet", () => {
+  const withFeatures = (features: Record<string, boolean>) => {
+    Object.assign(data, { demoDataset: "et-datasett", demoFeatures: features });
+    return mount();
+  };
+  afterEach(() => {
+    Reflect.deleteProperty(data, "demoDataset");
+    Reflect.deleteProperty(data, "demoFeatures");
+  });
+
+  it("navngir guiden bare når demoen har en navngitt guide", () => {
+    withFeatures({ guidedPersona: true });
+    expect(screen.getByRole("button", { name: "Snakk med Anja" })).toBeTruthy();
+    cleanup();
+    withFeatures({ faqProgress: true, revealPlaces: true });
+    expect(screen.getByRole("button", { name: "Snakk med Placy" })).toBeTruthy();
+  });
+
+  it("legger tempoinstruksen på hilsenen bare når demoen ber om den", () => {
+    withFeatures({ voicePacing: true });
+    expect(String(capturedOptions?.greeting)).toContain(LOCAL_VOICE_PACING);
+    cleanup();
+    withFeatures({ guidedPersona: true });
+    expect(String(capturedOptions?.greeting)).toBe(NYHAVNA_GREETING_INSTRUCTION);
+  });
+
+  it("åpner ekstrautvalget og melder viste steder bare når demoen har det", () => {
+    withFeatures({ revealPlaces: true });
+    expect(capturedOptions?.allowRevealPlaces).toBe(true);
+    expect((capturedOptions?.getContext as () => Record<string, unknown>)()).toHaveProperty("revealed_place_ids");
+    cleanup();
+    withFeatures({ faqProgress: true });
+    expect(capturedOptions?.allowRevealPlaces).toBe(false);
+    expect((capturedOptions?.getContext as () => Record<string, unknown>)()).not.toHaveProperty("revealed_place_ids");
+  });
+
+  it("kjører ikke ekstrautvalget som kartkommando når flagget er av", async () => {
+    withFeatures({ faqProgress: true });
+    const tool = capturedOptions?.executeTool as (name: string, args: Record<string, unknown>) => Promise<Record<string, unknown>>;
+    // Uten flagget er `reveal_places` en ukjent kommando, ikke en stille utvidelse.
+    await expect(tool("reveal_places", { poi_ids: [poi.id], category_id: "mat", radius_km: 2 })).resolves.toHaveProperty("error");
+  });
+
+  it("gir ingen FAQ-fremdrift når flagget er av", () => {
+    const faq = { id: "kaffe", question: "Hvor finner vi kaffe?", answer: "Se [Dora Kaffebar](poi:dora-kaffebar).", source: "curated" as const };
+    Object.assign(category, { editorial: { faq: [faq] } });
+    Object.assign(data, { demoDataset: "et-datasett", demoFeatures: { revealPlaces: true } });
+    render(<BoardVoiceProvider><FAQSection entries={[faq]} poisById={data.poisById} categoryIds={["mat"]} /></BoardVoiceProvider>);
+    fireEvent.click(screen.getByTestId("faq-question"));
+    expect(screen.queryByLabelText("Utforsket")).toBeNull();
+    expect(screen.queryByText("Nullstill haker")).toBeNull();
+    Reflect.deleteProperty(category, "editorial");
   });
 });

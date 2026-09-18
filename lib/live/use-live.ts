@@ -67,6 +67,12 @@ export interface LiveOptions {
    * Utelatt = serverens standard, den frosne Nyhavna-demoen.
    */
   dataset?: string;
+  /**
+   * Om serveren får kjøre kartkommandoen `reveal_places`. Kommer fra boardets
+   * funksjonsflagg (`LocalDemoFeatures.revealPlaces`), ikke fra datasett-ID-en:
+   * hooken skal ikke kjenne navnet på noen demo.
+   */
+  allowRevealPlaces?: boolean;
   /** Hilsenen, formulert som en instruksjon til stemmen (`session.instructions.append`). */
   greeting: string;
 }
@@ -248,7 +254,7 @@ export function useLive(options: LiveOptions) {
       if (configured.protocol !== "live") throw new Error("Serveren kjører ikke Live-protokollen. Start serveren på nytt med Live-ruten før du prøver igjen.");
       if (!configured.configured) throw new Error("Tale er ikke koblet til ennå. Legg OPENAI_API_KEY i .env.local, og prøv igjen.");
       const snapshotId = latestOptions.current.snapshotId ?? configured.snapshotId;
-      if (!snapshotId) throw new Error("Åpne Nyhavna-demoen med riktig dataversjon før du starter samtalen.");
+      if (!snapshotId) throw new Error("Last boardet på nytt med riktig dataversjon før du starter samtalen.");
       if (!window.RTCPeerConnection) throw new Error("Nettleseren støtter ikke talesamtaler. Prøv Chrome eller Safari.");
 
       const pc = new RTCPeerConnection();
@@ -532,7 +538,7 @@ export function useLive(options: LiveOptions) {
           const directive: MapDirective = payload.directive;
           let output: unknown;
           try {
-            if (!MAP_TOOLS.has(directive.name) && !(dataset === "nyhavna-lokal" && directive.name === "reveal_places")) throw new Error("Ukjent kartkommando");
+            if (!MAP_TOOLS.has(directive.name) && !(latestOptions.current.allowRevealPlaces && directive.name === "reveal_places")) throw new Error("Ukjent kartkommando");
             output = await latestOptions.current.executeTool(directive.name, directive.args ?? {});
           } catch {
             output = { error: "Kartkommandoen kunne ikke utføres. Ikke påstå at kartet ble flyttet." };

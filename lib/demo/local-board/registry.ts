@@ -41,6 +41,13 @@ export interface LocalDemoFeatures {
   narrationFocus: boolean;
   /** Tempoinstruksen legges på hilsenen. */
   voicePacing: boolean;
+  /**
+   * Samtalen presenteres som den navngitte guiden Anja, ikke som «Placy».
+   * Valgfritt fordi et datasett uten navngitt guide ikke skal måtte si nei:
+   * utelatt betyr den navnløse Placy-kontrollen, som er det boards uten lokal
+   * demo alltid har vist.
+   */
+  guidedPersona?: boolean;
 }
 
 export interface LocalDemoDescriptor {
@@ -61,6 +68,7 @@ const ALL_FEATURES: LocalDemoFeatures = {
   unscopedCategoryList: true,
   narrationFocus: true,
   voicePacing: true,
+  guidedPersona: true,
 };
 
 export const LOCAL_DEMOS: readonly LocalDemoDescriptor[] = [

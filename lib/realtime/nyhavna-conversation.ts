@@ -1,7 +1,8 @@
 import type { BoardData, BoardPOI } from "@/components/variants/report/board/board-data";
 import { buildChapter, chapterSummary, NO_PROJECT_INFO, NYHAVNA_CURATED, type ChapterPack, type CuratedProvider, type ProjectInfoProvider } from "@/lib/realtime/nyhavna-chapters";
 import { nyhavnaMapTools } from "@/lib/realtime/map-tools";
-import { createNyhavnaKnowledge, nyhavnaKnowledgeTools, type KnowledgeOptions } from "@/lib/realtime/nyhavna-knowledge";
+import { createNyhavnaKnowledge, knowledgeTools, type KnowledgeOptions } from "@/lib/realtime/nyhavna-knowledge";
+import { NYHAVNA_LABELS, shortProjectInfoLabel, type ConversationLabels } from "@/lib/realtime/conversation-labels";
 import {
   applyTourEvent, defaultTourOrder, initialTourState, nextThemes, themesForInterests, tourNote,
   type HighlightedPlace, type TourState, type TourTheme,
@@ -34,7 +35,12 @@ const schema = (properties: Record<string, unknown>, required: string[] = []) =>
   type: "object", properties, required, additionalProperties: false,
 });
 
-export const nyhavnaTourTools: RealtimeTool[] = [
+/**
+ * Omvisningens verktøy. En funksjon av navnene fordi `find_project_info`
+ * beskriver HVILKET kildemateriale den søker i, og det materialet er
+ * datasettets – ikke kodens.
+ */
+export const tourTools = (labels: ConversationLabels): RealtimeTool[] => [
   {
     type: "function", name: "set_interests",
     description: "Kall når brukeren har sagt hva som er viktig for hen, eller ber om en generell tur (tom liste). Lagrer interessene, lager temarekkefølge og åpner første tema; returnerer plan og kapittel med kart-ID-er. Kall igjen når brukeren endrer mening.",
@@ -60,13 +66,14 @@ export const nyhavnaTourTools: RealtimeTool[] = [
   },
   {
     type: "function", name: "find_project_info",
-    description: "Søk i Nyhavna Utviklings eget innhold (nyhavna.no): prosjektet, hvem som står bak, visjon, planer, status, hverdagsliv. Returnerer kildebelagte utsagn med status (eksisterende, planlagt, vedtatt plan, visjon, uavklart).",
+    description: `Søk i ${labels.projectInfoLabel}: prosjektet, hvem som står bak, visjon, planer, status, hverdagsliv. Returnerer kildebelagte utsagn med status (eksisterende, planlagt, vedtatt plan, visjon, uavklart).`,
     parameters: schema({ query: { type: "string", maxLength: 200 }, theme_id: { type: "string" } }, ["query"]),
   },
 ];
 
 /** Alle verktøyene backenden får: kunnskap og omvisning (server) + kart (nettleser). */
-export const nyhavnaTools: RealtimeTool[] = [...nyhavnaKnowledgeTools, ...nyhavnaTourTools, ...nyhavnaMapTools];
+export const conversationTools = (labels: ConversationLabels): RealtimeTool[] =>
+  [...knowledgeTools(labels), ...tourTools(labels), ...nyhavnaMapTools];
 
 /** Karttilstanden nettleseren melder inn mellom turene. */
 export interface BoardState {
@@ -104,6 +111,11 @@ export interface ConversationDeps {
   knowledge?: KnowledgeOptions;
   /** Omtalene kapitlene bærer. Utelatt = Nyhavna-snapshotets kobling. */
   curatedFor?: CuratedProvider;
+  /**
+   * Stedsnavnene verktøytekstene og de tomme svarene bruker. Utelatt =
+   * `NYHAVNA_LABELS`, så det frosne snapshotet sier nøyaktig det samme som før.
+   */
+  labels?: ConversationLabels;
 }
 
 const strings = (value: unknown, max = 10): string[] =>
@@ -127,6 +139,7 @@ const autoHighlights = (pack: ChapterPack): HighlightedPlace[] =>
 export function createNyhavnaConversation(board: BoardData, deps: ConversationDeps = {}): NyhavnaConversation {
   const projectInfo = deps.projectInfo ?? NO_PROJECT_INFO;
   const travelMode = deps.travelMode ?? "walk";
+  const labels = deps.labels ?? NYHAVNA_LABELS;
   const knowledge = createNyhavnaKnowledge(board, deps.knowledge);
   const pois = new Map<string, BoardPOI>(board.categories.flatMap((c) => c.pois).map((p) => [String(p.id), p]));
   const themes: (TourTheme & { sourced: boolean })[] = board.categories.map((c) => ({
@@ -225,10 +238,14 @@ export function createNyhavnaConversation(board: BoardData, deps: ConversationDe
       case "find_project_info": {
         const query = typeof args.query === "string" ? args.query.slice(0, 200) : "";
         const themeId = typeof args.theme_id === "string" && themeIds.has(args.theme_id) ? args.theme_id : state.currentThemeId;
-        const results = projectInfo.search(query, themeId ? [themeId, "nyhavna"] : ["nyhavna"], 4);
+        // Områdets egen nøkkel står ved siden av kapittelets tema, så et
+        // spørsmål om stedet som helhet også treffer. Et datasett uten en slik
+        // nøkkel søker bare i kapittelets tema.
+        const areaTheme = labels.areaThemeId ? [labels.areaThemeId] : [];
+        const results = projectInfo.search(query, themeId ? [themeId, ...areaTheme] : areaTheme, 4);
         if (!results.length) {
           state = applyTourEvent(state, { type: "open_question", question: query }, themes);
-          return { result: { matches: 0, results: [], note: "Ingen kildebelagt omtale i Nyhavnas eget innhold. Si kort at du ikke har grunnlag for det, uten å gjette." } };
+          return { result: { matches: 0, results: [], note: `Ingen kildebelagt omtale i ${shortProjectInfoLabel(labels)}. Si kort at du ikke har grunnlag for det, uten å gjette.` } };
         }
         return { result: { matches: results.length, results, note: "Kildebelagte utsagn fra prosjektets datagrunnlag. Bruk kilden ved hvert resultat. Behold status-ordene (planlagt, visjon, vedtatt) når du gjengir dem." } };
       }

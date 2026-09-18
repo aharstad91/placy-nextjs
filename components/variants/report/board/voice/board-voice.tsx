@@ -115,14 +115,24 @@ function BoardVoiceSession({ children }: { children: ReactNode }) {
   const activePoiId = state.activePOIId ? String(state.activePOIId) : null;
 
   const progressRef = useRef<ReturnType<typeof useFaqProgress> | null>(null);
-  const localDemo = data.demoDataset === "nyhavna-lokal";
-  const faqIds = useMemo(() => localDemo ? [...(data.globalFaq ?? []), ...data.categories.flatMap(c => c.editorial?.faq ?? [])].map(f => f.id) : [], [data.globalFaq, data.categories, localDemo]);
+  // Hver funksjon spør om SITT eget flagg, ikke om hvilken demo dette er
+  // (`LocalDemoFeatures`). En samle-boolean ville gjort «hvilket datasett» og
+  // «hvilke funksjoner» til samme spørsmål igjen, og et nytt datasett måtte da
+  // arve enten alt eller ingenting.
+  const features = data.demoFeatures;
+  const faqProgressEnabled = features?.faqProgress ?? false;
+  const revealEnabled = features?.revealPlaces ?? false;
+  const followHighlightCategory = features?.followHighlightCategory ?? false;
+  const narrationFocusEnabled = features?.narrationFocus ?? false;
+  const voicePacing = features?.voicePacing ?? false;
+  const guidedPersona = features?.guidedPersona ?? false;
+  const faqIds = useMemo(() => faqProgressEnabled ? [...(data.globalFaq ?? []), ...data.categories.flatMap(c => c.editorial?.faq ?? [])].map(f => f.id) : [], [data.globalFaq, data.categories, faqProgressEnabled]);
 
   const commandVersion = useRef(0);
   useEffect(() => () => { commandVersion.current++; }, []);
   const runBoardTool = useCallback(async (name: string, args: Record<string, unknown>): Promise<BoardToolResult> => {
     const version = ++commandVersion.current;
-    const revealing = localDemo && name === "reveal_places";
+    const revealing = revealEnabled && name === "reveal_places";
     const ids = Array.isArray(args.poi_ids) ? args.poi_ids.filter((id): id is string => typeof id === "string") : [];
     const validReveal = revealing && reserveData && typeof args.category_id === "string"
       ? radiusOptions(reserveData.demoRadiusPlaces ?? [], args.category_id, revealedPlaceIds ?? new Set()).options.find(o => o.radiusKm === args.radius_km)
@@ -148,7 +158,7 @@ function BoardVoiceSession({ children }: { children: ReactNode }) {
     if (!toolData) return { error: "Visningen ble avbrutt av et nytt valg." };
     const result = executeBoardTool(revealing ? "highlight_places" : name, revealing ? { ...args, poi_ids: ids } : args, {
       data: toolData, state, dispatch, mapCamera: revealing ? null : mapCamera,
-      followHighlightCategory: localDemo,
+      followHighlightCategory,
       placePanel,
       highlightLimit: revealing ? ids.length : undefined,
       onCategory: (index) => { if (!revealing && (String(data.categories[index]?.id) !== stopId || activePoiId)) story.begin(index); },
@@ -157,22 +167,23 @@ function BoardVoiceSession({ children }: { children: ReactNode }) {
     if (revealing && "ok" in result) {
       await new Promise<void>(resolve => requestAnimationFrame(() => requestAnimationFrame(() => resolve())));
     }
-    if (localDemo && "ok" in result && !result.rejected?.length && Array.isArray(args.answered_faq_ids)) {
+    if (faqProgressEnabled && "ok" in result && !result.rejected?.length && Array.isArray(args.answered_faq_ids)) {
       progressRef.current?.queue(args.answered_faq_ids.filter((id): id is string => typeof id === "string"));
     }
     const targets = boardToolTargets(revealing ? "highlight_places" : name, result, toolData, state.activeCategoryId);
     for (const id of targets.categoryIds) if (id !== stopId) voiceNav.current.categoryIds.add(id);
     for (const id of targets.poiIds) if (id !== activePoiId) voiceNav.current.poiIds.add(id);
     return result;
-  }, [data, state, dispatch, mapCamera, story, localDemo, stopId, activePoiId, revealPlaces, reserveData, revealedPlaceIds, placePanel]);
+  }, [data, state, dispatch, mapCamera, story, revealEnabled, faqProgressEnabled, followHighlightCategory, stopId, activePoiId, revealPlaces, reserveData, revealedPlaceIds, placePanel]);
 
   const live = useLive({
     // Hilsenen og datagrunnlaget følger BOARDET, ikke koden: to demoer deler
     // denne flaten med hvert sitt innhold, og guiden skal si stedets egen
     // åpning og svare ut av stedets egne data.
-    greeting: (data.demoGreeting ? greetingInstruction(data.demoGreeting) : NYHAVNA_GREETING_INSTRUCTION) + (localDemo ? `\n${LOCAL_VOICE_PACING}` : ""),
+    greeting: (data.demoGreeting ? greetingInstruction(data.demoGreeting) : NYHAVNA_GREETING_INSTRUCTION) + (voicePacing ? `\n${LOCAL_VOICE_PACING}` : ""),
     dataset: data.demoDataset,
-    getContext: () => ({ selected_category_id: stopId ?? (state.activeCategoryId ? String(state.activeCategoryId) : null), selected_place_id: activePoiId, travel_mode: state.travelMode, ...(localDemo ? { revealed_place_ids: [...(revealedPlaceIds ?? [])] } : {}) }),
+    allowRevealPlaces: revealEnabled,
+    getContext: () => ({ selected_category_id: stopId ?? (state.activeCategoryId ? String(state.activeCategoryId) : null), selected_place_id: activePoiId, travel_mode: state.travelMode, ...(revealEnabled ? { revealed_place_ids: [...(revealedPlaceIds ?? [])] } : {}) }),
     executeTool: runBoardTool,
     snapshotId: data.demoSnapshotId,
   });
@@ -181,7 +192,7 @@ function BoardVoiceSession({ children }: { children: ReactNode }) {
     const poi = data.poisById.get(id);
     return poi ? [{ id: String(id), name: poi.name.split(" – ")[0] }] : [];
   }), [state.highlightedPoiIds, data.poisById]);
-  useNarrationFocus(localDemo, narrationPlaces, status, messages,
+  useNarrationFocus(narrationFocusEnabled, narrationPlaces, status, messages,
     id => dispatch({ type: "FOCUS_NARRATION", id: id as BoardPOIId | null }));
   const progress = useFaqProgress(faqIds, status, messages, live.interruptionVersion);
   progressRef.current = progress;
@@ -201,8 +212,8 @@ function BoardVoiceSession({ children }: { children: ReactNode }) {
   // uten at stemmen sier noe om det. Hooken dedupliserer uendret tilstand.
   useEffect(() => {
     if (!connected) return;
-    sendContext({ kind: "state", selected_category_id: stopId ?? (state.activeCategoryId ? String(state.activeCategoryId) : null), selected_place_id: activePoiId, travel_mode: state.travelMode, ...(localDemo ? { revealed_place_ids: [...(revealedPlaceIds ?? [])] } : {}) });
-  }, [connected, sendContext, stopId, state.activeCategoryId, activePoiId, state.travelMode, localDemo, revealedPlaceIds]);
+    sendContext({ kind: "state", selected_category_id: stopId ?? (state.activeCategoryId ? String(state.activeCategoryId) : null), selected_place_id: activePoiId, travel_mode: state.travelMode, ...(revealEnabled ? { revealed_place_ids: [...(revealedPlaceIds ?? [])] } : {}) });
+  }, [connected, sendContext, stopId, state.activeCategoryId, activePoiId, state.travelMode, revealEnabled, revealedPlaceIds]);
 
   // Brukeren valgte et tema i raden/rutenettet: serveren åpner kapittelet,
   // fremhever stedene og gir stemmen en kommentar.
@@ -254,9 +265,9 @@ function BoardVoiceSession({ children }: { children: ReactNode }) {
   };
 
   const value: BoardVoice = {
-    status, hearing: hearing ?? false, micLevel: micLevel ?? { current: 0 }, running, connecting, ended, notice, error, guided: localDemo,
-    ...(localDemo && isDiscoveryCategory(reserveData?.demoRadiusPlaces, selectedCategory) ? { morePlaces: { current: radius.current, options: radius.options.map(o => ({ radiusKm: o.radiusKm, count: o.ids.length })), show: showMore } } : {}),
-    ...(localDemo ? { faq: { explored: progress.explored, active: progress.active, select: selectFaq, reset: progress.reset } } : {}),
+    status, hearing: hearing ?? false, micLevel: micLevel ?? { current: 0 }, running, connecting, ended, notice, error, guided: guidedPersona,
+    ...(revealEnabled && isDiscoveryCategory(reserveData?.demoRadiusPlaces, selectedCategory) ? { morePlaces: { current: radius.current, options: radius.options.map(o => ({ radiusKm: o.radiusKm, count: o.ids.length })), show: showMore } } : {}),
+    ...(faqProgressEnabled ? { faq: { explored: progress.explored, active: progress.active, select: selectFaq, reset: progress.reset } } : {}),
     toggle: () => {
       if (connecting) return;
       if (running) {

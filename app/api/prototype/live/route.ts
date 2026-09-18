@@ -9,7 +9,6 @@ import { LIVE_SESSION_ID } from '@/lib/live/hangup';
 import { NYHAVNA_VOICE_INSTRUCTIONS } from '@/lib/live/voice-instructions';
 import { localRequest } from '@/lib/live/local-request';
 import { DEFAULT_LIVE_DATASET, isLiveDataset, loadLiveDemo, type LiveDemo } from '@/lib/live/demos';
-import { nyhavnaTools } from '@/lib/realtime/nyhavna-conversation';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -89,7 +88,7 @@ export async function POST(request: NextRequest) {
   const backendInstructions = demo.backendInstructions;
   let identityKnown = false;
   try {
-    const session = liveSessionConfig(demo.voiceInstructions ?? NYHAVNA_VOICE_INSTRUCTIONS, backendInstructions, [...nyhavnaTools, ...(demo.additionalTools ?? [])], parsed.data.voice);
+    const session = liveSessionConfig(demo.voiceInstructions ?? NYHAVNA_VOICE_INSTRUCTIONS, backendInstructions, demo.tools, parsed.data.voice);
     session.delegation.responses.parallel_tool_calls = demo.parallelTools ?? true;
     const created = await createLiveSession(session, parsed.data.sdp);
     identityKnown = true;

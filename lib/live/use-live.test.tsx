@@ -176,14 +176,44 @@ describe("Live-oppkobling", () => {
 });
 
 describe("Kartdirektiver over SSE", () => {
-  it("slipper ekstrautvalget gjennom SSE bare for lokal Nyhavna-demo", async () => {
+  it("slipper ekstrautvalget gjennom SSE bare når boardet har slått det på", async () => {
     const executeTool = vi.fn(() => ({ ok: true, shown: "CrossFit Trondheim" }));
-    const { events } = await connect({ ...options(executeTool), dataset: "nyhavna-lokal" });
+    // Flagget, ikke datasett-navnet: en hvilken som helst registrert demo med
+    // `revealPlaces` skal få kommandoen gjennom.
+    const { events } = await connect({ ...options(executeTool), dataset: "en-annen-demo", allowRevealPlaces: true });
     await act(async () => { events.emit({ type: "map", directive: { id: "reserve-1", name: "reveal_places", args: { poi_ids: ["crossfit-trondheim"] } } }); });
     expect(executeTool).toHaveBeenCalledWith("reveal_places", { poi_ids: ["crossfit-trondheim"] });
     expect(JSON.parse(String(posts("/api/prototype/live/map")[0][1]?.body)).output).toMatchObject({ ok: true });
   });
-  it("avviser ekstrautvalg-direktivet på andre demoer", async () => {
+  it("viser serverens beskjed om å laste på nytt når datagrunnlaget er nyere (409)", async () => {
+    // AE6: fanen sto åpen mens datasettet ble endret. Samtalen skal ikke starte
+    // på gammelt grunnlag, og beskjeden skal si hva brukeren gjør.
+    vi.mocked(fetch).mockImplementation(async (url: unknown, init?: RequestInit) => {
+      const target = String(url);
+      if (init?.method === "DELETE") return { ok: true } as Response;
+      if (target === "/api/prototype/live" && init?.method === "POST") {
+        return { ok: false, status: 409, json: async () => ({ error: "Datagrunnlaget er oppdatert. Last boardet på nytt." }) } as unknown as Response;
+      }
+      return { ok: true, json: async () => ({ configured: true, protocol: "live", snapshotId: "snapshot-test" }) } as Response;
+    });
+    const view = renderHook(() => useLive({ ...options(), dataset: "en-annen-demo" }));
+    await act(async () => { await view.result.current.start(); });
+    expect(view.result.current.status).toBe("error");
+    expect(view.result.current.error).toBe("Datagrunnlaget er oppdatert. Last boardet på nytt.");
+  });
+
+  it("navngir ingen demo i beskjeden om manglende dataversjon", async () => {
+    vi.mocked(fetch).mockImplementation(async (url: unknown, init?: RequestInit) => {
+      if (init?.method === "DELETE") return { ok: true } as Response;
+      return { ok: true, json: async () => ({ configured: true, protocol: "live" }) } as Response;
+    });
+    const view = renderHook(() => useLive({ ...options(), snapshotId: undefined }));
+    await act(async () => { await view.result.current.start(); });
+    expect(view.result.current.error).toBe("Last boardet på nytt med riktig dataversjon før du starter samtalen.");
+    expect(view.result.current.error).not.toMatch(/Nyhavna/);
+  });
+
+  it("avviser ekstrautvalg-direktivet når boardet ikke har slått det på", async () => {
     const executeTool = vi.fn(() => ({ ok: true }));
     const { events } = await connect(options(executeTool));
     await act(async () => { events.emit({ type: "map", directive: { id: "reserve-2", name: "reveal_places", args: { poi_ids: ["crossfit-trondheim"] } } }); });

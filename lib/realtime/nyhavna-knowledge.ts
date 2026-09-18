@@ -5,14 +5,21 @@ import type { BoardData, BoardPOI } from '@/components/variants/report/board/boa
 import type { FaqEntry } from '@/lib/generators/faq-generator';
 import { boardPoisById, spokenFaq } from '@/lib/realtime/nyhavna-chapters';
 import type { RealtimeTool } from '@/lib/realtime/types';
+import { NYHAVNA_LABELS, type ConversationLabels } from '@/lib/realtime/conversation-labels';
 
 const schema = (properties: Record<string, unknown>, required: string[] = []) => ({ type: 'object', properties, required, additionalProperties: false });
 
-/** Kunnskapsverktøyene – utføres på serveren mot det fryste snapshotet. */
-export const nyhavnaKnowledgeTools: RealtimeTool[] = [
-  { type: 'function', name: 'find_places', description: 'Finn steder på Nyhavna: først kildekontrollerte omtaler, så boardets register. Opptil 6 treff med ID; ikke-plasserte omtaler kan forklares, ikke vises.', parameters: schema({ query: { type: 'string', maxLength: 200 }, offset: { type: 'integer', minimum: 0 } }) },
+/**
+ * Kunnskapsverktøyene – utføres på serveren mot ETT datagrunnlag.
+ *
+ * En funksjon og ikke en konstant fordi stedsnavnet står i beskrivelsene
+ * modellen leser: en fast liste ville fortalt guiden at den leter på Nyhavna
+ * uansett hvilket board som er åpent (`ConversationLabels`).
+ */
+export const knowledgeTools = (labels: ConversationLabels): RealtimeTool[] => [
+  { type: 'function', name: 'find_places', description: `Finn steder på ${labels.areaName}: først kildekontrollerte omtaler, så boardets register. Opptil 6 treff med ID; ikke-plasserte omtaler kan forklares, ikke vises.`, parameters: schema({ query: { type: 'string', maxLength: 200 }, offset: { type: 'integer', minimum: 0 } }) },
   { type: 'function', name: 'get_place_facts', description: 'Bekreftede fakta, kilder og relaterte steder for ett sted (kunnskaps-ID eller kart-ID), eller registerdata.', parameters: schema({ poi_id: { type: 'string' } }, ['poi_id']) },
-  { type: 'function', name: 'get_board_facts', description: 'Kort kildekontrollert introduksjon til Nyhavna og temaene.', parameters: schema({}) },
+  { type: 'function', name: 'get_board_facts', description: `Kort kildekontrollert introduksjon til ${labels.areaName} og temaene.`, parameters: schema({}) },
 ];
 const normalize = (s: string) => s.toLocaleLowerCase('nb').normalize('NFKD').replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9æøå]/g, '');
 /**
@@ -124,7 +131,7 @@ export function createNyhavnaKnowledge(board: BoardData, options: KnowledgeOptio
  * katalogspørsmål besvares og vises i kartet i én runde. Kapitlene
  * (`nyhavna-chapters.ts`) bærer dybden ved temainngang.
  */
-export function nyhavnaFaqCatalog(board: BoardData): string {
+export function nyhavnaFaqCatalog(board: BoardData, areaName: string = NYHAVNA_LABELS.areaName): string {
   const pois = boardPoisById(board);
   const line = (entry: FaqEntry) => {
     const spoken = spokenFaq(entry, pois);
@@ -136,7 +143,7 @@ export function nyhavnaFaqCatalog(board: BoardData): string {
   };
   const blocks: string[] = [];
   const global = board.globalFaq ?? [];
-  if (global.length) blocks.push(`[nabolaget] Nyhavna\n${global.map(line).join('\n')}`);
+  if (global.length) blocks.push(`[nabolaget] ${areaName}\n${global.map(line).join('\n')}`);
   for (const category of board.categories) {
     const faq = category.editorial?.faq ?? [];
     if (faq.length) blocks.push(`[${String(category.id)}] ${category.label}\n${faq.map(line).join('\n')}`);
@@ -164,6 +171,8 @@ export interface InstructionOptions {
    * oppgir sin egen i `board.json`.
    */
   projectInfoLabel?: string;
+  /** Stedsnavnet spørsmålskatalogens nabolagsblokk står under. */
+  areaName?: string;
 }
 
 /** Hele instruksjonen for én samtale: reglene, temaene og spørsmålskatalogen fra boardet. */
@@ -171,5 +180,5 @@ export function nyhavnaInstructions(board: BoardData, options: InstructionOption
   const label = options.projectInfoLabel ?? 'nyhavna.no';
   const categories = board.categories.map(c => ({ id: String(c.id), name: c.label, source: c.editorial?.source ? c.editorial.source.label : undefined }));
   const rules = label === 'nyhavna.no' ? NYHAVNA_INSTRUCTIONS : NYHAVNA_INSTRUCTIONS.split('nyhavna.no').join(label);
-  return `${rules}\nBoardets temaer (data; tema-ID → navn, «source» = temaet bærer kundens eget innhold): ${JSON.stringify(categories)}\nSPØRSMÅL OG SVAR (data, per tema):\n${nyhavnaFaqCatalog(board)}`;
+  return `${rules}\nBoardets temaer (data; tema-ID → navn, «source» = temaet bærer kundens eget innhold): ${JSON.stringify(categories)}\nSPØRSMÅL OG SVAR (data, per tema):\n${nyhavnaFaqCatalog(board, options.areaName)}`;
 }
