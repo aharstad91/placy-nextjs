@@ -1,4 +1,4 @@
-import { radiusOptions } from "@/lib/demo/nyhavna-lokal/radius";
+import { radiusOptions } from "@/lib/demo/local-board/radius";
 import type { BoardData } from "@/components/variants/report/board/board-data";
 
 /** The complete dataset stays local; only curated/revealed places reach board surfaces. */

@@ -5,13 +5,13 @@ import { useBoard } from "@/components/variants/report/board/board-state";
 import { useDesktopPlacePanel } from "@/components/variants/report/board/use-popup-mode";
 import { AREA_STEP, useStoryTour } from "@/components/variants/report/board/story/story-tour";
 import { useAudioTourStore } from "@/lib/stores/audio-tour-store";
-import { revealAfterCamera } from "@/lib/demo/nyhavna-lokal/reveal-transition";
-import { DISCOVERY_CATEGORIES, radiusOptions } from "@/lib/demo/nyhavna-lokal/radius";
-import { LOCAL_VOICE_PACING } from "@/lib/demo/nyhavna-lokal/voice-instructions";
+import { revealAfterCamera } from "@/lib/demo/local-board/reveal-transition";
+import { isDiscoveryCategory, radiusOptions } from "@/lib/demo/local-board/radius";
+import { LOCAL_VOICE_PACING } from "@/lib/demo/local-board/voice-instructions";
 import { useLive } from "@/lib/live/use-live";
-import { useNarrationFocus } from "@/lib/demo/nyhavna-lokal/use-narration-focus";
+import { useNarrationFocus } from "@/lib/demo/local-board/use-narration-focus";
 import type { BoardPOIId } from "@/components/variants/report/board/board-data";
-import { useFaqProgress } from "@/lib/demo/nyhavna-lokal/use-faq-progress";
+import { useFaqProgress } from "@/lib/demo/local-board/use-faq-progress";
 import { parseLinkedText, boardLinkResolvers } from "@/lib/board/poi-link-text";
 import type { FaqEntry } from "@/lib/generators/faq-generator";
 import type { LiveMessage, LiveStatus } from "@/lib/live/types";
@@ -255,7 +255,7 @@ function BoardVoiceSession({ children }: { children: ReactNode }) {
 
   const value: BoardVoice = {
     status, hearing: hearing ?? false, micLevel: micLevel ?? { current: 0 }, running, connecting, ended, notice, error, guided: localDemo,
-    ...(localDemo && selectedCategory && (DISCOVERY_CATEGORIES as readonly string[]).includes(selectedCategory) ? { morePlaces: { current: radius.current, options: radius.options.map(o => ({ radiusKm: o.radiusKm, count: o.ids.length })), show: showMore } } : {}),
+    ...(localDemo && isDiscoveryCategory(reserveData?.demoRadiusPlaces, selectedCategory) ? { morePlaces: { current: radius.current, options: radius.options.map(o => ({ radiusKm: o.radiusKm, count: o.ids.length })), show: showMore } } : {}),
     ...(localDemo ? { faq: { explored: progress.explored, active: progress.active, select: selectFaq, reset: progress.reset } } : {}),
     toggle: () => {
       if (connecting) return;

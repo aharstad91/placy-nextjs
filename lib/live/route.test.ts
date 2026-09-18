@@ -8,8 +8,10 @@ vi.mock('@/lib/realtime/nyhavna-knowledge', async (importOriginal) => ({ ...awai
 vi.mock('@/lib/live/voice-instructions', () => ({ NYHAVNA_VOICE_INSTRUCTIONS: 'trusted-voice-instructions' }));
 vi.mock('@/lib/realtime/nyhavna-conversation', () => ({ createNyhavnaConversation: () => ({}), nyhavnaTools: [] }));
 vi.mock('@/lib/realtime/nyhavna-project-info', () => ({ nyhavnaProjectInfo: { forTheme: () => [], search: () => [] } }));
-import { loadLiveDemo } from '@/lib/live/demos';
-import { LOCAL_VOICE_INSTRUCTIONS } from '@/lib/demo/nyhavna-lokal/voice-instructions';
+import { isLiveDataset, loadLiveDemo } from '@/lib/live/demos';
+import { buildLocalVoiceInstructions } from '@/lib/demo/local-board/voice-instructions';
+import { loadDataset } from '@/lib/demo/local-board/dataset';
+import { getLocalDemo } from '@/lib/demo/local-board/registry';
 import { GET, POST, DELETE } from '@/app/api/prototype/live/route';
 
 const key = 'test-secret-must-remain-server-side';
@@ -43,7 +45,7 @@ describe('local GPT-Live session route', () => {
     expect(response.status).toBe(200);
     const init = vi.mocked(fetch).mock.calls[0][1] as RequestInit;
     const body = JSON.parse(String(init.body));
-    expect(body.session.instructions).toBe(LOCAL_VOICE_INSTRUCTIONS);
+    expect(body.session.instructions).toBe(buildLocalVoiceInstructions(await loadDataset(getLocalDemo('nyhavna-lokal'))));
     expect(body.session.delegation.responses.parallel_tool_calls).toBe(false);
     expect(body.session.delegation.responses.tools).toContainEqual(expect.objectContaining({ name: 'present_neighbourhood' }));
     expect(body.session.delegation.responses.tools).toContainEqual(expect.objectContaining({ name: 'find_similar_places' }));
@@ -65,6 +67,15 @@ describe('local GPT-Live session route', () => {
     expect(response.headers.get('X-Placy-Session')).toBe('session-token');
     expect(await response.json()).toEqual({ sdp: 'v=0\r\nanswer', sessionId: 'live_test' });
   });
+  it('rejects an unknown dataset without loading any other demo', async () => {
+    const response = await POST(request(undefined, undefined, { dataset: 'finnes-ikke' }));
+    expect(response.status).toBe(400);
+    expect(fetch).not.toHaveBeenCalled();
+    expect(isLiveDataset('finnes-ikke')).toBe(false);
+    // Ingen tilbakefall til snapshotet: lasteren kaster i stedet for å svare.
+    await expect(loadLiveDemo('finnes-ikke')).rejects.toThrow(/Ukjent datasett «finnes-ikke»/);
+  });
+
   it('rejects foreign origin, nonloopback and production without opt-in', async () => {
     expect((await POST(request('https://example.com'))).status).toBe(404);
     expect((await POST(request(undefined, 'https://example.com'))).status).toBe(404);

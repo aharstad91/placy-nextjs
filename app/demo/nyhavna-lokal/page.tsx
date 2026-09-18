@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
-import { loadDataset } from "@/lib/demo/nyhavna-lokal/dataset";
-import { buildLocalBoard, buildLocalProject } from "@/lib/demo/nyhavna-lokal/board";
+import { loadDataset } from "@/lib/demo/local-board/dataset";
+import { buildLocalBoard, buildLocalProject } from "@/lib/demo/local-board/board";
+import { getLocalDemo } from "@/lib/demo/local-board/registry";
 import LokalBoardGate from "./lokal-board-gate";
 
 /**
@@ -43,9 +44,10 @@ export default async function NyhavnaLokalPage() {
 
   // Feilen fra lasteren peker på fil, felt og hva som manglet, og får boble opp
   // som den er. En demo som stille faller tilbake til noe annet er verdiløs.
-  const dataset = await loadDataset();
-  const project = buildLocalProject(dataset);
-  const board = buildLocalBoard(dataset);
+  const demo = getLocalDemo("nyhavna-lokal");
+  const dataset = await loadDataset(demo);
+  const project = buildLocalProject(dataset, demo);
+  const board = buildLocalBoard(dataset, demo);
 
   return (
     <div className="min-h-screen bg-background text-foreground">

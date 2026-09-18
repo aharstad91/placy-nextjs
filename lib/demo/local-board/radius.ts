@@ -1,10 +1,17 @@
 import { calculateDistance } from '@/lib/utils/geo';
 
-export const DISCOVERY_CATEGORIES = ['trening-aktivitet', 'natur-friluftsliv'] as const;
 export const RADIUS_STEPS = [2, 4, 6, 8, 10] as const;
 export interface RadiusPlace { id: string; categoryId: string; distanceKm: number; initiallyVisible?: boolean }
-export function radiusPlaces(places: readonly { id: string; categoryId: string; coordinates: { lat: number; lng: number } }[], center: { lat: number; lng: number }, initialIds?: readonly string[]): RadiusPlace[] {
-  const sorted = places.filter(p => (DISCOVERY_CATEGORIES as readonly string[]).includes(p.categoryId))
+
+/**
+ * Stedene som kan avdekkes gradvis, med avstanden sin.
+ *
+ * Hvilke kategorier det gjelder kommer fra datasettet (`discoveryCategoryIds`),
+ * ikke fra en liste i koden: at trening og natur tåler «litt lenger unna» er en
+ * egenskap ved innholdet på ett sted, ikke ved motoren.
+ */
+export function radiusPlaces(places: readonly { id: string; categoryId: string; coordinates: { lat: number; lng: number } }[], center: { lat: number; lng: number }, discoveryCategoryIds: readonly string[], initialIds?: readonly string[]): RadiusPlace[] {
+  const sorted = places.filter(p => discoveryCategoryIds.includes(p.categoryId))
     .map(p => ({ id: p.id, categoryId: p.categoryId, distanceKm: calculateDistance(center.lat, center.lng, p.coordinates.lat, p.coordinates.lng) / 1000 }))
     .filter(p => p.distanceKm <= 10).sort((a,b) => a.distanceKm - b.distanceKm);
   return sorted.map(p => ({ ...p, initiallyVisible: initialIds === undefined ? p.distanceKm <= 2 : initialIds.includes(p.id) || (p.distanceKm <= 2 && sorted.filter(q => q.categoryId === p.categoryId).slice(0, 3).some(q => q.id === p.id)) }));
@@ -20,10 +27,21 @@ export function radiusOptions(places: readonly RadiusPlace[], categoryId: string
   return { current, options };
 }
 
+/**
+ * Om en kategori er en av datasettets utvidbare.
+ *
+ * Boardet bærer allerede svaret i `demoRadiusPlaces`, som har kategori-ID per
+ * sted. Flatene spør derfor boardet i stedet for å kjenne kategori-ID-ene til
+ * ett bestemt datasett.
+ */
+export function isDiscoveryCategory(places: readonly RadiusPlace[] | undefined, categoryId: string | null | undefined): boolean {
+  return Boolean(categoryId && places?.some(p => p.categoryId === categoryId));
+}
+
 /** Reuses the board's geometry layers in both map engines; this is a search radius, not a route. */
 export function discoveryGeometry(data: import('@/components/variants/report/board/board-data').BoardData, categoryId: string | null | undefined): import('@/lib/types').CuratedGeometryFeature[] {
-  if (!categoryId || !data.demoRadiusPlaces?.some(p => p.categoryId === categoryId)) return [];
-  const radiusKm = radiusOptions(data.demoRadiusPlaces, categoryId, new Set(data.poisById.keys())).current;
+  if (!isDiscoveryCategory(data.demoRadiusPlaces, categoryId)) return [];
+  const radiusKm = radiusOptions(data.demoRadiusPlaces!, categoryId!, new Set(data.poisById.keys())).current;
   const { lat, lng } = data.home.coordinates;
   const angular = radiusKm / 6371;
   const latitude = lat * Math.PI / 180;
@@ -34,5 +52,5 @@ export function discoveryGeometry(data: import('@/components/variants/report/boa
     const x = longitude + Math.atan2(Math.sin(bearing) * Math.sin(angular) * Math.cos(latitude), Math.cos(angular) - Math.sin(latitude) * Math.sin(y));
     return [x * 180 / Math.PI, y * 180 / Math.PI];
   });
-  return [{ id: `discovery-radius-${categoryId}`, name: `${radiusKm} km fra Nyhavna`, kind: 'line', themeId: categoryId, status: 'existing', precision: 'sourced', color: '#64748b', coordinates }];
+  return [{ id: `discovery-radius-${categoryId}`, name: `${radiusKm} km fra ${data.home.name}`, kind: 'line', themeId: categoryId!, status: 'existing', precision: 'sourced', color: '#64748b', coordinates }];
 }

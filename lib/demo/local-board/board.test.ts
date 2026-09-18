@@ -1,15 +1,20 @@
 import { describe, expect, it } from "vitest";
 import { readFile } from "node:fs/promises";
 import { join } from "node:path";
-import { buildLocalBoard, buildLocalProject, datasetId } from "@/lib/demo/nyhavna-lokal/board";
-import { loadDataset, LOCAL_DATASET_DIR } from "@/lib/demo/nyhavna-lokal/dataset";
+import { buildLocalBoard, buildLocalProject, datasetId } from "@/lib/demo/local-board/board";
+import { loadDataset } from "@/lib/demo/local-board/dataset";
 import {
   localBoardSchema,
   localFaqsSchema,
   localPlacesSchema,
   localSourcesSchema,
   type LocalDataset,
-} from "@/lib/demo/nyhavna-lokal/schema";
+} from "@/lib/demo/local-board/schema";
+
+import { getLocalDemo } from "@/lib/demo/local-board/registry";
+import { writeTestDemo } from "@/lib/demo/local-board/__fixtures__/test-demo";
+
+const NYHAVNA = getLocalDemo("nyhavna-lokal");
 
 /**
  * Adapteren bærer demoens to løfter mot flaten: kategoriene overlever tomhet, og
@@ -17,7 +22,7 @@ import {
  */
 
 async function realBoard() {
-  const board = localBoardSchema.parse(JSON.parse(await readFile(join(LOCAL_DATASET_DIR, "board.json"), "utf8")));
+  const board = localBoardSchema.parse(JSON.parse(await readFile(join(NYHAVNA.directory, "board.json"), "utf8")));
   return { ...board, presentation: [], categories: board.categories.map(c => ({ ...c, lead: "", body: "", sourceId: undefined })) };
 }
 
@@ -31,7 +36,7 @@ const emptyDataset = async (): Promise<LocalDataset> => ({
 
 describe("tomt datasett", () => {
   it("beholder alle kategoriene, uten et eneste sted", async () => {
-    const board = buildLocalBoard(await emptyDataset());
+    const board = buildLocalBoard(await emptyDataset(), NYHAVNA);
     const dataset = await emptyDataset();
     expect(board.categories.map((c) => String(c.id))).toEqual(dataset.board.categories.map((c) => c.id));
     expect(board.categories.every((c) => c.pois.length === 0)).toBe(true);
@@ -39,7 +44,7 @@ describe("tomt datasett", () => {
   });
 
   it("lover ingenting boardet ikke har", async () => {
-    const board = buildLocalBoard(await emptyDataset());
+    const board = buildLocalBoard(await emptyDataset(), NYHAVNA);
     expect(board.audioTourEnabled).toBe(false);
     expect(board.globalFaq).toEqual([]);
     expect(board.summary).toBeUndefined();
@@ -51,25 +56,25 @@ describe("tomt datasett", () => {
 
   it("slår på Satelitt og 3D når datasettet ber om det", async () => {
     const dataset = await emptyDataset();
-    expect(buildLocalProject(dataset).has3dAddon).toBe(true);
+    expect(buildLocalProject(dataset, NYHAVNA).has3dAddon).toBe(true);
     const flat: LocalDataset = { ...dataset, board: { ...dataset.board, map3d: false } };
-    expect(buildLocalProject(flat).has3dAddon).toBe(false);
+    expect(buildLocalProject(flat, NYHAVNA).has3dAddon).toBe(false);
   });
 
   it("merker boardet som demo, med datasett og hilsen", async () => {
     const dataset = await emptyDataset();
-    const board = buildLocalBoard(dataset);
+    const board = buildLocalBoard(dataset, NYHAVNA);
     expect(board.demoDataset).toBe("nyhavna-lokal");
-    expect(board.demoSnapshotId).toBe(datasetId(dataset));
+    expect(board.demoSnapshotId).toBe(datasetId(dataset, NYHAVNA));
     expect(board.demoGreeting).toBe(dataset.board.greeting);
   });
 
   it("gir ny innholds-ID når innholdet endres", async () => {
     const before = await emptyDataset();
     const after: LocalDataset = { ...before, topics: [] , places: [] };
-    expect(datasetId(after)).toBe(datasetId(before));
+    expect(datasetId(after, NYHAVNA)).toBe(datasetId(before, NYHAVNA));
     const changed: LocalDataset = { ...before, board: { ...before.board, greeting: "Hei igjen." } };
-    expect(datasetId(changed)).not.toBe(datasetId(before));
+    expect(datasetId(changed, NYHAVNA)).not.toBe(datasetId(before, NYHAVNA));
   });
 });
 
@@ -97,7 +102,7 @@ describe("et sted i datasettet", () => {
   const withPlace = async (): Promise<LocalDataset> => ({ ...(await emptyDataset()), sources, places });
 
   it("havner i riktig tema, med koordinat, minutter og kilde", async () => {
-    const board = buildLocalBoard(await withPlace());
+    const board = buildLocalBoard(await withPlace(), NYHAVNA);
     const servering = board.categories.find((c) => String(c.id) === "mat-drikke")!;
     expect(servering.pois.map((p) => p.name)).toEqual(["Test Sted"]);
     const poi = servering.pois[0];
@@ -113,14 +118,14 @@ describe("et sted i datasettet", () => {
 
   it("lar stedet bli med i prosjektet, så kart og oppslag ser det samme", async () => {
     const dataset = await withPlace();
-    const project = buildLocalProject(dataset);
+    const project = buildLocalProject(dataset, NYHAVNA);
     expect(project.pois.map((p) => p.id)).toEqual(["test-sted"]);
-    expect(buildLocalBoard(dataset).poisById.get("test-sted")?.name).toBe("Test Sted");
+    expect(buildLocalBoard(dataset, NYHAVNA).poisById.get("test-sted")?.name).toBe("Test Sted");
   });
 
   it("merker et planlagt sted som planlagt", async () => {
     const planned = localPlacesSchema.parse([{ ...places[0], id: "plan-sted", status: "planned" }]);
-    const board = buildLocalBoard({ ...(await withPlace()), places: planned });
+    const board = buildLocalBoard({ ...(await withPlace()), places: planned }, NYHAVNA);
     expect(board.categories.flatMap((c) => c.pois)[0].raw.developmentStatus).toBe("planned");
   });
 });
@@ -160,7 +165,7 @@ describe("spørsmål og svar", () => {
   });
 
   it("legger spørsmål uten tema i den globale seksjonen, resten under sitt tema", async () => {
-    const board = buildLocalBoard(await withFaq());
+    const board = buildLocalBoard(await withFaq(), NYHAVNA);
     expect(board.globalFaq?.map((e) => e.id)).toEqual(["hele-omradet"]);
     const servering = board.categories.find((c) => String(c.id) === "mat-drikke")!;
     // Rekkefølgen i fila er rekkefølgen på flaten.
@@ -169,29 +174,29 @@ describe("spørsmål og svar", () => {
   });
 
   it("viser spørsmålene selv om temaet ikke har ett eneste sted", async () => {
-    const board = buildLocalBoard(await withFaq());
+    const board = buildLocalBoard(await withFaq(), NYHAVNA);
     const servering = board.categories.find((c) => String(c.id) === "mat-drikke")!;
     expect(servering.pois).toEqual([]);
     expect(servering.editorial?.faq?.length).toBe(2);
   });
 
   it("lar temaer uten spørsmål stå urørt, uten oppdiktet innhold", async () => {
-    const board = buildLocalBoard(await withFaq());
+    const board = buildLocalBoard(await withFaq(), NYHAVNA);
     const transport = board.categories.find((c) => String(c.id) === "transport")!;
     expect(transport.editorial).toBeUndefined();
   });
 
   it("gir det ekte datasettet spørsmål i sidebaren", async () => {
-    const dataset = await loadDataset();
-    const board = buildLocalBoard(dataset);
+    const dataset = await loadDataset(NYHAVNA);
+    const board = buildLocalBoard(dataset, NYHAVNA);
     const shown = (board.globalFaq?.length ?? 0) + board.categories.reduce((n, c) => n + (c.editorial?.faq?.length ?? 0), 0);
     // Alt som ligger i faq.json havner på en flate — ingen stille bortfall.
     expect(shown).toBe(dataset.faqs.length);
   });
 
   it("viser de kontrollerte oppvekstkildene med dato ved hvert svar", async () => {
-    const dataset = await loadDataset();
-    const board = buildLocalBoard(dataset);
+    const dataset = await loadDataset(NYHAVNA);
+    const board = buildLocalBoard(dataset, NYHAVNA);
     const faq = board.categories.find((c) => c.id === "barn-oppvekst")!.editorial!.faq!;
     expect(faq).toHaveLength(dataset.faqs.filter(f => f.categoryId === "barn-oppvekst").length);
     for (const entry of faq) {
@@ -199,5 +204,46 @@ describe("spørsmål og svar", () => {
       expect(entry.knowledgeSources?.map((s) => s.id)).toEqual(original.sourceIds);
       expect(entry.knowledgeSources?.every((s) => s.url.startsWith("https://") && s.verifiedAt === dataset.sources.find(source => source.id === s.id)?.checkedAt)).toBe(true);
     }
+  });
+});
+
+describe("to datasett på samme kjerne", () => {
+  it("gir hver demo sin egen identitet, hilsen og innholds-ID", async () => {
+    const other = await writeTestDemo();
+    const otherDataset = await loadDataset(other);
+    const otherBoard = buildLocalBoard(otherDataset, other);
+    const nyhavna = buildLocalBoard(await loadDataset(NYHAVNA), NYHAVNA);
+
+    expect(otherBoard.demoDataset).toBe("leangenbukta-test");
+    expect(nyhavna.demoDataset).toBe("nyhavna-lokal");
+    expect(otherBoard.demoSnapshotId).not.toBe(nyhavna.demoSnapshotId);
+    expect(otherBoard.demoSnapshotId?.startsWith("leangenbukta-test-")).toBe(true);
+    expect(otherBoard.demoGreeting).toBe(otherDataset.board.greeting);
+    expect(otherBoard.demoGreeting).not.toBe(nyhavna.demoGreeting);
+    expect(otherBoard.home.name).toBe("Leangenbukta");
+    // Ingen arv: det tomme datasettet har verken Nyhavnas steder eller temaer.
+    expect(JSON.stringify([...otherBoard.poisById.keys()])).not.toMatch(/nyhavna/i);
+    expect(otherBoard.categories.map((c) => String(c.id))).toEqual(["hverdagsliv"]);
+  });
+
+  it("bærer demoens funksjonsflagg, og lar dem endre innholds-ID-en", async () => {
+    const off = await writeTestDemo();
+    const dataset = await loadDataset(off);
+    expect(buildLocalBoard(dataset, off).demoFeatures?.faqProgress).toBe(false);
+
+    const on = { ...off, features: { ...off.features, faqProgress: true } };
+    expect(buildLocalBoard(dataset, on).demoFeatures?.faqProgress).toBe(true);
+    expect(datasetId(dataset, on)).not.toBe(datasetId(dataset, off));
+  });
+
+  it("utvider bare radius i kategoriene datasettet peker ut", async () => {
+    const dataset = await loadDataset(NYHAVNA);
+    const board = buildLocalBoard(dataset, NYHAVNA);
+    const categories = new Set(board.demoRadiusPlaces?.map((p) => p.categoryId));
+    for (const id of categories) expect(dataset.board.discoveryCategoryIds).toContain(id);
+
+    const narrow = { ...dataset, board: { ...dataset.board, discoveryCategoryIds: [] } };
+    expect(buildLocalBoard(narrow, NYHAVNA).demoRadiusPlaces).toEqual([]);
+    expect(buildLocalBoard(narrow, NYHAVNA).demoReservePlaceIds).toEqual([]);
   });
 });

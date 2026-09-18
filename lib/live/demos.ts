@@ -2,14 +2,16 @@ import "server-only";
 
 import type { BoardData } from "@/components/variants/report/board/board-data";
 import { getNyhavnaSnapshot } from "@/lib/demo/nyhavna-leve/snapshot";
-import { buildLocalBoard, datasetId } from "@/lib/demo/nyhavna-lokal/board";
-import { loadDataset, LOCAL_DATASET_ID } from "@/lib/demo/nyhavna-lokal/dataset";
-import { buildVoiceDeps, buildLocalInstructions } from "@/lib/demo/nyhavna-lokal/voice";
+import { buildLocalBoard, datasetId } from "@/lib/demo/local-board/board";
+import { loadDataset } from "@/lib/demo/local-board/dataset";
+import { getLocalDemo, isLocalDemoId, LOCAL_DEMO_IDS, type LocalDemoDescriptor } from "@/lib/demo/local-board/registry";
+import { LocalDatasetError } from "@/lib/demo/local-board/errors";
+import { buildVoiceDeps, buildLocalInstructions } from "@/lib/demo/local-board/voice";
 import { createNyhavnaConversation, type NyhavnaConversation } from "@/lib/realtime/nyhavna-conversation";
 import { nyhavnaInstructions } from "@/lib/realtime/nyhavna-knowledge";
 import { nyhavnaProjectInfo } from "@/lib/realtime/nyhavna-project-info";
-import { createPresentation, presentationTool, similarPlacesTool, morePlacesTool } from "@/lib/demo/nyhavna-lokal/presentation";
-import { LOCAL_VOICE_INSTRUCTIONS } from "@/lib/demo/nyhavna-lokal/voice-instructions";
+import { createPresentation, presentationTool, similarPlacesTool, morePlacesTool } from "@/lib/demo/local-board/presentation";
+import { buildLocalVoiceInstructions } from "@/lib/demo/local-board/voice-instructions";
 import type { RealtimeTool } from "@/lib/realtime/types";
 
 /**
@@ -32,12 +34,12 @@ import type { RealtimeTool } from "@/lib/realtime/types";
 
 export const DEFAULT_LIVE_DATASET = "nyhavna-leve";
 
-/** Datasett-ID-ene ruta godtar. Alt annet avvises. */
-export const LIVE_DATASETS = [DEFAULT_LIVE_DATASET, LOCAL_DATASET_ID] as const;
-export type LiveDatasetId = (typeof LIVE_DATASETS)[number];
+/** Datasett-ID-ene ruta godtar: snapshotet pluss hver registrerte lokale demo. */
+export const LIVE_DATASETS: readonly string[] = [DEFAULT_LIVE_DATASET, ...LOCAL_DEMO_IDS];
+export type LiveDatasetId = string;
 
 export function isLiveDataset(value: string): value is LiveDatasetId {
-  return (LIVE_DATASETS as readonly string[]).includes(value);
+  return LIVE_DATASETS.includes(value);
 }
 
 export interface LiveDemo {
@@ -66,23 +68,37 @@ async function leveDemo(): Promise<LiveDemo> {
   };
 }
 
-async function lokalDemo(): Promise<LiveDemo> {
-  const dataset = await loadDataset();
-  const board = buildLocalBoard(dataset);
+async function lokalDemo(descriptor: LocalDemoDescriptor): Promise<LiveDemo> {
+  const dataset = await loadDataset(descriptor);
+  const board = buildLocalBoard(dataset, descriptor);
   const deps = buildVoiceDeps(dataset);
   return {
-    id: LOCAL_DATASET_ID,
-    snapshotId: datasetId(dataset),
+    id: descriptor.id,
+    snapshotId: datasetId(dataset, descriptor),
     board,
     backendInstructions: buildLocalInstructions(dataset, board),
-    voiceInstructions: LOCAL_VOICE_INSTRUCTIONS,
+    voiceInstructions: buildLocalVoiceInstructions(dataset),
     additionalTools: [presentationTool, similarPlacesTool, morePlacesTool],
     parallelTools: false,
-    createConversation: () => createPresentation(createNyhavnaConversation(board, deps), dataset.board.presentation ?? [], dataset.places, dataset.board.center),
+    createConversation: () => createPresentation(createNyhavnaConversation(board, deps), {
+      segments: dataset.board.presentation ?? [],
+      places: dataset.places,
+      center: dataset.board.center,
+      categories: dataset.board.categories,
+      homeName: dataset.board.name,
+      discoveryCategoryIds: dataset.board.discoveryCategoryIds,
+    }),
   };
 }
 
-/** Laster datagrunnlaget for ett datasett. Kaster hvis filene ikke kan leses. */
+/**
+ * Laster datagrunnlaget for ett datasett. Kaster hvis filene ikke kan leses.
+ *
+ * Ukjent ID gir en feil, ALDRI snapshotet: et stille tilbakefall ville gitt en
+ * guide som snakker om Nyhavna på et board som viser noe annet.
+ */
 export function loadLiveDemo(dataset: LiveDatasetId): Promise<LiveDemo> {
-  return dataset === LOCAL_DATASET_ID ? lokalDemo() : leveDemo();
+  if (dataset === DEFAULT_LIVE_DATASET) return leveDemo();
+  if (isLocalDemoId(dataset)) return lokalDemo(getLocalDemo(dataset));
+  return Promise.reject(new LocalDatasetError(`Ukjent datasett «${dataset}». Godkjente: ${LIVE_DATASETS.join(", ")}.`));
 }

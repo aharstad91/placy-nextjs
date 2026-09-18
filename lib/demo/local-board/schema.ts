@@ -1,5 +1,5 @@
 /**
- * Dataformatet for den lokale Nyhavna-demoen (2026-09-13).
+ * Dataformatet for lokale demo-datasett (2026-09-13, delt kjerne 2026-09-18).
  *
  * ## Hvorfor et eget format og ikke boardets egne typer
  *
@@ -22,7 +22,12 @@
  * Samtaleeksemplene er skilt ut i egen fil og egen laster (`loadConversations`)
  * nettopp fordi de ALDRI skal inn i modellens kunnskapsgrunnlag: en
  * transkripsjon er hva noen sa, ikke hva som er sant. `loadDataset` laster dem
- * ikke, og `lib/demo/nyhavna-lokal/voice.ts` importerer dem ikke.
+ * ikke, og `lib/demo/local-board/voice.ts` importerer dem ikke.
+ *
+ * `board.json` bærer i tillegg setningene guiden sier om DETTE stedet
+ * (`voice`) og hvilke kategorier som kan utvides med radius
+ * (`discoveryCategoryIds`). De lå før i koden, med ett steds navn midt i en
+ * ellers generell motor.
  *
  * ## Kildehenvisning, kontrolldato og forbehold
  *
@@ -117,6 +122,18 @@ export const localCategorySchema = z
     unplaced: z.array(z.string().min(1).max(120)).max(40).default([]),
     /** Kilden temateksten er hentet fra. Utelatt = vår egen tekst. */
     sourceId: stableId.optional(),
+    /**
+     * Invitasjonen manusdelen avsluttes med i denne kategorien.
+     *
+     * Utelatt = den vanlige invitasjonen, som tilbyr flere steder når utvalget
+     * har flere igjen. Satt = kategorien spør om noe annet, slik et delområde
+     * gjør: der er «flere lignende steder» feil spørsmål.
+     */
+    invitation: z.string().min(1).max(400).optional(),
+    /** Oppfølgingen etter et klikk på et sted i kategorien. Utelatt = lignende steder. */
+    placeInvitation: z.string().min(1).max(400).optional(),
+    /** Ordet «flere lignende …» bruker, f.eks. «treningssteder». Utelatt = «steder». */
+    moreNoun: z.string().min(1).max(60).optional(),
   })
   .strict();
 export type LocalCategory = z.infer<typeof localCategorySchema>;
@@ -130,6 +147,45 @@ export const presentationSegmentSchema = z.object({
   checkedAt: isoDate,
 }).strict();
 export type PresentationSegment = z.infer<typeof presentationSegmentSchema>;
+
+
+/**
+ * Setningene stemmen sier som handler om DETTE stedet.
+ *
+ * Alt her lå tidligere i koden, med Nyhavnas navn og Nyhavnas delområder midt i
+ * en ellers generell instruks. Da kunne ikke et annet datasett bruke samme
+ * motor uten å arve et annet steds fakta. Feltene er derfor eksakte setninger,
+ * ikke maler med plassholdere: den som skriver innholdet ser nøyaktig hva
+ * guiden får vite, og en utelatt setning blir borte i stedet for å bli en tom
+ * plassholder.
+ */
+export const localVoiceSchema = z
+  .object({
+    /** Hva samtalen handler om, f.eks. «hverdagen på Nyhavna». */
+    subject: z.string().min(1).max(160).optional(),
+    /** Hva guiden presenterer, f.eks. «Nyhavna og nærområdet». */
+    presents: z.string().min(1).max(160).optional(),
+    /** Den guiden IKKE er ansatt hos. Utelatt = boardets navn. */
+    employer: z.string().min(1).max(120).optional(),
+    /** Ordene guiden skal bruke, f.eks. «fra Nyhavna». Tom = ingen slik føring. */
+    phrases: z.array(z.string().min(1).max(80)).max(10).default([]),
+    /** OMFANG-linja: hva rammen er, og hva som må holdes adskilt. */
+    scope: z.string().min(1).max(800).optional(),
+    /** INNGANG: hvilke ord som betyr hvilken kategori i hilsenens to retninger. */
+    entry: z.string().min(1).max(800).optional(),
+    /** Hva det faste referansepunktet er, sagt i klartekst. */
+    referencePoint: z.string().min(1).max(400).optional(),
+    /** STEDSFOKUS: hvordan et delområde skal følges opp (backend-instruksen). */
+    subAreaFocus: z.string().min(1).max(600).optional(),
+    /** Samme regel, sagt til stemmen selv. */
+    subAreaRole: z.string().min(1).max(600).optional(),
+    /** Egne avsnitt i backend-instruksen, f.eks. om bydelens delområder. */
+    backendSections: z.array(z.string().min(1).max(2000)).max(10).default([]),
+    /** Egne setninger i stemmens rolleinstruks. */
+    roleSentences: z.array(z.string().min(1).max(600)).max(10).default([]),
+  })
+  .strict();
+export type LocalVoice = z.infer<typeof localVoiceSchema>;
 
 export const localBoardSchema = z
   .object({
@@ -180,6 +236,16 @@ export const localBoardSchema = z
      */
     projectInfoLabel: z.string().min(1).max(80),
     categories: z.array(localCategorySchema).min(1).max(30),
+    /**
+     * Kategoriene som starter med et lite utvalg og kan utvides med radius.
+     *
+     * Hvilke temaer som tåler det er en egenskap ved INNHOLDET: trening og
+     * natur har mange likeverdige alternativer der «litt lenger unna» fortsatt
+     * er relevant, mens en skolekrets ikke har det. Tom liste = ingen utvidelse,
+     * som er riktig for et datasett som ikke har tatt stilling ennå.
+     */
+    discoveryCategoryIds: z.array(stableId).max(20).default([]),
+    voice: localVoiceSchema.optional(),
     /** Kuratert fortelling, adskilt fra transkripter og spørsmål/svar. */
     presentation: z.array(presentationSegmentSchema).max(30).optional(),
   })

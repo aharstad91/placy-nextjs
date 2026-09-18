@@ -148,7 +148,7 @@ interface Props {
    *
    * Fram til 2026-09-13 var event-modus UTLEDET av at `boardData` kom inn som
    * prop, fordi event-ruta var den eneste som bygde BoardData selv. Den lokale
-   * Nyhavna-demoen bygger den også (`lib/demo/nyhavna-lokal/board.ts`) og er et
+   * Nyhavna-demoen bygger den også (`lib/demo/local-board/board.ts`) og er et
    * BOLIG-board — med utledningen ville den arvet event-chromet: programfilter,
    * samlings-skuff og «Utforsk programmet» på splashen. Utelatt = utledning som
    * før, så event-ruta er uendret.

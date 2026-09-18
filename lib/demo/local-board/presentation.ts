@@ -1,5 +1,5 @@
-import { radiusOptions, radiusPlaces, type RadiusPlace } from "@/lib/demo/nyhavna-lokal/radius";
-import type { LocalPlace, PresentationSegment } from "@/lib/demo/nyhavna-lokal/schema";
+import { radiusOptions, radiusPlaces, type RadiusPlace } from "@/lib/demo/local-board/radius";
+import type { LocalCategory, LocalPlace, PresentationSegment } from "@/lib/demo/local-board/schema";
 import type { NyhavnaConversation } from "@/lib/realtime/nyhavna-conversation";
 import type { RealtimeTool } from "@/lib/realtime/types";
 import type { ToolOutcome } from "@/lib/live/types";
@@ -28,8 +28,28 @@ export const morePlacesTool: RealtimeTool = {
   parameters: { type: "object", additionalProperties: false, properties: { category_id: { type: "string" }, radius_km: { type: "number", enum: [2, 4, 6, 8, 10] } }, required: ["category_id"] },
 };
 
+/**
+ * Alt presentasjonen trenger å vite om DETTE datasettet.
+ *
+ * Kategoriene er med fordi invitasjonene og ordvalget hører til innholdet:
+ * «flere lignende treningssteder» og «hvilket delområde vil du høre mer om»
+ * er setninger om Nyhavna, ikke om motoren.
+ */
+export interface PresentationOptions {
+  segments: readonly PresentationSegment[];
+  places?: readonly LocalPlace[];
+  /** Utelatt = ingen avstandsberegning, og dermed ingen utvidelse av radius. */
+  center?: { lat: number; lng: number };
+  categories?: readonly LocalCategory[];
+  /** Stedet reisetider måles fra, slik guiden sier det: «å gå fra Nyhavna». */
+  homeName?: string;
+  discoveryCategoryIds?: readonly string[];
+}
+
 /** Eget returpunkt for manuset: et faktaspørsmål skal ikke flytte det. */
-export function createPresentation(base: NyhavnaConversation, segments: readonly PresentationSegment[], places: readonly LocalPlace[] = [], center?: { lat: number; lng: number }): NyhavnaConversation {
+export function createPresentation(base: NyhavnaConversation, options: PresentationOptions): NyhavnaConversation {
+  const { segments, places = [], center, categories = [], homeName = "", discoveryCategoryIds = [] } = options;
+  const categoryById = new Map(categories.map(c => [c.id, c]));
   let position = -1;
   let lastNote = "";
   let focusedPlaceId: string | null = null;
@@ -37,10 +57,10 @@ export function createPresentation(base: NyhavnaConversation, segments: readonly
   const mapIds = (ids: readonly string[]) => [...new Set(ids.map(id => mapIdByPlace.get(id) ?? id))];
   const visited = new Set<string>();
   const revealed = new Set<string>();
-  const distances: RadiusPlace[] = center ? radiusPlaces(places, center, segments.flatMap(s => s.placeIds)) : [];
+  const distances: RadiusPlace[] = center ? radiusPlaces(places, center, discoveryCategoryIds, segments.flatMap(s => s.placeIds)) : [];
   const optionsFor = (categoryId: string) => radiusOptions(distances, categoryId, revealed);
   const moreInvitation = (categoryId: string, farther = false) => {
-    const noun = categoryId === "trening-aktivitet" ? "treningssteder" : categoryId === "natur-friluftsliv" ? "turmål" : "steder";
+    const noun = categoryById.get(categoryId)?.moreNoun ?? "steder";
     return `Vil du se ${farther ? "enda " : ""}flere lignende ${noun} ${farther ? "litt lenger unna" : "i nærheten"}?`;
   };
   const invitationFor = (categoryId: string) => {
@@ -62,7 +82,7 @@ export function createPresentation(base: NyhavnaConversation, segments: readonly
   };
   const family = (place: LocalPlace) => /kaf[eé]|kaffe|baker/i.test(place.placeType ?? "") ? "kaffe" : place.placeType;
   const nextSimilar = (place: LocalPlace) => places.find(p => !distances.some(d => d.id === p.id && !d.initiallyVisible && !revealed.has(p.id)) && p.id !== place.id && !visited.has(p.id) && p.categoryId === place.categoryId && family(p) === family(place));
-  const placeText = (place: LocalPlace) => `${place.name}. ${place.summary}${place.status !== "existing" ? ` ${place.facts.filter(f => f.verification === "confirmed").slice(0, 3).map(f => f.text).join(" ")}` : ""}${place.travelTime?.walk !== undefined ? ` Omtrent ${place.travelTime.walk} minutter å gå fra Nyhavna.` : ""}`;
+  const placeText = (place: LocalPlace) => `${place.name}. ${place.summary}${place.status !== "existing" ? ` ${place.facts.filter(f => f.verification === "confirmed").slice(0, 3).map(f => f.text).join(" ")}` : ""}${place.travelTime?.walk !== undefined ? ` Omtrent ${place.travelTime.walk} minutter å gå${homeName ? ` fra ${homeName}` : ""}.` : ""}`;
   const similar = (args: Record<string, unknown>): ToolOutcome => {
     const id = typeof args.poi_id === "string" ? args.poi_id : focusedPlaceId;
     const source = places.find(p => p.id === id);
@@ -96,7 +116,7 @@ export function createPresentation(base: NyhavnaConversation, segments: readonly
       result: {
         chapter: (opened.result as { chapter?: unknown }).chapter,
         segment, nearby_places: distances.filter(p => p.categoryId === segment.categoryId && (p.initiallyVisible || revealed.has(p.id))).flatMap(d => places.find(p => p.id === d.id) ?? []), next_category: nextSegment?.categoryId ?? null,
-        invitation: segment.categoryId === "nyhavna-bydel" ? "Hvilket delområde vil du høre mer om? Du kan også trykke på det i kartet." : invitationFor(segment.categoryId),
+        invitation: categoryById.get(segment.categoryId)?.invitation ?? invitationFor(segment.categoryId),
         instruction: `${action === "resume" ? "Fortsett fra der brukeren avbrøt, ut fra transkriptet; ikke les starten på nytt. " : ""}Formidle denne manusdelen rolig med korte setninger og tydelige pauser. Behold fakta. Nevn ett sted om gangen i oppgitt rekkefølge. Avslutt med invitasjonen og vent. Ingen flere present_neighbourhood-kall før brukeren ber om det. Kartkommandoer følger denne manusdelen; ikke gjenta dem. Kartkonteksten viser om de lyktes. Ikke påstå at kategori eller steder er vist uten bekreftelse.`,
       },
       directives: [
@@ -122,7 +142,7 @@ export function createPresentation(base: NyhavnaConversation, segments: readonly
     execute: (name, args) => name === "open_theme" && segments.some(s => s.categoryId === args.theme_id) ? present({ action: "category", category_id: args.theme_id }) : name === "reveal_more_places" ? more(args) : name === "present_neighbourhood" ? present(args) : name === "find_similar_places" ? similar(args) : base.execute(name, args),
     noteIfChanged: () => {
       const baseNote = base.noteIfChanged();
-      const note = `EKSTRAUTVALG ALLEREDE VIST: ${[...revealed].join(", ") || "ingen"}. Flere steder i en kategori: reveal_more_places. RADIER: ${JSON.stringify(["trening-aktivitet", "natur-friluftsliv"].map(id => ({ category: id, current: optionsFor(id).current, available: optionsFor(id).options.map(o => o.radiusKm) })))}.
+      const note = `EKSTRAUTVALG ALLEREDE VIST: ${[...revealed].join(", ") || "ingen"}. Flere steder i en kategori: reveal_more_places. RADIER: ${JSON.stringify(discoveryCategoryIds.map(id => ({ category: id, current: optionsFor(id).current, available: optionsFor(id).options.map(o => o.radiusKm) })))}.
 VALGT STED: ${focusedPlaceId ?? "ingen"}. Ja til lignende steder betyr find_similar_places, ikke present_neighbourhood.
 MANUSPOSISJON: ${position < 0 ? "Ikke startet; next begynner med hverdagen." : `${segments[position].id}. resume fortsetter denne delen; next går til neste del.`}`;
       if (!baseNote && note === lastNote) return null;
@@ -135,7 +155,7 @@ MANUSPOSISJON: ${position < 0 ? "Ikke startet; next begynner med hverdagen." : `
         if (!place) return null;
         focusedPlaceId = id;
         visited.add(id);
-        const invitation = nextSimilar(place) ? (place.categoryId === "nyhavna-bydel" ? "Vil du høre mer om boligplanene for dette delområdet, eller om nærområdet slik det er i dag?" : "Vil du høre om lignende steder i nærheten?") : "Vil du utforske et annet tema, for eksempel transport eller oppvekst?";
+        const invitation = nextSimilar(place) ? (categoryById.get(place.categoryId)?.placeInvitation ?? "Vil du høre om lignende steder i nærheten?") : "Vil du utforske et annet tema, for eksempel transport eller oppvekst?";
         return { commentary: `${placeText(place)} ${invitation}`, directives: [] };
       }
       if (kind !== "theme" || !segments.some(s => s.categoryId === id)) return base.onMapSelection(kind, id);

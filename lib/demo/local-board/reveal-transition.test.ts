@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { revealAfterCamera } from '@/lib/demo/nyhavna-lokal/reveal-transition';
+import { revealAfterCamera } from '@/lib/demo/local-board/reveal-transition';
 
 describe('map reveal sequencing', () => {
   it('frames first, keeps new markers hidden during the flight, then acknowledges after paint', async () => {

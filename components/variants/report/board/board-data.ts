@@ -212,7 +212,7 @@ export interface BoardHome {
 export interface BoardData {
   /** Curated reserve, omitted from the initial local demo view. */
   demoReservePlaceIds?: string[];
-  demoRadiusPlaces?: import("@/lib/demo/nyhavna-lokal/radius").RadiusPlace[];
+  demoRadiusPlaces?: import("@/lib/demo/local-board/radius").RadiusPlace[];
   demoSnapshotId?: string;
   /**
    * Hvilket demo-datasett stemmen skal snakke ut fra.
@@ -225,6 +225,15 @@ export interface BoardData {
    * (`nyhavna-leve`).
    */
   demoDataset?: string;
+  /**
+   * Hvilke felles funksjoner denne demoen har slått på.
+   *
+   * Sto tidligere som en sammenligning mot slug-en `nyhavna-lokal` på hver
+   * flate. Da var «hvilken demo» og «hvilke funksjoner» samme spørsmål, og et
+   * nytt datasett måtte arve alt eller ingenting. Registeret
+   * (`lib/demo/local-board/registry.ts`) eier svaret, og boardet bærer det hit.
+   */
+  demoFeatures?: import("@/lib/demo/local-board/registry").LocalDemoFeatures;
   /**
    * Førstesetningen guiden sier. Utelatt = demoens standardhilsen.
    *

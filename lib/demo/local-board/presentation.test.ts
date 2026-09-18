@@ -1,14 +1,18 @@
 import { describe, expect, it } from "vitest";
-import { loadDataset } from "@/lib/demo/nyhavna-lokal/dataset";
-import { buildLocalBoard } from "@/lib/demo/nyhavna-lokal/board";
-import { buildVoiceDeps } from "@/lib/demo/nyhavna-lokal/voice";
+import { loadDataset } from "@/lib/demo/local-board/dataset";
+import { buildLocalBoard } from "@/lib/demo/local-board/board";
+import { buildVoiceDeps } from "@/lib/demo/local-board/voice";
 import { createNyhavnaConversation } from "@/lib/realtime/nyhavna-conversation";
-import { createPresentation } from "@/lib/demo/nyhavna-lokal/presentation";
+import { createPresentation } from "@/lib/demo/local-board/presentation";
+
+import { getLocalDemo } from "@/lib/demo/local-board/registry";
+
+const NYHAVNA = getLocalDemo("nyhavna-lokal");
 
 async function fixture() {
-  const dataset = await loadDataset();
-  const board = buildLocalBoard(dataset);
-  return createPresentation(createNyhavnaConversation(board, buildVoiceDeps(dataset)), dataset.board.presentation ?? [], dataset.places, dataset.board.center);
+  const dataset = await loadDataset(NYHAVNA);
+  const board = buildLocalBoard(dataset, NYHAVNA);
+  return createPresentation(createNyhavnaConversation(board, buildVoiceDeps(dataset)), { segments: dataset.board.presentation ?? [], places: dataset.places, center: dataset.board.center, categories: dataset.board.categories, homeName: dataset.board.name, discoveryCategoryIds: dataset.board.discoveryCategoryIds });
 }
 
 describe("guided local presentation", () => {
@@ -98,7 +102,7 @@ describe("guided local presentation", () => {
   });
   it("ends without looping, and a new session starts fresh", async () => {
     const tour = await fixture();
-    const dataset = await loadDataset();
+    const dataset = await loadDataset(NYHAVNA);
     for (let i = 0; i < (dataset.board.presentation?.length ?? 0); i++) tour.execute("present_neighbourhood", { action: "next" });
     expect(tour.execute("present_neighbourhood", { action: "next" }).result).toMatchObject({ done: true });
     expect((await fixture()).execute("present_neighbourhood", { action: "next" }).result).toMatchObject({ segment: { categoryId: "hverdagsliv" } });

@@ -1,6 +1,6 @@
 import { renderHook } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
-import { mentionedPlace, useNarrationFocus } from "@/lib/demo/nyhavna-lokal/use-narration-focus";
+import { mentionedPlace, useNarrationFocus } from "@/lib/demo/local-board/use-narration-focus";
 import type { LiveMessage, LiveStatus } from "@/lib/live/types";
 
 const places = [{ id: "a", name: "MENY Solsiden" }, { id: "b", name: "KIWI Lilleby" }];

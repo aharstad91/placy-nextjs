@@ -1,6 +1,6 @@
 "use client";
 
-import { discoveryGeometry } from "@/lib/demo/nyhavna-lokal/radius";
+import { discoveryGeometry } from "@/lib/demo/local-board/radius";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Map, {

@@ -1,6 +1,6 @@
 import { act, renderHook } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { useFaqProgress } from "@/lib/demo/nyhavna-lokal/use-faq-progress";
+import { useFaqProgress } from "@/lib/demo/local-board/use-faq-progress";
 import type { LiveMessage, LiveStatus } from "@/lib/live/types";
 
 afterEach(() => vi.useRealTimers());

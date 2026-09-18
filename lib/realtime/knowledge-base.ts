@@ -4,7 +4,7 @@
  * Typene er STRUKTURELLE med vilje. `lib/demo/nyhavna-leve/knowledge.ts` er en
  * håndskrevet TypeScript-modul med snevre literal-unioner (fire temaer, fem
  * relasjonstyper); det lokale JSON-datasettet
- * (`lib/demo/nyhavna-lokal/voice.ts`) har sine egne temaer og ingen relasjoner.
+ * (`lib/demo/local-board/voice.ts`) har sine egne temaer og ingen relasjoner.
  * Begge skal kunne mate de SAMME kunnskapsverktøyene, ellers måtte
  * verktøykoden finnes i to utgaver — og da ville demoene begynt å svare ulikt
  * på samme spørsmål av grunner ingen kan se.

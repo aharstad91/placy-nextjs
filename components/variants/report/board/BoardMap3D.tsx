@@ -1,6 +1,6 @@
 "use client";
 
-import { discoveryGeometry } from "@/lib/demo/nyhavna-lokal/radius";
+import { discoveryGeometry } from "@/lib/demo/local-board/radius";
 
 import dynamic from "next/dynamic";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";

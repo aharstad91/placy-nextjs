@@ -1,18 +1,22 @@
 import { describe, expect, it } from "vitest";
 import { readFile } from "node:fs/promises";
 import { join } from "node:path";
-import { buildLocalBoard } from "@/lib/demo/nyhavna-lokal/board";
-import { loadDataset, LOCAL_DATASET_DIR } from "@/lib/demo/nyhavna-lokal/dataset";
-import { buildLocalInstructions, buildVoiceDeps, LOCAL_DEMO_INSTRUCTION } from "@/lib/demo/nyhavna-lokal/voice";
+import { buildLocalBoard } from "@/lib/demo/local-board/board";
+import { loadDataset } from "@/lib/demo/local-board/dataset";
+import { buildLocalInstructions, buildVoiceDeps, localDemoInstruction } from "@/lib/demo/local-board/voice";
 import {
   localBoardSchema,
   localPlacesSchema,
   localSourcesSchema,
   localTopicsSchema,
   type LocalDataset,
-} from "@/lib/demo/nyhavna-lokal/schema";
+} from "@/lib/demo/local-board/schema";
 import { createNyhavnaConversation } from "@/lib/realtime/nyhavna-conversation";
 import { nyhavnaFaqCatalog, nyhavnaInstructions } from "@/lib/realtime/nyhavna-knowledge";
+
+import { getLocalDemo } from "@/lib/demo/local-board/registry";
+
+const NYHAVNA = getLocalDemo("nyhavna-lokal");
 
 /**
  * Stemmens grunnlag skal være DATASETTET, og ingenting annet.
@@ -37,7 +41,7 @@ const LEVE_ONLY = [
 ];
 
 async function realBoard() {
-  return localBoardSchema.parse(JSON.parse(await readFile(join(LOCAL_DATASET_DIR, "board.json"), "utf8")));
+  return localBoardSchema.parse(JSON.parse(await readFile(join(NYHAVNA.directory, "board.json"), "utf8")));
 }
 
 const emptyDataset = async (): Promise<LocalDataset> => ({
@@ -49,7 +53,7 @@ const emptyDataset = async (): Promise<LocalDataset> => ({
 });
 
 const conversationFor = (dataset: LocalDataset) =>
-  createNyhavnaConversation(buildLocalBoard(dataset), buildVoiceDeps(dataset));
+  createNyhavnaConversation(buildLocalBoard(dataset, NYHAVNA), buildVoiceDeps(dataset));
 
 const result = (dataset: LocalDataset, name: string, args: Record<string, unknown> = {}) =>
   conversationFor(dataset).execute(name, args).result as Record<string, unknown>;
@@ -96,8 +100,8 @@ describe("tomt datagrunnlag", () => {
 
   it("gir en instruksjon uten ett eneste navn fra den andre demoen", async () => {
     const dataset = await emptyDataset();
-    const board = buildLocalBoard(dataset);
-    const instructions = `${nyhavnaInstructions(board, { projectInfoLabel: dataset.board.projectInfoLabel })}\n${LOCAL_DEMO_INSTRUCTION}`;
+    const board = buildLocalBoard(dataset, NYHAVNA);
+    const instructions = `${nyhavnaInstructions(board, { projectInfoLabel: dataset.board.projectInfoLabel })}\n${localDemoInstruction(dataset)}`;
     for (const name of LEVE_ONLY) expect(instructions).not.toContain(name);
     // Ingen arvet spørsmålskatalog: seksjonen er der, men tom.
     expect(instructions).toMatch(/SPØRSMÅL OG SVAR \(data, per tema\):\n\n/);
@@ -181,24 +185,24 @@ describe("innhold som er lagt inn", () => {
 
 describe("samtaleeksemplene", () => {
   it("kan ikke nå modellen: stemmemodulen leser dem ikke", async () => {
-    const source = await readFile(join("lib", "demo", "nyhavna-lokal", "voice.ts"), "utf8");
+    const source = await readFile(join("lib", "demo", "local-board", "voice.ts"), "utf8");
     // Bare importene teller: doc-kommentaren NEVNER fila, med vilje.
     const imports = source.split("\n").filter((line) => line.startsWith("import"));
     expect(imports.join("\n")).not.toMatch(/dataset|loadConversations/);
     // …og de ligger heller ikke i noe stemmen faktisk får.
     const dataset = await emptyDataset();
-    const example = JSON.parse(await readFile(join(LOCAL_DATASET_DIR, "eksempel.json"), "utf8"));
+    const example = JSON.parse(await readFile(join(NYHAVNA.directory, "eksempel.json"), "utf8"));
     const utterance: string = example.conversations[0].transcript[0].text;
-    const board = buildLocalBoard(dataset);
-    const payload = `${nyhavnaInstructions(board)}${LOCAL_DEMO_INSTRUCTION}${JSON.stringify(buildVoiceDeps(dataset).knowledge)}`;
+    const board = buildLocalBoard(dataset, NYHAVNA);
+    const payload = `${nyhavnaInstructions(board)}${localDemoInstruction(dataset)}${JSON.stringify(buildVoiceDeps(dataset).knowledge)}`;
     expect(payload).not.toContain(utterance);
   });
 });
 
 describe("spørsmål og svar er felles for sidebar og stemme", () => {
   it("gir backenden kontrollerte FAQ og kilder uten ureviderte svar", async () => {
-    const dataset = await loadDataset();
-    const instructions = buildLocalInstructions(dataset, buildLocalBoard(dataset));
+    const dataset = await loadDataset(NYHAVNA);
+    const instructions = buildLocalInstructions(dataset, buildLocalBoard(dataset, NYHAVNA));
     for (const faq of dataset.faqs) {
       if (faq.origin === "local") {
         expect(instructions).toContain(faq.answer.replace(/\[([^\]]+)\]\([^)]+\)/g, "$1"));
@@ -210,8 +214,8 @@ describe("spørsmål og svar er felles for sidebar og stemme", () => {
   });
 
   it("bruker enkle FAQ og kartsteder, uten arkivets meny- og aldersdetaljer", async () => {
-    const dataset = await loadDataset();
-    const board = buildLocalBoard(dataset);
+    const dataset = await loadDataset(NYHAVNA);
+    const board = buildLocalBoard(dataset, NYHAVNA);
     const instructions = buildLocalInstructions(dataset, board);
     expect(instructions).not.toContain("ingen steder i kartet");
     expect(instructions).toContain("demoens utgangspunkt");
@@ -224,8 +228,8 @@ describe("spørsmål og svar er felles for sidebar og stemme", () => {
   it("kan fremheve alle steder lenket fra FAQ gjennom ekte kartverktøy", async () => {
     const { executeBoardTool } = await import("@/lib/realtime/board-tools");
     const { initialBoardState } = await import("@/components/variants/report/board/board-state");
-    const dataset = await loadDataset();
-    const board = buildLocalBoard(dataset);
+    const dataset = await loadDataset(NYHAVNA);
+    const board = buildLocalBoard(dataset, NYHAVNA);
     const visibleFaqs = [...(board.globalFaq ?? []), ...board.categories.flatMap(c => c.editorial?.faq ?? [])];
     for (const faq of visibleFaqs) {
       const ids = [...new Set([...faq.answer.matchAll(/\(poi:([^)]+)\)/g)].map(m => m[1]))];
@@ -240,8 +244,8 @@ describe("spørsmål og svar er felles for sidebar og stemme", () => {
   });
 
   it("gir stemmen nøyaktig de spørsmålene sidebaren viser", async () => {
-    const dataset = await loadDataset();
-    const board = buildLocalBoard(dataset);
+    const dataset = await loadDataset(NYHAVNA);
+    const board = buildLocalBoard(dataset, NYHAVNA);
     const catalog = nyhavnaFaqCatalog(board);
     for (const entry of dataset.faqs) {
       // ID-en er kontrakten mellom flaten og `answered_faq_ids`.

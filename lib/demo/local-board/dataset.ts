@@ -4,6 +4,8 @@ import "server-only";
 import { readFile } from "node:fs/promises";
 import { join } from "node:path";
 import type { ZodType } from "zod";
+import type { LocalDemoDescriptor } from "@/lib/demo/local-board/registry";
+import { LocalDatasetError } from "@/lib/demo/local-board/errors";
 import {
   localBoardSchema,
   localConversationsSchema,
@@ -13,10 +15,14 @@ import {
   localTopicsSchema,
   type LocalConversation,
   type LocalDataset,
-} from "@/lib/demo/nyhavna-lokal/schema";
+} from "@/lib/demo/local-board/schema";
 
 /**
- * Lasteren for den lokale Nyhavna-demoen (2026-09-13).
+ * Lasteren for lokale demo-datasett (2026-09-13, delt kjerne 2026-09-18).
+ *
+ * Hvilket datasett som lastes kommer fra registerets deskriptor, aldri fra en
+ * standardmappe: en laster med en innebygd standard ville lastet Nyhavna når
+ * oppringeren glemte å si hvem den spurte for.
  *
  * ## Hvorfor filer og ikke Supabase
  *
@@ -41,11 +47,7 @@ import {
  * ikke starter: da oppdages hullet på møtet i stedet for i terminalen.
  */
 
-/** Mappa datasettet ligger i, relativt til repo-rota. */
-export const LOCAL_DATASET_DIR = join("data", "demo", "nyhavna-lokal");
-
-/** Datasett-ID-en ruta og stemmen bruker for å slå opp dette datasettet. */
-export const LOCAL_DATASET_ID = "nyhavna-lokal";
+export { LocalDatasetError };
 
 const FILES = {
   board: "board.json",
@@ -56,21 +58,14 @@ const FILES = {
   conversations: "conversations.json",
 } as const;
 
-export class LocalDatasetError extends Error {
-  constructor(message: string) {
-    super(message);
-    this.name = "LocalDatasetError";
-  }
-}
-
-async function readJson(directory: string, file: string): Promise<unknown> {
-  const path = join(directory, file);
+async function readJson(descriptor: LocalDemoDescriptor, file: string): Promise<unknown> {
+  const path = join(descriptor.directory, file);
   let raw: string;
   try {
     raw = await readFile(path, "utf8");
   } catch {
     throw new LocalDatasetError(
-      `Fant ikke ${path}. Demoen trenger alle seks filene i ${LOCAL_DATASET_DIR}/ — se docs/research/nyhavna-lokal-demo/README.md.`,
+      `Fant ikke ${path}. Demoen trenger alle seks filene i ${descriptor.directory}/ — se ${descriptor.readme}.`,
     );
   }
   try {
@@ -111,7 +106,7 @@ function duplicates(ids: readonly string[]): string[] {
  * for hånd: en skrivefeil i en `categoryId`, en `sourceId` som ble hetende noe
  * annet, to steder med samme ID.
  */
-export function assertReferences(dataset: LocalDataset): void {
+export function assertReferences(dataset: LocalDataset, descriptor: LocalDemoDescriptor): void {
   const problems: string[] = [];
 
   const categoryIds = new Set(dataset.board.categories.map((c) => c.id));
@@ -140,6 +135,10 @@ export function assertReferences(dataset: LocalDataset): void {
 
   for (const category of dataset.board.categories) {
     if (category.sourceId) source(`${FILES.board} → kategori «${category.id}»`, [category.sourceId]);
+  }
+
+  for (const id of dataset.board.discoveryCategoryIds) {
+    if (!categoryIds.has(id)) problems.push(`${FILES.board} → discoveryCategoryIds: ukjent categoryId «${id}».`);
   }
 
   dupe("board.json → presentation", (dataset.board.presentation ?? []).map(s => s.id));
@@ -212,7 +211,7 @@ export function assertReferences(dataset: LocalDataset): void {
 
   if (problems.length) {
     throw new LocalDatasetError(
-      `Datasettet i ${LOCAL_DATASET_DIR}/ har brutte referanser:\n${problems.map((p) => `  • ${p}`).join("\n")}`,
+      `Datasettet i ${descriptor.directory}/ har brutte referanser:\n${problems.map((p) => `  • ${p}`).join("\n")}`,
     );
   }
 }
@@ -224,13 +223,13 @@ export function assertReferences(dataset: LocalDataset): void {
  * skal ikke kunne havne i noe som sendes til modellen ved et uhell. Bruk
  * `loadConversations` når du faktisk vil lese dem.
  */
-export async function loadDataset(directory = LOCAL_DATASET_DIR): Promise<LocalDataset> {
+export async function loadDataset(descriptor: LocalDemoDescriptor): Promise<LocalDataset> {
   const [board, sources, places, topics, faqs] = await Promise.all([
-    readJson(directory, FILES.board),
-    readJson(directory, FILES.sources),
-    readJson(directory, FILES.places),
-    readJson(directory, FILES.topics),
-    readJson(directory, FILES.faq),
+    readJson(descriptor, FILES.board),
+    readJson(descriptor, FILES.sources),
+    readJson(descriptor, FILES.places),
+    readJson(descriptor, FILES.topics),
+    readJson(descriptor, FILES.faq),
   ]);
   const dataset: LocalDataset = {
     board: parse(localBoardSchema, board, FILES.board),
@@ -239,7 +238,7 @@ export async function loadDataset(directory = LOCAL_DATASET_DIR): Promise<LocalD
     topics: parse(localTopicsSchema, topics, FILES.topics),
     faqs: parse(localFaqsSchema, faqs, FILES.faq),
   };
-  assertReferences(dataset);
+  assertReferences(dataset, descriptor);
   return dataset;
 }
 
@@ -249,7 +248,7 @@ export async function loadDataset(directory = LOCAL_DATASET_DIR): Promise<LocalD
  * Ingen annen modul i demoen kaller denne. Den finnes så en test, et script
  * eller en person kan lese eksemplene — ikke så modellen kan.
  */
-export async function loadConversations(directory = LOCAL_DATASET_DIR): Promise<LocalConversation[]> {
-  const raw = await readJson(directory, FILES.conversations);
+export async function loadConversations(descriptor: LocalDemoDescriptor): Promise<LocalConversation[]> {
+  const raw = await readJson(descriptor, FILES.conversations);
   return parse(localConversationsSchema, raw, FILES.conversations);
 }

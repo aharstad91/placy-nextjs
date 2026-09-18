@@ -1,20 +1,24 @@
 import { describe, expect, it, vi } from 'vitest';
-import { loadDataset } from '@/lib/demo/nyhavna-lokal/dataset';
-import { buildLocalBoard } from '@/lib/demo/nyhavna-lokal/board';
-import { visibleReserveBoard, nextReserveIds } from '@/lib/demo/nyhavna-lokal/reserve';
-import { radiusOptions, discoveryGeometry, radiusPlaces } from '@/lib/demo/nyhavna-lokal/radius';
-import { createPresentation } from '@/lib/demo/nyhavna-lokal/presentation';
+import { loadDataset } from '@/lib/demo/local-board/dataset';
+import { buildLocalBoard } from '@/lib/demo/local-board/board';
+import { visibleReserveBoard, nextReserveIds } from '@/lib/demo/local-board/reserve';
+import { radiusOptions, discoveryGeometry, radiusPlaces } from '@/lib/demo/local-board/radius';
+import { createPresentation } from '@/lib/demo/local-board/presentation';
 import { createNyhavnaConversation } from '@/lib/realtime/nyhavna-conversation';
-import { buildVoiceDeps } from '@/lib/demo/nyhavna-lokal/voice';
+import { buildVoiceDeps } from '@/lib/demo/local-board/voice';
 
 import { executeBoardTool } from '@/lib/realtime/board-tools';
 import { initialBoardState } from '@/components/variants/report/board/board-state';
 
+import { getLocalDemo } from "@/lib/demo/local-board/registry";
+
+const NYHAVNA = getLocalDemo("nyhavna-lokal");
+
 const category = 'trening-aktivitet';
 async function fixture() {
-  const dataset = await loadDataset();
-  const board = buildLocalBoard(dataset);
-  return { board, tour: createPresentation(createNyhavnaConversation(board, buildVoiceDeps(dataset)), dataset.board.presentation ?? [], dataset.places, dataset.board.center) };
+  const dataset = await loadDataset(NYHAVNA);
+  const board = buildLocalBoard(dataset, NYHAVNA);
+  return { board, tour: createPresentation(createNyhavnaConversation(board, buildVoiceDeps(dataset)), { segments: dataset.board.presentation ?? [], places: dataset.places, center: dataset.board.center, categories: dataset.board.categories, homeName: dataset.board.name, discoveryCategoryIds: dataset.board.discoveryCategoryIds }) };
 }
 describe('radius discovery', () => {
   it('shows an initial selection and loads remaining nearby places before expanding and expands categories independently in two-kilometre steps', async () => {
@@ -98,7 +102,7 @@ describe('radius discovery', () => {
       { id: 'far', categoryId: category, coordinates: { lat: 0.06, lng: 0 } },
       { id: 'outside', categoryId: category, coordinates: { lat: 0.1, lng: 0 } },
       { id: 'unrelated', categoryId: 'transport', coordinates: center },
-    ], center);
+    ], center, [category]);
     expect(points.map(p => p.id)).toEqual(['near', 'far']);
     expect(radiusOptions(points, category, new Set()).options).toEqual([{ radiusKm: 8, ids: ['far'] }, { radiusKm: 10, ids: ['far'] }]);
   });

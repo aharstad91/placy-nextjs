@@ -1,5 +1,5 @@
 import { isAnchorPOI } from "@/lib/board/anchor-poi";
-import { radiusPlaces } from "@/lib/demo/nyhavna-lokal/radius";
+import { radiusPlaces } from "@/lib/demo/local-board/radius";
 import { createHash } from "node:crypto";
 import type {
   BoardCategory,
@@ -12,8 +12,8 @@ import type {
 import { poiVisualIdentity } from "@/components/variants/report/board/marker-style";
 import type { FaqEntry } from "@/lib/generators/faq-generator";
 import type { Category, POI, Project } from "@/lib/types";
-import { LOCAL_DATASET_ID } from "@/lib/demo/nyhavna-lokal/dataset";
-import type { LocalCategory, LocalDataset, LocalFaq, LocalPlace } from "@/lib/demo/nyhavna-lokal/schema";
+import type { LocalDemoDescriptor } from "@/lib/demo/local-board/registry";
+import type { LocalCategory, LocalDataset, LocalFaq, LocalPlace } from "@/lib/demo/local-board/schema";
 
 /**
  * Adapteren: lokalt datasett → boardets egne typer (2026-09-13).
@@ -145,9 +145,12 @@ function faqByCategory(dataset: LocalDataset): Map<string, FaqEntry[]> {
  * den kunne en fane som sto åpen mens JSON-en ble redigert fått en guide som
  * snakket om steder fanen ikke viser.
  */
-export function datasetId(dataset: LocalDataset): string {
-  const hash = createHash("sha256").update(JSON.stringify(dataset)).digest("hex");
-  return `${LOCAL_DATASET_ID}-${hash.slice(0, 16)}`;
+export function datasetId(dataset: LocalDataset, descriptor: LocalDemoDescriptor): string {
+  // Deskriptoren er med i hashen, ikke bare i prefikset: funksjonsflaggene
+  // avgjør hva flaten viser og hva stemmen kan gjøre, så en endring i dem er en
+  // endring i det brukeren ser — like mye som en endring i innholdet.
+  const hash = createHash("sha256").update(JSON.stringify({ dataset, descriptor })).digest("hex");
+  return `${descriptor.id}-${hash.slice(0, 16)}`;
 }
 
 /**
@@ -158,13 +161,13 @@ export function datasetId(dataset: LocalDataset): string {
  * `buildLocalBoard`. POI- og kategorilistene speiler datasettet, så et oppslag
  * på prosjektet ikke kan se noe annet enn kartet gjør.
  */
-export function buildLocalProject(dataset: LocalDataset): Project {
+export function buildLocalProject(dataset: LocalDataset, descriptor: LocalDemoDescriptor): Project {
   const categories = dataset.board.categories.map(toCategory);
   const byId = new Map(categories.map((c) => [c.id, c]));
   const urlBySourceId = new Map(dataset.sources.map((s) => [s.id, s.url]));
   const pois = dataset.places.map((place) => toPoi(place, byId.get(place.categoryId)!, urlBySourceId));
   return {
-    demoSnapshotId: datasetId(dataset),
+    demoSnapshotId: datasetId(dataset, descriptor),
     id: dataset.board.id,
     name: dataset.board.name,
     customer: "demo",
@@ -204,8 +207,8 @@ export function buildLocalProject(dataset: LocalDataset): Project {
  * tomt board gir et kart uten markører, en temarad med alle temaene, og en
  * tomtilstand per tema (`StoryCategoryBody`).
  */
-export function buildLocalBoard(dataset: LocalDataset): BoardData {
-  const project = buildLocalProject(dataset);
+export function buildLocalBoard(dataset: LocalDataset, descriptor: LocalDemoDescriptor): BoardData {
+  const project = buildLocalProject(dataset, descriptor);
   const byId = new Map(project.pois.map(p => [p.id, p]));
   const children = new Map<string, POI[]>();
   const themeByPoiId = new Map(dataset.places.map(p => [p.id, p.categoryId]));
@@ -289,6 +292,8 @@ export function buildLocalBoard(dataset: LocalDataset): BoardData {
     };
   });
 
+  const radius = radiusPlaces(dataset.places, dataset.board.center, dataset.board.discoveryCategoryIds, dataset.board.presentation?.flatMap(s => s.placeIds));
+
   const home: BoardHome = {
     name: dataset.board.name,
     coordinates: dataset.board.center,
@@ -303,9 +308,10 @@ export function buildLocalBoard(dataset: LocalDataset): BoardData {
 
   return {
     demoSnapshotId: project.demoSnapshotId,
-    demoDataset: LOCAL_DATASET_ID,
-    demoRadiusPlaces: radiusPlaces(dataset.places, dataset.board.center, dataset.board.presentation?.flatMap(s => s.placeIds)),
-    demoReservePlaceIds: radiusPlaces(dataset.places, dataset.board.center, dataset.board.presentation?.flatMap(s => s.placeIds)).filter(p => !p.initiallyVisible).map(p => p.id),
+    demoDataset: descriptor.id,
+    demoFeatures: descriptor.features,
+    demoRadiusPlaces: radius,
+    demoReservePlaceIds: radius.filter(p => !p.initiallyVisible).map(p => p.id),
     demoGreeting: dataset.board.greeting,
     projectSlug: project.urlSlug,
     home,
