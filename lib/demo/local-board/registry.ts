@@ -19,6 +19,11 @@ import { LocalDatasetError } from "@/lib/demo/local-board/errors";
  * og «hvilke funksjoner har den» samme spørsmål, og et nytt datasett arvet
  * enten alt eller ingenting. Her er de to forskjellige spørsmål: identiteten er
  * `id`, funksjonsstøtten er `features`, og hver demo svarer for seg.
+ *
+ * Derfor deler ingen demoer en felles flagg-konstant, selv når de er enige i
+ * dag: hver deskriptor skriver ut hvert flagg selv. Med en delt konstant ville
+ * et framtidig flagg slått seg på hos alle uten at noen hadde vurdert om
+ * datasettet bærer innholdet flagget forutsetter.
  */
 
 /**
@@ -43,11 +48,10 @@ export interface LocalDemoFeatures {
   voicePacing: boolean;
   /**
    * Samtalen presenteres som den navngitte guiden Anja, ikke som «Placy».
-   * Valgfritt fordi et datasett uten navngitt guide ikke skal måtte si nei:
-   * utelatt betyr den navnløse Placy-kontrollen, som er det boards uten lokal
+   * `false` gir den navnløse Placy-kontrollen, som er det boards uten lokal
    * demo alltid har vist.
    */
-  guidedPersona?: boolean;
+  guidedPersona: boolean;
 }
 
 export interface LocalDemoDescriptor {
@@ -60,32 +64,11 @@ export interface LocalDemoDescriptor {
   features: LocalDemoFeatures;
 }
 
-/** Alle funksjonene på: det den første lokale demoen (Nyhavna) etablerte. */
-const ALL_FEATURES: LocalDemoFeatures = {
-  faqProgress: true,
-  revealPlaces: true,
-  followHighlightCategory: true,
-  unscopedCategoryList: true,
-  narrationFocus: true,
-  voicePacing: true,
-  guidedPersona: true,
-};
-
-export const LOCAL_DEMOS: readonly LocalDemoDescriptor[] = [
+export const LOCAL_DEMOS = [
   {
     id: "nyhavna-lokal",
     directory: "data/demo/nyhavna-lokal",
     readme: "docs/research/nyhavna-lokal-demo/README.md",
-    features: ALL_FEATURES,
-  },
-  {
-    id: "leangenbukta-lokal",
-    directory: "data/demo/leangenbukta-lokal",
-    readme: "docs/research/leangenbukta-lokal-demo/README.md",
-    // Samme funksjoner som Nyhavna, oppført hver for seg og ikke gjennom
-    // `ALL_FEATURES`: en demo skal ta stilling til hvert flagg selv. Deler den
-    // konstanten, ville et framtidig flagg slått seg på her uten at noen hadde
-    // vurdert om datasettet bærer innholdet flagget forutsetter.
     features: {
       faqProgress: true,
       revealPlaces: true,
@@ -96,12 +79,34 @@ export const LOCAL_DEMOS: readonly LocalDemoDescriptor[] = [
       guidedPersona: true,
     },
   },
-];
+  {
+    id: "leangenbukta-lokal",
+    directory: "data/demo/leangenbukta-lokal",
+    readme: "docs/research/leangenbukta-lokal-demo/README.md",
+    features: {
+      faqProgress: true,
+      revealPlaces: true,
+      followHighlightCategory: true,
+      unscopedCategoryList: true,
+      narrationFocus: true,
+      voicePacing: true,
+      guidedPersona: true,
+    },
+  },
+] as const satisfies readonly LocalDemoDescriptor[];
 
-export const LOCAL_DEMO_IDS: readonly string[] = LOCAL_DEMOS.map((demo) => demo.id);
+/**
+ * ID-ene som finnes, som en type.
+ *
+ * Avledet av lista og ikke skrevet ned ved siden av den: en union som må
+ * vedlikeholdes for hånd er en union som blir uenig med registeret.
+ */
+export type LocalDemoId = (typeof LOCAL_DEMOS)[number]["id"];
 
-export function isLocalDemoId(value: string): boolean {
-  return LOCAL_DEMO_IDS.includes(value);
+export const LOCAL_DEMO_IDS: readonly LocalDemoId[] = LOCAL_DEMOS.map((demo) => demo.id);
+
+export function isLocalDemoId(value: string): value is LocalDemoId {
+  return LOCAL_DEMO_IDS.some((id) => id === value);
 }
 
 /**

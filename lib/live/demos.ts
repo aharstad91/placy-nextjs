@@ -2,9 +2,9 @@ import "server-only";
 
 import type { BoardData } from "@/components/variants/report/board/board-data";
 import { getNyhavnaSnapshot } from "@/lib/demo/nyhavna-leve/snapshot";
-import { buildLocalBoard, datasetId } from "@/lib/demo/local-board/board";
+import { buildLocalBoard, buildLocalProject } from "@/lib/demo/local-board/board";
 import { loadDataset } from "@/lib/demo/local-board/dataset";
-import { getLocalDemo, isLocalDemoId, LOCAL_DEMO_IDS, type LocalDemoDescriptor } from "@/lib/demo/local-board/registry";
+import { getLocalDemo, isLocalDemoId, LOCAL_DEMO_IDS, type LocalDemoDescriptor, type LocalDemoId } from "@/lib/demo/local-board/registry";
 import { LocalDatasetError } from "@/lib/demo/local-board/errors";
 import { buildVoiceDeps, buildLocalInstructions } from "@/lib/demo/local-board/voice";
 import { conversationTools, createNyhavnaConversation, type NyhavnaConversation } from "@/lib/realtime/nyhavna-conversation";
@@ -35,12 +35,19 @@ import type { RealtimeTool } from "@/lib/realtime/types";
 
 export const DEFAULT_LIVE_DATASET = "nyhavna-leve";
 
-/** Datasett-ID-ene ruta godtar: snapshotet pluss hver registrerte lokale demo. */
-export const LIVE_DATASETS: readonly string[] = [DEFAULT_LIVE_DATASET, ...LOCAL_DEMO_IDS];
-export type LiveDatasetId = string;
+/**
+ * Datasett-ID-ene ruta godtar: snapshotet pluss hver registrerte lokale demo.
+ *
+ * Typen er unionen av nettopp de ID-ene, ikke `string`: da er `isLiveDataset`
+ * en ekte innsnevring, og et kallsted som glemmer sjekken blir en typefeil i
+ * stedet for en runtime-avvisning.
+ */
+export type LiveDatasetId = typeof DEFAULT_LIVE_DATASET | LocalDemoId;
+
+export const LIVE_DATASETS: readonly LiveDatasetId[] = [DEFAULT_LIVE_DATASET, ...LOCAL_DEMO_IDS];
 
 export function isLiveDataset(value: string): value is LiveDatasetId {
-  return LIVE_DATASETS.includes(value);
+  return LIVE_DATASETS.some((id) => id === value);
 }
 
 export interface LiveDemo {
@@ -77,9 +84,18 @@ async function leveDemo(): Promise<LiveDemo> {
   };
 }
 
-async function lokalDemo(descriptor: LocalDemoDescriptor): Promise<LiveDemo> {
+/**
+ * `id` kommer fra kallstedet og ikke fra deskriptoren fordi det er DER den er
+ * innsnevret til en godkjent datasett-ID. Deskriptorens `id` er en vanlig
+ * streng, slik at tester kan skrive et syntetisk datasett til en midlertidig
+ * mappe uten å stå i registeret.
+ */
+async function lokalDemo(descriptor: LocalDemoDescriptor, id: LiveDatasetId): Promise<LiveDemo> {
   const dataset = await loadDataset(descriptor);
-  const board = buildLocalBoard(dataset, descriptor);
+  // Prosjektet bygges én gang og sendes inn: innholds-ID-en er en SHA-256 over
+  // hele datasettet, og den skal beregnes én gang per lasting.
+  const project = buildLocalProject(dataset, descriptor);
+  const board = buildLocalBoard(dataset, descriptor, project);
   // Stedsnavnet og kildematerialet kommer fra datasettets `board.json`, så
   // verktøytekstene omtaler det boardet faktisk viser.
   const labels: ConversationLabels = {
@@ -88,8 +104,10 @@ async function lokalDemo(descriptor: LocalDemoDescriptor): Promise<LiveDemo> {
   };
   const deps = { ...buildVoiceDeps(dataset), labels };
   return {
-    id: descriptor.id,
-    snapshotId: datasetId(dataset, descriptor),
+    id,
+    // Alltid satt av `buildLocalProject`; feltet er valgfritt på `Project`
+    // fordi provisjonerte boards ikke har noe frosset datagrunnlag.
+    snapshotId: project.demoSnapshotId!,
     board,
     backendInstructions: buildLocalInstructions(dataset, board),
     voiceInstructions: buildLocalVoiceInstructions(dataset),
@@ -114,6 +132,6 @@ async function lokalDemo(descriptor: LocalDemoDescriptor): Promise<LiveDemo> {
  */
 export function loadLiveDemo(dataset: LiveDatasetId): Promise<LiveDemo> {
   if (dataset === DEFAULT_LIVE_DATASET) return leveDemo();
-  if (isLocalDemoId(dataset)) return lokalDemo(getLocalDemo(dataset));
+  if (isLocalDemoId(dataset)) return lokalDemo(getLocalDemo(dataset), dataset);
   return Promise.reject(new LocalDatasetError(`Ukjent datasett «${dataset}». Godkjente: ${LIVE_DATASETS.join(", ")}.`));
 }

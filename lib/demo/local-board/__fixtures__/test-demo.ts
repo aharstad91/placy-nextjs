@@ -18,6 +18,7 @@ const ALL_OFF: LocalDemoFeatures = {
   unscopedCategoryList: false,
   narrationFocus: false,
   voicePacing: false,
+  guidedPersona: false,
 };
 
 export async function writeTestDemo(options: {

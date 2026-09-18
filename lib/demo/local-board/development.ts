@@ -36,7 +36,7 @@ import type {
  */
 
 /** Byggestatusens ord, slik guiden skal si dem. */
-export const BUILD_STATUS_WORDS: Record<DevelopmentBuildStatus, string> = {
+const BUILD_STATUS_WORDS: Record<DevelopmentBuildStatus, string> = {
   existing: "eksisterende",
   "under-construction": "under bygging",
   planned: "planlagt",
@@ -63,7 +63,7 @@ export const BUILD_STATUS_KNOWLEDGE: Record<DevelopmentBuildStatus, string> = {
 };
 
 /** Tilgjengelighetens ord. «ikke oppgitt» er et ærlig svar, ikke et avslag. */
-export const AVAILABILITY_WORDS: Record<DevelopmentAvailability, string> = {
+const AVAILABILITY_WORDS: Record<DevelopmentAvailability, string> = {
   open: "åpnet",
   "not-open": "ikke åpnet",
   expected: "åpning forventet",
@@ -112,13 +112,20 @@ export function developmentByPlaceId(topics: readonly LocalTopic[]): Map<string,
   return byPlace;
 }
 
-const list = (items: readonly string[]) =>
+/**
+ * «a», «b» og «c» — slik en norsk setning ramser opp en liste.
+ *
+ * Bor her fordi adgangs- og innflyttingslinjene var det første stedet som
+ * trengte den. `voice.ts` bruker den samme funksjonen på siterte ord, så
+ * skjermen og stemmen ikke kan ramse opp på hver sin måte.
+ */
+export const joinWithOg = (items: readonly string[]): string =>
   items.length < 2 ? items.join("") : `${items.slice(0, -1).join(", ")} og ${items[items.length - 1]}`;
 
 function accessValue(access: LocalDevelopment["access"], names: ReadonlyMap<string, string>): string {
   const base =
     access.scope === "named-buildings"
-      ? list(access.buildingIds.map((id) => names.get(id) ?? id))
+      ? joinWithOg(access.buildingIds.map((id) => names.get(id) ?? id))
       : ACCESS_WORDS[access.scope];
   return access.conditions ? `${base} — ${access.conditions}` : base;
 }
@@ -174,7 +181,7 @@ export function projectDevelopment(
   if (development.moveInLinks.length) {
     facts.push({
       label: "Bekreftet ved innflytting",
-      value: list(development.moveInLinks.map((link) => names.get(link.buildingId) ?? link.buildingId)),
+      value: joinWithOg(development.moveInLinks.map((link) => names.get(link.buildingId) ?? link.buildingId)),
     });
   } else if (development.objectType !== "project" && development.availability !== "open") {
     // Det som mangler er nettopp det kjøperen spør om: er det der når jeg

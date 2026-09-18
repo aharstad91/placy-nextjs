@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { readdir, readFile } from "node:fs/promises";
 import { join } from "node:path";
-import { loadLiveDemo } from "@/lib/live/demos";
+import { loadLiveDemo, type LiveDatasetId } from "@/lib/live/demos";
 import { loadDataset } from "@/lib/demo/local-board/dataset";
 import { getLocalDemo } from "@/lib/demo/local-board/registry";
 import { conversationTools } from "@/lib/realtime/nyhavna-conversation";
@@ -25,7 +25,7 @@ describe("Live-demoenes egne tekster", () => {
   it("gir den lokale demoen datasettets navn i verktøytekstene", async () => {
     const descriptor = getLocalDemo("nyhavna-lokal");
     const dataset = await loadDataset(descriptor);
-    const demo = await loadLiveDemo(descriptor.id);
+    const demo = await loadLiveDemo(descriptor.id as LiveDatasetId);
     const find = demo.tools.find((tool) => tool.name === "find_project_info");
     expect(find?.description).toContain(`Søk i ${dataset.board.projectInfoLabel}:`);
     // Datasettets eget navn, ikke det frosne snapshotets faste beskrivelse.
@@ -115,7 +115,7 @@ describe("to lokale demoer ved siden av hverandre", () => {
   it("krysser ikke verktøynavnene mellom de to demoene", async () => {
     const descriptor = getLocalDemo("leangenbukta-lokal");
     const dataset = await loadDataset(descriptor);
-    const leangenbukta = await loadLiveDemo(descriptor.id);
+    const leangenbukta = await loadLiveDemo(descriptor.id as LiveDatasetId);
     const nyhavna = await loadLiveDemo("nyhavna-lokal");
 
     const find = leangenbukta.tools.find((tool) => tool.name === "find_project_info");

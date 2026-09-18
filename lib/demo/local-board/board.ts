@@ -120,29 +120,32 @@ function toBoardPoi(poi: POI, categoryId: BoardCategoryId, fallback: { icon: str
  * var i boardet de kom fra — hvor teksten faktisk kommer fra står i
  * `faq.json`s `sourceIds`, ikke her.
  */
-const toFaqEntry = (entry: LocalFaq, sources: LocalDataset["sources"]): FaqEntry => ({
+const toFaqEntry = (entry: LocalFaq, sourceById: ReadonlyMap<string, LocalDataset["sources"][number]>): FaqEntry => ({
   id: entry.id,
   question: entry.question,
   answer: entry.answer,
   source: entry.origin === "imported" ? "deterministic" : "curated",
   ...(entry.origin === "local" ? {
     knowledgeSources: entry.sourceIds.flatMap((id) => {
-      const source = sources.find((s) => s.id === id);
+      const source = sourceById.get(id);
       return source ? [{ id, name: `${source.label}: ${source.page}`, url: source.url, verifiedAt: source.checkedAt }] : [];
     }),
   } : {}),
 });
 
 /** Spørsmålene per tema, i filas egen rekkefølge. Nøkkel `""` = hele området. */
-function faqByCategory(dataset: LocalDataset): Map<string, FaqEntry[]> {
+function faqByCategory(
+  dataset: LocalDataset,
+  sourceById: ReadonlyMap<string, LocalDataset["sources"][number]>,
+): Map<string, FaqEntry[]> {
   const byCategory = new Map<string, FaqEntry[]>();
   const mapIds = new Map(dataset.places.map(p => [p.id, p.parentPlaceId ?? p.id]));
   for (const original of dataset.faqs) {
     const entry = { ...original, answer: original.answer.replace(/\(poi:([^)]+)\)/g, (_, id: string) => `(poi:${mapIds.get(id) ?? id})`) };
     const key = entry.categoryId ?? "";
     const bucket = byCategory.get(key);
-    if (bucket) bucket.push(toFaqEntry(entry, dataset.sources));
-    else byCategory.set(key, [toFaqEntry(entry, dataset.sources)]);
+    if (bucket) bucket.push(toFaqEntry(entry, sourceById));
+    else byCategory.set(key, [toFaqEntry(entry, sourceById)]);
   }
   return byCategory;
 }
@@ -231,8 +234,13 @@ export function buildLocalProject(dataset: LocalDataset, descriptor: LocalDemoDe
  * tomt board gir et kart uten markører, en temarad med alle temaene, og en
  * tomtilstand per tema (`StoryCategoryBody`).
  */
-export function buildLocalBoard(dataset: LocalDataset, descriptor: LocalDemoDescriptor): BoardData {
-  const project = buildLocalProject(dataset, descriptor);
+export function buildLocalBoard(
+  dataset: LocalDataset,
+  descriptor: LocalDemoDescriptor,
+  // Prosjektet tas som parameter fordi sidene trenger det selv og allerede har
+  // bygd det. Bygges det to ganger, hashes hele datasettet to ganger.
+  project: Project = buildLocalProject(dataset, descriptor),
+): BoardData {
   const byId = new Map(project.pois.map(p => [p.id, p]));
   const children = new Map<string, POI[]>();
   const themeByPoiId = new Map(dataset.places.map(p => [p.id, p.categoryId]));
@@ -266,7 +274,7 @@ export function buildLocalBoard(dataset: LocalDataset, descriptor: LocalDemoDesc
   }
 
   const sourceById = new Map(dataset.sources.map((s) => [s.id, s]));
-  const faqs = faqByCategory(dataset);
+  const faqs = faqByCategory(dataset, sourceById);
 
   const categories: BoardCategory[] = dataset.board.categories.map((category) => {
     const categoryId = category.id as BoardCategoryId;

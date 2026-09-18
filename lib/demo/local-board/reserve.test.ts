@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import { loadDataset } from '@/lib/demo/local-board/dataset';
 import { buildLocalBoard } from '@/lib/demo/local-board/board';
-import { visibleReserveBoard, nextReserveIds } from '@/lib/demo/local-board/reserve';
+import { visibleReserveBoard } from '@/lib/demo/local-board/reserve';
 import { radiusOptions, discoveryGeometry, radiusPlaces } from '@/lib/demo/local-board/radius';
 import { createPresentation } from '@/lib/demo/local-board/presentation';
 import { createNyhavnaConversation } from '@/lib/realtime/nyhavna-conversation';
@@ -9,12 +9,22 @@ import { buildVoiceDeps } from '@/lib/demo/local-board/voice';
 
 import { executeBoardTool } from '@/lib/realtime/board-tools';
 import { initialBoardState } from '@/components/variants/report/board/board-state';
+import type { BoardData } from '@/components/variants/report/board/board-data';
 
 import { getLocalDemo } from "@/lib/demo/local-board/registry";
 
 const NYHAVNA = getLocalDemo("nyhavna-lokal");
 
 const category = 'trening-aktivitet';
+
+/**
+ * Neste ekstrautvalg for en kategori: det knappen og stemmen skal enes om.
+ *
+ * Bor i testen og ikke i `reserve.ts` fordi ingen produksjonsflate spør etter
+ * «neste radius» uten å vite hvilken – flatene slår opp en oppgitt `radius_km`.
+ */
+const nextReserveIds = (data: BoardData, categoryId: string, revealed: ReadonlySet<string>): string[] =>
+  radiusOptions(data.demoRadiusPlaces ?? [], categoryId, revealed).options[0]?.ids ?? [];
 async function fixture() {
   const dataset = await loadDataset(NYHAVNA);
   const board = buildLocalBoard(dataset, NYHAVNA);

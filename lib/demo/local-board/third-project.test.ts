@@ -10,7 +10,7 @@ import { buildLocalVoiceInstructions } from "@/lib/demo/local-board/voice-instru
 import { createPresentation, presentationTool, similarPlacesTool, morePlacesTool } from "@/lib/demo/local-board/presentation";
 import { getLocalDemo, isLocalDemoId, LOCAL_DEMO_IDS } from "@/lib/demo/local-board/registry";
 import { LocalDatasetError } from "@/lib/demo/local-board/errors";
-import { isLiveDataset, loadLiveDemo, LIVE_DATASETS } from "@/lib/live/demos";
+import { isLiveDataset, loadLiveDemo, LIVE_DATASETS, type LiveDatasetId } from "@/lib/live/demos";
 import { conversationTools, createNyhavnaConversation } from "@/lib/realtime/nyhavna-conversation";
 import type { ConversationLabels } from "@/lib/realtime/conversation-labels";
 import type { LocalDemoDescriptor, LocalDemoFeatures } from "@/lib/demo/local-board/registry";
@@ -243,7 +243,10 @@ describe("et tredje, syntetisk prosjekt på den delte kjernen", () => {
     // Live-ruta godtar bare snapshotet og de registrerte demoene.
     expect(LIVE_DATASETS).not.toContain(SYNTHETIC_ID);
     expect(isLiveDataset(SYNTHETIC_ID)).toBe(false);
-    await expect(loadLiveDemo(SYNTHETIC_ID)).rejects.toThrow(LocalDatasetError);
-    await expect(loadLiveDemo(SYNTHETIC_ID)).rejects.toThrow(/Ukjent datasett «syntetisk-test»/);
+    // Casten er selve poenget: typen kjenner bare de registrerte ID-ene, så en
+    // ukjent ID må tvinges inn for å kunne bevise at lasteren avviser den.
+    const unknown = SYNTHETIC_ID as LiveDatasetId;
+    await expect(loadLiveDemo(unknown)).rejects.toThrow(LocalDatasetError);
+    await expect(loadLiveDemo(unknown)).rejects.toThrow(/Ukjent datasett «syntetisk-test»/);
   });
 });

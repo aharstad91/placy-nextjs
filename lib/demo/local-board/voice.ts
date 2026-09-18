@@ -10,6 +10,7 @@ import type { LocalDataset, LocalPlace, LocalStatus, LocalTopic } from "@/lib/de
 import {
   buildingNames,
   developmentByPlaceId,
+  joinWithOg,
   projectDevelopment,
   type DevelopmentProjection,
 } from "@/lib/demo/local-board/development";
@@ -145,9 +146,8 @@ function placeEntity(
  * utsagnene som gjelder helheten. Uten dem er området et navn uten påstander,
  * som er riktig når datasettet er tomt.
  */
-function areaEntity(dataset: LocalDataset): KnowledgeEntityLike {
+function areaEntity(dataset: LocalDataset, names: ReadonlyMap<string, string>): KnowledgeEntityLike {
   const general = dataset.topics.filter((topic) => topic.categoryIds.length === 0);
-  const names = buildingNames(dataset.topics);
   return {
     id: dataset.board.id,
     name: dataset.board.name,
@@ -171,8 +171,7 @@ function areaEntity(dataset: LocalDataset): KnowledgeEntityLike {
 }
 
 /** Utbyggingsobjektene som er forankret i et sted, ferdig projisert. */
-function anchoredByPlaceId(dataset: LocalDataset) {
-  const names = buildingNames(dataset.topics);
+function anchoredByPlaceId(dataset: LocalDataset, names: ReadonlyMap<string, string>) {
   const anchored = new Map<string, { topic: LocalTopic; projection: DevelopmentProjection }>();
   for (const [placeId, topic] of developmentByPlaceId(dataset.topics)) {
     const projection = projectDevelopment(topic, names);
@@ -182,7 +181,10 @@ function anchoredByPlaceId(dataset: LocalDataset) {
 }
 
 export function buildKnowledgeBase(dataset: LocalDataset): KnowledgeBase {
-  const anchored = anchoredByPlaceId(dataset);
+  // Byggenavnene slås opp én gang og sendes videre: begge projeksjonene under
+  // trenger dem, og de leser samme temaliste.
+  const names = buildingNames(dataset.topics);
+  const anchored = anchoredByPlaceId(dataset, names);
   return {
     sources: dataset.sources.map((source) => ({
       id: source.id,
@@ -192,7 +194,7 @@ export function buildKnowledgeBase(dataset: LocalDataset): KnowledgeBase {
       checkedAt: source.checkedAt,
     })),
     entities: dataset.places.map((place) => placeEntity(place, anchored.get(place.id))),
-    area: areaEntity(dataset),
+    area: areaEntity(dataset, names),
   };
 }
 
@@ -228,7 +230,7 @@ export function buildKnowledgeOptions(dataset: LocalDataset): KnowledgeOptions {
 
 /** Kapitlenes kildekontrollerte omtaler: datasettets steder, per kategori. */
 export function buildCuratedProvider(dataset: LocalDataset): CuratedProvider {
-  const anchored = anchoredByPlaceId(dataset);
+  const anchored = anchoredByPlaceId(dataset, buildingNames(dataset.topics));
   const byCategory = new Map<string, LocalPlace[]>();
   for (const place of dataset.places) {
     const bucket = byCategory.get(place.categoryId);
@@ -256,10 +258,10 @@ export function buildCuratedProvider(dataset: LocalDataset): CuratedProvider {
 
 function toProjectInfo(
   topic: LocalTopic,
-  sources: LocalDataset["sources"],
+  sourceById: ReadonlyMap<string, LocalDataset["sources"][number]>,
   names: ReadonlyMap<string, string>,
 ): ProjectInfo {
-  const source = sources.find((s) => s.id === topic.sourceIds[0]);
+  const source = sourceById.get(topic.sourceIds[0]);
   // Er temaet et utbyggingsobjekt, er det projeksjonen som eier status-ordet og
   // forbeholdene: `find_project_info` skal aldri kunne svare «åpent» på noe
   // datasettet bare har oppgitt en forventet dato for.
@@ -290,8 +292,11 @@ function toProjectInfo(
 export function buildProjectInfo(dataset: LocalDataset): ProjectInfoProvider {
   const topics = dataset.topics;
   const names = buildingNames(topics);
+  // Kildene slås opp på ID i stedet for å skannes per treff: søket kalles per
+  // spørsmål, og lista vokser med datasettet.
+  const sourceById = new Map(dataset.sources.map((source) => [source.id, source]));
   const forTheme = (themeId: string, limit: number) =>
-    topics.filter((topic) => topic.categoryIds.includes(themeId)).slice(0, limit).map((t) => toProjectInfo(t, dataset.sources, names));
+    topics.filter((topic) => topic.categoryIds.includes(themeId)).slice(0, limit).map((t) => toProjectInfo(t, sourceById, names));
 
   const search = (query: string, themes: readonly string[], limit: number) => {
     const terms = normalize(query).split(/[^a-z0-9æøå]+/).filter((term) => term.length > 2);
@@ -312,7 +317,7 @@ export function buildProjectInfo(dataset: LocalDataset): ProjectInfoProvider {
       })
       .filter((entry): entry is { topic: LocalTopic; score: number } => entry !== null)
       .sort((a, b) => b.score - a.score || a.topic.id.localeCompare(b.topic.id, "nb"));
-    return scored.slice(0, limit).map((entry) => toProjectInfo(entry.topic, dataset.sources, names));
+    return scored.slice(0, limit).map((entry) => toProjectInfo(entry.topic, sourceById, names));
   };
 
   return { forTheme, search };
@@ -329,8 +334,7 @@ export function buildVoiceDeps(dataset: LocalDataset) {
 
 /** «a», «b» og «c» — ordene guiden skal bruke, slik en norsk setning ramser dem opp. */
 export function quotedList(items: readonly string[]): string {
-  const quoted = items.map((item) => `«${item}»`);
-  return quoted.length < 2 ? quoted.join("") : `${quoted.slice(0, -1).join(", ")} og ${quoted[quoted.length - 1]}`;
+  return joinWithOg(items.map((item) => `«${item}»`));
 }
 
 /** Regler for den lokale demoen; ingen arv av den gamle demoens kart- og FAQ-manus. */

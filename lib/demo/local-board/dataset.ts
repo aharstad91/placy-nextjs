@@ -181,7 +181,7 @@ function developmentProblems(
  * for hånd: en skrivefeil i en `categoryId`, en `sourceId` som ble hetende noe
  * annet, to steder med samme ID.
  */
-export function assertProfile(dataset: LocalDataset): void {
+function assertProfile(dataset: LocalDataset): void {
   const profile = dataset.board.profile;
   if (isImplementedProfile(profile)) return;
   // Egen feil, ikke en linje i referanselista: dette er ikke en skrivefeil som

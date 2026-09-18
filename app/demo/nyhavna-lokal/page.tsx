@@ -47,7 +47,9 @@ export default async function NyhavnaLokalPage() {
   const demo = getLocalDemo("nyhavna-lokal");
   const dataset = await loadDataset(demo);
   const project = buildLocalProject(dataset, demo);
-  const board = buildLocalBoard(dataset, demo);
+  // Prosjektet sendes videre: boardet bygger det ellers en gang til, og
+  // innholds-ID-en hashes over hele datasettet.
+  const board = buildLocalBoard(dataset, demo, project);
 
   return (
     <div className="min-h-screen bg-background text-foreground">

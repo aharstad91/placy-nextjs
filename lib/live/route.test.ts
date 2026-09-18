@@ -8,7 +8,7 @@ vi.mock('@/lib/realtime/nyhavna-knowledge', async (importOriginal) => ({ ...awai
 vi.mock('@/lib/live/voice-instructions', () => ({ NYHAVNA_VOICE_INSTRUCTIONS: 'trusted-voice-instructions' }));
 vi.mock('@/lib/realtime/nyhavna-conversation', () => ({ createNyhavnaConversation: () => ({}), conversationTools: () => [] }));
 vi.mock('@/lib/realtime/nyhavna-project-info', () => ({ nyhavnaProjectInfo: { forTheme: () => [], search: () => [] } }));
-import { isLiveDataset, loadLiveDemo } from '@/lib/live/demos';
+import { isLiveDataset, loadLiveDemo, type LiveDatasetId } from '@/lib/live/demos';
 import { buildLocalVoiceInstructions } from '@/lib/demo/local-board/voice-instructions';
 import { loadDataset } from '@/lib/demo/local-board/dataset';
 import { getLocalDemo } from '@/lib/demo/local-board/registry';
@@ -73,7 +73,9 @@ describe('local GPT-Live session route', () => {
     expect(fetch).not.toHaveBeenCalled();
     expect(isLiveDataset('finnes-ikke')).toBe(false);
     // Ingen tilbakefall til snapshotet: lasteren kaster i stedet for å svare.
-    await expect(loadLiveDemo('finnes-ikke')).rejects.toThrow(/Ukjent datasett «finnes-ikke»/);
+    // Typen kjenner bare de registrerte ID-ene; casten lar testen bevise at
+    // lasteren avviser en ukjent ID i stedet for å falle tilbake.
+    await expect(loadLiveDemo('finnes-ikke' as LiveDatasetId)).rejects.toThrow(/Ukjent datasett «finnes-ikke»/);
   });
 
   it('holds the same limits for a registered local demo as for the frozen snapshot', async () => {

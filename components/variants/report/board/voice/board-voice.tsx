@@ -125,7 +125,7 @@ function BoardVoiceSession({ children }: { children: ReactNode }) {
   const followHighlightCategory = features?.followHighlightCategory ?? false;
   const narrationFocusEnabled = features?.narrationFocus ?? false;
   const voicePacing = features?.voicePacing ?? false;
-  const guidedPersona = features?.guidedPersona ?? false;
+  const guidedPersona = features?.guidedPersona;
   const faqIds = useMemo(() => faqProgressEnabled ? [...(data.globalFaq ?? []), ...data.categories.flatMap(c => c.editorial?.faq ?? [])].map(f => f.id) : [], [data.globalFaq, data.categories, faqProgressEnabled]);
 
   const commandVersion = useRef(0);
@@ -253,7 +253,17 @@ function BoardVoiceSession({ children }: { children: ReactNode }) {
 
   const highlightedCategory = state.highlightedPoiIds.length ? data.poisById.get(state.highlightedPoiIds[0])?.category.id : null;
   const selectedCategory = stopId ?? (state.activeCategoryId ? String(state.activeCategoryId) : null) ?? highlightedCategory;
-  const radius = radiusOptions(reserveData?.demoRadiusPlaces ?? [], selectedCategory ?? "", revealedPlaceIds ?? new Set());
+  // Begge er rene oppslag i boardets avstandsliste, og begge kjøres hver gang
+  // provideren rendrer – også når ingenting av det de leser har endret seg.
+  const radiusPlaces = reserveData?.demoRadiusPlaces;
+  const radius = useMemo(
+    () => radiusOptions(radiusPlaces ?? [], selectedCategory ?? "", revealedPlaceIds ?? new Set()),
+    [radiusPlaces, selectedCategory, revealedPlaceIds],
+  );
+  const discoveryCategory = useMemo(
+    () => isDiscoveryCategory(radiusPlaces, selectedCategory),
+    [radiusPlaces, selectedCategory],
+  );
   const showMore = (radiusKm: number) => {
     const option = radius.options.find(o => o.radiusKm === radiusKm);
     if (!option || connecting) return;
@@ -266,7 +276,7 @@ function BoardVoiceSession({ children }: { children: ReactNode }) {
 
   const value: BoardVoice = {
     status, hearing: hearing ?? false, micLevel: micLevel ?? { current: 0 }, running, connecting, ended, notice, error, guided: guidedPersona,
-    ...(revealEnabled && isDiscoveryCategory(reserveData?.demoRadiusPlaces, selectedCategory) ? { morePlaces: { current: radius.current, options: radius.options.map(o => ({ radiusKm: o.radiusKm, count: o.ids.length })), show: showMore } } : {}),
+    ...(revealEnabled && discoveryCategory ? { morePlaces: { current: radius.current, options: radius.options.map(o => ({ radiusKm: o.radiusKm, count: o.ids.length })), show: showMore } } : {}),
     ...(faqProgressEnabled ? { faq: { explored: progress.explored, active: progress.active, select: selectFaq, reset: progress.reset } } : {}),
     toggle: () => {
       if (connecting) return;

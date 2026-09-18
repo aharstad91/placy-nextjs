@@ -1,4 +1,3 @@
-import { radiusOptions } from "@/lib/demo/local-board/radius";
 import type { BoardData } from "@/components/variants/report/board/board-data";
 
 /** The complete dataset stays local; only curated/revealed places reach board surfaces. */
@@ -15,8 +14,4 @@ export function visibleReserveBoard(data: BoardData, revealed: ReadonlySet<strin
     })),
     poisById: new Map([...data.poisById].filter(([id]) => !hidden.has(id))),
   };
-}
-
-export function nextReserveIds(data: BoardData, categoryId: string, revealed: ReadonlySet<string>): string[] {
-  return radiusOptions(data.demoRadiusPlaces ?? [], categoryId, revealed).options[0]?.ids ?? [];
 }
