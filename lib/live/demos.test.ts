@@ -107,9 +107,10 @@ describe("to lokale demoer ved siden av hverandre", () => {
     expect(leangenbukta.voiceInstructions).toBeTruthy();
     expect(leangenbukta.voiceInstructions).not.toBe(nyhavna.voiceInstructions);
     expect(leangenbukta.backendInstructions).not.toBe(nyhavna.backendInstructions);
-    // Tomtilstanden (AE1): ingen steder, og instruksen sier det uttrykkelig.
-    expect(leangenbukta.backendInstructions).toContain("KART: Det er ingen steder i kartet.");
-    expect(leangenbukta.board.poisById.size).toBe(0);
+    expect(leangenbukta.backendInstructions).toContain("STEDER OG REISETIDER (data):");
+    expect(leangenbukta.backendInstructions).toContain("Skolekretsen for Haakon VIIs gate 14 er ikke verifisert");
+    expect(leangenbukta.backendInstructions).not.toContain("KART: Det er ingen steder i kartet.");
+    expect(leangenbukta.board.poisById.size).toBe(26);
   });
 
   it("krysser ikke verktøynavnene mellom de to demoene", async () => {

@@ -1,1 +1,2135 @@
-[]
+[
+  {
+    "id": "ladetorget",
+    "name": "LadeTorget",
+    "categoryId": "hverdag",
+    "coordinates": {
+      "lat": 63.447424000000005,
+      "lng": 10.444825999999999
+    },
+    "status": "existing",
+    "summary": "LadeTorget er et nærsenter i Østmarkveien 2 med dokumenterte virksomheter i senterets egen oversikt.",
+    "locationPrecision": "approximate",
+    "facts": [
+      {
+        "id": "fact-derived-ks-04-1",
+        "text": "LadeTorget er et nærsenter i Østmarkveien 2 med dokumenterte virksomheter i senterets egen oversikt.",
+        "sourceId": "ladetorget-15d604f6",
+        "checkedAt": "2026-09-18",
+        "verification": "confirmed"
+      }
+    ],
+    "sourceIds": [
+      "ladetorget-15d604f6"
+    ],
+    "checkedAt": "2026-09-18",
+    "caveats": [
+      "Kartpunktet viser stedet eller adressen; selve publikumsinngangen er ikke bekreftet.",
+      "Åpningstid, program eller virksomhetsstatus er tidsfølsomt og bør kontrolleres før besøk."
+    ],
+    "address": "Østmarkveien 2, 7040 Trondheim",
+    "placeType": "Nærsenter",
+    "locationNote": "Kartpunktet viser stedet eller adressen; selve publikumsinngangen er ikke bekreftet.",
+    "travelTime": {
+      "walk": 20,
+      "bike": 9,
+      "car": 5
+    },
+    "anchorSummary": "3 dokumenterte tilbud er samlet under dette ankeret.",
+    "anchorKeepsOwnName": true
+  },
+  {
+    "id": "city-lade",
+    "name": "City Lade",
+    "categoryId": "hverdag",
+    "coordinates": {
+      "lat": 63.443541100000004,
+      "lng": 10.4478207
+    },
+    "status": "existing",
+    "summary": "Senteret oppgir ordinært hverdager 09–21 og lørdag 09–20. Søndag er senteret stengt, mens Solrekka har egne åpningstider.",
+    "locationPrecision": "approximate",
+    "facts": [
+      {
+        "id": "fact-ks-01-1",
+        "text": "Senteret oppgir ordinært hverdager 09–21 og lørdag 09–20.",
+        "sourceId": "citylade-6434272b",
+        "checkedAt": "2026-09-18",
+        "verification": "confirmed"
+      },
+      {
+        "id": "fact-ks-01-2",
+        "text": "Søndag er senteret stengt, mens Solrekka har egne åpningstider.",
+        "sourceId": "citylade-93943a3e",
+        "checkedAt": "2026-09-18",
+        "verification": "confirmed"
+      }
+    ],
+    "sourceIds": [
+      "citylade-6434272b",
+      "citylade-93943a3e"
+    ],
+    "checkedAt": "2026-09-18",
+    "caveats": [
+      "Kartpunktet viser stedet eller adressen; selve publikumsinngangen er ikke bekreftet.",
+      "Åpningstid, program eller virksomhetsstatus er tidsfølsomt og bør kontrolleres før besøk."
+    ],
+    "address": "Haakon VIIs gt. 9, 7041 Trondheim",
+    "placeType": "Kjøpesenter",
+    "locationNote": "Kartpunktet viser stedet eller adressen; selve publikumsinngangen er ikke bekreftet.",
+    "travelTime": {
+      "walk": 17,
+      "bike": 10,
+      "car": 6
+    },
+    "anchorSummary": "12 dokumenterte tilbud er samlet under dette ankeret."
+  },
+  {
+    "id": "sirkus-shopping",
+    "name": "Sirkus Shopping",
+    "categoryId": "hverdag",
+    "coordinates": {
+      "lat": 63.4356484,
+      "lng": 10.4566579
+    },
+    "status": "existing",
+    "summary": "Senteret oppgir ordinært hverdager 09–21 og lørdag 09–20. Søndagsåpne serveringssteder har egne tider.",
+    "locationPrecision": "approximate",
+    "facts": [
+      {
+        "id": "fact-ks-02-1",
+        "text": "Senteret oppgir ordinært hverdager 09–21 og lørdag 09–20.",
+        "sourceId": "sirkusshopping-63ecbf55",
+        "checkedAt": "2026-09-18",
+        "verification": "confirmed"
+      },
+      {
+        "id": "fact-ks-02-2",
+        "text": "Søndagsåpne serveringssteder har egne tider.",
+        "sourceId": "sirkusshopping-63ecbf55",
+        "checkedAt": "2026-09-18",
+        "verification": "confirmed"
+      }
+    ],
+    "sourceIds": [
+      "sirkusshopping-63ecbf55"
+    ],
+    "checkedAt": "2026-09-18",
+    "caveats": [
+      "Kartpunktet viser stedet eller adressen; selve publikumsinngangen er ikke bekreftet.",
+      "Åpningstid, program eller virksomhetsstatus er tidsfølsomt og bør kontrolleres før besøk."
+    ],
+    "address": "Falkenborgvegen 1, 7044 Trondheim",
+    "placeType": "Kjøpesenter",
+    "locationNote": "Kartpunktet viser stedet eller adressen; selve publikumsinngangen er ikke bekreftet.",
+    "travelTime": {
+      "walk": 11,
+      "bike": 7,
+      "car": 8
+    },
+    "anchorSummary": "5 dokumenterte tilbud er samlet under dette ankeret."
+  },
+  {
+    "id": "lade-arena",
+    "name": "Lade Arena",
+    "categoryId": "hverdag",
+    "coordinates": {
+      "lat": 63.4400004,
+      "lng": 10.4624029
+    },
+    "status": "existing",
+    "summary": "Senterets gjeldende butikkside lister blant annet Rema 1000, Vitusapotek og Burger King. Senteradressen er Haakon VIIs gate 8–12.",
+    "locationPrecision": "approximate",
+    "facts": [
+      {
+        "id": "fact-ks-03-1",
+        "text": "Senterets gjeldende butikkside lister blant annet Rema 1000, Vitusapotek og Burger King.",
+        "sourceId": "ladearena-cf5df9d7",
+        "checkedAt": "2026-09-18",
+        "verification": "confirmed"
+      },
+      {
+        "id": "fact-ks-03-2",
+        "text": "Senteradressen er Haakon VIIs gate 8–12.",
+        "sourceId": "ladearena-cf5df9d7",
+        "checkedAt": "2026-09-18",
+        "verification": "confirmed"
+      }
+    ],
+    "sourceIds": [
+      "ladearena-cf5df9d7"
+    ],
+    "checkedAt": "2026-09-18",
+    "caveats": [
+      "Kartpunktet viser stedet eller adressen; selve publikumsinngangen er ikke bekreftet.",
+      "Åpningstid, program eller virksomhetsstatus er tidsfølsomt og bør kontrolleres før besøk."
+    ],
+    "address": "Haakon VIIs gt. 12, 7041 Trondheim",
+    "placeType": "Kjøpesenter",
+    "locationNote": "Kartpunktet viser stedet eller adressen; selve publikumsinngangen er ikke bekreftet.",
+    "travelTime": {
+      "walk": 4,
+      "bike": 4,
+      "car": 2
+    },
+    "anchorSummary": "4 dokumenterte tilbud er samlet under dette ankeret."
+  },
+  {
+    "id": "lade-skole",
+    "name": "Lade skole",
+    "categoryId": "oppvekst",
+    "coordinates": {
+      "lat": 63.447284599999996,
+      "lng": 10.436244
+    },
+    "status": "existing",
+    "summary": "Kommunal skole for 1.–10. trinn i Ladehammerveien 45. Skolens side oppgir 663 elever per 11.05.2026. Skolekrets for Haakon VIIs gate 14 er ikke verifisert.",
+    "locationPrecision": "approximate",
+    "facts": [
+      {
+        "id": "fact-opp-01-1",
+        "text": "Kommunal skole for 1.–10. trinn i Ladehammerveien 45.",
+        "sourceId": "trondheim-60a02168",
+        "checkedAt": "2026-09-18",
+        "verification": "confirmed"
+      },
+      {
+        "id": "fact-opp-01-2",
+        "text": "Skolens side oppgir 663 elever per 11.05.2026.",
+        "sourceId": "trondheim-60a02168",
+        "checkedAt": "2026-09-18",
+        "verification": "confirmed"
+      },
+      {
+        "id": "fact-opp-01-3",
+        "text": "Skolekrets for Haakon VIIs gate 14 er ikke verifisert.",
+        "sourceId": "trondheim-60a02168",
+        "checkedAt": "2026-09-18",
+        "verification": "confirmed"
+      }
+    ],
+    "sourceIds": [
+      "trondheim-60a02168"
+    ],
+    "checkedAt": "2026-09-18",
+    "caveats": [
+      "Kartpunktet viser stedet eller adressen; selve publikumsinngangen er ikke bekreftet.",
+      "Skolekrets for Haakon VIIs gate 14 er ikke verifisert."
+    ],
+    "address": "Ladehammerveien, Trondheim",
+    "placeType": "Skole",
+    "locationNote": "Kartpunktet viser stedet eller adressen; selve publikumsinngangen er ikke bekreftet.",
+    "travelTime": {
+      "walk": 24,
+      "bike": 11,
+      "car": 6
+    },
+    "anchorSummary": "1 dokumenterte tilbud er samlet under dette ankeret.",
+    "anchorKeepsOwnName": true
+  },
+  {
+    "id": "ladesletta-barnehage",
+    "name": "Ladesletta barnehage",
+    "categoryId": "oppvekst",
+    "coordinates": {
+      "lat": 63.442191799999996,
+      "lng": 10.465891599999999
+    },
+    "status": "existing",
+    "summary": "Kommunal barnehage i Lade allé 80A med åpningstid 07.15–16.30. Enheten oppgir sommerstengt uke 28–30 i 2026 og 2027.",
+    "locationPrecision": "approximate",
+    "facts": [
+      {
+        "id": "fact-opp-03-1",
+        "text": "Kommunal barnehage i Lade allé 80A med åpningstid 07.15–16.30.",
+        "sourceId": "trondheim-a9d869bd",
+        "checkedAt": "2026-09-18",
+        "verification": "confirmed"
+      },
+      {
+        "id": "fact-opp-03-2",
+        "text": "Enheten oppgir sommerstengt uke 28–30 i 2026 og 2027.",
+        "sourceId": "trondheim-a9d869bd",
+        "checkedAt": "2026-09-18",
+        "verification": "confirmed"
+      }
+    ],
+    "sourceIds": [
+      "trondheim-a9d869bd"
+    ],
+    "checkedAt": "2026-09-18",
+    "caveats": [
+      "Kartpunktet viser stedet eller adressen; selve publikumsinngangen er ikke bekreftet.",
+      "Åpningstid, program eller virksomhetsstatus er tidsfølsomt og bør kontrolleres før besøk.",
+      "Plassering gir ikke rett til barnehageplass."
+    ],
+    "address": "Lade alle 80, 7041 Trondheim",
+    "placeType": "Barnehage",
+    "locationNote": "Kartpunktet viser stedet eller adressen; selve publikumsinngangen er ikke bekreftet.",
+    "travelTime": {
+      "walk": 6,
+      "bike": 3,
+      "car": 3
+    }
+  },
+  {
+    "id": "leangen-kulturbarnehage-sa",
+    "name": "Leangen kulturbarnehage SA",
+    "categoryId": "oppvekst",
+    "coordinates": {
+      "lat": 63.428962999999996,
+      "lng": 10.461174
+    },
+    "status": "existing",
+    "summary": "Privat samvirkeforetak for barn 1–5 år i Peder Østlunds veg 1. Opptak skjer gjennom kommunens samordnede opptak.",
+    "locationPrecision": "approximate",
+    "facts": [
+      {
+        "id": "fact-opp-05-1",
+        "text": "Privat samvirkeforetak for barn 1–5 år i Peder Østlunds veg 1.",
+        "sourceId": "barnehagefakta-28025e1b",
+        "checkedAt": "2026-09-18",
+        "verification": "confirmed"
+      },
+      {
+        "id": "fact-opp-05-2",
+        "text": "Opptak skjer gjennom kommunens samordnede opptak.",
+        "sourceId": "leangenkulturbarnehage-c3d859f4",
+        "checkedAt": "2026-09-18",
+        "verification": "confirmed"
+      }
+    ],
+    "sourceIds": [
+      "barnehagefakta-28025e1b",
+      "leangenkulturbarnehage-c3d859f4"
+    ],
+    "checkedAt": "2026-09-18",
+    "caveats": [
+      "Kartpunktet viser stedet eller adressen; selve publikumsinngangen er ikke bekreftet.",
+      "Åpningstid, program eller virksomhetsstatus er tidsfølsomt og bør kontrolleres før besøk.",
+      "Plassering gir ikke rett til barnehageplass."
+    ],
+    "address": "Peder Østlunds veg 1, 7045 Trondheim",
+    "placeType": "Barnehage",
+    "locationNote": "Kartpunktet viser stedet eller adressen; selve publikumsinngangen er ikke bekreftet.",
+    "travelTime": {
+      "walk": 19,
+      "bike": 9,
+      "car": 7
+    }
+  },
+  {
+    "id": "lade-skole-play",
+    "name": "Lade skole lek",
+    "categoryId": "oppvekst",
+    "coordinates": {
+      "lat": 63.447284599999996,
+      "lng": 10.436244
+    },
+    "status": "existing",
+    "summary": "Kommunalt leke- og aktivitetsområde i tilknytning til Lade skole.",
+    "locationPrecision": "approximate",
+    "facts": [
+      {
+        "id": "fact-opp-10-1",
+        "text": "Kommunalt leke- og aktivitetsområde i tilknytning til Lade skole.",
+        "sourceId": "trondheim-6389ab9b",
+        "checkedAt": "2026-09-18",
+        "verification": "confirmed"
+      }
+    ],
+    "sourceIds": [
+      "trondheim-6389ab9b"
+    ],
+    "checkedAt": "2026-09-18",
+    "caveats": [
+      "Kartpunktet viser stedet eller adressen; selve publikumsinngangen er ikke bekreftet."
+    ],
+    "address": "Ladehammerveien, Trondheim",
+    "placeType": "Leke- og aktivitetsområde",
+    "locationNote": "Kartpunktet viser stedet eller adressen; selve publikumsinngangen er ikke bekreftet.",
+    "travelTime": {
+      "walk": 24,
+      "bike": 11,
+      "car": 6
+    }
+  },
+  {
+    "id": "ladeparken",
+    "name": "Ladeparken lek",
+    "categoryId": "oppvekst",
+    "coordinates": {
+      "lat": 63.445483599999996,
+      "lng": 10.4402498
+    },
+    "status": "existing",
+    "summary": "Kommunalt park- og lekeområde med toalett.",
+    "locationPrecision": "approximate",
+    "facts": [
+      {
+        "id": "fact-opp-11-1",
+        "text": "Kommunalt park- og lekeområde med toalett.",
+        "sourceId": "trondheim-521880da",
+        "checkedAt": "2026-09-18",
+        "verification": "confirmed"
+      }
+    ],
+    "sourceIds": [
+      "trondheim-521880da"
+    ],
+    "checkedAt": "2026-09-18",
+    "caveats": [
+      "Kartpunktet viser stedet eller adressen; selve publikumsinngangen er ikke bekreftet."
+    ],
+    "address": "Håkon Magnussons gate, 7041 Trondheim",
+    "placeType": "Park og lekeområde",
+    "locationNote": "Kartpunktet viser stedet eller adressen; selve publikumsinngangen er ikke bekreftet.",
+    "travelTime": {
+      "walk": 20,
+      "bike": 10,
+      "car": 5
+    }
+  },
+  {
+    "id": "lade-fritidsklubb",
+    "name": "Lade fritidsklubb",
+    "categoryId": "oppvekst",
+    "coordinates": {
+      "lat": 63.44390980000001,
+      "lng": 10.4414003
+    },
+    "status": "existing",
+    "summary": "Kommunalt gratis fritidstilbud i Håkon Magnussons gate 5. Åpent tilbud mandag 18–21; gaming mandag 16–18 krever påmelding.",
+    "locationPrecision": "approximate",
+    "facts": [
+      {
+        "id": "fact-opp-15-1",
+        "text": "Kommunalt gratis fritidstilbud i Håkon Magnussons gate 5.",
+        "sourceId": "trondheim-5747a8f9",
+        "checkedAt": "2026-09-18",
+        "verification": "confirmed"
+      },
+      {
+        "id": "fact-opp-15-2",
+        "text": "Åpent tilbud mandag 18–21; gaming mandag 16–18 krever påmelding.",
+        "sourceId": "trondheim-5747a8f9",
+        "checkedAt": "2026-09-18",
+        "verification": "confirmed"
+      }
+    ],
+    "sourceIds": [
+      "trondheim-5747a8f9"
+    ],
+    "checkedAt": "2026-09-18",
+    "caveats": [
+      "Kartpunktet viser stedet eller adressen; selve publikumsinngangen er ikke bekreftet.",
+      "Åpningstid, program eller virksomhetsstatus er tidsfølsomt og bør kontrolleres før besøk."
+    ],
+    "address": "Håkon Magnussons gate 5, 7041 Trondheim",
+    "placeType": "Fritidsklubb",
+    "locationNote": "Kartpunktet viser stedet eller adressen; selve publikumsinngangen er ikke bekreftet.",
+    "travelTime": {
+      "walk": 19,
+      "bike": 10,
+      "car": 6
+    },
+    "anchorSummary": "1 dokumenterte tilbud er samlet under dette ankeret.",
+    "anchorKeepsOwnName": true
+  },
+  {
+    "id": "ladekaia",
+    "name": "Ladekaia",
+    "categoryId": "servering",
+    "coordinates": {
+      "lat": 63.45705439999999,
+      "lng": 10.4469876
+    },
+    "status": "existing",
+    "summary": "Serveringssted i Leiv Eirikssons vei 42 med bordbooking. Virksomheten oppgir 11–22 alle dager og kjøkken til 21; tiden er sesongfølsom og må oppfriskes.",
+    "locationPrecision": "approximate",
+    "facts": [
+      {
+        "id": "fact-srv-01-1",
+        "text": "Serveringssted i Leiv Eirikssons vei 42 med bordbooking.",
+        "sourceId": "ladekaia-c3a8f67a",
+        "checkedAt": "2026-09-18",
+        "verification": "confirmed"
+      },
+      {
+        "id": "fact-srv-01-2",
+        "text": "Virksomheten oppgir 11–22 alle dager og kjøkken til 21; tiden er sesongfølsom og må oppfriskes.",
+        "sourceId": "ladekaia-c3a8f67a",
+        "checkedAt": "2026-09-18",
+        "verification": "confirmed"
+      }
+    ],
+    "sourceIds": [
+      "ladekaia-c3a8f67a"
+    ],
+    "checkedAt": "2026-09-18",
+    "caveats": [
+      "Kartpunktet viser stedet eller adressen; selve publikumsinngangen er ikke bekreftet.",
+      "Åpningstid, program eller virksomhetsstatus er tidsfølsomt og bør kontrolleres før besøk.",
+      "Ladekaia er sesongstyrt; kontroller åpningstid før besøk."
+    ],
+    "address": "Leiv Eirikssons vei 42, 7040 Trondheim",
+    "placeType": "Serveringssted",
+    "locationNote": "Kartpunktet viser stedet eller adressen; selve publikumsinngangen er ikke bekreftet.",
+    "travelTime": {
+      "walk": 36,
+      "bike": 19,
+      "car": 11
+    }
+  },
+  {
+    "id": "egon-lade",
+    "name": "Egon Lade",
+    "categoryId": "servering",
+    "coordinates": {
+      "lat": 63.4429245,
+      "lng": 10.4465015
+    },
+    "status": "existing",
+    "summary": "Egon i Solrekka oppgir man–lør 10–23 og søndag 12–22. Virksomheten har egen uteservering.",
+    "locationPrecision": "approximate",
+    "facts": [
+      {
+        "id": "fact-srv-03-1",
+        "text": "Egon i Solrekka oppgir man–lør 10–23 og søndag 12–22.",
+        "sourceId": "citylade-6434272b",
+        "checkedAt": "2026-09-18",
+        "verification": "confirmed"
+      },
+      {
+        "id": "fact-srv-03-2",
+        "text": "Virksomheten har egen uteservering.",
+        "sourceId": "egon-bdf5a615",
+        "checkedAt": "2026-09-18",
+        "verification": "confirmed"
+      }
+    ],
+    "sourceIds": [
+      "citylade-6434272b",
+      "egon-bdf5a615"
+    ],
+    "checkedAt": "2026-09-18",
+    "caveats": [
+      "Kartpunktet viser stedet eller adressen; selve publikumsinngangen er ikke bekreftet.",
+      "Åpningstid, program eller virksomhetsstatus er tidsfølsomt og bør kontrolleres før besøk."
+    ],
+    "address": "Haakon VIIs gt. 9, 7041 Trondheim",
+    "placeType": "Restaurant",
+    "locationNote": "Kartpunktet viser stedet eller adressen; selve publikumsinngangen er ikke bekreftet.",
+    "travelTime": {
+      "walk": 16,
+      "bike": 9,
+      "car": 7
+    }
+  },
+  {
+    "id": "kompis-lade",
+    "name": "Kompis Lade",
+    "categoryId": "servering",
+    "coordinates": {
+      "lat": 63.447391599999996,
+      "lng": 10.444757599999999
+    },
+    "status": "existing",
+    "summary": "Kompis Lade publiserer egne restaurant- og takeaway-tider, inkludert søndag 13–22.",
+    "locationPrecision": "approximate",
+    "facts": [
+      {
+        "id": "fact-srv-05-1",
+        "text": "Kompis Lade publiserer egne restaurant- og takeaway-tider, inkludert søndag 13–22.",
+        "sourceId": "kompisnorge-626e7987",
+        "checkedAt": "2026-09-18",
+        "verification": "confirmed"
+      }
+    ],
+    "sourceIds": [
+      "kompisnorge-626e7987"
+    ],
+    "checkedAt": "2026-09-18",
+    "caveats": [
+      "Kartpunktet viser stedet eller adressen; selve publikumsinngangen er ikke bekreftet.",
+      "Åpningstid, program eller virksomhetsstatus er tidsfølsomt og bør kontrolleres før besøk."
+    ],
+    "address": "Østmarkveien 2, 7040 Trondheim",
+    "placeType": "Restaurant",
+    "locationNote": "Kartpunktet viser stedet eller adressen; selve publikumsinngangen er ikke bekreftet.",
+    "travelTime": {
+      "walk": 20,
+      "bike": 9,
+      "car": 5
+    }
+  },
+  {
+    "id": "korsvika",
+    "name": "Korsvika",
+    "categoryId": "natur",
+    "coordinates": {
+      "lat": 63.450384299999996,
+      "lng": 10.4346351
+    },
+    "status": "existing",
+    "summary": "Kommunal badeplass og friområde med benker/bord, toalett, grill, badestige og lekeplass. Kommunen beskriver adkomst fra enden av Korsvik allé.",
+    "locationPrecision": "approximate",
+    "facts": [
+      {
+        "id": "fact-nat-01-1",
+        "text": "Kommunal badeplass og friområde med benker/bord, toalett, grill, badestige og lekeplass.",
+        "sourceId": "trondheim-45a68fde",
+        "checkedAt": "2026-09-18",
+        "verification": "confirmed"
+      },
+      {
+        "id": "fact-nat-01-2",
+        "text": "Kommunen beskriver adkomst fra enden av Korsvik allé.",
+        "sourceId": "trondheim-45a68fde",
+        "checkedAt": "2026-09-18",
+        "verification": "confirmed"
+      }
+    ],
+    "sourceIds": [
+      "trondheim-45a68fde"
+    ],
+    "checkedAt": "2026-09-18",
+    "caveats": [
+      "Kartpunktet viser stedet eller adressen; selve publikumsinngangen er ikke bekreftet."
+    ],
+    "address": "Korsvika, Lade",
+    "placeType": "Badeplass og friområde",
+    "locationNote": "Kartpunktet viser stedet eller adressen; selve publikumsinngangen er ikke bekreftet.",
+    "travelTime": {
+      "walk": 28,
+      "bike": 13,
+      "car": 7
+    }
+  },
+  {
+    "id": "ringvebukta",
+    "name": "Ringvebukta",
+    "categoryId": "natur",
+    "coordinates": {
+      "lat": 63.45322969999999,
+      "lng": 10.463370999999999
+    },
+    "status": "existing",
+    "summary": "Kommunalt park- og lekeområde ved sjøen med offentlig toalett og lekeelementer.",
+    "locationPrecision": "approximate",
+    "facts": [
+      {
+        "id": "fact-nat-02-1",
+        "text": "Kommunalt park- og lekeområde ved sjøen med offentlig toalett og lekeelementer.",
+        "sourceId": "trondheim-f36a7a5b",
+        "checkedAt": "2026-09-18",
+        "verification": "confirmed"
+      }
+    ],
+    "sourceIds": [
+      "trondheim-f36a7a5b"
+    ],
+    "checkedAt": "2026-09-18",
+    "caveats": [
+      "Kartpunktet viser stedet eller adressen; selve publikumsinngangen er ikke bekreftet."
+    ],
+    "address": "Ringvebukta, Lade",
+    "placeType": "Park og friområde",
+    "locationNote": "Kartpunktet viser stedet eller adressen; selve publikumsinngangen er ikke bekreftet.",
+    "travelTime": {
+      "walk": 22,
+      "bike": 14,
+      "car": 7
+    }
+  },
+  {
+    "id": "djupvika",
+    "name": "Djupvika",
+    "categoryId": "natur",
+    "coordinates": {
+      "lat": 63.456653200000005,
+      "lng": 10.4518048
+    },
+    "status": "existing",
+    "summary": "Kommunen fører Djupvika i sin gjeldende oversikt over badeplasser i saltvann.",
+    "locationPrecision": "approximate",
+    "facts": [
+      {
+        "id": "fact-nat-03-1",
+        "text": "Kommunen fører Djupvika i sin gjeldende oversikt over badeplasser i saltvann.",
+        "sourceId": "trondheim-5c884f0a",
+        "checkedAt": "2026-09-18",
+        "verification": "confirmed"
+      }
+    ],
+    "sourceIds": [
+      "trondheim-5c884f0a"
+    ],
+    "checkedAt": "2026-09-18",
+    "caveats": [
+      "Kartpunktet viser stedet eller adressen; selve publikumsinngangen er ikke bekreftet."
+    ],
+    "address": "7040 Trondheim",
+    "placeType": "Badeplass",
+    "locationNote": "Kartpunktet viser stedet eller adressen; selve publikumsinngangen er ikke bekreftet.",
+    "travelTime": {
+      "walk": 31,
+      "bike": 16,
+      "car": 11
+    }
+  },
+  {
+    "id": "ringve-botaniske-hage",
+    "name": "Ringve botaniske hage",
+    "categoryId": "natur",
+    "coordinates": {
+      "lat": 63.44828889999999,
+      "lng": 10.452311199999999
+    },
+    "status": "existing",
+    "summary": "NTNU oppgir at hagen er gratis og åpen hver dag hele året. Hagen er 130 dekar og har inngang fra nord ved Olav Engelbrektssons allé.",
+    "locationPrecision": "approximate",
+    "facts": [
+      {
+        "id": "fact-nat-08-1",
+        "text": "NTNU oppgir at hagen er gratis og åpen hver dag hele året.",
+        "sourceId": "ntnu-4f3d38b5",
+        "checkedAt": "2026-09-18",
+        "verification": "confirmed"
+      },
+      {
+        "id": "fact-nat-08-2",
+        "text": "Hagen er 130 dekar og har inngang fra nord ved Olav Engelbrektssons allé.",
+        "sourceId": "ntnu-79fbb589",
+        "checkedAt": "2026-09-18",
+        "verification": "confirmed"
+      }
+    ],
+    "sourceIds": [
+      "ntnu-4f3d38b5",
+      "ntnu-79fbb589"
+    ],
+    "checkedAt": "2026-09-18",
+    "caveats": [
+      "Kartpunktet viser stedet eller adressen; selve publikumsinngangen er ikke bekreftet."
+    ],
+    "address": "Lade alle 58, 7041 Trondheim",
+    "placeType": "Botanisk hage",
+    "locationNote": "Kartpunktet viser stedet eller adressen; selve publikumsinngangen er ikke bekreftet.",
+    "travelTime": {
+      "walk": 18,
+      "bike": 7,
+      "car": 5
+    }
+  },
+  {
+    "id": "leangen-stasjon",
+    "name": "Leangen stasjon",
+    "categoryId": "transport",
+    "coordinates": {
+      "lat": 63.4375413,
+      "lng": 10.4615586
+    },
+    "status": "existing",
+    "summary": "Bane NOR oppgir adresse Leangenvegen 14 og togforbindelse på R70. Det finnes 15 parkeringsplasser og 2 HC-plasser ved den gamle stasjonsbygningen. Trinnfri rute finnes, men er lengre; planovergangen til plattformen har trapper.",
+    "locationPrecision": "approximate",
+    "facts": [
+      {
+        "id": "fact-trn-13-1",
+        "text": "Bane NOR oppgir adresse Leangenvegen 14 og togforbindelse på R70.",
+        "sourceId": "banenor-5c4f1b79",
+        "checkedAt": "2026-09-18",
+        "verification": "confirmed"
+      },
+      {
+        "id": "fact-trn-13-2",
+        "text": "Det finnes 15 parkeringsplasser og 2 HC-plasser ved den gamle stasjonsbygningen.",
+        "sourceId": "banenor-5c4f1b79",
+        "checkedAt": "2026-09-18",
+        "verification": "confirmed"
+      },
+      {
+        "id": "fact-trn-13-3",
+        "text": "Trinnfri rute finnes, men er lengre; planovergangen til plattformen har trapper.",
+        "sourceId": "banenor-5c4f1b79",
+        "checkedAt": "2026-09-18",
+        "verification": "confirmed"
+      }
+    ],
+    "sourceIds": [
+      "banenor-5c4f1b79"
+    ],
+    "checkedAt": "2026-09-18",
+    "caveats": [
+      "Kartpunktet viser stedet eller adressen; selve publikumsinngangen er ikke bekreftet.",
+      "Kartpunktet viser stasjonsområdet. Trinnfri rute og trappeadkomst følger ikke samme vei."
+    ],
+    "address": "7041 Trondheim",
+    "placeType": "Togstasjon",
+    "locationNote": "Kartpunktet viser stedet eller adressen; selve publikumsinngangen er ikke bekreftet.",
+    "travelTime": {
+      "walk": 6,
+      "bike": 4,
+      "car": 4
+    }
+  },
+  {
+    "id": "leangen-idrettspark",
+    "name": "Leangen idrettspark",
+    "categoryId": "trening",
+    "coordinates": {
+      "lat": 63.4273685,
+      "lng": 10.466399
+    },
+    "status": "existing",
+    "summary": "Kommunalt idrettsanlegg med kunstisbane, ishaller, fleridrettsflater, curlinghall og kunstgressbaner. Kommunen opplyser om midlertidig påvirket parkering og adkomst i september 2026.",
+    "locationPrecision": "approximate",
+    "facts": [
+      {
+        "id": "fact-anl-01-1",
+        "text": "Kommunalt idrettsanlegg med kunstisbane, ishaller, fleridrettsflater, curlinghall og kunstgressbaner.",
+        "sourceId": "sites-e7207c5a",
+        "checkedAt": "2026-09-18",
+        "verification": "confirmed"
+      },
+      {
+        "id": "fact-anl-01-2",
+        "text": "Kommunen opplyser om midlertidig påvirket parkering og adkomst i september 2026.",
+        "sourceId": "sites-e7207c5a",
+        "checkedAt": "2026-09-18",
+        "verification": "confirmed"
+      }
+    ],
+    "sourceIds": [
+      "sites-e7207c5a"
+    ],
+    "checkedAt": "2026-09-18",
+    "caveats": [
+      "Kartpunktet viser stedet eller adressen; selve publikumsinngangen er ikke bekreftet.",
+      "Åpningstid, program eller virksomhetsstatus er tidsfølsomt og bør kontrolleres før besøk."
+    ],
+    "address": "Tungavegen 3, 7047 Trondheim",
+    "placeType": "Idrettspark",
+    "locationNote": "Kartpunktet viser stedet eller adressen; selve publikumsinngangen er ikke bekreftet.",
+    "travelTime": {
+      "walk": 23,
+      "bike": 11,
+      "car": 7
+    },
+    "anchorSummary": "2 dokumenterte tilbud er samlet under dette ankeret.",
+    "anchorKeepsOwnName": true
+  },
+  {
+    "id": "trygg-lade-hallen",
+    "name": "Trygg/Lade-hallen",
+    "categoryId": "trening",
+    "coordinates": {
+      "lat": 63.443965199999994,
+      "lng": 10.4524767
+    },
+    "status": "existing",
+    "summary": "Klubbeid hall fra 2023 i Haakon VIIs gate 2A med 9er-fotballhall, flerbrukshall, garderober og styrkerom.",
+    "locationPrecision": "approximate",
+    "facts": [
+      {
+        "id": "fact-anl-05-1",
+        "text": "Klubbeid hall fra 2023 i Haakon VIIs gate 2A med 9er-fotballhall, flerbrukshall, garderober og styrkerom.",
+        "sourceId": "trygglade-45b62cef",
+        "checkedAt": "2026-09-18",
+        "verification": "confirmed"
+      }
+    ],
+    "sourceIds": [
+      "trygglade-45b62cef"
+    ],
+    "checkedAt": "2026-09-18",
+    "caveats": [
+      "Kartpunktet viser stedet eller adressen; selve publikumsinngangen er ikke bekreftet."
+    ],
+    "address": "Haakon VIIs gt. 2a, 7041 Lade",
+    "placeType": "Idrettshall",
+    "locationNote": "Kartpunktet viser stedet eller adressen; selve publikumsinngangen er ikke bekreftet.",
+    "travelTime": {
+      "walk": 12,
+      "bike": 6,
+      "car": 4
+    },
+    "anchorSummary": "1 dokumenterte tilbud er samlet under dette ankeret.",
+    "anchorKeepsOwnName": true
+  },
+  {
+    "id": "3t-lade",
+    "name": "3T-Lade",
+    "categoryId": "trening",
+    "coordinates": {
+      "lat": 63.44337,
+      "lng": 10.45078
+    },
+    "status": "existing",
+    "summary": "Åpent man–fre 05–22.30, lør 08–21 og søn 08–22.30. Avdelingen er bemannet i hele åpningstiden og oppgir spa-basseng, dampbad og kaldkulp.",
+    "locationPrecision": "sourced",
+    "facts": [
+      {
+        "id": "fact-tre-01-1",
+        "text": "Åpent man–fre 05–22.30, lør 08–21 og søn 08–22.30.",
+        "sourceId": "3t-e7fadada",
+        "checkedAt": "2026-09-18",
+        "verification": "confirmed"
+      },
+      {
+        "id": "fact-tre-01-2",
+        "text": "Avdelingen er bemannet i hele åpningstiden og oppgir spa-basseng, dampbad og kaldkulp.",
+        "sourceId": "3t-e7fadada",
+        "checkedAt": "2026-09-18",
+        "verification": "confirmed"
+      }
+    ],
+    "sourceIds": [
+      "3t-e7fadada"
+    ],
+    "checkedAt": "2026-09-18",
+    "caveats": [
+      "Åpningstid, program eller virksomhetsstatus er tidsfølsomt og bør kontrolleres før besøk."
+    ],
+    "address": "Haakon VIIs gt. 11, 7041 Trondheim",
+    "placeType": "Treningssenter",
+    "travelTime": {
+      "walk": 12,
+      "bike": 6,
+      "car": 4
+    }
+  },
+  {
+    "id": "impulse-leangen",
+    "name": "Impulse Leangen",
+    "categoryId": "trening",
+    "coordinates": {
+      "lat": 63.438781899999995,
+      "lng": 10.4632759
+    },
+    "status": "existing",
+    "summary": "Adgang 05–24 alle dager. Ligger i 2. etasje i Haakon VIIs gate 27, med inngang mot parkeringsplassen.",
+    "locationPrecision": "approximate",
+    "facts": [
+      {
+        "id": "fact-tre-02-1",
+        "text": "Adgang 05–24 alle dager.",
+        "sourceId": "impulse-1a17f3d2",
+        "checkedAt": "2026-09-18",
+        "verification": "confirmed"
+      },
+      {
+        "id": "fact-tre-02-2",
+        "text": "Ligger i 2. etasje i Haakon VIIs gate 27, med inngang mot parkeringsplassen.",
+        "sourceId": "impulse-1a17f3d2",
+        "checkedAt": "2026-09-18",
+        "verification": "confirmed"
+      }
+    ],
+    "sourceIds": [
+      "impulse-1a17f3d2"
+    ],
+    "checkedAt": "2026-09-18",
+    "caveats": [
+      "Kartpunktet viser stedet eller adressen; selve publikumsinngangen er ikke bekreftet.",
+      "Åpningstid, program eller virksomhetsstatus er tidsfølsomt og bør kontrolleres før besøk."
+    ],
+    "address": "Haakon VIIs gt. 27, 7041 Trondheim",
+    "placeType": "Treningssenter",
+    "locationNote": "Kartpunktet viser stedet eller adressen; selve publikumsinngangen er ikke bekreftet.",
+    "travelTime": {
+      "walk": 4,
+      "bike": 3,
+      "car": 3
+    }
+  },
+  {
+    "id": "impulse-lade",
+    "name": "Impulse Lade",
+    "categoryId": "trening",
+    "coordinates": {
+      "lat": 63.44767369999999,
+      "lng": 10.4437417
+    },
+    "status": "existing",
+    "summary": "Adgang 05–24 alle dager i Østmarkveien 4. Avdelingen oppgir mer enn 700 m² treningsareal.",
+    "locationPrecision": "approximate",
+    "facts": [
+      {
+        "id": "fact-tre-03-1",
+        "text": "Adgang 05–24 alle dager i Østmarkveien 4.",
+        "sourceId": "impulse-e97cf9a0",
+        "checkedAt": "2026-09-18",
+        "verification": "confirmed"
+      },
+      {
+        "id": "fact-tre-03-2",
+        "text": "Avdelingen oppgir mer enn 700 m² treningsareal.",
+        "sourceId": "impulse-e97cf9a0",
+        "checkedAt": "2026-09-18",
+        "verification": "confirmed"
+      }
+    ],
+    "sourceIds": [
+      "impulse-e97cf9a0"
+    ],
+    "checkedAt": "2026-09-18",
+    "caveats": [
+      "Kartpunktet viser stedet eller adressen; selve publikumsinngangen er ikke bekreftet.",
+      "Åpningstid, program eller virksomhetsstatus er tidsfølsomt og bør kontrolleres før besøk."
+    ],
+    "address": "Østmarkveien 4, 7040 Trondheim",
+    "placeType": "Treningssenter",
+    "locationNote": "Kartpunktet viser stedet eller adressen; selve publikumsinngangen er ikke bekreftet.",
+    "travelTime": {
+      "walk": 20,
+      "bike": 9,
+      "car": 5
+    }
+  },
+  {
+    "id": "ringve-musikkmuseum",
+    "name": "Ringve Musikkmuseum",
+    "categoryId": "opplevelser",
+    "coordinates": {
+      "lat": 63.44748,
+      "lng": 10.45351
+    },
+    "status": "existing",
+    "summary": "Billettbelagt museum i Lade allé 60 med offisielle koordinater 63.44748, 10.45351. Vintersesong 17.08.2026–01.04.2027: tirsdag–søndag 11–16, mandag stengt. Barn 0–15 år har gratis inngang i følge med betalende voksen.",
+    "locationPrecision": "sourced",
+    "facts": [
+      {
+        "id": "fact-exp-01-1",
+        "text": "Billettbelagt museum i Lade allé 60 med offisielle koordinater 63.44748, 10.45351.",
+        "sourceId": "ringve-e3d7e676",
+        "checkedAt": "2026-09-18",
+        "verification": "confirmed"
+      },
+      {
+        "id": "fact-exp-01-2",
+        "text": "Vintersesong 17.08.2026–01.04.2027: tirsdag–søndag 11–16, mandag stengt.",
+        "sourceId": "ringve-e3d7e676",
+        "checkedAt": "2026-09-18",
+        "verification": "confirmed"
+      },
+      {
+        "id": "fact-exp-01-3",
+        "text": "Barn 0–15 år har gratis inngang i følge med betalende voksen.",
+        "sourceId": "ringve-e3d7e676",
+        "checkedAt": "2026-09-18",
+        "verification": "confirmed"
+      }
+    ],
+    "sourceIds": [
+      "ringve-e3d7e676"
+    ],
+    "checkedAt": "2026-09-18",
+    "caveats": [
+      "Åpningstid, program eller virksomhetsstatus er tidsfølsomt og bør kontrolleres før besøk."
+    ],
+    "address": "Lade alle 60, 7041 Trondheim",
+    "placeType": "Museum",
+    "travelTime": {
+      "walk": 15,
+      "bike": 7,
+      "car": 4
+    },
+    "anchorSummary": "1 dokumenterte tilbud er samlet under dette ankeret.",
+    "anchorKeepsOwnName": true
+  },
+  {
+    "id": "lade-kirke",
+    "name": "Lade kirke",
+    "categoryId": "opplevelser",
+    "coordinates": {
+      "lat": 63.4462443,
+      "lng": 10.438620799999999
+    },
+    "status": "existing",
+    "summary": "Lade kirke har Åpen kirke tirsdager 12–13; øvrig adgang følger gudstjenester og arrangementer.",
+    "locationPrecision": "approximate",
+    "facts": [
+      {
+        "id": "fact-exp-04-1",
+        "text": "Lade kirke har Åpen kirke tirsdager 12–13; øvrig adgang følger gudstjenester og arrangementer.",
+        "sourceId": "kirken-60c88d28",
+        "checkedAt": "2026-09-18",
+        "verification": "confirmed"
+      }
+    ],
+    "sourceIds": [
+      "kirken-60c88d28"
+    ],
+    "checkedAt": "2026-09-18",
+    "caveats": [
+      "Kartpunktet viser stedet eller adressen; selve publikumsinngangen er ikke bekreftet.",
+      "Åpningstid, program eller virksomhetsstatus er tidsfølsomt og bør kontrolleres før besøk."
+    ],
+    "address": "Jarleveien 44, 7041 Trondheim",
+    "placeType": "Kirke og kulturminne",
+    "locationNote": "Kartpunktet viser stedet eller adressen; selve publikumsinngangen er ikke bekreftet.",
+    "travelTime": {
+      "walk": 21,
+      "bike": 11,
+      "car": 7
+    }
+  },
+  {
+    "id": "leos-lekeland-trondheim",
+    "name": "Leo's Lekeland",
+    "categoryId": "opplevelser",
+    "coordinates": {
+      "lat": 63.4430191,
+      "lng": 10.432294299999999
+    },
+    "status": "existing",
+    "summary": "Innendørs lekeland i Ladebekken 6. Publisert tid for kontrollperioden er man–fre 10–20 og lør–søn 09–20. Barn leker under ansvar av foreldre eller foresatte.",
+    "locationPrecision": "approximate",
+    "facts": [
+      {
+        "id": "fact-exp-07-1",
+        "text": "Innendørs lekeland i Ladebekken 6.",
+        "sourceId": "leoslekeland-f8abbf60",
+        "checkedAt": "2026-09-18",
+        "verification": "confirmed"
+      },
+      {
+        "id": "fact-exp-07-2",
+        "text": "Publisert tid for kontrollperioden er man–fre 10–20 og lør–søn 09–20.",
+        "sourceId": "leoslekeland-f8abbf60",
+        "checkedAt": "2026-09-18",
+        "verification": "confirmed"
+      },
+      {
+        "id": "fact-exp-07-3",
+        "text": "Barn leker under ansvar av foreldre eller foresatte.",
+        "sourceId": "leoslekeland-f8abbf60",
+        "checkedAt": "2026-09-18",
+        "verification": "confirmed"
+      }
+    ],
+    "sourceIds": [
+      "leoslekeland-f8abbf60"
+    ],
+    "checkedAt": "2026-09-18",
+    "caveats": [
+      "Kartpunktet viser stedet eller adressen; selve publikumsinngangen er ikke bekreftet.",
+      "Åpningstid, program eller virksomhetsstatus er tidsfølsomt og bør kontrolleres før besøk."
+    ],
+    "address": "Ladebekken 6, 7041 Trondheim",
+    "placeType": "Innendørs lekeland",
+    "locationNote": "Kartpunktet viser stedet eller adressen; selve publikumsinngangen er ikke bekreftet.",
+    "travelTime": {
+      "walk": 24,
+      "bike": 11,
+      "car": 6
+    }
+  },
+  {
+    "id": "vitusapotek-city-lade",
+    "name": "Vitusapotek City Lade",
+    "categoryId": "hverdag",
+    "coordinates": {
+      "lat": 63.442916999999994,
+      "lng": 10.4473151
+    },
+    "status": "existing",
+    "summary": "Vitusapotek City Lade beholdes som medlem under place:city-lade; egne åpningstider arves ikke fra ankeret.",
+    "locationPrecision": "approximate",
+    "facts": [
+      {
+        "id": "fact-ap-01-1",
+        "text": "Vitusapotek City Lade beholdes som medlem under place:city-lade; egne åpningstider arves ikke fra ankeret.",
+        "sourceId": "citylade-6434272b",
+        "checkedAt": "2026-09-18",
+        "verification": "confirmed"
+      }
+    ],
+    "sourceIds": [
+      "citylade-6434272b",
+      "citylade-93943a3e"
+    ],
+    "checkedAt": "2026-09-18",
+    "caveats": [
+      "Kartpunktet viser stedet eller adressen; selve publikumsinngangen er ikke bekreftet.",
+      "Åpningstid, program eller virksomhetsstatus er tidsfølsomt og bør kontrolleres før besøk."
+    ],
+    "address": "Haakon VIIs gt. 9, 7041 Trondheim",
+    "parentPlaceId": "city-lade",
+    "poiCategoryId": "butikk",
+    "locationNote": "Kartpunktet viser stedet eller adressen; selve publikumsinngangen er ikke bekreftet."
+  },
+  {
+    "id": "vitusapotek-lade-arena",
+    "name": "Vitusapotek Lade Arena",
+    "categoryId": "hverdag",
+    "coordinates": {
+      "lat": 63.4418054,
+      "lng": 10.459983699999999
+    },
+    "status": "existing",
+    "summary": "Vitusapotek Lade Arena beholdes som medlem under place:lade-arena; egne åpningstider arves ikke fra ankeret.",
+    "locationPrecision": "approximate",
+    "facts": [
+      {
+        "id": "fact-ap-03-1",
+        "text": "Vitusapotek Lade Arena beholdes som medlem under place:lade-arena; egne åpningstider arves ikke fra ankeret.",
+        "sourceId": "ladearena-cf5df9d7",
+        "checkedAt": "2026-09-18",
+        "verification": "confirmed"
+      }
+    ],
+    "sourceIds": [
+      "ladearena-cf5df9d7"
+    ],
+    "checkedAt": "2026-09-18",
+    "caveats": [
+      "Kartpunktet viser stedet eller adressen; selve publikumsinngangen er ikke bekreftet.",
+      "Åpningstid, program eller virksomhetsstatus er tidsfølsomt og bør kontrolleres før besøk."
+    ],
+    "address": "Haakon VIIs gt. 8, 7041 Trondheim",
+    "parentPlaceId": "lade-arena",
+    "poiCategoryId": "butikk",
+    "locationNote": "Kartpunktet viser stedet eller adressen; selve publikumsinngangen er ikke bekreftet."
+  },
+  {
+    "id": "boots-apotek-ladetorget",
+    "name": "Boots apotek LadeTorget",
+    "categoryId": "hverdag",
+    "coordinates": {
+      "lat": 63.447268599999994,
+      "lng": 10.4446514
+    },
+    "status": "existing",
+    "summary": "Boots apotek LadeTorget beholdes som medlem under place:ladetorget; egne åpningstider arves ikke fra ankeret.",
+    "locationPrecision": "approximate",
+    "facts": [
+      {
+        "id": "fact-ap-04-1",
+        "text": "Boots apotek LadeTorget beholdes som medlem under place:ladetorget; egne åpningstider arves ikke fra ankeret.",
+        "sourceId": "ladetorget-15d604f6",
+        "checkedAt": "2026-09-18",
+        "verification": "confirmed"
+      }
+    ],
+    "sourceIds": [
+      "ladetorget-15d604f6"
+    ],
+    "checkedAt": "2026-09-18",
+    "caveats": [
+      "Kartpunktet viser stedet eller adressen; selve publikumsinngangen er ikke bekreftet.",
+      "Åpningstid, program eller virksomhetsstatus er tidsfølsomt og bør kontrolleres før besøk."
+    ],
+    "address": "Østmarkveien 2, 7040 Trondheim",
+    "parentPlaceId": "ladetorget",
+    "poiCategoryId": "butikk",
+    "locationNote": "Kartpunktet viser stedet eller adressen; selve publikumsinngangen er ikke bekreftet."
+  },
+  {
+    "id": "obs-city-lade",
+    "name": "Obs City Lade",
+    "categoryId": "hverdag",
+    "coordinates": {
+      "lat": 63.443299999999994,
+      "lng": 10.447799999999999
+    },
+    "status": "existing",
+    "summary": "Obs City Lade beholdes som medlem under place:city-lade; egne åpningstider arves ikke fra ankeret.",
+    "locationPrecision": "approximate",
+    "facts": [
+      {
+        "id": "fact-dg-01-1",
+        "text": "Obs City Lade beholdes som medlem under place:city-lade; egne åpningstider arves ikke fra ankeret.",
+        "sourceId": "citylade-6434272b",
+        "checkedAt": "2026-09-18",
+        "verification": "confirmed"
+      }
+    ],
+    "sourceIds": [
+      "citylade-6434272b",
+      "citylade-93943a3e"
+    ],
+    "checkedAt": "2026-09-18",
+    "caveats": [
+      "Kartpunktet viser stedet eller adressen; selve publikumsinngangen er ikke bekreftet.",
+      "Åpningstid, program eller virksomhetsstatus er tidsfølsomt og bør kontrolleres før besøk."
+    ],
+    "address": "Haakon VIIs gt. 9, 7041 Trondheim",
+    "parentPlaceId": "city-lade",
+    "poiCategoryId": "butikk",
+    "locationNote": "Kartpunktet viser stedet eller adressen; selve publikumsinngangen er ikke bekreftet."
+  },
+  {
+    "id": "rema-1000-lade-arena",
+    "name": "Rema 1000 Lade Arena",
+    "categoryId": "hverdag",
+    "coordinates": {
+      "lat": 63.441738,
+      "lng": 10.458264
+    },
+    "status": "existing",
+    "summary": "Rema 1000 Lade Arena beholdes som medlem under place:lade-arena; egne åpningstider arves ikke fra ankeret.",
+    "locationPrecision": "approximate",
+    "facts": [
+      {
+        "id": "fact-dg-03-1",
+        "text": "Rema 1000 Lade Arena beholdes som medlem under place:lade-arena; egne åpningstider arves ikke fra ankeret.",
+        "sourceId": "ladearena-cf5df9d7",
+        "checkedAt": "2026-09-18",
+        "verification": "confirmed"
+      }
+    ],
+    "sourceIds": [
+      "ladearena-cf5df9d7"
+    ],
+    "checkedAt": "2026-09-18",
+    "caveats": [
+      "Kartpunktet viser stedet eller adressen; selve publikumsinngangen er ikke bekreftet.",
+      "Åpningstid, program eller virksomhetsstatus er tidsfølsomt og bør kontrolleres før besøk."
+    ],
+    "address": "Haakon VIIs gt. 8-10, 7041 Trondheim",
+    "parentPlaceId": "lade-arena",
+    "poiCategoryId": "butikk",
+    "locationNote": "Kartpunktet viser stedet eller adressen; selve publikumsinngangen er ikke bekreftet."
+  },
+  {
+    "id": "coop-mega-sirkus-shopping",
+    "name": "Coop Mega Sirkus Shopping",
+    "categoryId": "hverdag",
+    "coordinates": {
+      "lat": 63.4357293,
+      "lng": 10.457212199999999
+    },
+    "status": "existing",
+    "summary": "Coop Mega Sirkus Shopping beholdes som medlem under place:sirkus-shopping; egne åpningstider arves ikke fra ankeret.",
+    "locationPrecision": "approximate",
+    "facts": [
+      {
+        "id": "fact-dg-04-1",
+        "text": "Coop Mega Sirkus Shopping beholdes som medlem under place:sirkus-shopping; egne åpningstider arves ikke fra ankeret.",
+        "sourceId": "sirkusshopping-63ecbf55",
+        "checkedAt": "2026-09-18",
+        "verification": "confirmed"
+      }
+    ],
+    "sourceIds": [
+      "sirkusshopping-63ecbf55"
+    ],
+    "checkedAt": "2026-09-18",
+    "caveats": [
+      "Kartpunktet viser stedet eller adressen; selve publikumsinngangen er ikke bekreftet.",
+      "Åpningstid, program eller virksomhetsstatus er tidsfølsomt og bør kontrolleres før besøk."
+    ],
+    "address": "Sirkus Shopping, Falkenborgvegen 9, 7044 Trondheim",
+    "parentPlaceId": "sirkus-shopping",
+    "poiCategoryId": "butikk",
+    "locationNote": "Kartpunktet viser stedet eller adressen; selve publikumsinngangen er ikke bekreftet."
+  },
+  {
+    "id": "lade-post-i-butikk-rema-1000-ladetorget",
+    "name": "Lade Post i Butikk (REMA 1000 Ladetorget)",
+    "categoryId": "hverdag",
+    "coordinates": {
+      "lat": 63.447268599999994,
+      "lng": 10.4446514
+    },
+    "status": "existing",
+    "summary": "Lade Post i Butikk (REMA 1000 Ladetorget) beholdes som medlem under place:ladetorget; egne åpningstider arves ikke fra ankeret.",
+    "locationPrecision": "approximate",
+    "facts": [
+      {
+        "id": "fact-po-01-1",
+        "text": "Lade Post i Butikk (REMA 1000 Ladetorget) beholdes som medlem under place:ladetorget; egne åpningstider arves ikke fra ankeret.",
+        "sourceId": "ladetorget-15d604f6",
+        "checkedAt": "2026-09-18",
+        "verification": "confirmed"
+      }
+    ],
+    "sourceIds": [
+      "ladetorget-15d604f6"
+    ],
+    "checkedAt": "2026-09-18",
+    "caveats": [
+      "Kartpunktet viser stedet eller adressen; selve publikumsinngangen er ikke bekreftet."
+    ],
+    "address": "Østmarkveien 2, 7040 Trondheim",
+    "parentPlaceId": "ladetorget",
+    "poiCategoryId": "butikk",
+    "locationNote": "Kartpunktet viser stedet eller adressen; selve publikumsinngangen er ikke bekreftet."
+  },
+  {
+    "id": "lade-arena-post-i-butikk-rema-1000-lade-arena",
+    "name": "Lade Arena Post i Butikk (REMA 1000 Lade Arena)",
+    "categoryId": "hverdag",
+    "coordinates": {
+      "lat": 63.4416221,
+      "lng": 10.459145999999999
+    },
+    "status": "existing",
+    "summary": "Lade Arena Post i Butikk (REMA 1000 Lade Arena) beholdes som medlem under place:lade-arena; egne åpningstider arves ikke fra ankeret.",
+    "locationPrecision": "approximate",
+    "facts": [
+      {
+        "id": "fact-po-02-1",
+        "text": "Lade Arena Post i Butikk (REMA 1000 Lade Arena) beholdes som medlem under place:lade-arena; egne åpningstider arves ikke fra ankeret.",
+        "sourceId": "ladearena-cf5df9d7",
+        "checkedAt": "2026-09-18",
+        "verification": "confirmed"
+      }
+    ],
+    "sourceIds": [
+      "ladearena-cf5df9d7"
+    ],
+    "checkedAt": "2026-09-18",
+    "caveats": [
+      "Kartpunktet viser stedet eller adressen; selve publikumsinngangen er ikke bekreftet."
+    ],
+    "address": "HAAKON VII'S GATE 8A, 7041 Trondheim",
+    "parentPlaceId": "lade-arena",
+    "poiCategoryId": "butikk",
+    "locationNote": "Kartpunktet viser stedet eller adressen; selve publikumsinngangen er ikke bekreftet."
+  },
+  {
+    "id": "vinmonopolet-lade",
+    "name": "Vinmonopolet Lade",
+    "categoryId": "hverdag",
+    "coordinates": {
+      "lat": 63.4431168,
+      "lng": 10.447457199999999
+    },
+    "status": "existing",
+    "summary": "Vinmonopolet Lade beholdes som medlem under place:city-lade; egne åpningstider arves ikke fra ankeret.",
+    "locationPrecision": "approximate",
+    "facts": [
+      {
+        "id": "fact-vm-01-1",
+        "text": "Vinmonopolet Lade beholdes som medlem under place:city-lade; egne åpningstider arves ikke fra ankeret.",
+        "sourceId": "citylade-6434272b",
+        "checkedAt": "2026-09-18",
+        "verification": "confirmed"
+      }
+    ],
+    "sourceIds": [
+      "citylade-6434272b",
+      "citylade-93943a3e"
+    ],
+    "checkedAt": "2026-09-18",
+    "caveats": [
+      "Kartpunktet viser stedet eller adressen; selve publikumsinngangen er ikke bekreftet.",
+      "Åpningstid, program eller virksomhetsstatus er tidsfølsomt og bør kontrolleres før besøk."
+    ],
+    "address": "Haakon VII's gt 9, City Lade, 7041 Trondheim",
+    "parentPlaceId": "city-lade",
+    "poiCategoryId": "butikk",
+    "locationNote": "Kartpunktet viser stedet eller adressen; selve publikumsinngangen er ikke bekreftet."
+  },
+  {
+    "id": "vinmonopolet-sirkus-shopping",
+    "name": "Vinmonopolet Sirkus Shopping",
+    "categoryId": "hverdag",
+    "coordinates": {
+      "lat": 63.436088500000004,
+      "lng": 10.455385699999999
+    },
+    "status": "existing",
+    "summary": "Vinmonopolet Sirkus Shopping beholdes som medlem under place:sirkus-shopping; egne åpningstider arves ikke fra ankeret.",
+    "locationPrecision": "approximate",
+    "facts": [
+      {
+        "id": "fact-vm-02-1",
+        "text": "Vinmonopolet Sirkus Shopping beholdes som medlem under place:sirkus-shopping; egne åpningstider arves ikke fra ankeret.",
+        "sourceId": "sirkusshopping-63ecbf55",
+        "checkedAt": "2026-09-18",
+        "verification": "confirmed"
+      }
+    ],
+    "sourceIds": [
+      "sirkusshopping-63ecbf55"
+    ],
+    "checkedAt": "2026-09-18",
+    "caveats": [
+      "Kartpunktet viser stedet eller adressen; selve publikumsinngangen er ikke bekreftet.",
+      "Åpningstid, program eller virksomhetsstatus er tidsfølsomt og bør kontrolleres før besøk."
+    ],
+    "address": "Falkenborgvegen 5, 7044 Trondheim",
+    "parentPlaceId": "sirkus-shopping",
+    "poiCategoryId": "butikk",
+    "locationNote": "Kartpunktet viser stedet eller adressen; selve publikumsinngangen er ikke bekreftet."
+  },
+  {
+    "id": "lade-sfo",
+    "name": "Lade SFO",
+    "categoryId": "oppvekst",
+    "coordinates": {
+      "lat": 63.447284599999996,
+      "lng": 10.436244
+    },
+    "status": "existing",
+    "summary": "Lade SFO publiserer åpningstid 07.15–16.30 og tilbud for 1.–4. trinn.",
+    "locationPrecision": "approximate",
+    "facts": [
+      {
+        "id": "fact-opp-02-1",
+        "text": "Lade SFO publiserer åpningstid 07.15–16.30 og tilbud for 1.–4. trinn.",
+        "sourceId": "trondheim-96778447",
+        "checkedAt": "2026-09-18",
+        "verification": "confirmed"
+      }
+    ],
+    "sourceIds": [
+      "trondheim-96778447"
+    ],
+    "checkedAt": "2026-09-18",
+    "caveats": [
+      "Kartpunktet viser stedet eller adressen; selve publikumsinngangen er ikke bekreftet.",
+      "Åpningstid, program eller virksomhetsstatus er tidsfølsomt og bør kontrolleres før besøk."
+    ],
+    "address": "Ladehammerveien, Trondheim",
+    "parentPlaceId": "lade-skole",
+    "poiCategoryId": "oppvekst",
+    "locationNote": "Kartpunktet viser stedet eller adressen; selve publikumsinngangen er ikke bekreftet."
+  },
+  {
+    "id": "lade-motor",
+    "name": "Lade Motor",
+    "categoryId": "oppvekst",
+    "coordinates": {
+      "lat": 63.44390980000001,
+      "lng": 10.4414003
+    },
+    "status": "existing",
+    "summary": "Lade Motor beholdes som medlem under place:lade-fritidsklubb; egne åpningstider arves ikke fra ankeret.",
+    "locationPrecision": "approximate",
+    "facts": [
+      {
+        "id": "fact-opp-16-1",
+        "text": "Lade Motor beholdes som medlem under place:lade-fritidsklubb; egne åpningstider arves ikke fra ankeret.",
+        "sourceId": "trondheim-5747a8f9",
+        "checkedAt": "2026-09-18",
+        "verification": "confirmed"
+      }
+    ],
+    "sourceIds": [
+      "trondheim-5747a8f9"
+    ],
+    "checkedAt": "2026-09-18",
+    "caveats": [
+      "Kartpunktet viser stedet eller adressen; selve publikumsinngangen er ikke bekreftet.",
+      "Åpningstid, program eller virksomhetsstatus er tidsfølsomt og bør kontrolleres før besøk."
+    ],
+    "address": "Haakon VIIs gt. 12, 7041 Trondheim",
+    "parentPlaceId": "lade-fritidsklubb",
+    "poiCategoryId": "oppvekst",
+    "locationNote": "Kartpunktet viser stedet eller adressen; selve publikumsinngangen er ikke bekreftet."
+  },
+  {
+    "id": "snurr-handverksbakeri",
+    "name": "Snurr Håndverksbakeri",
+    "categoryId": "servering",
+    "coordinates": {
+      "lat": 63.443002,
+      "lng": 10.446449699999999
+    },
+    "status": "existing",
+    "summary": "Snurr Håndverksbakeri beholdes som medlem under place:city-lade; egne åpningstider arves ikke fra ankeret.",
+    "locationPrecision": "approximate",
+    "facts": [
+      {
+        "id": "fact-srv-04-1",
+        "text": "Snurr Håndverksbakeri beholdes som medlem under place:city-lade; egne åpningstider arves ikke fra ankeret.",
+        "sourceId": "citylade-6434272b",
+        "checkedAt": "2026-09-18",
+        "verification": "confirmed"
+      }
+    ],
+    "sourceIds": [
+      "citylade-6434272b",
+      "citylade-93943a3e"
+    ],
+    "checkedAt": "2026-09-18",
+    "caveats": [
+      "Kartpunktet viser stedet eller adressen; selve publikumsinngangen er ikke bekreftet.",
+      "Åpningstid, program eller virksomhetsstatus er tidsfølsomt og bør kontrolleres før besøk."
+    ],
+    "address": "Haakon VII's gate 9, 7041 Trondheim",
+    "parentPlaceId": "city-lade",
+    "poiCategoryId": "butikk",
+    "locationNote": "Kartpunktet viser stedet eller adressen; selve publikumsinngangen er ikke bekreftet."
+  },
+  {
+    "id": "digg-sirkus",
+    "name": "DIGG Sirkus",
+    "categoryId": "servering",
+    "coordinates": {
+      "lat": 63.436776599999995,
+      "lng": 10.4550134
+    },
+    "status": "existing",
+    "summary": "DIGG Sirkus beholdes som medlem under place:sirkus-shopping; egne åpningstider arves ikke fra ankeret.",
+    "locationPrecision": "approximate",
+    "facts": [
+      {
+        "id": "fact-srv-06-1",
+        "text": "DIGG Sirkus beholdes som medlem under place:sirkus-shopping; egne åpningstider arves ikke fra ankeret.",
+        "sourceId": "sirkusshopping-901d6d5e",
+        "checkedAt": "2026-09-18",
+        "verification": "confirmed"
+      }
+    ],
+    "sourceIds": [
+      "sirkusshopping-901d6d5e",
+      "digg-b4485831"
+    ],
+    "checkedAt": "2026-09-18",
+    "caveats": [
+      "Kartpunktet viser stedet eller adressen; selve publikumsinngangen er ikke bekreftet.",
+      "Åpningstid, program eller virksomhetsstatus er tidsfølsomt og bør kontrolleres før besøk."
+    ],
+    "address": "Falkenborgvegen 1, 7044 Trondheim",
+    "parentPlaceId": "sirkus-shopping",
+    "poiCategoryId": "butikk",
+    "locationNote": "Kartpunktet viser stedet eller adressen; selve publikumsinngangen er ikke bekreftet."
+  },
+  {
+    "id": "dromedar-sirkus-shopping",
+    "name": "Dromedar Sirkus Shopping",
+    "categoryId": "servering",
+    "coordinates": {
+      "lat": 63.4355505,
+      "lng": 10.456391000000002
+    },
+    "status": "existing",
+    "summary": "Dromedar Sirkus Shopping beholdes som medlem under place:sirkus-shopping; egne åpningstider arves ikke fra ankeret.",
+    "locationPrecision": "approximate",
+    "facts": [
+      {
+        "id": "fact-srv-07-1",
+        "text": "Dromedar Sirkus Shopping beholdes som medlem under place:sirkus-shopping; egne åpningstider arves ikke fra ankeret.",
+        "sourceId": "sirkusshopping-7e0c9148",
+        "checkedAt": "2026-09-18",
+        "verification": "confirmed"
+      }
+    ],
+    "sourceIds": [
+      "sirkusshopping-7e0c9148"
+    ],
+    "checkedAt": "2026-09-18",
+    "caveats": [
+      "Kartpunktet viser stedet eller adressen; selve publikumsinngangen er ikke bekreftet.",
+      "Åpningstid, program eller virksomhetsstatus er tidsfølsomt og bør kontrolleres før besøk."
+    ],
+    "address": "Falkenborgvegen 1, 7044 Trondheim",
+    "parentPlaceId": "sirkus-shopping",
+    "poiCategoryId": "butikk",
+    "locationNote": "Kartpunktet viser stedet eller adressen; selve publikumsinngangen er ikke bekreftet."
+  },
+  {
+    "id": "krem-mat-og-kaffehus",
+    "name": "Krem Mat og Kaffehus",
+    "categoryId": "servering",
+    "coordinates": {
+      "lat": 63.436147399999996,
+      "lng": 10.4555616
+    },
+    "status": "existing",
+    "summary": "Krem Mat og Kaffehus beholdes som medlem under place:sirkus-shopping; egne åpningstider arves ikke fra ankeret.",
+    "locationPrecision": "approximate",
+    "facts": [
+      {
+        "id": "fact-srv-08-1",
+        "text": "Krem Mat og Kaffehus beholdes som medlem under place:sirkus-shopping; egne åpningstider arves ikke fra ankeret.",
+        "sourceId": "sirkusshopping-a2329a3c",
+        "checkedAt": "2026-09-18",
+        "verification": "confirmed"
+      }
+    ],
+    "sourceIds": [
+      "sirkusshopping-a2329a3c"
+    ],
+    "checkedAt": "2026-09-18",
+    "caveats": [
+      "Kartpunktet viser stedet eller adressen; selve publikumsinngangen er ikke bekreftet.",
+      "Åpningstid, program eller virksomhetsstatus er tidsfølsomt og bør kontrolleres før besøk."
+    ],
+    "address": "Falkenborgvegen 9, 7044 Trondheim",
+    "parentPlaceId": "sirkus-shopping",
+    "poiCategoryId": "butikk",
+    "locationNote": "Kartpunktet viser stedet eller adressen; selve publikumsinngangen er ikke bekreftet."
+  },
+  {
+    "id": "rosenborg-bakeri-ladetorget",
+    "name": "Rosenborg Bakeri LadeTorget",
+    "categoryId": "servering",
+    "coordinates": {
+      "lat": 63.4472154,
+      "lng": 10.4444428
+    },
+    "status": "existing",
+    "summary": "Rosenborg Bakeri LadeTorget beholdes som medlem under place:ladetorget; egne åpningstider arves ikke fra ankeret.",
+    "locationPrecision": "approximate",
+    "facts": [
+      {
+        "id": "fact-srv-09-1",
+        "text": "Rosenborg Bakeri LadeTorget beholdes som medlem under place:ladetorget; egne åpningstider arves ikke fra ankeret.",
+        "sourceId": "ladetorget-15d604f6",
+        "checkedAt": "2026-09-18",
+        "verification": "confirmed"
+      }
+    ],
+    "sourceIds": [
+      "ladetorget-15d604f6"
+    ],
+    "checkedAt": "2026-09-18",
+    "caveats": [
+      "Kartpunktet viser stedet eller adressen; selve publikumsinngangen er ikke bekreftet.",
+      "Åpningstid, program eller virksomhetsstatus er tidsfølsomt og bør kontrolleres før besøk."
+    ],
+    "address": "Østmarkveien 2, 7040 Trondheim",
+    "parentPlaceId": "ladetorget",
+    "poiCategoryId": "butikk",
+    "locationNote": "Kartpunktet viser stedet eller adressen; selve publikumsinngangen er ikke bekreftet."
+  },
+  {
+    "id": "cafe-victoria",
+    "name": "Café Victoria",
+    "categoryId": "servering",
+    "coordinates": {
+      "lat": 63.4473266,
+      "lng": 10.4546463
+    },
+    "status": "existing",
+    "summary": "Café Victoria beholdes som medlem under place:ringve-musikkmuseum; egne åpningstider arves ikke fra ankeret.",
+    "locationPrecision": "approximate",
+    "facts": [
+      {
+        "id": "fact-srv-10-1",
+        "text": "Café Victoria beholdes som medlem under place:ringve-musikkmuseum; egne åpningstider arves ikke fra ankeret.",
+        "sourceId": "ringve-e3d7e676",
+        "checkedAt": "2026-09-18",
+        "verification": "confirmed"
+      }
+    ],
+    "sourceIds": [
+      "ringve-e3d7e676"
+    ],
+    "checkedAt": "2026-09-18",
+    "caveats": [
+      "Kartpunktet viser stedet eller adressen; selve publikumsinngangen er ikke bekreftet.",
+      "Åpningstid, program eller virksomhetsstatus er tidsfølsomt og bør kontrolleres før besøk."
+    ],
+    "address": "Lade alle 60, 7041 Lade",
+    "parentPlaceId": "ringve-musikkmuseum",
+    "poiCategoryId": "butikk",
+    "locationNote": "Kartpunktet viser stedet eller adressen; selve publikumsinngangen er ikke bekreftet."
+  },
+  {
+    "id": "rosenborg-bakeri-city-lade",
+    "name": "Rosenborg Bakeri City Lade",
+    "categoryId": "servering",
+    "coordinates": {
+      "lat": 63.44342969999999,
+      "lng": 10.447395
+    },
+    "status": "existing",
+    "summary": "Rosenborg Bakeri City Lade beholdes som medlem under place:city-lade; egne åpningstider arves ikke fra ankeret.",
+    "locationPrecision": "approximate",
+    "facts": [
+      {
+        "id": "fact-srv-11-1",
+        "text": "Rosenborg Bakeri City Lade beholdes som medlem under place:city-lade; egne åpningstider arves ikke fra ankeret.",
+        "sourceId": "citylade-6434272b",
+        "checkedAt": "2026-09-18",
+        "verification": "confirmed"
+      }
+    ],
+    "sourceIds": [
+      "citylade-6434272b",
+      "citylade-93943a3e"
+    ],
+    "checkedAt": "2026-09-18",
+    "caveats": [
+      "Kartpunktet viser stedet eller adressen; selve publikumsinngangen er ikke bekreftet."
+    ],
+    "address": "Haakon VIIs gt. 9, 7041 Trondheim",
+    "parentPlaceId": "city-lade",
+    "poiCategoryId": "butikk",
+    "locationNote": "Kartpunktet viser stedet eller adressen; selve publikumsinngangen er ikke bekreftet."
+  },
+  {
+    "id": "espresso-house-city-lade",
+    "name": "Espresso House City Lade",
+    "categoryId": "servering",
+    "coordinates": {
+      "lat": 63.4434956,
+      "lng": 10.4462815
+    },
+    "status": "existing",
+    "summary": "Espresso House City Lade beholdes som medlem under place:city-lade; egne åpningstider arves ikke fra ankeret.",
+    "locationPrecision": "approximate",
+    "facts": [
+      {
+        "id": "fact-srv-12-1",
+        "text": "Espresso House City Lade beholdes som medlem under place:city-lade; egne åpningstider arves ikke fra ankeret.",
+        "sourceId": "citylade-6434272b",
+        "checkedAt": "2026-09-18",
+        "verification": "confirmed"
+      }
+    ],
+    "sourceIds": [
+      "citylade-6434272b",
+      "citylade-93943a3e"
+    ],
+    "checkedAt": "2026-09-18",
+    "caveats": [
+      "Kartpunktet viser stedet eller adressen; selve publikumsinngangen er ikke bekreftet."
+    ],
+    "address": "Haakon VIIs gt. 9, City Lade, 7041 Trondheim",
+    "parentPlaceId": "city-lade",
+    "poiCategoryId": "butikk",
+    "locationNote": "Kartpunktet viser stedet eller adressen; selve publikumsinngangen er ikke bekreftet."
+  },
+  {
+    "id": "obs-kafe",
+    "name": "Obs! Kafé",
+    "categoryId": "servering",
+    "coordinates": {
+      "lat": 63.4435507,
+      "lng": 10.4464806
+    },
+    "status": "existing",
+    "summary": "Obs! Kafé beholdes som medlem under place:city-lade; egne åpningstider arves ikke fra ankeret.",
+    "locationPrecision": "approximate",
+    "facts": [
+      {
+        "id": "fact-srv-13-1",
+        "text": "Obs! Kafé beholdes som medlem under place:city-lade; egne åpningstider arves ikke fra ankeret.",
+        "sourceId": "citylade-6434272b",
+        "checkedAt": "2026-09-18",
+        "verification": "confirmed"
+      }
+    ],
+    "sourceIds": [
+      "citylade-6434272b",
+      "citylade-93943a3e"
+    ],
+    "checkedAt": "2026-09-18",
+    "caveats": [
+      "Kartpunktet viser stedet eller adressen; selve publikumsinngangen er ikke bekreftet."
+    ],
+    "address": "Haakon Vii's gate 9, 7041 Trondheim",
+    "parentPlaceId": "city-lade",
+    "poiCategoryId": "butikk",
+    "locationNote": "Kartpunktet viser stedet eller adressen; selve publikumsinngangen er ikke bekreftet."
+  },
+  {
+    "id": "sabrura-sticks-sushi",
+    "name": "Sabrura Sticks & Sushi",
+    "categoryId": "servering",
+    "coordinates": {
+      "lat": 63.4433733,
+      "lng": 10.447778399999999
+    },
+    "status": "existing",
+    "summary": "Sabrura Sticks & Sushi beholdes som medlem under place:city-lade; egne åpningstider arves ikke fra ankeret.",
+    "locationPrecision": "approximate",
+    "facts": [
+      {
+        "id": "fact-srv-14-1",
+        "text": "Sabrura Sticks & Sushi beholdes som medlem under place:city-lade; egne åpningstider arves ikke fra ankeret.",
+        "sourceId": "citylade-6434272b",
+        "checkedAt": "2026-09-18",
+        "verification": "confirmed"
+      }
+    ],
+    "sourceIds": [
+      "citylade-6434272b",
+      "citylade-93943a3e"
+    ],
+    "checkedAt": "2026-09-18",
+    "caveats": [
+      "Kartpunktet viser stedet eller adressen; selve publikumsinngangen er ikke bekreftet."
+    ],
+    "address": "Haakon VIIs gt. 9, 7041 Trondheim",
+    "parentPlaceId": "city-lade",
+    "poiCategoryId": "butikk",
+    "locationNote": "Kartpunktet viser stedet eller adressen; selve publikumsinngangen er ikke bekreftet."
+  },
+  {
+    "id": "wood",
+    "name": "Wood",
+    "categoryId": "servering",
+    "coordinates": {
+      "lat": 63.44332979999999,
+      "lng": 10.446676100000001
+    },
+    "status": "existing",
+    "summary": "Wood beholdes som medlem under place:city-lade; egne åpningstider arves ikke fra ankeret.",
+    "locationPrecision": "approximate",
+    "facts": [
+      {
+        "id": "fact-srv-15-1",
+        "text": "Wood beholdes som medlem under place:city-lade; egne åpningstider arves ikke fra ankeret.",
+        "sourceId": "citylade-6434272b",
+        "checkedAt": "2026-09-18",
+        "verification": "confirmed"
+      }
+    ],
+    "sourceIds": [
+      "citylade-6434272b",
+      "citylade-93943a3e"
+    ],
+    "checkedAt": "2026-09-18",
+    "caveats": [
+      "Kartpunktet viser stedet eller adressen; selve publikumsinngangen er ikke bekreftet."
+    ],
+    "address": "Haakon VIIs gt. 9, 7041 Trondheim",
+    "parentPlaceId": "city-lade",
+    "poiCategoryId": "butikk",
+    "locationNote": "Kartpunktet viser stedet eller adressen; selve publikumsinngangen er ikke bekreftet."
+  },
+  {
+    "id": "thaithai",
+    "name": "ThaiThai",
+    "categoryId": "servering",
+    "coordinates": {
+      "lat": 63.44341490000001,
+      "lng": 10.448789699999999
+    },
+    "status": "existing",
+    "summary": "ThaiThai beholdes som medlem under place:city-lade; egne åpningstider arves ikke fra ankeret.",
+    "locationPrecision": "approximate",
+    "facts": [
+      {
+        "id": "fact-srv-16-1",
+        "text": "ThaiThai beholdes som medlem under place:city-lade; egne åpningstider arves ikke fra ankeret.",
+        "sourceId": "citylade-6434272b",
+        "checkedAt": "2026-09-18",
+        "verification": "confirmed"
+      }
+    ],
+    "sourceIds": [
+      "citylade-6434272b",
+      "citylade-93943a3e"
+    ],
+    "checkedAt": "2026-09-18",
+    "caveats": [
+      "Kartpunktet viser stedet eller adressen; selve publikumsinngangen er ikke bekreftet."
+    ],
+    "address": "Håkon VII´s gata 9, 7041 Trondheim",
+    "parentPlaceId": "city-lade",
+    "poiCategoryId": "butikk",
+    "locationNote": "Kartpunktet viser stedet eller adressen; selve publikumsinngangen er ikke bekreftet."
+  },
+  {
+    "id": "big-bite-city-lade",
+    "name": "Big Bite City Lade",
+    "categoryId": "servering",
+    "coordinates": {
+      "lat": 63.4441764,
+      "lng": 10.4489264
+    },
+    "status": "existing",
+    "summary": "Big Bite City Lade beholdes som medlem under place:city-lade; egne åpningstider arves ikke fra ankeret.",
+    "locationPrecision": "approximate",
+    "facts": [
+      {
+        "id": "fact-srv-17-1",
+        "text": "Big Bite City Lade beholdes som medlem under place:city-lade; egne åpningstider arves ikke fra ankeret.",
+        "sourceId": "citylade-6434272b",
+        "checkedAt": "2026-09-18",
+        "verification": "confirmed"
+      }
+    ],
+    "sourceIds": [
+      "citylade-6434272b",
+      "citylade-93943a3e"
+    ],
+    "checkedAt": "2026-09-18",
+    "caveats": [
+      "Kartpunktet viser stedet eller adressen; selve publikumsinngangen er ikke bekreftet."
+    ],
+    "address": "Haakon VII gt 9, 7041 Trondheim",
+    "parentPlaceId": "city-lade",
+    "poiCategoryId": "butikk",
+    "locationNote": "Kartpunktet viser stedet eller adressen; selve publikumsinngangen er ikke bekreftet."
+  },
+  {
+    "id": "jordbrpikene-city-lade",
+    "name": "Jordbærpikene City Lade",
+    "categoryId": "servering",
+    "coordinates": {
+      "lat": 63.443468599999996,
+      "lng": 10.4472685
+    },
+    "status": "existing",
+    "summary": "Jordbærpikene City Lade beholdes som medlem under place:city-lade; egne åpningstider arves ikke fra ankeret.",
+    "locationPrecision": "approximate",
+    "facts": [
+      {
+        "id": "fact-srv-18-1",
+        "text": "Jordbærpikene City Lade beholdes som medlem under place:city-lade; egne åpningstider arves ikke fra ankeret.",
+        "sourceId": "citylade-6434272b",
+        "checkedAt": "2026-09-18",
+        "verification": "confirmed"
+      }
+    ],
+    "sourceIds": [
+      "citylade-6434272b",
+      "citylade-93943a3e"
+    ],
+    "checkedAt": "2026-09-18",
+    "caveats": [
+      "Kartpunktet viser stedet eller adressen; selve publikumsinngangen er ikke bekreftet."
+    ],
+    "address": "Haakon VIIs gt. 9, 7041 Trondheim",
+    "parentPlaceId": "city-lade",
+    "poiCategoryId": "butikk",
+    "locationNote": "Kartpunktet viser stedet eller adressen; selve publikumsinngangen er ikke bekreftet."
+  },
+  {
+    "id": "burger-king-lade-arena",
+    "name": "Burger King Lade Arena",
+    "categoryId": "servering",
+    "coordinates": {
+      "lat": 63.440503,
+      "lng": 10.460396
+    },
+    "status": "existing",
+    "summary": "Burger King Lade Arena beholdes som medlem under place:lade-arena; egne åpningstider arves ikke fra ankeret.",
+    "locationPrecision": "approximate",
+    "facts": [
+      {
+        "id": "fact-srv-19-1",
+        "text": "Burger King Lade Arena beholdes som medlem under place:lade-arena; egne åpningstider arves ikke fra ankeret.",
+        "sourceId": "ladearena-cf5df9d7",
+        "checkedAt": "2026-09-18",
+        "verification": "confirmed"
+      }
+    ],
+    "sourceIds": [
+      "ladearena-cf5df9d7"
+    ],
+    "checkedAt": "2026-09-18",
+    "caveats": [
+      "Kartpunktet viser stedet eller adressen; selve publikumsinngangen er ikke bekreftet."
+    ],
+    "address": "Haakon VIIs gt. 8-10, 7041 Trondheim",
+    "parentPlaceId": "lade-arena",
+    "poiCategoryId": "butikk",
+    "locationNote": "Kartpunktet viser stedet eller adressen; selve publikumsinngangen er ikke bekreftet."
+  },
+  {
+    "id": "leangen-kunstisbane",
+    "name": "Leangen kunstisbane",
+    "categoryId": "trening",
+    "coordinates": {
+      "lat": 63.426830800000005,
+      "lng": 10.465077400000002
+    },
+    "status": "existing",
+    "summary": "Gratis publikumstid uten reservasjon tirsdag/torsdag 11.15–16 og onsdag/fredag 10–16 i sesong. Sesongen er væravhengig, normalt omtrent 1. november–15. mars; kveld og helg må sjekkes i aktivitetskalenderen.",
+    "locationPrecision": "approximate",
+    "facts": [
+      {
+        "id": "fact-anl-02-1",
+        "text": "Gratis publikumstid uten reservasjon tirsdag/torsdag 11.15–16 og onsdag/fredag 10–16 i sesong.",
+        "sourceId": "sites-57a7ecdf",
+        "checkedAt": "2026-09-18",
+        "verification": "confirmed"
+      },
+      {
+        "id": "fact-anl-02-2",
+        "text": "Sesongen er væravhengig, normalt omtrent 1. november–15. mars; kveld og helg må sjekkes i aktivitetskalenderen.",
+        "sourceId": "sites-57a7ecdf",
+        "checkedAt": "2026-09-18",
+        "verification": "confirmed"
+      }
+    ],
+    "sourceIds": [
+      "sites-57a7ecdf"
+    ],
+    "checkedAt": "2026-09-18",
+    "caveats": [
+      "Kartpunktet viser stedet eller adressen; selve publikumsinngangen er ikke bekreftet.",
+      "Åpningstid, program eller virksomhetsstatus er tidsfølsomt og bør kontrolleres før besøk."
+    ],
+    "address": "Tungavegen 28, 7047 Trondheim",
+    "parentPlaceId": "leangen-idrettspark",
+    "poiCategoryId": "trening",
+    "locationNote": "Kartpunktet viser stedet eller adressen; selve publikumsinngangen er ikke bekreftet."
+  },
+  {
+    "id": "leangen-arena-leangen-ungdomshall-ishaller",
+    "name": "Leangen Arena / Leangen Ungdomshall (ishaller)",
+    "categoryId": "trening",
+    "coordinates": {
+      "lat": 63.4273685,
+      "lng": 10.466399
+    },
+    "status": "existing",
+    "summary": "Leangen Arena / Leangen Ungdomshall (ishaller) beholdes som medlem under place:leangen-idrettspark; egne åpningstider arves ikke fra ankeret.",
+    "locationPrecision": "approximate",
+    "facts": [
+      {
+        "id": "fact-anl-03-1",
+        "text": "Leangen Arena / Leangen Ungdomshall (ishaller) beholdes som medlem under place:leangen-idrettspark; egne åpningstider arves ikke fra ankeret.",
+        "sourceId": "sites-e7207c5a",
+        "checkedAt": "2026-09-18",
+        "verification": "confirmed"
+      }
+    ],
+    "sourceIds": [
+      "sites-e7207c5a"
+    ],
+    "checkedAt": "2026-09-18",
+    "caveats": [
+      "Kartpunktet viser stedet eller adressen; selve publikumsinngangen er ikke bekreftet.",
+      "Åpningstid, program eller virksomhetsstatus er tidsfølsomt og bør kontrolleres før besøk."
+    ],
+    "address": "Tungavegen 3, 7047 Trondheim",
+    "parentPlaceId": "leangen-idrettspark",
+    "poiCategoryId": "trening",
+    "locationNote": "Kartpunktet viser stedet eller adressen; selve publikumsinngangen er ikke bekreftet."
+  },
+  {
+    "id": "trygg-lade-training-room",
+    "name": "Treningssenteret i Trygg/Lade-hallen",
+    "categoryId": "trening",
+    "coordinates": {
+      "lat": 63.443965199999994,
+      "lng": 10.4524767
+    },
+    "status": "existing",
+    "summary": "Selvbetjent styrkerom til 200 kr per måned i tillegg til klubbmedlemskap. Adgang via Wondr; inngang på baksiden mot Haakon VIIs gate.",
+    "locationPrecision": "approximate",
+    "facts": [
+      {
+        "id": "fact-tre-05-1",
+        "text": "Selvbetjent styrkerom til 200 kr per måned i tillegg til klubbmedlemskap.",
+        "sourceId": "trygglade-017fd19c",
+        "checkedAt": "2026-09-18",
+        "verification": "confirmed"
+      },
+      {
+        "id": "fact-tre-05-2",
+        "text": "Adgang via Wondr; inngang på baksiden mot Haakon VIIs gate.",
+        "sourceId": "trygglade-017fd19c",
+        "checkedAt": "2026-09-18",
+        "verification": "confirmed"
+      }
+    ],
+    "sourceIds": [
+      "trygglade-017fd19c"
+    ],
+    "checkedAt": "2026-09-18",
+    "caveats": [
+      "Kartpunktet viser stedet eller adressen; selve publikumsinngangen er ikke bekreftet.",
+      "Åpningstid, program eller virksomhetsstatus er tidsfølsomt og bør kontrolleres før besøk."
+    ],
+    "address": "Haakon VIIs gt. 2a, 7041 Lade",
+    "parentPlaceId": "trygg-lade-hallen",
+    "poiCategoryId": "trening",
+    "locationNote": "Kartpunktet viser stedet eller adressen; selve publikumsinngangen er ikke bekreftet."
+  }
+]

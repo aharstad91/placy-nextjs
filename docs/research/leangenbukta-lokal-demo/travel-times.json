@@ -1,0 +1,484 @@
+{
+  "schema_version": 1,
+  "purpose": "Measured route minutes for visible Leangenbukta local-board anchors.",
+  "checked_at": "2026-09-18",
+  "provider": "Mapbox Matrix API",
+  "origin": {
+    "name": "Leangenbukta",
+    "coordinates": {
+      "lat": 63.43947521501401,
+      "lng": 10.466113792494502
+    }
+  },
+  "rounding": "Duration seconds rounded up to whole minutes.",
+  "places": [
+    {
+      "place_id": "ladetorget",
+      "name": "LadeTorget",
+      "coordinates": {
+        "lat": 63.447424000000005,
+        "lng": 10.444825999999999
+      },
+      "minutes": {
+        "walk": 20,
+        "bike": 9,
+        "car": 5
+      },
+      "duration_seconds": {
+        "walk": 1156.3,
+        "bike": 524.2,
+        "car": 247.3
+      }
+    },
+    {
+      "place_id": "city-lade",
+      "name": "City Lade",
+      "coordinates": {
+        "lat": 63.443541100000004,
+        "lng": 10.4478207
+      },
+      "minutes": {
+        "walk": 17,
+        "bike": 10,
+        "car": 6
+      },
+      "duration_seconds": {
+        "walk": 1019.8,
+        "bike": 585.6,
+        "car": 345
+      }
+    },
+    {
+      "place_id": "sirkus-shopping",
+      "name": "Sirkus Shopping",
+      "coordinates": {
+        "lat": 63.4356484,
+        "lng": 10.4566579
+      },
+      "minutes": {
+        "walk": 11,
+        "bike": 7,
+        "car": 8
+      },
+      "duration_seconds": {
+        "walk": 633.7,
+        "bike": 405.1,
+        "car": 426.4
+      }
+    },
+    {
+      "place_id": "lade-arena",
+      "name": "Lade Arena",
+      "coordinates": {
+        "lat": 63.4400004,
+        "lng": 10.4624029
+      },
+      "minutes": {
+        "walk": 4,
+        "bike": 4,
+        "car": 2
+      },
+      "duration_seconds": {
+        "walk": 207,
+        "bike": 199.4,
+        "car": 107.8
+      }
+    },
+    {
+      "place_id": "lade-skole",
+      "name": "Lade skole",
+      "coordinates": {
+        "lat": 63.447284599999996,
+        "lng": 10.436244
+      },
+      "minutes": {
+        "walk": 24,
+        "bike": 11,
+        "car": 6
+      },
+      "duration_seconds": {
+        "walk": 1383.2,
+        "bike": 622.6,
+        "car": 315.4
+      }
+    },
+    {
+      "place_id": "ladesletta-barnehage",
+      "name": "Ladesletta barnehage",
+      "coordinates": {
+        "lat": 63.442191799999996,
+        "lng": 10.465891599999999
+      },
+      "minutes": {
+        "walk": 6,
+        "bike": 3,
+        "car": 3
+      },
+      "duration_seconds": {
+        "walk": 321.8,
+        "bike": 176.3,
+        "car": 121.6
+      }
+    },
+    {
+      "place_id": "leangen-kulturbarnehage-sa",
+      "name": "Leangen kulturbarnehage SA",
+      "coordinates": {
+        "lat": 63.428962999999996,
+        "lng": 10.461174
+      },
+      "minutes": {
+        "walk": 19,
+        "bike": 9,
+        "car": 7
+      },
+      "duration_seconds": {
+        "walk": 1106,
+        "bike": 523,
+        "car": 389.3
+      }
+    },
+    {
+      "place_id": "lade-skole-play",
+      "name": "Lade skole lek",
+      "coordinates": {
+        "lat": 63.447284599999996,
+        "lng": 10.436244
+      },
+      "minutes": {
+        "walk": 24,
+        "bike": 11,
+        "car": 6
+      },
+      "duration_seconds": {
+        "walk": 1383.2,
+        "bike": 622.6,
+        "car": 315.4
+      }
+    },
+    {
+      "place_id": "ladeparken",
+      "name": "Ladeparken lek",
+      "coordinates": {
+        "lat": 63.445483599999996,
+        "lng": 10.4402498
+      },
+      "minutes": {
+        "walk": 20,
+        "bike": 10,
+        "car": 5
+      },
+      "duration_seconds": {
+        "walk": 1189.3,
+        "bike": 572.4,
+        "car": 285.8
+      }
+    },
+    {
+      "place_id": "lade-fritidsklubb",
+      "name": "Lade fritidsklubb",
+      "coordinates": {
+        "lat": 63.44390980000001,
+        "lng": 10.4414003
+      },
+      "minutes": {
+        "walk": 19,
+        "bike": 10,
+        "car": 6
+      },
+      "duration_seconds": {
+        "walk": 1136.5,
+        "bike": 550.8,
+        "car": 307.6
+      }
+    },
+    {
+      "place_id": "ladekaia",
+      "name": "Ladekaia",
+      "coordinates": {
+        "lat": 63.45705439999999,
+        "lng": 10.4469876
+      },
+      "minutes": {
+        "walk": 36,
+        "bike": 19,
+        "car": 11
+      },
+      "duration_seconds": {
+        "walk": 2105.9,
+        "bike": 1100,
+        "car": 627.6
+      }
+    },
+    {
+      "place_id": "egon-lade",
+      "name": "Egon Lade",
+      "coordinates": {
+        "lat": 63.4429245,
+        "lng": 10.4465015
+      },
+      "minutes": {
+        "walk": 16,
+        "bike": 9,
+        "car": 7
+      },
+      "duration_seconds": {
+        "walk": 940.9,
+        "bike": 487.8,
+        "car": 371.2
+      }
+    },
+    {
+      "place_id": "kompis-lade",
+      "name": "Kompis Lade",
+      "coordinates": {
+        "lat": 63.447391599999996,
+        "lng": 10.444757599999999
+      },
+      "minutes": {
+        "walk": 20,
+        "bike": 9,
+        "car": 5
+      },
+      "duration_seconds": {
+        "walk": 1152.9,
+        "bike": 519.9,
+        "car": 246
+      }
+    },
+    {
+      "place_id": "korsvika",
+      "name": "Korsvika",
+      "coordinates": {
+        "lat": 63.450384299999996,
+        "lng": 10.4346351
+      },
+      "minutes": {
+        "walk": 28,
+        "bike": 13,
+        "car": 7
+      },
+      "duration_seconds": {
+        "walk": 1632.7,
+        "bike": 760.4,
+        "car": 392.2
+      }
+    },
+    {
+      "place_id": "ringvebukta",
+      "name": "Ringvebukta",
+      "coordinates": {
+        "lat": 63.45322969999999,
+        "lng": 10.463370999999999
+      },
+      "minutes": {
+        "walk": 22,
+        "bike": 14,
+        "car": 7
+      },
+      "duration_seconds": {
+        "walk": 1295.5,
+        "bike": 798.6,
+        "car": 391.7
+      }
+    },
+    {
+      "place_id": "djupvika",
+      "name": "Djupvika",
+      "coordinates": {
+        "lat": 63.456653200000005,
+        "lng": 10.4518048
+      },
+      "minutes": {
+        "walk": 31,
+        "bike": 16,
+        "car": 11
+      },
+      "duration_seconds": {
+        "walk": 1832.7,
+        "bike": 929.2,
+        "car": 640.9
+      }
+    },
+    {
+      "place_id": "ringve-botaniske-hage",
+      "name": "Ringve botaniske hage",
+      "coordinates": {
+        "lat": 63.44828889999999,
+        "lng": 10.452311199999999
+      },
+      "minutes": {
+        "walk": 18,
+        "bike": 7,
+        "car": 5
+      },
+      "duration_seconds": {
+        "walk": 1020.1,
+        "bike": 417.2,
+        "car": 266.8
+      }
+    },
+    {
+      "place_id": "leangen-stasjon",
+      "name": "Leangen stasjon",
+      "coordinates": {
+        "lat": 63.4375413,
+        "lng": 10.4615586
+      },
+      "minutes": {
+        "walk": 6,
+        "bike": 4,
+        "car": 4
+      },
+      "duration_seconds": {
+        "walk": 310.8,
+        "bike": 233,
+        "car": 238.3
+      }
+    },
+    {
+      "place_id": "leangen-idrettspark",
+      "name": "Leangen idrettspark",
+      "coordinates": {
+        "lat": 63.4273685,
+        "lng": 10.466399
+      },
+      "minutes": {
+        "walk": 23,
+        "bike": 11,
+        "car": 7
+      },
+      "duration_seconds": {
+        "walk": 1358.5,
+        "bike": 629,
+        "car": 363.1
+      }
+    },
+    {
+      "place_id": "trygg-lade-hallen",
+      "name": "Trygg/Lade-hallen",
+      "coordinates": {
+        "lat": 63.443965199999994,
+        "lng": 10.4524767
+      },
+      "minutes": {
+        "walk": 12,
+        "bike": 6,
+        "car": 4
+      },
+      "duration_seconds": {
+        "walk": 713.5,
+        "bike": 348,
+        "car": 228.3
+      }
+    },
+    {
+      "place_id": "3t-lade",
+      "name": "3T-Lade",
+      "coordinates": {
+        "lat": 63.44337,
+        "lng": 10.45078
+      },
+      "minutes": {
+        "walk": 12,
+        "bike": 6,
+        "car": 4
+      },
+      "duration_seconds": {
+        "walk": 711.4,
+        "bike": 356.8,
+        "car": 222.2
+      }
+    },
+    {
+      "place_id": "impulse-leangen",
+      "name": "Impulse Leangen",
+      "coordinates": {
+        "lat": 63.438781899999995,
+        "lng": 10.4632759
+      },
+      "minutes": {
+        "walk": 4,
+        "bike": 3,
+        "car": 3
+      },
+      "duration_seconds": {
+        "walk": 210.9,
+        "bike": 174.4,
+        "car": 174.8
+      }
+    },
+    {
+      "place_id": "impulse-lade",
+      "name": "Impulse Lade",
+      "coordinates": {
+        "lat": 63.44767369999999,
+        "lng": 10.4437417
+      },
+      "minutes": {
+        "walk": 20,
+        "bike": 9,
+        "car": 5
+      },
+      "duration_seconds": {
+        "walk": 1182.6,
+        "bike": 493.2,
+        "car": 293.3
+      }
+    },
+    {
+      "place_id": "ringve-musikkmuseum",
+      "name": "Ringve Musikkmuseum",
+      "coordinates": {
+        "lat": 63.44748,
+        "lng": 10.45351
+      },
+      "minutes": {
+        "walk": 15,
+        "bike": 7,
+        "car": 4
+      },
+      "duration_seconds": {
+        "walk": 886.1,
+        "bike": 410,
+        "car": 222.9
+      }
+    },
+    {
+      "place_id": "lade-kirke",
+      "name": "Lade kirke",
+      "coordinates": {
+        "lat": 63.4462443,
+        "lng": 10.438620799999999
+      },
+      "minutes": {
+        "walk": 21,
+        "bike": 11,
+        "car": 7
+      },
+      "duration_seconds": {
+        "walk": 1245.8,
+        "bike": 601.8,
+        "car": 382.7
+      }
+    },
+    {
+      "place_id": "leos-lekeland-trondheim",
+      "name": "Leo's Lekeland",
+      "coordinates": {
+        "lat": 63.4430191,
+        "lng": 10.432294299999999
+      },
+      "minutes": {
+        "walk": 24,
+        "bike": 11,
+        "car": 6
+      },
+      "duration_seconds": {
+        "walk": 1433.2,
+        "bike": 641.6,
+        "car": 350.7
+      }
+    }
+  ]
+}

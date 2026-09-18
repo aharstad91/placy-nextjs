@@ -157,7 +157,7 @@ Ved planlegging er hovedrepo på `fc83a56`. `feat/nyhavna-mobil-paritet` og `fea
 
 Nettsidekopien, dens ressurser og bruksanvisning er ucommittet i hovedrepo ved planlegging. En ny worktree får dem derfor ikke automatisk. Overfør bare de nødvendige filene med bevart innhold/proveniens, eller bruk en allerede ferdigstilt commit hvis den finnes ved oppstart. Ikke inkluder andres logg- og strategiendringer i egne commits.
 
-Eksisterende Leangenbukta-board er en valgfri innholdskilde, ikke en oppstartsavhengighet. Den faktiske Opus-leveransen er ennå ikke lokalisert. Ikke dikt opp en filsti eller rapporter den som gjennomgått. Ramme og skjema kan bygges først; U5–U6 krever at faktisk research er tilgjengelig eller utføres fra primærkilder innen samme scope.
+Eksisterende Leangenbukta-board er en valgfri innholdskilde, ikke en oppstartsavhengighet. Opus-rapporten for selve boligprosjektet er mottatt 18.09.2026 og lagret i `docs/research/leangenbukta-lokal-demo/raw/2026-09-18-opus-prosjektresearch-runde-1.md`. Les mottaksnotatet `docs/research/leangenbukta-lokal-demo/2026-09-18-research-mottak.md` før U5; det identifiserer interne motsetninger og skiller mottatt research fra verifiserte fakta. Kategorirapportene for Natur, Transport, Hverdag, Oppvekst, Servering, Trening og Opplevelser er lagret under `docs/research/leangenbukta-lokal-demo/raw/` som runde 2–8, med tilhørende mottaksnotater i katalogen over. Alle avtalte researchrunder er dermed mottatt. Les relevant mottaksnotat før hver del av U6. Rapportene er råmateriale, ikke ferdig runtime-kunnskap. Ramme og skjema kan bygges først; U5 krever kildekontroll av prosjektrapporten, og U6 krever tilsvarende kontroll kategori for kategori.
 
 ### Sources and Patterns
 
@@ -249,6 +249,8 @@ Eksisterende Leangenbukta-board er en valgfri innholdskilde, ikke en oppstartsav
 
 **Goal:** Bygg, fasiliteter og prosjektets tidslinje får kontrollert kunnskapsgrunnlag. **Requirements:** R4, R5, R7. **Dependencies:** U3, U4 og faktisk tilgjengelig prosjekt-research.
 
+**Status 18.09.2026:** Levert. 565 av 565 prosjektpåstander er revidert. De 124 godkjente eller godkjent tidsfølsomme påstandene er importert til runtime-temaer og prosjekt-FAQ; uavklarte, avviste og historiske påstander er ikke importert som bekreftede fakta. [Audit](../research/leangenbukta-lokal-demo/audited/2026-09-18-project-facts-audit.md), [faktapakke](../research/leangenbukta-lokal-demo/audited/2026-09-18-project-facts-package.json) og [runtime-kvittering](../research/leangenbukta-lokal-demo/runtime-import-report.json) bevarer regnskapet.
+
 **Files:** Nye `docs/research/leangenbukta-lokal-demo/raw/`, `coverage.md`, `project-facts.md`; Leangenbuktas lokale JSON-filer; ny `lib/demo/local-board/leangenbukta-content.test.ts`.
 
 **Approach:** KTD5. Registrer faktisk rapportsti og dato, bevar originalen og inventer samtlige påstander/kilder. Gjennomgå alt, vurder det som står igjen på nytt, og stikkprøvekontroller egne beslutninger. Rapportér X av Y vurdert, Z endret, W bekreftet og antall uavklarte/utelatte. «Halvveis ferdigbygd» er brukerens kontekst, ikke et verifisert prosenttall. Legg prosjektspørsmål i FAQ og kunnskap først; lag bare kartpunkter når plasseringen er forsvarlig.
@@ -265,6 +267,8 @@ Eksisterende Leangenbukta-board er en valgfri innholdskilde, ikke en oppstartsav
 ### U6. Bygg naeromradet kategori for kategori
 
 **Goal:** Alle avtalte nabolagskategorier får vurdert innhold og prøvbare kjøperspørsmål. **Requirements:** R4, R6, R7. **Dependencies:** U4, U5; kategoriresearch kan innhentes tidligere.
+
+**Status 18.09.2026:** Levert mekanisk. [Kategoripakken](../research/leangenbukta-lokal-demo/categories/README.md) regnskapsfører 145 av 145 kandidater: 25 startsteder, 30 medlemmer, 43 tema-/gjenbrukskoblinger, 6 eksterne referanser, 33 utsatte og 8 utelatte. Runtime har 26 synlige ankre, 30 medlemmer, 36 temaer, 34 FAQ-er og 35 separate samtalescenarier. Google Places-/primærkoordinater er kontrollert for alle importerte objekter, og Mapbox Matrix har målt gange, sykkel og bil fra prosjektpunktet til alle synlige ankre. [Importmanifestet](../research/leangenbukta-lokal-demo/import-manifest.json), [samtaleevalueringen](../research/leangenbukta-lokal-demo/conversation-evaluation.md) og [valideringsrapporten](../research/leangenbukta-lokal-demo/validation-report.md) beskriver beviset. Faktisk nettleser- og lydprøve ligger i U7.
 
 **Files:** Leangenbuktas JSON-filer; nye `docs/research/leangenbukta-lokal-demo/categories/`, `import-manifest.json`, `conversation-evaluation.md`; `lib/demo/local-board/leangenbukta-content.test.ts`.
 
@@ -283,6 +287,8 @@ Eksisterende Leangenbukta-board er en valgfri innholdskilde, ikke en oppstartsav
 ### U7. Koble nettsidekopien og gjennomfor demoprove
 
 **Goal:** Hele kundeopplevelsen kan demonstreres fra nettside til samtale og kart. **Requirements:** R2, R5–R8. **Dependencies:** U4–U6.
+
+**Status 18.09.2026:** Delvis levert. Nettside-CTA åpner riktig lokalboard. Desktop og responsiv mobil er kontrollert i Chrome gjennom velkomst, kategori, faktabasert prosjektkategori, kartpunkt, anker/medlem, FAQ, kilde, inngangsforbehold og alle tre reisemåter. Mekaniske sjekker og produksjonsbygg er grønne. Faktisk mikrofon-/lydprøve er fortsatt en åpen sluttgate; se [valideringskvitteringen](../research/leangenbukta-lokal-demo/validation.md).
 
 **Files:** `app/demo/leangenbukta-nettside/placy-row.tsx`, `beliggenhet/page.tsx` ved behov; `docs/demos/leangenbukta-nettside.md`; nye `docs/research/leangenbukta-lokal-demo/validation.md` og skjermbilder/lyttetestnotater; relevante komponenttester fra U4.
 

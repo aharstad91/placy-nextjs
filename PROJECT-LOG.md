@@ -6,6 +6,16 @@
 
 ---
 
+## 2026-09-18 — Leangenbukta: revidert innhold importert og boardet demoprøvd (U5–U8)
+
+Gren `feat/leangenbukta-board` i worktree `../placy-leangenbukta`. Ikke pushet. Alle åtte researchrunder er bevart som råmateriale, atomisert og revidert før import: 565 prosjektpåstander og 145 nabolagskandidater har eksplisitt utfall. Runtime bruker 124 godkjente prosjektpåstander, 25 redaksjonelle startsteder, 30 medlemmer og ett avledet strukturanker. Det gir 56 kanoniske steder, 26 synlige kartankre, 36 temaer, 34 FAQ-er og 35 separate samtalescenarier. 58 kilder, 56 koordinatkvitteringer og Mapbox-tider for gange, sykkel og bil ligger som egne revisjonsartefakter. Rårapportene leses aldri av runtime-byggeren.
+
+Nettside-CTA-en åpner nå `/demo/leangenbukta-lokal`. Desktop og responsiv mobil er prøvd i Chrome gjennom velkomst, kategori, prosjektfakta, FAQ, kartpunkt, anker/medlem, kilde, inngangsforbehold og reisemodus. Prøven avdekket at prosjektkategorien med seks svar ble presentert som tom fordi den ikke har kartsteder. Kategorien viser nå `6 svar`, uten tom stedsoverskrift eller mobilfanen `Steder (0)`; komponenttesten låser dette. Medlemsfakta beholdes i detaljen, unike stedstall teller kanoniske steder, LadeTorget kan beholde eget navn som strukturanker, og avbrutte Live-kall gir ikke lenger ubehandlet promise-avvisning.
+
+Verifisering: 283 testfiler / 4 489 tester grønne, TypeScript grønn, lint 0 feil / 53 eksisterende advarsler, produksjonsbygg bestått og `git diff --check` rent. `docs/research/leangenbukta-lokal-demo/validation.md` er nettleserkvitteringen. Faktisk mikrofon-/lydprøve mot Anja er fortsatt en eksplisitt åpen sluttgate; den er ikke omdøpt til bestått. Arbeidsprosessen og kanoniske sted-ID-er er laget for gjenbruk i senere prosjekt- og bruktboligboards, mens `facility:leangenbukta:*` forblir prosjektlokale.
+
+---
+
 ## 2026-09-18 — Leangenbukta: felles lokal board-kjerne, boligprosjektprofil og tom demo (U1–U4 + U8 del 1)
 
 Plan `docs/plans/2026-09-18-1124-feat-leangenbukta-board-master-plan.md`, gren `feat/leangenbukta-board` (worktree `../placy-leangenbukta`, baseline `fc83a56`). Ikke pushet. Opus-research for prosjekt og kategorier var ikke levert, så det tekniske grunnlaget ble bygd først; U5–U7 (prosjektfakta, kategoriinnhold, nettside-CTA + demoprøve) venter på research.

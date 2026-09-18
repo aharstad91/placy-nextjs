@@ -84,4 +84,15 @@ describe('lokale kjøpesentre', () => {
     const small = await fixture(); small.places = small.places.filter(p => p.id !== 'bakeri');
     expect(() => assertReferences(small, NYHAVNA)).toThrow(/minst fire/);
   });
+
+  it('tillater et navnebevarende anker for et større anlegg med ett medlem', async () => {
+    const d = await fixture();
+    const centre = d.places.find(p => p.id === 'senter')!;
+    centre.anchorKeepsOwnName = true;
+    d.places = d.places.filter(p => !p.parentPlaceId || p.id === 'matbutikk');
+    d.board.presentation = d.board.presentation?.map(segment => ({ ...segment, placeIds: ['matbutikk'] }));
+    expect(() => assertReferences(d, NYHAVNA)).not.toThrow();
+    const board = buildLocalBoard(d, NYHAVNA);
+    expect(board.categories.find(c => c.id === 'hverdagsliv')!.pois[0].raw.anchorKeepsOwnName).toBe(true);
+  });
 });

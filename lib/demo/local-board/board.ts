@@ -79,6 +79,7 @@ function toPoi(
     ...(place.enturStopplaceId ? { enturStopplaceId: place.enturStopplaceId } : {}),
     ...(place.parentPlaceId ? { parentPoiId: place.parentPlaceId } : {}),
     ...(place.anchorSummary ? { anchorSummary: place.anchorSummary } : {}),
+    ...(place.anchorKeepsOwnName ? { anchorKeepsOwnName: true } : {}),
     ...(place.address ? { address: place.address } : {}),
     ...(place.summary ? { editorialHook: place.summary } : {}),
     ...(place.image ? { featuredImage: place.image, markerImage: place.image } : {}),

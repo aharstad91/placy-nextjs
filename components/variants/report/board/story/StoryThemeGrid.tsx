@@ -94,6 +94,7 @@ export function StoryThemeGrid({ className = "" }: { className?: string }) {
     <div className="mt-2 grid grid-cols-2 gap-2">
       {items.map(({ c, n }) => {
           const Icon = getIcon(c.icon);
+          const faqCount = c.editorial?.faq?.length ?? 0;
           return (
             <button
               key={c.id}
@@ -119,11 +120,14 @@ export function StoryThemeGrid({ className = "" }: { className?: string }) {
                   {c.label}
                 </span>
                 <span className="block text-[12px] font-medium leading-[1.3] tabular-nums text-stone-500">
-                  {/* «0 steder» leses som en feil i kartet. «Ingen ennå» sier
-                      det rammen faktisk er: temaet står klart, innholdet er
-                      ikke skrevet. */}
+                  {/* Et tema kan være rent faktainnhold uten egne kartpunkter,
+                      slik prosjektfanen i en boligdemo er. Da er svarene den
+                      faktiske dekningen. Bare et tema uten både steder og svar
+                      bruker den ordinære tomtilstanden. */}
                   {c.pois.length === 0
-                    ? "Ingen steder ennå"
+                    ? faqCount > 0
+                      ? `${faqCount} svar`
+                      : "Ingen steder ennå"
                     : `${c.pois.length} ${c.pois.length === 1 ? "sted" : "steder"}`}
                 </span>
               </span>

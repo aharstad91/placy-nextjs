@@ -264,11 +264,17 @@ export function assertReferences(dataset: LocalDataset, descriptor: LocalDemoDes
     if (place.parentPlaceId) {
       const parent = placeById.get(place.parentPlaceId);
       if (place.parentPlaceId === place.id || !parent || !isAnchorPOI(parent) || parent.parentPlaceId || isAnchorPOI(place)) {
-        problems.push(`${owner}: parentPlaceId må peke til et annet, selvstendig kjøpesenter.`);
+        problems.push(`${owner}: parentPlaceId må peke til et annet, selvstendig anker.`);
       }
     }
-    if (isAnchorPOI(place) && (childCountByParentId.get(place.id) ?? 0) < 4) {
+    if (isAnchorPOI(place) && !place.anchorKeepsOwnName && (childCountByParentId.get(place.id) ?? 0) < 4) {
       problems.push(`${owner}: kjøpesenter må ha minst fire dokumenterte virksomheter.`);
+    }
+    if (place.anchorKeepsOwnName && !isAnchorPOI(place)) {
+      problems.push(`${owner}: anchorKeepsOwnName krever anchorSummary — ellers finnes det ikke noe anker å navngi.`);
+    }
+    if (isAnchorPOI(place) && place.anchorKeepsOwnName && (childCountByParentId.get(place.id) ?? 0) < 1) {
+      problems.push(`${owner}: generisk anker må ha minst ett dokumentert medlem.`);
     }
     source(owner, place.sourceIds);
     source(owner, place.facts.map((f) => f.sourceId));

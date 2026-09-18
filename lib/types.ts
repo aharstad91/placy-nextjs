@@ -175,6 +175,8 @@ export interface POI {
   // Parent-child POI hierarchy (e.g., shopping center → stores)
   parentPoiId?: string;
   anchorSummary?: string;
+  /** Behold ankerets eget navn selv når bare ett medlem er synlig. */
+  anchorKeepsOwnName?: boolean;
   childPOIs?: POI[];
 
   // Reisetider fra prosjekt-origo. Enhets-KONTRAKT: MINUTTER (ceil) — samme

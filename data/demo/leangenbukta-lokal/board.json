@@ -3,10 +3,10 @@
   "profile": "housing-development",
   "id": "leangenbukta-lokal",
   "name": "Leangenbukta",
-  "address": "",
+  "address": "Haakon VIIs gate 14, 7041 Trondheim",
   "district": "Leangenbukta",
   "city": "Trondheim",
-  "intro": "Demoen er under oppbygging. Kartet viser prosjektets utgangspunkt, og kategoriene fylles med kildekontrollert innhold etter hvert. Start gjerne en samtale med Anja om hva du lurer på.",
+  "intro": "Utforsk Leangenbukta som boligprosjekt og det kildekontrollerte utvalget på Lade og Leangen. Kartpunkter, prosjektstatus og åpningstider viser kontrolldato og forbehold der noe kan endre seg.",
   "center": {
     "lat": 63.43947521501401,
     "lng": 10.466113792494502
@@ -15,7 +15,7 @@
   "pinSubtitle": "",
   "pinAccent": "#90553e",
   "pinImage": "/demo/leangenbukta-lokal/leangenbukta-logo.svg",
-  "greeting": "Hei, jeg heter Anja og er din digitale guide i Leangenbukta. Demoen bygges opp nå, så jeg har ikke fakta om prosjektet eller nærområdet ennå. Vil du høre om Leangenbukta som boligprosjekt, eller om nærområdet rundt?",
+  "greeting": "Hei, jeg heter Anja og er din digitale guide i Leangenbukta. Jeg kan fortelle om boligprosjektet eller om dokumenterte tilbud på Lade og Leangen. Hva vil du utforske først?",
   "projectInfoLabel": "det kildekontrollerte materialet om Leangenbukta",
   "discoveryCategoryIds": [
     "trening",
@@ -29,16 +29,19 @@
       "i Leangenbukta",
       "her ute"
     ],
-    "scope": "Leangenbukta som boligprosjekt er rammen, sammen med nærområdet rundt. Prosjektets planer og tilbudet som finnes i dag holdes adskilt. Demoen har ikke kildekontrollert innhold ennå; si det i stedet for å fylle hullet.",
-    "afterGreeting": "La brukeren velge prosjektet som kommer eller stedene som finnes i dag. Ved prosjektet, deleger valget.",
+    "scope": "Leangenbukta som boligprosjekt er rammen, sammen med Lade og Leangen. Skill vedtatt plan, faktisk byggestatus, forventet tidspunkt, innflytting og adgang. Bruk bare datasettets bekreftede fakta, og si tydelig når noe er uavklart eller tidsfølsomt.",
+    "afterGreeting": "La brukeren velge boligprosjektet eller tilbudene som finnes i dag. Ved prosjektet, tilby plan, byggetrinn eller fellesfasiliteter.",
     "planScope": "Skill mellom planene for prosjektet og tilbud som finnes i dag.",
     "entry": "«Prosjektet», «bo», «boligene» og «det som kommer» betyr present_neighbourhood med category og category_id leangenbukta-prosjektet.",
     "referencePoint": "Det er et fast referansepunkt i Leangenbukta, ikke en bestemt bolig.",
     "backendSections": [
-      "GRUNNLAG: Dette datasettet er tomt. Det finnes ingen kildekontrollerte fakta om Leangenbukta her ennå. Svar at du ikke har opplysningen, og ikke hent den fra hukommelsen, fra et annet prosjekt eller fra et annet sted i Trondheim. Ikke gjett byggetrinn, ferdigstillelse, innflytting, priser eller hvilke tilbud som finnes i nærheten."
+      "PROSJEKTSTATUS: Vedtatt plan, byggestatus, forventet tidspunkt, innflytting og adgang er forskjellige opplysninger. En passert forventning gjør ikke et tilbud åpnet. En beboerfasilitet er ikke offentlig.",
+      "KARTPRESISJON: Et omtrent markert sted viser adressen eller anlegget, ikke en dokumentert publikumsinngang. Ikke beskriv en rute som kontrollert eller trygg uten eget grunnlag.",
+      "PLASS OG OPPTAK: Plassering gir ikke rett til skole- eller barnehageplass. Skolekretsen for Haakon VIIs gate 14 er ikke verifisert."
     ],
     "roleSentences": [
-      "Si åpent at demoen fortsatt bygges opp når du mangler grunnlag, i stedet for å anta noe om Leangenbukta."
+      "Si kontrolldato eller forbehold når åpningstid, program, byggefremdrift eller adgang kan ha endret seg.",
+      "Ikke ranger steder og ikke kall et sted nærmest uten en kontrollert sammenlikning."
     ]
   },
   "categories": [
@@ -47,66 +50,231 @@
       "name": "Leangenbukta",
       "icon": "Building2",
       "color": "#91563e",
-      "lead": "",
-      "body": ""
+      "lead": "Reguleringsplan, byggetrinn og fellesfasiliteter med tydelig skille mellom vedtatt, forventet og åpnet.",
+      "body": "Leangenbukta er regulert for minst 450 boliger, offentlig barnehage, uteoppholdsareal og offentlig turveg. Utbygger omtaler prosjektet som rundt 500 boliger. Opplysningene under skiller plangrunnlaget fra dagens byggestatus og forventede tidspunkt.",
+      "invitation": "Vil du høre om planen, et byggetrinn eller fellesfasilitetene?",
+      "placeInvitation": "Vil du vite mer om prosjektstatus eller et bestemt byggetrinn?"
     },
     {
       "id": "hverdag",
       "name": "Hverdag",
       "icon": "ShoppingCart",
       "color": "#36d16f",
-      "lead": "",
-      "body": ""
+      "lead": "Kjøpesentre og dokumenterte virksomheter for dagligvare, apotek, post og andre ærender.",
+      "body": "City Lade, Sirkus Shopping og Lade Arena er kontrollerte senterankre. LadeTorget er lagt inn som et strukturelt anker for virksomhetene der. Åpningstider er tidsfølsomme og gjelder per senter eller virksomhet.",
+      "invitation": "Vil du se et senter eller spørre om et bestemt ærend?",
+      "placeInvitation": "Vil du se hvilke dokumenterte virksomheter som ligger i senteret?"
     },
     {
       "id": "oppvekst",
       "name": "Oppvekst",
       "icon": "GraduationCap",
       "color": "#f8ae17",
-      "lead": "",
-      "body": ""
+      "lead": "Skole, SFO, barnehager, lekeområder og fritidstilbud med opptak og skolekrets holdt adskilt.",
+      "body": "Lade skole, Lade SFO, to barnehager, kommunale lekeområder og Lade fritidsklubb er dokumentert. Skolekretsen for Haakon VIIs gate 14 er ikke verifisert, og plass i skole eller barnehage kan ikke utledes av plassering.",
+      "invitation": "Vil du høre om skole, barnehage, lek eller fritidstilbud?",
+      "placeInvitation": "Vil du høre om et annet oppveksttilbud?"
     },
     {
       "id": "servering",
       "name": "Servering",
       "icon": "UtensilsCrossed",
       "color": "#f35a5a",
-      "lead": "",
-      "body": ""
+      "lead": "Serveringssteder ved sjøen, i Solrekka og ved LadeTorget, med sentersteder samlet under sine ankre.",
+      "body": "Ladekaia, Egon Lade og Kompis Lade er egne startsteder. Andre serveringssteder ligger som medlemmer under City Lade, Sirkus Shopping, LadeTorget, Lade Arena eller Ringve Musikkmuseum. Sesong og virksomhetens egen åpningstid må kontrolleres før besøk.",
+      "invitation": "Vil du høre om sjøservering, søndagsåpent eller takeaway?",
+      "placeInvitation": "Vil du se et annet dokumentert serveringssted?"
     },
     {
       "id": "natur",
       "name": "Natur",
       "icon": "Trees",
       "color": "#22c68d",
-      "lead": "",
-      "body": "",
-      "moreNoun": "turmål"
+      "lead": "Bade- og friområder samt botanisk hage, uten beregnede ruter i selve faktagrunnlaget.",
+      "body": "Korsvika, Ringvebukta og Djupvika er dokumenterte kommunale steder. Ringve botaniske hage er gratis og åpen hele året. Kartpunkter uten dokumentert port eller publikumsinngang er merket som omtrentlige.",
+      "moreNoun": "turmål",
+      "invitation": "Vil du høre om et badested eller Ringve botaniske hage?",
+      "placeInvitation": "Vil du høre om et annet tur- eller badested?"
     },
     {
       "id": "transport",
       "name": "Transport",
       "icon": "Bus",
       "color": "#4d93f8",
-      "lead": "",
-      "body": ""
+      "lead": "Stasjon og planlagt sykkelforbindelse fra gjeldende primærkilder; gamle rutetabeller brukes ikke som nåstatus.",
+      "body": "Leangen stasjon er kartfestet. Miljøpakkens hovedsykkelveg beskrives som et pågående prosjekt med ferdige og gjenstående delstrekninger. Busslinjer må hentes fra AtB eller Entur for konkret holdeplass og dato.",
+      "invitation": "Vil du høre om toget, sykkelforbindelsen eller hva som fortsatt er uavklart?",
+      "placeInvitation": "Vil du vite mer om adkomst eller forbindelser fra stasjonen?"
     },
     {
       "id": "trening",
       "name": "Trening",
       "icon": "Dumbbell",
       "color": "#f05da7",
-      "lead": "",
-      "body": "",
-      "moreNoun": "treningssteder"
+      "lead": "Kommersielle sentre, idrettspark og klubbanlegg med adgangstid, bemanning og publikumstid holdt adskilt.",
+      "body": "3T-Lade, to Impulse-avdelinger, Leangen idrettspark og Trygg/Lade-hallen er kontrollerte startsteder. Kunstisbanen og halltilbud ligger som medlemmer under anleggene. Fresh Fitness er utelatt fordi kjedens egen side varslet at avdelingen ikke skulle være i drift etter 1. februar 2026.",
+      "moreNoun": "treningssteder",
+      "invitation": "Vil du høre om treningssenter, hall eller skøyter?",
+      "placeInvitation": "Vil du høre om et annet treningstilbud?"
     },
     {
       "id": "opplevelser",
       "name": "Opplevelser",
       "icon": "Film",
       "color": "#a06cf5",
-      "lead": "",
-      "body": ""
+      "lead": "Museum, kulturminne og innendørs familieaktivitet på Lade, med eksterne alternativer som temakunnskap.",
+      "body": "Ringve Musikkmuseum, Lade kirke og Leo's Lekeland er lokale startsteder. Hagen er gratis uavhengig av museumsbilletten. Program og enkeltarrangementer er kalenderdata og behandles ikke som permanente stedstider.",
+      "invitation": "Vil du høre om museum, kulturminne eller familieaktivitet?",
+      "placeInvitation": "Vil du høre om en annen opplevelse?"
+    }
+  ],
+  "presentation": [
+    {
+      "id": "intro-leangenbukta-prosjektet",
+      "categoryId": "leangenbukta-prosjektet",
+      "text": "Leangenbukta er et boligprosjekt under utvikling. Reguleringsplanen, faktisk byggestatus, forventede tidspunkt og adgang til fellesfasiliteter er holdt som separate opplysninger.",
+      "placeIds": [],
+      "sourceIds": [
+        "trondheim-f303f1b2",
+        "leangenbukta-29db079d"
+      ],
+      "checkedAt": "2026-09-18"
+    },
+    {
+      "id": "intro-hverdag",
+      "categoryId": "hverdag",
+      "text": "City Lade, Sirkus Shopping og Lade Arena er kontrollerte ankre. Dagligvare, apotek, post og servering representeres som medlemmer under sentrene.",
+      "placeIds": [
+        "city-lade",
+        "sirkus-shopping",
+        "lade-arena"
+      ],
+      "sourceIds": [
+        "citylade-6434272b",
+        "citylade-93943a3e",
+        "ladearena-cf5df9d7",
+        "ladetorget-15d604f6",
+        "sirkusshopping-63ecbf55"
+      ],
+      "checkedAt": "2026-09-18"
+    },
+    {
+      "id": "intro-oppvekst",
+      "categoryId": "oppvekst",
+      "text": "Lade skole, Lade SFO, Ladesletta barnehage, Leangen kulturbarnehage, kommunale lekeområder og Lade fritidsklubb er relevante kandidater. Skolekretsen for adressen er fortsatt uavklart.",
+      "placeIds": [
+        "lade-skole",
+        "ladesletta-barnehage",
+        "leangen-kulturbarnehage-sa",
+        "lade-skole-play",
+        "ladeparken",
+        "lade-fritidsklubb"
+      ],
+      "sourceIds": [
+        "barnehagefakta-28025e1b",
+        "leangenkulturbarnehage-c3d859f4",
+        "trondheim-521880da",
+        "trondheim-5747a8f9",
+        "trondheim-60a02168",
+        "trondheim-6389ab9b",
+        "trondheim-96778447",
+        "trondheim-a9d869bd"
+      ],
+      "checkedAt": "2026-09-18"
+    },
+    {
+      "id": "intro-servering",
+      "categoryId": "servering",
+      "text": "Ladekaia, Egon Lade og Kompis Lade er valgt som selvstendige startsteder. Øvrige spisesteder beholdes som medlemmer under kjøpesentre eller andre ankre.",
+      "placeIds": [
+        "ladekaia",
+        "egon-lade",
+        "kompis-lade"
+      ],
+      "sourceIds": [
+        "citylade-6434272b",
+        "citylade-93943a3e",
+        "digg-b4485831",
+        "egon-bdf5a615",
+        "kompisnorge-626e7987",
+        "ladearena-cf5df9d7",
+        "ladekaia-c3a8f67a",
+        "ladetorget-15d604f6",
+        "ringve-e3d7e676",
+        "sirkusshopping-7e0c9148",
+        "sirkusshopping-901d6d5e",
+        "sirkusshopping-a2329a3c"
+      ],
+      "checkedAt": "2026-09-18"
+    },
+    {
+      "id": "intro-natur",
+      "categoryId": "natur",
+      "text": "Korsvika, Ringvebukta og Djupvika er dokumenterte kommunale kandidater. Ringve botaniske hage er et gratis helårstilbud. Faktisk rute og reisetid fra boligen er ikke beregnet.",
+      "placeIds": [
+        "korsvika",
+        "ringvebukta",
+        "djupvika",
+        "ringve-botaniske-hage"
+      ],
+      "sourceIds": [
+        "ntnu-4f3d38b5",
+        "ntnu-79fbb589",
+        "trondheim-45a68fde",
+        "trondheim-5c884f0a",
+        "trondheim-f36a7a5b"
+      ],
+      "checkedAt": "2026-09-18"
+    },
+    {
+      "id": "intro-transport",
+      "categoryId": "transport",
+      "text": "Leangen stasjon og hovedsykkelvegprosjektet kan beskrives fra gjeldende primærkilder. Busslinjer og holdeplasser i rårapporten må oppfriskes mot AtB/Entur før publisering.",
+      "placeIds": [
+        "leangen-stasjon"
+      ],
+      "sourceIds": [
+        "banenor-5c4f1b79"
+      ],
+      "checkedAt": "2026-09-18"
+    },
+    {
+      "id": "intro-trening",
+      "categoryId": "trening",
+      "text": "3T-Lade, Impulse Leangen, Impulse Lade, Leangen idrettspark og Trygg/Lade-hallen er kontrollerte kandidater. Fresh Fitness skal ikke vises som aktivt tilbud.",
+      "placeIds": [
+        "leangen-idrettspark",
+        "trygg-lade-hallen",
+        "3t-lade",
+        "impulse-leangen",
+        "impulse-lade"
+      ],
+      "sourceIds": [
+        "3t-e7fadada",
+        "impulse-1a17f3d2",
+        "impulse-e97cf9a0",
+        "sites-57a7ecdf",
+        "sites-e7207c5a",
+        "trygglade-017fd19c",
+        "trygglade-45b62cef"
+      ],
+      "checkedAt": "2026-09-18"
+    },
+    {
+      "id": "intro-opplevelser",
+      "categoryId": "opplevelser",
+      "text": "Ringve Musikkmuseum, Lade kirke og Leo's Lekeland er valgt som lokale startsteder. Hagen, Leangen gård og Ladehammeren gjenbrukes fra Natur.",
+      "placeIds": [
+        "ringve-musikkmuseum",
+        "lade-kirke",
+        "leos-lekeland-trondheim"
+      ],
+      "sourceIds": [
+        "kirken-60c88d28",
+        "leoslekeland-f8abbf60",
+        "ringve-e3d7e676"
+      ],
+      "checkedAt": "2026-09-18"
     }
   ]
 }

@@ -120,6 +120,11 @@ describe("anchorMarkerName", () => {
     expect(anchorMarkerName(place("p", "Rema 1000", "dagligvare"))).toBe("Rema 1000");
     expect(anchorMarkerName(anchor("Thon Senter Verdal", []))).toBe("Thon Senter Verdal");
   });
+
+  it("lar generiske ankre beholde navnet når ett medlem er synlig", () => {
+    const school = { ...anchor("Lade skole", [place("sfo", "Lade SFO", "oppvekst")]), anchorKeepsOwnName: true };
+    expect(anchorMarkerName(school)).toBe("Lade skole");
+  });
 });
 
 describe("withAnchorMarkerName", () => {

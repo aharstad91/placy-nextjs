@@ -1,6 +1,6 @@
 import Arrow from "@/app/demo/leangenbukta-nettside/arrow";
 
-export const PLACY_BOARD = "/eiendom/placy-demo/leangenbukta/rapport-board";
+export const PLACY_BOARD = "/demo/leangenbukta-lokal";
 
 /**
  * Placy-inngangen på forsiden.

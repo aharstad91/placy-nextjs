@@ -1,0 +1,170 @@
+{
+  "schema_version": 1,
+  "project_id": "leangenbukta",
+  "board_id": "leangenbukta-lokal",
+  "reviewed_at": "2026-09-18",
+  "status": "runtime_imported_mechanically_validated",
+  "runtime_blocker": null,
+  "coverage": {
+    "categories": 7,
+    "received_candidates": 145,
+    "reviewed_candidates": 145,
+    "unreviewed_candidates": 0,
+    "decision_counts": {
+      "defer": 33,
+      "exclude": 8,
+      "external_reference": 6,
+      "member": 30,
+      "start_set": 25,
+      "topic_only": 43
+    },
+    "buyer_questions": 35
+  },
+  "category_files": [
+    {
+      "category": "natur",
+      "coverage": {
+        "received_candidates": 15,
+        "reviewed_candidates": 15,
+        "decision_counts": {
+          "defer": 3,
+          "external_reference": 1,
+          "start_set": 4,
+          "topic_only": 7
+        },
+        "buyer_questions": 5,
+        "unreviewed_candidates": 0
+      },
+      "file": "categories/natur.json"
+    },
+    {
+      "category": "transport",
+      "coverage": {
+        "received_candidates": 39,
+        "reviewed_candidates": 39,
+        "decision_counts": {
+          "defer": 15,
+          "exclude": 4,
+          "start_set": 1,
+          "topic_only": 19
+        },
+        "buyer_questions": 5,
+        "unreviewed_candidates": 0
+      },
+      "file": "categories/transport.json"
+    },
+    {
+      "category": "hverdag",
+      "coverage": {
+        "received_candidates": 18,
+        "reviewed_candidates": 18,
+        "decision_counts": {
+          "defer": 4,
+          "member": 10,
+          "start_set": 3,
+          "topic_only": 1
+        },
+        "buyer_questions": 5,
+        "unreviewed_candidates": 0
+      },
+      "file": "categories/hverdag.json"
+    },
+    {
+      "category": "oppvekst",
+      "coverage": {
+        "received_candidates": 20,
+        "reviewed_candidates": 20,
+        "decision_counts": {
+          "defer": 5,
+          "member": 2,
+          "start_set": 6,
+          "topic_only": 7
+        },
+        "buyer_questions": 5,
+        "unreviewed_candidates": 0
+      },
+      "file": "categories/oppvekst.json"
+    },
+    {
+      "category": "servering",
+      "coverage": {
+        "received_candidates": 21,
+        "reviewed_candidates": 21,
+        "decision_counts": {
+          "defer": 1,
+          "exclude": 1,
+          "member": 15,
+          "start_set": 3,
+          "topic_only": 1
+        },
+        "buyer_questions": 5,
+        "unreviewed_candidates": 0
+      },
+      "file": "categories/servering.json"
+    },
+    {
+      "category": "trening",
+      "coverage": {
+        "received_candidates": 18,
+        "reviewed_candidates": 18,
+        "decision_counts": {
+          "defer": 4,
+          "exclude": 1,
+          "external_reference": 1,
+          "member": 3,
+          "start_set": 5,
+          "topic_only": 4
+        },
+        "buyer_questions": 5,
+        "unreviewed_candidates": 0
+      },
+      "file": "categories/trening.json"
+    },
+    {
+      "category": "opplevelser",
+      "coverage": {
+        "received_candidates": 14,
+        "reviewed_candidates": 14,
+        "decision_counts": {
+          "defer": 1,
+          "exclude": 2,
+          "external_reference": 4,
+          "start_set": 3,
+          "topic_only": 4
+        },
+        "buyer_questions": 5,
+        "unreviewed_candidates": 0
+      },
+      "file": "categories/opplevelser.json"
+    }
+  ],
+  "import_rules": [
+    "Import only start_set candidates after entrance and coordinate verification.",
+    "Attach member candidates to their parent without duplicate markers.",
+    "Reuse canonical global places across boards; store board membership separately.",
+    "Never import exclude candidates as current Leangenbukta facts.",
+    "Refresh time-sensitive opening hours, prices, public sessions and schedules before demo publication.",
+    "Calculate routes and travel times only from the controlled Leangenbukta start point created in U4.",
+    "Keep school district, delivery coverage and current capacity unresolved until address-specific checks exist."
+  ],
+  "known_corrections": [
+    "Leangen station has no current published elevator outage in the checked Bane NOR page.",
+    "Lade SFO now publishes 07:15–16:30.",
+    "Lade fritidsklubb gaming is Monday 16–18, not Wednesday.",
+    "Burger King is listed on Lade Arena's current official shop page.",
+    "3T-Lade's current page explicitly lists spa facilities.",
+    "Leo's current weekend hours are 09–20 for the control period.",
+    "Leangenbukta Torget in the raw experiences report belongs to neighbor plan r20170034 and is excluded."
+  ],
+  "runtime_outputs": [
+    "data/demo/leangenbukta-lokal/board.json",
+    "data/demo/leangenbukta-lokal/sources.json",
+    "data/demo/leangenbukta-lokal/places.json",
+    "data/demo/leangenbukta-lokal/topics.json",
+    "data/demo/leangenbukta-lokal/faq.json",
+    "data/demo/leangenbukta-lokal/conversations.json",
+    "docs/research/leangenbukta-lokal-demo/runtime-import-report.json",
+    "docs/research/leangenbukta-lokal-demo/place-coordinate-verification.json",
+    "docs/research/leangenbukta-lokal-demo/travel-times.json"
+  ]
+}

@@ -281,15 +281,21 @@ export const localPlaceSchema = z
     provenance: z.object({ provider: z.literal("supabase"), recordId: z.string(), importedAt: isoDate }).strict().optional(),
     id: stableId,
     name: z.string().min(1).max(120),
-    /** Dokumentert butikk inne i et kjøpesenter; kartet viser forelderen. */
+    /** Dokumentert tilbud inne i eller del av et større anlegg; kartet viser forelderen. */
     parentPlaceId: stableId.optional(),
     /** Kilde-ID-er for boardets eksisterende transportinformasjon. */
     bysykkelStationId: z.string().min(1).max(80).optional(),
     enturStopplaceId: z.string().regex(/^NSR:StopPlace:[0-9]+$/).optional(),
     /** Stedets underkategori (f.eks. supermarket); categoryId er boardets tema. */
     poiCategoryId: z.string().min(1).max(80).regex(/^[a-z0-9][a-z0-9_-]*$/).optional(),
-    /** Aktiverer boardets eksisterende sentermerke og butikkregister. */
+    /** Aktiverer boardets ankermerke og medlemsregister. */
     anchorSummary: z.string().min(1).max(400).optional(),
+    /**
+     * Kjøpesenterankre navngir ett synlig medlem i markøren. Skoler,
+     * idrettsparker og andre anlegg beholder sitt eget navn selv om bare ett
+     * medlem er synlig i et tema.
+     */
+    anchorKeepsOwnName: z.boolean().default(false),
     /** Peker på en kategori i `board.json`. Validert i `dataset.ts`. */
     categoryId: stableId,
     coordinates,

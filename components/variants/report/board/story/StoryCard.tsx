@@ -145,6 +145,7 @@ export function StoryCard({
   // Panel-policyen gjelder bare kolonnen: én svarform, ingen fanerad.
   const panelMode = column && placePanel;
   const faqs = stop?.editorial?.faq ?? [];
+  const hasPlaces = (stop?.pois.length ?? 0) > 0;
   // Desktop har ingen svar-FANE: svarene står i «Om området». Står `pane` på
   // "faq" (satt på mobil, eller ved en bredde-endring), leses den som "about"
   // her framfor å vise en tom flate.
@@ -153,6 +154,8 @@ export function StoryCard({
     ? "about"
     : pane === "faq" && !faqTab
       ? "about"
+      : pane === "places" && !hasPlaces
+        ? "about"
       : pane;
   const visibleRows = placesInView(list);
 
@@ -293,7 +296,7 @@ export function StoryCard({
               className="flex gap-0.5 rounded-full bg-black/[0.045] p-[3px]"
             >
               {tab("about", "Om området")}
-              {tab("places", `Steder (${visibleRows.length})`)}
+              {hasPlaces && tab("places", `Steder (${visibleRows.length})`)}
               {faqTab && tab("faq", `Spørsmål (${faqs.length})`)}
             </div>
           )}
@@ -484,6 +487,7 @@ function AboutPane({
 }) {
   const { showPane } = useStoryTour();
   const faqs = category.editorial?.faq ?? [];
+  const isFactOnly = category.pois.length === 0 && faqs.length > 0;
   // Snarveien er veien til svarene når de ligger bak en fane. Ligger de rett
   // under, ville den pekt på noe leseren allerede ser.
   const faqShortcut = !withFaq && faqs.length > 0;
@@ -502,12 +506,14 @@ function AboutPane({
           selv når teksten er vår egen, som den er på alle vanlige boards. */}
       <SourceCredit source={category.editorial?.source} />
 
-      <div className="mb-2 mt-5 flex items-center justify-between gap-2.5">
-        <p className={cn("min-w-0", SIDEBAR_SECTION_TITLE)}>
-          {storyPickTitle(category)}
-        </p>
-        <StoryTravelCell />
-      </div>
+      {!isFactOnly && (
+        <div className="mb-2 mt-5 flex items-center justify-between gap-2.5">
+          <p className={cn("min-w-0", SIDEBAR_SECTION_TITLE)}>
+            {storyPickTitle(category)}
+          </p>
+          <StoryTravelCell />
+        </div>
+      )}
 
       {/* Dekningen ligger RETT UNDER utvalget — og fra 2026-09-02 INNE i samme
           liste, som en siste rad.
@@ -521,7 +527,7 @@ function AboutPane({
           Snarveien skiller seg fra en stedsrad på ÉN ting: pilen til høyre der
           stedene har en chevron. Chevron = folder seg ut her, pil = tar deg et
           annet sted. */}
-      {category.pois.length === 0 && (
+      {category.pois.length === 0 && !isFactOnly && (
         /* Tomtilstanden: temaet FINNES, det har bare ikke fått innhold ennå.
            Den står der lista ville stått, i samme boks som resten, så rammen
            leses som ferdig og innholdet som det som mangler — ikke motsatt. */

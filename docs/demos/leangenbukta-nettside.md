@@ -2,7 +2,7 @@
 
 Lokal inngang: <http://localhost:3103/demo/leangenbukta-nettside> (porten er den dev-serveren din kjører på).
 
-Flyt: forsiden → deres eget illustrerte kart → **Utforsk nabolaget** → det eksisterende boardet `/eiendom/placy-demo/leangenbukta/rapport-board` i ny fane. Samme knapp ligger på **Beliggenhet**, som er nytt punkt i hovedmenyen. Kun forsiden og Beliggenhet er bygd; alle andre menypunkter går til de ekte sidene på leangenbukta.no.
+Flyt: forsiden → deres eget illustrerte kart → **Utforsk nabolaget** → den kildekontrollerte lokale demoen `/demo/leangenbukta-lokal` i ny fane. Samme knapp ligger på **Beliggenhet**, som er nytt punkt i hovedmenyen. Kun forsiden og Beliggenhet er bygd; alle andre menypunkter går til de ekte sidene på leangenbukta.no.
 
 ## Poenget med demoen
 

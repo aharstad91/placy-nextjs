@@ -100,11 +100,13 @@ describe("området — rekkefølgens første brikke", () => {
     expect(areaLabel({ district: "", city: "" })).toBe("Nabolaget");
   });
 
-  it("summerer dekningen slik brikkene i raden summerer den", () => {
-    const cat = (n: number) => ({ pois: Array.from({ length: n }) });
+  it("teller unike kartsteder selv når samme anker finnes i flere temaer", () => {
+    let nextId = 0;
+    const cat = (n: number) => ({ pois: Array.from({ length: n }, () => ({ id: `sted-${nextId++}` })) });
     expect(areaSubline([cat(13), cat(19)])).toBe("32 steder · 2 temaer");
     expect(areaSubline([cat(4)])).toBe("4 steder · 1 tema");
     expect(areaSubline([])).toBe("0 steder · 0 temaer");
+    expect(areaSubline([{ pois: [{ id: "felles" }] }, { pois: [{ id: "felles" }] }])).toBe("1 sted · 2 temaer");
   });
 
   it("brikkens ord er fast, og ALDRI stedsnavnet", () => {

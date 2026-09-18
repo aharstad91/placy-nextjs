@@ -415,7 +415,11 @@ export function useLive(options: LiveOptions) {
         startedTimeout = setTimeout(() => reject(new Error("Samtalen svarte ikke i tide. Prøv igjen.")), SESSION_START_TIMEOUT_MS);
         current.abort.signal.addEventListener("abort", () => {
           clearTimeout(startedTimeout);
-          reject(new DOMException("Cancelled", "AbortError"));
+          // Avbrudd kan skje før vi rekker å vente på kvitteringen (for
+          // eksempel når SDP-kallet svarer 409). Da ville en rejection her
+          // blitt en uobservert Promise-feil. `active()`-vaktene stopper den
+          // avbrutte oppstarten, så avbrudd skal bare løse ventingen.
+          resolve();
         }, { once: true });
       });
 

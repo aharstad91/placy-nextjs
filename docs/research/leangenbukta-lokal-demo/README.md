@@ -2,7 +2,7 @@
 
 Den andre lokale demoen på den delte kjernen i `lib/demo/local-board/`. Samme board, kart og samtalemotor som Nyhavna-demoen, men med `data/demo/leangenbukta-lokal/` som eneste kilde til faginnhold. Ingen Supabase, ingen POI-pool, ingen arv fra Nyhavna.
 
-Demoen starter **tom**: åtte kategorier uten tekst, null steder, null temaer, null spørsmål. Kartet viser prosjektets utgangspunkt og ingenting annet. Det er meningen — hvert fakta som dukker opp, har noen lagt inn med vilje og med kilde.
+Demoen er fylt fra et fullstendig revidert researchgrunnlag: 565 prosjektpåstander og 145 nabolagskandidater er vurdert. Runtime inneholder 56 steder, 36 temaer, 34 faktiske FAQ-er og 35 separate samtalescenarier. Hvert aktivt fakta har kilde og kontrolldato; uavklarte eller avviste råpåstander importeres ikke som bekreftet kunnskap.
 
 ## Kjør den
 
@@ -22,7 +22,20 @@ Datasettets seks JSON-filer er formatet i `lib/demo/local-board/schema.ts`. Prof
 
 Hele oppskriften — prosjektoppsett, researchbestilling, dekningsregnskap, import, validering, skjermkontroll, lyttetest og hvordan oppdateringer oppfører seg — ligger i **[`docs/demos/boligprosjekt-arbeidsprosess.md`](../../demos/boligprosjekt-arbeidsprosess.md)**. Den gjelder både denne demoen og neste boligprosjekt.
 
-Fram til innholdet er lagt inn er de tomme kategoriene et manglende **demogrunnlag**, ikke en påstand om at tilbudet ikke finnes i virkeligheten.
+Runtime bygges deterministisk. `_build_runtime.py` leser bare reviderte kategori- og prosjektpakker, koordinatkvitteringen og den valgfrie rutekvitteringen. Rårapportene er bevart for revisjon, men leses ikke av runtime-byggeren.
+
+```bash
+# Oppfrisk målte ruter ved behov (krever NEXT_PUBLIC_MAPBOX_TOKEN)
+python3 docs/research/leangenbukta-lokal-demo/_measure_travel_times.py
+
+# Bygg de seks runtime-filene fra godkjent materiale
+python3 docs/research/leangenbukta-lokal-demo/_build_runtime.py
+
+# Kontroller full dekning og runtime-grenser
+npx vitest run lib/demo/local-board/leangenbukta-content.test.ts
+```
+
+`place-coordinate-verification.json`, `travel-times.json` og `runtime-import-report.json` er kvitteringene for importen. Et omtrentlig kartpunkt er merket med synlig inngangsforbehold. Reisetid finnes bare på de 26 synlige ankrene; medlemmer bruker ankerets kartpunkt.
 
 ## Status per enhet
 
@@ -31,11 +44,11 @@ Fram til innholdet er lagt inn er de tomme kategoriene et manglende **demogrunnl
 | U1 | Baseline og kartlegging av Nyhavna-koblingene | Levert — `baseline.md` |
 | U2 | Felles lokal board-kjerne med eksplisitt register | Levert — `lib/demo/local-board/` |
 | U3 | Boligprosjektprofil og `development`-objektet | Levert — `docs/demos/board-profiler.md` |
-| U4 | Tom Leangenbukta-demo koblet til kart og Anja | Levert — `/demo/leangenbukta-lokal` |
-| U5 | Prosjektgrunnlaget: bygg, fasiliteter, tidslinje | **Venter på research.** Ingen rapportsti registrert. |
-| U6 | Nærområdet kategori for kategori, med lyttetest | **Venter på research.** |
-| U7 | Nettsidekopien koblet, og demoprøve i nettleser og lyd | Venter på U5–U6 |
-| U8 | Arbeidsprosessen dokumentert og bevist | Delvis — oppskriften og det syntetiske tredje prosjektet er levert. Gjenstår: å prøve oppskriften mot faktisk innholdsarbeid i U5–U6. |
+| U4 | Leangenbukta-demo koblet til kart og Anja | Levert — `/demo/leangenbukta-lokal` |
+| U5 | Prosjektgrunnlaget: bygg, fasiliteter, tidslinje | Levert — 565/565 påstander vurdert, 124 godkjente runtime-påstander |
+| U6 | Nærområdet kategori for kategori | Levert mekanisk — 145/145 kandidater, 26 kartankre, 30 medlemmer og målte ruter |
+| U7 | Nettsidekopien koblet, og demoprøve i nettleser og lyd | Delvis levert — CTA og desktop/mobil er kontrollert; faktisk lydprøve gjenstår |
+| U8 | Arbeidsprosessen dokumentert og bevist | Levert for research/import og nettleser; lydkvittering legges til etter lydprøven |
 
 Det syntetiske tredje prosjektet ligger i `lib/demo/local-board/third-project.test.ts`. Det finnes bare i testen, er ikke oppført i registeret og kan ikke nås fra Live-ruta.
 
