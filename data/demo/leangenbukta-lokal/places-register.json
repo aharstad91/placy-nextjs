@@ -2,6 +2,31 @@
   {
     "provenance": {
       "provider": "supabase",
+      "recordId": "google-ChIJadfBocAxbUYRfeuufpAKBYc",
+      "importedAt": "2026-09-18"
+    },
+    "knowledgeLevel": "register",
+    "id": "register-fyr-pa-lade-4d6a3048bd",
+    "name": "Fyr på Lade",
+    "poiCategoryId": "restaurant",
+    "categoryId": "servering",
+    "coordinates": {
+      "lat": 63.440333499999994,
+      "lng": 10.4628638
+    },
+    "address": "Haakon VII's gt 12, Trondheim",
+    "placeType": "Restaurant",
+    "icon": "UtensilsCrossed",
+    "travelTime": {
+      "walk": 4,
+      "bike": 4,
+      "car": 2
+    },
+    "checkedAt": "2026-09-18"
+  },
+  {
+    "provenance": {
+      "provider": "supabase",
       "recordId": "google-ChIJ41LSGgIxbUYReF3SYEPU27M",
       "importedAt": "2026-09-18"
     },
@@ -314,58 +339,6 @@
   {
     "provenance": {
       "provider": "supabase",
-      "recordId": "google-ChIJ1-nTGgIxbUYR_L6AbKF6Qcw",
-      "importedAt": "2026-09-18"
-    },
-    "knowledgeLevel": "register",
-    "id": "register-burger-king-8ce50f5354",
-    "name": "Burger King",
-    "parentPlaceId": "lade-arena",
-    "poiCategoryId": "restaurant",
-    "categoryId": "servering",
-    "coordinates": {
-      "lat": 63.440503,
-      "lng": 10.460396
-    },
-    "address": "Haakon VIIs gt. 8-10, Trondheim",
-    "placeType": "Restaurant",
-    "icon": "UtensilsCrossed",
-    "travelTime": {
-      "walk": 6,
-      "bike": 5,
-      "car": 4
-    },
-    "checkedAt": "2026-09-18"
-  },
-  {
-    "provenance": {
-      "provider": "supabase",
-      "recordId": "google-ChIJadfBocAxbUYRfeuufpAKBYc",
-      "importedAt": "2026-09-18"
-    },
-    "knowledgeLevel": "register",
-    "id": "register-fyr-pa-lade-4d6a3048bd",
-    "name": "Fyr på Lade",
-    "parentPlaceId": "lade-arena",
-    "poiCategoryId": "restaurant",
-    "categoryId": "servering",
-    "coordinates": {
-      "lat": 63.440333499999994,
-      "lng": 10.4628638
-    },
-    "address": "Haakon VII's gt 12, Trondheim",
-    "placeType": "Restaurant",
-    "icon": "UtensilsCrossed",
-    "travelTime": {
-      "walk": 4,
-      "bike": 4,
-      "car": 2
-    },
-    "checkedAt": "2026-09-18"
-  },
-  {
-    "provenance": {
-      "provider": "supabase",
       "recordId": "google-ChIJ1whmlD0xbUYRTxe0NR29dW4",
       "importedAt": "2026-09-18"
     },
@@ -386,6 +359,31 @@
       "walk": 6,
       "bike": 4,
       "car": 4
+    },
+    "checkedAt": "2026-09-18"
+  },
+  {
+    "provenance": {
+      "provider": "supabase",
+      "recordId": "google-ChIJqeBnd_4wbUYR4SUbbftcyoo",
+      "importedAt": "2026-09-18"
+    },
+    "knowledgeLevel": "register",
+    "id": "register-franske-nytelser-as-d14607a696",
+    "name": "Franske Nytelser AS",
+    "poiCategoryId": "bakeri",
+    "categoryId": "servering",
+    "coordinates": {
+      "lat": 63.438824399999994,
+      "lng": 10.4632548
+    },
+    "address": "Haakon VIIs gt. 27, Trondheim",
+    "placeType": "Bakeri",
+    "icon": "Croissant",
+    "travelTime": {
+      "walk": 4,
+      "bike": 3,
+      "car": 3
     },
     "checkedAt": "2026-09-18"
   },
@@ -595,32 +593,6 @@
       "walk": 5,
       "bike": 4,
       "car": 5
-    },
-    "checkedAt": "2026-09-18"
-  },
-  {
-    "provenance": {
-      "provider": "supabase",
-      "recordId": "google-ChIJqeBnd_4wbUYR4SUbbftcyoo",
-      "importedAt": "2026-09-18"
-    },
-    "knowledgeLevel": "register",
-    "id": "register-franske-nytelser-as-d14607a696",
-    "name": "Franske Nytelser AS",
-    "parentPlaceId": "register-hangaren-lade-d5aae7cff8",
-    "poiCategoryId": "bakeri",
-    "categoryId": "servering",
-    "coordinates": {
-      "lat": 63.438824399999994,
-      "lng": 10.4632548
-    },
-    "address": "Haakon VIIs gt. 27, Trondheim",
-    "placeType": "Bakeri",
-    "icon": "Croissant",
-    "travelTime": {
-      "walk": 4,
-      "bike": 3,
-      "car": 3
     },
     "checkedAt": "2026-09-18"
   },

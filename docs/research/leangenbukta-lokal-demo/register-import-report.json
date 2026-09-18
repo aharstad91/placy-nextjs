@@ -13,11 +13,12 @@
   "matched_audited_roots": 21,
   "matched_register_roots": 6,
   "imported_register_roots": 331,
-  "imported_register_children": 173,
-  "skipped_duplicate_children": 8,
-  "output_places": 560,
-  "output_map_anchors": 357,
-  "register_places": 504,
+  "imported_register_children": 172,
+  "promoted_children_to_anchors": 2,
+  "skipped_duplicate_children": 9,
+  "output_places": 559,
+  "output_map_anchors": 360,
+  "register_places": 503,
   "matched_roots": [
     {
       "source_id": "google-ChIJqeBnd_4wbUYRR06hK76o-c0",
@@ -187,6 +188,12 @@
       "source_id": "google-ChIJ41LSGgIxbUYR__2L19iSkI0",
       "source_name": "Vitusapotek Lade Arena",
       "local_id": "vitusapotek-lade-arena",
+      "knowledge_level": "audited"
+    },
+    {
+      "source_id": "google-ChIJ1-nTGgIxbUYR_L6AbKF6Qcw",
+      "source_name": "Burger King",
+      "local_id": "burger-king-lade-arena",
       "knowledge_level": "audited"
     },
     {

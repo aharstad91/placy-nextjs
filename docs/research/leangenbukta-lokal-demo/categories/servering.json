@@ -19,8 +19,8 @@
     "decision_counts": {
       "defer": 1,
       "exclude": 1,
-      "member": 15,
-      "start_set": 3,
+      "member": 14,
+      "start_set": 4,
       "topic_only": 1
     },
     "buyer_questions": 5,
@@ -892,20 +892,20 @@
       "canonical_id": "place:burger-king-lade-arena",
       "scope": "global_place",
       "board_id": "leangenbukta-lokal",
-      "decision": "member",
-      "decision_reason": "Lade Arenas gjeldende offisielle butikkside lister Burger King; rårapportens driftsstatus er dermed styrket, men stedet beholdes som sentermedlem.",
+      "decision": "start_set",
+      "decision_reason": "Lade Arenas gjeldende offisielle butikkside lister Burger King. Stedet har egen besøksadresse og skal være direkte synlig i Servering, med Lade Arena beholdt som plasseringskontekst i teksten.",
       "primary_source_urls": [
         "https://ladearena.no/butikker/"
       ],
       "observed_at": "2026-09-18",
       "approved_facts": [
-        "Burger King Lade Arena beholdes som medlem under place:lade-arena; egne åpningstider arves ikke fra ankeret."
+        "Burger King Lade Arena er oppført på Lade Arenas gjeldende offisielle butikkside; egne åpningstider er ikke dokumentert."
       ],
-      "parent_canonical_id": "place:lade-arena",
+      "parent_canonical_id": null,
       "reusable_across_boards": true,
       "reuse_constraints": "Reuse place facts globally; keep board membership, routes and travel times board-specific.",
       "refresh_required_before_publish": false,
-      "map_action": "attach_to_parent_without_duplicate_marker",
+      "map_action": "new_marker_after_coordinate_verification",
       "runtime_status": "blocked_on_u4_local_board_schema",
       "coordinate_status": "unverified_or_missing",
       "entrance_status": "unverified_or_area_access"
@@ -999,7 +999,7 @@
     {
       "scenario": "broad",
       "question": "Hvilke serveringssteder er dokumentert?",
-      "approved_answer": "Ladekaia, Egon Lade og Kompis Lade er valgt som selvstendige startsteder. Øvrige spisesteder beholdes som medlemmer under kjøpesentre eller andre ankre.",
+      "approved_answer": "Ladekaia, Egon Lade, Kompis Lade og Burger King Lade Arena er reviderte, selvstendige kartpunkter. Fyr på Lade og Franske Nytelser vises som selvstendige registerpunkter. Øvrige spisesteder beholdes som medlemmer under kjøpesentre eller andre ankre.",
       "evaluation": "content_pass",
       "runtime_evaluation": "not_run_u4_dependency_missing"
     },

@@ -60,8 +60,8 @@ describe("Leangenbukta: komplett revisjon og import", () => {
 
     expect(candidates).toHaveLength(145);
     expect(counts).toEqual({
-      start_set: 25,
-      member: 30,
+      start_set: 26,
+      member: 29,
       topic_only: 43,
       external_reference: 6,
       defer: 33,
@@ -83,8 +83,8 @@ describe("Leangenbukta: komplett revisjon og import", () => {
     }
     expect(placeIds).toContain("ladetorget");
     expect(auditedPlaces).toHaveLength(56);
-    expect(auditedPlaces.filter(place => !place.parentPlaceId)).toHaveLength(26);
-    expect(auditedPlaces.filter(place => place.parentPlaceId)).toHaveLength(30);
+    expect(auditedPlaces.filter(place => !place.parentPlaceId)).toHaveLength(27);
+    expect(auditedPlaces.filter(place => place.parentPlaceId)).toHaveLength(29);
 
     const selectedCanonicals = new Set(selected.map(candidate => candidate.canonical_id));
     const blockedOnly = candidates.filter(
@@ -146,7 +146,7 @@ describe("Leangenbukta: komplett revisjon og import", () => {
     expect(ladeMotor?.parentPlaceId).toBe("lade-fritidsklubb");
   });
 
-  it("bruker målte Mapbox-minutter fra prosjektpunktet for alle 26 synlige ankre", async () => {
+  it("bruker målte Mapbox-minutter fra prosjektpunktet for alle 27 synlige ankre", async () => {
     const dataset = await loadDataset(DEMO);
     const receipt = await json<TravelReceipt>(`${RESEARCH}/travel-times.json`);
     const topLevel = dataset.places.filter(place => place.knowledgeLevel === "audited" && !place.parentPlaceId);
@@ -154,8 +154,8 @@ describe("Leangenbukta: komplett revisjon og import", () => {
 
     expect(receipt.provider).toBe("Mapbox Matrix API");
     expect(receipt.origin.coordinates).toEqual(dataset.board.center);
-    expect(receipt.places).toHaveLength(26);
-    expect(topLevel).toHaveLength(26);
+    expect(receipt.places).toHaveLength(27);
+    expect(topLevel).toHaveLength(27);
     for (const place of topLevel) {
       expect(place.travelTime, place.id).toEqual(receiptById.get(place.id));
       expect(place.travelTime?.walk, place.id).toBeGreaterThan(0);

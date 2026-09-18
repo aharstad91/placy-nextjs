@@ -6,6 +6,16 @@
 
 ---
 
+## 2026-09-18 — Leangenbukta: serveringssteder fristilt fra handelsankre
+
+Fyr på Lade og Franske Nytelser var med i det brede registeret, men lå som medlemmer under henholdsvis Lade Arena og Hangaren Lade. Burger King var både et revidert medlem under Lade Arena og en duplikat i registerimporten. De var derfor søkbare for Anja, men navnene fikk ikke egne kartmarkører. Dette forklarte hvorfor den synlige Servering-kategorien virket langt tynnere enn området faktisk er.
+
+Registerimporten støtter nå en liten, datasettlokal `register-import.json`: `standaloneSourceIds` løfter utvalgte importerte medlemmer til selvstendige kartankre, mens `sourcePlaceMatches` kobler en kilde-ID eksplisitt til et eksisterende revidert sted. Leangenbukta bruker dette til å fristille Fyr på Lade og Franske Nytelser og til å la kilde-Burger King treffe det reviderte Burger King-stedet. Burger King er samtidig endret fra revidert medlem til revidert startsted med målt Mapbox-tid. Anjas tekst skiller de to registerpunktene fra de reviderte stedene.
+
+Resultatet er 56 reviderte steder, 503 registersteder og 360 kartankre innen 2 km. Servering viser 32 steder i det kontrollerte Chrome-utsnittet, inkludert egne markører for Fyr på Lade, Franske Nytelser og Burger King Lade Arena. Importen er reproduksjonstestet i dry-run med samme tall og ett Burger King-sted. Full suite: 283 testfiler / 4 496 tester grønne, TypeScript grønn, lint 0 feil / 53 eksisterende advarsler, produksjonsbygg bestått og `git diff --check` rent. Gren `feat/leangenbukta-board` er ikke pushet.
+
+---
+
 ## 2026-09-18 — Lærdommer fra å populere Leangenbukta
 
 Leangenbukta avklarte at et godt områdeboard trenger to kunnskapsnivåer samtidig. Researchlaget gir dybde: kildekontrollerte fakta, redaksjonelle vurderinger, forbehold og svar Anja kan begrunne. Registerlaget gir bredde: navn, type, adresse, kartanker og lagret reisetid for det langt større antallet steder som faktisk finnes i området. Valget står derfor ikke mellom 26 grundig undersøkte steder og 800 rå POI-er. Riktig modell er et bredt kart med en eksplisitt og maskinelt håndhevet grense for hva Anja får si om hvert sted.

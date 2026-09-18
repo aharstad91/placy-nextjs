@@ -53,7 +53,7 @@ CATEGORY_COPY = {
     },
     "servering": {
         "lead": "Serveringssteder ved sjøen, i Solrekka og ved LadeTorget, med sentersteder samlet under sine ankre.",
-        "body": "Ladekaia, Egon Lade og Kompis Lade er egne startsteder. Andre serveringssteder ligger som medlemmer under City Lade, Sirkus Shopping, LadeTorget, Lade Arena eller Ringve Musikkmuseum. Sesong og virksomhetens egen åpningstid må kontrolleres før besøk.",
+        "body": "Ladekaia, Egon Lade, Kompis Lade og Burger King Lade Arena er reviderte, selvstendige kartpunkter. Fyr på Lade og Franske Nytelser vises som selvstendige registerpunkter. Andre serveringssteder ligger som medlemmer under City Lade, Sirkus Shopping, LadeTorget eller Ringve Musikkmuseum. Sesong og virksomhetens egen åpningstid må kontrolleres før besøk.",
         "invitation": "Vil du høre om sjøservering, søndagsåpent eller takeaway?",
         "placeInvitation": "Vil du se et annet dokumentert serveringssted?",
     },

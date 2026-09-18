@@ -172,7 +172,7 @@
       "bike": 4,
       "car": 2
     },
-    "anchorSummary": "4 dokumenterte tilbud er samlet under dette ankeret."
+    "anchorSummary": "3 dokumenterte tilbud er samlet under dette ankeret."
   },
   {
     "id": "lade-skole",
@@ -561,6 +561,41 @@
       "walk": 20,
       "bike": 9,
       "car": 5
+    }
+  },
+  {
+    "id": "burger-king-lade-arena",
+    "name": "Burger King Lade Arena",
+    "categoryId": "servering",
+    "coordinates": {
+      "lat": 63.440503,
+      "lng": 10.460396
+    },
+    "status": "existing",
+    "summary": "Burger King Lade Arena er oppført på Lade Arenas gjeldende offisielle butikkside; egne åpningstider er ikke dokumentert.",
+    "locationPrecision": "approximate",
+    "facts": [
+      {
+        "id": "fact-srv-19-1",
+        "text": "Burger King Lade Arena er oppført på Lade Arenas gjeldende offisielle butikkside; egne åpningstider er ikke dokumentert.",
+        "sourceId": "ladearena-cf5df9d7",
+        "checkedAt": "2026-09-18",
+        "verification": "confirmed"
+      }
+    ],
+    "sourceIds": [
+      "ladearena-cf5df9d7"
+    ],
+    "checkedAt": "2026-09-18",
+    "caveats": [
+      "Kartpunktet viser stedet eller adressen; selve publikumsinngangen er ikke bekreftet."
+    ],
+    "address": "Haakon VIIs gt. 8-10, 7041 Trondheim",
+    "locationNote": "Kartpunktet viser stedet eller adressen; selve publikumsinngangen er ikke bekreftet.",
+    "travelTime": {
+      "walk": 6,
+      "bike": 5,
+      "car": 4
     }
   },
   {
@@ -1984,38 +2019,6 @@
     ],
     "address": "Haakon VIIs gt. 9, 7041 Trondheim",
     "parentPlaceId": "city-lade",
-    "poiCategoryId": "butikk",
-    "locationNote": "Kartpunktet viser stedet eller adressen; selve publikumsinngangen er ikke bekreftet."
-  },
-  {
-    "id": "burger-king-lade-arena",
-    "name": "Burger King Lade Arena",
-    "categoryId": "servering",
-    "coordinates": {
-      "lat": 63.440503,
-      "lng": 10.460396
-    },
-    "status": "existing",
-    "summary": "Burger King Lade Arena beholdes som medlem under place:lade-arena; egne åpningstider arves ikke fra ankeret.",
-    "locationPrecision": "approximate",
-    "facts": [
-      {
-        "id": "fact-srv-19-1",
-        "text": "Burger King Lade Arena beholdes som medlem under place:lade-arena; egne åpningstider arves ikke fra ankeret.",
-        "sourceId": "ladearena-cf5df9d7",
-        "checkedAt": "2026-09-18",
-        "verification": "confirmed"
-      }
-    ],
-    "sourceIds": [
-      "ladearena-cf5df9d7"
-    ],
-    "checkedAt": "2026-09-18",
-    "caveats": [
-      "Kartpunktet viser stedet eller adressen; selve publikumsinngangen er ikke bekreftet."
-    ],
-    "address": "Haakon VIIs gt. 8-10, 7041 Trondheim",
-    "parentPlaceId": "lade-arena",
     "poiCategoryId": "butikk",
     "locationNote": "Kartpunktet viser stedet eller adressen; selve publikumsinngangen er ikke bekreftet."
   },

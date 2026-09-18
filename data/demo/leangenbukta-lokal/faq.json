@@ -226,7 +226,7 @@
     "id": "servering-broad-1",
     "categoryId": "servering",
     "question": "Hvilke serveringssteder er dokumentert?",
-    "answer": "Ladekaia, Egon Lade og Kompis Lade er valgt som selvstendige startsteder. Øvrige spisesteder beholdes som medlemmer under kjøpesentre eller andre ankre.",
+    "answer": "Ladekaia, Egon Lade, Kompis Lade og Burger King Lade Arena er reviderte, selvstendige kartpunkter. Fyr på Lade og Franske Nytelser vises som selvstendige registerpunkter. Øvrige spisesteder beholdes som medlemmer under kjøpesentre eller andre ankre.",
     "origin": "local",
     "sourceIds": [
       "citylade-6434272b",

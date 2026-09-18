@@ -4,7 +4,9 @@
  * Det lokale datasettet beholder de håndreviderte stedene som `audited` og
  * legger Supabase-punktene ved siden av som `register`. Registerpunkter gir
  * kartet bredde og Anja navn/type/adresse/reisetid, men aldri redaksjonelle
- * fakta. Kjør uten `--write` for en ren opptelling.
+ * fakta. `register-import.json` kan koble en kilde-ID til et revidert sted eller
+ * løfte et importert medlem til eget kartanker. Kjør uten `--write` for en ren
+ * opptelling.
  *
  * Eksempel:
  * NODE_OPTIONS=--conditions=react-server node --env-file=.env.local \
@@ -18,6 +20,7 @@ import "server-only";
 import { createHash } from "node:crypto";
 import { readFile, writeFile } from "node:fs/promises";
 import { join } from "node:path";
+import { z } from "zod";
 
 import { adaptBoardData, type BoardPOI } from "@/components/variants/report/board/board-data";
 import { transformToReportData } from "@/components/variants/report/report-data";
@@ -86,6 +89,26 @@ interface RootCandidate {
   poi: BoardPOI;
   categoryId: string;
   children: Map<string, { poi: POI; categoryId: string }>;
+}
+
+const registerImportConfigSchema = z.object({
+  schemaVersion: z.literal(1),
+  sourcePlaceMatches: z.record(z.string().min(1), z.string().min(1)).default({}),
+  standaloneSourceIds: z.array(z.string().min(1)).default([]),
+});
+
+type RegisterImportConfig = z.infer<typeof registerImportConfigSchema>;
+
+async function readImportConfig(dataset: string): Promise<RegisterImportConfig> {
+  const path = join(dataset, "register-import.json");
+  try {
+    return registerImportConfigSchema.parse(JSON.parse(await readFile(path, "utf8")));
+  } catch (error) {
+    if ((error as NodeJS.ErrnoException).code === "ENOENT") {
+      return registerImportConfigSchema.parse({ schemaVersion: 1 });
+    }
+    throw error;
+  }
 }
 
 function samePlace(a: Pick<LocalPlace, "name" | "coordinates">, b: Pick<POI, "name" | "coordinates">): boolean {
@@ -166,9 +189,10 @@ async function readPlaceSources(dataset: string): Promise<LocalPlaceSources> {
 
 async function main() {
   const options = args();
-  const [boardRaw, placeSources, product] = await Promise.all([
+  const [boardRaw, placeSources, importConfig, product] = await Promise.all([
     readFile(join(options.dataset, "board.json"), "utf8"),
     readPlaceSources(options.dataset),
+    readImportConfig(options.dataset),
     getProductFromSupabaseV2(options.customer, options.sourceSlug, "report"),
   ]);
   if (!product) throw new Error(`Fant ikke ${options.customer}/${options.sourceSlug}/report i Supabase.`);
@@ -206,15 +230,26 @@ async function main() {
   }
 
   const output: LocalPlace[] = [...audited];
+  const outputById = new Map(output.map((place) => [place.id, place]));
+  const standaloneSourceIds = new Set(importConfig.standaloneSourceIds);
   let matchedAuditedRoots = 0;
   let matchedRegisterRoots = 0;
   let skippedDuplicateChildren = 0;
   let importedRoots = 0;
   let importedChildren = 0;
+  let promotedChildrenToAnchors = 0;
   const matchedRoots: Array<{ source_id: string; source_name: string; local_id: string; knowledge_level: LocalPlace["knowledgeLevel"] }> = [];
   const skippedChildren: Array<{ source_id: string; source_name: string; local_id: string; knowledge_level: LocalPlace["knowledgeLevel"] }> = [];
 
-  const findExisting = (poi: POI) => output.find((place) => samePlace(place, poi));
+  const findExisting = (poi: POI) => {
+    const configuredId = importConfig.sourcePlaceMatches[String(poi.id)];
+    if (configuredId) {
+      const configured = outputById.get(configuredId);
+      if (!configured) throw new Error(`register-import.json peker ${String(poi.id)} til ukjent sted ${configuredId}.`);
+      return configured;
+    }
+    return output.find((place) => samePlace(place, poi));
+  };
   for (const root of roots.values()) {
     const matchedRoot = findExisting(root.poi.raw);
     let rootPlace = matchedRoot;
@@ -232,6 +267,14 @@ async function main() {
         });
         continue;
       }
+      if (standaloneSourceIds.has(String(child.poi.id))) {
+        const promoted = registerPlace(child.poi, child.categoryId, options.checkedAt);
+        output.push(promoted);
+        outputById.set(promoted.id, promoted);
+        promotedChildrenToAnchors += 1;
+        importedChildren += 1;
+        continue;
+      }
       // Forelderen opprettes under, men ID-en er deterministisk allerede her.
       const parentId = rootPlace?.parentPlaceId ?? rootPlace?.id ?? registerId(root.poi.name, String(root.poi.id));
       newChildren.push(registerPlace(child.poi, child.categoryId, options.checkedAt, parentId));
@@ -247,6 +290,7 @@ async function main() {
         });
       }
       output.push(rootPlace);
+      outputById.set(rootPlace.id, rootPlace);
       importedRoots += 1;
     } else {
       if (rootPlace.knowledgeLevel === "audited") matchedAuditedRoots += 1;
@@ -264,6 +308,7 @@ async function main() {
     }
 
     output.push(...newChildren);
+    for (const child of newChildren) outputById.set(child.id, child);
     importedChildren += newChildren.length;
   }
 
@@ -282,6 +327,7 @@ async function main() {
     matched_register_roots: matchedRegisterRoots,
     imported_register_roots: importedRoots,
     imported_register_children: importedChildren,
+    promoted_children_to_anchors: promotedChildrenToAnchors,
     skipped_duplicate_children: skippedDuplicateChildren,
     output_places: parsed.length,
     output_map_anchors: topLevel.length,

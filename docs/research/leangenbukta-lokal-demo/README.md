@@ -44,7 +44,7 @@ NODE_OPTIONS=--conditions=react-server node --env-file=.env.local \
 npx vitest run lib/demo/local-board/leangenbukta-content.test.ts
 ```
 
-`place-coordinate-verification.json`, `travel-times.json`, `runtime-import-report.json` og `register-import-report.json` er kvitteringene for importen. Et omtrentlig revidert kartpunkt er merket med synlig inngangsforbehold. De reviderte stedene bruker målte Mapbox-minutter; registeret beholder de lagrede reisetidene fra kildeboardet. Filgrensen håndhever `knowledgeLevel: audited|register`, og lasteren stopper hvis et sted ligger i feil lag. Alle 504 registersteder, også virksomhetene inni et anker, er søkbare for Anja med bare navn, type, adresse og lagret reisetid.
+`place-coordinate-verification.json`, `travel-times.json`, `runtime-import-report.json` og `register-import-report.json` er kvitteringene for importen. Et omtrentlig revidert kartpunkt er merket med synlig inngangsforbehold. De reviderte stedene bruker målte Mapbox-minutter; registeret beholder de lagrede reisetidene fra kildeboardet. Filgrensen håndhever `knowledgeLevel: audited|register`, og lasteren stopper hvis et sted ligger i feil lag. Alle 503 registersteder, også virksomhetene inni et anker, er søkbare for Anja med bare navn, type, adresse og lagret reisetid. `register-import.json` dokumenterer de få stedene der kilde-ID må kobles eksplisitt til et revidert sted, eller et importert medlem skal vises som et eget kartanker.
 
 ## Status per enhet
 
@@ -55,7 +55,7 @@ npx vitest run lib/demo/local-board/leangenbukta-content.test.ts
 | U3 | Boligprosjektprofil og `development`-objektet | Levert — `docs/demos/board-profiler.md` |
 | U4 | Leangenbukta-demo koblet til kart og Anja | Levert — `/demo/leangenbukta-lokal` |
 | U5 | Prosjektgrunnlaget: bygg, fasiliteter, tidslinje | Levert — 565/565 påstander vurdert, 124 godkjente runtime-påstander |
-| U6 | Nærområdet kategori for kategori | Levert mekanisk — 145/145 kandidater, 26 reviderte kartankre, 30 reviderte medlemmer og målte ruter. Breddeimporten legger til 504 registersteder og gir 357 kartankre totalt innen 2 km. |
+| U6 | Nærområdet kategori for kategori | Levert mekanisk — 145/145 kandidater, 27 reviderte kartankre, 29 reviderte medlemmer og målte ruter. Breddeimporten legger til 503 registersteder og gir 360 kartankre totalt innen 2 km. |
 | U7 | Nettsidekopien koblet, og demoprøve i nettleser og lyd | Delvis levert — CTA og desktop/mobil er kontrollert; faktisk lydprøve gjenstår |
 | U8 | Arbeidsprosessen dokumentert og bevist | Levert for research/import og nettleser; lydkvittering legges til etter lydprøven |
 

@@ -9,7 +9,7 @@ Kjørt: 18.09.2026. Resultat: **kuratert research, mekanisk runtime-validering o
 | Prosjektpåstander | bestått | 565 av 565 vurdert: 78 godkjent, 46 godkjent tidsfølsom, 397 uavklart, 33 avvist, 11 historisk |
 | Godkjente prosjektpåstander i runtime | bestått | 124 av 124 representert i `topics.json` |
 | Nabolagskandidater | bestått | 145 av 145 har eksplisitt beslutning |
-| Kandidatbeslutninger | bestått | 25 startsteder, 30 medlemmer, 43 tema, 6 eksterne referanser, 33 utsatt, 8 utelatt |
+| Kandidatbeslutninger | bestått | 26 startsteder, 29 medlemmer, 43 tema, 6 eksterne referanser, 33 utsatt, 8 utelatt |
 | Kjøperspørsmål | bestått | 35 av 35 ligger separat i `conversations.json`; 28 faktiske kategorisvar og 6 prosjektspørsmål ligger i FAQ |
 
 ## Runtime
@@ -17,10 +17,10 @@ Kjørt: 18.09.2026. Resultat: **kuratert research, mekanisk runtime-validering o
 | Kontroll | Resultat | Detalj |
 |---|---|---|
 | Valgte steder | bestått | Alle 55 valgte kandidater importert, pluss LadeTorget som ett dokumentert strukturanker |
-| Ankerhierarki | bestått | 26 synlige ankre og 30 medlemmer; medlemmer lager ikke doble markører |
+| Ankerhierarki | bestått | 27 synlige reviderte ankre og 29 reviderte medlemmer; medlemmer lager ikke doble markører |
 | Kilder | bestått | 58 runtime-kilder; hvert sted har minst én kilde |
 | Koordinater | bestått | 56 av 56 har kontrollkvittering; omtrentlig plassering har synlig inngangsforbehold |
-| Reisetider | bestått | Mapbox Matrix har målt gange, sykkel og bil fra boardets startpunkt til alle 26 synlige ankre |
+| Reisetider | bestått | Mapbox Matrix har målt gange, sykkel og bil fra boardets startpunkt til alle 27 synlige reviderte ankre |
 | Rårapportgrense | bestått | `_build_runtime.py` leser ikke rårapportene |
 | Uavklart/avvist prosjektinnhold | bestått | Ingen ikke-godkjent `approved_copy` finnes, og bare de 124 godkjente kopiene importeres |
 | Samtalegrense | bestått | `loadDataset` laster ikke `conversations.json`; avbruddsscenarier er ikke FAQ eller faktakunnskap |
@@ -30,7 +30,7 @@ Kontrollene kjøres i `lib/demo/local-board/leangenbukta-content.test.ts`. Struk
 
 ## Nettleser
 
-Desktop og responsiv mobil er kontrollert i Chrome mot den lokale utviklingsserveren. Nettside-CTA åpner `/demo/leangenbukta-lokal`; velkomst, åtte temaer, 26 kartankre, prosjekt-FAQ, kategori-FAQ, kartpunkt, anker med medlemmer, detaljkilde, inngangsforbehold og målt reisetid for gange, sykkel og bil er prøvd. Mobilvisningen bruker bunnark og skjuler tom `Steder (0)`-fane for den faktabaserte prosjektkategorien. Live-inspeksjonen er dokumentert i `validation.md`.
+Desktop og responsiv mobil er kontrollert i Chrome mot den lokale utviklingsserveren. Nettside-CTA åpner `/demo/leangenbukta-lokal`; velkomst, åtte temaer, kartankre, prosjekt-FAQ, kategori-FAQ, kartpunkt, anker med medlemmer, detaljkilde, inngangsforbehold og målt reisetid for gange, sykkel og bil er prøvd. Mobilvisningen bruker bunnark og skjuler tom `Steder (0)`-fane for den faktabaserte prosjektkategorien. Live-inspeksjonen er dokumentert i `validation.md`. Etter full reload er Fyr på Lade, Franske Nytelser og Burger King Lade Arena visuelt bekreftet som egne markører i Servering, og samme oppførsel er låst med datasettstester.
 
 ## Gjenstående sluttgater
 

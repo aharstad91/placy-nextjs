@@ -247,6 +247,24 @@
       }
     },
     {
+      "place_id": "burger-king-lade-arena",
+      "name": "Burger King Lade Arena",
+      "coordinates": {
+        "lat": 63.440503,
+        "lng": 10.460396
+      },
+      "minutes": {
+        "walk": 6,
+        "bike": 5,
+        "car": 4
+      },
+      "duration_seconds": {
+        "walk": 336.5,
+        "bike": 254.7,
+        "car": 209.6
+      }
+    },
+    {
       "place_id": "korsvika",
       "name": "Korsvika",
       "coordinates": {

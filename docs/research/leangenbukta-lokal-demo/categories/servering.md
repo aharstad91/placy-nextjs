@@ -44,7 +44,7 @@ Alle **21 av 21** strukturerte kandidater er vurdert. Ingen reisetid eller avsta
 
 ### broad: Hvilke serveringssteder er dokumentert?
 
-Ladekaia, Egon Lade og Kompis Lade er valgt som selvstendige startsteder. Øvrige spisesteder beholdes som medlemmer under kjøpesentre eller andre ankre.
+Ladekaia, Egon Lade, Kompis Lade og Burger King Lade Arena er reviderte, selvstendige kartpunkter. Fyr på Lade og Franske Nytelser vises som selvstendige registerpunkter. Øvrige spisesteder beholdes som medlemmer under kjøpesentre eller andre ankre.
 
 ### specific: Hva er åpent på City Lade søndag?
 

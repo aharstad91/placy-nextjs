@@ -17,8 +17,8 @@ describe("Leangenbukta-datasettet i repoet", () => {
     const dataset = await loadDataset(getLocalDemo(DEMO));
     expect(dataset.sources).toHaveLength(58);
     expect(dataset.places.filter((place) => place.knowledgeLevel === "audited")).toHaveLength(56);
-    expect(dataset.places.filter((place) => place.knowledgeLevel === "register")).toHaveLength(504);
-    expect(dataset.places).toHaveLength(560);
+    expect(dataset.places.filter((place) => place.knowledgeLevel === "register")).toHaveLength(503);
+    expect(dataset.places).toHaveLength(559);
     expect(dataset.topics).toHaveLength(36);
     expect(dataset.faqs).toHaveLength(34);
     expect(dataset.board.profile).toBe("housing-development");
@@ -53,7 +53,7 @@ describe("Leangenbukta-datasettet i repoet", () => {
     expect(board.home.name).toBe("Leangenbukta");
     expect(board.home.pinSubtitle).toBe("");
     expect(board.home.pinImage).toBe("/demo/leangenbukta-lokal/leangenbukta-logo.svg");
-    expect(board.poisById.size).toBe(357);
+    expect(board.poisById.size).toBe(360);
     expect(board.globalFaq ?? []).toEqual([]);
   });
 
@@ -85,13 +85,13 @@ describe("Leangenbukta-datasettet i repoet", () => {
     expect(voice).not.toContain("Nyhavna");
   });
 
-  it("gir Anja et avgrenset registeroppslag for alle 504 importerte steder", async () => {
+  it("gir Anja et avgrenset registeroppslag for alle 503 importerte steder", async () => {
     const descriptor = getLocalDemo(DEMO);
     const dataset = await loadDataset(descriptor);
     const conversation = createNyhavnaConversation(buildLocalBoard(dataset, descriptor), buildVoiceDeps(dataset));
     const registerPlaces = dataset.places.filter((place) => place.knowledgeLevel === "register");
 
-    expect(registerPlaces).toHaveLength(504);
+    expect(registerPlaces).toHaveLength(503);
     for (const place of registerPlaces) {
       const result = conversation.execute("get_place_facts", { poi_id: place.id }).result as Record<string, unknown>;
       expect(result, place.id).toMatchObject({
@@ -102,6 +102,29 @@ describe("Leangenbukta-datasettet i repoet", () => {
       expect(result, place.id).not.toHaveProperty("facts");
       expect(result, place.id).not.toHaveProperty("sources");
     }
+  });
+
+  it("viser Fyr, Franske Nytelser og Burger King som egne serveringspunkter", async () => {
+    const descriptor = getLocalDemo(DEMO);
+    const dataset = await loadDataset(descriptor);
+    const board = buildLocalBoard(dataset, descriptor);
+    const expected = [
+      { id: "register-fyr-pa-lade-4d6a3048bd", basis: "register" },
+      { id: "register-franske-nytelser-as-d14607a696", basis: "register" },
+      { id: "burger-king-lade-arena", basis: "audited" },
+    ] as const;
+
+    for (const { id, basis } of expected) {
+      const place = dataset.places.find((candidate) => candidate.id === id);
+      expect(place, id).toMatchObject({
+        categoryId: "servering",
+        knowledgeLevel: basis,
+      });
+      expect(place, id).not.toHaveProperty("parentPlaceId");
+      expect(board.poisById.has(id), id).toBe(true);
+    }
+
+    expect(dataset.places.filter((place) => /burger king/i.test(place.name))).toHaveLength(1);
   });
 
   it("holder demoen utenfor Supabase og POI-poolen", async () => {

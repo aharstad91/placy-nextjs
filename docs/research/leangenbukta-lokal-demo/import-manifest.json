@@ -14,8 +14,8 @@
       "defer": 33,
       "exclude": 8,
       "external_reference": 6,
-      "member": 30,
-      "start_set": 25,
+      "member": 29,
+      "start_set": 26,
       "topic_only": 43
     },
     "buyer_questions": 35
@@ -93,8 +93,8 @@
         "decision_counts": {
           "defer": 1,
           "exclude": 1,
-          "member": 15,
-          "start_set": 3,
+          "member": 14,
+          "start_set": 4,
           "topic_only": 1
         },
         "buyer_questions": 5,
@@ -167,5 +167,6 @@
     "docs/research/leangenbukta-lokal-demo/runtime-import-report.json",
     "docs/research/leangenbukta-lokal-demo/place-coordinate-verification.json",
     "docs/research/leangenbukta-lokal-demo/travel-times.json"
-  ]
+  ],
+  "register_import_config": "data/demo/leangenbukta-lokal/register-import.json"
 }

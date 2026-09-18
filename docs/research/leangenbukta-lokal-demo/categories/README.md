@@ -22,7 +22,7 @@ Kanoniske steder har ID-er som `place:ringve-musikkmuseum`, `place:ladekaia` og 
 
 ## Importstatus
 
-Alle 25 startsteder og 30 medlemmer er importert. LadeTorget er lagt til som ett avledet strukturanker for tre valgte medlemmer. Kartpunktene er kontrollert mot Google Places eller en dokumentert primærkoordinat; der faktisk publikumsinngang ikke er bekreftet, er plasseringen eksplisitt merket omtrentlig. Mapbox Matrix har beregnet gange, sykkel og bil fra boardets kontrollerte startpunkt til alle 26 synlige ankre. Tidsfølsomme felt har fortsatt kontrolldato 18.09.2026 og må oppfriskes før senere publisering.
+Alle 26 startsteder og 29 medlemmer er importert. LadeTorget er lagt til som ett avledet strukturanker for tre valgte medlemmer. Kartpunktene er kontrollert mot Google Places eller en dokumentert primærkoordinat; der faktisk publikumsinngang ikke er bekreftet, er plasseringen eksplisitt merket omtrentlig. Mapbox Matrix har beregnet gange, sykkel og bil fra boardets kontrollerte startpunkt til alle 27 synlige reviderte ankre. Tidsfølsomme felt har fortsatt kontrolldato 18.09.2026 og må oppfriskes før senere publisering.
 
 `status`- og `runtime_status`-feltene i kategori-JSON-ene beskriver fasen da beslutningspakken ble generert, før U4-runtime var koblet. De er historiske revisjonsfelt og skal ikke leses som dagens importstatus. Gjeldende sannhet ligger i `../import-manifest.json` og `../runtime-import-report.json`.
 
