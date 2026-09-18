@@ -16,13 +16,16 @@ import { LocalDatasetError } from "@/lib/demo/local-board/errors";
  * databasen.
  */
 
-const DEMO_FILES = ["board.json", "sources.json", "places.json", "topics.json", "faq.json", "conversations.json"];
+const DEMO_FILES = ["board.json", "sources.json", "topics.json", "faq.json", "conversations.json"];
 
 describe("registeret over lokale demoer", () => {
-  it("peker på mapper som faktisk finnes, med alle seks filene", async () => {
+  it("peker på mapper som faktisk finnes, med komplett stedsformat", async () => {
     for (const demo of LOCAL_DEMOS) {
       const files = await readdir(demo.directory);
       for (const file of DEMO_FILES) expect(files, `${demo.id}/${file}`).toContain(file);
+      const hasLegacyPlaces = files.includes("places.json");
+      const hasSplitPlaces = files.includes("places-audited.json") && files.includes("places-register.json");
+      expect(hasLegacyPlaces || hasSplitPlaces, `${demo.id}/places`).toBe(true);
     }
   });
 

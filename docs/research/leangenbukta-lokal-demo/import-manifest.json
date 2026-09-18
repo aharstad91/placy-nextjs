@@ -159,7 +159,8 @@
   "runtime_outputs": [
     "data/demo/leangenbukta-lokal/board.json",
     "data/demo/leangenbukta-lokal/sources.json",
-    "data/demo/leangenbukta-lokal/places.json",
+    "data/demo/leangenbukta-lokal/places-audited.json",
+    "data/demo/leangenbukta-lokal/places-register.json",
     "data/demo/leangenbukta-lokal/topics.json",
     "data/demo/leangenbukta-lokal/faq.json",
     "data/demo/leangenbukta-lokal/conversations.json",

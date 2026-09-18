@@ -74,8 +74,8 @@ def main() -> None:
         raise RuntimeError("NEXT_PUBLIC_MAPBOX_TOKEN is not configured")
 
     board = read_json(DATA / "board.json")
-    all_places = read_json(DATA / "places.json")
-    places = [place for place in all_places if not place.get("parentPlaceId")]
+    audited_places = read_json(DATA / "places-audited.json")
+    places = [place for place in audited_places if not place.get("parentPlaceId")]
     measured = {
         place["id"]: {
             "place_id": place["id"],

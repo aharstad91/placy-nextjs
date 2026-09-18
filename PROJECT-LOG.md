@@ -10292,3 +10292,12 @@ Alle volum og kjøpsandeler er forutsetninger, ikke verifiserte Propr-tall. Bel�
 - Proprs kundeteller: https://propr.no/
 - Prospekt: https://propr.no/prospekt/320277
 - Historiske salgstall: https://www.finansavisen.no/nyheter/bolig/2021/04/29/7664893/selger-flere-boliger-men-taper-penger-pa-femte-aret
+## 2026-09-18 — Leangenbukta: revidert kunnskap og bredt POI-register har hver sin fil
+
+Leangenbukta hadde 56 håndreviderte steder og 504 genererte registersteder i samme `places.json`. Det ga riktig kartdekning, men feil eierskap: researchbyggeren måtte lese og bevare registerlaget, mens registerimporten måtte skrive hele fila tilbake. En senere researchrunde eller registeroppfriskning kunne derfor overskrive den andre prosessens data.
+
+Datasettet bruker nå `places-audited.json` og `places-register.json`. Runtime laster og validerer filene hver for seg, avviser ufullstendige eller sammenblandede formater og slår dem deterministisk sammen med reviderte steder først. Små og eksisterende demoer kan fortsatt bruke `places.json`. Researchbyggeren og rutemålingen berører bare det reviderte laget; registerimporten leser begge lag for stabil matching, men skriver bare registerfila. Den semantiske rekkefølgen og innholdet i alle 560 steder er identisk med det tidligere datasettet.
+
+Dette er den gjenbrukbare grensen for kommende prosjekter og bruktboligboards: research kan forbedres uten å slette bredde, og et bredt register kan oppfriskes uten å endre det Anja får bruke som reviderte fakta. Leangenbukta beholder 357 kartankere, 56 reviderte steder og 504 registersteder. Importtesten mot kildeboardet ga 358 kilderøtter, 21 treff mot reviderte steder, 6 treff mot eksisterende registersteder, 331 importerte røtter og 173 understeder; 8 duplikate understeder ble hoppet over.
+
+Verifisering: researchbyggeren lot SHA-256 for registerfila stå urørt; registerimporten lot SHA-256 for audited-fila stå urørt. Fokuserte lagrings-, innholds- og registertester er grønne, hele testsuiten er grønn, TypeScript har 0 feil, lint har 0 feil (eksisterende advarsler), produksjonsbygg er OK uten den nye Turbopack-sporingsadvarselen, og `git diff --check` er ren. Tre uavhengige forenklingsgjennomganger fant og utbedret duplisert formatdeteksjon, TOCTOU-filkontroll og dobbel parsing i importøren. Lokalt, ikke pushet.

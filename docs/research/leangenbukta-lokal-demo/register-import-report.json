@@ -2,6 +2,7 @@
   "schema_version": 1,
   "imported_at": "2026-09-18",
   "source": "placy-demo/leangenbukta/report",
+  "storage_format": "split",
   "radius_km": 2,
   "center": {
     "lat": 63.43947521501401,

@@ -517,15 +517,12 @@ board["presentation"] = presentation
 for category in board["categories"]:
     category.update(CATEGORY_COPY[category["id"]])
 
-previous_places = read_json(DATA / "places.json")
-register_places = [place for place in previous_places if place.get("knowledgeLevel") == "register"]
-
 write_json(DATA / "board.json", board)
 write_json(DATA / "sources.json", sources)
-# Researchbyggeren eier det reviderte laget. Det brede kartregisteret bygges av
-# `scripts/demo/import-local-register.ts` og bevares her, slik en ny revisjon av
-# faginnholdet ikke stille sletter registeret eller oppgraderer det til fakta.
-write_json(DATA / "places.json", places + register_places)
+# Researchbyggeren eier bare det reviderte laget. Det brede kartregisteret
+# bygges separat av `scripts/demo/import-local-register.ts`, så regenerering av
+# research kan verken slette registeret eller oppgradere registerdata til fakta.
+write_json(DATA / "places-audited.json", places)
 write_json(DATA / "topics.json", topics)
 write_json(DATA / "faq.json", faqs)
 write_json(DATA / "conversations.json", conversations)
@@ -543,7 +540,7 @@ report = {
     },
     "candidate_decisions": dict(sorted(decision_counts.items())),
     "runtime": {
-        "sources": len(sources), "places": len(places), "register_places_preserved": len(register_places),
+        "sources": len(sources), "audited_places": len(places), "register_layer_written": False,
         "curated_start_places": sum(1 for item in selected if item["decision"] == "start_set"),
         "structural_anchors": 1, "members": sum(1 for item in selected if item["decision"] == "member"),
         "topics": len(topics), "faqs": len(faqs), "conversation_questions": sum(len(item["questions"]) for item in conversations),

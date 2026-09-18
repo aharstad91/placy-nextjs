@@ -23,18 +23,25 @@ mkdir -p data/demo/<id>
 
 `<id>` er datasettets ID overalt: mappenavn, registeroppføring, rutenavn, prefiks i innholds-hashen og verdien `dataset=<id>` som Live-samtalen bruker. Små bokstaver, tall og bindestrek. Konvensjonen så langt er `<prosjekt>-lokal` (`nyhavna-lokal`, `leangenbukta-lokal`), som skiller den lokale demoen fra et provisjonert board med samme navn.
 
-Seks filer skal ligge der. Alle seks må finnes, også de tomme — lasteren stopper på en manglende fil, med vilje:
+Fem faste filer og ett stedsformat skal ligge der. Alle må finnes, også de tomme — lasteren stopper på en manglende fil, med vilje:
 
 | Fil | Innhold | Tom start |
 |---|---|---|
 | `board.json` | Identitet, kartutsnitt, kategorier, hilsen, stemmens setninger | Objekt med kategorier |
 | `sources.json` | Kilderegisteret. Stabile ID-er alt annet peker på | `[]` |
-| `places.json` | Stedene som får markør i kartet | `[]` |
+| `places.json` | Stedene som får markør i små datasett | `[]` |
 | `topics.json` | Temakunnskap, og `development`-objektet for bygg og fasiliteter | `[]` |
 | `faq.json` | Spørsmål og svar, per kategori eller for hele området | `[]` |
 | `conversations.json` | Samtaleeksempler. **Testgrunnlag, aldri faktakilde** | `[]` |
 
 `conversations.json` lastes ikke av `loadDataset` og importeres ikke av `voice.ts`. En transkripsjon er hva noen sa, ikke hva som er sant, og den skal aldri kunne havne i modellens kunnskapsgrunnlag ved et uhell.
+
+Når et prosjekt får et bredt POI-register, erstattes `places.json` med et atomisk filpar:
+
+- **`places-audited.json`** — håndreviderte steder med sammendrag, fakta og kilder. Researchbyggeren eier fila.
+- **`places-register.json`** — genererte registersteder med navn, type, adresse, kartanker og lagret reisetid. Registerimporten eier fila.
+
+Ikke behold `places.json` samtidig. Lasteren avviser både sammenblandede formater og steder som ligger i feil kunnskapslag. Dette gjør det mulig å regenerere research og register uavhengig uten at den ene prosessen overskriver den andre.
 
 Et minimalt `board.json` som laster:
 
@@ -216,7 +223,7 @@ Dette ser likt ut enten prosjektet er et boligprosjekt, en bruktbolig eller et n
 
 - **`board.json`** — identitet, senter, kategorier, hilsen, `voice`-setningene, `presentation`-manuset og `discoveryCategoryIds`.
 - **`sources.json`** — kilderegisteret. Skriv det først; alt annet peker hit.
-- **`places.json`** — stedene med markør: koordinater, kategori, sammendrag, fakta, reisetid, `locationPrecision` og forbehold.
+- **Stedsformatet** — bruk `places.json` for et lite, håndskrevet utvalg. Bruk `places-audited.json` + `places-register.json` når boardet kombinerer revidert kunnskap med bred kartdekning. Runtime slår dem sammen; byggerne skriver hver sin fil.
 - **`faq.json`** — spørsmål og svar. Rekkefølgen i fila er rekkefølgen på skjermen. Svar kan bære `[tekst](category:id)` og `[navn](poi:sted-id)`, som blir klikkbare og oppgis til stemmen.
 - **`topics.json`** uten `development` — temakunnskap som ikke hører til ett sted.
 - **`checkedAt`, `sourceIds` og `caveats`** på alt. Det er ikke pynt: hele poenget er at stemmen bare sier ting som har dekning, og sier fra når noe er usikkert eller planlagt.

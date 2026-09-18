@@ -99,6 +99,58 @@ describe("lokalt Nyhavna-datasett", () => {
     await writeFile(join(dir, "topics.json"), "{ ikke json");
     await expect(loadDataset({ ...NYHAVNA, directory: dir })).rejects.toThrow(/gyldig JSON/);
   });
+
+  it("slår sammen et eksplisitt audited- og registerlag", async () => {
+    const dir = await fixture({});
+    await rm(join(dir, "places.json"));
+    await writeFile(join(dir, "places-audited.json"), JSON.stringify([
+      {
+        id: "revidert-sted",
+        name: "Revidert sted",
+        categoryId: "hverdagsliv",
+        coordinates: { lat: 63.44, lng: 10.41 },
+        checkedAt: "2026-09-18",
+      },
+    ]));
+    await writeFile(join(dir, "places-register.json"), JSON.stringify([
+      {
+        id: "register-sted",
+        name: "Registersted",
+        categoryId: "hverdagsliv",
+        coordinates: { lat: 63.45, lng: 10.42 },
+        checkedAt: "2026-09-18",
+        knowledgeLevel: "register",
+      },
+    ]));
+
+    const dataset = await loadDataset({ ...NYHAVNA, directory: dir });
+    expect(dataset.places.map((place) => [place.id, place.knowledgeLevel])).toEqual([
+      ["revidert-sted", "audited"],
+      ["register-sted", "register"],
+    ]);
+  });
+
+  it("avviser et ufullstendig eller sammenblandet filpar", async () => {
+    const incomplete = await fixture({});
+    await rm(join(incomplete, "places.json"));
+    await writeFile(join(incomplete, "places-audited.json"), "[]");
+    await expect(loadDataset({ ...NYHAVNA, directory: incomplete })).rejects.toThrow(/places-register\.json/);
+
+    const mixed = await fixture({});
+    await rm(join(mixed, "places.json"));
+    await writeFile(join(mixed, "places-audited.json"), JSON.stringify([
+      {
+        id: "feil-lag",
+        name: "Feil lag",
+        categoryId: "hverdagsliv",
+        coordinates: { lat: 63.44, lng: 10.41 },
+        checkedAt: "2026-09-18",
+        knowledgeLevel: "register",
+      },
+    ]));
+    await writeFile(join(mixed, "places-register.json"), "[]");
+    await expect(loadDataset({ ...NYHAVNA, directory: mixed })).rejects.toThrow(/places-audited\.json[\s\S]*audited/);
+  });
 });
 
 describe("referansesjekken", () => {

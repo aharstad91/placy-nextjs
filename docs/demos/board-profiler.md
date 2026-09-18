@@ -33,7 +33,7 @@ Et datasett som oppgir en uimplementert profil **lastes ikke**. Feilen navngir p
 
 ## Felles mot profilspesifikt
 
-**Felles for alle profiler:** kartet, kategoriene, stedskortene, spørsmål og svar, presentasjonen, kilderegisteret, kontrolldato og forbehold. Kort sagt hele `board.json`, `sources.json`, `places.json`, `faq.json` og resten av `topics.json`.
+**Felles for alle profiler:** kartet, kategoriene, stedskortene, spørsmål og svar, presentasjonen, kilderegisteret, kontrolldato og forbehold. Kort sagt hele `board.json`, `sources.json`, stedsfilene, `faq.json` og resten av `topics.json`.
 
 **Profilspesifikt i dag:** `development`-objektet på et tema, som bare `housing-development` bruker. Det er et valgfritt felt, så de andre profilene får ikke et tomt skall de må fylle.
 
@@ -55,7 +55,7 @@ Objektet ligger på et tema i `topics.json` og ikke i en egen fil, fordi et bygg
 | `access.buildingIds[]` | tema-ID-er med `objectType: "building"` | Bare med `scope: "named-buildings"`. |
 | `access.conditions` | fritekst | Dokumenterte vilkår, f.eks. «med nøkkelbrikke». |
 | `conflicts[]` | `{ claimIds[], note }` | Motstridende påstander. Begge blir stående; ingen rangering. |
-| `mapAnchor.placeId` | id i `places.json` | Kontrollert koordinat. |
+| `mapAnchor.placeId` | id i det sammenslåtte stedsdatasettet | Kontrollert koordinat. |
 | `mapAnchor.approximateArea` | fritekst | Eksplisitt omtrentlig anker. |
 | `claims[]` | `{ id, text, sourceId, checkedAt, verification }` | Objektets egne påstander. Feltene over peker hit, så et sammendrag kan spores. |
 

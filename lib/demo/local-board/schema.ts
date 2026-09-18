@@ -14,7 +14,8 @@
  *
  * - `board.json`        — identitet, kartutsnitt og KATEGORIENE. Ingen fakta.
  * - `sources.json`      — kilderegisteret. Stabile ID-er alt annet peker på.
- * - `places.json`       — stedene: det som får en markør i kartet.
+ * - `places.json`       — stedene i små datasett. Større datasett kan bruke
+ *                         `places-audited.json` + `places-register.json`.
  * - `topics.json`       — temakunnskap: fakta og sammenhenger uten ett sted.
  * - `faq.json`          — spørsmål og svar, per tema eller for hele området.
  * - `conversations.json`— samtaleeksempler. TESTGRUNNLAG, ikke faktakilde.
@@ -429,7 +430,7 @@ const developmentConflictSchema = z
 
 const developmentMapAnchorSchema = z
   .object({
-    /** Kontrollert koordinat: stedet i `places.json` objektet hører til. */
+    /** Kontrollert koordinat: stedet i det sammenslåtte stedsdatasettet objektet hører til. */
     placeId: stableId.optional(),
     /** Eksplisitt omtrentlig anker i klartekst når koordinaten ikke er belagt. */
     approximateArea: z.string().min(1).max(200).optional(),
@@ -479,7 +480,7 @@ export const localTopicSchema = z
     /** Ord stemmens søk skal treffe på, i tillegg til tittel og tekst. */
     keywords: z.array(z.string().min(1).max(60)).max(40).default([]),
     sourceIds: z.array(stableId).max(20).default([]),
-    /** Steder temaet omtaler. Validert mot `places.json`. */
+    /** Steder temaet omtaler. Validert mot det sammenslåtte stedsdatasettet. */
     relatedPlaceIds: z.array(stableId).max(40).default([]),
     checkedAt: isoDate,
     caveats: z.array(z.string().min(1).max(400)).max(20).default([]),

@@ -17,7 +17,8 @@
   },
   "runtime": {
     "sources": 58,
-    "places": 56,
+    "audited_places": 56,
+    "register_layer_written": false,
     "curated_start_places": 25,
     "structural_anchors": 1,
     "members": 30,

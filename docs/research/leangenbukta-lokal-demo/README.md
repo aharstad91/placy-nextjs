@@ -18,17 +18,17 @@ Nettsidekopien som lenker hit ligger på `/demo/leangenbukta-nettside` — se `d
 
 ## Hvor innholdet kommer fra
 
-Datasettets seks JSON-filer er formatet i `lib/demo/local-board/schema.ts`. Profilen er `housing-development`; hva den krever står i `docs/demos/board-profiler.md`.
+Datasettet bruker det delte stedsformatet i `lib/demo/local-board/schema.ts`: `places-audited.json` eies av researchbyggeren, mens `places-register.json` eies av registerimporten. Runtime slår lagene sammen etter separat validering. Profilen er `housing-development`; hva den krever står i `docs/demos/board-profiler.md`.
 
 Hele oppskriften — prosjektoppsett, researchbestilling, dekningsregnskap, import, validering, skjermkontroll, lyttetest og hvordan oppdateringer oppfører seg — ligger i **[`docs/demos/boligprosjekt-arbeidsprosess.md`](../../demos/boligprosjekt-arbeidsprosess.md)**. Den gjelder både denne demoen og neste boligprosjekt.
 
-Runtime bygges deterministisk. `_build_runtime.py` leser bare reviderte kategori- og prosjektpakker, koordinatkvitteringen og den valgfrie rutekvitteringen. Rårapportene er bevart for revisjon, men leses ikke av runtime-byggeren.
+Runtime bygges deterministisk. `_build_runtime.py` leser bare reviderte kategori- og prosjektpakker, koordinatkvitteringen og den valgfrie rutekvitteringen, og skriver bare `places-audited.json`. Rårapportene er bevart for revisjon, men leses ikke av runtime-byggeren. Registerimporten skriver bare `places-register.json`; ingen av byggerne kan dermed overskrive den andres lag.
 
 ```bash
 # Oppfrisk målte ruter ved behov (krever NEXT_PUBLIC_MAPBOX_TOKEN)
 python3 docs/research/leangenbukta-lokal-demo/_measure_travel_times.py
 
-# Bygg de seks runtime-filene fra godkjent materiale
+# Bygg det reviderte runtime-laget fra godkjent materiale
 python3 docs/research/leangenbukta-lokal-demo/_build_runtime.py
 
 # Oppfrisk det brede kartregisteret innen 2 km fra det eksisterende boardet.
@@ -44,7 +44,7 @@ NODE_OPTIONS=--conditions=react-server node --env-file=.env.local \
 npx vitest run lib/demo/local-board/leangenbukta-content.test.ts
 ```
 
-`place-coordinate-verification.json`, `travel-times.json`, `runtime-import-report.json` og `register-import-report.json` er kvitteringene for importen. Et omtrentlig revidert kartpunkt er merket med synlig inngangsforbehold. De reviderte stedene bruker målte Mapbox-minutter; registeret beholder de lagrede reisetidene fra kildeboardet. De to lagene skilles med `knowledgeLevel: audited|register`. Alle 504 registersteder, også virksomhetene inni et anker, er søkbare for Anja med bare navn, type, adresse og lagret reisetid.
+`place-coordinate-verification.json`, `travel-times.json`, `runtime-import-report.json` og `register-import-report.json` er kvitteringene for importen. Et omtrentlig revidert kartpunkt er merket med synlig inngangsforbehold. De reviderte stedene bruker målte Mapbox-minutter; registeret beholder de lagrede reisetidene fra kildeboardet. Filgrensen håndhever `knowledgeLevel: audited|register`, og lasteren stopper hvis et sted ligger i feil lag. Alle 504 registersteder, også virksomhetene inni et anker, er søkbare for Anja med bare navn, type, adresse og lagret reisetid.
 
 ## Status per enhet
 

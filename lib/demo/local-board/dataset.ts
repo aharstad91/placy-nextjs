@@ -6,6 +6,7 @@ import { join } from "node:path";
 import type { ZodType } from "zod";
 import type { LocalDemoDescriptor } from "@/lib/demo/local-board/registry";
 import { LocalDatasetError } from "@/lib/demo/local-board/errors";
+import { PLACE_FILES, readPlaceStorage } from "@/lib/demo/local-board/place-storage";
 import { BOARD_PROFILES, IMPLEMENTED_PROFILES, isImplementedProfile } from "@/lib/demo/local-board/profiles";
 import {
   localBoardSchema,
@@ -54,7 +55,7 @@ export { LocalDatasetError };
 const FILES = {
   board: "board.json",
   sources: "sources.json",
-  places: "places.json",
+  places: "places.json eller places-audited.json + places-register.json",
   topics: "topics.json",
   faq: "faq.json",
   conversations: "conversations.json",
@@ -70,13 +71,7 @@ async function readJson(descriptor: LocalDemoDescriptor, file: string): Promise<
       `Fant ikke ${path}. Demoen trenger alle seks filene i ${descriptor.directory}/ — se ${descriptor.readme}.`,
     );
   }
-  try {
-    return JSON.parse(raw);
-  } catch (error) {
-    throw new LocalDatasetError(
-      `${path} er ikke gyldig JSON: ${error instanceof Error ? error.message : "ukjent feil"}`,
-    );
-  }
+  return parseJson(raw, path);
 }
 
 function parse<T>(schema: ZodType<T>, value: unknown, file: string): T {
@@ -87,6 +82,49 @@ function parse<T>(schema: ZodType<T>, value: unknown, file: string): T {
     .map((issue) => `  • ${issue.path.join(".") || "(rot)"}: ${issue.message}`)
     .join("\n");
   throw new LocalDatasetError(`${file} har ugyldige data:\n${issues}`);
+}
+
+function parseJson(raw: string, path: string): unknown {
+  try {
+    return JSON.parse(raw);
+  } catch (error) {
+    throw new LocalDatasetError(
+      `${path} er ikke gyldig JSON: ${error instanceof Error ? error.message : "ukjent feil"}`,
+    );
+  }
+}
+
+/**
+ * Små datasett kan fortsatt ligge i én `places.json`. Store datasett kan dele
+ * det håndreviderte laget fra det genererte registeret. Filparet er atomisk:
+ * lasteren godtar aldri bare én fil eller både gammelt og nytt format, fordi
+ * det ville gjort det uklart hvilket lag som faktisk er autoritativt.
+ */
+async function readPlaces(descriptor: LocalDemoDescriptor) {
+  const storage = await readPlaceStorage(descriptor.directory, descriptor.readme);
+  if (storage.format === "legacy") {
+    const raw = parseJson(storage.legacyRaw, join(descriptor.directory, PLACE_FILES.legacy));
+    return parse(localPlacesSchema, raw, PLACE_FILES.legacy);
+  }
+
+  const auditedRaw = parseJson(storage.auditedRaw, join(descriptor.directory, PLACE_FILES.audited));
+  const registerRaw = parseJson(storage.registerRaw, join(descriptor.directory, PLACE_FILES.register));
+  const audited = parse(localPlacesSchema, auditedRaw, PLACE_FILES.audited);
+  const register = parse(localPlacesSchema, registerRaw, PLACE_FILES.register);
+  const misplacedAudited = audited.filter((place) => place.knowledgeLevel !== "audited").map((place) => place.id);
+  const misplacedRegister = register.filter((place) => place.knowledgeLevel !== "register").map((place) => place.id);
+  if (misplacedAudited.length || misplacedRegister.length) {
+    const problems = [
+      misplacedAudited.length
+        ? `${PLACE_FILES.audited} skal bare inneholde audited-steder: ${misplacedAudited.join(", ")}`
+        : undefined,
+      misplacedRegister.length
+        ? `${PLACE_FILES.register} skal bare inneholde register-steder: ${misplacedRegister.join(", ")}`
+        : undefined,
+    ].filter(Boolean);
+    throw new LocalDatasetError(`${descriptor.directory}/ har steder i feil kunnskapslag:\n${problems.map((p) => `  • ${p}`).join("\n")}`);
+  }
+  return [...audited, ...register];
 }
 
 /** Alle ID-ene i ei liste som forekommer mer enn én gang. */
@@ -347,14 +385,14 @@ export async function loadDataset(descriptor: LocalDemoDescriptor): Promise<Loca
   const [board, sources, places, topics, faqs] = await Promise.all([
     readJson(descriptor, FILES.board),
     readJson(descriptor, FILES.sources),
-    readJson(descriptor, FILES.places),
+    readPlaces(descriptor),
     readJson(descriptor, FILES.topics),
     readJson(descriptor, FILES.faq),
   ]);
   const dataset: LocalDataset = {
     board: parse(localBoardSchema, board, FILES.board),
     sources: parse(localSourcesSchema, sources, FILES.sources),
-    places: parse(localPlacesSchema, places, FILES.places),
+    places,
     topics: parse(localTopicsSchema, topics, FILES.topics),
     faqs: parse(localFaqsSchema, faqs, FILES.faq),
   };

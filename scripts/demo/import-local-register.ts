@@ -22,6 +22,7 @@ import { join } from "node:path";
 import { adaptBoardData, type BoardPOI } from "@/components/variants/report/board/board-data";
 import { transformToReportData } from "@/components/variants/report/report-data";
 import { localBoardSchema, localPlacesSchema, type LocalPlace } from "@/lib/demo/local-board/schema";
+import { readPlaceStorage } from "@/lib/demo/local-board/place-storage";
 import { getProductFromSupabaseV2 } from "@/lib/supabase/v2-queries";
 import type { POI } from "@/lib/types";
 import { calculateDistance } from "@/lib/utils/geo";
@@ -133,19 +134,47 @@ function compactPlace(place: LocalPlace): Record<string, unknown> {
   return compact;
 }
 
+interface LocalPlaceSources {
+  format: "legacy" | "split";
+  auditedSource: Array<Record<string, unknown>>;
+  current: LocalPlace[];
+}
+
+async function readPlaceSources(dataset: string): Promise<LocalPlaceSources> {
+  const storage = await readPlaceStorage(dataset);
+  if (storage.format === "split") {
+    const auditedSource = JSON.parse(storage.auditedRaw) as Array<Record<string, unknown>>;
+    const registerSource = JSON.parse(storage.registerRaw) as Array<Record<string, unknown>>;
+    const audited = localPlacesSchema.parse(auditedSource);
+    const register = localPlacesSchema.parse(registerSource);
+    if (audited.some((place) => place.knowledgeLevel !== "audited")) {
+      throw new Error("places-audited.json inneholder registersteder.");
+    }
+    if (register.some((place) => place.knowledgeLevel !== "register")) {
+      throw new Error("places-register.json inneholder steder som ikke er registersteder.");
+    }
+    return { format: "split", auditedSource, current: [...audited, ...register] };
+  }
+  const currentSource = JSON.parse(storage.legacyRaw) as Array<Record<string, unknown>>;
+  const current = localPlacesSchema.parse(currentSource);
+  return {
+    format: "legacy",
+    auditedSource: currentSource.filter((place) => place.knowledgeLevel !== "register"),
+    current,
+  };
+}
+
 async function main() {
   const options = args();
-  const [boardRaw, placesRaw, product] = await Promise.all([
+  const [boardRaw, placeSources, product] = await Promise.all([
     readFile(join(options.dataset, "board.json"), "utf8"),
-    readFile(join(options.dataset, "places.json"), "utf8"),
+    readPlaceSources(options.dataset),
     getProductFromSupabaseV2(options.customer, options.sourceSlug, "report"),
   ]);
   if (!product) throw new Error(`Fant ikke ${options.customer}/${options.sourceSlug}/report i Supabase.`);
 
   const localBoard = localBoardSchema.parse(JSON.parse(boardRaw));
-  const currentSource = JSON.parse(placesRaw) as Array<Record<string, unknown>>;
-  const current = localPlacesSchema.parse(currentSource);
-  const auditedSource = currentSource.filter((place) => place.knowledgeLevel !== "register");
+  const { auditedSource, current } = placeSources;
   const audited = current.filter((place) => place.knowledgeLevel === "audited");
   const sourceBoard = adaptBoardData(transformToReportData(product));
   const localCategoryIdByName = new Map(
@@ -244,6 +273,7 @@ async function main() {
     schema_version: 1,
     imported_at: options.checkedAt,
     source: `${options.customer}/${options.sourceSlug}/report`,
+    storage_format: placeSources.format,
     radius_km: options.radiusKm,
     center: localBoard.center,
     audited_places_preserved: audited.length,
@@ -265,7 +295,11 @@ async function main() {
     const registerSource = parsed
       .filter((place) => place.knowledgeLevel === "register")
       .map(compactPlace);
-    await writeFile(join(options.dataset, "places.json"), `${JSON.stringify([...auditedSource, ...registerSource], null, 2)}\n`);
+    if (placeSources.format === "split") {
+      await writeFile(join(options.dataset, "places-register.json"), `${JSON.stringify(registerSource, null, 2)}\n`);
+    } else {
+      await writeFile(join(options.dataset, "places.json"), `${JSON.stringify([...auditedSource, ...registerSource], null, 2)}\n`);
+    }
     const datasetName = options.dataset.split("/").filter(Boolean).at(-1);
     if (!datasetName) throw new Error(`Kan ikke utlede datasett-ID fra ${options.dataset}.`);
     const reportPath = join("docs/research", `${datasetName}-demo`, "register-import-report.json");
