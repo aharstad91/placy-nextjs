@@ -40,13 +40,20 @@ export interface KnowledgeOptions {
 
 /** Registerdata om et sted uten kildekontrollert omtale: det boardet selv viser, og ikke mer. */
 const REGISTER_BASIS = 'Boardets register: navn, type, adresse og lagret reisetid. Ikke redaksjonelt kontrollerte fakta. Ikke legg til åpningstider, priser, kvalitet eller tilbud.';
-const packRegister = (poi: BoardPOI, travelMode: 'walk' | 'bike' | 'car' = 'walk') => ({
-  id: String(poi.id), name: poi.name, map_poi_id: String(poi.id), has_map_location: true, basis: 'register',
-  category_id: String(poi.categoryId), type: poi.raw.category.name, address: poi.address ?? null,
-  status: poi.raw.developmentStatus ?? 'existing',
-  location_precision: poi.raw.locationPrecision ?? 'unknown', location_note: poi.raw.locationNote,
-  travel_minutes_from_board_origin: poi.raw.travelTime ?? null,
-  sort_minutes: poi.raw.travelTime?.[travelMode] ?? null,
+interface RegisterPlace {
+  id: string;
+  name: string;
+  mapPoiId: string;
+  categoryId: string;
+  raw: BoardPOI['raw'];
+}
+const packRegister = (place: RegisterPlace, travelMode: 'walk' | 'bike' | 'car' = 'walk') => ({
+  id: place.id, name: place.name, map_poi_id: place.mapPoiId, has_map_location: true, basis: 'register',
+  category_id: place.categoryId, type: place.raw.category.name, address: place.raw.address ?? null,
+  status: place.raw.developmentStatus ?? 'existing',
+  location_precision: place.raw.locationPrecision ?? 'unknown', location_note: place.raw.locationNote,
+  travel_minutes_from_board_origin: place.raw.travelTime ?? null,
+  sort_minutes: place.raw.travelTime?.[travelMode] ?? null,
   note: REGISTER_BASIS,
 });
 
@@ -64,6 +71,7 @@ export function createNyhavnaKnowledge(board: BoardData, options: KnowledgeOptio
   const themes = options.themeWords ?? DEFAULT_THEME_WORDS;
   const pois = new Map(board.categories.flatMap(c => c.pois).map(p => [String(p.id), p]));
   const all = [knowledge.area, ...knowledge.entities];
+  const curatedIds = new Set(knowledge.entities.map(e => e.id));
   const curatedMapIds = new Set(knowledge.entities.map(e => e.mapPoiId).filter((id): id is string => id !== null));
   const pack = (entity: typeof all[number], detail: boolean) => {
     const facts = entity.facts.filter(f => f.verification === 'confirmed').slice(0, detail ? 8 : 2);
@@ -83,10 +91,24 @@ export function createNyhavnaKnowledge(board: BoardData, options: KnowledgeOptio
       note: 'Kun bekreftede fakta i demoens utvalg. Manglende informasjon betyr ikke at tilbudet ikke finnes.',
     };
   };
-  // Registeret: boardets steder uten omtale, søkbare på navn og type. Kuraterte
-  // steder holdes utenfor så de aldri dukker opp to ganger med ulik status.
-  const register = [...pois.values()].filter(p => !curatedMapIds.has(String(p.id)));
-  const searchRegister = (q: string) => register
+  // Registeret: både kartankre og virksomheter inni ankrene, søkbare på navn
+  // og type. Et medlem peker på ankerets kart-ID. Reviderte steder holdes ute
+  // så de aldri dukker opp to ganger med ulik status.
+  const register = new Map<string, RegisterPlace>();
+  for (const category of board.categories) {
+    for (const poi of category.pois) {
+      const mapPoiId = String(poi.id);
+      const categoryId = String(category.id);
+      if (!curatedMapIds.has(mapPoiId) && !curatedIds.has(mapPoiId) && !register.has(mapPoiId)) {
+        register.set(mapPoiId, { id: mapPoiId, name: poi.name, mapPoiId, categoryId, raw: poi.raw });
+      }
+      for (const child of poi.childPOIs ?? []) {
+        const id = String(child.id);
+        if (!curatedIds.has(id) && !register.has(id)) register.set(id, { id, name: child.name, mapPoiId, categoryId, raw: child });
+      }
+    }
+  }
+  const searchRegister = (q: string) => [...register.values()]
     .filter(p => q.length > 1 && normalize(`${p.name} ${p.raw.category.name}`).includes(q))
     .map(p => packRegister(p))
     .sort((a, b) => (a.sort_minutes ?? Infinity) - (b.sort_minutes ?? Infinity) || a.name.localeCompare(b.name, 'nb'));
@@ -100,8 +122,8 @@ export function createNyhavnaKnowledge(board: BoardData, options: KnowledgeOptio
       const id = typeof args.poi_id === 'string' ? poiAliases[args.poi_id] ?? args.poi_id : '';
       const entity = all.find(e => e.id === id) ?? all.find(e => e.mapPoiId !== null && e.mapPoiId === id);
       if (entity) return pack(entity, true);
-      const poi = pois.get(id);
-      return poi ? packRegister(poi) : { error: 'Ukjent sted. Finn ID med find_places før du forsøker igjen.' };
+      const place = register.get(id);
+      return place ? packRegister(place) : { error: 'Ukjent sted. Finn ID med find_places før du forsøker igjen.' };
     }
     if (name !== 'find_places') return { error: 'Ukjent kunnskapsverktøy.' };
     const query = typeof args.query === 'string' ? args.query.slice(0, 200) : '';

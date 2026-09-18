@@ -4,8 +4,9 @@ import { join } from "node:path";
 import { loadDataset } from "@/lib/demo/local-board/dataset";
 import { buildLocalBoard, buildLocalProject } from "@/lib/demo/local-board/board";
 import { getLocalDemo, LOCAL_DEMO_IDS } from "@/lib/demo/local-board/registry";
-import { buildLocalInstructions } from "@/lib/demo/local-board/voice";
+import { buildLocalInstructions, buildVoiceDeps } from "@/lib/demo/local-board/voice";
 import { buildLocalVoiceInstructions } from "@/lib/demo/local-board/voice-instructions";
+import { createNyhavnaConversation } from "@/lib/realtime/nyhavna-conversation";
 
 /** Leangenbuktas reviderte, lokale demo-datasett (U5/U6). */
 
@@ -15,7 +16,9 @@ describe("Leangenbukta-datasettet i repoet", () => {
   it("laster hele den reviderte innholdspakken", async () => {
     const dataset = await loadDataset(getLocalDemo(DEMO));
     expect(dataset.sources).toHaveLength(58);
-    expect(dataset.places).toHaveLength(56);
+    expect(dataset.places.filter((place) => place.knowledgeLevel === "audited")).toHaveLength(56);
+    expect(dataset.places.filter((place) => place.knowledgeLevel === "register")).toHaveLength(504);
+    expect(dataset.places).toHaveLength(560);
     expect(dataset.topics).toHaveLength(36);
     expect(dataset.faqs).toHaveLength(34);
     expect(dataset.board.profile).toBe("housing-development");
@@ -50,7 +53,7 @@ describe("Leangenbukta-datasettet i repoet", () => {
     expect(board.home.name).toBe("Leangenbukta");
     expect(board.home.pinSubtitle).toBe("");
     expect(board.home.pinImage).toBe("/demo/leangenbukta-lokal/leangenbukta-logo.svg");
-    expect(board.poisById.size).toBe(26);
+    expect(board.poisById.size).toBe(357);
     expect(board.globalFaq ?? []).toEqual([]);
   });
 
@@ -59,7 +62,7 @@ describe("Leangenbukta-datasettet i repoet", () => {
     const dataset = await loadDataset(descriptor);
     const project = buildLocalProject(dataset, descriptor);
     expect(project.reportConfig?.hideBrokerCard).toBe(true);
-    expect(project.pois).toHaveLength(56);
+    expect(project.pois.filter((poi) => dataset.places.find((place) => place.id === poi.id)?.knowledgeLevel === "audited")).toHaveLength(56);
     expect(project.centerCoordinates).toEqual({
       lat: 63.43947521501401,
       lng: 10.466113792494502,
@@ -80,6 +83,25 @@ describe("Leangenbukta-datasettet i repoet", () => {
     expect(backend).not.toContain("Nyhavna");
     expect(voice).toContain("Leangenbukta");
     expect(voice).not.toContain("Nyhavna");
+  });
+
+  it("gir Anja et avgrenset registeroppslag for alle 504 importerte steder", async () => {
+    const descriptor = getLocalDemo(DEMO);
+    const dataset = await loadDataset(descriptor);
+    const conversation = createNyhavnaConversation(buildLocalBoard(dataset, descriptor), buildVoiceDeps(dataset));
+    const registerPlaces = dataset.places.filter((place) => place.knowledgeLevel === "register");
+
+    expect(registerPlaces).toHaveLength(504);
+    for (const place of registerPlaces) {
+      const result = conversation.execute("get_place_facts", { poi_id: place.id }).result as Record<string, unknown>;
+      expect(result, place.id).toMatchObject({
+        id: place.id,
+        map_poi_id: place.parentPlaceId ?? place.id,
+        basis: "register",
+      });
+      expect(result, place.id).not.toHaveProperty("facts");
+      expect(result, place.id).not.toHaveProperty("sources");
+    }
   });
 
   it("holder demoen utenfor Supabase og POI-poolen", async () => {

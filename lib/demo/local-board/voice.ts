@@ -239,7 +239,12 @@ export function buildKnowledgeBase(dataset: LocalDataset): KnowledgeBase {
       url: source.url,
       checkedAt: source.checkedAt,
     })),
-    entities: dataset.places.map((place) => placeEntity(place, anchored.get(place.id))),
+    // Registersteder finnes i kartet og i `createNyhavnaKnowledge` sitt sikre
+    // registeroppslag. De må ikke bli kunnskapsentiteter: da ville tomme
+    // registerrader se ut som kildekontrollerte omtaler.
+    entities: dataset.places
+      .filter((place) => place.knowledgeLevel === "audited")
+      .map((place) => placeEntity(place, anchored.get(place.id))),
     area: areaEntity(dataset, names),
   };
 }
@@ -278,7 +283,7 @@ export function buildKnowledgeOptions(dataset: LocalDataset): KnowledgeOptions {
 export function buildCuratedProvider(dataset: LocalDataset): CuratedProvider {
   const anchored = anchoredByPlaceId(dataset, buildingNames(dataset.topics));
   const byCategory = new Map<string, LocalPlace[]>();
-  for (const place of dataset.places) {
+  for (const place of dataset.places.filter((place) => place.knowledgeLevel === "audited")) {
     const bucket = byCategory.get(place.categoryId);
     if (bucket) bucket.push(place);
     else byCategory.set(place.categoryId, [place]);
@@ -497,7 +502,7 @@ ${localDemoInstruction(dataset)}${developmentInstruction(dataset)}
 ${dataset.places.length ? `KART: Ved faktasvar, aktiver først riktig kategori med show_category og fremhev bare stedene svaret faktisk handler om. Når spørsmålet gjelder ett sted, ikke trekk inn en annen skole eller holdeplass. Fremhev stedene fra katalogens «vis:» med highlight_places i samme svar. Oppgi besvarte FAQ-ID-er i answered_faq_ids. show_place åpner ett sted og ruten dit. Ved FAQ uten kartsteder, bruk show_category med answered_faq_ids. Si bare at noe vises når verktøyet har lykkes. Et klikk på FAQ er brukerens spørsmål og skal besvares direkte.
 SPRÅK:${phrases} Ikke si demo, register, kildegrunnlag eller at du sjekker kartet. Behold nødvendige planforbehold, men ikke legg til standardforbehold om ventetid eller trafikk. Oppgi busstid som «ifølge rutetabellen», og skill den fra gangtid til holdeplassen. Ikke korriger noe brukeren allerede har forstått, som skillet mellom ungdomsskole og videregående. Når innholdet er brukt opp, tilby to andre relevante temaer én gang og vent. Ikke lov mer kunnskap eller et nytt søk du ikke har.
 REISETIDER: Bruk lagrede tider fra det faste referansepunktet (${dataset.board.center.lat}, ${dataset.board.center.lng}).${referencePoint} Ikke si at utgangspunkt mangler. Tider er beregnede anslag; bruk aktuell reisemåte. Ikke vurder trygg skolevei ut fra rutetiden.
-STEDER OG REISETIDER (data): ${JSON.stringify(dataset.places.map(p => ({ id: p.id, map_poi_id: p.parentPlaceId ?? p.id, name: p.name, provenance: p.provenance, travelTime: p.travelTime, address: p.address })))}` : "KART: Det er ingen steder i kartet. Ikke lov kartmarkører eller kall highlight_places/show_place."}
+STEDER OG REISETIDER (data): ${JSON.stringify(dataset.places.filter(p => p.knowledgeLevel === "audited").map(p => ({ id: p.id, map_poi_id: p.parentPlaceId ?? p.id, name: p.name, provenance: p.provenance, travelTime: p.travelTime, address: p.address })))}` : "KART: Det er ingen steder i kartet. Ikke lov kartmarkører eller kall highlight_places/show_place."}
 TEMAER (data): ${JSON.stringify(board.categories.map((c) => ({ id: c.id, name: c.label })))}
 SPØRSMÅL OG SVAR (data, per tema):
 ${nyhavnaFaqCatalog(reviewedBoard, dataset.board.name)}

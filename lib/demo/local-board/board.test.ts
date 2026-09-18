@@ -130,6 +130,43 @@ describe("et sted i datasettet", () => {
     const board = buildLocalBoard({ ...(await withPlace()), places: planned }, NYHAVNA);
     expect(board.categories.flatMap((c) => c.pois)[0].raw.developmentStatus).toBe("planned");
   });
+
+  it("lar manusets reviderte sted beholde highlight foran et nærmere registersted", async () => {
+    const dataset = await withPlace();
+    const register = localPlacesSchema.parse([
+      {
+        provenance: { provider: "supabase", recordId: "source-register", importedAt: "2026-09-18" },
+        knowledgeLevel: "register",
+        id: "register-sted",
+        name: "Register Sted",
+        categoryId: "mat-drikke",
+        coordinates: { lat: 63.441, lng: 10.421 },
+        placeType: "Restaurant",
+        travelTime: { walk: 1 },
+        checkedAt: "2026-09-18",
+      },
+    ]);
+    const boardCategory = dataset.board.categories.find((category) => category.id === "mat-drikke")!;
+    dataset.board = {
+      ...dataset.board,
+      categories: dataset.board.categories.map((category) =>
+        category.id === "mat-drikke" ? { ...boardCategory, body: "Revidert tematekst." } : category,
+      ),
+      presentation: [{
+        id: "test-manus",
+        categoryId: "mat-drikke",
+        text: "Test Sted er det reviderte utvalget.",
+        placeIds: ["test-sted"],
+        sourceIds: ["kilde-a"],
+        checkedAt: "2026-09-13",
+      }],
+    };
+    dataset.places = [...dataset.places, ...register];
+
+    const category = buildLocalBoard(dataset, NYHAVNA).categories.find((item) => item.id === "mat-drikke")!;
+    expect(category.pois.map((poi) => poi.id)).toEqual(["register-sted", "test-sted"]);
+    expect(category.editorial?.highlights.map((highlight) => highlight.id)).toEqual(["test-sted"]);
+  });
 });
 
 describe("spørsmål og svar", () => {

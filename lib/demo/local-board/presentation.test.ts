@@ -8,6 +8,7 @@ import { createPresentation } from "@/lib/demo/local-board/presentation";
 import { getLocalDemo } from "@/lib/demo/local-board/registry";
 
 const NYHAVNA = getLocalDemo("nyhavna-lokal");
+const LEANGENBUKTA = getLocalDemo("leangenbukta-lokal");
 
 async function fixture() {
   const dataset = await loadDataset(NYHAVNA);
@@ -66,6 +67,24 @@ describe("guided local presentation", () => {
     expect(clicked?.directives).toEqual([]);
     expect(tour.onMapSelection("place", "unknown-place")).toBeNull();
     expect(tour.execute("present_neighbourhood", { action: "resume" }).result).toMatchObject({ segment: { categoryId: "mat-drikke" } });
+  });
+  it("uses a neutral follow-up for register places without implying audited member data", async () => {
+    const dataset = await loadDataset(LEANGENBUKTA);
+    const board = buildLocalBoard(dataset, LEANGENBUKTA);
+    const tour = createPresentation(createNyhavnaConversation(board, buildVoiceDeps(dataset)), {
+      segments: dataset.board.presentation ?? [],
+      places: dataset.places,
+      center: dataset.board.center,
+      categories: dataset.board.categories,
+      homeName: dataset.board.name,
+      discoveryCategoryIds: dataset.board.discoveryCategoryIds,
+    });
+    const place = dataset.places.find(item => item.name === "Ladeklinikken" && item.knowledgeLevel === "register");
+    expect(place).toBeDefined();
+    const clicked = tour.onMapSelection("place", place!.id);
+    expect(clicked?.commentary).toContain("Jeg har ikke kildekontrollerte opplysninger");
+    expect(clicked?.commentary).toContain("annet registrert sted i samme kategori");
+    expect(clicked?.commentary).not.toContain("virksomheter som ligger i senteret");
   });
   it("takes Dora directly to Snurr, stays in servering, then stops when alternatives are exhausted", async () => {
     const tour = await fixture();

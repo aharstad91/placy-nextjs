@@ -6,6 +6,18 @@
 
 ---
 
+## 2026-09-18 — Leangenbukta: bredt POI-register med avgrenset Anja-kunnskap
+
+Gren `feat/leangenbukta-board` i worktree `../placy-leangenbukta`. Ikke pushet. Det eksisterende provisjonerte Leangenbukta-boardet er importert som et eget `register`-lag innen 2 km fra prosjektpunktet. De 56 kildekontrollerte stedene er bevart uendret som `audited`; importen legger til 504 registersteder. Resultatet er 560 steder totalt og 357 kartankre. Første kartutsnitt viser 304 på grunn av den eksisterende radius-/reservepolitikken for Natur og Trening. Importkvitteringen ligger i `docs/research/leangenbukta-lokal-demo/register-import-report.json` og navngir alle 21 treff mot reviderte ankre, 6 duplikate registerrøtter og 8 barn som ble erstattet av reviderte steder.
+
+**Anja-grensen.** Reviderte steder kan fortsatt bruke sammendrag, fakta, forbehold og kilder. Registersteder gir bare navn, type, adresse, status, kartanker og lagret reisetid. De holdes ute av kunnskapsbasen, de kuraterte kapitlene, den faste stedslisten i prompten og de redaksjonelle høydepunktene. Alle 504 registersteder er likevel søkbare via de eksisterende kunnskapsverktøyene, også de 173 virksomhetene som ligger under kjøpesenter- og anleggsankre; medlemmer peker på ankerets kart-ID. En full dekningsprøve kaller `get_place_facts` for hvert registersted og krever `basis: register` uten `facts` eller `sources`. Kartklikk bruker samme nøkterne tekst og et nøytralt oppfølgingsspørsmål, slik en legeside ikke får kjøpesenterspråk.
+
+**Gjenbruk.** `scripts/demo/import-local-register.ts` tar kunde, kildeboard, lokal datasetmappe, radius og kontrolldato som argumenter, matcher kategorier etter navn, dedupliserer mot det reviderte laget og kan kjøres uten `--write` som forhåndsvisning. `_build_runtime.py` bevarer registerlaget ved ny researchbygging. Dermed kan samme to-lagsprosess brukes på Lilleby og senere prosjekt-/bruktboligboards når de har et provisjonert kildeboard og et lokalt revidert datasett.
+
+**Verifisering.** Nettleserprøve på `/demo/leangenbukta-lokal`: oversikt, Hverdag med 97 steder, tre reviderte redaksjonelle høydepunkter og registerpunktet Ladeklinikken uten oppdiktede fakta. Direkte Anja-prøve: Elkjøp Lade finnes som registermedlem og peker på Lade Arena. Importen er reprodusert fra Supabase med 560/357/504 som forventet. Full suite: 283 testfiler / 4 493 tester grønne, TypeScript grønn, lint 0 feil / 53 eksisterende advarsler, produksjonsbygg bestått og `git diff --check` rent. Manuell diffgjennomgang fant og rettet manglende Anja-oppslag for ankermedlemmer; ingen åpne funn.
+
+---
+
 ## 2026-09-18 — Leangenbukta: revidert innhold importert og boardet demoprøvd (U5–U8)
 
 Gren `feat/leangenbukta-board` i worktree `../placy-leangenbukta`. Ikke pushet. Alle åtte researchrunder er bevart som råmateriale, atomisert og revidert før import: 565 prosjektpåstander og 145 nabolagskandidater har eksplisitt utfall. Runtime bruker 124 godkjente prosjektpåstander, 25 redaksjonelle startsteder, 30 medlemmer og ett avledet strukturanker. Det gir 56 kanoniske steder, 26 synlige kartankre, 36 temaer, 34 FAQ-er og 35 separate samtalescenarier. 58 kilder, 56 koordinatkvitteringer og Mapbox-tider for gange, sykkel og bil ligger som egne revisjonsartefakter. Rårapportene leses aldri av runtime-byggeren.

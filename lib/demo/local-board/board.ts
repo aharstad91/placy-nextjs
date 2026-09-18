@@ -276,6 +276,17 @@ export function buildLocalBoard(
 
   const sourceById = new Map(dataset.sources.map((s) => [s.id, s]));
   const faqs = faqByCategory(dataset, sourceById);
+  const placeById = new Map(dataset.places.map((place) => [place.id, place]));
+  const presentedByCategory = new Map<string, string[]>();
+  for (const segment of dataset.board.presentation ?? []) {
+    const ids = presentedByCategory.get(segment.categoryId) ?? [];
+    for (const id of segment.placeIds) {
+      const place = placeById.get(id);
+      const mapId = place?.parentPlaceId ?? id;
+      if (!ids.includes(mapId)) ids.push(mapId);
+    }
+    presentedByCategory.set(segment.categoryId, ids);
+  }
 
   const categories: BoardCategory[] = dataset.board.categories.map((category) => {
     const categoryId = category.id as BoardCategoryId;
@@ -295,6 +306,16 @@ export function buildLocalBoard(
     // Spørsmålene alene er nok til at temaet har en `editorial`: de rendres
     // uavhengig av om temaet har steder, og det er nettopp poenget her.
     const hasEditorial = Boolean(category.body || category.unplaced.length || source || faq.length);
+    const presentedIds = presentedByCategory.get(category.id) ?? [];
+    const auditedIds = new Set(
+      dataset.places
+        .filter((place) => place.categoryId === category.id && place.knowledgeLevel === "audited")
+        .map((place) => place.parentPlaceId ?? place.id),
+    );
+    const highlightPool = [
+      ...presentedIds.flatMap((id) => pois.find((poi) => poi.id === id) ?? []),
+      ...pois.filter((poi) => auditedIds.has(String(poi.id)) && !presentedIds.includes(String(poi.id))),
+    ];
     return {
       id: categoryId,
       label: category.name,
@@ -310,7 +331,10 @@ export function buildLocalBoard(
         ? {
             editorial: {
               body: category.body,
-              highlights: pois.slice(0, 3).map((poi) => ({
+              // Det brede registeret skal kunne fylle kart og søkeresultater,
+              // men aldri skyve manusets kildekontrollerte steder ut av
+              // redaksjonelle highlights bare fordi registerstedet er nærmere.
+              highlights: highlightPool.slice(0, 3).map((poi) => ({
                 id: poi.id,
                 name: poi.name,
                 icon: poi.icon,

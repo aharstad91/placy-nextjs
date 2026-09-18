@@ -1,0 +1,235 @@
+{
+  "schema_version": 1,
+  "imported_at": "2026-09-18",
+  "source": "placy-demo/leangenbukta/report",
+  "radius_km": 2,
+  "center": {
+    "lat": 63.43947521501401,
+    "lng": 10.466113792494502
+  },
+  "audited_places_preserved": 56,
+  "source_roots_within_radius": 358,
+  "matched_audited_roots": 21,
+  "matched_register_roots": 6,
+  "imported_register_roots": 331,
+  "imported_register_children": 173,
+  "skipped_duplicate_children": 8,
+  "output_places": 560,
+  "output_map_anchors": 357,
+  "register_places": 504,
+  "matched_roots": [
+    {
+      "source_id": "google-ChIJqeBnd_4wbUYRR06hK76o-c0",
+      "source_name": "Lade Arena",
+      "local_id": "lade-arena",
+      "knowledge_level": "audited"
+    },
+    {
+      "source_id": "google-ChIJo5VQDgIxbUYR6A0e4vSrEBU",
+      "source_name": "REMA 1000 LADE ARENA",
+      "local_id": "rema-1000-lade-arena",
+      "knowledge_level": "audited"
+    },
+    {
+      "source_id": "google-ChIJVZdRQJoxbUYRTcToJ4smjeM",
+      "source_name": "Sirkus Shopping",
+      "local_id": "sirkus-shopping",
+      "knowledge_level": "audited"
+    },
+    {
+      "source_id": "google-ChIJt8f3LKQxbUYRDtDL6UWLq4Y",
+      "source_name": "City Lade",
+      "local_id": "city-lade",
+      "knowledge_level": "audited"
+    },
+    {
+      "source_id": "google-ChIJ-2PJLQUxbUYRAipV4EKMjVY",
+      "source_name": "Boots apotek LadeTorget",
+      "local_id": "boots-apotek-ladetorget",
+      "knowledge_level": "audited"
+    },
+    {
+      "source_id": "e4971c01-79a7-4308-8a51-2ea91f387685",
+      "source_name": "Ladesletta barnehage",
+      "local_id": "ladesletta-barnehage",
+      "knowledge_level": "audited"
+    },
+    {
+      "source_id": "google-ChIJU0r-QgQxbUYR8VK6ZGh_X2g",
+      "source_name": "Coop Midt-Norge SA",
+      "local_id": "register-coop-midt-norge-sa-1870868dfb",
+      "knowledge_level": "register"
+    },
+    {
+      "source_id": "c37aa6d2-0a09-40e1-9f5d-2edfb791463c",
+      "source_name": "Leangen kulturbarnehage SA",
+      "local_id": "leangen-kulturbarnehage-sa",
+      "knowledge_level": "audited"
+    },
+    {
+      "source_id": "lekeplass-ladeparken-lek",
+      "source_name": "Ladeparken lek",
+      "local_id": "ladeparken",
+      "knowledge_level": "audited"
+    },
+    {
+      "source_id": "lekeplass-lade-skole-lek",
+      "source_name": "Lade skole lek",
+      "local_id": "lade-skole-play",
+      "knowledge_level": "audited"
+    },
+    {
+      "source_id": "google-ChIJHbzUMFEwbUYRtcKkq-oGhM4",
+      "source_name": "Leangen Idrettspark",
+      "local_id": "leangen-idrettspark",
+      "knowledge_level": "audited"
+    },
+    {
+      "source_id": "2f0c0e0d-fcde-4c14-b5c8-2e0f707541da",
+      "source_name": "Lade skole",
+      "local_id": "lade-skole",
+      "knowledge_level": "audited"
+    },
+    {
+      "source_id": "osm-node-4394667412",
+      "source_name": "Leo's lekeland",
+      "local_id": "leos-lekeland-trondheim",
+      "knowledge_level": "audited"
+    },
+    {
+      "source_id": "google-ChIJVVUFzBwxbUYRmvU78sq9Vx8",
+      "source_name": "Café Victoria",
+      "local_id": "cafe-victoria",
+      "knowledge_level": "audited"
+    },
+    {
+      "source_id": "google-ChIJb3DRGdIxbUYRILAgj-GPzhI",
+      "source_name": "Rosenborg Bakeri Ladetorget",
+      "local_id": "rosenborg-bakeri-ladetorget",
+      "knowledge_level": "audited"
+    },
+    {
+      "source_id": "google-ChIJhSToLQUxbUYRY-bFi-HNxsQ",
+      "source_name": "Kompis Lade",
+      "local_id": "kompis-lade",
+      "knowledge_level": "audited"
+    },
+    {
+      "source_id": "google-ChIJ-4ALIWoubUYR3nK7rUBmeic",
+      "source_name": "Leo's Lekeland",
+      "local_id": "leos-lekeland-trondheim",
+      "knowledge_level": "audited"
+    },
+    {
+      "source_id": "google-ChIJ382Ew_wwbUYRWDIDp4q77cA",
+      "source_name": "Devlebukta",
+      "local_id": "register-devlebukta-5d463d132b",
+      "knowledge_level": "register"
+    },
+    {
+      "source_id": "badeplass-rotvollfj-ra",
+      "source_name": "Rotvollfjæra",
+      "local_id": "register-rotvollfjaera-c5ed84cedb",
+      "knowledge_level": "register"
+    },
+    {
+      "source_id": "park-dakotaparken",
+      "source_name": "Dakotaparken",
+      "local_id": "register-dakotaparken-642a87ac89",
+      "knowledge_level": "register"
+    },
+    {
+      "source_id": "badeplass-ringvebukta",
+      "source_name": "Ringvebukta",
+      "local_id": "ringvebukta",
+      "knowledge_level": "audited"
+    },
+    {
+      "source_id": "park-grillstadfj-ra",
+      "source_name": "Grillstadfjæra",
+      "local_id": "register-grillstadfjaera-6e9e5809e9",
+      "knowledge_level": "register"
+    },
+    {
+      "source_id": "entur-NSR-StopPlace-393",
+      "source_name": "Leangen stasjon",
+      "local_id": "leangen-stasjon",
+      "knowledge_level": "audited"
+    },
+    {
+      "source_id": "google-ChIJIxSO7s0xbUYRQTZSjmjBkjk",
+      "source_name": "3T-Lade",
+      "local_id": "3t-lade",
+      "knowledge_level": "audited"
+    },
+    {
+      "source_id": "google-ChIJExGbthwxbUYRYY6srQ-FrY8",
+      "source_name": "Ringve Musikkmuseum",
+      "local_id": "ringve-musikkmuseum",
+      "knowledge_level": "audited"
+    },
+    {
+      "source_id": "google-ChIJA3O3nQUxbUYRHVBuZzdhRkY",
+      "source_name": "Lade Kirke",
+      "local_id": "lade-kirke",
+      "knowledge_level": "audited"
+    },
+    {
+      "source_id": "google-ChIJyYzCLwgxbUYR5i40urgPIOY",
+      "source_name": "Lademoen kirke",
+      "local_id": "register-lademoen-kirke-30eea150bb",
+      "knowledge_level": "register"
+    }
+  ],
+  "skipped_children": [
+    {
+      "source_id": "google-ChIJ41LSGgIxbUYR__2L19iSkI0",
+      "source_name": "Vitusapotek Lade Arena",
+      "local_id": "vitusapotek-lade-arena",
+      "knowledge_level": "audited"
+    },
+    {
+      "source_id": "google-ChIJ_bGcGQAxbUYRV8c0jX3elYo",
+      "source_name": "Coop Mega Sirkus Shopping",
+      "local_id": "coop-mega-sirkus-shopping",
+      "knowledge_level": "audited"
+    },
+    {
+      "source_id": "google-ChIJofCvaPExbUYRxuBKg_zQM14",
+      "source_name": "Vitusapotek City Lade",
+      "local_id": "vitusapotek-city-lade",
+      "knowledge_level": "audited"
+    },
+    {
+      "source_id": "google-ChIJU0r-QgQxbUYRt6CgoPAVKKs",
+      "source_name": "Obs City Lade",
+      "local_id": "obs-city-lade",
+      "knowledge_level": "audited"
+    },
+    {
+      "source_id": "google-ChIJq8BfaAQxbUYR74KE0gu8Mxo",
+      "source_name": "Jordbærpikene City Lade",
+      "local_id": "jordbrpikene-city-lade",
+      "knowledge_level": "audited"
+    },
+    {
+      "source_id": "google-ChIJU0r-QgQxbUYR227hQ_E__jw",
+      "source_name": "Big Bite City Lade",
+      "local_id": "big-bite-city-lade",
+      "knowledge_level": "audited"
+    },
+    {
+      "source_id": "google-ChIJA-UCdaUxbUYR8q4im15y4TM",
+      "source_name": "Trygg/Lade hallen",
+      "local_id": "trygg-lade-hallen",
+      "knowledge_level": "audited"
+    },
+    {
+      "source_id": "google-ChIJ_9hhaFEwbUYRkwYH7PSVUD8",
+      "source_name": "Leangen kunstisbane",
+      "local_id": "leangen-kunstisbane",
+      "knowledge_level": "audited"
+    }
+  ],
+  "write": true
+}

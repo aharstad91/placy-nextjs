@@ -279,6 +279,13 @@ export type LocalBoard = z.infer<typeof localBoardSchema>;
 export const localPlaceSchema = z
   .object({
     provenance: z.object({ provider: z.literal("supabase"), recordId: z.string(), importedAt: isoDate }).strict().optional(),
+    /**
+     * `audited` er den redaksjonelle kunnskapsbasen: sammendrag, fakta og
+     * kilder kan sies av guiden. `register` er kartets brede stedsregister og
+     * gir bare navn, type, adresse og lagret reisetid. Standardverdien bevarer
+     * alle eksisterende lokale datasett uten en migrering av håndskrevet JSON.
+     */
+    knowledgeLevel: z.enum(["audited", "register"]).default("audited"),
     id: stableId,
     name: z.string().min(1).max(120),
     /** Dokumentert tilbud inne i eller del av et større anlegg; kartet viser forelderen. */
@@ -581,7 +588,10 @@ export const localConversationSchema = z
 export type LocalConversation = z.infer<typeof localConversationSchema>;
 
 export const localSourcesSchema = z.array(localSourceSchema).max(200);
-export const localPlacesSchema = z.array(localPlaceSchema).max(500);
+// Et tett byområde kan ha flere hundre registersteder i tillegg til det lille,
+// reviderte utvalget. Grensen er fortsatt endelig, men skal ikke presse kartet
+// til å late som registeret er redaksjonelt kuratert.
+export const localPlacesSchema = z.array(localPlaceSchema).max(2000);
 export const localTopicsSchema = z.array(localTopicSchema).max(500);
 export const localFaqsSchema = z.array(localFaqSchema).max(500);
 export const localConversationsSchema = z.array(localConversationSchema).max(100);

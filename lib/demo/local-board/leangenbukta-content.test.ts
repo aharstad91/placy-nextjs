@@ -74,16 +74,17 @@ describe("Leangenbukta: komplett revisjon og import", () => {
     const dataset = await loadDataset(DEMO);
     const candidates = (await categoryPackages()).flatMap(category => category.candidates);
     const selected = candidates.filter(candidate => candidate.decision === "start_set" || candidate.decision === "member");
-    const placeIds = new Set(dataset.places.map(place => place.id));
+    const auditedPlaces = dataset.places.filter(place => place.knowledgeLevel === "audited");
+    const placeIds = new Set(auditedPlaces.map(place => place.id));
 
     expect(selected).toHaveLength(55);
     for (const candidate of selected) {
       expect(placeIds, `${candidate.candidate_id}: ${candidate.canonical_id}`).toContain(runtimeId(candidate.canonical_id));
     }
     expect(placeIds).toContain("ladetorget");
-    expect(dataset.places).toHaveLength(56);
-    expect(dataset.places.filter(place => !place.parentPlaceId)).toHaveLength(26);
-    expect(dataset.places.filter(place => place.parentPlaceId)).toHaveLength(30);
+    expect(auditedPlaces).toHaveLength(56);
+    expect(auditedPlaces.filter(place => !place.parentPlaceId)).toHaveLength(26);
+    expect(auditedPlaces.filter(place => place.parentPlaceId)).toHaveLength(30);
 
     const selectedCanonicals = new Set(selected.map(candidate => candidate.canonical_id));
     const blockedOnly = candidates.filter(
@@ -132,7 +133,7 @@ describe("Leangenbukta: komplett revisjon og import", () => {
       expect(check.error, check.candidate_id).toBeNull();
       expect(check.results.length, check.candidate_id).toBeGreaterThan(0);
     }
-    for (const place of dataset.places) {
+    for (const place of dataset.places.filter(place => place.knowledgeLevel === "audited")) {
       expect(place.sourceIds.length, place.id).toBeGreaterThan(0);
       if (place.locationPrecision === "approximate") {
         expect(place.locationNote, place.id).toMatch(/inngang|kartpunkt|plassering/i);
@@ -148,7 +149,7 @@ describe("Leangenbukta: komplett revisjon og import", () => {
   it("bruker målte Mapbox-minutter fra prosjektpunktet for alle 26 synlige ankre", async () => {
     const dataset = await loadDataset(DEMO);
     const receipt = await json<TravelReceipt>(`${RESEARCH}/travel-times.json`);
-    const topLevel = dataset.places.filter(place => !place.parentPlaceId);
+    const topLevel = dataset.places.filter(place => place.knowledgeLevel === "audited" && !place.parentPlaceId);
     const receiptById = new Map(receipt.places.map(place => [place.place_id, place.minutes]));
 
     expect(receipt.provider).toBe("Mapbox Matrix API");
@@ -161,7 +162,7 @@ describe("Leangenbukta: komplett revisjon og import", () => {
       expect(place.travelTime?.bike, place.id).toBeGreaterThan(0);
       expect(place.travelTime?.car, place.id).toBeGreaterThan(0);
     }
-    expect(dataset.places.filter(place => place.parentPlaceId).every(place => place.travelTime === undefined)).toBe(true);
+    expect(dataset.places.filter(place => place.knowledgeLevel === "audited" && place.parentPlaceId).every(place => place.travelTime === undefined)).toBe(true);
   });
 
   it("holder kjente feil og naboplanen ute av aktive kartobjekter", async () => {

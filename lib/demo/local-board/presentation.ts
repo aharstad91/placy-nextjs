@@ -95,7 +95,17 @@ export function createPresentation(base: NyhavnaConversation, options: Presentat
   };
   const family = (place: LocalPlace) => /kaf[eé]|kaffe|baker/i.test(place.placeType ?? "") ? "kaffe" : place.placeType;
   const nextSimilar = (place: LocalPlace) => places.find(p => !distances.some(d => d.id === p.id && !d.initiallyVisible && !revealed.has(p.id)) && p.id !== place.id && !visited.has(p.id) && p.categoryId === place.categoryId && family(p) === family(place));
-  const placeText = (place: LocalPlace) => `${place.name}. ${place.summary}${place.status !== "existing" ? ` ${place.facts.filter(f => f.verification === "confirmed").slice(0, 3).map(f => f.text).join(" ")}` : ""}${place.travelTime?.walk !== undefined ? ` Omtrent ${place.travelTime.walk} minutter å gå${homeName ? ` fra ${homeName}` : ""}.` : ""}`;
+  const travelText = (place: LocalPlace) => place.travelTime?.walk !== undefined
+    ? ` Omtrent ${place.travelTime.walk} minutter å gå${homeName ? ` fra ${homeName}` : ""}.`
+    : "";
+  const placeText = (place: LocalPlace) => place.knowledgeLevel === "register"
+    ? `${place.name}. Registrert som ${place.placeType?.trim() || "sted"}${place.address ? ` på ${place.address}` : ""}.${travelText(place)} Jeg har ikke kildekontrollerte opplysninger om åpningstider, priser, kvalitet eller tilbud.`
+    : `${place.name}. ${place.summary}${place.status !== "existing" ? ` ${place.facts.filter(f => f.verification === "confirmed").slice(0, 3).map(f => f.text).join(" ")}` : ""}${travelText(place)}`;
+  const placeInvitation = (place: LocalPlace) => {
+    if (!nextSimilar(place)) return "Vil du utforske et annet tema, for eksempel transport eller oppvekst?";
+    if (place.knowledgeLevel === "register") return "Vil du se et annet registrert sted i samme kategori?";
+    return categoryById.get(place.categoryId)?.placeInvitation ?? "Vil du høre om lignende steder i nærheten?";
+  };
   const similar = (args: Record<string, unknown>): ToolOutcome => {
     const id = typeof args.poi_id === "string" ? args.poi_id : focusedPlaceId;
     const source = places.find(p => p.id === id);
@@ -168,8 +178,7 @@ MANUSPOSISJON: ${position < 0 ? startNote() : `${segments[position].id}. resume 
         if (!place) return null;
         focusedPlaceId = id;
         visited.add(id);
-        const invitation = nextSimilar(place) ? (categoryById.get(place.categoryId)?.placeInvitation ?? "Vil du høre om lignende steder i nærheten?") : "Vil du utforske et annet tema, for eksempel transport eller oppvekst?";
-        return { commentary: `${placeText(place)} ${invitation}`, directives: [] };
+        return { commentary: `${placeText(place)} ${placeInvitation(place)}`, directives: [] };
       }
       if (kind !== "theme" || !segments.some(s => s.categoryId === id)) return base.onMapSelection(kind, id);
       const outcome = present({ action: "category", category_id: id });

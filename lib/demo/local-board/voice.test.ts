@@ -168,6 +168,76 @@ describe("innhold som er lagt inn", () => {
     expect(facts.sources[0].url).toBe("https://eksempel.no/side/");
   });
 
+  it("holder registersteder utenfor den kildekontrollerte kunnskapsbasen", async () => {
+    const dataset = await filled();
+    dataset.places = [...dataset.places, ...localPlacesSchema.parse([
+      {
+        provenance: { provider: "supabase", recordId: "google-register", importedAt: "2026-09-18" },
+        knowledgeLevel: "register",
+        id: "register-sted",
+        name: "Register Sted",
+        categoryId: "mat-drikke",
+        coordinates: { lat: 63.441, lng: 10.421 },
+        address: "Registergata 2",
+        placeType: "Restaurant",
+        travelTime: { walk: 2 },
+        checkedAt: "2026-09-18",
+      },
+      {
+        provenance: { provider: "supabase", recordId: "google-center", importedAt: "2026-09-18" },
+        knowledgeLevel: "register",
+        id: "register-senter",
+        name: "Register Senter",
+        categoryId: "mat-drikke",
+        coordinates: { lat: 63.442, lng: 10.422 },
+        placeType: "Kjøpesenter",
+        anchorSummary: "Ett registrert sted.",
+        checkedAt: "2026-09-18",
+      },
+      {
+        provenance: { provider: "supabase", recordId: "google-child", importedAt: "2026-09-18" },
+        knowledgeLevel: "register",
+        id: "register-butikk",
+        parentPlaceId: "register-senter",
+        name: "Register Butikk",
+        categoryId: "mat-drikke",
+        coordinates: { lat: 63.442, lng: 10.422 },
+        address: "Registergata 3",
+        placeType: "Butikk",
+        checkedAt: "2026-09-18",
+      },
+    ])];
+
+    expect(buildKnowledgeBase(dataset).entities.map((entity) => entity.id)).not.toContain("register-sted");
+    const found = result(dataset, "find_places", { query: "Register Sted" }) as {
+      basis: string;
+      places: Array<{ id: string; basis: string; facts?: unknown; note: string }>;
+    };
+    expect(found.basis).toBe("register");
+    expect(found.places[0]).toMatchObject({ id: "register-sted", basis: "register" });
+    expect(found.places[0]).not.toHaveProperty("facts");
+    expect(found.places[0].note).toContain("Ikke legg til åpningstider");
+
+    const child = result(dataset, "find_places", { query: "Register Butikk" }) as {
+      places: Array<{ id: string; map_poi_id: string; basis: string }>;
+    };
+    expect(child.places[0]).toMatchObject({
+      id: "register-butikk",
+      map_poi_id: "register-senter",
+      basis: "register",
+    });
+    expect(result(dataset, "get_place_facts", { poi_id: "register-butikk" })).toMatchObject({
+      id: "register-butikk",
+      map_poi_id: "register-senter",
+      basis: "register",
+    });
+
+    const chapter = conversationFor(dataset).execute("open_theme", { theme_id: "mat-drikke" }).result as {
+      chapter: { curated: Array<{ id: string }> };
+    };
+    expect(chapter.chapter.curated.map((entry) => entry.id)).toEqual(["test-sted"]);
+  });
+
   it("fremhever stedet i kartet når temaet åpnes", async () => {
     const outcome = conversationFor(await filled()).execute("open_theme", { theme_id: "mat-drikke" });
     expect(outcome.directives).toEqual([{ name: "highlight_places", args: { poi_ids: ["test-sted"] } }]);

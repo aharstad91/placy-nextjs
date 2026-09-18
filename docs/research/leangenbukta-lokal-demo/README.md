@@ -31,11 +31,20 @@ python3 docs/research/leangenbukta-lokal-demo/_measure_travel_times.py
 # Bygg de seks runtime-filene fra godkjent materiale
 python3 docs/research/leangenbukta-lokal-demo/_build_runtime.py
 
+# Oppfrisk det brede kartregisteret innen 2 km fra det eksisterende boardet.
+# Uten --write viser kommandoen bare opptellingen. Registeret gir Anja navn,
+# type, adresse og lagret reisetid, men aldri kildekontrollerte fakta.
+NODE_OPTIONS=--conditions=react-server node --env-file=.env.local \
+  ./node_modules/.bin/tsx scripts/demo/import-local-register.ts \
+  --customer placy-demo --source-slug leangenbukta \
+  --dataset data/demo/leangenbukta-lokal --radius-km 2 \
+  --checked-at 2026-09-18 --write
+
 # Kontroller full dekning og runtime-grenser
 npx vitest run lib/demo/local-board/leangenbukta-content.test.ts
 ```
 
-`place-coordinate-verification.json`, `travel-times.json` og `runtime-import-report.json` er kvitteringene for importen. Et omtrentlig kartpunkt er merket med synlig inngangsforbehold. Reisetid finnes bare på de 26 synlige ankrene; medlemmer bruker ankerets kartpunkt.
+`place-coordinate-verification.json`, `travel-times.json`, `runtime-import-report.json` og `register-import-report.json` er kvitteringene for importen. Et omtrentlig revidert kartpunkt er merket med synlig inngangsforbehold. De reviderte stedene bruker målte Mapbox-minutter; registeret beholder de lagrede reisetidene fra kildeboardet. De to lagene skilles med `knowledgeLevel: audited|register`. Alle 504 registersteder, også virksomhetene inni et anker, er søkbare for Anja med bare navn, type, adresse og lagret reisetid.
 
 ## Status per enhet
 
@@ -46,7 +55,7 @@ npx vitest run lib/demo/local-board/leangenbukta-content.test.ts
 | U3 | Boligprosjektprofil og `development`-objektet | Levert — `docs/demos/board-profiler.md` |
 | U4 | Leangenbukta-demo koblet til kart og Anja | Levert — `/demo/leangenbukta-lokal` |
 | U5 | Prosjektgrunnlaget: bygg, fasiliteter, tidslinje | Levert — 565/565 påstander vurdert, 124 godkjente runtime-påstander |
-| U6 | Nærområdet kategori for kategori | Levert mekanisk — 145/145 kandidater, 26 kartankre, 30 medlemmer og målte ruter |
+| U6 | Nærområdet kategori for kategori | Levert mekanisk — 145/145 kandidater, 26 reviderte kartankre, 30 reviderte medlemmer og målte ruter. Breddeimporten legger til 504 registersteder og gir 357 kartankre totalt innen 2 km. |
 | U7 | Nettsidekopien koblet, og demoprøve i nettleser og lyd | Delvis levert — CTA og desktop/mobil er kontrollert; faktisk lydprøve gjenstår |
 | U8 | Arbeidsprosessen dokumentert og bevist | Levert for research/import og nettleser; lydkvittering legges til etter lydprøven |
 
