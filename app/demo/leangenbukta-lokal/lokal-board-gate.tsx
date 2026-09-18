@@ -1,6 +1,6 @@
 "use client";
 
-import type { ComponentProps } from "react";
+import { useMemo, type ComponentProps } from "react";
 import ReportReelsPage from "@/components/variants/report/reels/ReportReelsPage";
 
 type Props = Pick<ComponentProps<typeof ReportReelsPage>, "project" | "boardData">;
@@ -19,23 +19,25 @@ type Props = Pick<ComponentProps<typeof ReportReelsPage>, "project" | "boardData
  * `placePanel` — på desktop åpner alle steder ETT felles detaljpanel over
  * kolonnen. Mobil er uendret.
  *
- * ## Hvorfor ingen megler og ingen brand-assets
+ * ## Hvorfor ingen megler, men brand-assets
  *
- * Nyhavna-porten legger på en eksempelmegler og `assets.brand`. Ingen av delene
- * hører hjemme her. Megleren ville vært oppdiktet: Leangenbukta har ingen
- * navngitt kontaktperson i det kildekontrollerte materialet, og en demo som
- * starter tom skal ikke starte med en person som ikke finnes. Adapterens
- * `hideBrokerCard: true` blir derfor stående.
+ * Nyhavna-porten legger på en eksempelmegler. Den hører ikke hjemme her:
+ * Leangenbukta har ingen navngitt kontaktperson i det kildekontrollerte
+ * materialet, og en demo som starter tom skal ikke starte med en person som
+ * ikke finnes. Adapterens `hideBrokerCard: true` blir derfor stående.
  *
- * `assets.brand` ville pekt på `/illustrations/leangenbukta-lokal-logo.svg`,
- * `-splash.jpg` og `-splash-video.mp4` (`lib/themes/project-brand.ts`). De tre
- * filene finnes ikke, og flagget ville bare gitt tre 404-er i stedet for
- * splash-skjermens tekst-wordmark. Merkevaren kommer i stedet fra
- * `leangenbukta-brand.css` og fra logoen i prosjektmarkøren (`pinImage` i
- * `board.json`), som begge virker uten asset-pakken.
+ * `assets.brand` slås på fordi de tre filene finnes
+ * (`public/illustrations/leangenbukta-lokal-{logo.svg,splash.jpg,splash-video.mp4}`,
+ * hentet fra utbyggerens egen nettside via nettsidekopien). Det gir logoen over
+ * velkomstteksten og hero-filmen i høyre panel — uten flagget viser splashen
+ * bare tekst-ordmerke, og mobil-splashen får svart bakgrunn.
  *
  * Ingen `?embed`/`?from`/`?src`: demoen er lokal og deles ikke som lenke.
  */
 export default function LokalBoardGate({ project, boardData }: Props) {
-  return <ReportReelsPage project={project} boardData={boardData} boardMode="report" layout="framed" placePanel />;
+  const brandedBoard = useMemo(
+    () => (boardData ? { ...boardData, assets: { ...boardData.assets, brand: true } } : boardData),
+    [boardData],
+  );
+  return <ReportReelsPage project={project} boardData={brandedBoard} boardMode="report" layout="framed" placePanel />;
 }
