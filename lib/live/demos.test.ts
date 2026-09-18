@@ -86,3 +86,52 @@ describe("den delte kjeden nevner ingen demo ved navn", () => {
     expect(demo.board.projectSlug).not.toBe("nyhavna");
   });
 });
+
+/**
+ * To demoer i samme prosess (U4-scenario 2).
+ *
+ * Verktøytekstene navngir stedet, og de bygges per demo. Testene her måler at
+ * navnene ikke krysser: en Leangenbukta-samtale skal aldri få et verktøy som
+ * sier «Nyhavna», og omvendt — det er den feilen som ikke synes på skjermen,
+ * bare i det modellen leser.
+ */
+describe("to lokale demoer ved siden av hverandre", () => {
+  it("gir Leangenbukta sin egen innholds-ID, sine egne tekster og sitt eget board", async () => {
+    const leangenbukta = await loadLiveDemo("leangenbukta-lokal");
+    const nyhavna = await loadLiveDemo("nyhavna-lokal");
+
+    expect(leangenbukta.snapshotId).toMatch(/^leangenbukta-lokal-/);
+    expect(leangenbukta.snapshotId).not.toBe(nyhavna.snapshotId);
+    expect(leangenbukta.board.projectSlug).toBe("leangenbukta-lokal");
+    expect(leangenbukta.board.demoGreeting).not.toBe(nyhavna.board.demoGreeting);
+    expect(leangenbukta.voiceInstructions).toBeTruthy();
+    expect(leangenbukta.voiceInstructions).not.toBe(nyhavna.voiceInstructions);
+    expect(leangenbukta.backendInstructions).not.toBe(nyhavna.backendInstructions);
+    // Tomtilstanden (AE1): ingen steder, og instruksen sier det uttrykkelig.
+    expect(leangenbukta.backendInstructions).toContain("KART: Det er ingen steder i kartet.");
+    expect(leangenbukta.board.poisById.size).toBe(0);
+  });
+
+  it("krysser ikke verktøynavnene mellom de to demoene", async () => {
+    const descriptor = getLocalDemo("leangenbukta-lokal");
+    const dataset = await loadDataset(descriptor);
+    const leangenbukta = await loadLiveDemo(descriptor.id);
+    const nyhavna = await loadLiveDemo("nyhavna-lokal");
+
+    const find = leangenbukta.tools.find((tool) => tool.name === "find_project_info");
+    expect(find?.description).toContain(`Søk i ${dataset.board.projectInfoLabel}:`);
+    expect(find?.description).toContain("Leangenbukta");
+    expect(leangenbukta.tools.find((tool) => tool.name === "find_places")?.description)
+      .toContain("Finn steder på Leangenbukta:");
+    for (const tool of leangenbukta.tools) {
+      expect(JSON.stringify(tool), tool.name).not.toContain("Nyhavna");
+    }
+    for (const tool of nyhavna.tools) {
+      expect(JSON.stringify(tool), tool.name).not.toContain("Leangenbukta");
+    }
+    // Presentasjonsverktøyene ligger i samme liste for begge demoene.
+    for (const name of ["present_neighbourhood", "find_similar_places", "reveal_more_places"]) {
+      expect(leangenbukta.tools.map((tool) => tool.name)).toContain(name);
+    }
+  });
+});

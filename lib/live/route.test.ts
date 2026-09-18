@@ -89,6 +89,30 @@ describe('local GPT-Live session route', () => {
     expect((await POST(request('https://example.com', undefined, local))).status).toBe(404);
   });
 
+  it('holds the same limits for Leangenbukta as for Nyhavna, without crossing the two', async () => {
+    // U4-scenario 2 og 3, AE6: hver registrert demo har sin egen innholds-ID.
+    // En fane som sto åpen mens JSON-en ble endret, og en fane som spør med den
+    // ANDRE demoens ID, skal begge avvises — ikke få en guide som er uenig med
+    // skjermen.
+    const leangenbukta = await loadLiveDemo('leangenbukta-lokal');
+    const nyhavna = await loadLiveDemo('nyhavna-lokal');
+    expect(leangenbukta.snapshotId).not.toBe(nyhavna.snapshotId);
+
+    const stale = await POST(request(undefined, undefined, { dataset: 'leangenbukta-lokal', snapshotId: 'stale' }));
+    expect(stale.status).toBe(409);
+    const crossed = await POST(request(undefined, undefined, { dataset: 'leangenbukta-lokal', snapshotId: nyhavna.snapshotId }));
+    expect(crossed.status).toBe(409);
+    expect(mocks.reserve).not.toHaveBeenCalled();
+    expect(fetch).not.toHaveBeenCalled();
+
+    const ok = await POST(request(undefined, undefined, { dataset: 'leangenbukta-lokal', snapshotId: leangenbukta.snapshotId }));
+    expect(ok.status).toBe(200);
+    const init = vi.mocked(fetch).mock.calls[0][1] as RequestInit;
+    const body = JSON.parse(String(init.body));
+    expect(body.session.instructions).toBe(buildLocalVoiceInstructions(await loadDataset(getLocalDemo('leangenbukta-lokal'))));
+    expect(String(init.body)).not.toContain('Nyhavna');
+  });
+
   it('rejects foreign origin, nonloopback and production without opt-in', async () => {
     expect((await POST(request('https://example.com'))).status).toBe(404);
     expect((await POST(request(undefined, 'https://example.com'))).status).toBe(404);

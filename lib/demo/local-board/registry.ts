@@ -78,6 +78,24 @@ export const LOCAL_DEMOS: readonly LocalDemoDescriptor[] = [
     readme: "docs/research/nyhavna-lokal-demo/README.md",
     features: ALL_FEATURES,
   },
+  {
+    id: "leangenbukta-lokal",
+    directory: "data/demo/leangenbukta-lokal",
+    readme: "docs/research/leangenbukta-lokal-demo/README.md",
+    // Samme funksjoner som Nyhavna, oppført hver for seg og ikke gjennom
+    // `ALL_FEATURES`: en demo skal ta stilling til hvert flagg selv. Deler den
+    // konstanten, ville et framtidig flagg slått seg på her uten at noen hadde
+    // vurdert om datasettet bærer innholdet flagget forutsetter.
+    features: {
+      faqProgress: true,
+      revealPlaces: true,
+      followHighlightCategory: true,
+      unscopedCategoryList: true,
+      narrationFocus: true,
+      voicePacing: true,
+      guidedPersona: true,
+    },
+  },
 ];
 
 export const LOCAL_DEMO_IDS: readonly string[] = LOCAL_DEMOS.map((demo) => demo.id);

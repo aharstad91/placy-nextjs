@@ -1,0 +1,110 @@
+{
+  "schemaVersion": 1,
+  "profile": "housing-development",
+  "id": "leangenbukta-lokal",
+  "name": "Leangenbukta",
+  "address": "",
+  "district": "Leangenbukta",
+  "city": "Trondheim",
+  "intro": "Demoen er under oppbygging. Kartet viser prosjektets utgangspunkt, og kategoriene fylles med kildekontrollert innhold etter hvert. Start gjerne en samtale med Anja om hva du lurer på.",
+  "center": {
+    "lat": 63.43947521501401,
+    "lng": 10.466113792494502
+  },
+  "map3d": true,
+  "pinSubtitle": "",
+  "pinAccent": "#90553e",
+  "pinImage": "/demo/leangenbukta-lokal/leangenbukta-logo.svg",
+  "greeting": "Hei, jeg heter Anja og er din digitale guide i Leangenbukta. Demoen bygges opp nå, så jeg har ikke fakta om prosjektet eller nærområdet ennå. Vil du høre om Leangenbukta som boligprosjekt, eller om nærområdet rundt?",
+  "projectInfoLabel": "det kildekontrollerte materialet om Leangenbukta",
+  "discoveryCategoryIds": [
+    "trening",
+    "natur"
+  ],
+  "voice": {
+    "subject": "hverdagen i Leangenbukta",
+    "presents": "Leangenbukta og nærområdet",
+    "employer": "Leangenbukta",
+    "phrases": [
+      "i Leangenbukta",
+      "her ute"
+    ],
+    "scope": "Leangenbukta som boligprosjekt er rammen, sammen med nærområdet rundt. Prosjektets planer og tilbudet som finnes i dag holdes adskilt. Demoen har ikke kildekontrollert innhold ennå; si det i stedet for å fylle hullet.",
+    "entry": "«Prosjektet», «bo», «boligene» og «det som kommer» betyr present_neighbourhood med category og category_id leangenbukta-prosjektet.",
+    "referencePoint": "Det er et fast referansepunkt i Leangenbukta, ikke en bestemt bolig.",
+    "backendSections": [
+      "GRUNNLAG: Dette datasettet er tomt. Det finnes ingen kildekontrollerte fakta om Leangenbukta her ennå. Svar at du ikke har opplysningen, og ikke hent den fra hukommelsen, fra et annet prosjekt eller fra et annet sted i Trondheim. Ikke gjett byggetrinn, ferdigstillelse, innflytting, priser eller hvilke tilbud som finnes i nærheten."
+    ],
+    "roleSentences": [
+      "Si åpent at demoen fortsatt bygges opp når du mangler grunnlag, i stedet for å anta noe om Leangenbukta."
+    ]
+  },
+  "categories": [
+    {
+      "id": "leangenbukta-prosjektet",
+      "name": "Leangenbukta",
+      "icon": "Building2",
+      "color": "#91563e",
+      "lead": "",
+      "body": ""
+    },
+    {
+      "id": "hverdag",
+      "name": "Hverdag",
+      "icon": "ShoppingCart",
+      "color": "#36d16f",
+      "lead": "",
+      "body": ""
+    },
+    {
+      "id": "oppvekst",
+      "name": "Oppvekst",
+      "icon": "GraduationCap",
+      "color": "#f8ae17",
+      "lead": "",
+      "body": ""
+    },
+    {
+      "id": "servering",
+      "name": "Servering",
+      "icon": "UtensilsCrossed",
+      "color": "#f35a5a",
+      "lead": "",
+      "body": ""
+    },
+    {
+      "id": "natur",
+      "name": "Natur",
+      "icon": "Trees",
+      "color": "#22c68d",
+      "lead": "",
+      "body": "",
+      "moreNoun": "turmål"
+    },
+    {
+      "id": "transport",
+      "name": "Transport",
+      "icon": "Bus",
+      "color": "#4d93f8",
+      "lead": "",
+      "body": ""
+    },
+    {
+      "id": "trening",
+      "name": "Trening",
+      "icon": "Dumbbell",
+      "color": "#f05da7",
+      "lead": "",
+      "body": "",
+      "moreNoun": "treningssteder"
+    },
+    {
+      "id": "opplevelser",
+      "name": "Opplevelser",
+      "icon": "Film",
+      "color": "#a06cf5",
+      "lead": "",
+      "body": ""
+    }
+  ]
+}
