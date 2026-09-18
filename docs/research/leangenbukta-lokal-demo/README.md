@@ -20,15 +20,28 @@ Nettsidekopien som lenker hit ligger på `/demo/leangenbukta-nettside` — se `d
 
 Datasettets seks JSON-filer er formatet i `lib/demo/local-board/schema.ts`. Profilen er `housing-development`; hva den krever står i `docs/demos/board-profiler.md`.
 
-Innholdet fylles i to trinn etter denne rammen:
+Hele oppskriften — prosjektoppsett, researchbestilling, dekningsregnskap, import, validering, skjermkontroll, lyttetest og hvordan oppdateringer oppfører seg — ligger i **[`docs/demos/boligprosjekt-arbeidsprosess.md`](../../demos/boligprosjekt-arbeidsprosess.md)**. Den gjelder både denne demoen og neste boligprosjekt.
 
-- **U5** tar inn prosjektgrunnlaget: bygg, fasiliteter og tidslinje, med kilde, kontrolldato og skille mellom byggestatus, åpning, tidspunkt og adgang.
-- **U6** bygger nærområdet kategori for kategori, med samme kildekontroll og en lyttetest per kategori.
+Fram til innholdet er lagt inn er de tomme kategoriene et manglende **demogrunnlag**, ikke en påstand om at tilbudet ikke finnes i virkeligheten.
 
-Fram til da er de tomme kategoriene et manglende **demogrunnlag**, ikke en påstand om at tilbudet ikke finnes i virkeligheten.
+## Status per enhet
+
+| Enhet | Hva den leverer | Status |
+|---|---|---|
+| U1 | Baseline og kartlegging av Nyhavna-koblingene | Levert — `baseline.md` |
+| U2 | Felles lokal board-kjerne med eksplisitt register | Levert — `lib/demo/local-board/` |
+| U3 | Boligprosjektprofil og `development`-objektet | Levert — `docs/demos/board-profiler.md` |
+| U4 | Tom Leangenbukta-demo koblet til kart og Anja | Levert — `/demo/leangenbukta-lokal` |
+| U5 | Prosjektgrunnlaget: bygg, fasiliteter, tidslinje | **Venter på research.** Ingen rapportsti registrert. |
+| U6 | Nærområdet kategori for kategori, med lyttetest | **Venter på research.** |
+| U7 | Nettsidekopien koblet, og demoprøve i nettleser og lyd | Venter på U5–U6 |
+| U8 | Arbeidsprosessen dokumentert og bevist | Delvis — oppskriften og det syntetiske tredje prosjektet er levert. Gjenstår: å prøve oppskriften mot faktisk innholdsarbeid i U5–U6. |
+
+Det syntetiske tredje prosjektet ligger i `lib/demo/local-board/third-project.test.ts`. Det finnes bare i testen, er ikke oppført i registeret og kan ikke nås fra Live-ruta.
 
 ## Bakgrunn
 
 - `baseline.md` — regresjonsgrunnlaget demoen måles mot.
 - `docs/plans/2026-09-18-1124-feat-leangenbukta-board-master-plan.md` — planen.
+- `docs/demos/boligprosjekt-arbeidsprosess.md` — oppskriften for neste boligprosjekt.
 - `docs/research/nyhavna-lokal-demo/README.md` — den første gjennomføringen av samme metode.
