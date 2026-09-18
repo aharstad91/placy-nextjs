@@ -136,8 +136,21 @@ function developmentProblems(
   claim("timing.claimId", development.timing?.claimId);
   claim("access.claimId", development.access.claimId);
 
-  if (development.availability === "open" && !development.availabilityClaimId) {
-    problems.push(`${owner} → development.availability: «open» krever availabilityClaimId — at noe er åpent må ha en påstand med kilde.`);
+  if (development.availability === "open") {
+    const claimId = development.availabilityClaimId;
+    if (!claimId) {
+      problems.push(`${owner} → development.availability: «open» krever availabilityClaimId — at noe er åpent må ha en påstand med kilde.`);
+    } else {
+      // En uavklart påstand er per definisjon noe vi IKKE sier som fakta. At den
+      // likevel kan bære «open» ville gjort forbeholdet usynlig: projeksjonen
+      // skriver «åpnet» uten et eneste forbehold, og stemmen sier det videre.
+      const referenced = development.claims.find((c) => c.id === claimId);
+      if (referenced && referenced.verification !== "confirmed") {
+        problems.push(
+          `${owner} → development.availability: «open» krever en bekreftet påstand (verification: confirmed); «${claimId}» er uavklart.`,
+        );
+      }
+    }
   }
 
   const building = (field: string, id: string) => {
@@ -268,8 +281,14 @@ export function assertReferences(dataset: LocalDataset, descriptor: LocalDemoDes
   const buildingIds = new Set(
     dataset.topics.filter((t) => t.development?.objectType === "building").map((t) => t.id),
   );
+  // Kartankeret slår opp objektet på stedets ID. Deler to objekter anker, ville
+  // det ene stille forsvunnet fra både kartet og stedsfaktaene mens fritekstsøket
+  // fortsatt fant begge — samme demo, to forskjellige svar.
+  const anchoredPlaceIds: string[] = [];
   for (const topic of dataset.topics) {
     const owner = `${FILES.topics} → «${topic.id}»`;
+    const anchoredPlaceId = topic.development?.mapAnchor?.placeId;
+    if (anchoredPlaceId) anchoredPlaceIds.push(anchoredPlaceId);
     for (const id of topic.categoryIds) {
       if (!categoryIds.has(id)) problems.push(`${owner}: ukjent categoryId «${id}» (mangler i ${FILES.board}).`);
     }
@@ -279,6 +298,7 @@ export function assertReferences(dataset: LocalDataset, descriptor: LocalDemoDes
     source(owner, topic.sourceIds);
     if (topic.development) problems.push(...developmentProblems(topic, owner, { sourceIds, placeIds, buildingIds }));
   }
+  dupe(`${FILES.topics} → development.mapAnchor.placeId`, anchoredPlaceIds);
 
   dupe(FILES.faq, dataset.faqs.map((f) => f.id));
   for (const entry of dataset.faqs) {

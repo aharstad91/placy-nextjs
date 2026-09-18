@@ -100,6 +100,18 @@ describe("guided local presentation", () => {
     expect(tour.execute("present_neighbourhood", { action: "resume" }).result).toMatchObject({ segment: { categoryId: "mat-drikke" } });
     expect(tour.execute("find_similar_places", { poi_id: "unknown-place" }).result).toHaveProperty("error");
   });
+  it("navngir manusets egen første kategori i notatet, og sier fra når datasettet ikke har manus", async () => {
+    const withScript = await fixture();
+    expect(withScript.noteIfChanged()).toContain("Ikke startet; next begynner med hverdag.");
+
+    const dataset = await loadDataset(NYHAVNA);
+    const board = buildLocalBoard(dataset, NYHAVNA);
+    const scriptless = createPresentation(createNyhavnaConversation(board, buildVoiceDeps(dataset)), { segments: [], places: dataset.places, center: dataset.board.center, categories: dataset.board.categories, homeName: dataset.board.name, discoveryCategoryIds: dataset.board.discoveryCategoryIds });
+    const note = scriptless.noteIfChanged();
+    expect(note).toContain("Ingen manus i dette datasettet; present_neighbourhood har ingenting å lese.");
+    expect(note).not.toContain("next begynner med");
+    expect(scriptless.execute("present_neighbourhood", { action: "next" }).result).toMatchObject({ done: true });
+  });
   it("ends without looping, and a new session starts fresh", async () => {
     const tour = await fixture();
     const dataset = await loadDataset(NYHAVNA);

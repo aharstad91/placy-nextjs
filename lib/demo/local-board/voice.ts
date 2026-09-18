@@ -83,23 +83,69 @@ const caveatFacts = (owner: { caveats: string[]; checkedAt: string; sourceIds: s
   }));
 
 /**
- * Forbeholdene fra et utbyggingsobjekt, som UAVKLARTE fakta.
+ * Påstanden hver linje i projeksjonen hviler på, slått opp på linjas etikett.
  *
- * Kunnskapsverktøyet returnerer uavklarte fakta under `uncertainties` og siterer
- * dem aldri som fakta. Det er nøyaktig riktig plass for «vi vet ikke om
- * treningsrommet er åpent»: guiden får vite det, men kan ikke si det som en
- * opplysning om at det ER åpent.
+ * Etikettene er `development.ts` sine egne ord, og de er med vilje gjentatt her:
+ * uten koblingen mistet `get_place_facts` kilden til status, åpning, tidspunkt
+ * og adgang, og alt ble tilskrevet temaets første kilde. Linjer uten påstand
+ * («Omtrentlig plassering») står ikke i tabellen og faller tilbake til temaet.
+ */
+function claimByFactLabel(development: LocalTopic["development"]) {
+  const byLabel = new Map<string, LocalFactLike>();
+  if (!development) return byLabel;
+  const claim = (id?: string) => (id ? development.claims.find((c) => c.id === id) : undefined);
+  const put = (label: string, id?: string) => {
+    const found = claim(id);
+    if (found) byLabel.set(label, found);
+  };
+  put("Status", development.buildStatusClaimId);
+  put("Åpning", development.availabilityClaimId);
+  put("Bekreftet tidspunkt", development.timing?.claimId);
+  put("Forventet tidspunkt", development.timing?.claimId);
+  put("Adgang", development.access.claimId);
+  put("Bekreftet ved innflytting", development.moveInLinks.find((link) => link.claimId)?.claimId);
+  return byLabel;
+}
+
+type LocalFactLike = { sourceId: string; checkedAt: string };
+
+/**
+ * Et utbyggingsobjekt → kunnskapsfakta.
+ *
+ * Opplysningene (`facts`) er BEKREFTEDE: status, åpning, tidspunkt og adgang er
+ * nøyaktig det kortet på skjermen viser, og uten dem svarte `get_place_facts`
+ * med bare forbeholdene — guiden mistet det kilden faktisk sier.
+ *
+ * Forbeholdene (`caveats`) blir UAVKLARTE fakta. Kunnskapsverktøyet returnerer
+ * dem under `uncertainties` og siterer dem aldri som fakta. Det er riktig plass
+ * for «vi vet ikke om treningsrommet er åpent»: guiden får vite det, men kan
+ * ikke si det som en opplysning om at det ER åpent.
  */
 const projectionFacts = (
   projection: DevelopmentProjection | null,
   owner: { checkedAt: string; sourceIds: string[] },
-) =>
-  (projection?.caveats ?? []).map((text) => ({
-    text,
-    sourceId: owner.sourceIds[0] ?? "",
-    checkedAt: owner.checkedAt,
-    verification: "unresolved" as const,
-  }));
+  development?: LocalTopic["development"],
+) => {
+  if (!projection) return [];
+  const byLabel = claimByFactLabel(development);
+  return [
+    ...projection.facts.map((fact) => {
+      const claim = byLabel.get(fact.label);
+      return {
+        text: `${fact.label}: ${fact.value}`,
+        sourceId: claim?.sourceId ?? owner.sourceIds[0] ?? "",
+        checkedAt: claim?.checkedAt ?? owner.checkedAt,
+        verification: "confirmed" as const,
+      };
+    }),
+    ...projection.caveats.map((text) => ({
+      text,
+      sourceId: owner.sourceIds[0] ?? "",
+      checkedAt: owner.checkedAt,
+      verification: "unresolved" as const,
+    })),
+  ];
+};
 
 /**
  * Ett sted → kunnskapsentitet.
@@ -133,7 +179,7 @@ function placeEntity(
         verification: fact.verification,
       })),
       ...caveatFacts(place),
-      ...projectionFacts(anchored?.projection ?? null, anchored?.topic ?? place),
+      ...projectionFacts(anchored?.projection ?? null, anchored?.topic ?? place, anchored?.topic.development),
     ],
     relations: [],
   };
@@ -164,7 +210,7 @@ function areaEntity(dataset: LocalDataset, names: ReadonlyMap<string, string>): 
         verification: topic.status === "unresolved" ? ("unresolved" as const) : ("confirmed" as const),
       },
       ...caveatFacts(topic),
-      ...projectionFacts(projectDevelopment(topic, names), topic),
+      ...projectionFacts(projectDevelopment(topic, names), topic, topic.development),
     ]),
     relations: [],
   };
@@ -261,7 +307,14 @@ function toProjectInfo(
   sourceById: ReadonlyMap<string, LocalDataset["sources"][number]>,
   names: ReadonlyMap<string, string>,
 ): ProjectInfo {
-  const source = sourceById.get(topic.sourceIds[0]);
+  // Er temaet et utbyggingsobjekt, er det påstanden svaret hviler på som eier
+  // kilden — ikke temaets første kilde. Åpningen er den påstanden brukeren
+  // spør om oftest, så den går foran byggestatusen.
+  const development = topic.development;
+  const claimId =
+    development?.availabilityClaimId ?? development?.buildStatusClaimId ?? development?.claims[0]?.id;
+  const claim = claimId ? development?.claims.find((c) => c.id === claimId) : undefined;
+  const source = sourceById.get(claim?.sourceId ?? topic.sourceIds[0]);
   // Er temaet et utbyggingsobjekt, er det projeksjonen som eier status-ordet og
   // forbeholdene: `find_project_info` skal aldri kunne svare «åpent» på noe
   // datasettet bare har oppgitt en forventet dato for.
@@ -337,6 +390,27 @@ export function quotedList(items: readonly string[]): string {
   return joinWithOg(items.map((item) => `«${item}»`));
 }
 
+/**
+ * Kategoriene som starter med et lite utvalg og kan utvides med radius, ramset
+ * opp med små bokstaver slik guiden sier dem.
+ *
+ * Utledet av `discoveryCategoryIds` og kategorinavnene, ikke skrevet inn i
+ * instruksen: «Trening og natur» var Nyhavnas to kategorier, og et datasett med
+ * andre kategorier ville fått en regel om temaer det ikke har. Tom liste gir
+ * tom streng, og kallstedet utelater hele setningen.
+ */
+export function discoveryCategoryNames(dataset: LocalDataset): string {
+  const byId = new Map(dataset.board.categories.map((category) => [category.id, category.name]));
+  const names = dataset.board.discoveryCategoryIds.flatMap((id) => {
+    const name = byId.get(id);
+    return name ? [name] : [];
+  });
+  return names.length ? joinWithOg(names).toLocaleLowerCase("nb") : "";
+}
+
+/** Første bokstav stor — en liste med kategorinavn som starter en setning. */
+const sentenceCase = (text: string) => `${text.charAt(0).toLocaleUpperCase("nb")}${text.slice(1)}`;
+
 /** Regler for den lokale demoen; ingen arv av den gamle demoens kart- og FAQ-manus. */
 export function localDemoInstruction(dataset: LocalDataset): string {
   const scope = dataset.board.voice?.scope;
@@ -387,6 +461,12 @@ export function buildLocalInstructions(dataset: LocalDataset, board: BoardData):
   const sections = (voice?.backendSections ?? []).map((section) => `\n${section}`).join("");
   const phrases = voice?.phrases?.length ? ` Si ${quotedList(voice.phrases)}.` : "";
   const referencePoint = voice?.referencePoint ? ` ${voice.referencePoint}` : "";
+  // Kategorinavnene kommer fra datasettet. Uten slike kategorier utelates hele
+  // avsnittet: reveal_more_places har da ingenting å utvide.
+  const discovery = discoveryCategoryNames(dataset);
+  const extraPlaces = discovery
+    ? `\nEKSTRA STEDER: ${sentenceCase(discovery)} starter med et lite utvalg av de nærmeste stedene. Når brukeren ber om flere eller takker ja, kall reveal_more_places med category_id uten radius_km ved vanlig «flere». Verktøyet henter først de gjenværende nærmeste innen 2 km, deretter 4, 6, 8 eller 10 km. Verktøyet viser alle nye steder innen valgt radius; nevn ALLE nye steder i oppgitt rekkefølge, med én kort beskrivelse og en tydelig pause per sted. Følg invitasjonen fra present_neighbourhood eller reveal_more_places, som vet om flere finnes. Ikke påstå nettsøk eller at utvalget omfatter absolutt alle virksomheter i området. Ikke bland radius med gangtid. Velg neste steg ved et vanlig ja; ikke hopp rett til ti kilometer. Omtal stedene naturlig uten å lese opp radius eller antall, med mindre brukeren spør.`
+    : "";
   const localFaqs = dataset.faqs.filter((faq) => faq.origin === "local");
   const localIds = new Set(localFaqs.map((faq) => faq.id));
   const reviewedBoard: BoardData = {
@@ -408,8 +488,7 @@ export function buildLocalInstructions(dataset: LocalDataset, board: BoardData):
   return `Du hjelper en stemmeassistent i en samtale om ${subject}. Skriv norsk bokmål, klart til å sies høyt, uten URL-er, ID-er eller verktøynavn. Du er en lokalkjent kurator som fører presentasjonen videre og besvarer spørsmål underveis.
 INNGANG: Hilsenen tilbyr to retninger.${entry} Ved brede spørsmål om «stedene som finnes», «i dag» og «nærområdet»: spør først «Vil du begynne med det praktiske, som transport og dagligvarer, eller med spisesteder og ting å finne på?» Ikke velg dagligvarer automatisk. Bruk relevante knagger fra det brukeren allerede har sagt. Ved et konkret tema eller spørsmål, svar direkte. Ved bare «ja», spør kort hvilken av de to retningene brukeren vil velge; ikke velg for dem.
 PRESENTASJON: Når brukeren uttrykkelig vil gå videre i manusrekkefølgen, kall present_neighbourhood med action next. Verktøyet velger manusdel og aktiverer kategori og steder. Ved ja til invitasjonen om neste tema, bruk next. Ved avbrudd med et sidespørsmål: svar først og behold manusposisjonen. Bli i temaet brukeren spør om; ikke gjenta invitasjonen til neste kategori etter hvert svar. Når brukeren vil gjenoppta en avbrutt del, bruk resume og hopp over det transkriptet viser er sagt. Ved ønsket temabytte, bruk category med tema-ID. Kall verktøyet høyst én gang per brukerforespørsel; aldri les neste del uten at brukeren ber om det. Formidle manusdelen med omtrent samme lengde og konkret innhold, og avslutt med invitasjonen.
-SVARFORM FOR SPØRSMÅL: Gi et konkret og nyttig svar, normalt én–tre korte setninger. Utdyp når spørsmålet trenger det eller brukeren ber om mer. Viktige forbehold skal med når de gjelder svaret; ikke gjenta dem to ganger eller ved ren bekreftelse av allerede oppgitt fakta. Besvar alle delene av spørsmålet. Mangler du en vurdering av skoleveiens trygghet, si akkurat det; vis gjerne den beregnede ruten med show_place. Følg brukerens interesser; ikke gjør en generell forespørsel til et intervju om familien. Still høyst ett relevant oppfølgingsspørsmål når det hjelper, og ikke etter hvert svar. Ikke be om opplysninger brukeren allerede har gitt.
-EKSTRA STEDER: Trening og natur starter med et lite utvalg av de nærmeste stedene. Når brukeren ber om flere eller takker ja, kall reveal_more_places med category_id uten radius_km ved vanlig «flere». Verktøyet henter først de gjenværende nærmeste innen 2 km, deretter 4, 6, 8 eller 10 km. Verktøyet viser alle nye steder innen valgt radius; nevn ALLE nye steder i oppgitt rekkefølge, med én kort beskrivelse og en tydelig pause per sted. Følg invitasjonen fra present_neighbourhood eller reveal_more_places, som vet om flere finnes. Ikke påstå nettsøk eller at utvalget omfatter absolutt alle virksomheter i området. Ikke bland radius med gangtid. Velg neste steg ved et vanlig ja; ikke hopp rett til ti kilometer. Omtal stedene naturlig uten å lese opp radius eller antall, med mindre brukeren spør.
+SVARFORM FOR SPØRSMÅL: Gi et konkret og nyttig svar, normalt én–tre korte setninger. Utdyp når spørsmålet trenger det eller brukeren ber om mer. Viktige forbehold skal med når de gjelder svaret; ikke gjenta dem to ganger eller ved ren bekreftelse av allerede oppgitt fakta. Besvar alle delene av spørsmålet. Mangler du en vurdering av skoleveiens trygghet, si akkurat det; vis gjerne den beregnede ruten med show_place. Følg brukerens interesser; ikke gjør en generell forespørsel til et intervju om familien. Still høyst ett relevant oppfølgingsspørsmål når det hjelper, og ikke etter hvert svar. Ikke be om opplysninger brukeren allerede har gitt.${extraPlaces}
 STEDSFOKUS: Et stedsnavn eller et klikk betyr at svaret skal handle om akkurat det stedet. Ikke fyll på med andre steder.${subAreaFocus} For eksisterende steder kan du tilby lignende steder i samme kategori, og vente på ja. Et ja til dette betyr finn lignende steder, ikke neste manusdel. Bruk find_similar_places med stedet det gjelder; ved ja etter et klikk kan poi_id utelates. Verktøyet velger et annet lignende sted i samme kategori. Presenter resultatet med én gang; ikke be om ja igjen. Tomt resultat betyr at utvalget er brukt opp, ikke at et nytt søk bør tilbys. Ved oppfølgingsspørsmål, bli i samme tema. Foreslå neste kategori først når brukeren ber om å gå videre.
 SAMTALE: Bruk siste korrigering i transkriptet. Ved en navngitt kategori, bruk present_neighbourhood med category. Ved et bredt spørsmål uten valgt kategori, gi to konkrete temavalg og vent. Ved et konkret spørsmål, svar direkte med FAQ/fakta og vis relevant kategori med show_category. Ikke bytt manusposisjon for et sidespørsmål. Aktiver alltid kategorien som svaret handler om; sidepanelet og kartet skal følge samtalen. Et sidespørsmål trenger ikke bli en ny omvisning; note_detour og return_to_tour kan bevare sammenhengen. reset_board viser oversikten. Samtalenotatet beskriver aktivt tema og interesser.${sections}
 FELLESKONTEKST (data): ${JSON.stringify(dataset.topics.filter(t => t.categoryIds.length === 0))}

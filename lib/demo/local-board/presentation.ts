@@ -67,6 +67,19 @@ export function createPresentation(base: NyhavnaConversation, options: Presentat
     const next = optionsFor(categoryId).options[0];
     return next ? moreInvitation(categoryId) : "Er det noe innen dette temaet du vil vite mer om, eller vil du velge et annet tema?";
   };
+  /**
+   * Hva notatet sier før manuset er startet.
+   *
+   * Et datasett uten manus har ingen første del å love: sier notatet likevel at
+   * `next` begynner et sted, blir modellen fortalt om et kapittel som ikke
+   * finnes, og `next` svarer `done: true`. Med manus navngis kategorien første
+   * del faktisk hører til, ikke en kategori fra ett bestemt datasett.
+   */
+  const startNote = () => {
+    const first = segments[0];
+    if (!first) return "Ingen manus i dette datasettet; present_neighbourhood har ingenting å lese.";
+    return `Ikke startet; next begynner med ${(categoryById.get(first.categoryId)?.name ?? first.categoryId).toLowerCase()}.`;
+  };
   const more = (args: Record<string, unknown>): ToolOutcome => {
     const categoryId = String(args.category_id);
     const options = optionsFor(categoryId).options;
@@ -144,7 +157,7 @@ export function createPresentation(base: NyhavnaConversation, options: Presentat
       const baseNote = base.noteIfChanged();
       const note = `EKSTRAUTVALG ALLEREDE VIST: ${[...revealed].join(", ") || "ingen"}. Flere steder i en kategori: reveal_more_places. RADIER: ${JSON.stringify(discoveryCategoryIds.map(id => ({ category: id, current: optionsFor(id).current, available: optionsFor(id).options.map(o => o.radiusKm) })))}.
 VALGT STED: ${focusedPlaceId ?? "ingen"}. Ja til lignende steder betyr find_similar_places, ikke present_neighbourhood.
-MANUSPOSISJON: ${position < 0 ? "Ikke startet; next begynner med hverdagen." : `${segments[position].id}. resume fortsetter denne delen; next går til neste del.`}`;
+MANUSPOSISJON: ${position < 0 ? startNote() : `${segments[position].id}. resume fortsetter denne delen; next går til neste del.`}`;
       if (!baseNote && note === lastNote) return null;
       lastNote = note;
       return [baseNote, note].filter(Boolean).join("\n");

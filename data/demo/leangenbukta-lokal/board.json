@@ -30,6 +30,8 @@
       "her ute"
     ],
     "scope": "Leangenbukta som boligprosjekt er rammen, sammen med nærområdet rundt. Prosjektets planer og tilbudet som finnes i dag holdes adskilt. Demoen har ikke kildekontrollert innhold ennå; si det i stedet for å fylle hullet.",
+    "afterGreeting": "La brukeren velge prosjektet som kommer eller stedene som finnes i dag. Ved prosjektet, deleger valget.",
+    "planScope": "Skill mellom planene for prosjektet og tilbud som finnes i dag.",
     "entry": "«Prosjektet», «bo», «boligene» og «det som kommer» betyr present_neighbourhood med category og category_id leangenbukta-prosjektet.",
     "referencePoint": "Det er et fast referansepunkt i Leangenbukta, ikke en bestemt bolig.",
     "backendSections": [

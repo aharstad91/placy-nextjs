@@ -3,7 +3,8 @@ import { readFile } from "node:fs/promises";
 import { join } from "node:path";
 import { buildLocalBoard } from "@/lib/demo/local-board/board";
 import { loadDataset } from "@/lib/demo/local-board/dataset";
-import { buildLocalInstructions, buildVoiceDeps, localDemoInstruction } from "@/lib/demo/local-board/voice";
+import { buildKnowledgeBase, buildLocalInstructions, buildVoiceDeps, localDemoInstruction } from "@/lib/demo/local-board/voice";
+import { buildLocalVoiceInstructions } from "@/lib/demo/local-board/voice-instructions";
 import {
   localBoardSchema,
   localPlacesSchema,
@@ -358,5 +359,106 @@ describe("prosjektkunnskap i stemmens grunnlag", () => {
 
     const plain = await emptyDataset();
     expect(buildLocalInstructions(plain, buildLocalBoard(plain, NYHAVNA))).not.toContain("PROSJEKTSTATUS:");
+  });
+});
+
+/**
+ * Kategorinavn og kildekobling i prosjektkunnskapen (2026-09-18).
+ *
+ * To feil som begge gir guiden noe den ikke har dekning for: en regel om
+ * «trening og natur» i et datasett uten de kategoriene, og et bekreftet fakta
+ * tilskrevet feil kilde.
+ */
+describe("radiusutvidelsen navngir datasettets egne kategorier", () => {
+  const withDiscovery = async (ids: string[], categories?: Array<{ id: string; name: string; icon: string; color: string }>): Promise<LocalDataset> => {
+    const base = await emptyDataset();
+    return {
+      ...base,
+      board: localBoardSchema.parse({
+        ...base.board,
+        categories: categories ?? base.board.categories,
+        discoveryCategoryIds: ids,
+      }),
+    };
+  };
+
+  it("bruker kategorien datasettet faktisk har", async () => {
+    const dataset = await withDiscovery(["vannkant"], [
+      { id: "vannkant", name: "Vannkant", icon: "Waves", color: "#3b82f6" },
+    ]);
+    const instructions = buildLocalInstructions(dataset, buildLocalBoard(dataset, NYHAVNA));
+    expect(instructions).toContain("EKSTRA STEDER: Vannkant starter med et lite utvalg");
+    expect(instructions).not.toContain("Trening og natur");
+    expect(buildLocalVoiceInstructions(dataset)).toContain("For vannkant kan backenden utvide radiusen");
+  });
+
+  it("utelater hele avsnittet når ingen kategori kan utvides", async () => {
+    const dataset = await withDiscovery([]);
+    const instructions = buildLocalInstructions(dataset, buildLocalBoard(dataset, NYHAVNA));
+    expect(instructions).not.toContain("EKSTRA STEDER:");
+    expect(buildLocalVoiceInstructions(dataset)).not.toContain("utvide radiusen");
+  });
+});
+
+describe("bekreftede prosjektopplysninger i stedets fakta", () => {
+  const sources = localSourcesSchema.parse([
+    { id: "kilde-a", label: "eksempel.no", page: "Prosjektet", url: "https://eksempel.no/prosjektet/", publisher: "Eksempel", checkedAt: "2026-09-18" },
+    { id: "kilde-b", label: "utbygger.no", page: "Fellesarealer", url: "https://utbygger.no/fellesarealer/", publisher: "Utbygger", checkedAt: "2026-09-18" },
+  ]);
+  const places = localPlacesSchema.parse([
+    {
+      id: "bygg-a-sted", name: "Bygg A", categoryId: "mat-drikke",
+      coordinates: { lat: 63.44, lng: 10.42 }, summary: "Første byggetrinn.",
+      sourceIds: ["kilde-a"], checkedAt: "2026-09-18",
+    },
+  ]);
+  const anchoredTopic = (extra: Record<string, unknown>) =>
+    localTopicsSchema.parse([
+      {
+        id: "bygg-a", title: "Bygg A", categoryIds: ["mat-drikke"], status: "existing",
+        text: "Bygg A er ferdigstilt.", checkedAt: "2026-09-18", sourceIds: ["kilde-a"],
+        development: {
+          objectType: "building", buildStatus: "existing",
+          access: { scope: "all-residents" }, mapAnchor: { placeId: "bygg-a-sted" },
+          ...extra,
+        },
+      },
+    ]);
+  const datasetFor = async (extra: Record<string, unknown>): Promise<LocalDataset> => ({
+    ...(await emptyDataset()),
+    sources,
+    places,
+    topics: anchoredTopic(extra),
+  });
+
+  it("gir stedet opplysningene som bekreftede fakta, med påstandens egen kilde", async () => {
+    const dataset = await datasetFor({
+      availability: "open",
+      availabilityClaimId: "c-apen",
+      claims: [{ id: "c-apen", text: "Fellesarealene er åpnet.", sourceId: "kilde-b", checkedAt: "2026-09-10" }],
+    });
+    const entity = buildKnowledgeBase(dataset).entities.find((e) => e.id === "bygg-a-sted");
+    const opening = entity?.facts.find((fact) => fact.text.startsWith("Åpning:"));
+    expect(opening).toMatchObject({ text: "Åpning: åpnet", verification: "confirmed", sourceId: "kilde-b" });
+  });
+
+  it("lar et uavklart objekt stå med forbehold alene, uten en åpningspåstand", async () => {
+    const dataset = await datasetFor({ availability: "unknown", claims: [] });
+    const entity = buildKnowledgeBase(dataset).entities.find((e) => e.id === "bygg-a-sted");
+    const opening = entity?.facts.find((fact) => fact.text.startsWith("Åpning:"));
+    expect(opening?.text).toBe("Åpning: åpning ikke oppgitt");
+    expect(entity?.facts.some((fact) => fact.text.includes("åpnet") && fact.verification === "confirmed")).toBe(false);
+    expect(entity?.facts.some((fact) => fact.verification === "unresolved" && fact.text.includes("Ikke slutt at den er åpen"))).toBe(true);
+  });
+
+  it("siterer påstandens kilde i find_project_info, ikke temaets første", async () => {
+    const dataset = await datasetFor({
+      availability: "open",
+      availabilityClaimId: "c-apen",
+      claims: [{ id: "c-apen", text: "Fellesarealene er åpnet.", sourceId: "kilde-b", checkedAt: "2026-09-10" }],
+    });
+    const info = result(dataset, "find_project_info", { query: "bygg" });
+    const [first] = info.results as Array<{ source: { url: string } }>;
+    expect(first.source.url).toBe("https://utbygger.no/fellesarealer/");
   });
 });

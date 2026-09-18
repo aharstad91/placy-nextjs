@@ -347,6 +347,37 @@ describe("referansesjekken for prosjektkunnskap", () => {
     ).not.toThrow();
   });
 
+  it("godtar ikke en uavklart påstand som dekning for at noe er åpent", () => {
+    const unresolved = { ...claim, verification: "unresolved" as const };
+    expect(() =>
+      assertReferences(dataset({ availability: "open", availabilityClaimId: "c1", claims: [unresolved] }), NYHAVNA),
+    ).toThrow(/«open» krever en bekreftet påstand \(verification: confirmed\); «c1» er uavklart/);
+    expect(() =>
+      assertReferences(
+        dataset({ availability: "open", availabilityClaimId: "c1", claims: [{ ...claim, verification: "confirmed" as const }] }),
+        NYHAVNA,
+      ),
+    ).not.toThrow();
+  });
+
+  it("fanger to objekter som deler kartanker", () => {
+    const places = localPlacesSchema.parse([
+      { id: "sted-a", name: "Sted A", categoryId: "kat-a", coordinates: { lat: 63.4, lng: 10.4 }, checkedAt: "2026-09-18" },
+    ]);
+    const shared = {
+      id: "takterrasse", title: "Takterrassen", status: "existing", text: "Tak.", checkedAt: "2026-09-18",
+      development: { objectType: "outdoor-area", buildStatus: "existing", availability: "unknown", access: { scope: "unresolved" }, mapAnchor: { placeId: "sted-a" } },
+    };
+    const withAnchor = (extra: Record<string, unknown>[] = []) => ({
+      ...dataset({ mapAnchor: { placeId: "sted-a" } }, extra),
+      places,
+    });
+    expect(() => assertReferences(withAnchor([shared]), NYHAVNA)).toThrow(
+      /development\.mapAnchor\.placeId: ID-en\(e\) sted-a finnes flere ganger/,
+    );
+    expect(() => assertReferences(withAnchor(), NYHAVNA)).not.toThrow();
+  });
+
   it("krever at innflyttingskoblingen peker på et bygg", () => {
     expect(() =>
       assertReferences(dataset({ moveInLinks: [{ buildingId: "bygg-a", confirmedBy: "kilde-a" }] }), NYHAVNA),

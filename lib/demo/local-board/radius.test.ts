@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { curatedInitialIds, radiusPlaces } from "@/lib/demo/local-board/radius";
+import { curatedInitialIds, discoveryGeometry, radiusPlaces } from "@/lib/demo/local-board/radius";
+import type { BoardData } from "@/components/variants/report/board/board-data";
 
 /**
  * Boardet (`board.ts`) og guiden (`presentation.ts`) beregner hvilke steder som
@@ -25,5 +26,29 @@ describe("curatedInitialIds", () => {
     const guide = radiusPlaces(places, center, ["trening"], curatedInitialIds([]));
     expect(guide).toEqual(board);
     expect(board.every(p => p.initiallyVisible)).toBe(true);
+  });
+});
+
+/**
+ * Ringen rundt hjemmet navngis etter datasettets eget hjem. Testen fantes bare
+ * med Nyhavna, så et hardkodet «Nyhavna» ville ha bestått den; her er hjemmet
+ * Leangenbukta, og navnet må følge med.
+ */
+describe("discoveryGeometry", () => {
+  it("navngir ringen etter datasettets eget hjem", () => {
+    const center = { lat: 63.43, lng: 10.45 };
+    const data = {
+      home: { name: "Leangenbukta", coordinates: center },
+      poisById: new Map([["trening-1", {}]]),
+      demoRadiusPlaces: radiusPlaces(
+        [{ id: "trening-1", categoryId: "trening", coordinates: { lat: center.lat + 0.005, lng: center.lng } }],
+        center, ["trening"], undefined,
+      ),
+    } as unknown as BoardData;
+    const [ring] = discoveryGeometry(data, "trening");
+    expect(ring.name).toContain("Leangenbukta");
+    expect(ring.name).not.toContain("Nyhavna");
+    expect(ring.themeId).toBe("trening");
+    expect(discoveryGeometry(data, "ukjent-kategori")).toEqual([]);
   });
 });

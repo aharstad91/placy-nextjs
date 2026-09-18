@@ -66,6 +66,17 @@ describe('server knowledge boundary', () => {
     expect(instructions).toContain(catalog);
     expect(instructions.split(/\s+/).length).toBeLessThan(3400);
   });
+  it('navngir området katalogen faktisk gjelder, ikke Nyhavna', async () => {
+    // Overskriften på de ukategoriserte spørsmålene er det ENESTE stedet
+    // stedsnavnet står i katalogen. Sto Nyhavna igjen der, ville et annet
+    // datasett fått en spørsmålsliste merket med feil sted.
+    const { board } = await getNyhavnaSnapshot();
+    const single = { ...board, globalFaq: (board.globalFaq ?? []).slice(0, 1), categories: [] };
+    expect(single.globalFaq.length).toBe(1);
+    const catalog = nyhavnaFaqCatalog(single, 'Leangenbukta');
+    expect(catalog).toContain('[nabolaget] Leangenbukta');
+    expect(catalog).not.toContain('Nyhavna');
+  });
   it('deler instruksjonen: stemmen eier uttale og samspill, backenden eier fakta og verktøy', () => {
     const spoken = `${NYHAVNA_VOICE_INSTRUCTIONS}\n${NYHAVNA_GREETING_INSTRUCTION}`;
     expect(`${spoken}\n${NYHAVNA_INSTRUCTIONS}`).not.toMatch(/Placy/);

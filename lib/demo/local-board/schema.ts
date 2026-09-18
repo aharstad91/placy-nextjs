@@ -173,6 +173,19 @@ export const localVoiceSchema = z
     phrases: z.array(z.string().min(1).max(80)).max(10).default([]),
     /** OMFANG-linja: hva rammen er, og hva som må holdes adskilt. */
     scope: z.string().min(1).max(800).optional(),
+    /**
+     * Valget guiden tilbyr rett etter hilsenen, i datasettets egne ord.
+     *
+     * Sto som «bydelen» i koden. En bydel er Nyhavnas ord; et boligprosjekt har
+     * ikke en bydel som kommer, det har et prosjekt. Utelatt = en stedsnøytral
+     * formulering uten «bydel».
+     */
+    afterGreeting: z.string().min(1).max(400).optional(),
+    /**
+     * Setningen som skiller planene fra dagens tilbud, i datasettets egne ord.
+     * Samme grunn som `afterGreeting`. Utelatt = stedsnøytral formulering.
+     */
+    planScope: z.string().min(1).max(400).optional(),
     /** INNGANG: hvilke ord som betyr hvilken kategori i hilsenens to retninger. */
     entry: z.string().min(1).max(800).optional(),
     /** Hva det faste referansepunktet er, sagt i klartekst. */

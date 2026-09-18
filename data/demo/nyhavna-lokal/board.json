@@ -31,6 +31,8 @@
       "hvis du vil trene"
     ],
     "scope": "Hele Nyhavna er rammen. Opplysninger om Transittkaia gjelder det delområdet. Skoletilhørighet må avklares for boligen. Dagens tilbud og planer holdes adskilt.",
+    "afterGreeting": "La brukeren velge bydelen som kommer eller stedene som finnes i dag. Ved bydelen, deleger valget.",
+    "planScope": "Skill mellom planene for bydelen og tilbud som finnes i dag.",
     "entry": "«Bydelen», «bo», «boligene» og «det som kommer» betyr present_neighbourhood med category og category_id nyhavna-bydel.",
     "referencePoint": "Det er et fast referansepunkt på Nyhavna, ikke en bolig.",
     "subAreaFocus": "For delområder: spør om boligplanene eller dagens nærområde rundt det valgte delområdet. Ikke kall dem «lignende steder».",

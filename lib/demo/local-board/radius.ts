@@ -45,14 +45,15 @@ export function radiusOptions(places: readonly RadiusPlace[], categoryId: string
  * sted. Flatene spør derfor boardet i stedet for å kjenne kategori-ID-ene til
  * ett bestemt datasett.
  */
-export function isDiscoveryCategory(places: readonly RadiusPlace[] | undefined, categoryId: string | null | undefined): boolean {
+export function isDiscoveryCategory(places: readonly RadiusPlace[] | undefined, categoryId: string | null | undefined): categoryId is string {
   return Boolean(categoryId && places?.some(p => p.categoryId === categoryId));
 }
 
 /** Reuses the board's geometry layers in both map engines; this is a search radius, not a route. */
 export function discoveryGeometry(data: import('@/components/variants/report/board/board-data').BoardData, categoryId: string | null | undefined): import('@/lib/types').CuratedGeometryFeature[] {
-  if (!isDiscoveryCategory(data.demoRadiusPlaces, categoryId)) return [];
-  const radiusKm = radiusOptions(data.demoRadiusPlaces!, categoryId!, new Set(data.poisById.keys())).current;
+  const places = data.demoRadiusPlaces;
+  if (!places || !isDiscoveryCategory(places, categoryId)) return [];
+  const radiusKm = radiusOptions(places, categoryId, new Set(data.poisById.keys())).current;
   const { lat, lng } = data.home.coordinates;
   const angular = radiusKm / 6371;
   const latitude = lat * Math.PI / 180;
@@ -63,5 +64,5 @@ export function discoveryGeometry(data: import('@/components/variants/report/boa
     const x = longitude + Math.atan2(Math.sin(bearing) * Math.sin(angular) * Math.cos(latitude), Math.cos(angular) - Math.sin(latitude) * Math.sin(y));
     return [x * 180 / Math.PI, y * 180 / Math.PI];
   });
-  return [{ id: `discovery-radius-${categoryId}`, name: `${radiusKm} km fra ${data.home.name}`, kind: 'line', themeId: categoryId!, status: 'existing', precision: 'sourced', color: '#64748b', coordinates }];
+  return [{ id: `discovery-radius-${categoryId}`, name: `${radiusKm} km fra ${data.home.name}`, kind: 'line', themeId: categoryId, status: 'existing', precision: 'sourced', color: '#64748b', coordinates }];
 }

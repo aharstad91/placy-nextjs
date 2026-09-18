@@ -97,6 +97,27 @@ describe("projeksjonen av ett utbyggingsobjekt", () => {
     expect(b.caveats).toContain("Ingen kilde bekrefter at «Bygg B» er tilgjengelig ved innflytting.");
   });
 
+  it("sier i klartekst at et objekt som ikke er åpnet, ikke er åpnet", () => {
+    const gym = topic({ id: "treningsrom", title: "Treningsrommet" }, {
+      buildStatus: "under-construction",
+      availability: "not-open",
+    });
+    const projection = projectDevelopment(gym)!;
+    expect(projection.facts.find((f) => f.label === "Åpning")!.value).toBe("ikke åpnet");
+    expect(projection.caveats).toContain("«Treningsrommet» er ikke åpnet ennå.");
+  });
+
+  it("et bekreftet tidspunkt står uten forventnings-forbehold", () => {
+    const gym = topic({ id: "treningsrom", title: "Treningsrommet" }, {
+      availability: "unknown",
+      timing: { text: "Q2 2027", qualifier: "confirmed" },
+    });
+    const projection = projectDevelopment(gym)!;
+    expect(projection.facts).toContainEqual({ label: "Bekreftet tidspunkt", value: "Q2 2027" });
+    expect(projection.facts).not.toContainEqual({ label: "Forventet tidspunkt", value: "Q2 2027" });
+    expect(projection.caveats.some((c) => c.includes("er en forventning fra kilden"))).toBe(false);
+  });
+
   it("AE4: motstridende påstander blir begge stående, uten at én vinner", () => {
     const conflicted = topic({ id: "treningsrom", title: "Treningsrommet" }, {
       availability: "unknown",
