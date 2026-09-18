@@ -6,6 +6,30 @@
 
 ---
 
+## 2026-09-17 — Dagen avsluttet; stabil demo til kunden 18. september
+
+**Beslutning med Andreas:** Arbeidet stoppes for dagen. Kunden skal få demoen i morgen tidlig, 18. september. Gjeldende produksjonsversjon beholdes; ingen nye modellbytter, optimaliseringer eller produksjonsendringer før demoen som del av denne økten.
+
+**Status ved avslutning:** Nyhavna ligger på felles plattform med direkte delingsadresse **https://placy.no/nyhavna**, uten adgangskode og med noindex. `placy.no/<slug>` er standarden for nye prosjekter. Systemkart finnes også som selvstendig HTML i Downloads. Vercel CLI-tilgang og OpenAI Admin-lesetilgang er verifisert; første faktiske kostnadsavstemming er dokumentert nedenfor. Dette er dagens tidligere verifiseringer, ikke en ny produksjonstest ved loggføring.
+
+**Åpent etter demoen:** Rette manglende cache-write-tillegg i kostnadsestimatene og bevare historisk usikkerhet. Avklare resterende stemmedifferanse og ufullstendige samtaler uten å fordele dagssummer vilkårlig på kunder. Deretter måle og optimalisere felles samtaleflyt: representative testsamtaler, rimeligere svarmodell, relevant kontekst, hurtigbuffer, verktøyrunder og stemmetid. Vurdere kostnad per vellykket samtale sammen med svartid og kvalitet. Ingen besparelse eller modellendring er levert som følge av denne diskusjonen.
+
+**Videre produktarbeid:** Mobilopplevelsen er et ønsket neste spor. Kundepris, inkludert bruk og fordeling av felles driftskostnader er ikke landet. Prioritering tas opp igjen etter kundedemoen.
+
+**Lokal overlevering:** Aktivt arbeid ligger på `feat/voice-infrastructure` i `/Users/andreasharstad/Documents/placy-voice-infrastructure`. Avstemmingsverktøyet er lagret i commit `2d8ad3a`; dagens autentiserte funn ligger i `docs/research/voice-infrastructure/openai-reconciliation.md` og tilhørende sanitert JSON. Ved denne loggføringen ligger disse rapportoppdateringene og arbeidsloggen som lokale, ikke-committede dokumentasjonsendringer. Ingen Git-push eller ny deploy.
+
+## 2026-09-17 — OpenAI Admin-tilgang verifisert; første reelle avstemming fant pristillegg som mangler
+
+Ny administratørnøkkel ble lagt inn via skjult macOS-dialog og lagret direkte i ignorert lokal miljøfil (0600); verdien ble ikke skrevet til verktøyutdata, Git eller Vercel. GET for prosjektliste, nøkkelmetadata og faktiske Costs-data fungerer. OpenAI-prosjekt **Placy** (`proj_YAUKxLUwNpPpbXE4YOp24E9i`) er identifisert; eksisterende lokal modellnøkkel samsvarer med redigert nøkkelmetadata der og fungerer fortsatt. Historisk provider-tilordning per samtale er ikke bevist av dette.
+
+**Første avstemming:** 10.–16. september UTC: OpenAI $21.5354661694, register $0.9909740667. Registeret begynner først 16. september kl. 20:29:59 UTC; $20.5444921027 står derfor ufordelt, ikke som et påvist kundeavvik. For dagens fortsatt åpne UTC-døgn: OpenAI $13.7547054991, register kjent $13.349405. To ufullstendige samtaler står fortsatt åpne regnskapsmessig; rapporten setter korrekt endelig differanse til null.
+
+**Konkret, ubearbeidet kodefunn:** GPT-5.6 Terra cache writes prises til 1.25× ordinær input hos OpenAI. Vår v1-normalisering/sideband fjerner cache-write-telleren, og JS/SQL bruker bare input/cache-read/output. Dagens backenddifferanse **$0.3928005** stemmer nøyaktig med det utelatte tillegget. Stemmeforskjell ~$0.0125 tilsvarer 15 sekunder, men er ikke tilordnet en bestemt samtale. Dette er åpne funn fra avstemmingen, ikke korrigert regnskap.
+
+**Neste nødvendige kodearbeid:** føre cache_write_tokens gjennom sideband → normalisering → durable events/SQL; versjonere tariffrater; teste JS/SQL-paritet; merke gamle estimater med tariffusikkerhet; separat produksjonsvalidering. Ingen historiske poster må skrives om eller reservasjoner frigis basert på dagssummer. Kostnadsrapportens dokumentasjon har nå en tydelig advarsel om at «complete/reconciles» er intern avstemming, ikke bekreftede fakturabeløp.
+
+Kun lesinger hos OpenAI/Supabase og lokal dokumentasjon i denne økten. Ingen betalt inferens, produksjonsendring, budsjettendring eller automatisk tidsplan. [Detaljert avstemming](docs/research/voice-infrastructure/openai-reconciliation.md), [sanitert bevis](docs/research/voice-infrastructure/openai-reconciliation-live-2026-09-17.json).
+
 ## 2026-09-17 — OpenAI-avstemming klargjort, administratortilgang gjenstår
 
 Andreas ønsker at agenten har nødvendig driftsinnsyn, inkludert avstemming mot OpenAI. Modelltilgangen er allerede i bruk, men ingen `OPENAI_ADMIN_KEY` ble funnet i prosessmiljøet eller de aktuelle lokale miljøfilene. Nettleserverktøyet meldte at ingen nettleser var tilgjengelig. Andreas er bedt om å legge en Admin API key i lokal ignorert `.env.local`, uten å dele den i chat. Ingen organisasjonsrettigheter eller nye nøkler er opprettet av agenten.

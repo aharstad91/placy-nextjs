@@ -1,12 +1,12 @@
 # OpenAI cost reconciliation
 
-Status: local read-only comparison implemented; live provider verification pending `OPENAI_ADMIN_KEY` and confirmation of the correct OpenAI project. This is not an automatic billing or ledger-repair service.
+Status: Admin access and actual Costs reads verified on 2026-09-17 for OpenAI project Placy. First comparisons require review: an omitted cache-write premium was found in the existing voice tariff. This is not an automatic billing or ledger-repair service.
 
 ## Access
 
 Model/API access is already used by Anja. Organization cost data uses a separate Admin API key. Only an organization owner can create one in [OpenAI Admin keys](https://platform.openai.com/settings/organization/admin-keys). Keep `OPENAI_ADMIN_KEY` in the ignored local `.env.local` or operator environment. Do not put it in chat, Git, browser variables or the public Vercel app. The reader sends it only in the Authorization header to fixed `https://api.openai.com/v1/organization/` GET endpoints; it never falls back to the inference key.
 
-This release adds no account mutation, budget change, cron, public endpoint, deployment or key rotation. Account access and the actual Costs response remain unverified until the first successful read.
+This release adds no account mutation, budget change, cron, public endpoint, deployment or key rotation. Project listing, key metadata and actual Costs reads are verified; the admin key is stored only in the local ignored environment file. Historical per-session provider identity remains unverified.
 
 ## Run
 
@@ -55,6 +55,20 @@ Checked 2026-09-17: [Costs API](https://developers.openai.com/api/reference/reso
 
 Review follow-up: one confirmed P2 producer/consumer mismatch was fixed. The ledger exporter filters creation timestamps but can read an end timestamp after its cutoff; the comparison now accepts it and marks `ledger_changed_during_export`, retaining creation and timestamp-order checks. Regression observed red (1 failed / 14 passed), then all 34 provider/ledger tests passed (15 new comparator tests + 19 existing ledger tests). The full 4,601-test suite and build above preceded this narrowly scoped repair; final targeted lint and TypeScript were repeated.
 
-Completed code-review receipt: [openai-reconciliation-code-review.json](openai-reconciliation-code-review.json), run `20260917-160147-10d52c80`, six local lenses plus independent validation of the sole P2. No cross-model pass: the sanctioned peer diff path could not include the explicitly scoped untracked files without Git mutation, so a local adversarial pass was used. The receipt preserves its pre-fix snapshot. Finding #1 was applied inline under the single-finding exception; no findings were rejected or left unresolved in code. Actual closure timestamps remain visible with a changing-snapshot warning; observations before the requested period end still suppress the delta. The optional transport-error and invalid-JSON coverage gaps were also addressed. Authenticated provider verification remains pending.
+Completed code-review receipt: [openai-reconciliation-code-review.json](openai-reconciliation-code-review.json), run `20260917-160147-10d52c80`, six local lenses plus independent validation of the sole P2. No cross-model pass: the sanctioned peer diff path could not include the explicitly scoped untracked files without Git mutation, so a local adversarial pass was used. The receipt preserves its pre-fix snapshot. Finding #1 was applied inline under the single-finding exception; no findings were rejected or left unresolved in code. Actual closure timestamps remain visible with a changing-snapshot warning; observations before the requested period end still suppress the delta. The optional transport-error and invalid-JSON coverage gaps were also addressed. Authenticated provider verification subsequently completed; see the live findings below.
 
 Final focused result after the two added provider-failure cases: **36 passed** (17 provider + 19 ledger).
+
+## First authenticated comparison — 2026-09-17
+
+[Sanitized live evidence](openai-reconciliation-live-2026-09-17.json). The Admin key was entered through a hidden local macOS dialog, saved without printing its value, and used only for GET requests. It was not copied to Vercel, Git or a public app. The existing inference key still returns 200 on a read-only model-list request. Its redacted prefix/suffix matches the sole key metadata entry in the selected Placy project; this is current configuration evidence, not proof of every historical session's identity.
+
+For 10–16 September UTC, seven daily provider buckets sum to **$21.5354661694**. The ledger contains seven sessions and **$0.9909740667** for that interval, an unallocated difference of **$20.5444921027**. Its first row is **16 September at 20:29:59 UTC**, so the earlier provider history is outside ledger coverage. The difference is not a Nyhavna charge or evidence of unexplained spend on its own.
+
+For 17 September (still an open UTC day), provider cost was **$13.7547054991**, versus **$13.349405** known ledger cost: $13.2201966667 complete and $0.1292083333 known lower bound from two incomplete sessions. The CLI correctly leaves the period's final difference null. Recent provider data may still change.
+
+**Confirmed tariff defect, not yet repaired:** provider backend total $5.5972055 versus ledger $5.204405 differs by **$0.3928005**. The provider's cache-write line is $1.9640025. Terra cache writes cost 1.25 times base input, so charging those writes at base price misses exactly $1.9640025 × (1 − 1/1.25) = **$0.3928005**. Current normalization/sideband drops `cache_write_tokens`, and the saved v1 JS/SQL tariff only handles ordinary input, cached reads and output. This establishes a pricing defect; it does not provide cache-write counts per historical session. [Official Terra pricing](https://developers.openai.com/api/docs/models/gpt-5.6-terra).
+
+The voice difference is about **$0.0125**, equivalent to 15 seconds at the current voice tariff. Its per-session cause is unresolved; the two incomplete calls and the open reporting day prevent a final conclusion. Do not close historical liabilities or spread these aggregate differences across customers.
+
+**Required follow-up before treating costs as invoice-aligned:** capture cache-write counts through provider event normalization, durable events and SQL; version the price snapshot; test JS/SQL parity; expose historical tariff uncertainty in reports; validate the production change separately. Existing history stays intact. This access-verification session changed no application code, production deployment, budgets, ledger statuses or billing automation.

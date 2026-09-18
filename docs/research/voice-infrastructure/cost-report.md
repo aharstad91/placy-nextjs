@@ -1,5 +1,7 @@
 # Operator conversation costs
 
+**Known tariff limitation (2026-09-17):** the first real OpenAI comparison confirmed that v1 omits the cache-write premium. `complete`/`reconciles` currently indicate internal ledger evidence, not invoice alignment. See [live findings and required correction](openai-reconciliation.md#first-authenticated-comparison--2026-09-17). Do not use these estimates as final customer billing.
+
 Run from the repository root with `.env.local` containing `NEXT_PUBLIC_SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY`. The CLI uses the existing uncached server wrapper. Migrations 093–095 must be applied. This is a local operator tool; no public route or `ADMIN_ENABLED` gate is involved. Never distribute the service-role key to demo visitors.
 
 ```sh
@@ -34,4 +36,4 @@ Verification: `npx vitest run lib/live/cost-report.test.ts`, targeted ESLint and
 
 ## Independent provider comparison
 
-Use the local [OpenAI reconciliation CLI](openai-reconciliation.md) to read provider costs and compare an unfiltered ledger export over explicit UTC dates. It requires a separate `OPENAI_ADMIN_KEY`; live verification is pending. Its output never changes ledger status, reservations or customer charges, and provider-project identity must not be inferred from a Placy customer/project ID.
+Use the local [OpenAI reconciliation CLI](openai-reconciliation.md) to read provider costs and compare an unfiltered ledger export over explicit UTC dates. It requires a separate `OPENAI_ADMIN_KEY`; actual Placy project Costs reads are now verified. Its output never changes ledger status, reservations or customer charges, and provider-project identity must not be inferred from a Placy customer/project ID.
