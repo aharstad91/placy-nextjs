@@ -32,6 +32,29 @@ describe('server knowledge boundary', () => {
     expect(result.places.length).toBeGreaterThan(1);
     expect(result.places.some(p => /Fyringsbunkeren/i.test(p.name))).toBe(true);
   });
+  it('prefers an exact map-register place over a partial curated name match', async () => {
+    const { board } = await getNyhavnaSnapshot();
+    const sample = board.categories[0]!.pois[0]!;
+    const bowling = {
+      ...sample,
+      id: 'project:nyhavna:dora-bowling' as typeof sample.id,
+      name: 'Dora 1 Bowling',
+      raw: { ...sample.raw, id: 'project:nyhavna:dora-bowling', name: 'Dora 1 Bowling' },
+    };
+    const withBowling = {
+      ...board,
+      categories: board.categories.map((category, index) =>
+        index === 0 ? { ...category, pois: [...category.pois, bowling] } : category),
+    };
+    const result = createNyhavnaKnowledge(withBowling)('find_places', {
+      query: 'Dora 1 Bowling',
+    }) as { places: Array<{ name: string; map_poi_id: string | null }> };
+
+    expect(result.places[0]).toMatchObject({
+      name: 'Dora 1 Bowling',
+      map_poi_id: 'project:nyhavna:dora-bowling',
+    });
+  });
   it('serves unreviewed base records as labelled register data, never as facts', async () => {
     const { board } = await getNyhavnaSnapshot();
     const execute = createNyhavnaKnowledge(board);

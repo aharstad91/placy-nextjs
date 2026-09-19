@@ -144,6 +144,19 @@ export function createNyhavnaKnowledge(board: BoardData, options: KnowledgeOptio
     if (name !== 'find_places') return { error: 'Ukjent kunnskapsverktøy.' };
     const query = typeof args.query === 'string' ? args.query.slice(0, 200) : '';
     const q = normalize(query);
+    // Et eksakt stedsnavn i kartregisteret vinner over et delvis treff i
+    // researchen. Uten denne porten traff «Dora 1 Bowling» først den kuraterte
+    // entiteten «Dora» fordi hele spørsmålet inneholder ordet Dora, og det
+    // faktiske bowlingstedet ble aldri vurdert. Registertreffet har dessuten
+    // en servervalidert kart-ID, som er det stemmen trenger for å åpne stedet.
+    const hasExactCurated = knowledge.entities.some((entity) =>
+      [entity.name, ...entity.aliases].some((name) => normalize(name) === q));
+    const exactRegister = [...register.values()]
+      .filter((place) => normalize(place.name) === q)
+      .map((place) => packRegister(place));
+    if (!hasExactCurated && exactRegister.length > 0) {
+      return page(exactRegister, args, { basis: 'register', note: REGISTER_BASIS });
+    }
     const requestedThemes = Object.entries(themes).filter(([word]) => q.includes(word)).flatMap(([, ids]) => ids);
     const coffeeOnly = /kaffe|kafe|cafe|coffee/.test(q);
     const ranked = knowledge.entities.filter(e => !coffeeOnly || e.facts.some(f => f.verification === "confirmed" && /kaffe|kafe|cafe/i.test(normalize(f.text)))).map(e => {

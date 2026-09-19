@@ -1,0 +1,33 @@
+{
+  "status": "updated",
+  "appliedAt": "2026-09-19T10:22:53.058Z",
+  "schemaVersion": 1,
+  "projectId": "nyhavna-utvikling_nyhavna",
+  "customer": "nyhavna-utvikling",
+  "projectSlug": "nyhavna",
+  "productId": "063a0b6a-edb3-4fb2-885d-c594ddd46063",
+  "previousAssets": null,
+  "previousPresentation": null,
+  "assets": {
+    "brand": true,
+    "logoUrl": "/illustrations/nyhavna-logo.svg",
+    "splashImageUrl": "/illustrations/nyhavna-splash.jpg",
+    "splashVideoUrl": "/illustrations/nyhavna-splash-video.mp4"
+  },
+  "presentation": {
+    "initialView": "splash",
+    "brand": {
+      "surfaceColor": "#f7f5eb",
+      "inkColor": "#171b2d",
+      "accentColor": "#005ef5",
+      "accentForegroundColor": "#ffffff",
+      "mutedColor": "#eeece2",
+      "mutedForegroundColor": "#515568",
+      "radius": "2px",
+      "headingFontFamily": "Unbounded",
+      "headingFontWeight": 700
+    }
+  },
+  "updatedAt": "2026-09-10T08:14:21.415103+00:00",
+  "revalidated": []
+}

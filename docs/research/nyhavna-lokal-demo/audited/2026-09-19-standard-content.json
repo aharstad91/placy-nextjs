@@ -6,7 +6,10 @@
     "city": "Trondheim",
     "pinSubtitle": "Ny bydel",
     "pinAccent": "#005ef5",
-    "hideBrokerCard": true
+    "hideBrokerCard": true,
+    "standalonePoiIds": [
+      "google-ChIJm6lLfZ8xbUYRFYo0NaeG5sk"
+    ]
   },
   "themes": [
     {

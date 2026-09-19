@@ -33,6 +33,7 @@ describe("buildLocalBoardContent", () => {
       ownCategoryThemeIds: ["development"],
       faqAnswerOverrides: {},
       hideBrokerCard: true,
+      standalonePoiIds: ["shared-harbour"],
     });
     expect(result.themes[0]).toMatchObject({
       id: "development",
@@ -41,5 +42,6 @@ describe("buildLocalBoardContent", () => {
       editorial: { body: "Presentation", highlightPoiIds: ["project:area:harbour"] },
       faq: [{ svar: "See [Harbour](poi:project:area:harbour) and Missing." }],
     });
+    expect(result.reportConfig.standalonePoiIds).toEqual(["shared-harbour"]);
   });
 });

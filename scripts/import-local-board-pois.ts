@@ -47,7 +47,7 @@ async function main() {
     projectId: project.id,
     customer: args.customer,
     projectSlug: args.projectSlug,
-    category: poiPackage.category,
+    categories: poiPackage.categories,
     poiIds: poiPackage.pois.map((poi) => poi.id),
     productIds: products.map((product) => product.id),
   };
@@ -56,7 +56,7 @@ async function main() {
     return;
   }
 
-  const { error: categoryError } = await db.from("categories").upsert(poiPackage.category);
+  const { error: categoryError } = await db.from("categories").upsert(poiPackage.categories);
   if (categoryError) throw new Error(`Kategoriimport feilet: ${categoryError.message}`);
   const { error: poiError } = await db.from("pois").upsert(poiPackage.pois, { onConflict: "id" });
   if (poiError) throw new Error(`POI-import feilet: ${poiError.message}`);
@@ -81,11 +81,14 @@ async function main() {
     if (productLinkError) throw new Error(`Produktkobling feilet: ${productLinkError.message}`);
   }
   for (const product of products) {
-    const { error: productCategoryError } = await db.from("product_categories").upsert({
-      product_id: product.id,
-      category_id: poiPackage.category.id,
-      display_order: 0,
-    }, { onConflict: "product_id,category_id" });
+    const { error: productCategoryError } = await db.from("product_categories").upsert(
+      poiPackage.categories.map((category) => ({
+        product_id: product.id,
+        category_id: category.id,
+        display_order: 0,
+      })),
+      { onConflict: "product_id,category_id" },
+    );
     if (productCategoryError) throw new Error(`Produktkategori feilet: ${productCategoryError.message}`);
   }
   const { data: written, error: verifyError } = await db.from("pois")

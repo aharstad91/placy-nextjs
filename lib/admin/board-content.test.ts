@@ -10,6 +10,7 @@ interface ContentResult {
       faq?: unknown[];
     }>;
     globalFaq?: Array<{ id: string; spørsmål?: string; svar: string }>;
+    standalonePoiIds?: string[];
   };
 }
 
@@ -23,7 +24,7 @@ describe("mergeBoardContentConfig", () => {
       categories: ["bus"],
       grounding: { keep: true },
     }] } }, {
-      reportConfig: { label: "Nyhavna" },
+      reportConfig: { label: "Nyhavna", standalonePoiIds: ["meny-solsiden"] },
       themes: [
         { id: "transport", faq: [{ id: "live", spørsmål: "Avganger?", svar: "Hentes live." }] },
         {
@@ -42,6 +43,7 @@ describe("mergeBoardContentConfig", () => {
       .toEqual(["development", "transport"]);
     expect(result.reportConfig.themes[1].grounding).toEqual({ keep: true });
     expect(result.reportConfig.themes[1].faq).toHaveLength(1);
+    expect(result.reportConfig.standalonePoiIds).toEqual(["meny-solsiden"]);
   });
 
   it("upserts FAQ by id and preserves unrelated global answers", () => {

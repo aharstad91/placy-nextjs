@@ -35,6 +35,9 @@ describe("buildLocalBoardPoiPackage", () => {
         marker_image: "/illustrations/nyhavna-harbour.webp",
       },
     });
+    expect(result.categories).toEqual([
+      { id: "development", name: "Development", icon: "Building2", color: "#123456" },
+    ]);
   });
 
   it("refuses to promote a place under the wrong category", () => {
@@ -44,5 +47,39 @@ describe("buildLocalBoardPoiPackage", () => {
       placeIds: ["harbour"],
       markerImagePrefix: "/illustrations/nyhavna-",
     })).toThrow("harbour tilhører development");
+  });
+
+  it("promotes several local themes into standard subcategories without fake marker images", () => {
+    const second = {
+      ...place,
+      id: "gym",
+      name: "Gym",
+      categoryId: "training-theme",
+      status: "existing" as const,
+      locationPrecision: "sourced" as const,
+      locationNote: undefined,
+    };
+    const result = buildLocalBoardPoiPackage([place, second], {
+      projectId: "customer_project",
+      groups: [
+        {
+          category: { id: "development", name: "Development", icon: "Building2", color: "#123456" },
+          placeIds: ["harbour"],
+          markerImagePrefix: "/illustrations/nyhavna-",
+        },
+        {
+          category: { id: "gym", name: "Treningssenter", icon: "Dumbbell", color: "#ec4899" },
+          sourceCategoryId: "training-theme",
+          placeIds: ["gym"],
+        },
+      ],
+    });
+
+    expect(result.categories).toHaveLength(2);
+    expect(result.pois[1]).toMatchObject({
+      category_id: "gym",
+      poi_metadata: { local_board_place_id: "gym" },
+    });
+    expect(result.pois[1]!.poi_metadata).not.toHaveProperty("marker_image");
   });
 });

@@ -29,6 +29,8 @@ export const boardContentInputSchema = z.object({
     pinSubtitle: z.string().optional(),
     pinAccent: z.string().regex(/^#[0-9a-fA-F]{6}$/).optional(),
     hideBrokerCard: z.boolean().optional(),
+    /** Kuraterte ankermedlemmer som også skal være egne søkbare kartpunkt. */
+    standalonePoiIds: z.array(z.string().min(1)).optional(),
   }),
   themes: z.array(themePatchSchema),
   globalFaq: z.array(faqSchema).default([]),

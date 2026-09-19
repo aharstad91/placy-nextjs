@@ -3,6 +3,9 @@
     "nyhavna-bydel"
   ],
   "hideBrokerCard": true,
+  "standalonePoiIds": [
+    "google-ChIJm6lLfZ8xbUYRFYo0NaeG5sk"
+  ],
   "faqAnswerOverrides": {
     "skolevei": "Åpne stedskortet for Lilleby skole eller Rosenborg skole for å beregne en aktuell rute fra boardets startpunkt. Boardet kan vise gang- og sykkelruter, men har ikke vurdert kryssinger eller om skoleveien er trygg.",
     "barnehage-dekning": "Nedre Elvehavn og Voldsminde er to kommunale barnehager som er kartlagt i området. Åpne stedskortet for plassering, og se kommunens sider for opptak. Ledige plasser er ikke undersøkt.",

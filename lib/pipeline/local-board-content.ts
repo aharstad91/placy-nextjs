@@ -15,6 +15,7 @@ const optionsSchema = z.object({
   ownCategoryThemeIds: z.array(z.string().min(1)).default([]),
   faqAnswerOverrides: z.record(z.string(), z.string().min(1)).default({}),
   hideBrokerCard: z.boolean().default(true),
+  standalonePoiIds: z.array(z.string().min(1)).default([]),
 });
 
 const POI_LINK_RE = /\[([^\]]+)\]\(poi:([^)]+)\)/g;
@@ -85,6 +86,9 @@ export function buildLocalBoardContent(
       pinSubtitle: board.pinSubtitle,
       ...(board.pinAccent ? { pinAccent: board.pinAccent } : {}),
       hideBrokerCard: options.hideBrokerCard,
+      ...(options.standalonePoiIds.length > 0
+        ? { standalonePoiIds: options.standalonePoiIds }
+        : {}),
     },
     themes,
     globalFaq: (faqByCategory.get("") ?? []).map(convertFaq),
