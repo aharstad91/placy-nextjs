@@ -342,14 +342,17 @@ describe("adaptBoardData", () => {
   it("tråder assets-flagg fra reportData til boardData", () => {
     const assetsFixture = {
       brand: true,
+      logoUrl: "/illustrations/test-prosjekt-logo.svg",
       customIllustrations: true,
       pinThumbnail: false,
     };
     const data = adaptBoardData({
       ...makeReportData([makeTheme("x", [makePOI("p1")])]),
+      projectSlug: "test-prosjekt",
       assets: assetsFixture,
     });
     expect(data.assets).toEqual(assetsFixture);
+    expect(data.home.pinImage).toBe("/illustrations/test-prosjekt-logo.svg");
   });
 
   it("assets er undefined når reportData mangler det", () => {

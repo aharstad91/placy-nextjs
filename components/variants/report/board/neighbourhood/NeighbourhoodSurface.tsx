@@ -17,7 +17,6 @@ import { StoryDeck } from "../story/StoryRail";
 import { StoryPlayCard } from "../story/StoryPlayCard";
 import { useStoryTour } from "../story/story-tour";
 import { areaProse } from "../story/story-model";
-import { BoardKnowledgeFacts } from "../BoardKnowledgeFacts";
 
 /**
  * Nabolagsflaten — navigasjonsstakken (Unit 3b + 4).
@@ -261,8 +260,6 @@ function NeighbourhoodList({
           ))}
         </div>
       )}
-
-      <BoardKnowledgeFacts knowledge={data.publishedKnowledge} />
 
       {/* Boardets egen FAQ, etter kategorikortene: bevisst slank, og svarene
           lenker INN i kategoriene framfor å gjenta innholdet deres. Lista over

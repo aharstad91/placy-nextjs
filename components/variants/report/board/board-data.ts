@@ -15,7 +15,7 @@ import type {
 import type { ReportData, ReportTheme, ThemeIllustration } from "../report-data";
 import type { FaqEntry } from "@/lib/generators/faq-generator";
 import { estimateWalkMin, getHeroInsightPOIIds } from "../hero-insight-pois";
-import { getProjectBrokers } from "@/lib/themes/project-brand";
+import { getProjectBrokers, getProjectLogoSrc } from "@/lib/themes/project-brand";
 import { computeSpreadCoordinates } from "@/lib/board/spread-co-located";
 import { isAnchorPOI } from "@/lib/board/anchor-poi";
 import {
@@ -420,6 +420,9 @@ export function adaptBoardData(report: ReportData): BoardData {
       city: report.city,
       pinSubtitle: report.pinSubtitle,
       pinAccent: report.pinAccent,
+      // Brandede standardboards bruker samme prosjektlogo i kartmarkøren som
+      // demo-boardene tidligere matet inn eksplisitt som `pinImage`.
+      pinImage: getProjectLogoSrc(report.projectSlug, report.assets),
       audio: pickPlayableAudio(report.heroAudio),
     },
     categories,

@@ -10468,3 +10468,11 @@ Boardet har nå åtte temaer: Leangenbukta, Hverdag, Oppvekst, Servering, Natur,
 Konvertereren støtter nå en eksplisitt `themeIdMap`, fordi lokale researchtemaer kan hete `hverdag`, `oppvekst` og `servering`, mens standardboardets kanoniske ID-er er `hverdagsliv`, `barn-oppvekst` og `mat-drikke`. Uten denne grensen ville en innholdsmigrering laget duplikattemaer. Dette er gjenbrukbar læring for Lillebytunet og alle nye prosjekter.
 
 Leangenbukta kan fortsatt ikke få demo-runtime slettet: den oppdaterte standardruten må testes visuelt på desktop og eksakt mobilbredde etter serverrestart, og Anja må prøves fysisk med mikrofon, avbrudd, kartverktøy og uttale. Standardprosjektet har foreløpig ingen `voice_projects`-binding eller offentlig `placy.no/leangenbukta`-cutover. Etter bestått manuell port skal binding/rute aktiveres, deretter slettes `app/demo/leangenbukta-lokal/` og de runtimeavhengighetene som da ikke lenger brukes. Research, scenarioer, snapshots og receipts beholdes.
+
+## 2026-09-19 — Standardboardene viser prosjektlogo og holder researchfakta utenfor sidebaren
+
+Etter migreringen viste både Nyhavna og Leangenbukta den tekniske blokken «Dokumenterte opplysninger» i sidebaren, og prosjektmarkøren falt tilbake til bygningsikon. Årsakene var felles: `publishedKnowledge` ble rendret direkte i begge områdeflatene, mens demoenes eksplisitte `pinImage` aldri hadde fått en standardboard-ekvivalent. Brandlogoen lå allerede korrekt i `reportConfig.assets.logoUrl`.
+
+Standardadapteren bruker nå den validerte brandlogoen som `home.pinImage`. Det gjenoppretter logoen i prosjektmarkøren for alle brandede standardboards uten prosjektspesialkode. Den separate faktablokken og dens døde komponent er fjernet fra sidebaren. `publishedKnowledge` beholdes uendret i boarddata og Anja-kontekst; endringen gjelder bare presentasjonen.
+
+Visuell desktopkontroll i Chrome bekreftet logo i kartmarkøren og fravær av faktablokken på begge standardrutene. Verifisering: 146 målrettede tester besto; hele suiten besto med 324 testfiler og 4 823 tester, én integrasjonstest hoppet over; TypeScript 0 feil; lint 0 feil med 64 eksisterende advarsler; produksjonsbygg besto. Mobil- og fysisk stemmetest er fortsatt egne cutover-porter før demo-runtime slettes.
