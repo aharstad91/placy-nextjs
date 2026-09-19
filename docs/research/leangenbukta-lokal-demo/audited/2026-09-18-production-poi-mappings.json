@@ -1,0 +1,147 @@
+[
+  {
+    "localPlaceId": "3t-lade",
+    "poiId": "google-ChIJIxSO7s0xbUYRQTZSjmjBkjk",
+    "evidence": "docs/research/leangenbukta-lokal-demo/register-import-report.json"
+  },
+  {
+    "localPlaceId": "big-bite-city-lade",
+    "poiId": "google-ChIJU0r-QgQxbUYR227hQ_E__jw",
+    "evidence": "docs/research/leangenbukta-lokal-demo/register-import-report.json"
+  },
+  {
+    "localPlaceId": "boots-apotek-ladetorget",
+    "poiId": "google-ChIJ-2PJLQUxbUYRAipV4EKMjVY",
+    "evidence": "docs/research/leangenbukta-lokal-demo/register-import-report.json"
+  },
+  {
+    "localPlaceId": "burger-king-lade-arena",
+    "poiId": "google-ChIJ1-nTGgIxbUYR_L6AbKF6Qcw",
+    "evidence": "docs/research/leangenbukta-lokal-demo/register-import-report.json"
+  },
+  {
+    "localPlaceId": "cafe-victoria",
+    "poiId": "google-ChIJVVUFzBwxbUYRmvU78sq9Vx8",
+    "evidence": "docs/research/leangenbukta-lokal-demo/register-import-report.json"
+  },
+  {
+    "localPlaceId": "city-lade",
+    "poiId": "google-ChIJt8f3LKQxbUYRDtDL6UWLq4Y",
+    "evidence": "docs/research/leangenbukta-lokal-demo/register-import-report.json"
+  },
+  {
+    "localPlaceId": "coop-mega-sirkus-shopping",
+    "poiId": "google-ChIJ_bGcGQAxbUYRV8c0jX3elYo",
+    "evidence": "docs/research/leangenbukta-lokal-demo/register-import-report.json"
+  },
+  {
+    "localPlaceId": "jordbrpikene-city-lade",
+    "poiId": "google-ChIJq8BfaAQxbUYR74KE0gu8Mxo",
+    "evidence": "docs/research/leangenbukta-lokal-demo/register-import-report.json"
+  },
+  {
+    "localPlaceId": "kompis-lade",
+    "poiId": "google-ChIJhSToLQUxbUYRY-bFi-HNxsQ",
+    "evidence": "docs/research/leangenbukta-lokal-demo/register-import-report.json"
+  },
+  {
+    "localPlaceId": "lade-arena",
+    "poiId": "google-ChIJqeBnd_4wbUYRR06hK76o-c0",
+    "evidence": "docs/research/leangenbukta-lokal-demo/register-import-report.json"
+  },
+  {
+    "localPlaceId": "lade-kirke",
+    "poiId": "google-ChIJA3O3nQUxbUYRHVBuZzdhRkY",
+    "evidence": "docs/research/leangenbukta-lokal-demo/register-import-report.json"
+  },
+  {
+    "localPlaceId": "lade-skole",
+    "poiId": "2f0c0e0d-fcde-4c14-b5c8-2e0f707541da",
+    "evidence": "docs/research/leangenbukta-lokal-demo/register-import-report.json"
+  },
+  {
+    "localPlaceId": "lade-skole-play",
+    "poiId": "lekeplass-lade-skole-lek",
+    "evidence": "docs/research/leangenbukta-lokal-demo/register-import-report.json"
+  },
+  {
+    "localPlaceId": "ladeparken",
+    "poiId": "lekeplass-ladeparken-lek",
+    "evidence": "docs/research/leangenbukta-lokal-demo/register-import-report.json"
+  },
+  {
+    "localPlaceId": "ladesletta-barnehage",
+    "poiId": "e4971c01-79a7-4308-8a51-2ea91f387685",
+    "evidence": "docs/research/leangenbukta-lokal-demo/register-import-report.json"
+  },
+  {
+    "localPlaceId": "leangen-idrettspark",
+    "poiId": "google-ChIJHbzUMFEwbUYRtcKkq-oGhM4",
+    "evidence": "docs/research/leangenbukta-lokal-demo/register-import-report.json"
+  },
+  {
+    "localPlaceId": "leangen-kulturbarnehage-sa",
+    "poiId": "c37aa6d2-0a09-40e1-9f5d-2edfb791463c",
+    "evidence": "docs/research/leangenbukta-lokal-demo/register-import-report.json"
+  },
+  {
+    "localPlaceId": "leangen-kunstisbane",
+    "poiId": "google-ChIJ_9hhaFEwbUYRkwYH7PSVUD8",
+    "evidence": "docs/research/leangenbukta-lokal-demo/register-import-report.json"
+  },
+  {
+    "localPlaceId": "leangen-stasjon",
+    "poiId": "entur-NSR-StopPlace-393",
+    "evidence": "docs/research/leangenbukta-lokal-demo/register-import-report.json"
+  },
+  {
+    "localPlaceId": "leos-lekeland-trondheim",
+    "poiId": "google-ChIJ-4ALIWoubUYR3nK7rUBmeic",
+    "evidence": "docs/research/leangenbukta-lokal-demo/register-import-report.json"
+  },
+  {
+    "localPlaceId": "obs-city-lade",
+    "poiId": "google-ChIJU0r-QgQxbUYRt6CgoPAVKKs",
+    "evidence": "docs/research/leangenbukta-lokal-demo/register-import-report.json"
+  },
+  {
+    "localPlaceId": "rema-1000-lade-arena",
+    "poiId": "google-ChIJo5VQDgIxbUYR6A0e4vSrEBU",
+    "evidence": "docs/research/leangenbukta-lokal-demo/register-import-report.json"
+  },
+  {
+    "localPlaceId": "ringve-musikkmuseum",
+    "poiId": "google-ChIJExGbthwxbUYRYY6srQ-FrY8",
+    "evidence": "docs/research/leangenbukta-lokal-demo/register-import-report.json"
+  },
+  {
+    "localPlaceId": "ringvebukta",
+    "poiId": "badeplass-ringvebukta",
+    "evidence": "docs/research/leangenbukta-lokal-demo/register-import-report.json"
+  },
+  {
+    "localPlaceId": "rosenborg-bakeri-ladetorget",
+    "poiId": "google-ChIJb3DRGdIxbUYRILAgj-GPzhI",
+    "evidence": "docs/research/leangenbukta-lokal-demo/register-import-report.json"
+  },
+  {
+    "localPlaceId": "sirkus-shopping",
+    "poiId": "google-ChIJVZdRQJoxbUYRTcToJ4smjeM",
+    "evidence": "docs/research/leangenbukta-lokal-demo/register-import-report.json"
+  },
+  {
+    "localPlaceId": "trygg-lade-hallen",
+    "poiId": "google-ChIJA-UCdaUxbUYR8q4im15y4TM",
+    "evidence": "docs/research/leangenbukta-lokal-demo/register-import-report.json"
+  },
+  {
+    "localPlaceId": "vitusapotek-city-lade",
+    "poiId": "google-ChIJofCvaPExbUYRxuBKg_zQM14",
+    "evidence": "docs/research/leangenbukta-lokal-demo/register-import-report.json"
+  },
+  {
+    "localPlaceId": "vitusapotek-lade-arena",
+    "poiId": "google-ChIJ41LSGgIxbUYR__2L19iSkI0",
+    "evidence": "docs/research/leangenbukta-lokal-demo/register-import-report.json"
+  }
+]
