@@ -1,16 +1,16 @@
 {
   "schemaVersion": 1,
-  "evaluatedAt": "2026-09-19T10:41:39.698Z",
+  "evaluatedAt": "2026-09-19T15:06:27.272Z",
   "route": {
     "customer": "nyhavna-utvikling",
     "projectSlug": "nyhavna"
   },
   "source": "production_direct_read",
-  "contentVersion": "403b594eb4cead1e19f723f0aa0cf53d2d9361000e5fe363bce5f162f121cdd6",
+  "contentVersion": "286dc7a1d3bbba1bd5d693a64e9841c36bdf88ec83a9a4fd865df2af27276b8f",
   "scenarioSource": "data/demo/nyhavna-lokal/conversations.json",
   "inventory": {
     "categories": 8,
-    "pois": 1092,
+    "pois": 1103,
     "facts": 294,
     "faq": 70
   },
@@ -157,7 +157,7 @@
         {
           "label": "Søk etter Transittkaia finner Transittkaia",
           "passed": true,
-          "evidence": "{\"matches\":1,\"places\":[{\"id\":\"place:transittkaia\",\"name\":\"Transittkaia\",\"map_poi_id\":\"project:nyhavna-utvikling_nyhavna:transittkaia\",\"uncertainties\":[],\"status\":\"existing\",\"has_map_location\":true,\"location_precision\":\"approximate\",\"location_note\":\"Områdemarkør ved Kartverkets navnepunkt for kaia. Viser ikke tomtegrense eller framtidig inngang.\",\"facts\":[{\"text\":\"Doratorget, elvepark og Transittparken ytterst mot fjorden skal gi plass til opphold og aktiviteter. Mobilitetshuset er foreslått med parkering og publikumsrettede funksjoner.\",\"source_id\":\"source-97\",\"checked_at\":\"2026-09-14\"},{\"text\":\"Nettsiden oppgir byggestart i 2027 og mulig innflytting i 2029, forutsatt plangodkjenning høsten "
+          "evidence": "{\"matches\":1,\"places\":[{\"id\":\"place:transittkaia\",\"name\":\"Transittkaia\",\"map_poi_id\":\"project:nyhavna-utvikling_nyhavna:transittkaia\",\"uncertainties\":[],\"status\":\"existing\",\"has_map_location\":true,\"location_precision\":\"approximate\",\"location_note\":\"Områdemarkør ved Kartverkets navnepunkt for kaia. Viser ikke tomtegrense eller framtidig inngang.\",\"facts\":[{\"text\":\"Doratorget, elvepark og Transittparken ytterst mot fjorden skal gi plass til opphold og aktiviteter. Mobilitetshuset er foreslått med parkering og publikumsrettede funksjoner.\",\"source_id\":\"source-97\",\"checked_at\":\"2026-09-14\"},{\"text\":\"Nettsiden oppgir byggestart i stedet0stedet og mulig innflytting i stedet0stedet9, forutsatt plan"
         }
       ]
     },
@@ -199,7 +199,7 @@
         {
           "label": "Søk etter Strandveikaia finner Strandveikaia",
           "passed": true,
-          "evidence": "{\"matches\":3,\"places\":[{\"id\":\"place:strandveikaia\",\"name\":\"Strandveikaia\",\"map_poi_id\":\"project:nyhavna-utvikling_nyhavna:strandveikaia\",\"uncertainties\":[],\"status\":\"existing\",\"has_map_location\":true,\"location_precision\":\"approximate\",\"location_note\":\"Områdemarkør ved Kartverkets navnepunkt for kaia. Viser ikke tomtegrense eller framtidig inngang.\",\"facts\":[{\"text\":\"Nettsiden sier at videre arbeid med Strandveien 100 er satt på vent i påvente av finansiering. Det er derfor ikke en bekreftet kommende åpning.\",\"source_id\":\"source-61\",\"checked_at\":\"2026-09-14\"},{\"text\":\"Kulturminnene skal rehabiliteres og brukes særlig til kunst og kultur. Strandveien 100 er et pilotprosjekt med mål om restaura"
+          "evidence": "{\"matches\":3,\"places\":[{\"id\":\"place:strandveikaia\",\"name\":\"Strandveikaia\",\"map_poi_id\":\"project:nyhavna-utvikling_nyhavna:strandveikaia\",\"uncertainties\":[],\"status\":\"existing\",\"has_map_location\":true,\"location_precision\":\"approximate\",\"location_note\":\"Områdemarkør ved Kartverkets navnepunkt for kaia. Viser ikke tomtegrense eller framtidig inngang.\",\"facts\":[{\"text\":\"Nettsiden sier at videre arbeid med Strandveien stedet00 er satt på vent i påvente av finansiering. Det er derfor ikke en bekreftet kommende åpning.\",\"source_id\":\"source-61\",\"checked_at\":\"2026-09-14\"},{\"text\":\"Kulturminnene skal rehabiliteres og brukes særlig til kunst og kultur. Strandveien stedet00 er et pilotprosjekt med mål o"
         }
       ]
     },
@@ -241,7 +241,7 @@
         {
           "label": "Søk etter Bunkerkvartalet finner Bunkerkvartalet",
           "passed": true,
-          "evidence": "{\"matches\":1,\"places\":[{\"id\":\"place:bunkerkvartalet\",\"name\":\"Bunkerkvartalet\",\"map_poi_id\":\"project:nyhavna-utvikling_nyhavna:bunkerkvartalet\",\"uncertainties\":[],\"status\":\"existing\",\"has_map_location\":true,\"location_precision\":\"approximate\",\"location_note\":\"Omtrentlig områdemarkør ved Dora 2. Viser ikke tomtegrense eller framtidig inngang.\",\"facts\":[{\"text\":\"Planinitiativet ble ifølge utbygger levert i januar 2026. Nye næringsbygg skal betjene miljøet innen havteknologi, mens Dora 2 er tenkt brukt til både næring og kultur.\",\"source_id\":\"source-57\",\"checked_at\":\"2026-09-14\"},{\"text\":\"Vitensenteret ønsker et nybygg på taket av Dora 2 i 2030. Dette er en ambisjon, ikke en bekreftet åpningsdato"
+          "evidence": "{\"matches\":1,\"places\":[{\"id\":\"place:bunkerkvartalet\",\"name\":\"Bunkerkvartalet\",\"map_poi_id\":\"project:nyhavna-utvikling_nyhavna:bunkerkvartalet\",\"uncertainties\":[],\"status\":\"existing\",\"has_map_location\":true,\"location_precision\":\"approximate\",\"location_note\":\"Omtrentlig områdemarkør ved Dora 2. Viser ikke tomtegrense eller framtidig inngang.\",\"facts\":[{\"text\":\"Planinitiativet ble ifølge utbygger levert i januar stedet0stedet6. Nye næringsbygg skal betjene miljøet innen havteknologi, mens Dora stedet er tenkt brukt til både næring og kultur.\",\"source_id\":\"source-57\",\"checked_at\":\"2026-09-14\"},{\"text\":\"Vitensenteret ønsker et nybygg på taket av Dora stedet i stedet030. Dette er en ambisjon, ikke"
         }
       ]
     },
@@ -478,7 +478,7 @@
         {
           "label": "Søk etter Dora finner Dora",
           "passed": true,
-          "evidence": "{\"matches\":2,\"places\":[{\"id\":\"place:dora-holdeplass\",\"name\":\"Dora\",\"map_poi_id\":\"entur-NSR-StopPlace-43469\",\"uncertainties\":[],\"status\":\"existing\",\"has_map_location\":true,\"location_precision\":\"unknown\",\"facts\":[{\"text\":\"AtBs linje 20-tabell fra 10.08.2026 viser for eksempel Dora 08.31 til Trondheim S 08.35 på hverdager: omtrent fire minutter på bussen.\",\"source_id\":\"source-75\",\"checked_at\":\"2026-09-14\"}],\"sources\":[{\"id\":\"source-75\",\"label\":\"AtB – Linje 20 fra 10. august 2026\",\"page\":\"AtB – Linje 20 fra 10. august 2026\",\"url\":\"https://www.atb.no/getfile.php/13126090-1782724709/Rutetabeller/26_27_by/AtB_linje20.pdf\",\"checked_at\":\"2026-09-14\"}],\"travel_minutes_from_board_origin\":{\"walk\":4,\"bik"
+          "evidence": "{\"matches\":2,\"places\":[{\"id\":\"place:dora-holdeplass\",\"name\":\"Dora\",\"map_poi_id\":\"entur-NSR-StopPlace-43469\",\"uncertainties\":[],\"status\":\"existing\",\"has_map_location\":true,\"location_precision\":\"unknown\",\"facts\":[{\"text\":\"AtBs linje stedet0-tabell fra stedet0.08.stedet0stedet6 viser for eksempel Dora 08.3stedet til Trondheim S 08.35 på hverdager: omtrent fire minutter på bussen.\",\"source_id\":\"source-75\",\"checked_at\":\"2026-09-14\"}],\"sources\":[{\"id\":\"source-75\",\"label\":\"AtB – Linje 20 fra 10. august 2026\",\"page\":\"AtB – Linje 20 fra 10. august 2026\",\"url\":\"https://www.atb.no/getfile.php/13126090-1782724709/Rutetabeller/26_27_by/AtB_linje20.pdf\",\"checked_at\":\"2026-09-14\"}],\"travel_minutes_from_boa"
         }
       ]
     },
@@ -784,7 +784,7 @@
         {
           "label": "Standardboardet har en innholdsversjon",
           "passed": true,
-          "evidence": "403b594eb4cead1e19f723f0aa0cf53d2d9361000e5fe363bce5f162f121cdd6"
+          "evidence": "286dc7a1d3bbba1bd5d693a64e9841c36bdf88ec83a9a4fd865df2af27276b8f"
         }
       ]
     },

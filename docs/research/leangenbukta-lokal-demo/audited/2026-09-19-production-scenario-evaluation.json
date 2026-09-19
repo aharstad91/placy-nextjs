@@ -1,11 +1,11 @@
 {
   "schemaVersion": 1,
-  "evaluatedAt": "2026-09-19T10:50:11.306Z",
+  "evaluatedAt": "2026-09-19T15:06:30.323Z",
   "route": {
     "customer": "placy-demo",
     "projectSlug": "leangenbukta"
   },
-  "contentVersion": "6b7dfcad6274d2a250dc07da765e707046f72f4811e48fee347f530ed947f6ba",
+  "contentVersion": "3fdc56b80b7cf408430647d29af837d49b7bfbd87f71c622dba084d2beaf7f3d",
   "source": "production_direct_read",
   "scenarioSource": "data/demo/leangenbukta-lokal/conversations.json",
   "scenarios": 35,
@@ -65,7 +65,7 @@
         {
           "label": "Ingen publisert raskest-rangering av apotek",
           "passed": true,
-          "evidence": "Kontrollerte 269 publiserte fakta; ingen påstand med apotek + raskest."
+          "evidence": "Kontrollerte 273 publiserte fakta; ingen påstand med apotek + raskest."
         }
       ]
     },
@@ -140,7 +140,7 @@
         {
           "label": "Ingen publisert ledig-plass-påstand",
           "passed": true,
-          "evidence": "Kontrollerte 269 publiserte fakta; ingen påstand med barnehage + ledig plass."
+          "evidence": "Kontrollerte 273 publiserte fakta; ingen påstand med barnehage + ledig plass."
         }
       ]
     },
@@ -215,7 +215,7 @@
         {
           "label": "Ingen publisert leveringsdekning til prosjektadressen",
           "passed": true,
-          "evidence": "Kontrollerte 269 publiserte fakta; ingen påstand med lever + Haakon VIIs gate 14."
+          "evidence": "Kontrollerte 273 publiserte fakta; ingen påstand med lever + Haakon VIIs gate 14."
         }
       ]
     },
@@ -229,7 +229,7 @@
         {
           "label": "Avbrudd returnerer til mat-drikke",
           "passed": true,
-          "evidence": "{\"opened\":{\"ok\":true,\"interests\":[\"mat-drikke\"],\"general_tour\":false,\"plan\":{\"current\":{\"theme_id\":\"mat-drikke\",\"name\":\"Servering\"},\"next\":[{\"theme_id\":\"hverdagsliv\",\"name\":\"Hverdag\"},{\"theme_id\":\"barn-oppvekst\",\"name\":\"Oppvekst\"},{\"theme_id\":\"natur-friluftsliv\",\"name\":\"Natur\"}]},\"chapter\":{\"theme_id\":\"mat-drikke\",\"name\":\"Servering\",\"intro\":\"Spisestedene spenner fra Ladekaia ute ved stien, med fjorden som nærmeste nabo, til Kompis på Ladetorget og bryggerikjøkkenet til E.C. Dahls på Nyhavna-side"
+          "evidence": "{\"opened\":{\"ok\":true,\"interests\":[\"mat-drikke\"],\"general_tour\":false,\"plan\":{\"current\":{\"theme_id\":\"mat-drikke\",\"name\":\"Servering\"},\"next\":[{\"theme_id\":\"hverdagsliv\",\"name\":\"Hverdag\"},{\"theme_id\":\"barn-oppvekst\",\"name\":\"Oppvekst\"},{\"theme_id\":\"natur-friluftsliv\",\"name\":\"Natur\"}]},\"chapter\":{\"theme_id\":\"mat-drikke\",\"name\":\"Servering\",\"intro\":\"Baan, Franske Nytelser og Fyr på Lade er blant de første serveringsstedene som vises fra prosjektet. Kartet bruker lagrede reisetider og viser flere alterna"
         },
         {
           "label": "Inneholder Ladekaia, sesong",
@@ -290,7 +290,7 @@
         {
           "label": "Ingen publisert nåstatus for adkomststien",
           "passed": true,
-          "evidence": "Kontrollerte 269 publiserte fakta; ingen påstand med adkomststien + åpen akkurat nå."
+          "evidence": "Kontrollerte 273 publiserte fakta; ingen påstand med adkomststien + åpen akkurat nå."
         }
       ]
     },
@@ -351,7 +351,7 @@
         {
           "label": "Ingen publisert nåstatus for stasjonsheisen",
           "passed": true,
-          "evidence": "Kontrollerte 269 publiserte fakta; ingen påstand med heisen + ute av drift."
+          "evidence": "Kontrollerte 273 publiserte fakta; ingen påstand med heisen + ute av drift."
         }
       ]
     },
@@ -455,7 +455,7 @@
         {
           "label": "Ingen publisert ferdigstilt-påstand for treningsrommet",
           "passed": true,
-          "evidence": "Kontrollerte 269 publiserte fakta; ingen påstand med treningsrom + ferdigstilt."
+          "evidence": "Kontrollerte 273 publiserte fakta; ingen påstand med treningsrom + ferdigstilt."
         }
       ]
     },
@@ -469,7 +469,7 @@
         {
           "label": "Avbrudd returnerer til trening-aktivitet",
           "passed": true,
-          "evidence": "{\"opened\":{\"ok\":true,\"interests\":[\"trening-aktivitet\"],\"general_tour\":false,\"plan\":{\"current\":{\"theme_id\":\"trening-aktivitet\",\"name\":\"Trening\"},\"next\":[{\"theme_id\":\"hverdagsliv\",\"name\":\"Hverdag\"},{\"theme_id\":\"barn-oppvekst\",\"name\":\"Oppvekst\"},{\"theme_id\":\"mat-drikke\",\"name\":\"Servering\"}]},\"chapter\":{\"theme_id\":\"trening-aktivitet\",\"name\":\"Trening\",\"intro\":\"Treningstilbudet ligger spredt over hele strøket: 3T på Lade, Flex Gym og TrenHer på Lilleby-siden og Impulse ved Ladetorget. Akademiet kickbo"
+          "evidence": "{\"opened\":{\"ok\":true,\"interests\":[\"trening-aktivitet\"],\"general_tour\":false,\"plan\":{\"current\":{\"theme_id\":\"trening-aktivitet\",\"name\":\"Trening\"},\"next\":[{\"theme_id\":\"hverdagsliv\",\"name\":\"Hverdag\"},{\"theme_id\":\"barn-oppvekst\",\"name\":\"Oppvekst\"},{\"theme_id\":\"mat-drikke\",\"name\":\"Servering\"}]},\"chapter\":{\"theme_id\":\"trening-aktivitet\",\"name\":\"Trening\",\"intro\":\"Impulse Treningssenter, Speed Treningssenter Lade og 3T-Leangen er blant treningsstedene kartet viser fra prosjektet. Kartet bruker lagrede re"
         },
         {
           "label": "Inneholder bemannet",

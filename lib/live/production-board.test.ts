@@ -158,7 +158,50 @@ describe("production board assistant source", () => {
     const chapter = (opened.result as { chapter: { intro: string; places: Array<{ id: string }> } }).chapter;
     expect(chapter.places.map((place) => place.id))
       .toEqual(["cafe-1", "far-place"]);
+    expect(chapter.intro).toBe("Servering");
     expect(chapter.intro).not.toContain("Langt unna");
+  });
+
+  it("beholder temafortellingen samtidig som steder sorteres etter nærhet", () => {
+    const input = board();
+    const category = input.categories[0]!;
+    category.editorial = {
+      intro: "Her møtes den gamle industrien og dagens serveringssteder.",
+      body: "Lengre redaksjonell tekst.",
+      highlights: [],
+    } as never;
+    category.pois[0]!.raw.travelTime = { walk: 4 };
+
+    const chapter = buildProductionAssistantSource(input).createConversation()
+      .execute("open_theme", { theme_id: "servering" }).result as {
+        chapter: { intro: string; places: Array<{ name: string }> };
+      };
+
+    expect(chapter.chapter.intro).toBe(
+      "Her møtes den gamle industrien og dagens serveringssteder.",
+    );
+    expect(chapter.chapter.places[0]?.name).toBe("Fyr");
+  });
+
+  it("fjerner også gateadressen når prosa utelater bysuffikset", () => {
+    const input = board();
+    const category = input.categories[0]!;
+    category.pois[0]!.address = "Lade allé 9, Trondheim";
+    category.pois[0]!.raw.address = "Lade allé 9, Trondheim";
+    category.editorial = {
+      intro: "Fyr i Lade allé 9 serverer mat og drikke.",
+      body: "Fyr ligger i Lade allé 9.",
+      highlights: [],
+    } as never;
+    category.pois[0]!.raw.travelTime = { walk: 4 };
+
+    const chapter = buildProductionAssistantSource(input).createConversation()
+      .execute("open_theme", { theme_id: "servering" }).result as {
+        chapter: { intro: string };
+      };
+
+    expect(chapter.chapter.intro).not.toContain("Lade allé 9");
+    expect(chapter.chapter.intro).toContain("stedet");
   });
 
   it("prioriterer kildeattribuert prosjektfortelling foran reguleringsdetaljer", () => {

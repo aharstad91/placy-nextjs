@@ -172,9 +172,12 @@ export function buildChapter(
       location_note: p.raw.locationNote,
     }));
   const curated = curatedFor(String(category.id));
-  const intro = preferNearestPlaces
-    ? `Dette temaet viser steder i området. Listen nedenfor er sortert etter lagret reisetid fra prosjektadressen.`
-    : category.editorial?.intro ?? firstSentences(category.editorial?.body ?? category.body ?? category.lead, 2) ?? category.lead;
+  // Nærhetsmodus styrer UTVALGET og rekkefølgen av steder, ikke om boardets
+  // kildekontrollerte temafortelling får finnes. Å koble disse to hensynene
+  // erstattet Nyhavnas ferdige introduksjoner med en generisk systemtekst.
+  const intro = category.editorial?.intro
+    ?? firstSentences(category.editorial?.body ?? category.body ?? category.lead, 2)
+    ?? category.lead;
   return {
     theme_id: String(category.id),
     name: category.label,

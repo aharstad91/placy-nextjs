@@ -57,7 +57,13 @@ export function spokenBoardProjection(board: BoardData): BoardData {
     // Katalogdata bruker av og til stedsnavn ("Lade", "Trondheim S") i
     // adressefeltet. De må ikke globalt erstattes inni navn og FAQ. Et presist
     // gateadresseuttrykk har husnummer; selve adressefeltene fjernes uansett.
-    .filter((value): value is string => Boolean(value?.trim()) && /\d/.test(value));
+    .filter((value): value is string => Boolean(value?.trim()) && /\d/.test(value))
+    // POI-feltet er ofte "Kobbes gate 2, Trondheim", mens redaksjonell tekst
+    // skriver "Kobbes gate 2". Begge variantene må bort fra modelldata.
+    .flatMap((value) => [value, value.split(",")[0]?.trim()])
+    .filter((value): value is string => Boolean(value) && /\d/.test(value))
+    .filter((value, index, values) => values.indexOf(value) === index)
+    .sort((a, b) => b.length - a.length);
   const categories = board.categories.map((category) => {
     const pois = category.pois.map((poi) => spokenPoi(poi, addresses));
     const byId = new Map(pois.map((poi) => [String(poi.id), poi]));
