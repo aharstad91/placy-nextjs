@@ -1,0 +1,78 @@
+{
+  "schemaVersion": 1,
+  "board": {
+    "projectId": "placy-demo_leangenbukta",
+    "route": "/eiendom/placy-demo/leangenbukta/rapport-board",
+    "origin": "http://localhost:3107"
+  },
+  "testedAt": "2026-09-19",
+  "driver": "host-native CUA in Google Chrome",
+  "result": "partial",
+  "summary": "The production board, audited content, POI curation, assistant consent and all supported map modes passed visual inspection. Live microphone/listening, browser-console inspection and an exact phone viewport were not exercised.",
+  "checks": [
+    {
+      "name": "Desktop board shell",
+      "result": "pass",
+      "evidence": "The Leangenbukta board opened with its title, seven themes and 817 de-duplicated places."
+    },
+    {
+      "name": "Audited project knowledge",
+      "result": "pass",
+      "evidence": "Documented project facts appeared under Dokumenterte opplysninger, including the topic-only Hangarbrua fact and the approved Snurr opening-hours fact."
+    },
+    {
+      "name": "Standalone servering places",
+      "result": "pass",
+      "evidence": "Fyr, Franske Nytelser and Burger King Lade Arena appeared as separate markers and list entries. Fyr opened with route time and register details."
+    },
+    {
+      "name": "2D map",
+      "result": "pass",
+      "evidence": "The map rendered and a selected place showed one detail popup after the duplicate-popup fix."
+    },
+    {
+      "name": "Satellite map",
+      "result": "pass",
+      "evidence": "The satellite layer rendered with POI markers and selection state intact."
+    },
+    {
+      "name": "3D map",
+      "result": "pass",
+      "evidence": "The 3D layer rendered with POI markers and selection state intact."
+    },
+    {
+      "name": "Assistant consent",
+      "result": "pass",
+      "evidence": "Opening Anja displayed the consent dialog before microphone use. The dialog was cancelled."
+    },
+    {
+      "name": "Narrow viewport",
+      "result": "pass",
+      "evidence": "The board remained coherent after narrowing the native Chrome window to a tablet-like viewport."
+    },
+    {
+      "name": "Exact phone viewport",
+      "result": "skip",
+      "reason": "The selected host-native browser driver did not expose exact viewport emulation."
+    },
+    {
+      "name": "Live microphone and listening state",
+      "result": "skip",
+      "reason": "Microphone permission and live voice interaction were intentionally not granted during this visual pass."
+    },
+    {
+      "name": "Browser console",
+      "result": "skip",
+      "reason": "Console inspection was not exposed through the selected host-native browser driver."
+    }
+  ],
+  "defects": [
+    {
+      "status": "fixed",
+      "title": "Selected POI displayed duplicate popups after switching to 2D",
+      "cause": "The persistent BoardMap3D layer rendered its HTML popup while it was behind the active Mapbox layer.",
+      "resolution": "BoardMap3D now renders its selected-place popup only while the 3D layer is in front.",
+      "verification": "Switching back to 2D showed exactly one selected-place popup."
+    }
+  ]
+}
