@@ -154,9 +154,10 @@ export function buildChapter(
   travelMode: TravelMode,
   projectInfo: ProjectInfoProvider = NO_PROJECT_INFO,
   curatedFor: CuratedProvider = NYHAVNA_CURATED,
+  preferNearestPlaces = false,
 ): ChapterPack {
   const highlights = category.editorial?.highlights ?? [];
-  const pickPool: BoardPOI[] = highlights.length
+  const pickPool: BoardPOI[] = !preferNearestPlaces && highlights.length
     ? highlights.map((h) => category.pois.find((p) => p.id.toLowerCase() === String(h.id).toLowerCase())).filter((p): p is BoardPOI => p !== undefined)
     : category.pois.filter((p) => minutes(p, travelMode) !== null);
   const places = pickPool
@@ -171,7 +172,9 @@ export function buildChapter(
       location_note: p.raw.locationNote,
     }));
   const curated = curatedFor(String(category.id));
-  const intro = category.editorial?.intro ?? firstSentences(category.editorial?.body ?? category.body ?? category.lead, 2) ?? category.lead;
+  const intro = preferNearestPlaces
+    ? `Dette temaet viser steder i området. Listen nedenfor er sortert etter lagret reisetid fra prosjektadressen.`
+    : category.editorial?.intro ?? firstSentences(category.editorial?.body ?? category.body ?? category.lead, 2) ?? category.lead;
   return {
     theme_id: String(category.id),
     name: category.label,

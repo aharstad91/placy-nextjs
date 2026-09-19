@@ -88,28 +88,39 @@ describe("POIRealtimeSection", () => {
     });
 
     it("renders line code for each departure", () => {
-      const { getByText } = render(
+      const { getAllByText } = render(
         <POIRealtimeSection realtimeData={{ ...EMPTY, entur: ENTUR }} />,
       );
-      expect(getByText("5")).not.toBeNull();
-      expect(getByText("6")).not.toBeNull();
-      expect(getByText("10")).not.toBeNull();
+      expect(getAllByText("5")).toHaveLength(2);
+      expect(getAllByText("6")).toHaveLength(2);
+      expect(getAllByText("10")).toHaveLength(2);
+    });
+
+    it("summarizes the lines serving the stop before live departures", () => {
+      const { getByText, getAllByText } = render(
+        <POIRealtimeSection realtimeData={{ ...EMPTY, entur: ENTUR }} />,
+      );
+      expect(getByText("Linjer her")).not.toBeNull();
+      expect(getAllByText("5")).toHaveLength(2);
+      expect(getAllByText("6")).toHaveLength(2);
+      expect(getAllByText("10")).toHaveLength(2);
+      expect(getAllByText("1")).toHaveLength(1);
     });
 
     it("applies lineColor style to departure with lineColor set", () => {
-      const { getByText } = render(
+      const { getAllByText } = render(
         <POIRealtimeSection realtimeData={{ ...EMPTY, entur: ENTUR }} />,
       );
-      const lineEl = getByText("5");
+      const lineEl = getAllByText("5").at(-1)!;
       // jsdom normalises hex → rgb; check colour is applied (non-empty style)
       expect(lineEl.getAttribute("style")).toBeTruthy();
     });
 
     it("applies no color style when lineColor is absent", () => {
-      const { getByText } = render(
+      const { getAllByText } = render(
         <POIRealtimeSection realtimeData={{ ...EMPTY, entur: ENTUR }} />,
       );
-      const lineEl = getByText("6");
+      const lineEl = getAllByText("6").at(-1)!;
       expect(lineEl.getAttribute("style") ?? "").not.toContain("color:");
     });
 

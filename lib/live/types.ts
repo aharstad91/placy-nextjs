@@ -43,6 +43,7 @@ export interface MapDirectiveResult {
 /** Meldinger serveren sender nettleseren over SSE-strømmen (`/api/prototype/live/map`). */
 export type LiveServerMessage =
   | { type: "map"; directive: MapDirective }
+  | { type: "activity"; activity: "working" | "answering" | "idle" }
   | { type: "ended"; reason: LiveEndReason; message: string }
   | { type: "hello" };
 

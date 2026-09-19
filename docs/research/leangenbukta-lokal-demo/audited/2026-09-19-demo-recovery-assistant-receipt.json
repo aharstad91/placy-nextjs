@@ -1,0 +1,62 @@
+{
+  "status": "updated",
+  "appliedAt": "2026-09-19T13:58:37.755Z",
+  "schemaVersion": 1,
+  "projectId": "placy-demo_leangenbukta",
+  "customer": "placy-demo",
+  "projectSlug": "leangenbukta",
+  "productId": "5df5eade-4fd5-4bd6-b41d-686b988d9d3b",
+  "previousAssistant": {
+    "name": "Anja",
+    "guided": true,
+    "enabled": true,
+    "features": {
+      "faqProgress": true,
+      "voicePacing": true,
+      "revealPlaces": true,
+      "guidedPersona": true,
+      "narrationFocus": true,
+      "unscopedCategoryList": true,
+      "followHighlightCategory": true
+    },
+    "greeting": "Hei, jeg heter Anja og er din digitale guide i Leangenbukta. Jeg kan fortelle om boligprosjektet eller om dokumenterte tilbud på Lade og Leangen. Hva vil du utforske først?"
+  },
+  "assistant": {
+    "name": "Anja",
+    "guided": true,
+    "enabled": true,
+    "features": {
+      "faqProgress": true,
+      "voicePacing": true,
+      "revealPlaces": true,
+      "guidedPersona": true,
+      "narrationFocus": true,
+      "unscopedCategoryList": true,
+      "followHighlightCategory": true
+    },
+    "greeting": "Hei, jeg heter Anja og er din digitale guide i Leangenbukta. Vil du høre om Leangenbukta som boligprosjekt, eller utforske området rundt?"
+  },
+  "preservedReportConfigKeys": [
+    "assets",
+    "assistant",
+    "boardFacts",
+    "brokers",
+    "city",
+    "cta",
+    "district",
+    "heroImage",
+    "heroIntro",
+    "hideBrokerCard",
+    "isochrones",
+    "label",
+    "pinAccent",
+    "pinSubtitle",
+    "presentation",
+    "reportTier",
+    "standalonePoiIds",
+    "summary",
+    "themes"
+  ],
+  "updatedAt": "2026-09-07T16:29:35.30202+00:00",
+  "revalidated": []
+}

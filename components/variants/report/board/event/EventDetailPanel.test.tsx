@@ -250,12 +250,12 @@ describe("EventDetailPanel (Unit 6, R15)", () => {
       },
     };
     const poi = boardPoi({ enturStopplaceId: "NSR:StopPlace:42" });
-    const { getByText } = renderPanel(poi);
+    const { getByText, getAllByText } = renderPanel(poi);
 
     fireEvent.click(getByText("Konsert i Domkirken"));
     expect(getByText("Kollektiv i nærheten")).toBeTruthy();
     // POIRealtimeSection rendrer linjekode + destinasjon.
-    expect(getByText("3")).toBeTruthy();
+    expect(getAllByText("3")).toHaveLength(2);
     expect(getByText(/Lade/)).toBeTruthy();
   });
 

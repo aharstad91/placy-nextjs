@@ -2,13 +2,11 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { NextRequest } from "next/server";
 
 const mocks = vi.hoisted(() => ({
-  boardSource: vi.fn(),
   boardCapability: vi.fn(),
   serviceJson: vi.fn(),
 }));
 
 vi.mock("@/lib/live/board-gateway", () => ({
-  boardSource: mocks.boardSource,
   boardCapability: mocks.boardCapability,
   serviceJson: mocks.serviceJson,
   sameOrigin: (request: NextRequest) => request.headers.get("origin") === request.nextUrl.origin,
@@ -22,7 +20,6 @@ const body = { customer: "kunde", projectSlug: "prosjekt", contentVersion: versi
 describe("board assistant gateway", () => {
   beforeEach(() => {
     process.env.ANJA_CAPABILITY_SECRET = "test-secret-that-is-longer-than-thirty-two-characters";
-    mocks.boardSource.mockReset().mockResolvedValue({ source: { contentVersion: version } });
     mocks.serviceJson.mockReset().mockResolvedValue({
       response: new Response(JSON.stringify({ sdp: "answer", sessionId: "live_test" }), {
         status: 200, headers: { "X-Anja-Session": "11111111-1111-4111-8111-111111111111" },
@@ -48,14 +45,17 @@ describe("board assistant gateway", () => {
     expect(mocks.serviceJson).toHaveBeenCalledWith("/sessions", expect.anything());
   });
 
-  it("avviser stale board før tjenesten kalles", async () => {
-    mocks.boardSource.mockResolvedValueOnce({ error: "Datagrunnlaget er oppdatert. Last boardet på nytt.", status: 409 });
+  it("videresender tjenestens versjonsavvisning uten å utstede capability", async () => {
+    mocks.serviceJson.mockResolvedValueOnce({
+      response: new Response(JSON.stringify({ error: "Datagrunnlaget er oppdatert. Last boardet på nytt." }), { status: 409 }),
+      payload: { error: "Datagrunnlaget er oppdatert. Last boardet på nytt." },
+    });
     const request = new NextRequest("https://placy.no/api/board-assistant", {
       method: "POST", headers: { origin: "https://placy.no", "content-type": "application/json" }, body: JSON.stringify(body),
     });
     const response = await POST(request);
     expect(response.status).toBe(409);
-    expect(mocks.serviceJson).not.toHaveBeenCalled();
+    expect(response.headers.get("set-cookie")).toBeNull();
   });
 
   it("skjuler muterende rute for fremmed origin", async () => {

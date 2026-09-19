@@ -99,6 +99,21 @@ describe('live sideband delegation loop', () => {
     expect(typesSent()).not.toContain('response.create');
   });
 
+  it('keeps the browser in a stable work state until the backend is ready to answer', async () => {
+    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout', 'setInterval', 'clearInterval', 'Date'] });
+    const bridge = getMapBridge(TOKEN);
+    const activities: string[] = [];
+    bridge.subscribe(message => { if (message.type === 'activity') activities.push(message.activity); });
+    await connect(fakeConversation());
+    emit(delegationCreated());
+    emit(nested('del_1', { type: 'response.created', response: { id: 'resp_1' } }));
+    emit(nested('del_1', completed('resp_1')));
+    await vi.advanceTimersByTimeAsync(0);
+    expect(activities).toEqual(['working', 'answering']);
+    await vi.advanceTimersByTimeAsync(4000);
+    expect(activities).toEqual(['working', 'answering', 'idle']);
+  });
+
   it('sends map work to the browser and mirrors the browser answer in conversation state', async () => {
     const conversation = fakeConversation();
     const bridge = getMapBridge(TOKEN);

@@ -123,6 +123,8 @@ export interface ConversationDeps {
   labels?: ConversationLabels;
   /** Levende kollektivoppslag. Utelatt for datasett som ikke har serverklient. */
   liveTransport?: LiveTransportExecutor;
+  /** Ordinære områdeboards svarer på «i nærheten» med faktisk reisetid. */
+  preferNearestPlaces?: boolean;
 }
 
 const strings = (value: unknown, max = 10): string[] =>
@@ -169,7 +171,14 @@ export function createNyhavnaConversation(board: BoardData, deps: ConversationDe
     if (!pack) {
       const category = conversationBoard.categories.find((c) => String(c.id) === themeId);
       if (!category) throw new Error(`Ukjent tema: ${themeId}`);
-      pack = buildChapter(conversationBoard, category, travelMode, projectInfo, deps.curatedFor ?? NYHAVNA_CURATED);
+      pack = buildChapter(
+        conversationBoard,
+        category,
+        travelMode,
+        projectInfo,
+        deps.curatedFor ?? NYHAVNA_CURATED,
+        deps.preferNearestPlaces ?? false,
+      );
       chapters.set(themeId, pack);
     }
     const fresh = pack.project_info.filter((p) => !sentProjectInfo.has(p.id));

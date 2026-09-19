@@ -1,0 +1,56 @@
+{
+  "reportConfig": {
+    "label": "Leangenbukta",
+    "heroIntro": "Leangenbukta er et nytt boligområde på Lade og Leangen, mellom fjorden, Ladestien og kollektivknutepunktet på Leangen. Utforsk prosjektet, hverdagslivet og stedene rundt."
+  },
+  "themes": [
+    {
+      "id": "leangenbukta-prosjektet",
+      "prepend": false,
+      "intro": "Bli kjent med boligområdet, beliggenheten og fellesfunksjonene som er planlagt for beboerne.",
+      "editorial": {
+        "body": "Leangenbukta utvikles som et nytt boligområde på Lade og Leangen. Utbygger beskriver området mellom fjorden, Ladestien og kollektivknutepunktet på Leangen, med bilfrie utearealer mellom boligene. Prosjektet bygges trinnvis, og planlagte fasiliteter omtales med tydelig framtidsstatus.",
+        "highlightPoiIds": []
+      },
+      "faq": [
+        {
+          "id": "project-introduction",
+          "spørsmål": "Hva er Leangenbukta?",
+          "svar": "Leangenbukta er et nytt boligområde under utvikling på Lade og Leangen. Utbygger beskriver bebyggelsen med bilfrie utearealer mellom boligene, åpning mot kulturlandskapet og planlagte fellesfunksjoner i Knutepunktet."
+        },
+        {
+          "id": "project-location",
+          "spørsmål": "Hvordan er beliggenheten?",
+          "svar": "Utbygger beskriver Leangenbukta som et boligområde mellom fjorden, Ladestien og kollektivknutepunktet på Leangen. Boardet viser buss- og togstopp, handel, servering, trening og naturtilbud med lagrede reisetider fra prosjektet."
+        }
+      ]
+    },
+    {
+      "id": "mat-drikke",
+      "prepend": false,
+      "intro": "Serveringstilbudet rundt Leangenbukta spenner fra restaurant og bakeri til burger og kjøpesenterservering.",
+      "editorial": {
+        "body": "Baan, Franske Nytelser og Fyr på Lade er blant de første serveringsstedene som vises fra prosjektet. Kartet bruker lagrede reisetider og viser flere alternativer når du utforsker temaet.",
+        "highlightPoiIds": [
+          "google-ChIJNSi2eQAxbUYRVP8noe0HUzc",
+          "google-ChIJqeBnd_4wbUYR4SUbbftcyoo",
+          "google-ChIJadfBocAxbUYRfeuufpAKBYc"
+        ]
+      }
+    },
+    {
+      "id": "trening-aktivitet",
+      "prepend": false,
+      "intro": "Treningstilbudet rundt Leangenbukta omfatter flere treningssentre og aktivitetsanlegg.",
+      "editorial": {
+        "body": "Impulse Treningssenter, Speed Treningssenter Lade og 3T-Leangen er blant treningsstedene kartet viser fra prosjektet. Kartet bruker lagrede reisetider og viser flere alternativer når du utforsker temaet.",
+        "highlightPoiIds": [
+          "google-ChIJ2wDh0f8wbUYRlfCrsUTpnnQ",
+          "google-ChIJ9XKmbCYxbUYRnhlvHvia2ws",
+          "google-ChIJUdaOG_8wbUYRthFAqcjZ5kM"
+        ]
+      }
+    }
+  ],
+  "globalFaq": []
+}

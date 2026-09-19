@@ -149,12 +149,19 @@ export function createNyhavnaKnowledge(board: BoardData, options: KnowledgeOptio
     // entiteten «Dora» fordi hele spørsmålet inneholder ordet Dora, og det
     // faktiske bowlingstedet ble aldri vurdert. Registertreffet har dessuten
     // en servervalidert kart-ID, som er det stemmen trenger for å åpne stedet.
-    const hasExactCurated = knowledge.entities.some((entity) =>
-      [entity.name, ...entity.aliases].some((name) => normalize(name) === q));
+    // En kuratert filial kan ha et presist suffiks (f.eks. «Burger King Lade
+    // Arena») mens registeret har flere identiske kjedenavn. Da må filialen
+    // vinne. Motsatt skal et kort kuratert navn («Dora») ikke slå et lengre,
+    // eksakt registersøk («Dora 1 Bowling»).
+    const hasStrongCurated = knowledge.entities.some((entity) =>
+      [entity.name, ...entity.aliases].some((name) => {
+        const normalized = normalize(name);
+        return normalized === q || normalized.includes(q);
+      }));
     const exactRegister = [...register.values()]
       .filter((place) => normalize(place.name) === q)
       .map((place) => packRegister(place));
-    if (!hasExactCurated && exactRegister.length > 0) {
+    if (!hasStrongCurated && exactRegister.length > 0) {
       return page(exactRegister, args, { basis: 'register', note: REGISTER_BASIS });
     }
     const requestedThemes = Object.entries(themes).filter(([word]) => q.includes(word)).flatMap(([, ids]) => ids);

@@ -168,12 +168,14 @@ export async function connectLiveSideband(
     if (active === delegation) active = null;
     clearTimeout(delegation.settleTimer);
     onTiming({ ...delegation.timing, end });
+    if (!active) bridge.send({ type: 'activity', activity: 'idle' });
   };
 
   const finish = (delegation: Delegation, end: DelegationTiming['end']) => {
     if (delegation.finished) return;
     delegation.finished = true;
     if (delegation.timing.backend_done_ms === null) delegation.timing.backend_done_ms = since(delegation);
+    bridge.send({ type: 'activity', activity: 'answering' });
     // Rundetaket var en nødbrems for ÉN delegering; neste forespørsel skal ha verktøy igjen.
     if (delegation.toolChoiceLimited) {
       send({ type: 'session.update', session: { delegation: { type: 'responses', responses: { tool_choice: 'auto' } } } });
@@ -394,6 +396,7 @@ export async function connectLiveSideband(
       delegations.set(delegation.id, delegation);
       if (delegation.responseId) byResponse.set(delegation.responseId, delegation);
       active = delegation;
+      bridge.send({ type: 'activity', activity: 'working' });
       return;
     }
     if (type === 'response.event') {

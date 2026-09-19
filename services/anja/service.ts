@@ -1,6 +1,8 @@
 import "server-only";
 
 import { timingSafeEqual } from "node:crypto";
+import { appendFile, mkdir } from "node:fs/promises";
+import { join } from "node:path";
 import { z } from "zod";
 import { createLiveSession, LiveSessionError } from "@/lib/live/create-session";
 import { liveHangup, LIVE_SESSION_ID } from "@/lib/live/hangup";
@@ -16,7 +18,7 @@ import { loadProductionAssistantSource } from "@/lib/live/production-board";
 import { liveSessionConfig } from "@/lib/live/session-config";
 import { LiveSessionRegistry } from "@/lib/live/session-registry";
 import { connectLiveSideband, getLiveSideband } from "@/lib/live/sideband";
-import type { LiveServerMessage } from "@/lib/live/types";
+import type { DelegationTiming, LiveServerMessage, LiveUsage } from "@/lib/live/types";
 
 const HEARTBEAT_MS = 15_000;
 const MAX_BODY = 50_000;
@@ -35,6 +37,36 @@ export interface AnjaServiceDependencies {
   createSession?: typeof createLiveSession;
   connectSideband?: typeof connectLiveSideband;
   registry?: LiveSessionRegistry;
+  operationalReporter?: (event: AnjaOperationalEvent) => void | Promise<void>;
+}
+
+export type AnjaOperationalEvent =
+  | {
+      type: "turn";
+      recordedAt: string;
+      customer: string;
+      projectSlug: string;
+      contentVersion: string;
+      durationMs: number;
+      mapTool: string | null;
+      backendRounds: number;
+      end: DelegationTiming["end"];
+    }
+  | {
+      type: "session";
+      recordedAt: string;
+      customer: string;
+      projectSlug: string;
+      contentVersion: string;
+      wallDurationMs: number;
+      usage: LiveUsage;
+      reason: string;
+    };
+
+async function appendOperationalReport(event: AnjaOperationalEvent) {
+  const directory = join(process.cwd(), ".context");
+  await mkdir(directory, { recursive: true });
+  await appendFile(join(directory, "anja-sessions.jsonl"), `${JSON.stringify(event)}\n`);
 }
 
 /** Den langlivede prosessen som eier hele livsløpet til en Anja-samtale. */
@@ -43,11 +75,14 @@ export class AnjaConversationService {
   private readonly loadSource: typeof loadProductionAssistantSource;
   private readonly createSession: typeof createLiveSession;
   private readonly connectSideband: typeof connectLiveSideband;
+  private readonly operationalReporter: (event: AnjaOperationalEvent) => void | Promise<void>;
+  private readonly sources = new Map<string, Promise<Source>>();
 
   constructor(dependencies: AnjaServiceDependencies = {}) {
     this.loadSource = dependencies.loadSource ?? loadProductionAssistantSource;
     this.createSession = dependencies.createSession ?? createLiveSession;
     this.connectSideband = dependencies.connectSideband ?? connectLiveSideband;
+    this.operationalReporter = dependencies.operationalReporter ?? appendOperationalReport;
     this.registry = dependencies.registry ?? new LiveSessionRegistry({
       stop: liveHangup,
       maxMs: Number(process.env.ANJA_SESSION_MAX_MS) || 15 * 60_000,
@@ -56,14 +91,23 @@ export class AnjaConversationService {
     });
   }
 
-  private async source(customer: string, projectSlug: string): Promise<Source> {
-    const source = await this.loadSource(customer, projectSlug);
-    if (!source) throw new AnjaServiceError(404, "Assistenten er ikke aktivert for dette boardet.");
-    return source;
+  private async source(customer: string, projectSlug: string, contentVersion: string): Promise<Source> {
+    const key = `${customer}/${projectSlug}/${contentVersion}`;
+    let pending = this.sources.get(key);
+    if (!pending) {
+      pending = this.loadSource(customer, projectSlug).then((source) => {
+        if (!source) throw new AnjaServiceError(404, "Assistenten er ikke aktivert for dette boardet.");
+        return source;
+      });
+      this.sources.set(key, pending);
+      if (this.sources.size > 20) this.sources.delete(this.sources.keys().next().value!);
+      pending.catch(() => this.sources.delete(key));
+    }
+    return pending;
   }
 
   async health(identity: z.infer<typeof boardIdentitySchema>) {
-    const source = await this.source(identity.customer, identity.projectSlug);
+    const source = await this.source(identity.customer, identity.projectSlug, identity.contentVersion);
     if (source.contentVersion !== identity.contentVersion) {
       throw new AnjaServiceError(409, "Datagrunnlaget er oppdatert. Last boardet på nytt.");
     }
@@ -72,7 +116,7 @@ export class AnjaConversationService {
 
   async start(input: StartBoardSession) {
     if (!process.env.OPENAI_API_KEY) throw new AnjaServiceError(503, "Tale er ikke koblet til ennå.");
-    const source = await this.source(input.customer, input.projectSlug);
+    const source = await this.source(input.customer, input.projectSlug, input.contentVersion);
     if (source.contentVersion !== input.contentVersion) {
       throw new AnjaServiceError(409, "Datagrunnlaget er oppdatert. Last boardet på nytt.");
     }
@@ -80,6 +124,10 @@ export class AnjaConversationService {
     try { token = this.registry.reserve(); }
     catch { throw new AnjaServiceError(429, "Samtalegrensen er nådd. Prøv igjen senere."); }
     let identityKnown = false;
+    const startedAt = Date.now();
+    const report = (event: AnjaOperationalEvent) => {
+      void Promise.resolve(this.operationalReporter(event)).catch(() => {});
+    };
     try {
       const config = liveSessionConfig(source.voiceInstructions, source.backendInstructions, source.tools, input.voice);
       const created = await this.createSession(config, input.sdp);
@@ -95,6 +143,27 @@ export class AnjaConversationService {
         backendInstructions: source.backendInstructions,
         sessionOwner: this.registry,
         logging: "silent",
+        onTiming: (timing) => report({
+          type: "turn",
+          recordedAt: new Date().toISOString(),
+          customer: input.customer,
+          projectSlug: input.projectSlug,
+          contentVersion: input.contentVersion,
+          durationMs: timing.backend_done_ms ?? 0,
+          mapTool: timing.first_map_call,
+          backendRounds: timing.rounds.length,
+          end: timing.end,
+        }),
+        onUsage: ({ reason, ...usage }) => report({
+          type: "session",
+          recordedAt: new Date().toISOString(),
+          customer: input.customer,
+          projectSlug: input.projectSlug,
+          contentVersion: input.contentVersion,
+          wallDurationMs: Date.now() - startedAt,
+          usage,
+          reason,
+        }),
       });
       return { token, sdp: created.sdp, sessionId: created.sessionId };
     } catch (error) {

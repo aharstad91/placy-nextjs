@@ -130,8 +130,86 @@ describe("production board assistant source", () => {
     expect(source.backendInstructions).toContain("Leangenbukta");
     expect(source.backendInstructions).not.toContain("Nyhavna");
     expect(source.voiceInstructions).toContain("Anja");
+    expect(source.voiceInstructions).toContain("Leangen-bukta");
+    expect(source.backendInstructions).toContain("NÆRHET");
     expect(source.tools.map((tool) => tool.name)).toContain("find_places");
     expect(source.tools.map((tool) => tool.name)).toContain("get_live_departures");
+  });
+
+  it("prioriterer faktisk nærhet foran redaksjonelle temahøydepunkter", () => {
+    const input = board();
+    const category = input.categories[0]!;
+    const near = category.pois[0]!;
+    const far = {
+      ...near,
+      id: "far-place" as never,
+      name: "Redaksjonelt sted langt unna",
+      raw: { ...near.raw, id: "far-place", name: "Redaksjonelt sted langt unna", travelTime: { walk: 35 } },
+    };
+    near.raw.travelTime = { walk: 4 };
+    category.pois = [far, near];
+    category.editorial = {
+      intro: "Servering",
+      body: "Servering",
+      highlights: [{ id: "far-place", label: "Langt unna" }],
+    } as never;
+    const opened = buildProductionAssistantSource(input).createConversation()
+      .execute("open_theme", { theme_id: "servering" });
+    const chapter = (opened.result as { chapter: { intro: string; places: Array<{ id: string }> } }).chapter;
+    expect(chapter.places.map((place) => place.id))
+      .toEqual(["cafe-1", "far-place"]);
+    expect(chapter.intro).not.toContain("Langt unna");
+  });
+
+  it("prioriterer kildeattribuert prosjektfortelling foran reguleringsdetaljer", () => {
+    const input = board();
+    input.publishedKnowledge!.push(
+      {
+        ...input.publishedKnowledge![1]!,
+        id: "story-location",
+        field: "beliggenhet_beskrivelse",
+        factText: "Utbygger beskriver prosjektet mellom fjorden, turstien og kollektivknutepunktet.",
+        temporalKind: "marketed",
+      },
+      {
+        ...input.publishedKnowledge![1]!,
+        id: "story-homes",
+        field: "bomiljo_beskrivelse",
+        factText: "Utbygger beskriver bilfrie utearealer og bebyggelse som åpner seg mot landskapet.",
+        temporalKind: "marketed",
+      },
+    );
+    const facts = buildProductionAssistantSource(input).createConversation()
+      .execute("get_board_facts", {}).result as { facts: Array<{ text: string }> };
+    expect(facts.facts.slice(0, 2).map((fact) => fact.text)).toEqual([
+      "Utbygger beskriver prosjektet mellom fjorden, turstien og kollektivknutepunktet.",
+      "Utbygger beskriver bilfrie utearealer og bebyggelse som åpner seg mot landskapet.",
+    ]);
+  });
+
+  it("lar en kartkoblet filial vinne over et fjernt, generisk kjedenavn", () => {
+    const input = board();
+    const category = input.categories[0]!;
+    category.pois[0]!.name = "Burger King";
+    category.pois[0]!.raw.name = "Burger King";
+    category.pois[0]!.raw.travelTime = { walk: 6 };
+    const far = {
+      ...category.pois[0]!,
+      id: "far-burger-king" as never,
+      raw: { ...category.pois[0]!.raw, id: "far-burger-king", travelTime: { walk: 28 } },
+    };
+    category.pois.push(far);
+    input.publishedKnowledge![0] = {
+      ...input.publishedKnowledge![0]!,
+      subjectId: "burger-king-lade-arena",
+      subjectName: "Burger King Lade Arena",
+      factText: "Filialen er kartkoblet til Lade Arena.",
+    };
+
+    const found = buildProductionAssistantSource(input).createConversation()
+      .execute("find_places", { query: "Burger King" });
+    expect((found.result as { places: Array<{ name: string; map_poi_id: string | null }> }).places[0])
+      .toMatchObject({ name: "Burger King Lade Arena", map_poi_id: "cafe-1" });
   });
 
   it("beholder prosjektfakta uten falsk kart-ID", () => {

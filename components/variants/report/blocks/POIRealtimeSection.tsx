@@ -13,6 +13,12 @@ export function POIRealtimeSection({ realtimeData }: POIRealtimeSectionProps) {
   const hasBysykkel = !!realtimeData.bysykkel;
   const hasHyre = !!realtimeData.hyre;
   const hasAny = hasEntur || hasBysykkel || hasHyre;
+  const enturLines = hasEntur
+    ? Array.from(new Map(realtimeData.entur!.departures.map((departure) => [
+        departure.lineCode,
+        { code: departure.lineCode, color: departure.lineColor },
+      ])).values())
+    : [];
 
   // Første henting pågår (ingen data ennå) — vis skeleton så brukeren ser
   // at noe er på vei. Faller tilbake til null hvis hentingen ble ferdig uten
@@ -54,6 +60,20 @@ export function POIRealtimeSection({ realtimeData }: POIRealtimeSectionProps) {
     <div className="bg-gray-50 rounded-lg px-3 py-2.5 border border-gray-100 space-y-2">
       {hasEntur && (
         <div className="space-y-1">
+          <div className="mb-1.5 flex items-center gap-1.5 text-xs text-gray-600">
+            <span className="shrink-0">Linjer her</span>
+            <span className="flex flex-wrap gap-1">
+              {enturLines.map((line) => (
+                <span
+                  key={line.code}
+                  className="rounded-full bg-white px-1.5 py-0.5 font-semibold text-gray-700 ring-1 ring-gray-200"
+                  style={line.color ? { color: line.color } : undefined}
+                >
+                  {line.code}
+                </span>
+              ))}
+            </span>
+          </div>
           {realtimeData.entur!.departures.slice(0, 3).map((dep, i) => (
             <div key={i} className="flex items-center gap-1.5 text-xs">
               <span

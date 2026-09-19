@@ -164,6 +164,7 @@ function BoardVoiceSession({ children }: { children: ReactNode }) {
       data: toolData, state, dispatch, mapCamera: revealing ? null : mapCamera,
       followHighlightCategory,
       placePanel,
+      keepHomeInView: Boolean(data.assistant?.enabled),
       highlightLimit: revealing ? ids.length : undefined,
       onCategory: (index) => { if (!revealing && (String(data.categories[index]?.id) !== stopId || activePoiId)) story.begin(index); },
       onReset: () => story.begin(AREA_STEP),

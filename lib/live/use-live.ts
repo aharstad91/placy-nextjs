@@ -112,6 +112,7 @@ interface Connection {
   lastAssistantAt: number;
   lastUserAt: number;
   pauseRequested: boolean;
+  backendActivity: "working" | "answering" | "idle";
   transcript: { role: "user" | "assistant"; id: string; endMs: number; text: string } | null;
 }
 
@@ -328,6 +329,7 @@ export function useLive(options: LiveOptions) {
         endpoint, cookieAuth: Boolean(project), serverSession: false,
         started: false, ended: false, greetingEventId: `greeting-${crypto.randomUUID()}`, greetingKicked: false, speaking: false, loudAt: 0,
         lastAssistantAt: 0, lastUserAt: 0, pauseRequested: false, transcript: null, warningMs: configured.warningMs,
+        backendActivity: "idle",
       };
       connection.current = current;
       const active = () => connection.current === current && run === generation.current;
@@ -338,6 +340,7 @@ export function useLive(options: LiveOptions) {
         const now = Date.now();
         const lingering = now - current.loudAt < SPEAKING_LINGER_MS && current.lastUserAt < current.loudAt;
         if (lingering) { setStatus("speaking"); return; }
+        if (current.backendActivity !== "idle") { setStatus("thinking"); return; }
         // «Undersøker» er stillhet ETTER at brukeren sa noe: stemmen har
         // hverken ord eller lyd ute, og siste ord i rommet var brukerens.
         // Den lille pausen etter brukerens siste fragment holder etiketten på
@@ -369,6 +372,7 @@ export function useLive(options: LiveOptions) {
         const now = Date.now();
         if (analyser && rms(analyser, samples) > SPEAKING_RMS) current.loudAt = now;
         current.speaking = now - current.loudAt < SPEAKING_HOLD_MS;
+        if (current.speaking && current.backendActivity === "answering") current.backendActivity = "idle";
         // Brukerens stemme måles bare når guiden er stille: ekkoet av hennes
         // egen lyd i rommet skal ikke lese som at brukeren snakker.
         if (micAnalyser && !current.speaking) {
@@ -576,6 +580,11 @@ export function useLive(options: LiveOptions) {
 
       const handleServerMessage = async (payload: LiveServerMessage) => {
         if (connection.current !== current) return;
+        if (payload.type === "activity") {
+          current.backendActivity = payload.activity;
+          settle();
+          return;
+        }
         if (payload.type === "ended") {
           const stopped = current.stopping;
           current.ended = true;
