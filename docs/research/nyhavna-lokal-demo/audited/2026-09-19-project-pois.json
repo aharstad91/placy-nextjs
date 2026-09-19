@@ -1,0 +1,16 @@
+{
+  "category": {
+    "id": "nyhavna-bydel",
+    "name": "Delområde",
+    "icon": "Building2",
+    "color": "#8b6cc4"
+  },
+  "placeIds": [
+    "transittkaia",
+    "kullkranpiren",
+    "strandveikaia",
+    "ladehammerkaia",
+    "bunkerkvartalet"
+  ],
+  "markerImagePrefix": "/illustrations/nyhavna-"
+}

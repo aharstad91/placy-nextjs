@@ -28,6 +28,7 @@ export const researchTemporalKindSchema = z.enum([
   "absence_of_evidence",
   "historical",
 ]);
+export type ResearchTemporalKind = z.infer<typeof researchTemporalKindSchema>;
 
 export const researchMappingStatusSchema = z.enum([
   "mapped",

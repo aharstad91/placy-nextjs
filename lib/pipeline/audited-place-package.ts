@@ -47,6 +47,8 @@ export interface AuditedPlacePackageOptions {
   sourcePath: string;
   /** Required when a candidate review says refresh is needed before publish. */
   timeSensitiveValidUntil?: string;
+  /** Stable project-specific prefix; defaults to the historical Leangenbukta prefix. */
+  claimIdPrefix?: string;
 }
 
 function selectedCandidates(categoryReviews: unknown[]) {
@@ -123,7 +125,7 @@ export function buildAuditedPlacePackage(
       const source = sourceById.get(fact.sourceId);
       if (!source) throw new Error(`Ukjent kilde ${fact.sourceId} for ${fact.id}`);
       return {
-        claimId: `LB-PLACE-${fact.id}`,
+        claimId: `${options.claimIdPrefix ?? "LB-PLACE"}-${fact.id}`,
         subjectId: entity.entityId,
         canonicalId: entity.canonicalId,
         scope: "global_place" as const,

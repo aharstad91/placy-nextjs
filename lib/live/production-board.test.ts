@@ -89,6 +89,23 @@ function board(): BoardData {
         reusableAcrossBoards: false,
         mappingStatus: "not_applicable",
       },
+      {
+        id: "claim-unmapped-place",
+        projectId: "project-1",
+        scope: "global_place",
+        subjectId: "place-without-pin",
+        subjectName: "Et revidert sted uten kartpunkt",
+        topic: "Servering",
+        field: "concept",
+        factText: "Stedet er kildekontrollert, men kartkoblingen er ikke bekreftet.",
+        confidence: "high",
+        sourceUrls: ["https://example.com/unmapped"],
+        sourceTitles: ["Primærkilde"],
+        reviewStatus: "approved",
+        temporalKind: "existing",
+        reusableAcrossBoards: true,
+        mappingStatus: "unmapped",
+      },
     ],
     audioTourEnabled: false,
   };
@@ -111,6 +128,13 @@ describe("production board assistant source", () => {
       "Tomten er regulert, men byggestart er ikke dokumentert.",
     );
     expect(knowledge.entities[0]?.mapPoiId).toBe("cafe-1");
+    expect(knowledge.entities).toContainEqual(expect.objectContaining({
+      id: "place-without-pin",
+      mapPoiId: null,
+      facts: [expect.objectContaining({
+        text: "Stedet er kildekontrollert, men kartkoblingen er ikke bekreftet.",
+      })],
+    }));
   });
 
   it("avviser boards uten eksplisitt assistent-opt-in", () => {

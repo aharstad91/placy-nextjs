@@ -1,0 +1,18 @@
+{
+  "schemaVersion": 1,
+  "convertedAt": "2026-09-19T10:16:41.258Z",
+  "outputPath": "docs/research/nyhavna-lokal-demo/audited/2026-09-19-standard-content.json",
+  "themeCount": 8,
+  "themeFaqCounts": {
+    "nyhavna-bydel": 7,
+    "hverdagsliv": 1,
+    "barn-oppvekst": 3,
+    "mat-drikke": 3,
+    "natur-friluftsliv": 0,
+    "transport": 4,
+    "trening-aktivitet": 0,
+    "opplevelser": 1
+  },
+  "globalFaqCount": 0,
+  "totalFaqCount": 19
+}

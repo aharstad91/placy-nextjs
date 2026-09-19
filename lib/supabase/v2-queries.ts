@@ -173,6 +173,18 @@ export function transformPOI(
   dbPoi: DbPoi,
   category: Category | undefined
 ): POI {
+  const poiMetadata = dbPoi.poi_metadata && typeof dbPoi.poi_metadata === "object" &&
+      !Array.isArray(dbPoi.poi_metadata)
+    ? dbPoi.poi_metadata as Record<string, unknown>
+    : {};
+  const locationPrecision = poiMetadata.location_precision === "approximate" ||
+      poiMetadata.location_precision === "sourced"
+    ? poiMetadata.location_precision
+    : undefined;
+  const developmentStatus = poiMetadata.development_status === "planned" ||
+      poiMetadata.development_status === "existing"
+    ? poiMetadata.development_status
+    : undefined;
   return {
     id: dbPoi.id,
     name: dbPoi.name,
@@ -189,6 +201,15 @@ export function transformPOI(
     },
     description: dbPoi.description ?? undefined,
     featuredImage: dbPoi.featured_image ?? undefined,
+    markerImage: typeof poiMetadata.marker_image === "string"
+      ? poiMetadata.marker_image
+      : undefined,
+    developmentStatus,
+    locationPrecision,
+    locationNote: locationPrecision === "approximate" &&
+        typeof poiMetadata.location_note === "string"
+      ? poiMetadata.location_note
+      : undefined,
     // POI.galleryImages har eksistert i lib/types.ts uten mapping her — ingen
     // konsument leste feltet, så hullet var usynlig. Utforsk-modalens
     // bildekarusell er første leser.

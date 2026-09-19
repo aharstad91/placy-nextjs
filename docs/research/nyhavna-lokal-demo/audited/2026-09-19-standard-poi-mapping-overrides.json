@@ -1,0 +1,359 @@
+{
+  "schemaVersion": 1,
+  "reviewedAt": "2026-09-19",
+  "projectId": "nyhavna-utvikling_nyhavna",
+  "overrides": [
+    {
+      "localPlaceId": "dora-bowling",
+      "decision": "unmapped",
+      "reason": "Nearby candidates are different places; keep the audited entity searchable without a map marker."
+    },
+    {
+      "localPlaceId": "losgata",
+      "decision": "mapped",
+      "poiId": "entur-NSR-StopPlace-42926",
+      "reason": "Reviewed as the same production place.",
+      "evidence": "Same Entur stop place and coordinates."
+    },
+    {
+      "localPlaceId": "dora-holdeplass",
+      "decision": "mapped",
+      "poiId": "entur-NSR-StopPlace-43469",
+      "reason": "Reviewed as the same production place.",
+      "evidence": "Same Entur stop place and coordinates."
+    },
+    {
+      "localPlaceId": "tbk-mellomveien",
+      "decision": "unmapped",
+      "reason": "Nearby candidates are different places; keep the audited entity searchable without a map marker."
+    },
+    {
+      "localPlaceId": "dora-parkering",
+      "decision": "unmapped",
+      "reason": "Nearby candidates are different places; keep the audited entity searchable without a map marker."
+    },
+    {
+      "localPlaceId": "transittkaia",
+      "decision": "mapped",
+      "reason": "Promoted as a project-owned POI because no safe shared-pool identity exists.",
+      "poiId": "project:nyhavna-utvikling_nyhavna:transittkaia",
+      "evidence": "Audited local-board identity, coordinates and project ownership are preserved in the standard POI."
+    },
+    {
+      "localPlaceId": "kullkranpiren",
+      "decision": "mapped",
+      "reason": "Promoted as a project-owned POI because no safe shared-pool identity exists.",
+      "poiId": "project:nyhavna-utvikling_nyhavna:kullkranpiren",
+      "evidence": "Audited local-board identity, coordinates and project ownership are preserved in the standard POI."
+    },
+    {
+      "localPlaceId": "strandveikaia",
+      "decision": "mapped",
+      "reason": "Promoted as a project-owned POI because no safe shared-pool identity exists.",
+      "poiId": "project:nyhavna-utvikling_nyhavna:strandveikaia",
+      "evidence": "Audited local-board identity, coordinates and project ownership are preserved in the standard POI."
+    },
+    {
+      "localPlaceId": "ladehammerkaia",
+      "decision": "mapped",
+      "reason": "Promoted as a project-owned POI because no safe shared-pool identity exists.",
+      "poiId": "project:nyhavna-utvikling_nyhavna:ladehammerkaia",
+      "evidence": "Audited local-board identity, coordinates and project ownership are preserved in the standard POI."
+    },
+    {
+      "localPlaceId": "bunkerkvartalet",
+      "decision": "mapped",
+      "reason": "Promoted as a project-owned POI because no safe shared-pool identity exists.",
+      "poiId": "project:nyhavna-utvikling_nyhavna:bunkerkvartalet",
+      "evidence": "Audited local-board identity, coordinates and project ownership are preserved in the standard POI."
+    },
+    {
+      "localPlaceId": "pool-cora-pilates-as",
+      "decision": "unmapped",
+      "reason": "Nearby candidates are different places; keep the audited entity searchable without a map marker."
+    },
+    {
+      "localPlaceId": "pool-nidaros-bokseklubb",
+      "decision": "unmapped",
+      "reason": "Nearby candidates are different places; keep the audited entity searchable without a map marker."
+    },
+    {
+      "localPlaceId": "pool-3t-moholt",
+      "decision": "unmapped",
+      "reason": "No equivalent POI exists in the current standard project pool."
+    },
+    {
+      "localPlaceId": "pool-3t-ilsvika",
+      "decision": "unmapped",
+      "reason": "Nearby candidates are different places; keep the audited entity searchable without a map marker."
+    },
+    {
+      "localPlaceId": "pool-3t-ranheim",
+      "decision": "unmapped",
+      "reason": "No equivalent POI exists in the current standard project pool."
+    },
+    {
+      "localPlaceId": "pool-3t-rosten",
+      "decision": "unmapped",
+      "reason": "No equivalent POI exists in the current standard project pool."
+    },
+    {
+      "localPlaceId": "pool-fresh-fitness-tiller",
+      "decision": "unmapped",
+      "reason": "No equivalent POI exists in the current standard project pool."
+    },
+    {
+      "localPlaceId": "pool-3t-fossegrenda",
+      "decision": "unmapped",
+      "reason": "No equivalent POI exists in the current standard project pool."
+    },
+    {
+      "localPlaceId": "pool-lademoparken",
+      "decision": "mapped",
+      "poiId": "park-lademoparken",
+      "reason": "Reviewed as the same production place.",
+      "evidence": "Same municipal park; the stable municipal POI is preferred over duplicate catalog records."
+    },
+    {
+      "localPlaceId": "pool-ladeparken",
+      "decision": "mapped",
+      "poiId": "park-ladeparken",
+      "reason": "Reviewed as the same production place.",
+      "evidence": "Same municipal park; the stable municipal POI is preferred over duplicate catalog records."
+    },
+    {
+      "localPlaceId": "pool-korsvika",
+      "decision": "mapped",
+      "poiId": "badeplass-korsvika",
+      "reason": "Reviewed as the same production place.",
+      "evidence": "Same municipal bathing place; the stable municipal POI is preferred over duplicate catalog records."
+    },
+    {
+      "localPlaceId": "pool-ilaparken",
+      "decision": "mapped",
+      "poiId": "park-ilaparken",
+      "reason": "Reviewed as the same production place.",
+      "evidence": "Same municipal park; the stable municipal POI is preferred over duplicate catalog records."
+    },
+    {
+      "localPlaceId": "pool-rotvollfjra",
+      "decision": "unmapped",
+      "reason": "No equivalent POI exists in the current standard project pool."
+    },
+    {
+      "localPlaceId": "pool-theisendammen-badeplass",
+      "decision": "unmapped",
+      "reason": "No equivalent POI exists in the current standard project pool."
+    },
+    {
+      "localPlaceId": "pool-haukvatnet",
+      "decision": "unmapped",
+      "reason": "No equivalent POI exists in the current standard project pool."
+    },
+    {
+      "localPlaceId": "pool-lianvatnet",
+      "decision": "unmapped",
+      "reason": "No equivalent POI exists in the current standard project pool."
+    },
+    {
+      "localPlaceId": "pool-burmaklippen",
+      "decision": "unmapped",
+      "reason": "No equivalent POI exists in the current standard project pool."
+    },
+    {
+      "localPlaceId": "pool-hansbakkfjra",
+      "decision": "unmapped",
+      "reason": "No equivalent POI exists in the current standard project pool."
+    },
+    {
+      "localPlaceId": "ec-dahls",
+      "decision": "mapped",
+      "poiId": "google-ChIJQdOI4QsxbUYRawbfIv9XA00",
+      "reason": "Reviewed as the same production place.",
+      "evidence": "Same named restaurant and brewery venue at the audited address."
+    },
+    {
+      "localPlaceId": "havet-arena",
+      "decision": "unmapped",
+      "reason": "The candidate is BarBeintQ restaurant, which is part of HAVET but not the arena identity."
+    },
+    {
+      "localPlaceId": "rosendal-teater",
+      "decision": "unmapped",
+      "reason": "The candidate is Rosendal café, which is part of the venue but not the theatre identity."
+    },
+    {
+      "localPlaceId": "monkey-brew",
+      "decision": "unmapped",
+      "reason": "Nearby candidates are different places; keep the audited entity searchable without a map marker."
+    },
+    {
+      "localPlaceId": "lade-fritidsklubb",
+      "decision": "unmapped",
+      "reason": "The candidate is the shared municipal building, not the youth club identity."
+    },
+    {
+      "localPlaceId": "strandveiparken",
+      "decision": "mapped",
+      "poiId": "park-strandveiparken",
+      "reason": "Reviewed as the same production place.",
+      "evidence": "Same municipal park; the stable municipal POI is preferred over duplicate catalog records."
+    },
+    {
+      "localPlaceId": "strandveikaia-badeplass",
+      "decision": "mapped",
+      "poiId": "badeplass-strandveikaia",
+      "reason": "Reviewed as the same production place.",
+      "evidence": "Same municipal bathing place and coordinates."
+    },
+    {
+      "localPlaceId": "bua-lademoen",
+      "decision": "unmapped",
+      "reason": "Nearby candidates are different places; keep the audited entity searchable without a map marker."
+    },
+    {
+      "localPlaceId": "egon-solsiden",
+      "decision": "mapped",
+      "poiId": "google-ChIJ4ccQcZ8xbUYR6Xl1I85wHrg",
+      "reason": "Reviewed as the same production place.",
+      "evidence": "Same named restaurant at Solsiden, 3 m from the reviewed point."
+    },
+    {
+      "localPlaceId": "dromedar-solsiden",
+      "decision": "unmapped",
+      "reason": "Nearby candidates are different places; keep the audited entity searchable without a map marker."
+    },
+    {
+      "localPlaceId": "tollbua",
+      "decision": "mapped",
+      "poiId": "google-ChIJSY81O1wxbUYRGf59dfwcssw",
+      "reason": "Reviewed as the same production place.",
+      "evidence": "Same named restaurant, 1 m from the reviewed point."
+    },
+    {
+      "localPlaceId": "dokkhuset",
+      "decision": "unmapped",
+      "reason": "The candidate is Bar Passiar inside Dokkhuset, not the concert venue identity."
+    },
+    {
+      "localPlaceId": "vinmonopolet-solsiden",
+      "decision": "mapped",
+      "poiId": "google-ChIJIYkLg58xbUYRlOSxB_0Hhu0",
+      "reason": "Reviewed as the same production place.",
+      "evidence": "Same operator inside Solsiden and 34 m from the shared centre coordinate."
+    },
+    {
+      "localPlaceId": "leos-lekeland-trondheim",
+      "decision": "unmapped",
+      "reason": "Nearby candidates are different places; keep the audited entity searchable without a map marker."
+    },
+    {
+      "localPlaceId": "lade-motor",
+      "decision": "unmapped",
+      "reason": "The candidate is the shared municipal building, not the Lade Motor programme identity."
+    },
+    {
+      "localPlaceId": "solsiden-senter",
+      "decision": "mapped",
+      "poiId": "google-ChIJyVBZnZ8xbUYRhB-s_crA_YQ",
+      "reason": "Reviewed as the same production place.",
+      "evidence": "Same Solsiden shopping centre POI, verified elsewhere in the same standard project pool."
+    },
+    {
+      "localPlaceId": "h-m-solsiden",
+      "decision": "unmapped",
+      "reason": "Nearby candidates are different places; keep the audited entity searchable without a map marker."
+    },
+    {
+      "localPlaceId": "apotek-1-city-lade",
+      "decision": "unmapped",
+      "reason": "Nearby candidates are different places; keep the audited entity searchable without a map marker."
+    },
+    {
+      "localPlaceId": "rosenborg-bakeri-city-lade",
+      "decision": "unmapped",
+      "reason": "Nearby candidates are different places; keep the audited entity searchable without a map marker."
+    },
+    {
+      "localPlaceId": "b-young-city-lade",
+      "decision": "unmapped",
+      "reason": "Nearby candidates are different places; keep the audited entity searchable without a map marker."
+    },
+    {
+      "localPlaceId": "barnas-hus-city-lade",
+      "decision": "unmapped",
+      "reason": "Nearby candidates are different places; keep the audited entity searchable without a map marker."
+    },
+    {
+      "localPlaceId": "anton-sport-city-lade",
+      "decision": "unmapped",
+      "reason": "Nearby candidates are different places; keep the audited entity searchable without a map marker."
+    },
+    {
+      "localPlaceId": "h-m-trondheim-torg",
+      "decision": "unmapped",
+      "reason": "Nearby candidates are different places; keep the audited entity searchable without a map marker."
+    },
+    {
+      "localPlaceId": "lekia-trondheim-torg",
+      "decision": "unmapped",
+      "reason": "Nearby candidates are different places; keep the audited entity searchable without a map marker."
+    },
+    {
+      "localPlaceId": "clas-ohlson-trondheim-torg",
+      "decision": "unmapped",
+      "reason": "Nearby candidates are different places; keep the audited entity searchable without a map marker."
+    },
+    {
+      "localPlaceId": "jordbaerpikene-trondheim-torg",
+      "decision": "unmapped",
+      "reason": "Nearby candidates are different places; keep the audited entity searchable without a map marker."
+    },
+    {
+      "localPlaceId": "dromedar-sirkus-shopping",
+      "decision": "unmapped",
+      "reason": "Nearby candidates are different places; keep the audited entity searchable without a map marker."
+    },
+    {
+      "localPlaceId": "cubus-sirkus-shopping",
+      "decision": "unmapped",
+      "reason": "Nearby candidates are different places; keep the audited entity searchable without a map marker."
+    },
+    {
+      "localPlaceId": "clas-ohlson-sirkus-shopping",
+      "decision": "mapped",
+      "poiId": "google-ChIJuUBzcjAxbUYRRp6Tz5ioCG4",
+      "reason": "Reviewed as the same production place.",
+      "evidence": "Same named shop inside Sirkus Shopping, 26 m from the shared centre coordinate."
+    },
+    {
+      "localPlaceId": "vinmonopolet-sirkus-shopping",
+      "decision": "unmapped",
+      "reason": "Nearby candidates are different places; keep the audited entity searchable without a map marker."
+    },
+    {
+      "localPlaceId": "flex-gym",
+      "decision": "mapped",
+      "poiId": "google-ChIJjWQhOA8xbUYRAUjUe7p7l8Y",
+      "reason": "Reviewed as the same production place.",
+      "evidence": "Same named gym and coordinates."
+    },
+    {
+      "localPlaceId": "buld-no",
+      "decision": "unmapped",
+      "reason": "The candidate is the former Ute-hallen building, not the current Buld.no business identity."
+    },
+    {
+      "localPlaceId": "trikkestallen",
+      "decision": "mapped",
+      "poiId": "osm-way-112442103",
+      "reason": "Reviewed as the same production place.",
+      "evidence": "Same named venue; the OSM building footprint is 36 m from the reviewed entrance point."
+    },
+    {
+      "localPlaceId": "ladesletta",
+      "decision": "unmapped",
+      "reason": "The reviewed entity is a festival area; Lade idrettspark is related but not the same identity."
+    }
+  ]
+}

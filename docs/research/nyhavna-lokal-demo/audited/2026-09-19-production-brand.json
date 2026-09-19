@@ -1,0 +1,22 @@
+{
+  "assets": {
+    "brand": true,
+    "logoUrl": "/illustrations/nyhavna-logo.svg",
+    "splashImageUrl": "/illustrations/nyhavna-splash.jpg",
+    "splashVideoUrl": "/illustrations/nyhavna-splash-video.mp4"
+  },
+  "presentation": {
+    "initialView": "splash",
+    "brand": {
+      "surfaceColor": "#f7f5eb",
+      "inkColor": "#171b2d",
+      "accentColor": "#005ef5",
+      "accentForegroundColor": "#ffffff",
+      "mutedColor": "#eeece2",
+      "mutedForegroundColor": "#515568",
+      "radius": "2px",
+      "headingFontFamily": "Unbounded",
+      "headingFontWeight": 700
+    }
+  }
+}

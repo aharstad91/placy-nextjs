@@ -1,0 +1,3502 @@
+{
+  "schemaVersion": 1,
+  "reviewedAt": "2026-09-19",
+  "projectId": "nyhavna-utvikling_nyhavna",
+  "sourcePath": "data/demo/nyhavna-lokal/places.json",
+  "poolSize": 1432,
+  "counts": {
+    "mapped": 57,
+    "review_required": 49,
+    "unmapped": 12
+  },
+  "mappings": [
+    {
+      "localPlaceId": "lilleby-skole",
+      "localName": "Lilleby skole",
+      "localAddress": "Ladeveien 1",
+      "decision": "mapped",
+      "poiId": "nsr-975278859",
+      "evidence": "Unique normalized name and coordinates 0 m apart.",
+      "candidates": [
+        {
+          "poiId": "nsr-975278859",
+          "productionName": "Lilleby skole",
+          "productionAddress": null,
+          "distanceMeters": 0
+        }
+      ]
+    },
+    {
+      "localPlaceId": "rosenborg-skole",
+      "localName": "Rosenborg skole",
+      "localAddress": "Stadsing Dahls gate 1",
+      "decision": "mapped",
+      "poiId": "13778d6f-734e-4441-be24-891ff66236bb",
+      "evidence": "Unique normalized name and coordinates 0 m apart.",
+      "candidates": [
+        {
+          "poiId": "13778d6f-734e-4441-be24-891ff66236bb",
+          "productionName": "Rosenborg skole",
+          "productionAddress": null,
+          "distanceMeters": 0
+        }
+      ]
+    },
+    {
+      "localPlaceId": "nedre-elvehavn-bhg",
+      "localName": "Nedre Elvehavn barnehage",
+      "localAddress": "Dyre Halses gate 6",
+      "decision": "mapped",
+      "poiId": "36d882f4-2001-4af9-8937-46ad9598a6f7",
+      "evidence": "Unique normalized name and coordinates 1 m apart.",
+      "candidates": [
+        {
+          "poiId": "36d882f4-2001-4af9-8937-46ad9598a6f7",
+          "productionName": "Nedre Elvehavn barnehage",
+          "productionAddress": null,
+          "distanceMeters": 1
+        }
+      ]
+    },
+    {
+      "localPlaceId": "voldsminde-bhg",
+      "localName": "Voldsminde barnehage",
+      "localAddress": "Mellomveien 5",
+      "decision": "mapped",
+      "poiId": "a72a9699-220f-484c-9096-4940b87dc5d7",
+      "evidence": "Unique normalized name and coordinates 0 m apart.",
+      "candidates": [
+        {
+          "poiId": "a72a9699-220f-484c-9096-4940b87dc5d7",
+          "productionName": "Voldsminde barnehage",
+          "productionAddress": null,
+          "distanceMeters": 0
+        }
+      ]
+    },
+    {
+      "localPlaceId": "dora-bowling",
+      "localName": "Dora 1 Bowling",
+      "localAddress": "Kobbes gate 6",
+      "decision": "review_required",
+      "candidates": [
+        {
+          "poiId": "google-ChIJJ2QpWAoxbUYRzMEbE7jTiMM",
+          "productionName": "Ntnu universitetsbiblioteket",
+          "productionAddress": "Dora I, Trondheim",
+          "distanceMeters": 36
+        },
+        {
+          "poiId": "google-ChIJUwRsXGMxbUYRSCDGuoLrNcQ",
+          "productionName": "CrossFit Trondheim",
+          "productionAddress": "Kobbes gate 10, Trondheim",
+          "distanceMeters": 67
+        },
+        {
+          "poiId": "google-ChIJQZP2FQAxbUYRLLSFB0ZOc08",
+          "productionName": "KNM Ula S300",
+          "productionAddress": "Dora I, Maskinistgata 2, Trondheim",
+          "distanceMeters": 76
+        },
+        {
+          "poiId": "google-ChIJoddW4J8xbUYRVT1Vy80JkGs",
+          "productionName": "NTNU Universitetsbiblioteket Fellesmagasin",
+          "productionAddress": "Arkivsenteret, Dora I, Maskinistgata, Trondheim",
+          "distanceMeters": 114
+        },
+        {
+          "poiId": "google-ChIJRQRfwwoxbUYRaZiB8E35OlE",
+          "productionName": "Charge365 Charging Station",
+          "productionAddress": "14 Skippergata TRONDHEIM, Brzeźno",
+          "distanceMeters": 131
+        },
+        {
+          "poiId": "google-ChIJkSttw-sxbUYRAanGtarSMo0",
+          "productionName": "Dora kaffebar",
+          "productionAddress": "Kobbes gate 2, Trondheim",
+          "distanceMeters": 139
+        },
+        {
+          "poiId": "google-ChIJO_aBCKIxbUYRzQtP2aWiAmM",
+          "productionName": "Lilcat",
+          "productionAddress": "Skippergata 14, Trondheim",
+          "distanceMeters": 146
+        },
+        {
+          "poiId": "google-ChIJqzgu7IwxbUYRrRAI3fEK4bg",
+          "productionName": "Oppdalsbanken avd. Trondheim",
+          "productionAddress": "Skippergata 14, Trondheim",
+          "distanceMeters": 146
+        }
+      ]
+    },
+    {
+      "localPlaceId": "nyhavna-padel",
+      "localName": "Nyhavna Padel",
+      "localAddress": "Strandveien 53",
+      "decision": "mapped",
+      "poiId": "osm-node-9546096858",
+      "evidence": "Unique normalized name and coordinates 0 m apart.",
+      "candidates": [
+        {
+          "poiId": "osm-node-9546096858",
+          "productionName": "Nyhavna padel",
+          "productionAddress": null,
+          "distanceMeters": 0
+        }
+      ]
+    },
+    {
+      "localPlaceId": "snurr-nyhavna",
+      "localName": "Snurr Nyhavna",
+      "localAddress": "Ladebekken 24D",
+      "decision": "mapped",
+      "poiId": "google-ChIJO6r3WQAxbUYRIwblKoirXeU",
+      "evidence": "Unique normalized name and coordinates 42 m apart.",
+      "candidates": [
+        {
+          "poiId": "google-ChIJO6r3WQAxbUYRIwblKoirXeU",
+          "productionName": "Snurr Nyhavna",
+          "productionAddress": "Ladebekken 24 D, Trondheim",
+          "distanceMeters": 42
+        }
+      ]
+    },
+    {
+      "localPlaceId": "dora-kaffebar",
+      "localName": "Dora Kaffebar",
+      "localAddress": "Kobbes gate 2",
+      "decision": "mapped",
+      "poiId": "google-ChIJkSttw-sxbUYRAanGtarSMo0",
+      "evidence": "Unique normalized name and coordinates 17 m apart.",
+      "candidates": [
+        {
+          "poiId": "google-ChIJkSttw-sxbUYRAanGtarSMo0",
+          "productionName": "Dora kaffebar",
+          "productionAddress": "Kobbes gate 2, Trondheim",
+          "distanceMeters": 17
+        }
+      ]
+    },
+    {
+      "localPlaceId": "nyhavna-bistro",
+      "localName": "Nyhavna BistroBar",
+      "localAddress": "Ladebekken 24A",
+      "decision": "mapped",
+      "poiId": "google-ChIJNzs1uMMxbUYRFHxPylbUTSg",
+      "evidence": "Unique normalized name and coordinates 28 m apart.",
+      "candidates": [
+        {
+          "poiId": "google-ChIJNzs1uMMxbUYRFHxPylbUTSg",
+          "productionName": "Nyhavna BistroBar",
+          "productionAddress": "Ladebekken 24a, Trondheim",
+          "distanceMeters": 28
+        }
+      ]
+    },
+    {
+      "localPlaceId": "ladejarlen",
+      "localName": "Ladejarlen",
+      "localAddress": "Innherredsveien 50",
+      "decision": "mapped",
+      "poiId": "google-ChIJJ5VwkqAxbUYRVB3X034TK3g",
+      "evidence": "Unique normalized name and coordinates 3 m apart.",
+      "candidates": [
+        {
+          "poiId": "google-ChIJJ5VwkqAxbUYRVB3X034TK3g",
+          "productionName": "Ladejarlen",
+          "productionAddress": "Innherredsveien 52, Trondheim",
+          "distanceMeters": 3
+        }
+      ]
+    },
+    {
+      "localPlaceId": "kiwi-lilleby",
+      "localName": "KIWI Lilleby",
+      "localAddress": "Stjørdalsveien 2",
+      "decision": "mapped",
+      "poiId": "google-ChIJTweFjGYxbUYRz2lXeNSRp2Q",
+      "evidence": "Unique normalized name and coordinates 0 m apart.",
+      "candidates": [
+        {
+          "poiId": "google-ChIJTweFjGYxbUYRz2lXeNSRp2Q",
+          "productionName": "KIWI Lilleby",
+          "productionAddress": "Stjørdalsveien 2, Trondheim",
+          "distanceMeters": 0
+        }
+      ]
+    },
+    {
+      "localPlaceId": "meny-solsiden",
+      "localName": "MENY Solsiden",
+      "localAddress": "Beddingen 12",
+      "decision": "mapped",
+      "poiId": "google-ChIJm6lLfZ8xbUYRFYo0NaeG5sk",
+      "evidence": "Unique normalized name and coordinates 33 m apart.",
+      "candidates": [
+        {
+          "poiId": "google-ChIJm6lLfZ8xbUYRFYo0NaeG5sk",
+          "productionName": "MENY Solsiden",
+          "productionAddress": "Beddingen 12, Trondheim",
+          "distanceMeters": 33
+        }
+      ]
+    },
+    {
+      "localPlaceId": "losgata",
+      "localName": "Losgata",
+      "localAddress": "Losgata",
+      "decision": "review_required",
+      "candidates": [
+        {
+          "poiId": "entur-NSR-StopPlace-42926",
+          "productionName": "Losgata bussholdeplass",
+          "productionAddress": null,
+          "distanceMeters": 0
+        },
+        {
+          "poiId": "entur-NSR-StopPlace-271",
+          "productionName": "Lademoen stasjon",
+          "productionAddress": null,
+          "distanceMeters": 87
+        },
+        {
+          "poiId": "bysykkel-92",
+          "productionName": "Trondheim Bysykkel: Dora I",
+          "productionAddress": "Maskinistgata 1",
+          "distanceMeters": 108
+        },
+        {
+          "poiId": "google-ChIJIxZ9IQAxbUYR4zFjhEtw1Vo",
+          "productionName": "Lekeplass",
+          "productionAddress": "Trondheim",
+          "distanceMeters": 124
+        },
+        {
+          "poiId": "park-strandveiparken",
+          "productionName": "Strandveiparken",
+          "productionAddress": null,
+          "distanceMeters": 124
+        },
+        {
+          "poiId": "osm-node-2384097230",
+          "productionName": "Strandveiparken lekeplass",
+          "productionAddress": null,
+          "distanceMeters": 129
+        },
+        {
+          "poiId": "lekeplass-strandveiparken-lek",
+          "productionName": "Strandveiparken lek",
+          "productionAddress": null,
+          "distanceMeters": 133
+        },
+        {
+          "poiId": "google-ChIJkSttw-sxbUYRAanGtarSMo0",
+          "productionName": "Dora kaffebar",
+          "productionAddress": "Kobbes gate 2, Trondheim",
+          "distanceMeters": 137
+        }
+      ]
+    },
+    {
+      "localPlaceId": "dora-holdeplass",
+      "localName": "Dora",
+      "localAddress": "Maskinistgata",
+      "decision": "review_required",
+      "candidates": [
+        {
+          "poiId": "entur-NSR-StopPlace-43469",
+          "productionName": "Dora bussholdeplass",
+          "productionAddress": null,
+          "distanceMeters": 0
+        },
+        {
+          "poiId": "google-ChIJoddW4J8xbUYRVT1Vy80JkGs",
+          "productionName": "NTNU Universitetsbiblioteket Fellesmagasin",
+          "productionAddress": "Arkivsenteret, Dora I, Maskinistgata, Trondheim",
+          "distanceMeters": 43
+        },
+        {
+          "poiId": "google-ChIJ81aNcAoxbUYR9A3T2-hoyz4",
+          "productionName": "Ramp Pub & Spiseri",
+          "productionAddress": "Strandveien 25a, Trondheim",
+          "distanceMeters": 64
+        },
+        {
+          "poiId": "95122dfa-509d-4c78-9d1b-2f2b2700f6ba",
+          "productionName": "Svartlamon Kunst- og kulturbarnehage",
+          "productionAddress": null,
+          "distanceMeters": 79
+        },
+        {
+          "poiId": "bysykkel-92",
+          "productionName": "Trondheim Bysykkel: Dora I",
+          "productionAddress": "Maskinistgata 1",
+          "distanceMeters": 106
+        },
+        {
+          "poiId": "osm-way-1036117195",
+          "productionName": "Frihetsparken",
+          "productionAddress": null,
+          "distanceMeters": 110
+        },
+        {
+          "poiId": "google-ChIJS7R2LdMxbUYRE7-z96uox-s",
+          "productionName": "RAKE arbeidsfellesskap",
+          "productionAddress": "Strandveien 33, Trondheim",
+          "distanceMeters": 116
+        },
+        {
+          "poiId": "google-ChIJH_iuY8kxbUYRCNx9Pv5ugJ4",
+          "productionName": "Frihetsparken",
+          "productionAddress": "Biskop Darres gate 7042, Trondheim",
+          "distanceMeters": 122
+        }
+      ]
+    },
+    {
+      "localPlaceId": "tbk-mellomveien",
+      "localName": "Bildeling i Mellomveien",
+      "localAddress": "Mellomveien 16",
+      "decision": "review_required",
+      "candidates": [
+        {
+          "poiId": "google-ChIJu7diPZsxbUYRgqrKes7ZW34",
+          "productionName": "Zhanna D'Art",
+          "productionAddress": "Mellomveien 16, Trondheim",
+          "distanceMeters": 1
+        },
+        {
+          "poiId": "google-ChIJucpiwgkxbUYRltJuwfJjjLA",
+          "productionName": "Mellomveien",
+          "productionAddress": "Mellomveien 16, Trondheim",
+          "distanceMeters": 1
+        },
+        {
+          "poiId": "google-ChIJb8G1wAkxbUYRzCE56N_WA-s",
+          "productionName": "E.ON Drive Charging Station",
+          "productionAddress": "22 Fv868, Trondheim",
+          "distanceMeters": 59
+        },
+        {
+          "poiId": "google-ChIJo2K4lQkxbUYRTQgYckfbK6o",
+          "productionName": "CURRENT-ladestasjon",
+          "productionAddress": "Ulstadløkkveien 1, Trondheim",
+          "distanceMeters": 63
+        },
+        {
+          "poiId": "google-ChIJ93Lq7QkxbUYRqjW-pFVDgis",
+          "productionName": "E.ON Drive-ladestasjon",
+          "productionAddress": "Ulstadløkkveien, Trondheim",
+          "distanceMeters": 67
+        },
+        {
+          "poiId": "google-ChIJW1X04wkxbUYRz7pR9I8ru10",
+          "productionName": "MikroGartneriet Trondheim",
+          "productionAddress": "Mellomveien 12 A, Trondheim",
+          "distanceMeters": 79
+        },
+        {
+          "poiId": "osm-way-10261330",
+          "productionName": "Lademoparken",
+          "productionAddress": null,
+          "distanceMeters": 89
+        },
+        {
+          "poiId": "park-lademoparken",
+          "productionName": "Lademoparken",
+          "productionAddress": null,
+          "distanceMeters": 96
+        }
+      ]
+    },
+    {
+      "localPlaceId": "dora-parkering",
+      "localName": "Parkering ved Dora",
+      "localAddress": "Maskinistgata 1",
+      "decision": "review_required",
+      "candidates": [
+        {
+          "poiId": "google-ChIJoddW4J8xbUYRVT1Vy80JkGs",
+          "productionName": "NTNU Universitetsbiblioteket Fellesmagasin",
+          "productionAddress": "Arkivsenteret, Dora I, Maskinistgata, Trondheim",
+          "distanceMeters": 13
+        },
+        {
+          "poiId": "entur-NSR-StopPlace-43469",
+          "productionName": "Dora bussholdeplass",
+          "productionAddress": null,
+          "distanceMeters": 40
+        },
+        {
+          "poiId": "bysykkel-92",
+          "productionName": "Trondheim Bysykkel: Dora I",
+          "productionAddress": "Maskinistgata 1",
+          "distanceMeters": 81
+        },
+        {
+          "poiId": "google-ChIJkSttw-sxbUYRAanGtarSMo0",
+          "productionName": "Dora kaffebar",
+          "productionAddress": "Kobbes gate 2, Trondheim",
+          "distanceMeters": 89
+        },
+        {
+          "poiId": "google-ChIJ81aNcAoxbUYR9A3T2-hoyz4",
+          "productionName": "Ramp Pub & Spiseri",
+          "productionAddress": "Strandveien 25a, Trondheim",
+          "distanceMeters": 100
+        },
+        {
+          "poiId": "google-ChIJJ2QpWAoxbUYRzMEbE7jTiMM",
+          "productionName": "Ntnu universitetsbiblioteket",
+          "productionAddress": "Dora I, Trondheim",
+          "distanceMeters": 108
+        },
+        {
+          "poiId": "95122dfa-509d-4c78-9d1b-2f2b2700f6ba",
+          "productionName": "Svartlamon Kunst- og kulturbarnehage",
+          "productionAddress": null,
+          "distanceMeters": 113
+        },
+        {
+          "poiId": "osm-way-1036117195",
+          "productionName": "Frihetsparken",
+          "productionAddress": null,
+          "distanceMeters": 141
+        }
+      ]
+    },
+    {
+      "localPlaceId": "ladestien",
+      "localName": "Ladestien – via Ormen Langes vei",
+      "localAddress": "Ormen Langes vei 24",
+      "decision": "mapped",
+      "poiId": "ladestien",
+      "evidence": "Exact POI identifier in the standard project pool.",
+      "candidates": [
+        {
+          "poiId": "ladestien",
+          "productionName": "Ladestien",
+          "productionAddress": null,
+          "distanceMeters": 524
+        }
+      ]
+    },
+    {
+      "localPlaceId": "trondheim-s",
+      "localName": "Trondheim S",
+      "localAddress": null,
+      "decision": "mapped",
+      "poiId": "google-ChIJ5ZCzXW0xbUYRscnihNFt18g",
+      "evidence": "Unique normalized name and coordinates 147 m apart.",
+      "candidates": [
+        {
+          "poiId": "google-ChIJ5ZCzXW0xbUYRscnihNFt18g",
+          "productionName": "Trondheim s",
+          "productionAddress": "Brattørkaia 17C, Trondheim",
+          "distanceMeters": 147
+        }
+      ]
+    },
+    {
+      "localPlaceId": "transittkaia",
+      "localName": "Transittkaia",
+      "localAddress": null,
+      "decision": "unmapped",
+      "candidates": []
+    },
+    {
+      "localPlaceId": "kullkranpiren",
+      "localName": "Kullkranpiren",
+      "localAddress": null,
+      "decision": "review_required",
+      "candidates": [
+        {
+          "poiId": "google-ChIJUwRsXGMxbUYRSCDGuoLrNcQ",
+          "productionName": "CrossFit Trondheim",
+          "productionAddress": "Kobbes gate 10, Trondheim",
+          "distanceMeters": 195
+        },
+        {
+          "poiId": "badeplass-strandveikaia",
+          "productionName": "Strandveikaia",
+          "productionAddress": null,
+          "distanceMeters": 212
+        },
+        {
+          "poiId": "google-ChIJx4DIPwAxbUYR2YJkZyqXyGc",
+          "productionName": "BarBeintQ Restaurant",
+          "productionAddress": "Strandveien 104, Trondheim",
+          "distanceMeters": 225
+        },
+        {
+          "poiId": "google-ChIJQZP2FQAxbUYRLLSFB0ZOc08",
+          "productionName": "KNM Ula S300",
+          "productionAddress": "Dora I, Maskinistgata 2, Trondheim",
+          "distanceMeters": 238
+        }
+      ]
+    },
+    {
+      "localPlaceId": "strandveikaia",
+      "localName": "Strandveikaia",
+      "localAddress": null,
+      "decision": "mapped",
+      "poiId": "badeplass-strandveikaia",
+      "evidence": "Unique normalized name and coordinates 140 m apart.",
+      "candidates": [
+        {
+          "poiId": "badeplass-strandveikaia",
+          "productionName": "Strandveikaia",
+          "productionAddress": null,
+          "distanceMeters": 140
+        }
+      ]
+    },
+    {
+      "localPlaceId": "ladehammerkaia",
+      "localName": "Ladehammerkaia",
+      "localAddress": null,
+      "decision": "review_required",
+      "candidates": [
+        {
+          "poiId": "bus-ladejarlen-vgs",
+          "productionName": "Ladejarlen vgs. bussholdeplass",
+          "productionAddress": null,
+          "distanceMeters": 163
+        },
+        {
+          "poiId": "osm-way-183259536",
+          "productionName": "Ute-hallen",
+          "productionAddress": null,
+          "distanceMeters": 182
+        },
+        {
+          "poiId": "google-ChIJwSG2900xbUYRoO23DamxKOg",
+          "productionName": "Rothor Restaurantdrift AS The King",
+          "productionAddress": "Ladehammerkaia 1, Trondheim",
+          "distanceMeters": 190
+        },
+        {
+          "poiId": "badeplass-strandveikaia",
+          "productionName": "Strandveikaia",
+          "productionAddress": null,
+          "distanceMeters": 242
+        }
+      ]
+    },
+    {
+      "localPlaceId": "bunkerkvartalet",
+      "localName": "Bunkerkvartalet",
+      "localAddress": null,
+      "decision": "review_required",
+      "candidates": [
+        {
+          "poiId": "google-ChIJO_aBCKIxbUYRzQtP2aWiAmM",
+          "productionName": "Lilcat",
+          "productionAddress": "Skippergata 14, Trondheim",
+          "distanceMeters": 117
+        },
+        {
+          "poiId": "google-ChIJqzgu7IwxbUYRrRAI3fEK4bg",
+          "productionName": "Oppdalsbanken avd. Trondheim",
+          "productionAddress": "Skippergata 14, Trondheim",
+          "distanceMeters": 117
+        },
+        {
+          "poiId": "google-ChIJRQRfwwoxbUYRaZiB8E35OlE",
+          "productionName": "Charge365 Charging Station",
+          "productionAddress": "14 Skippergata TRONDHEIM, Brzeźno",
+          "distanceMeters": 120
+        },
+        {
+          "poiId": "4f1cb31a-9ea1-41d0-aa56-1d2182116b5f",
+          "productionName": "Aktiv åpen barnehage AS",
+          "productionAddress": null,
+          "distanceMeters": 166
+        },
+        {
+          "poiId": "google-ChIJu4gGTXUxbUYRkmfmVwJiXEU",
+          "productionName": "MMA Trondheim BJJ",
+          "productionAddress": "Båtsmannsgata 4, Trondheim",
+          "distanceMeters": 186
+        },
+        {
+          "poiId": "google-ChIJqXehpaAxbUYRm6lCX4nIgoY",
+          "productionName": "TRONDHEIM KICKBOXING KLUBB",
+          "productionAddress": "Båtsmannsgata 4, Trondheim",
+          "distanceMeters": 189
+        },
+        {
+          "poiId": "google-ChIJUwRsXGMxbUYRSCDGuoLrNcQ",
+          "productionName": "CrossFit Trondheim",
+          "productionAddress": "Kobbes gate 10, Trondheim",
+          "distanceMeters": 231
+        },
+        {
+          "poiId": "google-ChIJkSttw-sxbUYRAanGtarSMo0",
+          "productionName": "Dora kaffebar",
+          "productionAddress": "Kobbes gate 2, Trondheim",
+          "distanceMeters": 232
+        }
+      ]
+    },
+    {
+      "localPlaceId": "crossfit-trondheim",
+      "localName": "CrossFit Trondheim",
+      "localAddress": "Kobbes gate 10",
+      "decision": "mapped",
+      "poiId": "google-ChIJUwRsXGMxbUYRSCDGuoLrNcQ",
+      "evidence": "Unique normalized name and coordinates 0 m apart.",
+      "candidates": [
+        {
+          "poiId": "google-ChIJUwRsXGMxbUYRSCDGuoLrNcQ",
+          "productionName": "CrossFit Trondheim",
+          "productionAddress": "Kobbes gate 10, Trondheim",
+          "distanceMeters": 0
+        }
+      ]
+    },
+    {
+      "localPlaceId": "lilleby-treningssenter",
+      "localName": "Lilleby Treningssenter",
+      "localAddress": "Stiklestadveien 3",
+      "decision": "mapped",
+      "poiId": "google-ChIJMfCgQlYxbUYRjXwo6KQhl0I",
+      "evidence": "Unique normalized name and coordinates 0 m apart.",
+      "candidates": [
+        {
+          "poiId": "google-ChIJMfCgQlYxbUYRjXwo6KQhl0I",
+          "productionName": "Lilleby Treningssenter",
+          "productionAddress": "Stiklestadveien 3, Trondheim",
+          "distanceMeters": 0
+        }
+      ]
+    },
+    {
+      "localPlaceId": "pool-3t-solsiden",
+      "localName": "3T-Solsiden",
+      "localAddress": "Dyre Halses gate 1, Trondheim",
+      "decision": "mapped",
+      "poiId": "google-ChIJSUfPIqAxbUYRiyIKq4-hSPs",
+      "evidence": "Unique normalized name and coordinates 0 m apart.",
+      "candidates": [
+        {
+          "poiId": "google-ChIJSUfPIqAxbUYRiyIKq4-hSPs",
+          "productionName": "3T-Solsiden",
+          "productionAddress": "Dyre Halses gate 1, Trondheim",
+          "distanceMeters": 0
+        }
+      ]
+    },
+    {
+      "localPlaceId": "pool-fresh-fitness-trondheim-sentrum",
+      "localName": "Fresh Fitness Trondheim Sentrum",
+      "localAddress": "Kjøpmannsgata 65, Trondheim",
+      "decision": "mapped",
+      "poiId": "google-ChIJhQ_hSpkxbUYRWqS19GSEX74",
+      "evidence": "Unique normalized name and coordinates 0 m apart.",
+      "candidates": [
+        {
+          "poiId": "google-ChIJhQ_hSpkxbUYRWqS19GSEX74",
+          "productionName": "Fresh Fitness Trondheim Sentrum",
+          "productionAddress": "Kjøpmannsgata 65, Trondheim",
+          "distanceMeters": 0
+        }
+      ]
+    },
+    {
+      "localPlaceId": "pool-cora-pilates-as",
+      "localName": "Cora Pilates as.",
+      "localAddress": "Ferjemannsveien 4, Trondheim",
+      "decision": "review_required",
+      "candidates": [
+        {
+          "poiId": "google-ChIJ3TWwLZ8xbUYR-5JXEyfbL4c",
+          "productionName": "EMES Charging Station",
+          "productionAddress": "Verftsgata 2a, Trondheim",
+          "distanceMeters": 14
+        },
+        {
+          "poiId": "google-ChIJLfQY1aExbUYRvlWmF6a1uHg",
+          "productionName": "Bjørvika Apartments, Solsiden Area, Trondheim City Center",
+          "productionAddress": "Verftsgata 1c, Trondheim",
+          "distanceMeters": 22
+        },
+        {
+          "poiId": "google-ChIJK_ahJCAxbUYRv7tS8xdCsRo",
+          "productionName": "Eurodent AS avd. Trondheim. Spesialisttannklinikk, kjeveortopedi og oralkirurgi",
+          "productionAddress": "Innherredsveien 2C, Trondheim",
+          "distanceMeters": 28
+        },
+        {
+          "poiId": "google-ChIJEUuOLJ8xbUYRD_BZKrXcEmA",
+          "productionName": "BOX frisør",
+          "productionAddress": "Ferjemannsveien 10, Trondheim",
+          "distanceMeters": 43
+        },
+        {
+          "poiId": "google-ChIJnco3Lp8xbUYRzlKYnOvrdDY",
+          "productionName": "Monta-ladestasjon",
+          "productionAddress": "Ferjemannsveien 4, Trondheim",
+          "distanceMeters": 45
+        },
+        {
+          "poiId": "google-ChIJe2iFFxQxbUYRGPS_zrcc-4Q",
+          "productionName": "Pincho Nation Trondheim",
+          "productionAddress": "Ferjemannsveien 12, Trondheim",
+          "distanceMeters": 46
+        },
+        {
+          "poiId": "park-adressaparken",
+          "productionName": "Adressaparken",
+          "productionAddress": null,
+          "distanceMeters": 48
+        },
+        {
+          "poiId": "google-ChIJSfp_jJ0xbUYRYxUZ6JA9XGs",
+          "productionName": "Brasilia Trondheim",
+          "productionAddress": "Ferjemannsveien 10, Trondheim",
+          "distanceMeters": 49
+        }
+      ]
+    },
+    {
+      "localPlaceId": "pool-nidaros-bokseklubb",
+      "localName": "Nidaros Bokseklubb",
+      "localAddress": "Båtsmannsgata 4, Trondheim",
+      "decision": "review_required",
+      "candidates": [
+        {
+          "poiId": "google-ChIJqXehpaAxbUYRm6lCX4nIgoY",
+          "productionName": "TRONDHEIM KICKBOXING KLUBB",
+          "productionAddress": "Båtsmannsgata 4, Trondheim",
+          "distanceMeters": 27
+        },
+        {
+          "poiId": "4f1cb31a-9ea1-41d0-aa56-1d2182116b5f",
+          "productionName": "Aktiv åpen barnehage AS",
+          "productionAddress": null,
+          "distanceMeters": 31
+        },
+        {
+          "poiId": "google-ChIJu4gGTXUxbUYRkmfmVwJiXEU",
+          "productionName": "MMA Trondheim BJJ",
+          "productionAddress": "Båtsmannsgata 4, Trondheim",
+          "distanceMeters": 45
+        },
+        {
+          "poiId": "google-ChIJS77W_J8xbUYRqsIXh24u5Zc",
+          "productionName": "E.ON Drive-ladestasjon",
+          "productionAddress": "Losgata 5, Trondheim",
+          "distanceMeters": 112
+        },
+        {
+          "poiId": "entur-NSR-StopPlace-42926",
+          "productionName": "Losgata bussholdeplass",
+          "productionAddress": null,
+          "distanceMeters": 127
+        },
+        {
+          "poiId": "google-ChIJkSttw-sxbUYRAanGtarSMo0",
+          "productionName": "Dora kaffebar",
+          "productionAddress": "Kobbes gate 2, Trondheim",
+          "distanceMeters": 149
+        },
+        {
+          "poiId": "google-ChIJO_aBCKIxbUYRzQtP2aWiAmM",
+          "productionName": "Lilcat",
+          "productionAddress": "Skippergata 14, Trondheim",
+          "distanceMeters": 151
+        },
+        {
+          "poiId": "google-ChIJqzgu7IwxbUYRrRAI3fEK4bg",
+          "productionName": "Oppdalsbanken avd. Trondheim",
+          "productionAddress": "Skippergata 14, Trondheim",
+          "distanceMeters": 151
+        }
+      ]
+    },
+    {
+      "localPlaceId": "pool-3t-lade",
+      "localName": "3T-Lade",
+      "localAddress": "Haakon VIIs gt. 11, Trondheim",
+      "decision": "mapped",
+      "poiId": "google-ChIJIxSO7s0xbUYRQTZSjmjBkjk",
+      "evidence": "Unique normalized name and coordinates 0 m apart.",
+      "candidates": [
+        {
+          "poiId": "google-ChIJIxSO7s0xbUYRQTZSjmjBkjk",
+          "productionName": "3T-Lade",
+          "productionAddress": "Haakon VIIs gt. 11, Trondheim",
+          "distanceMeters": 0
+        }
+      ]
+    },
+    {
+      "localPlaceId": "pool-3t-leangen",
+      "localName": "3T-Leangen",
+      "localAddress": "Leangenvegen 10, Trondheim",
+      "decision": "mapped",
+      "poiId": "google-ChIJUdaOG_8wbUYRthFAqcjZ5kM",
+      "evidence": "Unique normalized name and coordinates 0 m apart.",
+      "candidates": [
+        {
+          "poiId": "google-ChIJUdaOG_8wbUYRthFAqcjZ5kM",
+          "productionName": "3T-Leangen",
+          "productionAddress": "Leangenvegen 10, Trondheim",
+          "distanceMeters": 0
+        }
+      ]
+    },
+    {
+      "localPlaceId": "pool-3t-moholt",
+      "localName": "3T-Moholt",
+      "localAddress": "Vegamot 16, Trondheim",
+      "decision": "unmapped",
+      "candidates": []
+    },
+    {
+      "localPlaceId": "pool-3t-ilsvika",
+      "localName": "3T-Ilsvika",
+      "localAddress": "Ilsvikveien 18, Trondheim",
+      "decision": "review_required",
+      "candidates": [
+        {
+          "poiId": "google-ChIJnQvluygybUYRc_qHvIZX-3c",
+          "productionName": "Extra Ila",
+          "productionAddress": "Mellomila 63, Trondheim",
+          "distanceMeters": 146
+        },
+        {
+          "poiId": "lekeplass-ilsvika-lek",
+          "productionName": "Ilsvika lek",
+          "productionAddress": null,
+          "distanceMeters": 208
+        }
+      ]
+    },
+    {
+      "localPlaceId": "pool-3t-ranheim",
+      "localName": "3T-Ranheim",
+      "localAddress": "Ranheim Arena, Ranheimsvegen 174, Ranheim",
+      "decision": "unmapped",
+      "candidates": []
+    },
+    {
+      "localPlaceId": "pool-3t-rosten",
+      "localName": "3T-Rosten",
+      "localAddress": "Vestre Rosten 80, Tiller",
+      "decision": "unmapped",
+      "candidates": []
+    },
+    {
+      "localPlaceId": "pool-fresh-fitness-tiller",
+      "localName": "Fresh Fitness Tiller",
+      "localAddress": "Ivar Lykkes veg 10, Tiller",
+      "decision": "unmapped",
+      "candidates": []
+    },
+    {
+      "localPlaceId": "pool-3t-fossegrenda",
+      "localName": "3T-Fossegrenda",
+      "localAddress": "Hornebergvegen 7b, Trondheim",
+      "decision": "unmapped",
+      "candidates": []
+    },
+    {
+      "localPlaceId": "pool-lademoparken",
+      "localName": "Lademoparken",
+      "localAddress": "Innherredsveien 65A, Trondheim",
+      "decision": "review_required",
+      "candidates": [
+        {
+          "poiId": "google-ChIJQUYtXqcxbUYRnntdZiQYiDE",
+          "productionName": "Lademoparken",
+          "productionAddress": "Innherredsveien 65A, Trondheim",
+          "distanceMeters": 0
+        },
+        {
+          "poiId": "park-lademoparken",
+          "productionName": "Lademoparken",
+          "productionAddress": null,
+          "distanceMeters": 29
+        },
+        {
+          "poiId": "osm-way-10261330",
+          "productionName": "Lademoparken",
+          "productionAddress": null,
+          "distanceMeters": 43
+        }
+      ]
+    },
+    {
+      "localPlaceId": "pool-ladeparken",
+      "localName": "Ladeparken",
+      "localAddress": "Håkon Magnussons gate, Trondheim",
+      "decision": "review_required",
+      "candidates": [
+        {
+          "poiId": "google-ChIJ26Pxfw8xbUYRw4xh_eDq0JE",
+          "productionName": "Ladeparken",
+          "productionAddress": "Håkon Magnussons gate, Trondheim",
+          "distanceMeters": 0
+        },
+        {
+          "poiId": "park-ladeparken",
+          "productionName": "Ladeparken",
+          "productionAddress": null,
+          "distanceMeters": 9
+        },
+        {
+          "poiId": "osm-way-97089569",
+          "productionName": "Ladeparken",
+          "productionAddress": null,
+          "distanceMeters": 16
+        }
+      ]
+    },
+    {
+      "localPlaceId": "pool-korsvika",
+      "localName": "Korsvika",
+      "localAddress": "Ladestien, Trondheim",
+      "decision": "review_required",
+      "candidates": [
+        {
+          "poiId": "google-ChIJle1bvxExbUYRqE7HtdGY0kA",
+          "productionName": "Korsvika",
+          "productionAddress": "Ladestien, Trondheim",
+          "distanceMeters": 0
+        },
+        {
+          "poiId": "osm-way-491788579",
+          "productionName": "Korsvika",
+          "productionAddress": null,
+          "distanceMeters": 11
+        },
+        {
+          "poiId": "osm-way-491788577",
+          "productionName": "Korsvika",
+          "productionAddress": null,
+          "distanceMeters": 29
+        },
+        {
+          "poiId": "badeplass-korsvika",
+          "productionName": "Korsvika",
+          "productionAddress": null,
+          "distanceMeters": 51
+        },
+        {
+          "poiId": "osm-way-491788578",
+          "productionName": "Korsvika",
+          "productionAddress": null,
+          "distanceMeters": 82
+        },
+        {
+          "poiId": "google-ChIJK1mauxExbUYRoHoJIBswuMg",
+          "productionName": "Korsvika",
+          "productionAddress": "Trondheim",
+          "distanceMeters": 94
+        }
+      ]
+    },
+    {
+      "localPlaceId": "pool-ntnu-ringve-botaniske-hage",
+      "localName": "NTNU Ringve botaniske hage",
+      "localAddress": "Lade alle 58, Trondheim",
+      "decision": "mapped",
+      "poiId": "google-ChIJZZmfpBwxbUYRgEXlKQkTmmc",
+      "evidence": "Unique normalized name and coordinates 0 m apart.",
+      "candidates": [
+        {
+          "poiId": "google-ChIJZZmfpBwxbUYRgEXlKQkTmmc",
+          "productionName": "NTNU Ringve botaniske hage",
+          "productionAddress": "Lade alle 58, Trondheim",
+          "distanceMeters": 0
+        }
+      ]
+    },
+    {
+      "localPlaceId": "pool-ilaparken",
+      "localName": "Ilaparken",
+      "localAddress": "Unnamed Road, Trondheim",
+      "decision": "review_required",
+      "candidates": [
+        {
+          "poiId": "google-ChIJXUbogKcxbUYRxumaw2AIQCo",
+          "productionName": "Ilaparken",
+          "productionAddress": "Unnamed Road, Trondheim",
+          "distanceMeters": 0
+        },
+        {
+          "poiId": "park-ilaparken",
+          "productionName": "Ilaparken",
+          "productionAddress": null,
+          "distanceMeters": 63
+        },
+        {
+          "poiId": "osm-way-8585004",
+          "productionName": "Ilaparken",
+          "productionAddress": null,
+          "distanceMeters": 87
+        }
+      ]
+    },
+    {
+      "localPlaceId": "pool-rotvollfjra",
+      "localName": "Rotvollfjæra",
+      "localAddress": "Arkitekt Ebbells veg, Trondheim",
+      "decision": "unmapped",
+      "candidates": []
+    },
+    {
+      "localPlaceId": "pool-theisendammen-badeplass",
+      "localName": "Theisendammen badeplass",
+      "localAddress": "Trondheim",
+      "decision": "unmapped",
+      "candidates": []
+    },
+    {
+      "localPlaceId": "pool-haukvatnet",
+      "localName": "Haukvatnet",
+      "localAddress": null,
+      "decision": "unmapped",
+      "candidates": []
+    },
+    {
+      "localPlaceId": "pool-lianvatnet",
+      "localName": "Lianvatnet",
+      "localAddress": null,
+      "decision": "unmapped",
+      "candidates": []
+    },
+    {
+      "localPlaceId": "pool-burmaklippen",
+      "localName": "Burmaklippen",
+      "localAddress": "Estenstadvegen, Trondheim",
+      "decision": "unmapped",
+      "candidates": []
+    },
+    {
+      "localPlaceId": "pool-hansbakkfjra",
+      "localName": "Hansbakkfjæra",
+      "localAddress": null,
+      "decision": "unmapped",
+      "candidates": []
+    },
+    {
+      "localPlaceId": "ec-dahls",
+      "localName": "E.C. Dahls Pub og Kjøkken",
+      "localAddress": "Strandveien 71",
+      "decision": "review_required",
+      "candidates": [
+        {
+          "poiId": "osm-node-9546096858",
+          "productionName": "Nyhavna padel",
+          "productionAddress": null,
+          "distanceMeters": 62
+        },
+        {
+          "poiId": "google-ChIJ112lUwoxbUYRlrSHP3B_JYw",
+          "productionName": "Beach senter Trondheim",
+          "productionAddress": "Strandveien 53, Trondheim",
+          "distanceMeters": 87
+        },
+        {
+          "poiId": "google-ChIJgVcG4u0xbUYRY1CS-yjLc3w",
+          "productionName": "Pizzabakeren Lade",
+          "productionAddress": "Strandveien 71, Trondheim",
+          "distanceMeters": 103
+        },
+        {
+          "poiId": "google-ChIJQdOI4QsxbUYRawbfIv9XA00",
+          "productionName": "E.C.Dahls Bryggeri Pub og Kjøkken",
+          "productionAddress": "Strandveien 71, Trondheim",
+          "distanceMeters": 103
+        },
+        {
+          "poiId": "google-ChIJx4DIPwAxbUYR2YJkZyqXyGc",
+          "productionName": "BarBeintQ Restaurant",
+          "productionAddress": "Strandveien 104, Trondheim",
+          "distanceMeters": 133
+        },
+        {
+          "poiId": "bysykkel-65",
+          "productionName": "Trondheim Bysykkel: Strandveikaia",
+          "productionAddress": "Stiklestadveien 1",
+          "distanceMeters": 142
+        },
+        {
+          "poiId": "badeplass-strandveikaia",
+          "productionName": "Strandveikaia",
+          "productionAddress": null,
+          "distanceMeters": 163
+        },
+        {
+          "poiId": "google-ChIJwWdIw-AtbUYRORYz09C_yeI",
+          "productionName": "Sircon Norge AS",
+          "productionAddress": "Stiklestadveien 1, Trondheim",
+          "distanceMeters": 163
+        }
+      ]
+    },
+    {
+      "localPlaceId": "ramp",
+      "localName": "Ramp Pub & Spiseri",
+      "localAddress": "Strandveien 25A",
+      "decision": "mapped",
+      "poiId": "google-ChIJ81aNcAoxbUYR9A3T2-hoyz4",
+      "evidence": "Unique normalized name and coordinates 3 m apart.",
+      "candidates": [
+        {
+          "poiId": "google-ChIJ81aNcAoxbUYR9A3T2-hoyz4",
+          "productionName": "Ramp Pub & Spiseri",
+          "productionAddress": "Strandveien 25a, Trondheim",
+          "distanceMeters": 3
+        }
+      ]
+    },
+    {
+      "localPlaceId": "una-solsiden",
+      "localName": "Una Solsiden",
+      "localAddress": "Beddingen 14",
+      "decision": "mapped",
+      "poiId": "google-ChIJFSxqCp8xbUYRxlNF2ntkSWg",
+      "evidence": "Unique normalized name and coordinates 3 m apart.",
+      "candidates": [
+        {
+          "poiId": "google-ChIJFSxqCp8xbUYRxlNF2ntkSWg",
+          "productionName": "Una Solsiden",
+          "productionAddress": "Beddingen 14, Trondheim",
+          "distanceMeters": 3
+        }
+      ]
+    },
+    {
+      "localPlaceId": "godt-brod-solsiden",
+      "localName": "Godt Brød Solsiden",
+      "localAddress": "Beddingen 10",
+      "decision": "mapped",
+      "poiId": "google-ChIJa5PTYPQxbUYRMhl1-tTmyJs",
+      "evidence": "Unique normalized name and coordinates 87 m apart.",
+      "candidates": [
+        {
+          "poiId": "google-ChIJa5PTYPQxbUYRMhl1-tTmyJs",
+          "productionName": "Godt Brød Solsiden",
+          "productionAddress": "Beddingen 10, Trondheim",
+          "distanceMeters": 87
+        }
+      ]
+    },
+    {
+      "localPlaceId": "sabrura-solsiden",
+      "localName": "Sabrura Solsiden",
+      "localAddress": "Bassengbakken 2",
+      "decision": "mapped",
+      "poiId": "google-ChIJYTz8R6AxbUYRz_IhEP_oOVk",
+      "evidence": "Unique normalized name and coordinates 37 m apart.",
+      "candidates": [
+        {
+          "poiId": "google-ChIJYTz8R6AxbUYRz_IhEP_oOVk",
+          "productionName": "Sabrura Solsiden",
+          "productionAddress": "Bassengbakken 2, Trondheim",
+          "distanceMeters": 37
+        }
+      ]
+    },
+    {
+      "localPlaceId": "havet-arena",
+      "localName": "HAVET Arena",
+      "localAddress": "Strandveien 104",
+      "decision": "review_required",
+      "candidates": [
+        {
+          "poiId": "google-ChIJx4DIPwAxbUYR2YJkZyqXyGc",
+          "productionName": "BarBeintQ Restaurant",
+          "productionAddress": "Strandveien 104, Trondheim",
+          "distanceMeters": 29
+        },
+        {
+          "poiId": "badeplass-strandveikaia",
+          "productionName": "Strandveikaia",
+          "productionAddress": null,
+          "distanceMeters": 63
+        },
+        {
+          "poiId": "google-ChIJQdOI4QsxbUYRawbfIv9XA00",
+          "productionName": "E.C.Dahls Bryggeri Pub og Kjøkken",
+          "productionAddress": "Strandveien 71, Trondheim",
+          "distanceMeters": 108
+        },
+        {
+          "poiId": "osm-node-9546096858",
+          "productionName": "Nyhavna padel",
+          "productionAddress": null,
+          "distanceMeters": 125
+        },
+        {
+          "poiId": "google-ChIJ112lUwoxbUYRlrSHP3B_JYw",
+          "productionName": "Beach senter Trondheim",
+          "productionAddress": "Strandveien 53, Trondheim",
+          "distanceMeters": 134
+        },
+        {
+          "poiId": "bysykkel-65",
+          "productionName": "Trondheim Bysykkel: Strandveikaia",
+          "productionAddress": "Stiklestadveien 1",
+          "distanceMeters": 161
+        },
+        {
+          "poiId": "google-ChIJwWdIw-AtbUYRORYz09C_yeI",
+          "productionName": "Sircon Norge AS",
+          "productionAddress": "Stiklestadveien 1, Trondheim",
+          "distanceMeters": 171
+        },
+        {
+          "poiId": "google-ChIJgVcG4u0xbUYRY1CS-yjLc3w",
+          "productionName": "Pizzabakeren Lade",
+          "productionAddress": "Strandveien 71, Trondheim",
+          "distanceMeters": 176
+        }
+      ]
+    },
+    {
+      "localPlaceId": "rosendal-teater",
+      "localName": "Rosendal Teater og Kafé",
+      "localAddress": "Innherredsveien 73",
+      "decision": "review_required",
+      "candidates": [
+        {
+          "poiId": "google-ChIJZ1HevyExbUYRZ4wKFCfL-DI",
+          "productionName": "Rosendal kafé",
+          "productionAddress": "Innherredsveien 73, Trondheim",
+          "distanceMeters": 8
+        },
+        {
+          "poiId": "google-ChIJKZtWFPMxbUYRdtoGndYPdhc",
+          "productionName": "Bunnpris Rosendal",
+          "productionAddress": "Innherredsveien 80, Trondheim",
+          "distanceMeters": 52
+        },
+        {
+          "poiId": "bysykkel-6",
+          "productionName": "Trondheim Bysykkel: Anders Buens gate",
+          "productionAddress": "Innherredsveien 61F",
+          "distanceMeters": 77
+        },
+        {
+          "poiId": "park-hans-nielsens-hauges-gate-park",
+          "productionName": "Hans Nielsens Hauges gate park",
+          "productionAddress": null,
+          "distanceMeters": 79
+        },
+        {
+          "poiId": "taxi-tk-lademoen-kirke",
+          "productionName": "Lademoen Kirke",
+          "productionAddress": null,
+          "distanceMeters": 88
+        },
+        {
+          "poiId": "google-ChIJr30JGwgxbUYR_HZukaETyNs",
+          "productionName": "Stiluett Frisør",
+          "productionAddress": "Innherredsveien 88, Trondheim",
+          "distanceMeters": 92
+        },
+        {
+          "poiId": "google-ChIJyYzCLwgxbUYR5i40urgPIOY",
+          "productionName": "Lademoen kirke",
+          "productionAddress": "Innherredsveien 78, Trondheim",
+          "distanceMeters": 116
+        },
+        {
+          "poiId": "google-ChIJIyKm_GMxbUYR-d0hJKvOKLE",
+          "productionName": "Rosendal Bordtennisklubb",
+          "productionAddress": "Hans Finnes gate 4, Trondheim",
+          "distanceMeters": 130
+        }
+      ]
+    },
+    {
+      "localPlaceId": "monkey-brew",
+      "localName": "Monkey Brew",
+      "localAddress": "Kobbes gate 10",
+      "decision": "review_required",
+      "candidates": [
+        {
+          "poiId": "google-ChIJUwRsXGMxbUYRSCDGuoLrNcQ",
+          "productionName": "CrossFit Trondheim",
+          "productionAddress": "Kobbes gate 10, Trondheim",
+          "distanceMeters": 14
+        },
+        {
+          "poiId": "google-ChIJQZP2FQAxbUYRLLSFB0ZOc08",
+          "productionName": "KNM Ula S300",
+          "productionAddress": "Dora I, Maskinistgata 2, Trondheim",
+          "distanceMeters": 71
+        },
+        {
+          "poiId": "google-ChIJJ2QpWAoxbUYRzMEbE7jTiMM",
+          "productionName": "Ntnu universitetsbiblioteket",
+          "productionAddress": "Dora I, Trondheim",
+          "distanceMeters": 94
+        },
+        {
+          "poiId": "google-ChIJRQRfwwoxbUYRaZiB8E35OlE",
+          "productionName": "Charge365 Charging Station",
+          "productionAddress": "14 Skippergata TRONDHEIM, Brzeźno",
+          "distanceMeters": 146
+        },
+        {
+          "poiId": "google-ChIJBbvzfnAxbUYRjxqdBOIFsbE",
+          "productionName": "The Dome",
+          "productionAddress": "Strandveien 41, Trondheim",
+          "distanceMeters": 167
+        },
+        {
+          "poiId": "google-ChIJO_aBCKIxbUYRzQtP2aWiAmM",
+          "productionName": "Lilcat",
+          "productionAddress": "Skippergata 14, Trondheim",
+          "distanceMeters": 169
+        },
+        {
+          "poiId": "google-ChIJqzgu7IwxbUYRrRAI3fEK4bg",
+          "productionName": "Oppdalsbanken avd. Trondheim",
+          "productionAddress": "Skippergata 14, Trondheim",
+          "distanceMeters": 169
+        },
+        {
+          "poiId": "google-ChIJoddW4J8xbUYRVT1Vy80JkGs",
+          "productionName": "NTNU Universitetsbiblioteket Fellesmagasin",
+          "productionAddress": "Arkivsenteret, Dora I, Maskinistgata, Trondheim",
+          "distanceMeters": 185
+        }
+      ]
+    },
+    {
+      "localPlaceId": "lademoen-bhg",
+      "localName": "Lademoen barnehage",
+      "localAddress": "Østersunds gate 3",
+      "decision": "mapped",
+      "poiId": "e8923d5b-5353-41c5-80ea-6bb4e2720d01",
+      "evidence": "Unique normalized name and coordinates 0 m apart.",
+      "candidates": [
+        {
+          "poiId": "e8923d5b-5353-41c5-80ea-6bb4e2720d01",
+          "productionName": "Lademoen barnehage",
+          "productionAddress": null,
+          "distanceMeters": 0
+        }
+      ]
+    },
+    {
+      "localPlaceId": "svartlamon-bhg",
+      "localName": "Svartlamon kunst- og kulturbarnehage",
+      "localAddress": "Strandveien 33",
+      "decision": "mapped",
+      "poiId": "95122dfa-509d-4c78-9d1b-2f2b2700f6ba",
+      "evidence": "Unique normalized name and coordinates 0 m apart.",
+      "candidates": [
+        {
+          "poiId": "95122dfa-509d-4c78-9d1b-2f2b2700f6ba",
+          "productionName": "Svartlamon Kunst- og kulturbarnehage",
+          "productionAddress": null,
+          "distanceMeters": 0
+        }
+      ]
+    },
+    {
+      "localPlaceId": "lade-fritidsklubb",
+      "localName": "Lade fritidsklubb",
+      "localAddress": "Håkon Magnussons gate 5",
+      "decision": "review_required",
+      "candidates": [
+        {
+          "poiId": "ac654ac6-0a7f-40fd-ba0b-e13bb442771c",
+          "productionName": "Trondheim kommune Mestring og Inkludering, dagskolen",
+          "productionAddress": null,
+          "distanceMeters": 0
+        },
+        {
+          "poiId": "google-ChIJBwju6_QxbUYR94QEngleQZE",
+          "productionName": "Lade Tannhelsesenter Trondheim",
+          "productionAddress": "Håkon Magnussons gate 10, Trondheim",
+          "distanceMeters": 86
+        },
+        {
+          "poiId": "google-ChIJMYfNDwUxbUYRCESjyfStM1c",
+          "productionName": "Agaton Sax frisører avd Lade",
+          "productionAddress": "Håkon Magnussons gate 6, Trondheim",
+          "distanceMeters": 99
+        },
+        {
+          "poiId": "google-ChIJCzDwmgUxbUYRbM0LlUcPfu0",
+          "productionName": "Bunnpris Lade",
+          "productionAddress": "Håkon Magnussons gate 3, Trondheim",
+          "distanceMeters": 112
+        },
+        {
+          "poiId": "google-ChIJU0r-QgQxbUYR_SHix5cX354",
+          "productionName": "YX",
+          "productionAddress": "Haakon VIIs gt. 9, Trondheim",
+          "distanceMeters": 125
+        },
+        {
+          "poiId": "google-ChIJlVOdr1ExbUYRy0elJ8ELd5g",
+          "productionName": "BAG CITY LADE",
+          "productionAddress": "Haakon VIIs gt. 9, Trondheim",
+          "distanceMeters": 128
+        },
+        {
+          "poiId": "google-ChIJU0r-QgQxbUYRBAfqovQtD6I",
+          "productionName": "JACK & JONES",
+          "productionAddress": "Haakon VIIs gt. 9, Trondheim",
+          "distanceMeters": 128
+        },
+        {
+          "poiId": "google-ChIJA3O3nQUxbUYRHVBuZzdhRkY",
+          "productionName": "Lade Kirke",
+          "productionAddress": "Harald Hårfagres gate 2, Trondheim",
+          "distanceMeters": 140
+        }
+      ]
+    },
+    {
+      "localPlaceId": "strandveiparken",
+      "localName": "Strandveiparken",
+      "localAddress": null,
+      "decision": "review_required",
+      "candidates": [
+        {
+          "poiId": "park-strandveiparken",
+          "productionName": "Strandveiparken",
+          "productionAddress": null,
+          "distanceMeters": 29
+        },
+        {
+          "poiId": "osm-way-311837944",
+          "productionName": "Strandveiparken",
+          "productionAddress": null,
+          "distanceMeters": 33
+        },
+        {
+          "poiId": "google-ChIJ70JVAU8xbUYRi4bdPtwStvA",
+          "productionName": "Strandveiparken",
+          "productionAddress": "Trondheim",
+          "distanceMeters": 47
+        }
+      ]
+    },
+    {
+      "localPlaceId": "strandveikaia-badeplass",
+      "localName": "Strandveikaia badeplass",
+      "localAddress": null,
+      "decision": "review_required",
+      "candidates": [
+        {
+          "poiId": "badeplass-strandveikaia",
+          "productionName": "Strandveikaia",
+          "productionAddress": null,
+          "distanceMeters": 0
+        },
+        {
+          "poiId": "google-ChIJx4DIPwAxbUYR2YJkZyqXyGc",
+          "productionName": "BarBeintQ Restaurant",
+          "productionAddress": "Strandveien 104, Trondheim",
+          "distanceMeters": 36
+        },
+        {
+          "poiId": "google-ChIJQdOI4QsxbUYRawbfIv9XA00",
+          "productionName": "E.C.Dahls Bryggeri Pub og Kjøkken",
+          "productionAddress": "Strandveien 71, Trondheim",
+          "distanceMeters": 106
+        },
+        {
+          "poiId": "google-ChIJwSG2900xbUYRoO23DamxKOg",
+          "productionName": "Rothor Restaurantdrift AS The King",
+          "productionAddress": "Ladehammerkaia 1, Trondheim",
+          "distanceMeters": 114
+        },
+        {
+          "poiId": "bus-strandveikaia",
+          "productionName": "Strandveikaia bussholdeplass",
+          "productionAddress": null,
+          "distanceMeters": 137
+        },
+        {
+          "poiId": "bysykkel-65",
+          "productionName": "Trondheim Bysykkel: Strandveikaia",
+          "productionAddress": "Stiklestadveien 1",
+          "distanceMeters": 147
+        },
+        {
+          "poiId": "google-ChIJwWdIw-AtbUYRORYz09C_yeI",
+          "productionName": "Sircon Norge AS",
+          "productionAddress": "Stiklestadveien 1, Trondheim",
+          "distanceMeters": 149
+        },
+        {
+          "poiId": "osm-node-9546096858",
+          "productionName": "Nyhavna padel",
+          "productionAddress": null,
+          "distanceMeters": 185
+        }
+      ]
+    },
+    {
+      "localPlaceId": "bua-lademoen",
+      "localName": "BUA Lademoen",
+      "localAddress": "Innherredsveien 91",
+      "decision": "review_required",
+      "candidates": [
+        {
+          "poiId": "entur-NSR-StopPlace-41890",
+          "productionName": "Rønningsbakken bussholdeplass",
+          "productionAddress": null,
+          "distanceMeters": 62
+        },
+        {
+          "poiId": "google-ChIJK20WsfIxbUYRdGwhKN-KInY",
+          "productionName": "Studio Beve",
+          "productionAddress": "Innherredsveien 92, Trondheim",
+          "distanceMeters": 77
+        },
+        {
+          "poiId": "google-ChIJr30JGwgxbUYR_HZukaETyNs",
+          "productionName": "Stiluett Frisør",
+          "productionAddress": "Innherredsveien 88, Trondheim",
+          "distanceMeters": 145
+        },
+        {
+          "poiId": "google-ChIJDRijCQAxbUYRnW4FbaPX9mw",
+          "productionName": "TrenHer Rosendal",
+          "productionAddress": "Innherredsveien 103, Trondheim",
+          "distanceMeters": 149
+        },
+        {
+          "poiId": "google-ChIJt3ZfDwAxbUYRm_yIA4D9mrU",
+          "productionName": "Saxenborg Gård - Café og pub",
+          "productionAddress": "Rønningsbakken 4, Trondheim",
+          "distanceMeters": 179
+        },
+        {
+          "poiId": "google-ChIJZ1HevyExbUYRZ4wKFCfL-DI",
+          "productionName": "Rosendal kafé",
+          "productionAddress": "Innherredsveien 73, Trondheim",
+          "distanceMeters": 232
+        },
+        {
+          "poiId": "osm-way-1059663264",
+          "productionName": "Elsheim park",
+          "productionAddress": null,
+          "distanceMeters": 247
+        },
+        {
+          "poiId": "google-ChIJIyKm_GMxbUYR-d0hJKvOKLE",
+          "productionName": "Rosendal Bordtennisklubb",
+          "productionAddress": "Hans Finnes gate 4, Trondheim",
+          "distanceMeters": 250
+        }
+      ]
+    },
+    {
+      "localPlaceId": "buranbanen",
+      "localName": "Buranbanen",
+      "localAddress": null,
+      "decision": "mapped",
+      "poiId": "osm-way-10260237",
+      "evidence": "Unique normalized name and coordinates 21 m apart.",
+      "candidates": [
+        {
+          "poiId": "osm-way-10260237",
+          "productionName": "Buranbanen",
+          "productionAddress": null,
+          "distanceMeters": 21
+        }
+      ]
+    },
+    {
+      "localPlaceId": "egon-solsiden",
+      "localName": "Egon Solsiden",
+      "localAddress": "TMV-kaia 21",
+      "decision": "review_required",
+      "candidates": [
+        {
+          "poiId": "google-ChIJ4ccQcZ8xbUYR6Xl1I85wHrg",
+          "productionName": "Egon",
+          "productionAddress": "Tmv-kaia 21, Trondheim",
+          "distanceMeters": 3
+        },
+        {
+          "poiId": "google-ChIJyVBZnZ8xbUYRhB-s_crA_YQ",
+          "productionName": "Solsiden kjøpesenter",
+          "productionAddress": "Beddingen 10, Trondheim",
+          "distanceMeters": 11
+        },
+        {
+          "poiId": "google-ChIJyVBZnZ8xbUYRT9RGxv_DVCU",
+          "productionName": "Rosenborg bakeri avd Solsiden",
+          "productionAddress": "Beddingen 10, Trondheim",
+          "distanceMeters": 14
+        },
+        {
+          "poiId": "google-ChIJ39iadJ8xbUYRRczbteBUpAc",
+          "productionName": "Søstrene Karlsen",
+          "productionAddress": "Tmv-kaia 25, Trondheim",
+          "distanceMeters": 17
+        },
+        {
+          "poiId": "google-ChIJmxJ5cJ8xbUYRB1gNbagHlLw",
+          "productionName": "Heidi's Bier Bar Trondheim",
+          "productionAddress": "Tmv-kaia 17, Trondheim",
+          "distanceMeters": 20
+        },
+        {
+          "poiId": "google-ChIJIxLRfp8xbUYR45ux7yiuTNM",
+          "productionName": "Høyer - Solsiden",
+          "productionAddress": "Beddingen 10, Trondheim",
+          "distanceMeters": 30
+        },
+        {
+          "poiId": "google-ChIJWdP_Oa8xbUYRAfEFK2UmYOM",
+          "productionName": "Bror Solsiden",
+          "productionAddress": "Tmv-kaia 13, Trondheim",
+          "distanceMeters": 30
+        },
+        {
+          "poiId": "google-ChIJyVBZnZ8xbUYRLSHHIjIijkg",
+          "productionName": "Floriss Solsiden",
+          "productionAddress": "Beddingen 10, Trondheim",
+          "distanceMeters": 30
+        }
+      ]
+    },
+    {
+      "localPlaceId": "olivia-solsiden",
+      "localName": "Olivia Solsiden",
+      "localAddress": "Beddingen 16",
+      "decision": "mapped",
+      "poiId": "google-ChIJ88TAqZ8xbUYR7lTSrj19f4k",
+      "evidence": "Unique normalized name and coordinates 22 m apart.",
+      "candidates": [
+        {
+          "poiId": "google-ChIJ88TAqZ8xbUYR7lTSrj19f4k",
+          "productionName": "Olivia Solsiden",
+          "productionAddress": "Beddingen 16, Trondheim",
+          "distanceMeters": 22
+        }
+      ]
+    },
+    {
+      "localPlaceId": "cafe-lokka",
+      "localName": "Cafe Løkka",
+      "localAddress": "Dokkgata 8",
+      "decision": "mapped",
+      "poiId": "google-ChIJs-DHJJ8xbUYRslPZTW18HJo",
+      "evidence": "Unique normalized name and coordinates 5 m apart.",
+      "candidates": [
+        {
+          "poiId": "google-ChIJs-DHJJ8xbUYRslPZTW18HJo",
+          "productionName": "Cafe Løkka",
+          "productionAddress": "Dokkgata 8, Trondheim",
+          "distanceMeters": 5
+        }
+      ]
+    },
+    {
+      "localPlaceId": "dromedar-solsiden",
+      "localName": "Dromedar Kaffebar Solsiden",
+      "localAddress": "Beddingen 10",
+      "decision": "review_required",
+      "candidates": [
+        {
+          "poiId": "google-ChIJyVBZnZ8xbUYRFelaJqlTFRY",
+          "productionName": "Princess avd. Solsiden",
+          "productionAddress": "Beddingen 10-12, Trondheim",
+          "distanceMeters": 0
+        },
+        {
+          "poiId": "google-ChIJ2eVZ0aExbUYRnHI5tHoOjQo",
+          "productionName": "Apotek 1 Solsiden",
+          "productionAddress": "Beddingen 10, Trondheim",
+          "distanceMeters": 1
+        },
+        {
+          "poiId": "google-ChIJyVBZnZ8xbUYRJ4Sl12zqdY4",
+          "productionName": "Cutters Solsiden",
+          "productionAddress": "Beddingen 10, Trondheim",
+          "distanceMeters": 13
+        },
+        {
+          "poiId": "google-ChIJm6lLfZ8xbUYRFYo0NaeG5sk",
+          "productionName": "MENY Solsiden",
+          "productionAddress": "Beddingen 12, Trondheim",
+          "distanceMeters": 23
+        },
+        {
+          "poiId": "google-ChIJyVBZnZ8xbUYRaJQbvtKrkxk",
+          "productionName": "Elkjøp Phonehouse Solsiden",
+          "productionAddress": "Beddingen 10, Trondheim",
+          "distanceMeters": 28
+        },
+        {
+          "poiId": "google-ChIJIYkLg58xbUYRlOSxB_0Hhu0",
+          "productionName": "Vinmonopolet",
+          "productionAddress": "Beddingen 11, Bassengtomta, Trondheim",
+          "distanceMeters": 34
+        },
+        {
+          "poiId": "google-ChIJyVBZnZ8xbUYRC3okjbA5Vi4",
+          "productionName": "Clas Ohlson",
+          "productionAddress": "Beddingen 12, Trondheim",
+          "distanceMeters": 35
+        },
+        {
+          "poiId": "google-ChIJ4zABIdMxbUYRRdcNLzrHdsY",
+          "productionName": "Freyja Ultralyd Kvinne- og Familieklinikk",
+          "productionAddress": "4 etasje, samme inngang som Medicus, Beddingen 8, Trondheim",
+          "distanceMeters": 45
+        }
+      ]
+    },
+    {
+      "localPlaceId": "hector-solsiden",
+      "localName": "Héctor Food & Fiesta",
+      "localAddress": "TMV-kaia 25",
+      "decision": "mapped",
+      "poiId": "google-ChIJs5Q50UYxbUYRgJFfKVmyTvE",
+      "evidence": "Unique normalized name and coordinates 3 m apart.",
+      "candidates": [
+        {
+          "poiId": "google-ChIJs5Q50UYxbUYRgJFfKVmyTvE",
+          "productionName": "Héctor Food & Fiesta",
+          "productionAddress": "Tmv-kaia 25, Trondheim",
+          "distanceMeters": 3
+        }
+      ]
+    },
+    {
+      "localPlaceId": "tollbua",
+      "localName": "Tollbua",
+      "localAddress": "Brattørkaia 13B",
+      "decision": "review_required",
+      "candidates": [
+        {
+          "poiId": "google-ChIJSY81O1wxbUYRGf59dfwcssw",
+          "productionName": "Tollbua - Restaurant",
+          "productionAddress": "Brattørkaia 13B, Trondheim",
+          "distanceMeters": 1
+        },
+        {
+          "poiId": "google-ChIJ_bwdNwAxbUYRscOJKfM2snw",
+          "productionName": "Rockheim Skatepark",
+          "productionAddress": "Brattørkaia 13, Trondheim",
+          "distanceMeters": 37
+        },
+        {
+          "poiId": "park-rockheim-park",
+          "productionName": "Rockheim park",
+          "productionAddress": null,
+          "distanceMeters": 47
+        },
+        {
+          "poiId": "google-ChIJtQ2uIXYxbUYRWhrWPpKarC0",
+          "productionName": "Simens Isbar AS - Brattørkaia",
+          "productionAddress": "Brattørkaia 11, Trondheim",
+          "distanceMeters": 53
+        },
+        {
+          "poiId": "google-ChIJ_SQZi50xbUYR2we35aFCaSU",
+          "productionName": "Rockheim",
+          "productionAddress": "Brattørkaia 14, Trondheim",
+          "distanceMeters": 80
+        },
+        {
+          "poiId": "google-ChIJq3jrGHYxbUYRWCokKUAb-00",
+          "productionName": "Clarion Hotel & Congress Trondheim",
+          "productionAddress": "Brattørkaia 1, Trondheim",
+          "distanceMeters": 84
+        },
+        {
+          "poiId": "taxi-tk-brattorkaia",
+          "productionName": "Brattørkaia",
+          "productionAddress": null,
+          "distanceMeters": 96
+        },
+        {
+          "poiId": "bysykkel-31",
+          "productionName": "Trondheim Bysykkel: Tollboden",
+          "productionAddress": "Havnegata",
+          "distanceMeters": 107
+        }
+      ]
+    },
+    {
+      "localPlaceId": "bror-solsiden",
+      "localName": "Bror Solsiden",
+      "localAddress": "TMV-kaia 13",
+      "decision": "mapped",
+      "poiId": "google-ChIJWdP_Oa8xbUYRAfEFK2UmYOM",
+      "evidence": "Unique normalized name and coordinates 5 m apart.",
+      "candidates": [
+        {
+          "poiId": "google-ChIJWdP_Oa8xbUYRAfEFK2UmYOM",
+          "productionName": "Bror Solsiden",
+          "productionAddress": "Tmv-kaia 13, Trondheim",
+          "distanceMeters": 5
+        }
+      ]
+    },
+    {
+      "localPlaceId": "sot-solsiden",
+      "localName": "SOT Bar & Burger Solsiden",
+      "localAddress": "TMV-kaia 3",
+      "decision": "mapped",
+      "poiId": "google-ChIJobCJYp8xbUYRyD1DuGunCOQ",
+      "evidence": "Unique normalized name and coordinates 19 m apart.",
+      "candidates": [
+        {
+          "poiId": "google-ChIJobCJYp8xbUYRyD1DuGunCOQ",
+          "productionName": "SOT Bar & Burger - Solsiden",
+          "productionAddress": "Tmv-kaia 3, Trondheim",
+          "distanceMeters": 19
+        }
+      ]
+    },
+    {
+      "localPlaceId": "rockheim",
+      "localName": "Rockheim",
+      "localAddress": "Brattørkaia 14",
+      "decision": "mapped",
+      "poiId": "google-ChIJ_SQZi50xbUYR2we35aFCaSU",
+      "evidence": "Unique normalized name and coordinates 17 m apart.",
+      "candidates": [
+        {
+          "poiId": "google-ChIJ_SQZi50xbUYR2we35aFCaSU",
+          "productionName": "Rockheim",
+          "productionAddress": "Brattørkaia 14, Trondheim",
+          "distanceMeters": 17
+        }
+      ]
+    },
+    {
+      "localPlaceId": "pirbadet",
+      "localName": "Pirbadet",
+      "localAddress": "Havnegata 12",
+      "decision": "mapped",
+      "poiId": "osm-node-1291410914",
+      "evidence": "Unique normalized name and coordinates 41 m apart.",
+      "candidates": [
+        {
+          "poiId": "osm-node-1291410914",
+          "productionName": "Pirbadet",
+          "productionAddress": null,
+          "distanceMeters": 41
+        }
+      ]
+    },
+    {
+      "localPlaceId": "dokkhuset",
+      "localName": "Dokkhuset",
+      "localAddress": "Dokkparken 4",
+      "decision": "review_required",
+      "candidates": [
+        {
+          "poiId": "google-ChIJ6RdPbJ8xbUYRVSosCHalFHs",
+          "productionName": "Bar Passiar Dokkhuset",
+          "productionAddress": "Dokkparken 4, Trondheim",
+          "distanceMeters": 4
+        },
+        {
+          "poiId": "park-dokkparken",
+          "productionName": "Dokkparken",
+          "productionAddress": null,
+          "distanceMeters": 20
+        },
+        {
+          "poiId": "google-ChIJWxwKZp8xbUYR0VgyeFBEmWk",
+          "productionName": "Dokkparken",
+          "productionAddress": "Trondheim",
+          "distanceMeters": 32
+        },
+        {
+          "poiId": "google-ChIJzZFGmdcxbUYRQhRq6UJABTY",
+          "productionName": "Skøytebane",
+          "productionAddress": "Solsiden, Trondheim",
+          "distanceMeters": 36
+        },
+        {
+          "poiId": "google-ChIJWdP_Oa8xbUYRAfEFK2UmYOM",
+          "productionName": "Bror Solsiden",
+          "productionAddress": "Tmv-kaia 13, Trondheim",
+          "distanceMeters": 60
+        },
+        {
+          "poiId": "google-ChIJ4ccQcZ8xbUYR6Xl1I85wHrg",
+          "productionName": "Egon",
+          "productionAddress": "Tmv-kaia 21, Trondheim",
+          "distanceMeters": 62
+        },
+        {
+          "poiId": "google-ChIJfQ6rZJ8xbUYR-va16LFeoGE",
+          "productionName": "Barmuda Solsiden",
+          "productionAddress": "Tmv-kaia 9, Trondheim",
+          "distanceMeters": 64
+        },
+        {
+          "poiId": "google-ChIJgw3PfN4xbUYRQSJjEO89YGY",
+          "productionName": "ØX Tap Room",
+          "productionAddress": "Dokkparken 1, Trondheim",
+          "distanceMeters": 65
+        }
+      ]
+    },
+    {
+      "localPlaceId": "apotek-1-solsiden",
+      "localName": "Apotek 1 Solsiden",
+      "localAddress": "Beddingen 10",
+      "decision": "mapped",
+      "poiId": "google-ChIJ2eVZ0aExbUYRnHI5tHoOjQo",
+      "evidence": "Unique normalized name and coordinates 1 m apart.",
+      "candidates": [
+        {
+          "poiId": "google-ChIJ2eVZ0aExbUYRnHI5tHoOjQo",
+          "productionName": "Apotek 1 Solsiden",
+          "productionAddress": "Beddingen 10, Trondheim",
+          "distanceMeters": 1
+        }
+      ]
+    },
+    {
+      "localPlaceId": "vinmonopolet-solsiden",
+      "localName": "Vinmonopolet Solsiden",
+      "localAddress": "Beddingen 10",
+      "decision": "review_required",
+      "candidates": [
+        {
+          "poiId": "google-ChIJyVBZnZ8xbUYRFelaJqlTFRY",
+          "productionName": "Princess avd. Solsiden",
+          "productionAddress": "Beddingen 10-12, Trondheim",
+          "distanceMeters": 0
+        },
+        {
+          "poiId": "google-ChIJ2eVZ0aExbUYRnHI5tHoOjQo",
+          "productionName": "Apotek 1 Solsiden",
+          "productionAddress": "Beddingen 10, Trondheim",
+          "distanceMeters": 1
+        },
+        {
+          "poiId": "google-ChIJyVBZnZ8xbUYRJ4Sl12zqdY4",
+          "productionName": "Cutters Solsiden",
+          "productionAddress": "Beddingen 10, Trondheim",
+          "distanceMeters": 13
+        },
+        {
+          "poiId": "google-ChIJm6lLfZ8xbUYRFYo0NaeG5sk",
+          "productionName": "MENY Solsiden",
+          "productionAddress": "Beddingen 12, Trondheim",
+          "distanceMeters": 23
+        },
+        {
+          "poiId": "google-ChIJyVBZnZ8xbUYRaJQbvtKrkxk",
+          "productionName": "Elkjøp Phonehouse Solsiden",
+          "productionAddress": "Beddingen 10, Trondheim",
+          "distanceMeters": 28
+        },
+        {
+          "poiId": "google-ChIJIYkLg58xbUYRlOSxB_0Hhu0",
+          "productionName": "Vinmonopolet",
+          "productionAddress": "Beddingen 11, Bassengtomta, Trondheim",
+          "distanceMeters": 34
+        },
+        {
+          "poiId": "google-ChIJyVBZnZ8xbUYRC3okjbA5Vi4",
+          "productionName": "Clas Ohlson",
+          "productionAddress": "Beddingen 12, Trondheim",
+          "distanceMeters": 35
+        },
+        {
+          "poiId": "google-ChIJ4zABIdMxbUYRRdcNLzrHdsY",
+          "productionName": "Freyja Ultralyd Kvinne- og Familieklinikk",
+          "productionAddress": "4 etasje, samme inngang som Medicus, Beddingen 8, Trondheim",
+          "distanceMeters": 45
+        }
+      ]
+    },
+    {
+      "localPlaceId": "rema-1000-solsiden",
+      "localName": "REMA 1000 Solsiden",
+      "localAddress": "Dyre Halses gate 1A",
+      "decision": "mapped",
+      "poiId": "google-ChIJSUfPIqAxbUYRPU0CMflqgNM",
+      "evidence": "Unique normalized name and coordinates 2 m apart.",
+      "candidates": [
+        {
+          "poiId": "google-ChIJSUfPIqAxbUYRPU0CMflqgNM",
+          "productionName": "REMA 1000 SOLSIDEN",
+          "productionAddress": "Dyre Halses gate 1 A, Trondheim",
+          "distanceMeters": 2
+        }
+      ]
+    },
+    {
+      "localPlaceId": "leos-lekeland-trondheim",
+      "localName": "Leo's Lekeland Trondheim",
+      "localAddress": "Ladebekken 6",
+      "decision": "review_required",
+      "candidates": [
+        {
+          "poiId": "google-ChIJtQi1wKMxbUYRy3AzYr6aDYI",
+          "productionName": "Bølgen Frisør",
+          "productionAddress": "Ladebekken 8 B, Trondheim",
+          "distanceMeters": 34
+        },
+        {
+          "poiId": "bysykkel-5428",
+          "productionName": "Trondheim Bysykkel: Øvre Nyhavna",
+          "productionAddress": "Ladebekken 2",
+          "distanceMeters": 49
+        },
+        {
+          "poiId": "bus-strandveikaia",
+          "productionName": "Strandveikaia bussholdeplass",
+          "productionAddress": null,
+          "distanceMeters": 91
+        },
+        {
+          "poiId": "google-ChIJwWdIw-AtbUYRORYz09C_yeI",
+          "productionName": "Sircon Norge AS",
+          "productionAddress": "Stiklestadveien 1, Trondheim",
+          "distanceMeters": 125
+        },
+        {
+          "poiId": "google-ChIJMfCgQlYxbUYRjXwo6KQhl0I",
+          "productionName": "Lilleby Treningssenter",
+          "productionAddress": "Stiklestadveien 3, Trondheim",
+          "distanceMeters": 146
+        },
+        {
+          "poiId": "bysykkel-65",
+          "productionName": "Trondheim Bysykkel: Strandveikaia",
+          "productionAddress": "Stiklestadveien 1",
+          "distanceMeters": 147
+        },
+        {
+          "poiId": "google-ChIJwSG2900xbUYRoO23DamxKOg",
+          "productionName": "Rothor Restaurantdrift AS The King",
+          "productionAddress": "Ladehammerkaia 1, Trondheim",
+          "distanceMeters": 147
+        },
+        {
+          "poiId": "google-ChIJQdOI4QsxbUYRawbfIv9XA00",
+          "productionName": "E.C.Dahls Bryggeri Pub og Kjøkken",
+          "productionAddress": "Strandveien 71, Trondheim",
+          "distanceMeters": 189
+        }
+      ]
+    },
+    {
+      "localPlaceId": "lade-motor",
+      "localName": "Lade Motor",
+      "localAddress": "Håkon Magnussons gate 5",
+      "decision": "review_required",
+      "candidates": [
+        {
+          "poiId": "ac654ac6-0a7f-40fd-ba0b-e13bb442771c",
+          "productionName": "Trondheim kommune Mestring og Inkludering, dagskolen",
+          "productionAddress": null,
+          "distanceMeters": 0
+        },
+        {
+          "poiId": "google-ChIJBwju6_QxbUYR94QEngleQZE",
+          "productionName": "Lade Tannhelsesenter Trondheim",
+          "productionAddress": "Håkon Magnussons gate 10, Trondheim",
+          "distanceMeters": 86
+        },
+        {
+          "poiId": "google-ChIJMYfNDwUxbUYRCESjyfStM1c",
+          "productionName": "Agaton Sax frisører avd Lade",
+          "productionAddress": "Håkon Magnussons gate 6, Trondheim",
+          "distanceMeters": 99
+        },
+        {
+          "poiId": "google-ChIJCzDwmgUxbUYRbM0LlUcPfu0",
+          "productionName": "Bunnpris Lade",
+          "productionAddress": "Håkon Magnussons gate 3, Trondheim",
+          "distanceMeters": 112
+        },
+        {
+          "poiId": "google-ChIJU0r-QgQxbUYR_SHix5cX354",
+          "productionName": "YX",
+          "productionAddress": "Haakon VIIs gt. 9, Trondheim",
+          "distanceMeters": 125
+        },
+        {
+          "poiId": "google-ChIJlVOdr1ExbUYRy0elJ8ELd5g",
+          "productionName": "BAG CITY LADE",
+          "productionAddress": "Haakon VIIs gt. 9, Trondheim",
+          "distanceMeters": 128
+        },
+        {
+          "poiId": "google-ChIJU0r-QgQxbUYRBAfqovQtD6I",
+          "productionName": "JACK & JONES",
+          "productionAddress": "Haakon VIIs gt. 9, Trondheim",
+          "distanceMeters": 128
+        },
+        {
+          "poiId": "google-ChIJA3O3nQUxbUYRHVBuZzdhRkY",
+          "productionName": "Lade Kirke",
+          "productionAddress": "Harald Hårfagres gate 2, Trondheim",
+          "distanceMeters": 140
+        }
+      ]
+    },
+    {
+      "localPlaceId": "solsiden-senter",
+      "localName": "Solsiden senter",
+      "localAddress": "Beddingen 10",
+      "decision": "review_required",
+      "candidates": [
+        {
+          "poiId": "google-ChIJyVBZnZ8xbUYRFelaJqlTFRY",
+          "productionName": "Princess avd. Solsiden",
+          "productionAddress": "Beddingen 10-12, Trondheim",
+          "distanceMeters": 0
+        },
+        {
+          "poiId": "google-ChIJ2eVZ0aExbUYRnHI5tHoOjQo",
+          "productionName": "Apotek 1 Solsiden",
+          "productionAddress": "Beddingen 10, Trondheim",
+          "distanceMeters": 1
+        },
+        {
+          "poiId": "google-ChIJyVBZnZ8xbUYRJ4Sl12zqdY4",
+          "productionName": "Cutters Solsiden",
+          "productionAddress": "Beddingen 10, Trondheim",
+          "distanceMeters": 13
+        },
+        {
+          "poiId": "google-ChIJm6lLfZ8xbUYRFYo0NaeG5sk",
+          "productionName": "MENY Solsiden",
+          "productionAddress": "Beddingen 12, Trondheim",
+          "distanceMeters": 23
+        },
+        {
+          "poiId": "google-ChIJyVBZnZ8xbUYRaJQbvtKrkxk",
+          "productionName": "Elkjøp Phonehouse Solsiden",
+          "productionAddress": "Beddingen 10, Trondheim",
+          "distanceMeters": 28
+        },
+        {
+          "poiId": "google-ChIJIYkLg58xbUYRlOSxB_0Hhu0",
+          "productionName": "Vinmonopolet",
+          "productionAddress": "Beddingen 11, Bassengtomta, Trondheim",
+          "distanceMeters": 34
+        },
+        {
+          "poiId": "google-ChIJyVBZnZ8xbUYRC3okjbA5Vi4",
+          "productionName": "Clas Ohlson",
+          "productionAddress": "Beddingen 12, Trondheim",
+          "distanceMeters": 35
+        },
+        {
+          "poiId": "google-ChIJ4zABIdMxbUYRRdcNLzrHdsY",
+          "productionName": "Freyja Ultralyd Kvinne- og Familieklinikk",
+          "productionAddress": "4 etasje, samme inngang som Medicus, Beddingen 8, Trondheim",
+          "distanceMeters": 45
+        }
+      ]
+    },
+    {
+      "localPlaceId": "city-lade",
+      "localName": "City Lade",
+      "localAddress": "Haakon VII's gate 9",
+      "decision": "mapped",
+      "poiId": "google-ChIJt8f3LKQxbUYRDtDL6UWLq4Y",
+      "evidence": "Unique normalized name and coordinates 66 m apart.",
+      "candidates": [
+        {
+          "poiId": "google-ChIJt8f3LKQxbUYRDtDL6UWLq4Y",
+          "productionName": "City Lade",
+          "productionAddress": "Haakon VIIs gt. 9, Trondheim",
+          "distanceMeters": 66
+        }
+      ]
+    },
+    {
+      "localPlaceId": "trondheim-torg",
+      "localName": "Trondheim Torg",
+      "localAddress": "Kongens gate 9",
+      "decision": "mapped",
+      "poiId": "google-ChIJS1CB5ZoxbUYR-PEX9qTtNcA",
+      "evidence": "Unique normalized name and coordinates 26 m apart.",
+      "candidates": [
+        {
+          "poiId": "google-ChIJS1CB5ZoxbUYR-PEX9qTtNcA",
+          "productionName": "Trondheim Torg",
+          "productionAddress": "Kongens gate 9, Trondheim",
+          "distanceMeters": 26
+        }
+      ]
+    },
+    {
+      "localPlaceId": "sirkus-shopping",
+      "localName": "Sirkus Shopping",
+      "localAddress": "Falkenborgvegen 1",
+      "decision": "mapped",
+      "poiId": "google-ChIJVZdRQJoxbUYRTcToJ4smjeM",
+      "evidence": "Unique normalized name and coordinates 150 m apart.",
+      "candidates": [
+        {
+          "poiId": "google-ChIJVZdRQJoxbUYRTcToJ4smjeM",
+          "productionName": "Sirkus Shopping",
+          "productionAddress": "Falkenborgvegen 1, Trondheim",
+          "distanceMeters": 150
+        }
+      ]
+    },
+    {
+      "localPlaceId": "obs-city-lade",
+      "localName": "Obs City Lade",
+      "localAddress": "Haakon VIIs gate 9",
+      "decision": "mapped",
+      "poiId": "google-ChIJU0r-QgQxbUYRt6CgoPAVKKs",
+      "evidence": "Unique normalized name and coordinates 93 m apart.",
+      "candidates": [
+        {
+          "poiId": "google-ChIJU0r-QgQxbUYRt6CgoPAVKKs",
+          "productionName": "Obs City Lade",
+          "productionAddress": "Haakon VIIs gt. 9, Trondheim",
+          "distanceMeters": 93
+        }
+      ]
+    },
+    {
+      "localPlaceId": "coop-mega-sirkus",
+      "localName": "Coop Mega Sirkus Shopping",
+      "localAddress": "Falkenborgvegen 9",
+      "decision": "mapped",
+      "poiId": "google-ChIJ_bGcGQAxbUYRV8c0jX3elYo",
+      "evidence": "Unique normalized name and coordinates 160 m apart.",
+      "candidates": [
+        {
+          "poiId": "google-ChIJ_bGcGQAxbUYRV8c0jX3elYo",
+          "productionName": "Coop Mega Sirkus Shopping",
+          "productionAddress": "Sirkus Shopping, Falkenborgvegen 9, Trondheim",
+          "distanceMeters": 160
+        }
+      ]
+    },
+    {
+      "localPlaceId": "rema-1000-torvet",
+      "localName": "REMA 1000 Torvet",
+      "localAddress": "Munkegata 22",
+      "decision": "mapped",
+      "poiId": "google-ChIJpSsF-ZoxbUYRoRSu4akDizQ",
+      "evidence": "Unique normalized name and coordinates 30 m apart.",
+      "candidates": [
+        {
+          "poiId": "google-ChIJpSsF-ZoxbUYRoRSu4akDizQ",
+          "productionName": "REMA 1000 TORVET",
+          "productionAddress": "Munkegata 22, Trondheim",
+          "distanceMeters": 30
+        }
+      ]
+    },
+    {
+      "localPlaceId": "bunnpris-buran",
+      "localName": "Bunnpris Buran",
+      "localAddress": "Ulstadløkkveien 5",
+      "decision": "mapped",
+      "poiId": "google-ChIJsaC_rqAxbUYR3ZmuAyV_KZI",
+      "evidence": "Unique normalized name and coordinates 39 m apart.",
+      "candidates": [
+        {
+          "poiId": "google-ChIJsaC_rqAxbUYR3ZmuAyV_KZI",
+          "productionName": "Bunnpris Buran",
+          "productionAddress": "Ulstadløkkveien 5, Trondheim",
+          "distanceMeters": 39
+        }
+      ]
+    },
+    {
+      "localPlaceId": "bunnpris-lade",
+      "localName": "Bunnpris Lade",
+      "localAddress": "Håkon Magnussons gate 3",
+      "decision": "mapped",
+      "poiId": "google-ChIJCzDwmgUxbUYRbM0LlUcPfu0",
+      "evidence": "Unique normalized name and coordinates 0 m apart.",
+      "candidates": [
+        {
+          "poiId": "google-ChIJCzDwmgUxbUYRbM0LlUcPfu0",
+          "productionName": "Bunnpris Lade",
+          "productionAddress": "Håkon Magnussons gate 3, Trondheim",
+          "distanceMeters": 0
+        }
+      ]
+    },
+    {
+      "localPlaceId": "extra-lilleby",
+      "localName": "Extra Lilleby",
+      "localAddress": "Stjørdalsveien 4",
+      "decision": "mapped",
+      "poiId": "google-ChIJ83MSjCwxbUYRoJlhfmWQ0NQ",
+      "evidence": "Unique normalized name and coordinates 3 m apart.",
+      "candidates": [
+        {
+          "poiId": "google-ChIJ83MSjCwxbUYRoJlhfmWQ0NQ",
+          "productionName": "Extra Lilleby",
+          "productionAddress": "Stjørdalsveien 4, Trondheim",
+          "distanceMeters": 3
+        }
+      ]
+    },
+    {
+      "localPlaceId": "h-m-solsiden",
+      "localName": "H&M Solsiden",
+      "localAddress": "Beddingen 10",
+      "decision": "review_required",
+      "candidates": [
+        {
+          "poiId": "google-ChIJyVBZnZ8xbUYRFelaJqlTFRY",
+          "productionName": "Princess avd. Solsiden",
+          "productionAddress": "Beddingen 10-12, Trondheim",
+          "distanceMeters": 0
+        },
+        {
+          "poiId": "google-ChIJ2eVZ0aExbUYRnHI5tHoOjQo",
+          "productionName": "Apotek 1 Solsiden",
+          "productionAddress": "Beddingen 10, Trondheim",
+          "distanceMeters": 1
+        },
+        {
+          "poiId": "google-ChIJyVBZnZ8xbUYRJ4Sl12zqdY4",
+          "productionName": "Cutters Solsiden",
+          "productionAddress": "Beddingen 10, Trondheim",
+          "distanceMeters": 13
+        },
+        {
+          "poiId": "google-ChIJm6lLfZ8xbUYRFYo0NaeG5sk",
+          "productionName": "MENY Solsiden",
+          "productionAddress": "Beddingen 12, Trondheim",
+          "distanceMeters": 23
+        },
+        {
+          "poiId": "google-ChIJyVBZnZ8xbUYRaJQbvtKrkxk",
+          "productionName": "Elkjøp Phonehouse Solsiden",
+          "productionAddress": "Beddingen 10, Trondheim",
+          "distanceMeters": 28
+        },
+        {
+          "poiId": "google-ChIJIYkLg58xbUYRlOSxB_0Hhu0",
+          "productionName": "Vinmonopolet",
+          "productionAddress": "Beddingen 11, Bassengtomta, Trondheim",
+          "distanceMeters": 34
+        },
+        {
+          "poiId": "google-ChIJyVBZnZ8xbUYRC3okjbA5Vi4",
+          "productionName": "Clas Ohlson",
+          "productionAddress": "Beddingen 12, Trondheim",
+          "distanceMeters": 35
+        },
+        {
+          "poiId": "google-ChIJ4zABIdMxbUYRRdcNLzrHdsY",
+          "productionName": "Freyja Ultralyd Kvinne- og Familieklinikk",
+          "productionAddress": "4 etasje, samme inngang som Medicus, Beddingen 8, Trondheim",
+          "distanceMeters": 45
+        }
+      ]
+    },
+    {
+      "localPlaceId": "apotek-1-city-lade",
+      "localName": "Apotek 1 City Lade",
+      "localAddress": "Haakon VII's gate 9",
+      "decision": "review_required",
+      "candidates": [
+        {
+          "poiId": "google-ChIJU0r-QgQxbUYRUcz_p8k865g",
+          "productionName": "BIK BOK",
+          "productionAddress": "Haakon VIIs gt. 9, Trondheim",
+          "distanceMeters": 10
+        },
+        {
+          "poiId": "google-ChIJU0r-QgQxbUYR227hQ_E__jw",
+          "productionName": "Big Bite City Lade",
+          "productionAddress": "Haakon VII gt 9, Trondheim",
+          "distanceMeters": 42
+        },
+        {
+          "poiId": "google-ChIJE3vDXQQxbUYRlxwaOWJxPxM",
+          "productionName": "MATCH",
+          "productionAddress": "Haakon VIIs gt. 9, City Lade, Trondheim",
+          "distanceMeters": 44
+        },
+        {
+          "poiId": "google-ChIJ9xx7ZwQxbUYR4PkhvOvLTVs",
+          "productionName": "Norli City Lade, Trondheim",
+          "productionAddress": "Haakon VIIs gt. 9, City Lade, Trondheim",
+          "distanceMeters": 46
+        },
+        {
+          "poiId": "google-ChIJU0r-QgQxbUYRTTj_3MYINgk",
+          "productionName": "NEW YORKER",
+          "productionAddress": "Haakon VII's gate 9, Trondheim",
+          "distanceMeters": 47
+        },
+        {
+          "poiId": "google-ChIJ7zzU_yQxbUYRmgMA4owzjZE",
+          "productionName": "Carlings",
+          "productionAddress": "Haakon VIIs gt. 9, Trondheim",
+          "distanceMeters": 50
+        },
+        {
+          "poiId": "google-ChIJr834cQQxbUYRS2fmRZ7zzBQ",
+          "productionName": "Dressmann XL Trondheim",
+          "productionAddress": "Haakon VIIs gt. 9, Trondheim",
+          "distanceMeters": 51
+        },
+        {
+          "poiId": "google-ChIJg7zmdZMxbUYRA_T2LqAGIcQ",
+          "productionName": "Obs Sport",
+          "productionAddress": "Haakon VIIs gt. 8, Trondheim",
+          "distanceMeters": 55
+        }
+      ]
+    },
+    {
+      "localPlaceId": "rosenborg-bakeri-city-lade",
+      "localName": "Rosenborg Bakeri City Lade",
+      "localAddress": "Haakon VII's gate 9",
+      "decision": "review_required",
+      "candidates": [
+        {
+          "poiId": "google-ChIJU0r-QgQxbUYRUcz_p8k865g",
+          "productionName": "BIK BOK",
+          "productionAddress": "Haakon VIIs gt. 9, Trondheim",
+          "distanceMeters": 10
+        },
+        {
+          "poiId": "google-ChIJU0r-QgQxbUYR227hQ_E__jw",
+          "productionName": "Big Bite City Lade",
+          "productionAddress": "Haakon VII gt 9, Trondheim",
+          "distanceMeters": 42
+        },
+        {
+          "poiId": "google-ChIJE3vDXQQxbUYRlxwaOWJxPxM",
+          "productionName": "MATCH",
+          "productionAddress": "Haakon VIIs gt. 9, City Lade, Trondheim",
+          "distanceMeters": 44
+        },
+        {
+          "poiId": "google-ChIJ9xx7ZwQxbUYR4PkhvOvLTVs",
+          "productionName": "Norli City Lade, Trondheim",
+          "productionAddress": "Haakon VIIs gt. 9, City Lade, Trondheim",
+          "distanceMeters": 46
+        },
+        {
+          "poiId": "google-ChIJU0r-QgQxbUYRTTj_3MYINgk",
+          "productionName": "NEW YORKER",
+          "productionAddress": "Haakon VII's gate 9, Trondheim",
+          "distanceMeters": 47
+        },
+        {
+          "poiId": "google-ChIJ7zzU_yQxbUYRmgMA4owzjZE",
+          "productionName": "Carlings",
+          "productionAddress": "Haakon VIIs gt. 9, Trondheim",
+          "distanceMeters": 50
+        },
+        {
+          "poiId": "google-ChIJr834cQQxbUYRS2fmRZ7zzBQ",
+          "productionName": "Dressmann XL Trondheim",
+          "productionAddress": "Haakon VIIs gt. 9, Trondheim",
+          "distanceMeters": 51
+        },
+        {
+          "poiId": "google-ChIJg7zmdZMxbUYRA_T2LqAGIcQ",
+          "productionName": "Obs Sport",
+          "productionAddress": "Haakon VIIs gt. 8, Trondheim",
+          "distanceMeters": 55
+        }
+      ]
+    },
+    {
+      "localPlaceId": "b-young-city-lade",
+      "localName": "B.young City Lade",
+      "localAddress": "Haakon VII's gate 9",
+      "decision": "review_required",
+      "candidates": [
+        {
+          "poiId": "google-ChIJU0r-QgQxbUYRUcz_p8k865g",
+          "productionName": "BIK BOK",
+          "productionAddress": "Haakon VIIs gt. 9, Trondheim",
+          "distanceMeters": 10
+        },
+        {
+          "poiId": "google-ChIJU0r-QgQxbUYR227hQ_E__jw",
+          "productionName": "Big Bite City Lade",
+          "productionAddress": "Haakon VII gt 9, Trondheim",
+          "distanceMeters": 42
+        },
+        {
+          "poiId": "google-ChIJE3vDXQQxbUYRlxwaOWJxPxM",
+          "productionName": "MATCH",
+          "productionAddress": "Haakon VIIs gt. 9, City Lade, Trondheim",
+          "distanceMeters": 44
+        },
+        {
+          "poiId": "google-ChIJ9xx7ZwQxbUYR4PkhvOvLTVs",
+          "productionName": "Norli City Lade, Trondheim",
+          "productionAddress": "Haakon VIIs gt. 9, City Lade, Trondheim",
+          "distanceMeters": 46
+        },
+        {
+          "poiId": "google-ChIJU0r-QgQxbUYRTTj_3MYINgk",
+          "productionName": "NEW YORKER",
+          "productionAddress": "Haakon VII's gate 9, Trondheim",
+          "distanceMeters": 47
+        },
+        {
+          "poiId": "google-ChIJ7zzU_yQxbUYRmgMA4owzjZE",
+          "productionName": "Carlings",
+          "productionAddress": "Haakon VIIs gt. 9, Trondheim",
+          "distanceMeters": 50
+        },
+        {
+          "poiId": "google-ChIJr834cQQxbUYRS2fmRZ7zzBQ",
+          "productionName": "Dressmann XL Trondheim",
+          "productionAddress": "Haakon VIIs gt. 9, Trondheim",
+          "distanceMeters": 51
+        },
+        {
+          "poiId": "google-ChIJg7zmdZMxbUYRA_T2LqAGIcQ",
+          "productionName": "Obs Sport",
+          "productionAddress": "Haakon VIIs gt. 8, Trondheim",
+          "distanceMeters": 55
+        }
+      ]
+    },
+    {
+      "localPlaceId": "barnas-hus-city-lade",
+      "localName": "Barnas Hus City Lade",
+      "localAddress": "Haakon VII's gate 9",
+      "decision": "review_required",
+      "candidates": [
+        {
+          "poiId": "google-ChIJU0r-QgQxbUYRUcz_p8k865g",
+          "productionName": "BIK BOK",
+          "productionAddress": "Haakon VIIs gt. 9, Trondheim",
+          "distanceMeters": 10
+        },
+        {
+          "poiId": "google-ChIJU0r-QgQxbUYR227hQ_E__jw",
+          "productionName": "Big Bite City Lade",
+          "productionAddress": "Haakon VII gt 9, Trondheim",
+          "distanceMeters": 42
+        },
+        {
+          "poiId": "google-ChIJE3vDXQQxbUYRlxwaOWJxPxM",
+          "productionName": "MATCH",
+          "productionAddress": "Haakon VIIs gt. 9, City Lade, Trondheim",
+          "distanceMeters": 44
+        },
+        {
+          "poiId": "google-ChIJ9xx7ZwQxbUYR4PkhvOvLTVs",
+          "productionName": "Norli City Lade, Trondheim",
+          "productionAddress": "Haakon VIIs gt. 9, City Lade, Trondheim",
+          "distanceMeters": 46
+        },
+        {
+          "poiId": "google-ChIJU0r-QgQxbUYRTTj_3MYINgk",
+          "productionName": "NEW YORKER",
+          "productionAddress": "Haakon VII's gate 9, Trondheim",
+          "distanceMeters": 47
+        },
+        {
+          "poiId": "google-ChIJ7zzU_yQxbUYRmgMA4owzjZE",
+          "productionName": "Carlings",
+          "productionAddress": "Haakon VIIs gt. 9, Trondheim",
+          "distanceMeters": 50
+        },
+        {
+          "poiId": "google-ChIJr834cQQxbUYRS2fmRZ7zzBQ",
+          "productionName": "Dressmann XL Trondheim",
+          "productionAddress": "Haakon VIIs gt. 9, Trondheim",
+          "distanceMeters": 51
+        },
+        {
+          "poiId": "google-ChIJg7zmdZMxbUYRA_T2LqAGIcQ",
+          "productionName": "Obs Sport",
+          "productionAddress": "Haakon VIIs gt. 8, Trondheim",
+          "distanceMeters": 55
+        }
+      ]
+    },
+    {
+      "localPlaceId": "anton-sport-city-lade",
+      "localName": "Anton Sport City Lade",
+      "localAddress": "Haakon VII's gate 9",
+      "decision": "review_required",
+      "candidates": [
+        {
+          "poiId": "google-ChIJU0r-QgQxbUYRUcz_p8k865g",
+          "productionName": "BIK BOK",
+          "productionAddress": "Haakon VIIs gt. 9, Trondheim",
+          "distanceMeters": 10
+        },
+        {
+          "poiId": "google-ChIJU0r-QgQxbUYR227hQ_E__jw",
+          "productionName": "Big Bite City Lade",
+          "productionAddress": "Haakon VII gt 9, Trondheim",
+          "distanceMeters": 42
+        },
+        {
+          "poiId": "google-ChIJE3vDXQQxbUYRlxwaOWJxPxM",
+          "productionName": "MATCH",
+          "productionAddress": "Haakon VIIs gt. 9, City Lade, Trondheim",
+          "distanceMeters": 44
+        },
+        {
+          "poiId": "google-ChIJ9xx7ZwQxbUYR4PkhvOvLTVs",
+          "productionName": "Norli City Lade, Trondheim",
+          "productionAddress": "Haakon VIIs gt. 9, City Lade, Trondheim",
+          "distanceMeters": 46
+        },
+        {
+          "poiId": "google-ChIJU0r-QgQxbUYRTTj_3MYINgk",
+          "productionName": "NEW YORKER",
+          "productionAddress": "Haakon VII's gate 9, Trondheim",
+          "distanceMeters": 47
+        },
+        {
+          "poiId": "google-ChIJ7zzU_yQxbUYRmgMA4owzjZE",
+          "productionName": "Carlings",
+          "productionAddress": "Haakon VIIs gt. 9, Trondheim",
+          "distanceMeters": 50
+        },
+        {
+          "poiId": "google-ChIJr834cQQxbUYRS2fmRZ7zzBQ",
+          "productionName": "Dressmann XL Trondheim",
+          "productionAddress": "Haakon VIIs gt. 9, Trondheim",
+          "distanceMeters": 51
+        },
+        {
+          "poiId": "google-ChIJg7zmdZMxbUYRA_T2LqAGIcQ",
+          "productionName": "Obs Sport",
+          "productionAddress": "Haakon VIIs gt. 8, Trondheim",
+          "distanceMeters": 55
+        }
+      ]
+    },
+    {
+      "localPlaceId": "vitusapotek-trondheim-torg",
+      "localName": "Vitusapotek Trondheim Torg",
+      "localAddress": "Kongens gate 9",
+      "decision": "mapped",
+      "poiId": "google-ChIJIWUg4poxbUYRPlsv59xND6A",
+      "evidence": "Unique normalized name and coordinates 60 m apart.",
+      "candidates": [
+        {
+          "poiId": "google-ChIJIWUg4poxbUYRPlsv59xND6A",
+          "productionName": "Vitusapotek Trondheim Torg",
+          "productionAddress": "Kongens gate 11, Trondheim",
+          "distanceMeters": 60
+        }
+      ]
+    },
+    {
+      "localPlaceId": "h-m-trondheim-torg",
+      "localName": "H&M Trondheim Torg",
+      "localAddress": "Kongens gate 9",
+      "decision": "review_required",
+      "candidates": [
+        {
+          "poiId": "google-ChIJ06blfFcxbUYR6QJCYZ6k3uc",
+          "productionName": "Levi's Store, Trondheim​",
+          "productionAddress": "Kongens gate 9, Trondheim",
+          "distanceMeters": 8
+        },
+        {
+          "poiId": "google-ChIJM8Mh4poxbUYRMER-EeT11uM",
+          "productionName": "McDonald's",
+          "productionAddress": "Kongens gate 9, Trondheim",
+          "distanceMeters": 12
+        },
+        {
+          "poiId": "google-ChIJNSU8ghoxbUYRXK6wDxcIAUo",
+          "productionName": "Kid Trondheim Torg",
+          "productionAddress": "Kongens gate 9, Trondheim",
+          "distanceMeters": 12
+        },
+        {
+          "poiId": "google-ChIJ____T5cxbUYRQvNgn32QIN4",
+          "productionName": "Elite Foto Trondheim Torg",
+          "productionAddress": "Kongens gate 11, Trondheim",
+          "distanceMeters": 21
+        },
+        {
+          "poiId": "google-ChIJIWUg4poxbUYRhUy2-cY5E8g",
+          "productionName": "Blomstertorget Trondheim AS",
+          "productionAddress": "Kongens gate 11, Trondheim",
+          "distanceMeters": 21
+        },
+        {
+          "poiId": "google-ChIJcW_Y45oxbUYRb-ueZmK4lyE",
+          "productionName": "Gina Tricot AS",
+          "productionAddress": "Kongens gate 11, Trondheim",
+          "distanceMeters": 21
+        },
+        {
+          "poiId": "google-ChIJx2Vi3JsxbUYRKkgcZB4dc-c",
+          "productionName": "Vinmonopolet",
+          "productionAddress": "Kongens gate 9, Trondheim",
+          "distanceMeters": 22
+        },
+        {
+          "poiId": "google-ChIJS1CB5ZoxbUYR-PEX9qTtNcA",
+          "productionName": "Trondheim Torg",
+          "productionAddress": "Kongens gate 9, Trondheim",
+          "distanceMeters": 26
+        }
+      ]
+    },
+    {
+      "localPlaceId": "ark-trondheim-torg",
+      "localName": "ARK Trondheim Torg",
+      "localAddress": "Kongens gate 9",
+      "decision": "mapped",
+      "poiId": "google-ChIJkYRa5ZoxbUYRVpAQehPwgKM",
+      "evidence": "Unique normalized name and coordinates 60 m apart.",
+      "candidates": [
+        {
+          "poiId": "google-ChIJkYRa5ZoxbUYRVpAQehPwgKM",
+          "productionName": "ARK Trondheim Torg",
+          "productionAddress": "Tinghusplassen 1, Trondheim",
+          "distanceMeters": 60
+        }
+      ]
+    },
+    {
+      "localPlaceId": "lekia-trondheim-torg",
+      "localName": "Lekia Trondheim Torg",
+      "localAddress": "Kongens gate 9",
+      "decision": "review_required",
+      "candidates": [
+        {
+          "poiId": "google-ChIJ06blfFcxbUYR6QJCYZ6k3uc",
+          "productionName": "Levi's Store, Trondheim​",
+          "productionAddress": "Kongens gate 9, Trondheim",
+          "distanceMeters": 8
+        },
+        {
+          "poiId": "google-ChIJM8Mh4poxbUYRMER-EeT11uM",
+          "productionName": "McDonald's",
+          "productionAddress": "Kongens gate 9, Trondheim",
+          "distanceMeters": 12
+        },
+        {
+          "poiId": "google-ChIJNSU8ghoxbUYRXK6wDxcIAUo",
+          "productionName": "Kid Trondheim Torg",
+          "productionAddress": "Kongens gate 9, Trondheim",
+          "distanceMeters": 12
+        },
+        {
+          "poiId": "google-ChIJ____T5cxbUYRQvNgn32QIN4",
+          "productionName": "Elite Foto Trondheim Torg",
+          "productionAddress": "Kongens gate 11, Trondheim",
+          "distanceMeters": 21
+        },
+        {
+          "poiId": "google-ChIJIWUg4poxbUYRhUy2-cY5E8g",
+          "productionName": "Blomstertorget Trondheim AS",
+          "productionAddress": "Kongens gate 11, Trondheim",
+          "distanceMeters": 21
+        },
+        {
+          "poiId": "google-ChIJcW_Y45oxbUYRb-ueZmK4lyE",
+          "productionName": "Gina Tricot AS",
+          "productionAddress": "Kongens gate 11, Trondheim",
+          "distanceMeters": 21
+        },
+        {
+          "poiId": "google-ChIJx2Vi3JsxbUYRKkgcZB4dc-c",
+          "productionName": "Vinmonopolet",
+          "productionAddress": "Kongens gate 9, Trondheim",
+          "distanceMeters": 22
+        },
+        {
+          "poiId": "google-ChIJS1CB5ZoxbUYR-PEX9qTtNcA",
+          "productionName": "Trondheim Torg",
+          "productionAddress": "Kongens gate 9, Trondheim",
+          "distanceMeters": 26
+        }
+      ]
+    },
+    {
+      "localPlaceId": "clas-ohlson-trondheim-torg",
+      "localName": "Clas Ohlson Trondheim Torg",
+      "localAddress": "Kongens gate 9",
+      "decision": "review_required",
+      "candidates": [
+        {
+          "poiId": "google-ChIJ06blfFcxbUYR6QJCYZ6k3uc",
+          "productionName": "Levi's Store, Trondheim​",
+          "productionAddress": "Kongens gate 9, Trondheim",
+          "distanceMeters": 8
+        },
+        {
+          "poiId": "google-ChIJM8Mh4poxbUYRMER-EeT11uM",
+          "productionName": "McDonald's",
+          "productionAddress": "Kongens gate 9, Trondheim",
+          "distanceMeters": 12
+        },
+        {
+          "poiId": "google-ChIJNSU8ghoxbUYRXK6wDxcIAUo",
+          "productionName": "Kid Trondheim Torg",
+          "productionAddress": "Kongens gate 9, Trondheim",
+          "distanceMeters": 12
+        },
+        {
+          "poiId": "google-ChIJ____T5cxbUYRQvNgn32QIN4",
+          "productionName": "Elite Foto Trondheim Torg",
+          "productionAddress": "Kongens gate 11, Trondheim",
+          "distanceMeters": 21
+        },
+        {
+          "poiId": "google-ChIJIWUg4poxbUYRhUy2-cY5E8g",
+          "productionName": "Blomstertorget Trondheim AS",
+          "productionAddress": "Kongens gate 11, Trondheim",
+          "distanceMeters": 21
+        },
+        {
+          "poiId": "google-ChIJcW_Y45oxbUYRb-ueZmK4lyE",
+          "productionName": "Gina Tricot AS",
+          "productionAddress": "Kongens gate 11, Trondheim",
+          "distanceMeters": 21
+        },
+        {
+          "poiId": "google-ChIJx2Vi3JsxbUYRKkgcZB4dc-c",
+          "productionName": "Vinmonopolet",
+          "productionAddress": "Kongens gate 9, Trondheim",
+          "distanceMeters": 22
+        },
+        {
+          "poiId": "google-ChIJS1CB5ZoxbUYR-PEX9qTtNcA",
+          "productionName": "Trondheim Torg",
+          "productionAddress": "Kongens gate 9, Trondheim",
+          "distanceMeters": 26
+        }
+      ]
+    },
+    {
+      "localPlaceId": "jordbaerpikene-trondheim-torg",
+      "localName": "Jordbærpikene Trondheim Torg",
+      "localAddress": "Kongens gate 9",
+      "decision": "review_required",
+      "candidates": [
+        {
+          "poiId": "google-ChIJ06blfFcxbUYR6QJCYZ6k3uc",
+          "productionName": "Levi's Store, Trondheim​",
+          "productionAddress": "Kongens gate 9, Trondheim",
+          "distanceMeters": 8
+        },
+        {
+          "poiId": "google-ChIJM8Mh4poxbUYRMER-EeT11uM",
+          "productionName": "McDonald's",
+          "productionAddress": "Kongens gate 9, Trondheim",
+          "distanceMeters": 12
+        },
+        {
+          "poiId": "google-ChIJNSU8ghoxbUYRXK6wDxcIAUo",
+          "productionName": "Kid Trondheim Torg",
+          "productionAddress": "Kongens gate 9, Trondheim",
+          "distanceMeters": 12
+        },
+        {
+          "poiId": "google-ChIJ____T5cxbUYRQvNgn32QIN4",
+          "productionName": "Elite Foto Trondheim Torg",
+          "productionAddress": "Kongens gate 11, Trondheim",
+          "distanceMeters": 21
+        },
+        {
+          "poiId": "google-ChIJIWUg4poxbUYRhUy2-cY5E8g",
+          "productionName": "Blomstertorget Trondheim AS",
+          "productionAddress": "Kongens gate 11, Trondheim",
+          "distanceMeters": 21
+        },
+        {
+          "poiId": "google-ChIJcW_Y45oxbUYRb-ueZmK4lyE",
+          "productionName": "Gina Tricot AS",
+          "productionAddress": "Kongens gate 11, Trondheim",
+          "distanceMeters": 21
+        },
+        {
+          "poiId": "google-ChIJx2Vi3JsxbUYRKkgcZB4dc-c",
+          "productionName": "Vinmonopolet",
+          "productionAddress": "Kongens gate 9, Trondheim",
+          "distanceMeters": 22
+        },
+        {
+          "poiId": "google-ChIJS1CB5ZoxbUYR-PEX9qTtNcA",
+          "productionName": "Trondheim Torg",
+          "productionAddress": "Kongens gate 9, Trondheim",
+          "distanceMeters": 26
+        }
+      ]
+    },
+    {
+      "localPlaceId": "vitusapotek-sirkus-shopping",
+      "localName": "Vitusapotek Sirkus Shopping",
+      "localAddress": "Falkenborgvegen 1",
+      "decision": "mapped",
+      "poiId": "google-ChIJTd-l4P8wbUYRfp1y1hLVyMI",
+      "evidence": "Unique normalized name and coordinates 78 m apart.",
+      "candidates": [
+        {
+          "poiId": "google-ChIJTd-l4P8wbUYRfp1y1hLVyMI",
+          "productionName": "Vitusapotek Sirkus Shopping",
+          "productionAddress": "Sirkus Shopping, Falkenborgvegen 9, Trondheim",
+          "distanceMeters": 78
+        }
+      ]
+    },
+    {
+      "localPlaceId": "dromedar-sirkus-shopping",
+      "localName": "Dromedar Sirkus Shopping",
+      "localAddress": "Falkenborgvegen 1",
+      "decision": "review_required",
+      "candidates": [
+        {
+          "poiId": "google-ChIJ-fYJ-zsxbUYRHP8PSNdhCE8",
+          "productionName": "Digg Pizza - Sirkus",
+          "productionAddress": "Falkenborgvegen 1, Trondheim",
+          "distanceMeters": 1
+        },
+        {
+          "poiId": "google-ChIJtdil4P8wbUYRJ_ewtdgpBXs",
+          "productionName": "Jernia Sirkus Shopping",
+          "productionAddress": "Falkenborgvegen 1, Trondheim",
+          "distanceMeters": 15
+        },
+        {
+          "poiId": "google-ChIJrbDKwJIxbUYRUFU0r6GBLmQ",
+          "productionName": "Falkenborgvegen 3",
+          "productionAddress": "Falkenborgvegen 3, Trondheim",
+          "distanceMeters": 25
+        },
+        {
+          "poiId": "google-ChIJK729PAAxbUYRG6pRnhcOUWc",
+          "productionName": "Vita",
+          "productionAddress": "SIRKUS SHOPPING, Falkenborgvegen 1, Trondheim",
+          "distanceMeters": 26
+        },
+        {
+          "poiId": "google-ChIJK729PAAxbUYRIf8d5HD9R44",
+          "productionName": "Kleins Sirkus",
+          "productionAddress": "Falkenborgvegen 1, Trondheim",
+          "distanceMeters": 26
+        },
+        {
+          "poiId": "google-ChIJtdil4P8wbUYRNh_My_uzPFA",
+          "productionName": "Søstrene Grene (avd. Sirkus Shopping)",
+          "productionAddress": "Sirkus Shopping, Falkenborgvegen 1, Trondheim",
+          "distanceMeters": 26
+        },
+        {
+          "poiId": "google-ChIJuUBzcjAxbUYRRp6Tz5ioCG4",
+          "productionName": "Clas Ohlson",
+          "productionAddress": "Falkenborgvegen 1, Trondheim",
+          "distanceMeters": 26
+        },
+        {
+          "poiId": "google-ChIJSygBPgAxbUYRXE5ZmorgcEY",
+          "productionName": "Kitch'n Sirkus Shopping",
+          "productionAddress": "Falkenborgvegen 1, Trondheim",
+          "distanceMeters": 36
+        }
+      ]
+    },
+    {
+      "localPlaceId": "cubus-sirkus-shopping",
+      "localName": "Cubus Sirkus Shopping",
+      "localAddress": "Falkenborgvegen 1",
+      "decision": "review_required",
+      "candidates": [
+        {
+          "poiId": "google-ChIJ-fYJ-zsxbUYRHP8PSNdhCE8",
+          "productionName": "Digg Pizza - Sirkus",
+          "productionAddress": "Falkenborgvegen 1, Trondheim",
+          "distanceMeters": 1
+        },
+        {
+          "poiId": "google-ChIJtdil4P8wbUYRJ_ewtdgpBXs",
+          "productionName": "Jernia Sirkus Shopping",
+          "productionAddress": "Falkenborgvegen 1, Trondheim",
+          "distanceMeters": 15
+        },
+        {
+          "poiId": "google-ChIJrbDKwJIxbUYRUFU0r6GBLmQ",
+          "productionName": "Falkenborgvegen 3",
+          "productionAddress": "Falkenborgvegen 3, Trondheim",
+          "distanceMeters": 25
+        },
+        {
+          "poiId": "google-ChIJK729PAAxbUYRG6pRnhcOUWc",
+          "productionName": "Vita",
+          "productionAddress": "SIRKUS SHOPPING, Falkenborgvegen 1, Trondheim",
+          "distanceMeters": 26
+        },
+        {
+          "poiId": "google-ChIJK729PAAxbUYRIf8d5HD9R44",
+          "productionName": "Kleins Sirkus",
+          "productionAddress": "Falkenborgvegen 1, Trondheim",
+          "distanceMeters": 26
+        },
+        {
+          "poiId": "google-ChIJtdil4P8wbUYRNh_My_uzPFA",
+          "productionName": "Søstrene Grene (avd. Sirkus Shopping)",
+          "productionAddress": "Sirkus Shopping, Falkenborgvegen 1, Trondheim",
+          "distanceMeters": 26
+        },
+        {
+          "poiId": "google-ChIJuUBzcjAxbUYRRp6Tz5ioCG4",
+          "productionName": "Clas Ohlson",
+          "productionAddress": "Falkenborgvegen 1, Trondheim",
+          "distanceMeters": 26
+        },
+        {
+          "poiId": "google-ChIJSygBPgAxbUYRXE5ZmorgcEY",
+          "productionName": "Kitch'n Sirkus Shopping",
+          "productionAddress": "Falkenborgvegen 1, Trondheim",
+          "distanceMeters": 36
+        }
+      ]
+    },
+    {
+      "localPlaceId": "clas-ohlson-sirkus-shopping",
+      "localName": "Clas Ohlson Sirkus Shopping",
+      "localAddress": "Falkenborgvegen 1",
+      "decision": "review_required",
+      "candidates": [
+        {
+          "poiId": "google-ChIJ-fYJ-zsxbUYRHP8PSNdhCE8",
+          "productionName": "Digg Pizza - Sirkus",
+          "productionAddress": "Falkenborgvegen 1, Trondheim",
+          "distanceMeters": 1
+        },
+        {
+          "poiId": "google-ChIJtdil4P8wbUYRJ_ewtdgpBXs",
+          "productionName": "Jernia Sirkus Shopping",
+          "productionAddress": "Falkenborgvegen 1, Trondheim",
+          "distanceMeters": 15
+        },
+        {
+          "poiId": "google-ChIJrbDKwJIxbUYRUFU0r6GBLmQ",
+          "productionName": "Falkenborgvegen 3",
+          "productionAddress": "Falkenborgvegen 3, Trondheim",
+          "distanceMeters": 25
+        },
+        {
+          "poiId": "google-ChIJK729PAAxbUYRG6pRnhcOUWc",
+          "productionName": "Vita",
+          "productionAddress": "SIRKUS SHOPPING, Falkenborgvegen 1, Trondheim",
+          "distanceMeters": 26
+        },
+        {
+          "poiId": "google-ChIJK729PAAxbUYRIf8d5HD9R44",
+          "productionName": "Kleins Sirkus",
+          "productionAddress": "Falkenborgvegen 1, Trondheim",
+          "distanceMeters": 26
+        },
+        {
+          "poiId": "google-ChIJtdil4P8wbUYRNh_My_uzPFA",
+          "productionName": "Søstrene Grene (avd. Sirkus Shopping)",
+          "productionAddress": "Sirkus Shopping, Falkenborgvegen 1, Trondheim",
+          "distanceMeters": 26
+        },
+        {
+          "poiId": "google-ChIJuUBzcjAxbUYRRp6Tz5ioCG4",
+          "productionName": "Clas Ohlson",
+          "productionAddress": "Falkenborgvegen 1, Trondheim",
+          "distanceMeters": 26
+        },
+        {
+          "poiId": "google-ChIJSygBPgAxbUYRXE5ZmorgcEY",
+          "productionName": "Kitch'n Sirkus Shopping",
+          "productionAddress": "Falkenborgvegen 1, Trondheim",
+          "distanceMeters": 36
+        }
+      ]
+    },
+    {
+      "localPlaceId": "vinmonopolet-sirkus-shopping",
+      "localName": "Vinmonopolet Sirkus Shopping",
+      "localAddress": "Falkenborgvegen 1",
+      "decision": "review_required",
+      "candidates": [
+        {
+          "poiId": "google-ChIJ-fYJ-zsxbUYRHP8PSNdhCE8",
+          "productionName": "Digg Pizza - Sirkus",
+          "productionAddress": "Falkenborgvegen 1, Trondheim",
+          "distanceMeters": 1
+        },
+        {
+          "poiId": "google-ChIJtdil4P8wbUYRJ_ewtdgpBXs",
+          "productionName": "Jernia Sirkus Shopping",
+          "productionAddress": "Falkenborgvegen 1, Trondheim",
+          "distanceMeters": 15
+        },
+        {
+          "poiId": "google-ChIJrbDKwJIxbUYRUFU0r6GBLmQ",
+          "productionName": "Falkenborgvegen 3",
+          "productionAddress": "Falkenborgvegen 3, Trondheim",
+          "distanceMeters": 25
+        },
+        {
+          "poiId": "google-ChIJK729PAAxbUYRG6pRnhcOUWc",
+          "productionName": "Vita",
+          "productionAddress": "SIRKUS SHOPPING, Falkenborgvegen 1, Trondheim",
+          "distanceMeters": 26
+        },
+        {
+          "poiId": "google-ChIJK729PAAxbUYRIf8d5HD9R44",
+          "productionName": "Kleins Sirkus",
+          "productionAddress": "Falkenborgvegen 1, Trondheim",
+          "distanceMeters": 26
+        },
+        {
+          "poiId": "google-ChIJtdil4P8wbUYRNh_My_uzPFA",
+          "productionName": "Søstrene Grene (avd. Sirkus Shopping)",
+          "productionAddress": "Sirkus Shopping, Falkenborgvegen 1, Trondheim",
+          "distanceMeters": 26
+        },
+        {
+          "poiId": "google-ChIJuUBzcjAxbUYRRp6Tz5ioCG4",
+          "productionName": "Clas Ohlson",
+          "productionAddress": "Falkenborgvegen 1, Trondheim",
+          "distanceMeters": 26
+        },
+        {
+          "poiId": "google-ChIJSygBPgAxbUYRXE5ZmorgcEY",
+          "productionName": "Kitch'n Sirkus Shopping",
+          "productionAddress": "Falkenborgvegen 1, Trondheim",
+          "distanceMeters": 36
+        }
+      ]
+    },
+    {
+      "localPlaceId": "lademoen-stasjon",
+      "localName": "Lademoen stasjon",
+      "localAddress": "Dyre Halses gate, Trondheim",
+      "decision": "mapped",
+      "poiId": "entur-NSR-StopPlace-271",
+      "evidence": "Unique normalized name and coordinates 0 m apart.",
+      "candidates": [
+        {
+          "poiId": "entur-NSR-StopPlace-271",
+          "productionName": "Lademoen stasjon",
+          "productionAddress": null,
+          "distanceMeters": 0
+        }
+      ]
+    },
+    {
+      "localPlaceId": "bysykkel-92",
+      "localName": "Bysykkel Dora I",
+      "localAddress": "Maskinistgata 1",
+      "decision": "mapped",
+      "poiId": "bysykkel-92",
+      "evidence": "Exact POI identifier in the standard project pool.",
+      "candidates": [
+        {
+          "poiId": "bysykkel-92",
+          "productionName": "Trondheim Bysykkel: Dora I",
+          "productionAddress": "Maskinistgata 1",
+          "distanceMeters": 0
+        }
+      ]
+    },
+    {
+      "localPlaceId": "bysykkel-18",
+      "localName": "Bysykkel Møllenberg",
+      "localAddress": "Innherredsveien",
+      "decision": "mapped",
+      "poiId": "bysykkel-18",
+      "evidence": "Exact POI identifier in the standard project pool.",
+      "candidates": [
+        {
+          "poiId": "bysykkel-18",
+          "productionName": "Trondheim Bysykkel: Møllenberg",
+          "productionAddress": "Innherredsveien",
+          "distanceMeters": 0
+        }
+      ]
+    },
+    {
+      "localPlaceId": "bysykkel-108",
+      "localName": "Bysykkel Bassengbakken",
+      "localAddress": "Dyre Halses 1",
+      "decision": "mapped",
+      "poiId": "bysykkel-108",
+      "evidence": "Exact POI identifier in the standard project pool.",
+      "candidates": [
+        {
+          "poiId": "bysykkel-108",
+          "productionName": "Trondheim Bysykkel: Bassengbakken",
+          "productionAddress": "Dyre Halses 1",
+          "distanceMeters": 0
+        }
+      ]
+    },
+    {
+      "localPlaceId": "bysykkel-7696",
+      "localName": "Bysykkel Lademoparken",
+      "localAddress": "Mellomveien",
+      "decision": "mapped",
+      "poiId": "bysykkel-7696",
+      "evidence": "Exact POI identifier in the standard project pool.",
+      "candidates": [
+        {
+          "poiId": "bysykkel-7696",
+          "productionName": "Trondheim Bysykkel: Lademoparken",
+          "productionAddress": "Mellomveien",
+          "distanceMeters": 0
+        }
+      ]
+    },
+    {
+      "localPlaceId": "bysykkel-85",
+      "localName": "Bysykkel TMV-odden",
+      "localAddress": "Beddingen 14",
+      "decision": "mapped",
+      "poiId": "bysykkel-85",
+      "evidence": "Exact POI identifier in the standard project pool.",
+      "candidates": [
+        {
+          "poiId": "bysykkel-85",
+          "productionName": "Trondheim Bysykkel: TMV-odden",
+          "productionAddress": "Beddingen 14",
+          "distanceMeters": 0
+        }
+      ]
+    },
+    {
+      "localPlaceId": "bysykkel-65",
+      "localName": "Bysykkel Strandveikaia",
+      "localAddress": "Stiklestadveien 1",
+      "decision": "mapped",
+      "poiId": "bysykkel-65",
+      "evidence": "Exact POI identifier in the standard project pool.",
+      "candidates": [
+        {
+          "poiId": "bysykkel-65",
+          "productionName": "Trondheim Bysykkel: Strandveikaia",
+          "productionAddress": "Stiklestadveien 1",
+          "distanceMeters": 0
+        }
+      ]
+    },
+    {
+      "localPlaceId": "lilleby-stasjon",
+      "localName": "Lilleby stasjon",
+      "localAddress": "Mellomveien, Trondheim",
+      "decision": "mapped",
+      "poiId": "entur-NSR-StopPlace-62369",
+      "evidence": "Unique normalized name and coordinates 0 m apart.",
+      "candidates": [
+        {
+          "poiId": "entur-NSR-StopPlace-62369",
+          "productionName": "Lilleby stasjon",
+          "productionAddress": null,
+          "distanceMeters": 0
+        }
+      ]
+    },
+    {
+      "localPlaceId": "flex-gym",
+      "localName": "Flex Gym",
+      "localAddress": "Ladeveien 23, Trondheim",
+      "decision": "review_required",
+      "candidates": [
+        {
+          "poiId": "google-ChIJjWQhOA8xbUYRAUjUe7p7l8Y",
+          "productionName": "Flex Gym AS",
+          "productionAddress": "Ladebekken 7041, Trondheim",
+          "distanceMeters": 0
+        },
+        {
+          "poiId": "google-ChIJq1haXVwxbUYRW7rgImIAkxI",
+          "productionName": "TrenHer Lilleby",
+          "productionAddress": "Ladeveien 25, Trondheim",
+          "distanceMeters": 20
+        },
+        {
+          "poiId": "bus-ladeveien",
+          "productionName": "Ladeveien bussholdeplass",
+          "productionAddress": null,
+          "distanceMeters": 64
+        },
+        {
+          "poiId": "bysykkel-5427",
+          "productionName": "Trondheim Bysykkel: Ladeveien",
+          "productionAddress": "Ladeveien 13, 7066 Trondheim",
+          "distanceMeters": 65
+        },
+        {
+          "poiId": "google-ChIJXU40TA8xbUYRQ-h5sgmD_BQ",
+          "productionName": "Maskinparken",
+          "productionAddress": "Ladeveien 11, Trondheim",
+          "distanceMeters": 134
+        },
+        {
+          "poiId": "osm-way-700505138",
+          "productionName": "Maskinparken",
+          "productionAddress": null,
+          "distanceMeters": 138
+        },
+        {
+          "poiId": "google-ChIJMcXqfg8xbUYRt0fSq8LewRU",
+          "productionName": "E.ON Drive Charging Station",
+          "productionAddress": "Håkon Magnussons gate, Trondheim",
+          "distanceMeters": 183
+        },
+        {
+          "poiId": "google-ChIJuV9k0ggxbUYRZSDmj0P9UVA",
+          "productionName": "Supercharge-ladestasjon",
+          "productionAddress": "Jarleveien 19, Trondheim",
+          "distanceMeters": 191
+        }
+      ]
+    },
+    {
+      "localPlaceId": "buld-no",
+      "localName": "Buld.no",
+      "localAddress": "Ormen Langes vei 15, Trondheim",
+      "decision": "review_required",
+      "candidates": [
+        {
+          "poiId": "osm-way-183259536",
+          "productionName": "Ute-hallen",
+          "productionAddress": null,
+          "distanceMeters": 3
+        },
+        {
+          "poiId": "bus-ladejarlen-vgs",
+          "productionName": "Ladejarlen vgs. bussholdeplass",
+          "productionAddress": null,
+          "distanceMeters": 121
+        }
+      ]
+    },
+    {
+      "localPlaceId": "trikkestallen",
+      "localName": "Trikkestallen skatepark",
+      "localAddress": "Mellomveien 32, Trondheim",
+      "decision": "review_required",
+      "candidates": [
+        {
+          "poiId": "osm-way-112442103",
+          "productionName": "Trikkestallen",
+          "productionAddress": null,
+          "distanceMeters": 36
+        },
+        {
+          "poiId": "bysykkel-95",
+          "productionName": "Trondheim Bysykkel: Trikkestallen på Lademoen",
+          "productionAddress": "Mellomveien 13",
+          "distanceMeters": 57
+        },
+        {
+          "poiId": "google-ChIJU7CFvpgxbUYR1_sRclbEVOo",
+          "productionName": "leopardbarbershop",
+          "productionAddress": "Mellomveien 24 E, Trondheim",
+          "distanceMeters": 75
+        },
+        {
+          "poiId": "google-ChIJP9cBYzAxbUYRyzbmGeAfxDY",
+          "productionName": "Anton Kalvaas Park",
+          "productionAddress": "Trondheim",
+          "distanceMeters": 92
+        },
+        {
+          "poiId": "bus-anders-buens-gate",
+          "productionName": "Anders Buens gate bussholdeplass",
+          "productionAddress": null,
+          "distanceMeters": 99
+        },
+        {
+          "poiId": "entur-NSR-StopPlace-62369",
+          "productionName": "Lilleby stasjon",
+          "productionAddress": null,
+          "distanceMeters": 106
+        },
+        {
+          "poiId": "google-ChIJb8G1wAkxbUYRzCE56N_WA-s",
+          "productionName": "E.ON Drive Charging Station",
+          "productionAddress": "22 Fv868, Trondheim",
+          "distanceMeters": 142
+        },
+        {
+          "poiId": "google-ChIJ-fK25AgxbUYRT3NRGL9nXVs",
+          "productionName": "Trondheim Apartment hotel",
+          "productionAddress": "Gardemoens gate 1, Trondheim",
+          "distanceMeters": 155
+        }
+      ]
+    },
+    {
+      "localPlaceId": "ladesletta",
+      "localName": "Ladesletta",
+      "localAddress": "Ved Lade idrettspark, Trondheim",
+      "decision": "review_required",
+      "candidates": [
+        {
+          "poiId": "osm-way-437181228",
+          "productionName": "Lade idrettspark",
+          "productionAddress": null,
+          "distanceMeters": 0
+        },
+        {
+          "poiId": "osm-way-437181229",
+          "productionName": "Lade 4",
+          "productionAddress": null,
+          "distanceMeters": 104
+        },
+        {
+          "poiId": "osm-way-1293567124",
+          "productionName": "Lade idrettsanlegg",
+          "productionAddress": null,
+          "distanceMeters": 118
+        },
+        {
+          "poiId": "osm-way-5107254",
+          "productionName": "Lade idrettspark",
+          "productionAddress": null,
+          "distanceMeters": 119
+        },
+        {
+          "poiId": "osm-way-437181227",
+          "productionName": "Lade 1",
+          "productionAddress": null,
+          "distanceMeters": 123
+        },
+        {
+          "poiId": "osm-way-437181235",
+          "productionName": "Obos-banen",
+          "productionAddress": null,
+          "distanceMeters": 126
+        },
+        {
+          "poiId": "osm-way-1327813417",
+          "productionName": "Lade cricketpitch",
+          "productionAddress": null,
+          "distanceMeters": 145
+        },
+        {
+          "poiId": "osm-way-1265870090",
+          "productionName": "Lade 2",
+          "productionAddress": null,
+          "distanceMeters": 173
+        }
+      ]
+    }
+  ]
+}

@@ -48,7 +48,13 @@ export function boardKnowledgeBase(board: BoardData): KnowledgeBase {
     });
   }
 
-  const entityFacts = facts.filter((fact) => fact.poiId);
+  // A reviewed place remains a place even when it could not be mapped safely
+  // to the current POI pool. It must stay searchable and explainable, while
+  // mapPoiId remains null so the assistant cannot invent a marker. Project,
+  // address and board-view claims without a POI belong to the area context.
+  const entityFacts = facts.filter(
+    (fact) => Boolean(fact.poiId) || fact.scope === "global_place",
+  );
   const entityIds = new Set(entityFacts.map((fact) => fact.subjectId));
   const entities: KnowledgeEntityLike[] = [...entityIds].map((id) => {
     const rows = entityFacts.filter((fact) => fact.subjectId === id);
@@ -77,7 +83,8 @@ export function boardKnowledgeBase(board: BoardData): KnowledgeBase {
     };
   });
 
-  const areaFacts = facts.filter((fact) => !fact.poiId);
+  const entityFactIds = new Set(entityFacts.map((fact) => fact.id));
+  const areaFacts = facts.filter((fact) => !entityFactIds.has(fact.id));
   return {
     sources: [...sourceByUrl.values()],
     entities,
