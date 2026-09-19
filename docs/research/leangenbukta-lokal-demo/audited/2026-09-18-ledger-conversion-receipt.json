@@ -1,0 +1,24 @@
+{
+  "schemaVersion": 1,
+  "packageId": "leangenbukta-project-facts-2026-09-18",
+  "packageHash": "527bc6a7cf5f557587ed535c8c6013d885bb7b927c82f1f9a09e36732f996b59",
+  "projectId": "placy-demo_leangenbukta",
+  "sourcePath": "docs/research/leangenbukta-lokal-demo/audited/2026-09-18-project-facts-package.json",
+  "outputPath": "docs/research/leangenbukta-lokal-demo/audited/2026-09-18-ledger-package.json",
+  "reviewedAt": "2026-09-18",
+  "entityCount": 70,
+  "claimCount": 565,
+  "reviewStatusCounts": {
+    "unresolved": 397,
+    "rejected": 33,
+    "approved": 78,
+    "historical": 11,
+    "approved_time_sensitive": 46
+  },
+  "publicationStateCounts": {
+    "audit_only": 441,
+    "publishable": 78,
+    "missing_valid_until": 46
+  },
+  "mappingPolicy": "No POI mapping without an authoritative identifier in the audited package."
+}
