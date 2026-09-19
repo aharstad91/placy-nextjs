@@ -13,6 +13,10 @@ import type { BoardPOI } from "./board-data";
 import type { ReportData, ReportTheme } from "../report-data";
 import type { POI, ReportThemeAudio } from "@/lib/types";
 import type { BoardCategoryId } from "@/lib/board/board-types";
+import {
+  productionContentContractFixture,
+  PRODUCTION_CONTRACT_IDS,
+} from "./__fixtures__/production-content-contract";
 
 function makePOI(id: string, overrides: Partial<POI> = {}): POI {
   return {
@@ -77,6 +81,98 @@ function makeReportData(themes: ReportTheme[]): ReportData {
 }
 
 describe("adaptBoardData", () => {
+  describe("ordinary production content contract", () => {
+    it("keeps the pre-assistant projection stable and contains no demo identity", () => {
+      const data = adaptBoardData(productionContentContractFixture());
+
+      expect({
+        projectSlug: data.projectSlug,
+        home: data.home,
+        categoryIds: data.categories.map((category) => category.id),
+        poiIds: data.categories.flatMap((category) =>
+          category.pois.map((poi) => poi.id),
+        ),
+      }).toEqual({
+        projectSlug: "produksjonskontrakt",
+        home: {
+          name: "Produksjonskontrakt",
+          coordinates: { lat: 63.44, lng: 10.46 },
+          address: "Kontraktveien 1",
+          district: "Testområdet",
+          city: "Trondheim",
+          heroImage: undefined,
+          heroIntro: undefined,
+          pinSubtitle: undefined,
+          pinAccent: undefined,
+          audio: undefined,
+        },
+        categoryIds: ["steder"],
+        poiIds: [
+          PRODUCTION_CONTRACT_IDS.audited,
+          PRODUCTION_CONTRACT_IDS.register,
+          PRODUCTION_CONTRACT_IDS.approximate,
+          PRODUCTION_CONTRACT_IDS.planned,
+        ],
+      });
+      expect(data.demoSnapshotId).toBeUndefined();
+      expect(data.demoDataset).toBeUndefined();
+      expect(data.demoFeatures).toBeUndefined();
+    });
+
+    it("drops both an empty category and a topic-only category from the map projection", () => {
+      const data = adaptBoardData(productionContentContractFixture());
+
+      expect(data.categories.map((category) => category.id)).not.toContain(
+        PRODUCTION_CONTRACT_IDS.empty,
+      );
+      expect(data.categories.map((category) => category.id)).not.toContain(
+        PRODUCTION_CONTRACT_IDS.topicOnly,
+      );
+    });
+
+    it("does not invent audited claims for a register-only place", () => {
+      const data = adaptBoardData(productionContentContractFixture());
+      const register = findBoardPOI(
+        data.categories,
+        PRODUCTION_CONTRACT_IDS.register,
+      );
+
+      expect(register).not.toBeNull();
+      expect(register?.body).toBeUndefined();
+      expect(register?.raw.editorialHook).toBeUndefined();
+      expect(register?.raw.localInsight).toBeUndefined();
+      expect(register?.raw.editorialSources).toBeUndefined();
+    });
+
+    it("preserves planned status without turning the facility into an open offer", () => {
+      const data = adaptBoardData(productionContentContractFixture());
+      const planned = findBoardPOI(
+        data.categories,
+        PRODUCTION_CONTRACT_IDS.planned,
+      );
+
+      expect(planned?.raw.developmentStatus).toBe("planned");
+      expect(planned?.raw.development).toEqual({
+        facts: [{ label: "Status", value: "Regulert" }],
+        caveats: ["Byggebeslutning og åpningsdato er ikke dokumentert."],
+      });
+      expect(JSON.stringify(planned)).not.toMatch(/åpen|i drift/i);
+    });
+
+    it("preserves coordinate uncertainty as map metadata", () => {
+      const data = adaptBoardData(productionContentContractFixture());
+      const approximate = findBoardPOI(
+        data.categories,
+        PRODUCTION_CONTRACT_IDS.approximate,
+      );
+
+      expect(approximate?.raw.locationPrecision).toBe("approximate");
+      expect(approximate?.raw.locationNote).toBe(
+        "Plasseringen er ikke verifisert mot besøksinngangen.",
+      );
+    });
+  });
+
   it("maps themes to BoardCategory with normaliserte feltnavn", () => {
     const theme = makeTheme("hverdagsliv", [makePOI("p1")]);
     const data = adaptBoardData(makeReportData([theme]));
