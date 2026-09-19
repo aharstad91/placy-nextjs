@@ -10315,3 +10315,11 @@ Datasettet bruker nå `places-audited.json` og `places-register.json`. Runtime l
 Dette er den gjenbrukbare grensen for kommende prosjekter og bruktboligboards: research kan forbedres uten å slette bredde, og et bredt register kan oppfriskes uten å endre det Anja får bruke som reviderte fakta. Leangenbukta beholder 357 kartankere, 56 reviderte steder og 504 registersteder. Importtesten mot kildeboardet ga 358 kilderøtter, 21 treff mot reviderte steder, 6 treff mot eksisterende registersteder, 331 importerte røtter og 173 understeder; 8 duplikate understeder ble hoppet over.
 
 Verifisering: researchbyggeren lot SHA-256 for registerfila stå urørt; registerimporten lot SHA-256 for audited-fila stå urørt. Fokuserte lagrings-, innholds- og registertester er grønne, hele testsuiten er grønn, TypeScript har 0 feil, lint har 0 feil (eksisterende advarsler), produksjonsbygg er OK uten den nye Turbopack-sporingsadvarselen, og `git diff --check` er ren. Tre uavhengige forenklingsgjennomganger fant og utbedret duplisert formatdeteksjon, TOCTOU-filkontroll og dobbel parsing i importøren. Lokalt, ikke pushet.
+
+## 2026-09-19 — Fremtidig opprydding: slett Leangenbuktas lokale board-runtime
+
+Leangenbukta er migrert til det ordinære produksjonsboardet. Den lokale ruta `app/demo/leangenbukta-lokal/` og den parallelle runtimebanen beholdes midlertidig som migreringsorakel mens Lillebytunet kjøres gjennom den samme generiske research-, import-, board- og Anja-harnessen.
+
+**TODO etter bestått Lillebytunet-gjenbrukstest:** Slett Leangenbuktas lokale board-rute og fjern produksjonskomponentenes gjenværende direkte avhengigheter til `lib/demo/local-board/`. Oppdater eller fjern alle lenker og CTA-er som peker til `/demo/leangenbukta-lokal`, og bekreft med repo-søk og produksjonsbygg at ordinært board er eneste produksjonsruntime.
+
+Researchgrunnlaget skal ikke slettes. Behold rå research, auditerte pakker, kildeoversikter, import- og verifikasjonskvitteringer, samt golden fixtures og samtalescenarioer som revisjons- og regresjonsgrunnlag. Slettingen skal først gjøres når Leangenbukta, Nyhavna og Lillebytunet har bestått de avtalte mekaniske, visuelle og samtalebaserte portene.
