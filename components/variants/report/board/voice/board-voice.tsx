@@ -123,7 +123,7 @@ function BoardVoiceSession({ children }: { children: ReactNode }) {
   // (`LocalDemoFeatures`). En samle-boolean ville gjort «hvilket datasett» og
   // «hvilke funksjoner» til samme spørsmål igjen, og et nytt datasett måtte da
   // arve enten alt eller ingenting.
-  const features = data.demoFeatures;
+  const features = data.assistant?.features ?? data.demoFeatures;
   const faqProgressEnabled = features?.faqProgress ?? false;
   const revealEnabled = features?.revealPlaces ?? false;
   const followHighlightCategory = features?.followHighlightCategory ?? false;

@@ -54,7 +54,7 @@ export function useViewportCategoryList(
   const { state, viewportRect, data } = useBoard();
   // Demoens lille, kuraterte utvalg skal ikke forsvinne når samtalen flytter
   // kartet. Flagget hører til demoen (`LocalDemoFeatures`), ikke til slug-en.
-  const scopedRect = data?.demoFeatures?.unscopedCategoryList ? null : viewportRect;
+  const scopedRect = (data?.assistant?.features?.unscopedCategoryList ?? data?.demoFeatures?.unscopedCategoryList) ? null : viewportRect;
   const activePOIId = state.activePOIId;
   const travelMode = state.travelMode;
 

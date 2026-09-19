@@ -173,6 +173,27 @@ describe("BoardVoiceControl", () => {
     expect(screen.getByRole("button", { name: "Snakk med Anja" })).toBeTruthy();
   });
 
+  it("lar ordinær assistentkonfig aktivere de samme funksjonene som demo-orakelet", () => {
+    Reflect.deleteProperty(data, "demoSnapshotId");
+    Object.assign(data, {
+      contentVersion: "content-v1",
+      assistant: {
+        enabled: true,
+        name: "Anja",
+        guided: true,
+        features: {
+          revealPlaces: true,
+          voicePacing: true,
+          guidedPersona: true,
+        },
+      },
+    });
+    mount();
+    expect(screen.getByRole("button", { name: "Snakk med Anja" })).toBeTruthy();
+    expect(capturedOptions?.allowRevealPlaces).toBe(true);
+    expect(String(capturedOptions?.greeting)).toContain(LOCAL_VOICE_PACING);
+  });
+
   it("skiller åpen mikrofon fra å høre brukeren, uten å endre teksten", () => {
     resetLive({ status: "listening" });
     const view = mount();

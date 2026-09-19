@@ -61,6 +61,15 @@ async function main() {
     enabled: true,
     name: args.name,
     guided: true,
+    features: {
+      faqProgress: true,
+      revealPlaces: true,
+      followHighlightCategory: true,
+      unscopedCategoryList: true,
+      narrationFocus: true,
+      voicePacing: true,
+      guidedPersona: true,
+    },
     ...(args.greeting ? { greeting: args.greeting } : {}),
   };
   const nextConfig = {

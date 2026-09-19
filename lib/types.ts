@@ -884,6 +884,16 @@ export interface ReportAssistantConfig {
   guided?: boolean;
   /** Prosjektets egen første replikk. */
   greeting?: string;
+  /** Datadrevne samtale- og kartfunksjoner for ordinære boards. */
+  features?: {
+    faqProgress?: boolean;
+    revealPlaces?: boolean;
+    followHighlightCategory?: boolean;
+    unscopedCategoryList?: boolean;
+    narrationFocus?: boolean;
+    voicePacing?: boolean;
+    guidedPersona?: boolean;
+  };
 }
 
 /**
