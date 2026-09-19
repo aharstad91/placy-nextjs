@@ -20,13 +20,22 @@ const PIN_THUMBNAILS: Record<string, string> = {
   stasjonskvartalet: STASJONSKVARTALET_PIN_THUMB,
 };
 
+function configuredAsset(value: string | undefined, fallback: string): string | undefined {
+  if (value === undefined) return fallback;
+  if (!/^\/(?!\/)[A-Za-z0-9/_\-.]+$/.test(value)) return undefined;
+  if (value.split("/").some((segment) => segment === "." || segment === "..")) {
+    return undefined;
+  }
+  return value;
+}
+
 /** Logo-fil for prosjektet (SVG), eller undefined → splash viser tekst-wordmark. */
 export function getProjectLogoSrc(
   slug: string | undefined,
   assets: ProjectAssetFlags | undefined,
 ): string | undefined {
   if (slug && assets?.brand) {
-    return `/illustrations/${slug}-logo.svg`;
+    return configuredAsset(assets.logoUrl, `/illustrations/${slug}-logo.svg`);
   }
   return undefined;
 }
@@ -37,7 +46,7 @@ export function getProjectSplashImage(
   assets: ProjectAssetFlags | undefined,
 ): string | undefined {
   if (slug && assets?.brand) {
-    return `/illustrations/${slug}-splash.jpg`;
+    return configuredAsset(assets.splashImageUrl, `/illustrations/${slug}-splash.jpg`);
   }
   return undefined;
 }
@@ -52,7 +61,10 @@ export function getProjectSplashVideo(
   assets: ProjectAssetFlags | undefined,
 ): string | undefined {
   if (slug && (assets?.splashVideo || assets?.brand)) {
-    return `/illustrations/${slug}-splash-video.mp4`;
+    return configuredAsset(
+      assets.splashVideoUrl,
+      `/illustrations/${slug}-splash-video.mp4`,
+    );
   }
   return undefined;
 }

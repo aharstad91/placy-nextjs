@@ -891,13 +891,20 @@ export interface ReportAssistantConfig {
  * hardkodede slug-settene (PROJECTS_WITH_BRAND / PROJECTS_WITH_CUSTOM_ILLUSTRATIONS)
  * — et nytt prosjekt skrur på flagget i Supabase når filene er lastet opp, uten
  * kodeendring. Når et flagg er av, faller render-laget tilbake (tekst-wordmark,
- * generiske tema-illustrasjoner, bygnings-glyph-pin). Filene følger slug-
- * konvensjonen: `/illustrations/{slug}-logo.svg`, `-splash.jpg`,
- * `-splash-video.mp4`, `-{categoryId}.jpg`, `-pin-thumb.jpg`.
+ * generiske tema-illustrasjoner, bygnings-glyph-pin). Eksplisitte, interne
+ * asset-stier overstyrer slug-konvensjonen. Uten eksplisitte stier brukes
+ * `/illustrations/{slug}-logo.svg`, `-splash.jpg`, `-splash-video.mp4`,
+ * `-{categoryId}.jpg`, `-pin-thumb.jpg`.
  */
 export interface ProjectAssetFlags {
   /** Egen logo + splash-hero + splash-video finnes for prosjektet. */
   brand?: boolean;
+  /** Eksplisitt logo-URL. Utelatt = `/illustrations/{slug}-logo.svg`. */
+  logoUrl?: string;
+  /** Eksplisitt splash-bilde. Utelatt = `/illustrations/{slug}-splash.jpg`. */
+  splashImageUrl?: string;
+  /** Eksplisitt splash-video. Utelatt = `/illustrations/{slug}-splash-video.mp4`. */
+  splashVideoUrl?: string;
   /** Kun splash-video (`{slug}-splash-video.mp4` + `.jpg`-poster) finnes — uten
    *  logo/splash-hero. Lar et prosjekt få levende splash-bakgrunn uten å skru på
    *  hele `brand`-flagget (som også krever logo + splash-stillbilde). */
@@ -906,6 +913,28 @@ export interface ProjectAssetFlags {
   customIllustrations?: boolean;
   /** Egen kvadratisk pin-thumbnail (`{slug}-pin-thumb.jpg`) finnes for 3D-markøren. */
   pinThumbnail?: boolean;
+}
+
+export interface ReportBrandPresentation {
+  surfaceColor?: string;
+  inkColor?: string;
+  accentColor?: string;
+  accentForegroundColor?: string;
+  mutedColor?: string;
+  mutedForegroundColor?: string;
+  radius?: string;
+  headingFontFamily?: "Mukta" | "Unbounded" | "Figtree";
+  headingFontWeight?: number;
+}
+
+export interface ReportPresentationConfig {
+  /** `splash` er standard. `revealed` brukes når boardet er selve landingen. */
+  initialView?: "splash" | "revealed";
+  /**
+   * Visuelt skin. Aktiveres sammen med `assets.brand`; rendergrensen validerer
+   * verdiene mot et lukket sett før de blir CSS-variabler.
+   */
+  brand?: ReportBrandPresentation;
 }
 
 /**
@@ -1032,6 +1061,11 @@ export interface ReportConfig {
   cta?: ReportCTA;
   /** Runtime-assistenten er av med mindre prosjektet uttrykkelig slår den på. */
   assistant?: ReportAssistantConfig;
+  /**
+   * Små, eksplisitte presentasjonsvalg som faktisk varierer mellom boards.
+   * Selve POI-interaksjonen er en Placy-standard og ligger derfor ikke her.
+   */
+  presentation?: ReportPresentationConfig;
   mapStyle?: string;
   trails?: TrailCollection;
   /** Linjer og flater boardet tegner ved siden av punktene. Tom/utelatt =

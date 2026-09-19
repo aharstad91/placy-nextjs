@@ -27,7 +27,7 @@ type Props = Pick<ComponentProps<typeof ReportReelsPage>, "project" | "boardData
  * ikke finnes. Adapterens `hideBrokerCard: true` blir derfor stående.
  *
  * `assets.brand` slås på fordi de tre filene finnes
- * (`public/illustrations/leangenbukta-lokal-{logo.svg,splash.jpg,splash-video.mp4}`,
+ * (`public/illustrations/leangenbukta-{logo.svg,splash.jpg,splash-video.mp4}`,
  * hentet fra utbyggerens egen nettside via nettsidekopien). Det gir logoen over
  * velkomstteksten og hero-filmen i høyre panel — uten flagget viser splashen
  * bare tekst-ordmerke, og mobil-splashen får svart bakgrunn.
@@ -36,7 +36,16 @@ type Props = Pick<ComponentProps<typeof ReportReelsPage>, "project" | "boardData
  */
 export default function LokalBoardGate({ project, boardData }: Props) {
   const brandedBoard = useMemo(
-    () => (boardData ? { ...boardData, assets: { ...boardData.assets, brand: true } } : boardData),
+    () => (boardData ? {
+      ...boardData,
+      assets: {
+        ...boardData.assets,
+        brand: true,
+        logoUrl: "/illustrations/leangenbukta-logo.svg",
+        splashImageUrl: "/illustrations/leangenbukta-splash.jpg",
+        splashVideoUrl: "/illustrations/leangenbukta-splash-video.mp4",
+      },
+    } : boardData),
     [boardData],
   );
   return <ReportReelsPage project={project} boardData={brandedBoard} boardMode="report" layout="framed" placePanel />;

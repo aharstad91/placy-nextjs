@@ -13,8 +13,8 @@ import "./leangenbukta-brand.css";
  */
 const mukta = localFont({
   src: [
-    { path: "../../../public/demo/leangenbukta-nettside/iJWHBXyXfDDVXbEyjmmd8WD07oB--161f18.woff2", weight: "500" },
-    { path: "../../../public/demo/leangenbukta-nettside/iJWHBXyXfDDVXbFmi2md8WD07oB--9b1beb.woff2", weight: "800" },
+    { path: "../../../public/brand-fonts/mukta-500.woff2", weight: "500" },
+    { path: "../../../public/brand-fonts/mukta-800.woff2", weight: "800" },
   ],
   variable: "--font-leangenbukta-board",
   display: "swap",

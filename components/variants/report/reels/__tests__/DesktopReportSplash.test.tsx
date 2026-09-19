@@ -110,6 +110,19 @@ describe("DesktopReportSplash", () => {
     expect(video?.getAttribute("poster")).toBe("/x-splash-video.jpg");
   });
 
+  it("laster ikke splash-video mens boardet starter revealed", () => {
+    const { container } = render(
+      <DesktopReportSplash
+        {...baseProps}
+        visible={false}
+        heroImage="/hero.jpg"
+        heroVideo="/x-splash-video.mp4"
+      />,
+    );
+    expect(container.querySelector("video")).toBeNull();
+    expect(container.querySelector("img[src='/hero.jpg']")).toBeNull();
+  });
+
   it("faller tilbake til render-bilde uten heroVideo", () => {
     const { container, getByAltText } = render(
       <DesktopReportSplash {...baseProps} heroImage="/hero.jpg" />,

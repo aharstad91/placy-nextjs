@@ -80,8 +80,10 @@ describe("lokalt Nyhavna-datasett", () => {
   it("laster ikke samtaleeksempler som en del av datasettet", async () => {
     const dataset = await loadDataset(NYHAVNA);
     expect(Object.keys(dataset).sort()).toEqual(["board", "faqs", "places", "sources", "topics"]);
-    // Eksemplene finnes, men bare bak sin egen laster.
-    await expect(loadConversations(NYHAVNA)).resolves.toEqual([]);
+    // Eksemplene finnes, men bare bak sin egen laster og utenfor runtime-data.
+    const conversations = await loadConversations(NYHAVNA);
+    expect(conversations).toHaveLength(8);
+    expect(conversations.flatMap((conversation) => conversation.questions)).toHaveLength(43);
   });
 
   it("kaster med filnavn og felt når en fil har ugyldige data", async () => {

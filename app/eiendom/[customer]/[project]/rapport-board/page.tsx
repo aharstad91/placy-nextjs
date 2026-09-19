@@ -6,7 +6,7 @@ import {
 } from "@/lib/supabase/cached-board-reads";
 import { buildBoardMetadata } from "@/lib/seo/board-metadata";
 import BoardEmbedGate from "./board-embed-gate";
-import { hexToHslChannels, pickContrastForeground } from "@/lib/theme-utils";
+import { buildReportBoardStyle } from "@/lib/board/report-board-style";
 import { getSchoolZone } from "@/lib/utils/school-zones";
 
 export const revalidate = 3600;
@@ -56,33 +56,7 @@ export default async function EiendomReportBoardPage({ params }: PageProps) {
     projectData.id,
   );
 
-  const themeStyle: React.CSSProperties = {};
-  const t = projectData.theme;
-  if (t) {
-    const setIf = (cssVar: string, hex?: string) => {
-      if (hex) {
-        const channels = hexToHslChannels(hex);
-        if (channels) (themeStyle as Record<string, string>)[cssVar] = channels;
-      }
-    };
-    setIf("--background", t.backgroundColor);
-    setIf("--foreground", t.foregroundColor);
-    setIf("--primary", t.primaryColor);
-    setIf("--primary-foreground", t.primaryForegroundColor);
-    setIf("--card", t.cardColor);
-    setIf("--muted", t.mutedColor);
-    setIf("--muted-foreground", t.mutedForegroundColor);
-    setIf("--border", t.borderColor);
-    if (t.fontFamily) {
-      (themeStyle as Record<string, string>)["--font-family"] = t.fontFamily;
-    }
-    if (t.primaryColor && !t.primaryForegroundColor) {
-      const autoFg = pickContrastForeground(t.primaryColor);
-      if (autoFg) {
-        (themeStyle as Record<string, string>)["--primary-foreground"] = autoFg;
-      }
-    }
-  }
+  const themeStyle = buildReportBoardStyle(projectData);
 
   return (
     <div style={themeStyle} className="min-h-screen bg-background text-foreground">

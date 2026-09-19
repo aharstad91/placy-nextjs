@@ -25,6 +25,25 @@ describe("getProjectLogoSrc", () => {
     );
   });
 
+  it("prioriterer eksplisitte asset-URL-er når boardet har egen filstruktur", () => {
+    const assets: ProjectAssetFlags = {
+      brand: true,
+      logoUrl: "/brand/logo.svg",
+      splashImageUrl: "/brand/hero.jpg",
+      splashVideoUrl: "/brand/hero.mp4",
+    };
+    expect(getProjectLogoSrc(SLUG, assets)).toBe("/brand/logo.svg");
+    expect(getProjectSplashImage(SLUG, assets)).toBe("/brand/hero.jpg");
+    expect(getProjectSplashVideo(SLUG, assets)).toBe("/brand/hero.mp4");
+  });
+
+  it.each(["https://example.com/logo.svg", "//example.com/logo.svg", "/brand/../secret.svg"])(
+    "avviser utrygg eksplisitt asset-sti %s ved rendergrensen",
+    (logoUrl) => {
+      expect(getProjectLogoSrc(SLUG, { brand: true, logoUrl })).toBeUndefined();
+    },
+  );
+
   it("returnerer undefined uten brand-flagg (→ tekst-wordmark-fallback)", () => {
     expect(getProjectLogoSrc(SLUG, splashVideoOnly)).toBeUndefined();
     expect(getProjectLogoSrc(SLUG, undefined)).toBeUndefined();

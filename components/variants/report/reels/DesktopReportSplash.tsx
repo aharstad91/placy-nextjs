@@ -6,9 +6,8 @@ import { ArrowUpRight, ChevronDown, Play } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface Props {
-  /** Styrer om laget er synlig. Komponenten holdes alltid montert (én
-   *  kart-instans bak), og veksler kun opacity/pointer-events — så re-åpning
-   *  er momentan og bakgrunns-videoen aldri re-initialiseres. */
+  /** Styrer om laget er synlig. Skallet holdes montert over kartet, mens tunge
+   *  media avmonteres når laget er skjult. */
   visible: boolean;
   /** Prosjektnavn, eks. "Stasjonskvartalet". */
   name: string;
@@ -223,7 +222,7 @@ export function DesktopReportSplash({
         )}
 
         {/* Høyre kolonne — prosjekt-video (16:9), fallback til render */}
-        {(heroVideo || heroImage) && (
+        {visible && (heroVideo || heroImage) && (
           <div
             className={cn(itemCls, "relative hidden flex-1 lg:block")}
             style={stagger(2)}

@@ -1,0 +1,22 @@
+{
+  "assets": {
+    "brand": true,
+    "logoUrl": "/illustrations/leangenbukta-logo.svg",
+    "splashImageUrl": "/illustrations/leangenbukta-splash.jpg",
+    "splashVideoUrl": "/illustrations/leangenbukta-splash-video.mp4"
+  },
+  "presentation": {
+    "initialView": "splash",
+    "brand": {
+      "surfaceColor": "#eeedec",
+      "inkColor": "#2a2c2e",
+      "accentColor": "#90553e",
+      "accentForegroundColor": "#ffffff",
+      "mutedColor": "#f3ece8",
+      "mutedForegroundColor": "#5a5f62",
+      "radius": "2px",
+      "headingFontFamily": "Mukta",
+      "headingFontWeight": 500
+    }
+  }
+}

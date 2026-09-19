@@ -2,6 +2,34 @@
 @tailwind components;
 @tailwind utilities;
 
+@font-face {
+  font-family: "Mukta";
+  src: url("/brand-fonts/mukta-500.woff2") format("woff2");
+  font-weight: 500;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Mukta";
+  src: url("/brand-fonts/mukta-800.woff2") format("woff2");
+  font-weight: 800;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Unbounded";
+  src: url("/brand-fonts/unbounded-600.ttf") format("truetype");
+  font-weight: 600;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Unbounded";
+  src: url("/brand-fonts/unbounded-700.ttf") format("truetype");
+  font-weight: 700;
+  font-display: swap;
+}
+
 @layer utilities {
   .scrollbar-none {
     -ms-overflow-style: none;
@@ -40,6 +68,88 @@
 
 body {
   font-family: var(--font-figtree), system-ui, sans-serif;
+}
+
+/*
+ * Dataaktivert board-branding. `reportConfig.assets.brand` slår på skinnet,
+ * mens prosjektets theme leverer semantiske farger og typografi. Dermed kan et
+ * ordinært produksjonsboard bruke samme presentasjon som demoene uten egen
+ * rute, slug-sjekk eller kundespesifikk React-kode.
+ */
+[data-board-brand="true"] [data-report-splash="desktop"],
+[data-board-brand="true"] [data-report-sidebar],
+[data-board-brand="true"] [data-story-heading],
+[data-board-brand="true"] [data-report-frame],
+[data-board-brand="true"] [data-testid="story-poi-panel"] {
+  background-color: hsl(var(--background));
+  color: hsl(var(--foreground));
+}
+
+[data-board-brand="true"] [data-report-splash] h1,
+[data-board-brand="true"] [data-report-sidebar] h2,
+[data-board-brand="true"] [data-story-heading] h3 {
+  font-family: var(--board-heading-font, var(--font-family, var(--font-figtree))), sans-serif;
+  font-weight: var(--board-heading-weight, 700);
+  color: hsl(var(--foreground));
+}
+
+[data-board-brand="true"] [data-report-splash] h1 {
+  font-size: clamp(30px, 3.5vw, 54px);
+  line-height: 1.2;
+  letter-spacing: -0.02em;
+}
+
+[data-board-brand="true"] [data-report-splash] img[src$="-logo.svg"] {
+  height: 44px;
+  width: auto;
+}
+
+[data-board-brand="true"] [data-report-sidebar] img[src$="-logo.svg"] {
+  height: 30px;
+  width: auto;
+}
+
+[data-board-brand="true"] [data-report-splash] button {
+  background: hsl(var(--primary));
+  color: hsl(var(--primary-foreground));
+  border-radius: var(--radius);
+  box-shadow: none;
+  padding: 17px 25px;
+}
+
+[data-board-brand="true"] [data-report-splash] button:hover {
+  filter: brightness(0.9);
+}
+
+[data-board-brand="true"] [data-report-splash] button svg {
+  fill: currentColor;
+}
+
+[data-board-brand="true"] [data-report-splash="desktop"] video,
+[data-board-brand="true"] [data-report-splash="desktop"] .aspect-video,
+[data-board-brand="true"] [data-report-map-frame] {
+  border-radius: var(--radius);
+}
+
+[data-board-brand="true"] [data-report-splash="desktop"] .aspect-video {
+  aspect-ratio: 4 / 5;
+  max-height: 70dvh;
+  box-shadow: none;
+}
+
+[data-board-brand="true"] [data-testid="board-voice"] {
+  --voice-accent: hsl(var(--primary));
+  --voice-accent-hover: hsl(var(--primary) / 0.88);
+  --voice-bg: hsl(var(--muted));
+  --voice-bg-speaking: hsl(var(--muted) / 0.82);
+  --voice-bg-ended: hsl(var(--background));
+  --voice-ink: hsl(var(--foreground));
+  --voice-ink-2: hsl(var(--muted-foreground));
+  --voice-radius: var(--radius);
+}
+
+[data-board-brand="true"] [data-testid="story-poi-panel"] h2 {
+  background: transparent;
 }
 
 /* Skjul standard Mapbox POI-labels (kun admin-verktøy bruker Mapbox nå) */

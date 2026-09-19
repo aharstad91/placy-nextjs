@@ -1,1 +1,117 @@
-[]
+[
+  {
+    "id": "paritet-inngang",
+    "recordedAt": "2026-09-19",
+    "topic": "Hilsen, rolle og de to inngangene",
+    "notes": "Golden-scenarier for at en standardisert board-assistent skal beholde Nyhavnas etablerte samtaleinngang. Testgrunnlag, aldri faktakilde.",
+    "transcript": [],
+    "questions": [
+      { "id": "inngang-hilsen", "text": "Start samtalen.", "expectation": "Anja presenterer seg som digital guide for Nyhavna, holder hilsenen kort og tilbyr ett valg mellom planene for bydelen og nærområdet slik det er i dag." },
+      { "id": "inngang-planer", "text": "Fortell om det som kommer.", "expectation": "Tolkes som Nyhavna som bydel og åpner temaet nyhavna-bydel. Planlagt, ønsket og vedtatt holdes fra hverandre." },
+      { "id": "inngang-dagens-omrade", "text": "Hva finnes her allerede i dag?", "expectation": "Anja presenterer eksisterende tilbud og lar brukeren velge tema. Framtidige tilbud omtales ikke som åpne." },
+      { "id": "inngang-identitet", "text": "Jobber du for Nyhavna Utvikling?", "expectation": "Anja er Placys digitale guide og skal ikke utgi seg for å være ansatt hos Nyhavna eller megler." },
+      { "id": "inngang-adresse-stoy", "text": "Fortell om Dora Kaffebar.", "expectation": "Anja bruker navn og relevant revidert kunnskap uten å lese opp Kobbes gate 2. Adresse hentes bare hvis brukeren spør om adressen eller trenger veibeskrivelse." }
+    ]
+  },
+  {
+    "id": "paritet-bydel",
+    "recordedAt": "2026-09-19",
+    "topic": "Bydelen og de fem delområdene",
+    "notes": "Bevarer skillet mellom fem delområder og byggetrinn, samt kildeforbeholdene i planstoffet.",
+    "transcript": [],
+    "questions": [
+      { "id": "bydel-formal", "text": "Hva slags bydel skal Nyhavna bli?", "expectation": "Målet beskrives som boliger, arbeidsliv, kultur og grøntområder ved vannet, med møteplasser som kan bidra til naboskap. Dette formidles som mål og plan, ikke dagens tilbud." },
+      { "id": "bydel-transittkaia", "text": "Hvor kommer de første boligene?", "expectation": "Transittkaia oppgis som første område. Framdrift og etapper omtales med forbehold om plangodkjenning." },
+      { "id": "bydel-kullkranpiren", "text": "Hva er planlagt på Kullkranpiren?", "expectation": "Boliger, grøntområder og kultur inngår i planene. Detaljene presenteres ikke som vedtatte eller ferdige tilbud." },
+      { "id": "bydel-strandveikaia", "text": "Hva skal skje på Strandveikaia?", "expectation": "Strandveikaia omtales som planlagt bydelssentrum med kultur, sjøbad og forbindelser. Dette er plan, ikke dagens tilbud." },
+      { "id": "bydel-ladehammerkaia", "text": "Hvordan kan det bli å bo på Ladehammerkaia?", "expectation": "Ladehammerkaia omtales som et område tenkt med høy boligandel, parker og tilbud i sørvendte omgivelser ved vannet." },
+      { "id": "bydel-bunkerkvartalet", "text": "Hva er Bunkerkvartalet?", "expectation": "Kultur, kunnskap og havteknologi rundt Dora 2 forklares. Et nytt Vitensenter i 2030 omtales som et ønske eller en plan, ikke som vedtatt åpning." },
+      { "id": "bydel-folg-planene", "text": "Hvordan kan jeg følge boligplanene?", "expectation": "Anja viser til Nyhavnas nyhetsbrev for oppdateringer og invitasjon til forsalg, uten å love tidspunkt eller tilgjengelige boliger." }
+    ]
+  },
+  {
+    "id": "paritet-hverdag-oppvekst",
+    "recordedAt": "2026-09-19",
+    "topic": "Hverdagsliv og oppvekst",
+    "notes": "FAQ-paritet med eksplisitte forbehold om skolekrets, trygghet og ledig kapasitet.",
+    "transcript": [],
+    "questions": [
+      { "id": "hverdag-dagligvarer", "text": "Hvor handler vi dagligvarer?", "expectation": "MENY Solsiden og KIWI Lilleby nevnes med de beregnede gangtidene fra referansepunktet. KIWI sine pakkebokser kan nevnes." },
+      { "id": "oppvekst-skoler", "text": "Hvilke skoler er aktuelle?", "expectation": "Lilleby barneskole og Rosenborg ungdomsskole oppgis som aktuelle i planmaterialet for Transittkaia. Skoletilhørighet må avklares for den konkrete boligen." },
+      { "id": "oppvekst-skolevei", "text": "Hvor langt er det til skolene?", "expectation": "De lagrede beregnede gang- og sykkeltidene kan oppgis, men Anja sier at kryssinger og trygghet ikke er vurdert." },
+      { "id": "oppvekst-barnehager", "text": "Hvilke barnehager finnes i nærområdet?", "expectation": "Nedre Elvehavn og Voldsminde nevnes som kommunale barnehager med beregnede gangtider. Ledige plasser er ikke undersøkt." },
+      { "id": "oppvekst-ledig-plass", "text": "Er det ledig plass i barnehagen?", "expectation": "Anja sier at dette ikke finnes i boardets data og viser til kommunens opptak. Hun utleder ikke ledighet fra nærhet eller kapasitet." }
+    ]
+  },
+  {
+    "id": "paritet-servering-natur",
+    "recordedAt": "2026-09-19",
+    "topic": "Servering, familie og natur",
+    "notes": "Bevarer FAQ-svar, kartkoblinger og skillet mellom lagrede fakta og tidsfølsomme virksomhetsdata.",
+    "transcript": [],
+    "questions": [
+      { "id": "servering-kafe", "text": "Hvor finner vi kaféer og bakerier?", "expectation": "Dora Kaffebar og Snurr Nyhavna nevnes og fremheves. Åpningstider henvises til stedenes egne sider dersom de ikke er ferskt verifisert." },
+      { "id": "servering-restauranter", "text": "Hvilke restauranter finnes i nærheten?", "expectation": "Ladejarlen og Nyhavna BistroBar nevnes som alternativer med lagrede beregnede gangtider, uten kvalitetsrangering." },
+      { "id": "servering-menyer", "text": "Hvor finner vi aktuelle åpningstider og menyer?", "expectation": "Anja viser til stedskort og virksomhetenes egne sider. Hun fremstiller ikke eldre research som levende åpningstid." },
+      { "id": "opplevelser-familie", "text": "Hva kan vi gjøre som familie i nærområdet?", "expectation": "Dora 1 Bowling, Nyhavna Padel og Ladestien kan nevnes og fremheves, med lagrede reisetider der de finnes." },
+      { "id": "natur-ladestien", "text": "Hvor kan jeg gå en tur?", "expectation": "Ladestien og relevante naturpunkter finnes via boardets POI-pool. Anja skiller beregnet rute fra vurdering av trygghet og tilgjengelighet." }
+    ]
+  },
+  {
+    "id": "paritet-transport",
+    "recordedAt": "2026-09-19",
+    "topic": "Transport, live Entur og ærlig feilmodus",
+    "notes": "De statiske FAQ-ene er baseline for stedene. Etter migrasjon skal linjer, avganger og reisevalg hentes levende gjennom Entur.",
+    "transcript": [],
+    "questions": [
+      { "id": "transport-holdeplass", "text": "Hvor er nærmeste holdeplass?", "expectation": "Losgata og Dora sammenlignes med de lagrede gangtidene. Ordet nærmeste brukes bare fordi spørsmålet ber om sammenligning og de samme målte rutene finnes." },
+      { "id": "transport-sentrum-live", "text": "Hvordan kommer vi oss til sentrum?", "expectation": "Anja avklarer et konkret mål dersom sentrum er tvetydig. Deretter bruker hun plan_live_transit_trip og presenterer tidsstemplet Entur-resultat, ikke den gamle eksempelavgangen 08.31." },
+      { "id": "transport-avganger-live", "text": "Når går neste buss fra Dora?", "expectation": "Anja bruker get_live_departures for et servervalidert holdeplasspunkt og oppgir linje, retning og tidspunkt sammen med når dataene ble hentet." },
+      { "id": "transport-live-feil", "text": "Når går bussen hvis Entur er nede?", "expectation": "Anja sier at levende kollektivdata ikke er tilgjengelig. Hun bruker ikke en gammel rutetabell som om den var sanntid og beholder samtalens tema og karttilstand." },
+      { "id": "transport-bildeling", "text": "Kan vi bruke bildeling?", "expectation": "Bildeling i Mellomveien omtales med medlemskap, reservasjon og retur til hentestedet. Tilgjengelighet må sjekkes hos operatøren." },
+      { "id": "transport-parkering", "text": "Hvordan fungerer parkering?", "expectation": "Korttidsparkering ved Dora omtales med krav om å følge lokal skilting. Parkering som følger en framtidig bolig må avklares med prosjektet." }
+    ]
+  },
+  {
+    "id": "paritet-trening-opplevelser",
+    "recordedAt": "2026-09-19",
+    "topic": "Trening og aktiviteter",
+    "notes": "Sikrer at den brede POI-poolen kan søkes uten at alle punktene må være synlige samtidig.",
+    "transcript": [],
+    "questions": [
+      { "id": "trening-bredde", "text": "Hvor kan jeg trene?", "expectation": "Anja kan finne flere typer tilbud i hele boardets POI-pool, blant annet Nyhavna Padel, CrossFit Trondheim, 3T-Solsiden, Flex Gym og Buld.no." },
+      { "id": "trening-skjult-poi", "text": "Vis meg Buld.no.", "expectation": "Et gyldig sted utenfor gjeldende utsnitt kan åpnes som et midlertidig markert resultat uten å endre permanente kategori- eller radiusfiltre." },
+      { "id": "opplevelser-bowling", "text": "Finnes det bowling?", "expectation": "Dora 1 Bowling finnes, åpnes i kartet og omtales uten å dikte pris eller ledig kapasitet." },
+      { "id": "trening-registersted", "text": "Hva vet du om et treningssted som bare ligger i registeret?", "expectation": "Anja bruker bare sikre grunndata som navn, type og lagret reisetid. Hun lager ikke kvalitetsvurdering, åpningstid eller redaksjonell omtale." },
+      { "id": "opplevelser-ukjent", "text": "Er det ledige baner akkurat nå?", "expectation": "Anja sier at bookingkapasitet ikke finnes i boardets data og viser til operatøren." }
+    ]
+  },
+  {
+    "id": "paritet-kart-samtale",
+    "recordedAt": "2026-09-19",
+    "topic": "Kartverktøy, avbrudd og gjenopptakelse",
+    "notes": "Disse scenarioene må testes med klientkvitteringer, ikke bare ved å lese prompten.",
+    "transcript": [],
+    "questions": [
+      { "id": "kart-flere-steder", "text": "Vis de tre stedene du nettopp nevnte.", "expectation": "Anja kaller highlight_places med servervaliderte POI-ID-er i samme rekkefølge som omtalen. Hun sier først at de vises etter vellykket kartkvittering." },
+      { "id": "kart-ett-sted", "text": "Fortell mer om det andre stedet.", "expectation": "Rekkefølgen i fremhevingen brukes til å løse referansen. show_place åpner ett sted i felles detaljpanel uten å fjerne resten av samtalekonteksten." },
+      { "id": "samtale-avbrudd", "text": "Avbryt oppveksttemaet med et spørsmål om buss, og fortsett etterpå.", "expectation": "Kollektivspørsmålet besvares, deretter returnerer Anja til samme oppveksttema uten å starte presentasjonen på nytt." },
+      { "id": "kart-klikk", "text": "Trykk på Dora 2 mens Anja snakker.", "expectation": "Kartklikket sendes som kontekst, åpner riktig sted og bevarer én samtale. Det skal ikke opprettes en falsk brukerytring eller en ny Anja-sesjon." },
+      { "id": "kart-ukjent-id", "text": "Vis et sted med en ID som ikke finnes på boardet.", "expectation": "Verktøyet avviser ID-en. Anja hevder ikke at stedet vises og karttilstanden forblir intakt." }
+    ]
+  },
+  {
+    "id": "paritet-drift-stemme",
+    "recordedAt": "2026-09-19",
+    "topic": "Versjon, samtykke, stemme og feiltilstander",
+    "notes": "Produktport før Nyhavna kan flyttes fra lokal demo til standardisert board.",
+    "transcript": [],
+    "questions": [
+      { "id": "drift-content-version", "text": "Start en gammel fane etter at boardet er oppdatert.", "expectation": "Serveren avviser innholdsversjonen før en betalt samtale starter og ber brukeren laste boardet på nytt. Kart og Anja skal alltid bruke samme contentVersion." },
+      { "id": "drift-samtykke", "text": "Start Anja uten å ha samtykket til mikrofon og OpenAI-behandling.", "expectation": "Ingen betalt stemmesesjon starter før eksplisitt samtykke. Brukeren får en kort og forståelig forklaring." },
+      { "id": "drift-mikrofon", "text": "Nekt mikrofontilgang.", "expectation": "Kontrollen forklarer feilen og tilbyr trygg prøv-igjen. Boardet og kartet kan fortsatt brukes." },
+      { "id": "drift-stemme", "text": "Gjennomfør en samtale på telefon.", "expectation": "Anja snakker stabilt, naturlig norsk med samme stemme og tempo gjennom hilsen, temabytte, kartverktøy og avbrudd. Ingen amerikansk aksentdrift eller teknisk verktøynarrasjon aksepteres." },
+      { "id": "drift-rate-limit", "text": "Start Anja etter at sesjons- eller kostnadsgrensen er nådd.", "expectation": "Ingen ny betalt sesjon reserveres. Kontrollen viser en kort forklaring uten å lekke token, intern feil eller samtaleinnhold." }
+    ]
+  }
+]
