@@ -131,7 +131,11 @@ export function NeighbourhoodSurface({
           contentRestKey="story"
         >
           <StoryCard
-            assistant={data.demoSnapshotId ? <BoardVoiceControl /> : undefined}
+            assistant={
+              data.assistant?.enabled || data.demoSnapshotId ? (
+                <BoardVoiceControl />
+              ) : undefined
+            }
           />
         </NeighbourhoodSheet>
         <StoryDeck />

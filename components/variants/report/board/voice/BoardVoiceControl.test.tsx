@@ -86,13 +86,16 @@ afterEach(() => {
   capturedOptions = undefined;
   boardState = {};
   storyStop = null;
+  Object.assign(data, { demoSnapshotId: "nyhavna-snapshot-v1" });
+  Reflect.deleteProperty(data, "assistant");
+  Reflect.deleteProperty(data, "contentVersion");
   resetLive();
 });
 
 resetLive();
 
 describe("BoardVoiceControl", () => {
-  it("er én sirkel som starter tale med den navnløse hilsenen, og tømmer fremhevingen ved ny samtale", () => {
+  it("krever eksplisitt samtykke før tale starter, og tømmer fremhevingen ved ny samtale", () => {
     mount();
     // Før samtalen er feltet én linje: hele linjen er knappen, uten statusfelt
     // og hjelpetekst (2026-09-14).
@@ -101,6 +104,9 @@ describe("BoardVoiceControl", () => {
     expect(screen.queryByRole("textbox")).toBeNull();
     expect(screen.queryByRole("combobox")).toBeNull();
     fireEvent.click(screen.getByRole("button", { name: "Snakk med Placy" }));
+    expect(screen.getByTestId("board-voice-consent")).toBeTruthy();
+    expect(start).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByRole("button", { name: "Tillat og start" }));
     expect(pause).toHaveBeenCalledWith("manual");
     expect(dispatch).toHaveBeenCalledWith({ type: "END_INTRO" });
     expect(dispatch).toHaveBeenCalledWith({ type: "CLEAR_HIGHLIGHTS" });
@@ -131,6 +137,8 @@ describe("BoardVoiceControl", () => {
     expect(screen.queryByText(/avsluttet/i)).toBeNull();
     expect(screen.queryByRole("status")).toBeNull();
     fireEvent.click(knapp);
+    expect(start).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByRole("button", { name: "Tillat og start" }));
     expect(start).toHaveBeenCalledOnce();
   });
 
@@ -150,7 +158,19 @@ describe("BoardVoiceControl", () => {
     expect(screen.getByText("Tillat mikrofon i nettleseren, og prøv igjen.")).toBeTruthy();
     expect(screen.getByTestId("board-voice")).toHaveAttribute("data-s", "attention");
     fireEvent.click(screen.getByRole("button", { name: "Prøv igjen" }));
+    expect(start).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByRole("button", { name: "Tillat og start" }));
     expect(start).toHaveBeenCalledOnce();
+  });
+
+  it("kan aktiveres av ordinær assistentkonfig uten demoSnapshotId", () => {
+    Reflect.deleteProperty(data, "demoSnapshotId");
+    Object.assign(data, {
+      contentVersion: "content-v1",
+      assistant: { enabled: true, name: "Anja", guided: true },
+    });
+    mount();
+    expect(screen.getByRole("button", { name: "Snakk med Anja" })).toBeTruthy();
   });
 
   it("skiller åpen mikrofon fra å høre brukeren, uten å endre teksten", () => {

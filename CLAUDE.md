@@ -122,7 +122,13 @@ Disse reglene håndheves av ESLint og pre-commit hooks der mulig, men gjelder AL
 - ALDRI kommenter ut kode "for sikkerhets skyld" — git har historikk
 
 ### LLM-integrasjon
-- ALDRI runtime LLM-kall — build-time only (skill/script eller lagret output)
+- Runtime LLM-kall er forbudt med ett snevert unntak: den eksplisitt
+  aktiverte board-assistenten (`reportConfig.assistant.enabled`). Den skal gå
+  via Placys board-bundne gateway og den langlivede Anja-tjenesten, lese samme
+  `contentVersion` som kartet, bruke servervaliderte verktøy og aldri eksponere
+  leverandørnøkler eller sesjonskapabiliteter til JavaScript/URL/logg. Andre
+  LLM-integrasjoner er fortsatt build-time only (skill/script eller lagret
+  output).
 - ALLTID API-nøkkel i `x-goog-api-key`/`Authorization`-header, aldri URL-querystring (leker i logs)
 - Gemini-grounding: `scripts/gemini-grounding.ts` + `lib/gemini/`. Lagret per tema i `products.config.reportConfig.themes[].grounding`.
 - Cache bustes via `groundingVersion`-bump (Zod `z.literal(1)`) eller `revalidateTag("product:${customer}_${slug}")` — ikke auto-TTL

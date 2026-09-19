@@ -16,7 +16,8 @@
     "validate:tier": "npx tsx scripts/validate-report-tier.ts",
     "generate:reels-posters": "node scripts/generate-reels-posters.mjs",
     "prepare": "husky",
-    "demo:nyhavna": "PLACY_LOCAL_REALTIME_DEMO=1 next start --hostname 127.0.0.1 --port 3101"
+    "demo:nyhavna": "PLACY_LOCAL_REALTIME_DEMO=1 next start --hostname 127.0.0.1 --port 3101",
+    "anja:service": "NODE_OPTIONS=--conditions=react-server tsx services/anja/start.ts"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",

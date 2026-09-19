@@ -106,6 +106,27 @@ beforeEach(() => {
 afterEach(() => { cleanup(); vi.useRealTimers(); vi.unstubAllGlobals(); vi.restoreAllMocks(); });
 
 describe("Live-oppkobling", () => {
+  it("bruker cookie-bundet gateway for et ordinært board uten token i URL eller JavaScript", async () => {
+    vi.mocked(fetch).mockImplementation(async (url: unknown, init?: RequestInit) => {
+      const target = String(url);
+      if (target.startsWith("/api/board-assistant?") && !init?.method) {
+        return { ok: true, json: async () => ({ configured: true, protocol: "live" }) } as Response;
+      }
+      if (target === "/api/board-assistant" && init?.method === "POST") {
+        return { ok: true, headers: { get: () => null }, json: async () => ({ sdp: "v=0\r\nanswer", sessionId: "live_1" }) } as unknown as Response;
+      }
+      if (init?.method === "DELETE" || init?.method === "POST") return { ok: true, json: async () => ({}) } as Response;
+      return { ok: false, json: async () => ({}) } as Response;
+    });
+    const project = { customer: "kunde", projectSlug: "prosjekt", contentVersion: "a".repeat(64) };
+    const { events } = await connect({ ...options(), snapshotId: undefined, endpoint: "/api/board-assistant", project });
+    expect(events.url).toBe("/api/board-assistant/map");
+    const start = posts("/api/board-assistant")[0];
+    expect(JSON.parse(String(start[1]?.body))).toMatchObject(project);
+    expect(start[1]?.headers).toEqual({ "Content-Type": "application/json" });
+    expect(vi.mocked(fetch).mock.calls.map(([url]) => String(url)).join(" ")).not.toContain("session=");
+  });
+
   it("varsler før lokal tidsgrense og rydder varselet ved stopp", async () => {
     vi.useFakeTimers();
     const { result, peer } = await connect();

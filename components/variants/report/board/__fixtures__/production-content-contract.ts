@@ -90,6 +90,8 @@ export function productionContentContractFixture(): ReportData {
   });
 
   return {
+    projectId: "project-production-contract",
+    projectCustomer: "fixture-customer",
     projectName: "Produksjonskontrakt",
     projectSlug: "produksjonskontrakt",
     address: "Kontraktveien 1",

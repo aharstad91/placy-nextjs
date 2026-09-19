@@ -75,6 +75,13 @@ export interface LiveOptions {
   allowRevealPlaces?: boolean;
   /** Hilsenen, formulert som en instruksjon til stemmen (`session.instructions.append`). */
   greeting: string;
+  /** Ordinære boards bruker cookie-bundet gateway; demoer beholder legacy-headeren. */
+  endpoint?: string;
+  project?: {
+    customer: string;
+    projectSlug: string;
+    contentVersion: string;
+  };
 }
 
 interface Connection {
@@ -86,6 +93,9 @@ interface Connection {
   abort: AbortController;
   stream?: MediaStream;
   sessionToken?: string;
+  endpoint: string;
+  cookieAuth: boolean;
+  serverSession: boolean;
   events?: EventSource;
   audioContext?: AudioContext;
   meter?: ReturnType<typeof setInterval>;
@@ -135,6 +145,7 @@ export function useLive(options: LiveOptions) {
   const generation = useRef(0);
   const contextSent = useRef("");
   const cleanupToken = useRef<string | undefined>(undefined);
+  const cleanupEndpoint = useRef<string | undefined>(undefined);
   const cleanupPending = useRef<Promise<boolean>>(Promise.resolve(true));
   const latestOptions = useRef(options);
   useEffect(() => { latestOptions.current = options; }, [options]);
@@ -158,9 +169,11 @@ export function useLive(options: LiveOptions) {
     void current.audioContext?.close().catch(() => {});
     // Serveren har alt ryddet når den selv avsluttet; en ny DELETE ville bare
     // treffe et ukjent token.
-    if (current.sessionToken && !current.ended) {
-      cleanupToken.current = current.sessionToken;
-      cleanupPending.current = fetch("/api/prototype/live", { method: "DELETE", headers: { "X-Placy-Session": current.sessionToken }, keepalive: true }).then(response => response.ok).catch(() => false);
+    if (current.serverSession && !current.ended) {
+      const headers = current.sessionToken ? { "X-Placy-Session": current.sessionToken } : undefined;
+      if (current.sessionToken) cleanupToken.current = current.sessionToken;
+      cleanupEndpoint.current = current.endpoint;
+      cleanupPending.current = fetch(current.endpoint, { method: "DELETE", headers, keepalive: true }).then(response => response.ok).catch(() => false);
     }
   }, []);
 
@@ -183,7 +196,7 @@ export function useLive(options: LiveOptions) {
 
   const sendContext = useCallback((message: LiveContextMessage) => {
     const current = connection.current;
-    if (!current?.sessionToken) return;
+    if (!current?.serverSession) return;
     const body = JSON.stringify(message);
     // Karttilstanden meldes hver gang React committer; bare endringer er nytt
     // for serveren, og hver melding koster en kontekst-append hos stemmen.
@@ -191,9 +204,12 @@ export function useLive(options: LiveOptions) {
       if (contextSent.current === body) return;
       contextSent.current = body;
     }
-    void fetch("/api/prototype/live/context", {
+    void fetch(`${current.endpoint}/context`, {
       method: "POST",
-      headers: { "Content-Type": "application/json", "X-Placy-Session": current.sessionToken },
+      headers: {
+        "Content-Type": "application/json",
+        ...(current.sessionToken ? { "X-Placy-Session": current.sessionToken } : {}),
+      },
       body,
     }).catch(() => {});
   }, []);
@@ -233,28 +249,36 @@ export function useLive(options: LiveOptions) {
     setUsage({ voiceSeconds: 0, estimatedUsd: 0 });
     try {
       let cleaned = await cleanupPending.current;
-      if (!cleaned && cleanupToken.current) {
-        cleaned = await fetch("/api/prototype/live", { method: "DELETE", headers: { "X-Placy-Session": cleanupToken.current } }).then(response => response.ok).catch(() => false);
+      if (!cleaned && cleanupEndpoint.current) {
+        cleaned = await fetch(cleanupEndpoint.current, {
+          method: "DELETE",
+          headers: cleanupToken.current ? { "X-Placy-Session": cleanupToken.current } : undefined,
+        }).then(response => response.ok).catch(() => false);
         cleanupPending.current = Promise.resolve(cleaned);
       }
-      if (cleaned) cleanupToken.current = undefined;
+      if (cleaned) { cleanupToken.current = undefined; cleanupEndpoint.current = undefined; }
       if (run !== generation.current) return;
       if (!cleaned) throw new Error("Forrige samtale kunne ikke avsluttes. Vent på serverens opprydding før du prøver igjen.");
 
       // Sjekk oppsettet før vi ber om mikrofontillatelse.
+      const project = latestOptions.current.project;
+      const endpoint = latestOptions.current.endpoint ?? "/api/prototype/live";
       const dataset = latestOptions.current.dataset;
       const selectedVoice = latestOptions.current.voice;
-      const health = await fetch(`/api/prototype/live${dataset ? `?dataset=${encodeURIComponent(dataset)}` : ""}`, { cache: "no-store" });
+      const healthQuery = project
+        ? new URLSearchParams(project).toString()
+        : dataset ? `dataset=${encodeURIComponent(dataset)}` : "";
+      const health = await fetch(`${endpoint}${healthQuery ? `?${healthQuery}` : ""}`, { cache: "no-store" });
       if (run !== generation.current) return;
-      if (!health.ok) throw new Error("Denne prototypen kan bare starte samtaler på localhost.");
-      const configured = await health.json() as { configured?: boolean; protocol?: string; snapshotId?: string };
+      const configured = await health.json().catch(() => ({})) as { configured?: boolean; protocol?: string; snapshotId?: string; error?: string };
+      if (!health.ok) throw new Error(configured.error || "Talesamtalen er ikke tilgjengelig. Prøv igjen senere.");
       if (run !== generation.current) return;
       // Ingen reservevei til Realtime: en server som ikke svarer «live» ville
       // gitt en samtale med andre turregler enn resten av koden regner med.
       if (configured.protocol !== "live") throw new Error("Serveren kjører ikke Live-protokollen. Start serveren på nytt med Live-ruten før du prøver igjen.");
-      if (!configured.configured) throw new Error("Tale er ikke koblet til ennå. Legg OPENAI_API_KEY i .env.local, og prøv igjen.");
+      if (!configured.configured) throw new Error("Tale er ikke koblet til ennå. Prøv igjen senere.");
       const snapshotId = latestOptions.current.snapshotId ?? configured.snapshotId;
-      if (!snapshotId) throw new Error("Last boardet på nytt med riktig dataversjon før du starter samtalen.");
+      if (!project && !snapshotId) throw new Error("Last boardet på nytt med riktig dataversjon før du starter samtalen.");
       if (!window.RTCPeerConnection) throw new Error("Nettleseren støtter ikke talesamtaler. Prøv Chrome eller Safari.");
 
       const pc = new RTCPeerConnection();
@@ -265,6 +289,7 @@ export function useLive(options: LiveOptions) {
       audio.autoplay = true;
       const current: Connection = {
         generation: run, pc, channel, audio, transceiver, abort: new AbortController(),
+        endpoint, cookieAuth: Boolean(project), serverSession: false,
         started: false, ended: false, greetingEventId: `greeting-${crypto.randomUUID()}`, greetingKicked: false, speaking: false, loudAt: 0,
         lastAssistantAt: 0, lastUserAt: 0, transcript: null,
       };
@@ -500,10 +525,14 @@ export function useLive(options: LiveOptions) {
       });
       if (!active()) return;
 
-      const response = await fetch("/api/prototype/live", {
+      const response = await fetch(endpoint, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ sdp: pc.localDescription?.sdp ?? offer.sdp, snapshotId, ...(dataset ? { dataset } : {}), ...(selectedVoice ? { voice: selectedVoice } : {}) }),
+        body: JSON.stringify({
+          sdp: pc.localDescription?.sdp ?? offer.sdp,
+          ...(project ?? { snapshotId, ...(dataset ? { dataset } : {}) }),
+          ...(selectedVoice ? { voice: selectedVoice } : {}),
+        }),
         signal: current.abort.signal,
       });
       if (!active()) return;
@@ -516,6 +545,7 @@ export function useLive(options: LiveOptions) {
       if (!active()) return;
       if (!payload.sdp) throw new Error("Serveren svarte uten lydforbindelse. Prøv igjen.");
       current.sessionToken = token;
+      current.serverSession = true;
       await pc.setRemoteDescription({ type: "answer", sdp: payload.sdp });
       if (!active()) return;
 
@@ -524,8 +554,8 @@ export function useLive(options: LiveOptions) {
       if (!active()) return;
       setStatus("listening");
 
-      if (token) {
-        const events = new EventSource(`/api/prototype/live/map?session=${encodeURIComponent(token)}`);
+      if (current.serverSession && (current.cookieAuth || token)) {
+        const events = new EventSource(current.cookieAuth ? `${endpoint}/map` : `${endpoint}/map?session=${encodeURIComponent(token!)}`);
         current.events = events;
         events.onmessage = async message => {
           if (!active()) return;
@@ -548,9 +578,12 @@ export function useLive(options: LiveOptions) {
             output = { error: "Kartkommandoen kunne ikke utføres. Ikke påstå at kartet ble flyttet." };
           }
           if (!active()) return;
-          void fetch("/api/prototype/live/map", {
+          void fetch(`${endpoint}/map`, {
             method: "POST",
-            headers: { "Content-Type": "application/json", "X-Placy-Session": token },
+            headers: {
+              "Content-Type": "application/json",
+              ...(token ? { "X-Placy-Session": token } : {}),
+            },
             body: JSON.stringify({ id: directive.id, output: output ?? { ok: true } }),
           }).catch(() => {});
         };

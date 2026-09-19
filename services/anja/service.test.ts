@@ -1,0 +1,61 @@
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { AnjaConversationService, createAnjaServiceHandler } from "@/services/anja/service";
+import { LiveSessionRegistry } from "@/lib/live/session-registry";
+
+const version = "a".repeat(64);
+const source = {
+  contentVersion: version,
+  backendInstructions: "backend",
+  voiceInstructions: "voice",
+  tools: [],
+  createConversation: vi.fn(() => ({ execute: vi.fn(), observeBrowserResult: vi.fn(), onContext: vi.fn() })),
+  board: {},
+} as never;
+
+describe("long-lived Anja service", () => {
+  beforeEach(() => {
+    process.env.OPENAI_API_KEY = "test";
+    process.env.ANJA_SERVICE_SECRET = "service-secret";
+  });
+  afterEach(() => {
+    delete process.env.OPENAI_API_KEY;
+    delete process.env.ANJA_SERVICE_SECRET;
+  });
+
+  it("avviser stale versjon før en betalt sesjon reserveres", async () => {
+    const createSession = vi.fn();
+    const service = new AnjaConversationService({
+      loadSource: vi.fn(async () => source),
+      createSession,
+    });
+    await expect(service.start({
+      customer: "kunde", projectSlug: "prosjekt", contentVersion: "b".repeat(64), sdp: "v=0\r\n",
+    })).rejects.toMatchObject({ status: 409 });
+    expect(createSession).not.toHaveBeenCalled();
+  });
+
+  it("beholder samme interne sesjon gjennom start og avslutning", async () => {
+    const stop = vi.fn(async () => {});
+    const connectSideband = vi.fn(async () => ({ onContext: vi.fn(), end: vi.fn() }));
+    const registry = new LiveSessionRegistry({ stop, maxMs: 60_000 });
+    const service = new AnjaConversationService({
+      loadSource: vi.fn(async () => source),
+      createSession: vi.fn(async () => ({ sessionId: "live_test", sdp: "answer", model: "gpt-live-1" })),
+      connectSideband,
+      registry,
+    });
+    const started = await service.start({
+      customer: "kunde", projectSlug: "prosjekt", contentVersion: version, sdp: "v=0\r\n",
+    });
+    expect(service.registry.isActive(started.token)).toBe(true);
+    expect(connectSideband).toHaveBeenCalledWith("live_test", started.token, expect.anything(), expect.objectContaining({ sessionOwner: service.registry }));
+    await expect(service.end(started.token)).resolves.toEqual({ ended: true });
+    expect(stop).toHaveBeenCalledWith("live_test");
+  });
+
+  it("skjuler tjenesten uten riktig intern auth", async () => {
+    const handler = createAnjaServiceHandler(new AnjaConversationService({ loadSource: vi.fn(async () => source) }));
+    const response = await handler(new Request(`http://anja/health?customer=kunde&projectSlug=prosjekt&contentVersion=${version}`));
+    expect(response.status).toBe(404);
+  });
+});

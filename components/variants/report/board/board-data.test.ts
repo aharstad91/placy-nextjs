@@ -69,6 +69,8 @@ function makeTheme(id: string, pois: POI[], overrides: Partial<ReportTheme> = {}
 
 function makeReportData(themes: ReportTheme[]): ReportData {
   return {
+    projectId: "project-test",
+    projectCustomer: "test-customer",
     projectName: "Test Prosjekt",
     address: "Testveien 1, 0001 Test",
     district: "Midtbyen",

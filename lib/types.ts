@@ -875,6 +875,17 @@ export interface ReportCTA {
   shareTitle?: string;
 }
 
+/** Eksplisitt opt-in for den samtalende board-assistenten. */
+export interface ReportAssistantConfig {
+  enabled: boolean;
+  /** Navnet kontrollen og tilgjengelighetstekst bruker. */
+  name?: string;
+  /** Guidet persona bruker «AI-guide» i kontrollen. */
+  guided?: boolean;
+  /** Prosjektets egen første replikk. */
+  greeting?: string;
+}
+
 /**
  * Per-prosjekt opt-in for prosjekt-spesifikke asset-filer. Erstatter de gamle
  * hardkodede slug-settene (PROJECTS_WITH_BRAND / PROJECTS_WITH_CUSTOM_ILLUSTRATIONS)
@@ -1012,6 +1023,8 @@ export interface ReportConfig {
    */
   hideBrokerCard?: boolean;
   cta?: ReportCTA;
+  /** Runtime-assistenten er av med mindre prosjektet uttrykkelig slår den på. */
+  assistant?: ReportAssistantConfig;
   mapStyle?: string;
   trails?: TrailCollection;
   /** Linjer og flater boardet tegner ved siden av punktene. Tom/utelatt =

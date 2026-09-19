@@ -72,6 +72,15 @@ export interface LiveSidebandOptions {
   backendInstructions?: string;
   onTiming?: (timing: DelegationTiming) => void;
   onUsage?: (usage: LiveUsage & { reason: string }) => void;
+  /** Eieren av akkurat denne prosessen. Produksjonstjenesten kan eie mange. */
+  sessionOwner?: LiveSessionOwner;
+  /** Produksjon lagrer ikke transkriptfragmenter eller verktøyargumenter i driftslogg. */
+  logging?: "demo" | "silent";
+}
+
+export interface LiveSessionOwner {
+  end(token: string, reason?: string): Promise<boolean>;
+  setCleanup(token: string, cleanup: (reason: string) => void): void;
 }
 
 export interface LiveSidebandHandle {
@@ -98,13 +107,13 @@ export async function connectLiveSideband(
   const idleMs = options.idleMs ?? IDLE_MS;
   const maxRounds = options.maxRounds ?? MAX_ROUNDS;
   const baseInstructions = options.backendInstructions ?? '';
-  const supervisor = getLiveSupervisor();
+  const supervisor = options.sessionOwner ?? getLiveSupervisor();
   const bridge: MapBridge = getMapBridge(token);
   // Loggen går både til stdout og til `.context/nyhavna-live.log` (ikke i git):
   // demoens server kjører i et terminalvindu ingen leser under møtet, og
   // målepunktene skal kunne hentes etterpå.
   const log = (line: string) => {
-    if (process.env.NODE_ENV === 'test') return;
+    if (process.env.NODE_ENV === 'test' || options.logging === "silent") return;
     process.stdout.write(line);
     void appendFile(join(process.cwd(), '.context', 'nyhavna-live.log'), `${new Date().toISOString()} ${line}`).catch(() => {});
   };

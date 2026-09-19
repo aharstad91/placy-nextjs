@@ -28,8 +28,8 @@ import { greetingInstruction, NYHAVNA_GREETING_INSTRUCTION } from "@/lib/realtim
  * nytt ha lagt på. Derfor eier provideren forbindelsen, og kontrollene er bare
  * knapper mot den. Montert én gang, inne i board- og omvisningskonteksten.
  *
- * Bare boards med et frosset datagrunnlag (`demoSnapshotId`) har samtale;
- * andre boards får ingen kontekst, og kontrollen rendrer ingenting.
+ * Ordinære boards må aktivere `assistant`; lokale demoer kan fortsatt bruke
+ * et frosset `demoSnapshotId` mens migreringsoraklene finnes.
  *
  * ## Brukerens trykk er kontekst, ikke en brukertur
  *
@@ -59,6 +59,10 @@ export interface BoardVoice {
   ended: boolean;
   notice: string | null;
   error: string | null;
+  name: string;
+  consentPending: boolean;
+  confirmConsent: () => void;
+  cancelConsent: () => void;
   /** Spill/stopp. */
   toggle: () => void;
   faq?: {
@@ -77,7 +81,7 @@ export function useBoardVoice(): BoardVoice | null {
 
 export function BoardVoiceProvider({ children }: { children: ReactNode }) {
   const { data } = useBoard();
-  if (!data.demoSnapshotId) return <>{children}</>;
+  if (!data.assistant?.enabled && !data.demoSnapshotId) return <>{children}</>;
   return <BoardVoiceSession>{children}</BoardVoiceSession>;
 }
 
@@ -125,7 +129,7 @@ function BoardVoiceSession({ children }: { children: ReactNode }) {
   const followHighlightCategory = features?.followHighlightCategory ?? false;
   const narrationFocusEnabled = features?.narrationFocus ?? false;
   const voicePacing = features?.voicePacing ?? false;
-  const guidedPersona = features?.guidedPersona;
+  const guidedPersona = features?.guidedPersona ?? data.assistant?.guided;
   const faqIds = useMemo(() => faqProgressEnabled ? [...(data.globalFaq ?? []), ...data.categories.flatMap(c => c.editorial?.faq ?? [])].map(f => f.id) : [], [data.globalFaq, data.categories, faqProgressEnabled]);
 
   const commandVersion = useRef(0);
@@ -180,12 +184,28 @@ function BoardVoiceSession({ children }: { children: ReactNode }) {
     // Hilsenen og datagrunnlaget følger BOARDET, ikke koden: to demoer deler
     // denne flaten med hvert sitt innhold, og guiden skal si stedets egen
     // åpning og svare ut av stedets egne data.
-    greeting: (data.demoGreeting ? greetingInstruction(data.demoGreeting) : NYHAVNA_GREETING_INSTRUCTION) + (voicePacing ? `\n${LOCAL_VOICE_PACING}` : ""),
+    greeting:
+      (data.assistant?.greeting
+        ? greetingInstruction(data.assistant.greeting)
+        : data.demoGreeting
+          ? greetingInstruction(data.demoGreeting)
+          : NYHAVNA_GREETING_INSTRUCTION) +
+      (voicePacing ? `\n${LOCAL_VOICE_PACING}` : ""),
     dataset: data.demoDataset,
     allowRevealPlaces: revealEnabled,
     getContext: () => ({ selected_category_id: stopId ?? (state.activeCategoryId ? String(state.activeCategoryId) : null), selected_place_id: activePoiId, travel_mode: state.travelMode, ...(revealEnabled ? { revealed_place_ids: [...(revealedPlaceIds ?? [])] } : {}) }),
     executeTool: runBoardTool,
     snapshotId: data.demoSnapshotId,
+    ...(data.assistant?.enabled && data.projectCustomer && data.projectSlug && data.contentVersion
+      ? {
+          endpoint: "/api/board-assistant",
+          project: {
+            customer: data.projectCustomer,
+            projectSlug: data.projectSlug,
+            contentVersion: data.contentVersion,
+          },
+        }
+      : {}),
   });
   const { status, hearing, micLevel, notice, error, messages, start, stop, sendContext, sendText, replaceMicrophoneTrack } = live;
   const narrationPlaces = useMemo(() => state.highlightedPoiIds.flatMap(id => {
@@ -202,6 +222,7 @@ function BoardVoiceSession({ children }: { children: ReactNode }) {
   const running = connected || connecting;
   // «Snakk med Anja igjen»: bare etter en samtale som faktisk kom i gang.
   const [ended, setEnded] = useState(false);
+  const [consentPending, setConsentPending] = useState(false);
   const wasConnected = useRef(false);
   useEffect(() => {
     if (connected) wasConnected.current = true;
@@ -274,7 +295,20 @@ function BoardVoiceSession({ children }: { children: ReactNode }) {
     }
   };
 
+  const beginConversation = () => {
+    setConsentPending(false);
+    setEnded(false);
+    pauseTour("manual");
+    dispatch({ type: "END_INTRO" });
+    dispatch({ type: "CLEAR_HIGHLIGHTS" });
+    void start();
+  };
+
   const value: BoardVoice = {
+    name: data.assistant?.name?.trim() || (guidedPersona ? "Anja" : "Placy"),
+    consentPending,
+    confirmConsent: beginConversation,
+    cancelConsent: () => setConsentPending(false),
     status, hearing: hearing ?? false, micLevel: micLevel ?? { current: 0 }, running, connecting, ended, notice, error, guided: guidedPersona,
     ...(revealEnabled && discoveryCategory ? { morePlaces: { current: radius.current, options: radius.options.map(o => ({ radiusKm: o.radiusKm, count: o.ids.length })), show: showMore } } : {}),
     ...(faqProgressEnabled ? { faq: { explored: progress.explored, active: progress.active, select: selectFaq, reset: progress.reset } } : {}),
@@ -286,12 +320,7 @@ function BoardVoiceSession({ children }: { children: ReactNode }) {
         dispatch({ type: "CLEAR_HIGHLIGHTS" });
         return;
       }
-      setEnded(false);
-      pauseTour("manual");
-      dispatch({ type: "END_INTRO" });
-      // Ny samtale, tom profil – også i kartet.
-      dispatch({ type: "CLEAR_HIGHLIGHTS" });
-      void start();
+      setConsentPending(true);
     },
   };
 

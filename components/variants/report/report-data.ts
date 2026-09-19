@@ -226,9 +226,12 @@ const PROJECT_3D_HEADINGS: Record<string, number> = {
 };
 
 export interface ReportData {
+  projectId: string;
+  projectCustomer: string;
   demoSnapshotId?: string;
   contentVersion?: string;
   publishedKnowledge?: import("@/lib/types").PublishedKnowledge[];
+  assistant?: import("@/lib/types").ReportAssistantConfig;
   projectName: string;
   /** URL-slug, eks. "stasjonskvartalet". Brukes til å slå opp prosjekt-
    *  spesifikke ressurser (illustrasjoner, audio-stier, etc.). */
@@ -797,9 +800,12 @@ export function transformToReportData(project: Project, locale: Locale = "no"): 
     ?? interpolate(t(locale, getIntroKey(project.tags)), { name: project.name });
 
   return {
+    projectId: project.id,
+    projectCustomer: project.customer,
     demoSnapshotId: project.demoSnapshotId,
     contentVersion: project.contentVersion,
     publishedKnowledge: project.publishedKnowledge,
+    assistant: project.reportConfig?.assistant,
     projectName: project.name,
     projectSlug: project.urlSlug,
     address: project.pois[0]?.address ?? "",

@@ -211,6 +211,8 @@ export interface BoardHome {
 }
 
 export interface BoardData {
+  projectId?: string;
+  projectCustomer?: string;
   /** Curated reserve, omitted from the initial local demo view. */
   demoReservePlaceIds?: string[];
   demoRadiusPlaces?: import("@/lib/demo/local-board/radius").RadiusPlace[];
@@ -219,6 +221,8 @@ export interface BoardData {
   contentVersion?: string;
   /** Kildebelagt kunnskap, også prosjekt-/temafakta uten kartpunkt. */
   publishedKnowledge?: PublishedKnowledge[];
+  /** Eksplisitt opt-in for Anja på ordinære boards. */
+  assistant?: import("@/lib/types").ReportAssistantConfig;
   /**
    * Hvilket demo-datasett stemmen skal snakke ut fra.
    *
@@ -396,9 +400,12 @@ export function adaptBoardData(report: ReportData): BoardData {
   }
 
   return {
+    projectId: report.projectId,
+    projectCustomer: report.projectCustomer,
     demoSnapshotId: report.demoSnapshotId,
     contentVersion: report.contentVersion,
     publishedKnowledge: report.publishedKnowledge,
+    assistant: report.assistant,
     projectSlug: report.projectSlug,
     home: {
       name: report.projectName,
