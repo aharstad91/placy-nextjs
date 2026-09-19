@@ -188,6 +188,25 @@ describe("research package contract", () => {
     ).toBe("expired");
   });
 
+  it("keeps a future approved claim eligible while withholding it until valid_from", () => {
+    const state = applyResearchPackageToLedger(
+      EMPTY_RESEARCH_LEDGER,
+      researchPackage("pkg-future", "delta", [
+        claim("claim-future", "approved", { validFrom: "2026-09-20" }),
+      ]),
+      OPTIONS,
+    );
+
+    expect(state.claims[0].publicationEligible).toBe(true);
+    expect(currentPublishableClaims(state, NOW)).toEqual([]);
+    expect(
+      currentPublishableClaims(
+        state,
+        new Date("2026-09-20T00:00:00.000Z"),
+      ),
+    ).toHaveLength(1);
+  });
+
   it("is idempotent for the same package hash", () => {
     const input = researchPackage("pkg-repeat", "delta", [claim("claim-1")]);
     const once = applyResearchPackageToLedger(
@@ -314,4 +333,3 @@ describe("research package contract", () => {
     expect(initial).toEqual(before);
   });
 });
-

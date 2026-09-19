@@ -227,6 +227,8 @@ const PROJECT_3D_HEADINGS: Record<string, number> = {
 
 export interface ReportData {
   demoSnapshotId?: string;
+  contentVersion?: string;
+  publishedKnowledge?: import("@/lib/types").PublishedKnowledge[];
   projectName: string;
   /** URL-slug, eks. "stasjonskvartalet". Brukes til å slå opp prosjekt-
    *  spesifikke ressurser (illustrasjoner, audio-stier, etc.). */
@@ -796,6 +798,8 @@ export function transformToReportData(project: Project, locale: Locale = "no"): 
 
   return {
     demoSnapshotId: project.demoSnapshotId,
+    contentVersion: project.contentVersion,
+    publishedKnowledge: project.publishedKnowledge,
     projectName: project.name,
     projectSlug: project.urlSlug,
     address: project.pois[0]?.address ?? "",

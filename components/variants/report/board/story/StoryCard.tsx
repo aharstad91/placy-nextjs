@@ -37,6 +37,7 @@ import { useViewportCategoryList } from "../neighbourhood/use-viewport-category-
 import { StoryTravelCell } from "./StoryTravelCell";
 import { StoryThemeGrid } from "./StoryThemeGrid";
 import { useDesktopPlacePanel } from "../use-popup-mode";
+import { BoardKnowledgeFacts } from "../BoardKnowledgeFacts";
 import { useStoryTour, type StoryPane } from "./story-tour";
 import {
   areaLabel,
@@ -377,6 +378,7 @@ function AreaPane() {
           {p}
         </p>
       ))}
+      <BoardKnowledgeFacts knowledge={data.publishedKnowledge} />
       <StoryThemeGrid className="mt-5" />
       <div data-testid="story-area-faq">
         <StoryFaq

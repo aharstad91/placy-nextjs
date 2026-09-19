@@ -278,19 +278,11 @@ BEGIN
     NULLIF(claim->>'board_id', ''),
     claim->>'mapping_status',
     NULLIF(claim->>'mapped_poi_id', ''),
-    CASE
-      WHEN claim->>'review_status' = 'approved'
-        THEN (NULLIF(claim->>'valid_from', '') IS NULL
-          OR NULLIF(claim->>'valid_from', '')::date <= current_date)
-          AND (NULLIF(claim->>'valid_until', '') IS NULL
-            OR NULLIF(claim->>'valid_until', '')::date >= current_date)
-      WHEN claim->>'review_status' = 'approved_time_sensitive'
-        THEN NULLIF(claim->>'valid_until', '') IS NOT NULL
-          AND NULLIF(claim->>'valid_until', '')::date >= current_date
-          AND (NULLIF(claim->>'valid_from', '') IS NULL
-            OR NULLIF(claim->>'valid_from', '')::date <= current_date)
-      ELSE false
-    END
+    (claim->>'review_status' = 'approved') OR
+    (
+      claim->>'review_status' = 'approved_time_sensitive'
+      AND NULLIF(claim->>'valid_until', '') IS NOT NULL
+    )
   FROM jsonb_array_elements(p_payload->'claims') AS claim;
   GET DIAGNOSTICS v_claims = ROW_COUNT;
 

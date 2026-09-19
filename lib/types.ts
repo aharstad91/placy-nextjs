@@ -1090,6 +1090,10 @@ export interface ProjectTheme {
  */
 export interface Project {
   demoSnapshotId?: string;
+  /** Publiserbar, kildebelagt kunnskap fra samme v2-lesning som POI-poolen. */
+  publishedKnowledge?: PublishedKnowledge[];
+  /** Hash over kart-, kunnskaps- og konfigurasjonsdata i denne lesningen. */
+  contentVersion?: string;
   /** Server-resolved, source-backed activities selected by the board. */
   localActivities?: LocalActivity[];
   id: string;
@@ -1120,6 +1124,39 @@ export interface Project {
    * instead of calling getSchoolZone() directly.
    */
   schoolZone?: { barneskole: string | null; ungdomsskole: string | null };
+}
+
+export interface PublishedKnowledge {
+  id: string;
+  sourceClaimId?: string;
+  projectId?: string;
+  poiId?: string;
+  scope: "global_place" | "project" | "address" | "board_view";
+  subjectId: string;
+  subjectName?: string;
+  topic: string;
+  field: string;
+  factText: string;
+  structuredData?: unknown;
+  confidence: "low" | "medium" | "high";
+  sourceUrls: string[];
+  sourceTitles: string[];
+  reviewStatus: "approved" | "approved_time_sensitive";
+  temporalKind:
+    | "existing"
+    | "regulated"
+    | "planned"
+    | "marketed"
+    | "under_construction"
+    | "inference"
+    | "absence_of_evidence"
+    | "historical";
+  observedAt?: string;
+  validFrom?: string;
+  validUntil?: string;
+  reusableAcrossBoards: boolean;
+  boardId?: string;
+  mappingStatus: "mapped" | "unmapped" | "not_applicable" | "rejected";
 }
 
 // === Global State ===

@@ -210,6 +210,16 @@ export function claimPublicationState(
   return "publishable";
 }
 
+export function isPublicationEligible(
+  claim: Pick<ResearchClaim, "reviewStatus" | "validUntil">,
+): boolean {
+  return (
+    claim.reviewStatus === "approved" ||
+    (claim.reviewStatus === "approved_time_sensitive" &&
+      claim.validUntil !== null)
+  );
+}
+
 export interface ImportedResearchPackage {
   packageHash: string;
   researchPackage: ResearchPackage;
@@ -300,8 +310,7 @@ export function applyResearchPackageToLedger(
       projectId: researchPackage.projectId,
       scopeKey: researchPackage.scopeKey,
       claim,
-      publicationEligible:
-        claimPublicationState(claim, options.now) === "publishable",
+      publicationEligible: isPublicationEligible(claim),
       supersededAt: null,
     })),
   );
@@ -326,4 +335,3 @@ export function currentPublishableClaims(
       claimPublicationState(entry.claim, now) === "publishable",
   );
 }
-

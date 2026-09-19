@@ -1301,6 +1301,7 @@ export type Database = {
           poi_id: string | null
           sort_order: number | null
           source_name: string | null
+          source_claim_id: string | null
           source_url: string | null
           structured_data: Json | null
           topic: string
@@ -1318,6 +1319,7 @@ export type Database = {
           poi_id?: string | null
           sort_order?: number | null
           source_name?: string | null
+          source_claim_id?: string | null
           source_url?: string | null
           structured_data?: Json | null
           topic: string
@@ -1335,6 +1337,7 @@ export type Database = {
           poi_id?: string | null
           sort_order?: number | null
           source_name?: string | null
+          source_claim_id?: string | null
           source_url?: string | null
           structured_data?: Json | null
           topic?: string
@@ -1966,7 +1969,33 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      published_knowledge: {
+        Row: {
+          board_id: string | null
+          confidence: string
+          fact_text: string
+          field: string
+          id: string
+          mapping_status: string
+          observed_at: string | null
+          poi_id: string | null
+          project_id: string | null
+          reusable_across_boards: boolean
+          review_status: string
+          scope: string
+          source_claim_id: string | null
+          source_titles: string[]
+          source_urls: string[]
+          structured_data: Json | null
+          subject_id: string
+          subject_name: string | null
+          temporal_kind: string
+          topic: string
+          valid_from: string | null
+          valid_until: string | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       import_research_package: {

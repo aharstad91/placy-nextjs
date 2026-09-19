@@ -171,6 +171,40 @@ describe("adaptBoardData", () => {
         "Plasseringen er ikke verifisert mot besøksinngangen.",
       );
     });
+
+    it("threads content version and topic knowledge without inventing a map pin", () => {
+      const fixture = productionContentContractFixture();
+      const data = adaptBoardData({
+        ...fixture,
+        contentVersion: "a".repeat(64),
+        publishedKnowledge: [
+          {
+            id: "research:topic-1",
+            sourceClaimId: "topic-1",
+            projectId: "project-1",
+            scope: "project",
+            subjectId: "topic:school-capacity",
+            subjectName: "Skolekapasitet",
+            topic: "topic",
+            field: "status",
+            factText: "Kapasiteten er ikke avklart.",
+            confidence: "high",
+            sourceUrls: ["https://example.com/source"],
+            sourceTitles: ["Kilde"],
+            reviewStatus: "approved",
+            temporalKind: "existing",
+            reusableAcrossBoards: false,
+            mappingStatus: "not_applicable",
+          },
+        ],
+      });
+
+      expect(data.contentVersion).toBe("a".repeat(64));
+      expect(data.publishedKnowledge).toHaveLength(1);
+      expect(
+        data.categories.flatMap((category) => category.pois),
+      ).toHaveLength(4);
+    });
   });
 
   it("maps themes to BoardCategory with normaliserte feltnavn", () => {

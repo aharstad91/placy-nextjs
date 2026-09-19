@@ -35,7 +35,7 @@ function chain(table: string) {
   const result = () => nextResult(table);
   const builder: Record<string, unknown> = {};
   const self = () => builder;
-  for (const m of ["select", "eq", "in", "order"]) {
+  for (const m of ["select", "eq", "in", "or", "order"]) {
     builder[m] = vi.fn(self);
   }
 
@@ -151,9 +151,38 @@ function poiRow(id: string, overrides: Record<string, unknown> = {}) {
 
 const CAT_ROW = { id: "cat-1", name: "Kafé", icon: "Coffee", color: "#aa5500" };
 
+function knowledgeRow(id: string, overrides: Record<string, unknown> = {}) {
+  return {
+    id,
+    source_claim_id: id,
+    project_id: "proj-1",
+    poi_id: null,
+    scope: "project",
+    subject_id: "topic:test",
+    subject_name: "Testtema",
+    topic: "topic",
+    field: "status",
+    fact_text: "Godkjent faktum",
+    structured_data: "Godkjent faktum",
+    confidence: "high",
+    source_urls: ["https://example.com/source"],
+    source_titles: ["Kilde"],
+    review_status: "approved",
+    temporal_kind: "existing",
+    observed_at: "2026-09-18",
+    valid_from: null,
+    valid_until: null,
+    reusable_across_boards: false,
+    board_id: null,
+    mapping_status: "not_applicable",
+    ...overrides,
+  };
+}
+
 beforeEach(() => {
   queues.clear();
   vi.clearAllMocks();
+  enqueue("published_knowledge", { data: [], error: null });
 });
 
 describe("getProductFromSupabaseV2 — komposisjon", () => {
@@ -198,9 +227,48 @@ describe("getProductFromSupabaseV2 — komposisjon", () => {
     expect(b.travelTime).toBeUndefined();
     expect(b.featured).toBeUndefined();
     expect(a.category.name).toBe("Kafé");
+    expect(project!.publishedKnowledge).toEqual([]);
+    expect(project!.contentVersion).toMatch(/^[a-f0-9]{64}$/);
 
     expect(project!.categories).toEqual([
       { id: "cat-1", name: "Kafé", icon: "Coffee", color: "#aa5500" },
+    ]);
+  });
+
+  it("reads project facts and reusable facts only for POIs in the project pool", async () => {
+    enqueue("projects", { data: PROJECT_ROW, error: null });
+    enqueue("products", { data: PRODUCT_ROW, error: null });
+    enqueue("project_pois", {
+      data: [{ poi_id: "a", travel_times: null }],
+      error: null,
+    });
+    enqueue("product_pois", {
+      data: [{ poi_id: "a", featured: false, sort_order: 1 }],
+      error: null,
+    });
+    enqueue("pois", { data: [poiRow("a")], error: null });
+    enqueue("categories", { data: [CAT_ROW], error: null });
+    enqueue("product_categories", { data: [], error: null });
+    // Erstatt beforeEach-defaulten med den eksplisitte siden.
+    queues.set("published_knowledge", [
+      {
+        data: [
+          knowledgeRow("project-fact", { project_id: "proj-1", poi_id: null }),
+          knowledgeRow("shared-in-pool", { project_id: null, poi_id: "a" }),
+          knowledgeRow("shared-outside-pool", {
+            project_id: null,
+            poi_id: "outside",
+          }),
+        ],
+        error: null,
+      },
+    ]);
+
+    const project = await getProductFromSupabaseV2("intern", "pilot", "report");
+
+    expect(project?.publishedKnowledge?.map((fact) => fact.id)).toEqual([
+      "project-fact",
+      "shared-in-pool",
     ]);
   });
 

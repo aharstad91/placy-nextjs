@@ -6,6 +6,7 @@ import type {
   IsochroneSet,
   POI,
   ProjectAssetFlags,
+  PublishedKnowledge,
   ReportCTA,
   ReportSummary,
   ReportThemeAudio,
@@ -214,6 +215,10 @@ export interface BoardData {
   demoReservePlaceIds?: string[];
   demoRadiusPlaces?: import("@/lib/demo/local-board/radius").RadiusPlace[];
   demoSnapshotId?: string;
+  /** Samme autoritative innholdsversjon som serverens samtalekilde. */
+  contentVersion?: string;
+  /** Kildebelagt kunnskap, også prosjekt-/temafakta uten kartpunkt. */
+  publishedKnowledge?: PublishedKnowledge[];
   /**
    * Hvilket demo-datasett stemmen skal snakke ut fra.
    *
@@ -392,6 +397,8 @@ export function adaptBoardData(report: ReportData): BoardData {
 
   return {
     demoSnapshotId: report.demoSnapshotId,
+    contentVersion: report.contentVersion,
+    publishedKnowledge: report.publishedKnowledge,
     projectSlug: report.projectSlug,
     home: {
       name: report.projectName,
