@@ -1567,12 +1567,19 @@
       "lng": 10.446449699999999
     },
     "status": "existing",
-    "summary": "Snurr Håndverksbakeri beholdes som medlem under place:city-lade; egne åpningstider arves ikke fra ankeret.",
+    "summary": "Snurr Håndverksbakeri beholdes som medlem under place:city-lade; egne åpningstider arves ikke fra ankeret. Snurr Håndverksbakeri oppgir hverdager 09–21, lørdag 09–20 og søndag 10–16.",
     "locationPrecision": "approximate",
     "facts": [
       {
         "id": "fact-srv-04-1",
         "text": "Snurr Håndverksbakeri beholdes som medlem under place:city-lade; egne åpningstider arves ikke fra ankeret.",
+        "sourceId": "citylade-6434272b",
+        "checkedAt": "2026-09-18",
+        "verification": "confirmed"
+      },
+      {
+        "id": "fact-srv-04-2",
+        "text": "Snurr Håndverksbakeri oppgir hverdager 09–21, lørdag 09–20 og søndag 10–16.",
         "sourceId": "citylade-6434272b",
         "checkedAt": "2026-09-18",
         "verification": "confirmed"

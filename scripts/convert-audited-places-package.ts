@@ -36,7 +36,7 @@ async function main() {
       "docs/research/leangenbukta-lokal-demo/audited/2026-09-18-production-poi-mappings.json",
     ),
   }, {
-    packageId: "leangenbukta-audited-places-2026-09-18-r2",
+    packageId: "leangenbukta-audited-places-2026-09-18-r4",
     projectId: "placy-demo_leangenbukta",
     projectName: "Leangenbukta",
     reviewedAt: "2026-09-18",

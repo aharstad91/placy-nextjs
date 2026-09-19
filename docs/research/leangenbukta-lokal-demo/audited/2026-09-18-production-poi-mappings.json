@@ -30,6 +30,16 @@
     "evidence": "docs/research/leangenbukta-lokal-demo/register-import-report.json"
   },
   {
+    "localPlaceId": "djupvika",
+    "poiId": "badeplass-djupvika",
+    "evidence": "docs/research/leangenbukta-lokal-demo/audited/2026-09-19-production-poi-mapping-review.json"
+  },
+  {
+    "localPlaceId": "egon-lade",
+    "poiId": "google-ChIJrxBFQdMxbUYR31McpnjJ5kw",
+    "evidence": "docs/research/leangenbukta-lokal-demo/audited/2026-09-19-production-poi-mapping-review.json"
+  },
+  {
     "localPlaceId": "coop-mega-sirkus-shopping",
     "poiId": "google-ChIJ_bGcGQAxbUYRV8c0jX3elYo",
     "evidence": "docs/research/leangenbukta-lokal-demo/register-import-report.json"
@@ -40,9 +50,24 @@
     "evidence": "docs/research/leangenbukta-lokal-demo/register-import-report.json"
   },
   {
+    "localPlaceId": "impulse-lade",
+    "poiId": "google-ChIJm29xIwUxbUYRo845XVoq2_0",
+    "evidence": "docs/research/leangenbukta-lokal-demo/audited/2026-09-19-production-poi-mapping-review.json"
+  },
+  {
+    "localPlaceId": "impulse-leangen",
+    "poiId": "google-ChIJ2wDh0f8wbUYRlfCrsUTpnnQ",
+    "evidence": "docs/research/leangenbukta-lokal-demo/audited/2026-09-19-production-poi-mapping-review.json"
+  },
+  {
     "localPlaceId": "kompis-lade",
     "poiId": "google-ChIJhSToLQUxbUYRY-bFi-HNxsQ",
     "evidence": "docs/research/leangenbukta-lokal-demo/register-import-report.json"
+  },
+  {
+    "localPlaceId": "korsvika",
+    "poiId": "badeplass-korsvika",
+    "evidence": "docs/research/leangenbukta-lokal-demo/audited/2026-09-19-production-poi-mapping-review.json"
   },
   {
     "localPlaceId": "lade-arena",
@@ -53,6 +78,11 @@
     "localPlaceId": "lade-kirke",
     "poiId": "google-ChIJA3O3nQUxbUYRHVBuZzdhRkY",
     "evidence": "docs/research/leangenbukta-lokal-demo/register-import-report.json"
+  },
+  {
+    "localPlaceId": "ladekaia",
+    "poiId": "google-ChIJV8IlNxgxbUYRTCxNJCxp0pc",
+    "evidence": "docs/research/leangenbukta-lokal-demo/audited/2026-09-19-production-poi-mapping-review.json"
   },
   {
     "localPlaceId": "lade-skole",
@@ -113,6 +143,11 @@
     "localPlaceId": "ringve-musikkmuseum",
     "poiId": "google-ChIJExGbthwxbUYRYY6srQ-FrY8",
     "evidence": "docs/research/leangenbukta-lokal-demo/register-import-report.json"
+  },
+  {
+    "localPlaceId": "ringve-botaniske-hage",
+    "poiId": "google-ChIJZZmfpBwxbUYRgEXlKQkTmmc",
+    "evidence": "docs/research/leangenbukta-lokal-demo/audited/2026-09-19-production-poi-mapping-review.json"
   },
   {
     "localPlaceId": "ringvebukta",

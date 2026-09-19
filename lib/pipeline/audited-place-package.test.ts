@@ -41,19 +41,19 @@ function converted() {
 }
 
 describe("buildAuditedPlacePackage", () => {
-  it("bevarer de 56 stedene og 80 atomiske fakta", () => {
+  it("bevarer de 56 stedene og 81 atomiske fakta", () => {
     const result = converted();
     expect(result.entities).toHaveLength(56);
-    expect(result.claims).toHaveLength(80);
-    expect(new Set(result.claims.map((claim) => claim.claimId)).size).toBe(80);
+    expect(result.claims).toHaveLength(81);
+    expect(new Set(result.claims.map((claim) => claim.claimId)).size).toBe(81);
   });
 
   it("bruker bare den eksplisitte mappingkvitteringen", () => {
     const result = converted();
     expect(result.entities.filter((entity) => entity.mappingStatus === "mapped"))
-      .toHaveLength(29);
+      .toHaveLength(36);
     expect(result.entities.filter((entity) => entity.mappingStatus === "unmapped"))
-      .toHaveLength(27);
+      .toHaveLength(20);
     expect(result.entities.find((entity) => entity.name === "Burger King Lade Arena"))
       .toMatchObject({
         mappingStatus: "mapped",
@@ -66,12 +66,12 @@ describe("buildAuditedPlacePackage", () => {
     const states = Object.groupBy(result.claims, (claim) =>
       claimPublicationState(claim, new Date("2026-09-19T12:00:00Z")),
     );
-    expect(states.publishable).toHaveLength(80);
+    expect(states.publishable).toHaveLength(81);
 
     const expired = Object.groupBy(result.claims, (claim) =>
       claimPublicationState(claim, new Date("2026-09-26T12:00:00Z")),
     );
     expect(expired.publishable).toHaveLength(26);
-    expect(expired.expired).toHaveLength(54);
+    expect(expired.expired).toHaveLength(55);
   });
 });

@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "packageId": "leangenbukta-audited-places-2026-09-18-r2",
+  "packageId": "leangenbukta-audited-places-2026-09-18-r4",
   "projectId": "placy-demo_leangenbukta",
   "projectName": "Leangenbukta",
   "mode": "full_snapshot",
@@ -146,7 +146,8 @@
       "reusableAcrossBoards": true,
       "reuseConstraints": "Reuse place facts globally; keep board membership, routes and travel times board-specific.",
       "boardId": null,
-      "mappingStatus": "unmapped"
+      "mappingStatus": "mapped",
+      "poiId": "google-ChIJV8IlNxgxbUYRTCxNJCxp0pc"
     },
     {
       "entityId": "place:egon-lade",
@@ -158,7 +159,8 @@
       "reusableAcrossBoards": true,
       "reuseConstraints": "Reuse place facts globally; keep board membership, routes and travel times board-specific.",
       "boardId": null,
-      "mappingStatus": "unmapped"
+      "mappingStatus": "mapped",
+      "poiId": "google-ChIJrxBFQdMxbUYR31McpnjJ5kw"
     },
     {
       "entityId": "place:kompis-lade",
@@ -196,7 +198,8 @@
       "reusableAcrossBoards": true,
       "reuseConstraints": "Reuse place facts globally; keep board membership, routes and travel times board-specific.",
       "boardId": null,
-      "mappingStatus": "unmapped"
+      "mappingStatus": "mapped",
+      "poiId": "badeplass-korsvika"
     },
     {
       "entityId": "place:ringvebukta",
@@ -221,7 +224,8 @@
       "reusableAcrossBoards": true,
       "reuseConstraints": "Reuse place facts globally; keep board membership, routes and travel times board-specific.",
       "boardId": null,
-      "mappingStatus": "unmapped"
+      "mappingStatus": "mapped",
+      "poiId": "badeplass-djupvika"
     },
     {
       "entityId": "place:ringve-botaniske-hage",
@@ -233,7 +237,8 @@
       "reusableAcrossBoards": true,
       "reuseConstraints": "Reuse place facts globally; keep board membership, routes and travel times board-specific.",
       "boardId": null,
-      "mappingStatus": "unmapped"
+      "mappingStatus": "mapped",
+      "poiId": "google-ChIJZZmfpBwxbUYRgEXlKQkTmmc"
     },
     {
       "entityId": "place:leangen-stasjon",
@@ -297,7 +302,8 @@
       "reusableAcrossBoards": true,
       "reuseConstraints": "Reuse place facts globally; keep board membership, routes and travel times board-specific.",
       "boardId": null,
-      "mappingStatus": "unmapped"
+      "mappingStatus": "mapped",
+      "poiId": "google-ChIJ2wDh0f8wbUYRlfCrsUTpnnQ"
     },
     {
       "entityId": "place:impulse-lade",
@@ -309,7 +315,8 @@
       "reusableAcrossBoards": true,
       "reuseConstraints": "Reuse place facts globally; keep board membership, routes and travel times board-specific.",
       "boardId": null,
-      "mappingStatus": "unmapped"
+      "mappingStatus": "mapped",
+      "poiId": "google-ChIJm29xIwUxbUYRo845XVoq2_0"
     },
     {
       "entityId": "place:ringve-musikkmuseum",
@@ -1313,7 +1320,8 @@
       "reusableAcrossBoards": true,
       "reuseConstraints": "Reuse place facts globally; keep board membership, routes and travel times board-specific.",
       "boardId": null,
-      "mappingStatus": "unmapped"
+      "mappingStatus": "mapped",
+      "poiId": "google-ChIJV8IlNxgxbUYRTCxNJCxp0pc"
     },
     {
       "claimId": "LB-PLACE-fact-srv-01-2",
@@ -1344,7 +1352,8 @@
       "reusableAcrossBoards": true,
       "reuseConstraints": "Reuse place facts globally; keep board membership, routes and travel times board-specific.",
       "boardId": null,
-      "mappingStatus": "unmapped"
+      "mappingStatus": "mapped",
+      "poiId": "google-ChIJV8IlNxgxbUYRTCxNJCxp0pc"
     },
     {
       "claimId": "LB-PLACE-fact-srv-03-1",
@@ -1375,7 +1384,8 @@
       "reusableAcrossBoards": true,
       "reuseConstraints": "Reuse place facts globally; keep board membership, routes and travel times board-specific.",
       "boardId": null,
-      "mappingStatus": "unmapped"
+      "mappingStatus": "mapped",
+      "poiId": "google-ChIJrxBFQdMxbUYR31McpnjJ5kw"
     },
     {
       "claimId": "LB-PLACE-fact-srv-03-2",
@@ -1406,7 +1416,8 @@
       "reusableAcrossBoards": true,
       "reuseConstraints": "Reuse place facts globally; keep board membership, routes and travel times board-specific.",
       "boardId": null,
-      "mappingStatus": "unmapped"
+      "mappingStatus": "mapped",
+      "poiId": "google-ChIJrxBFQdMxbUYR31McpnjJ5kw"
     },
     {
       "claimId": "LB-PLACE-fact-srv-05-1",
@@ -1501,7 +1512,8 @@
       "reusableAcrossBoards": true,
       "reuseConstraints": "Reuse place facts globally; keep board membership, routes and travel times board-specific.",
       "boardId": null,
-      "mappingStatus": "unmapped"
+      "mappingStatus": "mapped",
+      "poiId": "badeplass-korsvika"
     },
     {
       "claimId": "LB-PLACE-fact-nat-01-2",
@@ -1532,7 +1544,8 @@
       "reusableAcrossBoards": true,
       "reuseConstraints": "Reuse place facts globally; keep board membership, routes and travel times board-specific.",
       "boardId": null,
-      "mappingStatus": "unmapped"
+      "mappingStatus": "mapped",
+      "poiId": "badeplass-korsvika"
     },
     {
       "claimId": "LB-PLACE-fact-nat-02-1",
@@ -1595,7 +1608,8 @@
       "reusableAcrossBoards": true,
       "reuseConstraints": "Reuse place facts globally; keep board membership, routes and travel times board-specific.",
       "boardId": null,
-      "mappingStatus": "unmapped"
+      "mappingStatus": "mapped",
+      "poiId": "badeplass-djupvika"
     },
     {
       "claimId": "LB-PLACE-fact-nat-08-1",
@@ -1626,7 +1640,8 @@
       "reusableAcrossBoards": true,
       "reuseConstraints": "Reuse place facts globally; keep board membership, routes and travel times board-specific.",
       "boardId": null,
-      "mappingStatus": "unmapped"
+      "mappingStatus": "mapped",
+      "poiId": "google-ChIJZZmfpBwxbUYRgEXlKQkTmmc"
     },
     {
       "claimId": "LB-PLACE-fact-nat-08-2",
@@ -1657,7 +1672,8 @@
       "reusableAcrossBoards": true,
       "reuseConstraints": "Reuse place facts globally; keep board membership, routes and travel times board-specific.",
       "boardId": null,
-      "mappingStatus": "unmapped"
+      "mappingStatus": "mapped",
+      "poiId": "google-ChIJZZmfpBwxbUYRgEXlKQkTmmc"
     },
     {
       "claimId": "LB-PLACE-fact-trn-13-1",
@@ -1944,7 +1960,8 @@
       "reusableAcrossBoards": true,
       "reuseConstraints": "Reuse place facts globally; keep board membership, routes and travel times board-specific.",
       "boardId": null,
-      "mappingStatus": "unmapped"
+      "mappingStatus": "mapped",
+      "poiId": "google-ChIJ2wDh0f8wbUYRlfCrsUTpnnQ"
     },
     {
       "claimId": "LB-PLACE-fact-tre-02-2",
@@ -1975,7 +1992,8 @@
       "reusableAcrossBoards": true,
       "reuseConstraints": "Reuse place facts globally; keep board membership, routes and travel times board-specific.",
       "boardId": null,
-      "mappingStatus": "unmapped"
+      "mappingStatus": "mapped",
+      "poiId": "google-ChIJ2wDh0f8wbUYRlfCrsUTpnnQ"
     },
     {
       "claimId": "LB-PLACE-fact-tre-03-1",
@@ -2006,7 +2024,8 @@
       "reusableAcrossBoards": true,
       "reuseConstraints": "Reuse place facts globally; keep board membership, routes and travel times board-specific.",
       "boardId": null,
-      "mappingStatus": "unmapped"
+      "mappingStatus": "mapped",
+      "poiId": "google-ChIJm29xIwUxbUYRo845XVoq2_0"
     },
     {
       "claimId": "LB-PLACE-fact-tre-03-2",
@@ -2037,7 +2056,8 @@
       "reusableAcrossBoards": true,
       "reuseConstraints": "Reuse place facts globally; keep board membership, routes and travel times board-specific.",
       "boardId": null,
-      "mappingStatus": "unmapped"
+      "mappingStatus": "mapped",
+      "poiId": "google-ChIJm29xIwUxbUYRo845XVoq2_0"
     },
     {
       "claimId": "LB-PLACE-fact-exp-01-1",
@@ -2666,6 +2686,37 @@
       "conflictNotes": null,
       "editorialNote": "Kandidatreview krever ny kontroll før publisering.",
       "approvedCopy": "Snurr Håndverksbakeri beholdes som medlem under place:city-lade; egne åpningstider arves ikke fra ankeret.",
+      "reason": null,
+      "reusableAcrossBoards": true,
+      "reuseConstraints": "Reuse place facts globally; keep board membership, routes and travel times board-specific.",
+      "boardId": null,
+      "mappingStatus": "unmapped"
+    },
+    {
+      "claimId": "LB-PLACE-fact-srv-04-2",
+      "subjectId": "place:snurr-handverksbakeri",
+      "canonicalId": "place:snurr-handverksbakeri",
+      "scope": "global_place",
+      "geography": "63.443002, 10.446449699999999",
+      "field": "place_fact",
+      "value": "Snurr Håndverksbakeri oppgir hverdager 09–21, lørdag 09–20 og søndag 10–16.",
+      "temporalKind": "existing",
+      "reviewStatus": "approved_time_sensitive",
+      "sourceUrls": [
+        "https://citylade.no/apningtider/"
+      ],
+      "sourceTitles": [
+        "City Lade – apningtider"
+      ],
+      "sourceType": "audited_place_source",
+      "sourceDate": null,
+      "observedAt": "2026-09-18",
+      "validFrom": null,
+      "validUntil": "2026-09-25",
+      "confidence": "high",
+      "conflictNotes": null,
+      "editorialNote": "Kandidatreview krever ny kontroll før publisering.",
+      "approvedCopy": "Snurr Håndverksbakeri oppgir hverdager 09–21, lørdag 09–20 og søndag 10–16.",
       "reason": null,
       "reusableAcrossBoards": true,
       "reuseConstraints": "Reuse place facts globally; keep board membership, routes and travel times board-specific.",

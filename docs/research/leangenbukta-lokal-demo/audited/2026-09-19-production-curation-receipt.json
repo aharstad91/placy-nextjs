@@ -1,16 +1,23 @@
 {
   "status": "updated",
-  "appliedAt": "2026-09-19T07:57:38.364Z",
+  "appliedAt": "2026-09-19T08:00:23.776Z",
   "schemaVersion": 1,
   "projectId": "placy-demo_leangenbukta",
   "customer": "placy-demo",
   "projectSlug": "leangenbukta",
   "productId": "5df5eade-4fd5-4bd6-b41d-686b988d9d3b",
-  "previousStandalonePoiIds": [],
-  "standalonePoiIds": [
+  "previousStandalonePoiIds": [
     "google-ChIJadfBocAxbUYRfeuufpAKBYc",
     "google-ChIJqeBnd_4wbUYR4SUbbftcyoo",
     "google-ChIJ1-nTGgIxbUYR_L6AbKF6Qcw"
+  ],
+  "standalonePoiIds": [
+    "google-ChIJadfBocAxbUYRfeuufpAKBYc",
+    "google-ChIJqeBnd_4wbUYR4SUbbftcyoo",
+    "google-ChIJ1-nTGgIxbUYR_L6AbKF6Qcw",
+    "google-ChIJV8IlNxgxbUYRTCxNJCxp0pc",
+    "google-ChIJrxBFQdMxbUYR31McpnjJ5kw",
+    "google-ChIJ2wDh0f8wbUYRlfCrsUTpnnQ"
   ],
   "preservedReportConfigKeys": [
     "assistant",
@@ -22,6 +29,7 @@
     "heroImage",
     "isochrones",
     "reportTier",
+    "standalonePoiIds",
     "summary",
     "themes"
   ],
