@@ -1,5 +1,6 @@
 import { writeFile } from "node:fs/promises";
 
+import { mergeBoardAssistantConfig } from "@/lib/admin/board-assistant";
 import { revalidateProject } from "@/lib/pipeline/provision";
 import { createServerClient } from "@/lib/supabase/client";
 import type { Json } from "@/lib/supabase/types";
@@ -57,21 +58,10 @@ async function main() {
 
   const config = (product.config ?? {}) as Record<string, Json | undefined>;
   const reportConfig = (config.reportConfig ?? {}) as Record<string, Json | undefined>;
-  const assistant = {
-    enabled: true,
+  const assistant = mergeBoardAssistantConfig(reportConfig.assistant, {
     name: args.name,
-    guided: true,
-    features: {
-      faqProgress: true,
-      revealPlaces: true,
-      followHighlightCategory: true,
-      unscopedCategoryList: true,
-      narrationFocus: true,
-      voicePacing: true,
-      guidedPersona: true,
-    },
-    ...(args.greeting ? { greeting: args.greeting } : {}),
-  };
+    greeting: args.greeting,
+  });
   const nextConfig = {
     ...config,
     reportConfig: {
