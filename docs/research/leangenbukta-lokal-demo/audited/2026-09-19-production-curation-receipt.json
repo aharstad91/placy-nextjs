@@ -1,0 +1,30 @@
+{
+  "status": "updated",
+  "appliedAt": "2026-09-19T07:57:38.364Z",
+  "schemaVersion": 1,
+  "projectId": "placy-demo_leangenbukta",
+  "customer": "placy-demo",
+  "projectSlug": "leangenbukta",
+  "productId": "5df5eade-4fd5-4bd6-b41d-686b988d9d3b",
+  "previousStandalonePoiIds": [],
+  "standalonePoiIds": [
+    "google-ChIJadfBocAxbUYRfeuufpAKBYc",
+    "google-ChIJqeBnd_4wbUYR4SUbbftcyoo",
+    "google-ChIJ1-nTGgIxbUYR_L6AbKF6Qcw"
+  ],
+  "preservedReportConfigKeys": [
+    "assistant",
+    "boardFacts",
+    "brokers",
+    "city",
+    "cta",
+    "district",
+    "heroImage",
+    "isochrones",
+    "reportTier",
+    "summary",
+    "themes"
+  ],
+  "updatedAt": "2026-09-07T16:29:35.30202+00:00",
+  "revalidated": []
+}

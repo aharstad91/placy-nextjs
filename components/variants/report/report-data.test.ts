@@ -240,6 +240,19 @@ function makeProject(pois: POI[], categories: string[]) {
   } as unknown as Parameters<typeof transformToReportData>[0];
 }
 
+function makeProjectWithStandalone(
+  pois: POI[],
+  categories: string[],
+  standalonePoiIds: string[],
+) {
+  const project = makeProject(pois, categories);
+  project.reportConfig = {
+    ...project.reportConfig,
+    standalonePoiIds,
+  };
+  return project;
+}
+
 const themeOf = (pois: POI[], categories: string[]) =>
   transformToReportData(makeProject(pois, categories)).themes[0];
 
@@ -281,6 +294,26 @@ describe("transformToReportData — ankeret absorberer barna (R5)", () => {
 
     expect(theme.allPOIs.map((p) => p.id).sort()).toEqual(["butikk-1", "butikk-2", "sirkus"]);
     expect(theme.allPOIs.every((p) => p.childPOIs === undefined)).toBe(true);
+  });
+
+  it("beholder redaksjonelt valgte medlemmer som egne kartpunkter", () => {
+    const fyr = makeChild("fyr", "restaurant");
+    const burger = makeChild("burger", "restaurant");
+    const data = transformToReportData(
+      makeProjectWithStandalone(
+        [makeAnchor(), fyr, burger],
+        ["restaurant"],
+        ["fyr"],
+      ),
+    );
+    const theme = data.themes[0];
+
+    expect(theme.allPOIs.map((poi) => poi.id).sort()).toEqual([
+      "fyr",
+      "sirkus",
+    ]);
+    expect(theme.allPOIs.find((poi) => poi.id === "sirkus")?.childPOIs)
+      .toEqual([burger]);
   });
 });
 

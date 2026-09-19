@@ -650,6 +650,9 @@ export function transformToReportData(project: Project, locale: Locale = "no"): 
 
   // Rekkevidde-konturene, hentet build-time i provisjoneringens steg 7c.
   const isochrones = parseIsochronesOrLog(project.reportConfig?.isochrones, project);
+  const standalonePoiIds = new Set(
+    project.reportConfig?.standalonePoiIds ?? [],
+  );
 
   for (const themeDef of themeDefinitions) {
     const cats = new Set(themeDef.categories);
@@ -698,11 +701,18 @@ export function transformToReportData(project: Project, locale: Locale = "no"): 
       categoryFiltered.filter(isAnchorPOI).map((p) => p.id),
     );
     const filtered = categoryFiltered
-      .filter((p) => !(p.parentPoiId && anchorIdsInTheme.has(p.parentPoiId)))
+      .filter(
+        (p) =>
+          !(
+            p.parentPoiId &&
+            anchorIdsInTheme.has(p.parentPoiId) &&
+            !standalonePoiIds.has(p.id)
+          ),
+      )
       .map((p) => {
         if (!anchorIdsInTheme.has(p.id)) return p;
-        const children = (childByParent.get(p.id) ?? []).filter((c) =>
-          cats.has(c.category.id),
+        const children = (childByParent.get(p.id) ?? []).filter(
+          (c) => cats.has(c.category.id) && !standalonePoiIds.has(c.id),
         );
         return children.length > 0 ? { ...p, childPOIs: children } : p;
       });

@@ -965,6 +965,13 @@ export interface CuratedGeometryFeature {
 export interface ReportConfig {
   /** Selected shared place_knowledge records; prose is assembled at render. */
   localActivityIds?: string[];
+  /**
+   * POI-er som skal stå som egne kartpunkter selv om den delte
+   * ankeroppløsningen også har klassifisert dem som medlemmer av et senter.
+   * Brukes til et lite, redaksjonelt valgt sett; øvrige medlemmer forblir i
+   * ankerets register.
+   */
+  standalonePoiIds?: string[];
   label?: string;
   heroIntro?: string;
   /** Bydel, eks. "Midtbyen". Subline i Nabolaget-seksjonen + splash. */
