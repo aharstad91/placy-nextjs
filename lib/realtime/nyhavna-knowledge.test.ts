@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { getNyhavnaSnapshot } from '@/lib/demo/nyhavna-leve/snapshot';
 import { nyhavnaKnowledge } from '@/lib/demo/nyhavna-leve/knowledge';
 import { createNyhavnaKnowledge, NYHAVNA_INSTRUCTIONS, nyhavnaFaqCatalog, nyhavnaInstructions } from '@/lib/realtime/nyhavna-knowledge';
+import { spokenBoardProjection } from '@/lib/realtime/spoken-projection';
 import { NYHAVNA_GREETING_INSTRUCTION, NYHAVNA_GREETING_TEXT } from '@/lib/realtime/nyhavna-greeting';
 import { NYHAVNA_VOICE_INSTRUCTIONS } from '@/lib/live/voice-instructions';
 
@@ -42,6 +43,7 @@ describe('server knowledge boundary', () => {
       expect(packet).toMatchObject({ basis: 'register', map_poi_id: String(poi.id) });
       expect(packet).not.toHaveProperty('facts');
       expect(packet).not.toHaveProperty('sources');
+      expect(packet).not.toHaveProperty('address');
     }
     const grocery = execute('find_places', { query: 'REMA 1000' }) as { basis?: string; places: Array<{ name: string; basis: string }> };
     expect(grocery.basis).toBe('register');
@@ -50,6 +52,11 @@ describe('server knowledge boundary', () => {
     expect(execute('find_places', { query: 'skriv pythonkode' })).toMatchObject({ matches: 0, places: [] });
     expect(execute('get_place_facts', { poi_id: 'finnes-ikke' })).toHaveProperty('error');
     expect(execute('unknown_tool', {})).toHaveProperty('error');
+    const addressed = uncurated.find(poi => poi.address);
+    expect(addressed).toBeTruthy();
+    expect(execute('get_place_address', { poi_id: String(addressed!.id), purpose: 'address' }))
+      .toMatchObject({ id: String(addressed!.id), address: addressed!.address, purpose: 'address' });
+    expect(execute('get_place_address', { poi_id: String(addressed!.id), purpose: 'other' })).toHaveProperty('error');
   });
   it('turns every board FAQ into a spoken catalog line with map ids instead of link markup', async () => {
     const { board } = await getNyhavnaSnapshot();
@@ -63,7 +70,7 @@ describe('server knowledge boundary', () => {
     for (const category of board.categories) if (category.editorial?.faq?.length) expect(catalog).toContain(`[${String(category.id)}] ${category.label}`);
     const instructions = nyhavnaInstructions(board);
     expect(instructions).toContain(NYHAVNA_INSTRUCTIONS);
-    expect(instructions).toContain(catalog);
+    expect(instructions).toContain(nyhavnaFaqCatalog(spokenBoardProjection(board)));
     expect(instructions.split(/\s+/).length).toBeLessThan(3400);
   });
   it('navngir området katalogen faktisk gjelder, ikke Nyhavna', async () => {

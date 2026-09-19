@@ -3,6 +3,7 @@ import { buildChapter, chapterSummary, NO_PROJECT_INFO, NYHAVNA_CURATED, type Ch
 import { nyhavnaMapTools } from "@/lib/realtime/map-tools";
 import { createNyhavnaKnowledge, knowledgeTools, type KnowledgeOptions } from "@/lib/realtime/nyhavna-knowledge";
 import { NYHAVNA_LABELS, shortProjectInfoLabel, type ConversationLabels } from "@/lib/realtime/conversation-labels";
+import { boardAddressBook, spokenBoardProjection } from "@/lib/realtime/spoken-projection";
 import {
   applyTourEvent, defaultTourOrder, initialTourState, nextThemes, themesForInterests, tourNote,
   type HighlightedPlace, type TourState, type TourTheme,
@@ -137,12 +138,16 @@ const autoHighlights = (pack: ChapterPack): HighlightedPlace[] =>
   pack.places.filter((p) => p.id).slice(0, 3).map((p) => ({ id: p.id, name: p.name }));
 
 export function createNyhavnaConversation(board: BoardData, deps: ConversationDeps = {}): NyhavnaConversation {
+  const conversationBoard = spokenBoardProjection(board);
   const projectInfo = deps.projectInfo ?? NO_PROJECT_INFO;
   const travelMode = deps.travelMode ?? "walk";
   const labels = deps.labels ?? NYHAVNA_LABELS;
-  const knowledge = createNyhavnaKnowledge(board, deps.knowledge);
-  const pois = new Map<string, BoardPOI>(board.categories.flatMap((c) => c.pois).map((p) => [String(p.id), p]));
-  const themes: (TourTheme & { sourced: boolean })[] = board.categories.map((c) => ({
+  const knowledge = createNyhavnaKnowledge(conversationBoard, {
+    ...deps.knowledge,
+    addresses: deps.knowledge?.addresses ?? boardAddressBook(board),
+  });
+  const pois = new Map<string, BoardPOI>(conversationBoard.categories.flatMap((c) => c.pois).map((p) => [String(p.id), p]));
+  const themes: (TourTheme & { sourced: boolean })[] = conversationBoard.categories.map((c) => ({
     id: String(c.id), name: c.label, sourced: Boolean(c.editorial?.source),
   }));
   const themeIds = new Set(themes.map((t) => t.id));
@@ -156,9 +161,9 @@ export function createNyhavnaConversation(board: BoardData, deps: ConversationDe
   const chapter = (themeId: string): ChapterPack => {
     let pack = chapters.get(themeId);
     if (!pack) {
-      const category = board.categories.find((c) => String(c.id) === themeId);
+      const category = conversationBoard.categories.find((c) => String(c.id) === themeId);
       if (!category) throw new Error(`Ukjent tema: ${themeId}`);
-      pack = buildChapter(board, category, travelMode, projectInfo, deps.curatedFor ?? NYHAVNA_CURATED);
+      pack = buildChapter(conversationBoard, category, travelMode, projectInfo, deps.curatedFor ?? NYHAVNA_CURATED);
       chapters.set(themeId, pack);
     }
     const fresh = pack.project_info.filter((p) => !sentProjectInfo.has(p.id));
@@ -320,7 +325,7 @@ export function createNyhavnaConversation(board: BoardData, deps: ConversationDe
     // ikke fylle hullene med generell kunnskap.
     const basis = texts.length
       ? `Bekreftede fakta: ${texts.join(" ")}`
-      : `Du har bare registerdata om stedet (navn, type, adresse og lagret reisetid), ingen kontrollerte fakta. Si kort hva det er, og at du ikke har mer om det.`;
+      : `Du har bare registerdata om stedet (navn, type og lagret reisetid), ingen kontrollerte fakta. Si kort hva det er, og at du ikke har mer om det.`;
     return {
       commentary: `Brukeren trykket på «${name}» i kartet, og stedet er alt åpnet der. ${basis}${caveat} Fortell kort om stedet ut fra dette. Ikke still spørsmål tilbake.`,
       directives: [],

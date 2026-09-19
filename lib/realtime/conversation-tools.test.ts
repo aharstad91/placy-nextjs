@@ -4,7 +4,7 @@ import { executeConversationTool, initialConversationView, placeEvidence } from 
 
 const data = {
   home: { name: "Nyhavna", address: "Nyhavna utgangspunkt", coordinates: { lat: 63.44, lng: 10.42 } },
-  categories: [{ id: "park", label: "Park og promenade", body: "En planlagt park.", pois: [{ id: "park-1", name: "Planlagt park", categoryId: "park", coordinates: { lat: 63.44, lng: 10.42 }, raw: { category: { name: "Park" }, developmentStatus: "planned", locationPrecision: "approximate", locationNote: "Foreløpig plassering", editorialSources: ["https://nyhavna.no/leve/park-og-promenade/"], travelTime: { walk: 7 } } }] }],
+  categories: [{ id: "park", label: "Park og promenade", body: "En planlagt park.", pois: [{ id: "park-1", name: "Planlagt park", address: "Testgata 7", body: "Park ved Testgata 7.", categoryId: "park", coordinates: { lat: 63.44, lng: 10.42 }, raw: { address: "Testgata 7", description: "Park ved Testgata 7.", category: { name: "Park" }, developmentStatus: "planned", locationPrecision: "approximate", locationNote: "Foreløpig plassering", editorialSources: ["https://nyhavna.no/leve/park-og-promenade/"], travelTime: { walk: 7 } } }] }],
 } as unknown as BoardData;
 
 describe("conversation tools: grounded map mutations", () => {
@@ -23,7 +23,7 @@ describe("conversation tools: grounded map mutations", () => {
 
   it("does not invent missing bicycle time or convert minutes to seconds", () => {
     const view = initialConversationView(data);
-    expect(executeConversationTool("set_travel_mode", { mode: "walk" }, data, view, () => {})).toMatchObject({ origin: "Nyhavna utgangspunkt", places: [{ minutes: 7 }] });
+    expect(executeConversationTool("set_travel_mode", { mode: "walk" }, data, view, () => {})).toMatchObject({ origin: "Nyhavna", places: [{ minutes: 7 }] });
     expect(executeConversationTool("set_travel_mode", { mode: "bike" }, data, view, () => {})).toMatchObject({ places: [{ minutes: null }] });
   });
 
@@ -38,5 +38,16 @@ describe("conversation tools: grounded map mutations", () => {
     expect(view.selectedId).toBe("park-1");
     expect(view.placeIds).toEqual(["park-1"]);
     expect(view.revision).toBe(1);
+  });
+
+  it("holder adressen utenfor normal modelldata og åpner den bare eksplisitt", () => {
+    const view = initialConversationView(data);
+    const search = executeConversationTool("search_places", { query: "park" }, data, view, () => {});
+    const opened = executeConversationTool("open_place", { place_id: "park-1" }, data, view, () => {});
+    expect(JSON.stringify({ search, opened })).not.toContain("Testgata 7");
+    expect(executeConversationTool("get_place_address", { place_id: "park-1", purpose: "address" }, data, view, () => {}))
+      .toEqual({ id: "park-1", name: "Planlagt park", address: "Testgata 7", purpose: "address" });
+    expect(executeConversationTool("get_place_address", { place_id: "park-1", purpose: "curiosity" }, data, view, () => {}))
+      .toHaveProperty("error");
   });
 });
