@@ -3,7 +3,7 @@ import "server-only";
 import type { BoardData } from "@/components/variants/report/board/board-data";
 import { adaptBoardData } from "@/components/variants/report/board/board-data";
 import { transformToReportData } from "@/components/variants/report/report-data";
-import { getCachedReportProduct } from "@/lib/supabase/cached-board-reads";
+import { getProductAsync } from "@/lib/data-server";
 import {
   boardConversationTools,
   createBoardConversation,
@@ -222,7 +222,11 @@ export async function loadProductionAssistantSource(
   customer: string,
   projectSlug: string,
 ): Promise<ProductionAssistantSource | null> {
-  const project = await getCachedReportProduct(customer, projectSlug);
+  // Samtaletjenesten kjører som en egen Node-prosess. Nexts `unstable_cache`
+  // krever en aktiv Next-requestkontekst og kaster ellers
+  // "incrementalCache missing". Sidecaren leser derfor den autoritative
+  // produkttabellen direkte; board-ruten beholder sin egen ISR-cache.
+  const project = await getProductAsync(customer, projectSlug, "report");
   if (!project?.reportConfig?.assistant?.enabled) return null;
   const board = adaptBoardData(transformToReportData(project));
   return buildProductionAssistantSource(board);

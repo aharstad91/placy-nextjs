@@ -6,7 +6,9 @@ import { ArrowLeft, ChevronRight, Info } from "lucide-react";
 import { getIcon } from "@/lib/utils/map-icons";
 import { cn } from "@/lib/utils";
 import { useEngagement } from "@/lib/instrumentation/engagement-scope";
+import { useRealtimeData } from "@/lib/hooks/useRealtimeData";
 import type { TravelMode } from "@/lib/types";
+import { POIRealtimeSection } from "../../blocks/POIRealtimeSection";
 import { markerCircleStyle } from "../marker-style";
 import { PoiDetailBody, hasGroundedNarrative } from "../PoiDetail";
 import { StatusBadge } from "../SourcedContent";
@@ -230,6 +232,13 @@ export function StoryPoiPanel() {
       .slice(0, 5);
   }, [shown, similarCategory, state.travelMode]);
 
+  const isTransportPOI = !!(
+    shown?.raw.enturStopplaceId ||
+    shown?.raw.bysykkelStationId ||
+    shown?.raw.hyreStationId
+  );
+  const realtimeData = useRealtimeData(open && isTransportPOI && shown ? shown.raw : null);
+
   if (!shown || !bodyPoi) return null;
 
   const circle = markerCircleStyle(shown.color);
@@ -364,6 +373,12 @@ export function StoryPoiPanel() {
           >
             {precisionNote}
           </p>
+        )}
+
+        {isTransportPOI && (
+          <div className="mt-4">
+            <POIRealtimeSection realtimeData={realtimeData} />
+          </div>
         )}
 
         {/* Uten `emptyText`: har stedet ikke tekst, står hodet alene. Merket

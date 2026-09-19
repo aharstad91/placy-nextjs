@@ -59,6 +59,29 @@ vi.mock("next/image", () => ({
   },
 }));
 
+vi.mock("@/lib/hooks/useRealtimeData", () => ({
+  useRealtimeData: (place: { enturStopplaceId?: string } | null) =>
+    place?.enturStopplaceId
+      ? {
+          entur: {
+            stopName: "Dora",
+            departures: [
+              {
+                departureTime: new Date(Date.now() + 5 * 60_000).toISOString(),
+                isRealtime: true,
+                destination: "Trondheim S",
+                lineCode: "20",
+                transportMode: "bus",
+              },
+            ],
+          },
+          loading: false,
+          error: null,
+          lastUpdated: new Date(),
+        }
+      : { loading: false, error: null, lastUpdated: null },
+}));
+
 const CATEGORY = {
   id: "restaurant",
   name: "Restaurant",
@@ -322,6 +345,20 @@ function openInPanel(id: string) {
 }
 
 describe("det felles detaljpanelet (2026-09-15)", () => {
+  it("viser sanntidsavganger for et Entur-koblet stoppested", () => {
+    const { getByTestId } = setup({
+      places: [
+        poi("Dora bussholdeplass", {
+          extra: { enturStopplaceId: "NSR:StopPlace:41613" },
+        }),
+      ],
+    });
+    openInPanel("Dora bussholdeplass");
+    const panel = getByTestId("story-poi-panel");
+    expect(panel.textContent).toContain("20");
+    expect(panel.textContent).toContain("Trondheim S");
+  });
+
   it("gir det tomme stedet en kompakt side: navn, kategori, minutter — ingen tom hero, ingen beklagelse", () => {
     const { getByTestId, queryByTestId } = setup();
     openInPanel("Bua");

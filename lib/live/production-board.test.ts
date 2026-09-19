@@ -1,4 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
 import type { BoardData } from "@/components/variants/report/board/board-data";
 import {
   boardKnowledgeBase,
@@ -112,6 +114,16 @@ function board(): BoardData {
 }
 
 describe("production board assistant source", () => {
+  it("leser boardet uten Next-requestcache fordi tjenesten kjører som sidecar", () => {
+    const source = readFileSync(
+      join(process.cwd(), "lib/live/production-board.ts"),
+      "utf8",
+    );
+    expect(source).toContain('from "@/lib/data-server"');
+    expect(source).not.toContain("cached-board-reads");
+    expect(source).not.toContain("getCachedReportProduct");
+  });
+
   it("bygger kildegrunnlag av publishedKnowledge uten demoidentitet", () => {
     const source = buildProductionAssistantSource(board());
     expect(source.contentVersion).toBe("version-1");
