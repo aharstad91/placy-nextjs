@@ -4,6 +4,7 @@ import { nyhavnaMapTools } from "@/lib/realtime/map-tools";
 import { createNyhavnaKnowledge, knowledgeTools, type KnowledgeOptions } from "@/lib/realtime/nyhavna-knowledge";
 import { NYHAVNA_LABELS, shortProjectInfoLabel, type ConversationLabels } from "@/lib/realtime/conversation-labels";
 import { boardAddressBook, spokenBoardProjection } from "@/lib/realtime/spoken-projection";
+import { isLiveTransportTool, liveTransportTools, type LiveTransportExecutor, type LiveTransportToolName } from "@/lib/realtime/live-transport";
 import {
   applyTourEvent, defaultTourOrder, initialTourState, nextThemes, themesForInterests, tourNote,
   type HighlightedPlace, type TourState, type TourTheme,
@@ -73,8 +74,8 @@ export const tourTools = (labels: ConversationLabels): RealtimeTool[] => [
 ];
 
 /** Alle verktøyene backenden får: kunnskap og omvisning (server) + kart (nettleser). */
-export const conversationTools = (labels: ConversationLabels): RealtimeTool[] =>
-  [...knowledgeTools(labels), ...tourTools(labels), ...nyhavnaMapTools];
+export const conversationTools = (labels: ConversationLabels, liveTransport = false): RealtimeTool[] =>
+  [...knowledgeTools(labels), ...tourTools(labels), ...(liveTransport ? liveTransportTools : []), ...nyhavnaMapTools];
 
 /** Karttilstanden nettleseren melder inn mellom turene. */
 export interface BoardState {
@@ -86,7 +87,10 @@ export interface BoardState {
 
 export interface NyhavnaConversation {
   /** Utfør et server-verktøy: resultatet til backenden, og kartdirektiver serveren selv utløser. */
-  execute: (name: string, args: Record<string, unknown>) => ToolOutcome;
+  execute: {
+    (name: LiveTransportToolName, args: Record<string, unknown>): Promise<ToolOutcome>;
+    (name: string, args: Record<string, unknown>): ToolOutcome;
+  };
   /** Nettleserens kartsvar – speiler kartets faktiske tilstand inn i omvisningen. */
   observeBrowserResult: (name: string, args: Record<string, unknown>, output: unknown) => void;
   /** Notatet hvis tilstanden har endret seg siden sist det ble hentet, ellers null. Legges SIST i backendens instruksjon. */
@@ -117,6 +121,8 @@ export interface ConversationDeps {
    * `NYHAVNA_LABELS`, så det frosne snapshotet sier nøyaktig det samme som før.
    */
   labels?: ConversationLabels;
+  /** Levende kollektivoppslag. Utelatt for datasett som ikke har serverklient. */
+  liveTransport?: LiveTransportExecutor;
 }
 
 const strings = (value: unknown, max = 10): string[] =>
@@ -189,7 +195,12 @@ export function createNyhavnaConversation(board: BoardData, deps: ConversationDe
     };
   };
 
-  const execute = (name: string, args: Record<string, unknown>): ToolOutcome => {
+  const execute = (name: string, args: Record<string, unknown>): ToolOutcome | Promise<ToolOutcome> => {
+    if (isLiveTransportTool(name)) {
+      return deps.liveTransport
+        ? deps.liveTransport(name, args).then((result) => ({ result }))
+        : { result: { error: "Levende kollektivdata er ikke aktivert for dette boardet." } };
+    }
     switch (name) {
       case "set_interests": {
         const interests = strings(args.interests, 6);
@@ -334,5 +345,5 @@ export function createNyhavnaConversation(board: BoardData, deps: ConversationDe
 
   const setBoardState = (next: BoardState) => { boardState = next; };
 
-  return { execute, observeBrowserResult, noteIfChanged, mapContextIfChanged, onMapSelection, setBoardState, state: () => state, themes };
+  return { execute: execute as NyhavnaConversation["execute"], observeBrowserResult, noteIfChanged, mapContextIfChanged, onMapSelection, setBoardState, state: () => state, themes };
 }

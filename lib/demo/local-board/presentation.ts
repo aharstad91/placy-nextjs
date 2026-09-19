@@ -162,7 +162,7 @@ export function createPresentation(base: NyhavnaConversation, options: Presentat
       }
       base.setBoardState(state);
     },
-    execute: (name, args) => name === "open_theme" && segments.some(s => s.categoryId === args.theme_id) ? present({ action: "category", category_id: args.theme_id }) : name === "reveal_more_places" ? more(args) : name === "present_neighbourhood" ? present(args) : name === "find_similar_places" ? similar(args) : base.execute(name, args),
+    execute: ((name, args) => name === "open_theme" && segments.some(s => s.categoryId === args.theme_id) ? present({ action: "category", category_id: args.theme_id }) : name === "reveal_more_places" ? more(args) : name === "present_neighbourhood" ? present(args) : name === "find_similar_places" ? similar(args) : base.execute(name, args)) as NyhavnaConversation["execute"],
     noteIfChanged: () => {
       const baseNote = base.noteIfChanged();
       const note = `EKSTRAUTVALG ALLEREDE VIST: ${[...revealed].join(", ") || "ingen"}. Flere steder i en kategori: reveal_more_places. RADIER: ${JSON.stringify(discoveryCategoryIds.map(id => ({ category: id, current: optionsFor(id).current, available: optionsFor(id).options.map(o => o.radiusKm) })))}.

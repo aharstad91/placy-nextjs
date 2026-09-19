@@ -1,10 +1,11 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import type { BoardData } from "@/components/variants/report/board/board-data";
 import {
   boardKnowledgeBase,
   buildProductionAssistantSource,
 } from "@/lib/live/production-board";
 import { spokenBoardProjection } from "@/lib/realtime/spoken-projection";
+import type { LiveTransportClient } from "@/lib/realtime/live-transport";
 
 function board(): BoardData {
   const raw = {
@@ -12,6 +13,7 @@ function board(): BoardData {
     name: "Fyr",
     address: "Lade allé 9",
     coordinates: { lat: 63.44, lng: 10.45 },
+    enturStopplaceId: "NSR:StopPlace:123",
     category: { id: "cafe", name: "Kafé", icon: "Coffee", color: "#000" },
   };
   return {
@@ -100,6 +102,7 @@ describe("production board assistant source", () => {
     expect(source.backendInstructions).not.toContain("Nyhavna");
     expect(source.voiceInstructions).toContain("Anja");
     expect(source.tools.map((tool) => tool.name)).toContain("find_places");
+    expect(source.tools.map((tool) => tool.name)).toContain("get_live_departures");
   });
 
   it("beholder prosjektfakta uten falsk kart-ID", () => {
@@ -147,5 +150,49 @@ describe("production board assistant source", () => {
       .toHaveProperty("error");
     expect(conversation.execute("get_place_address", { poi_id: "unknown", purpose: "address" }).result)
       .toHaveProperty("error");
+  });
+
+  it("bruker live Entur for validerte boardsteder og beholder turens returpunkt", async () => {
+    const client: LiveTransportClient = {
+      departures: vi.fn(async () => ({
+        stopPlace: { id: "NSR:StopPlace:123", name: "Leangenbukta" },
+        fetchedAt: "2026-09-19T08:00:00.000Z",
+        quays: [{ quayId: "NSR:Quay:1", departures: [{
+          departureTime: "2026-09-19T08:06:00+02:00",
+          expectedDepartureTime: "2026-09-19T08:05:00+02:00",
+          actualDepartureTime: "2026-09-19T08:06:00+02:00",
+          isRealtime: true,
+          destination: "Sentrum",
+          lineCode: "2",
+          transportMode: "bus",
+        }] }],
+        departures: [],
+      })),
+      trip: vi.fn(async () => ({
+        fetchedAt: "2026-09-19T08:00:00.000Z",
+        trips: [{ duration: 14, walkDistance: 180, legs: [{ mode: "bus", distance: 3000, duration: 10, lineCode: "2", from: "Leangenbukta", to: "Fyr" }] }],
+      })),
+    };
+    const conversation = buildProductionAssistantSource(board(), client).createConversation();
+    conversation.execute("set_interests", { interests: ["mat"], theme_ids: ["servering"] });
+    conversation.execute("note_detour", { about: "buss" });
+
+    const departures = (await conversation.execute("get_live_departures", { poi_id: "cafe-1" })).result;
+    expect(client.departures).toHaveBeenCalledWith("NSR:StopPlace:123", 5);
+    expect(departures).toMatchObject({
+      live: true,
+      fetched_at: "2026-09-19T08:00:00.000Z",
+      departures: [{
+        line: "2",
+        direction: "Sentrum",
+        expected_departure_time: "2026-09-19T08:05:00+02:00",
+        actual_departure_time: "2026-09-19T08:06:00+02:00",
+      }],
+    });
+
+    const trip = (await conversation.execute("plan_live_transit_trip", { destination_poi_id: "cafe-1" })).result;
+    expect(client.trip).toHaveBeenCalledWith(board().home.coordinates, board().categories[0].pois[0].coordinates, 3);
+    expect(trip).toMatchObject({ live: true, destination: { poi_id: "cafe-1", name: "Fyr" }, trips: [{ duration: 14 }] });
+    expect(conversation.execute("return_to_tour", {}).result).toMatchObject({ ok: true, chapter: { theme_id: "servering" } });
   });
 });
