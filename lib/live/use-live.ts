@@ -21,8 +21,7 @@ import { MAP_TOOLS } from "@/lib/realtime/types";
  *    kontekst-appends før lydrammer flyter, så en dempet mikrofon gjør at
  *    hilsenen aldri leveres (målt mot ekte API 2026-09-13).
  * 2. Kartkommandoene kommer IKKE på datakanalen. Serveren eier verktøysløyfen
- *    og sender kartdirektiver over SSE; nettleseren utfører dem og svarer med
- *    kartstatus over HTTP. Datakanalen brukes bare til å lese transkript,
+ *    og sender kartdirektiver over kontrollforbindelsen (lokalt: SSE/HTTP). Datakanalen brukes bare til å lese transkript,
  *    forbruk og feil – og til å sende hilsenen.
  * 3. «Snakker» avgjøres av FAKTISK avspilling (RMS på den mottatte lyden),
  *    ikke av transkriptet. Transkriptfragmenter kommer før og etter lyden, så
@@ -53,11 +52,22 @@ const HEARING_RMS = 0.015;
 const HEARING_HOLD_MS = 250;
 const ICE_TIMEOUT_MS = 10000;
 const SESSION_START_TIMEOUT_MS = 15000;
+/** Cold start, durable admission, provider creation and sideband attach precede media. */
+const HOSTED_HANDSHAKE_TIMEOUT_MS = 75000;
 /** Puffet som får stemmen til å si hilsenen med én gang (se `session.instructions.appended`-casen). */
 const GREETING_KICK = "Begynn samtalen nå: si hilsenen slik instruksjonen sier, og vent så på brukeren.";
 
 export interface LiveOptions {
   voice?: LiveVoice;
+  /** Public registry slug; the server resolves ownership and accounting. */
+  hostedProjectSlug?: string;
+  /** Standard-board identity; bound to the same content version as the map. */
+  project?: { customer: string; projectSlug: string; contentVersion: string };
+  endpoint?: string;
+  allowRevealPlaces?: boolean;
+  /** Internal benchmark labels; authorization is checked by the server. */
+  testRunId?: string;
+  scenarioId?: string;
   /** Kartkommandoen serveren ba om. Returverdien er ren kartstatus, aldri fakta. */
   executeTool: (name: string, args: Record<string, unknown>) => unknown | Promise<unknown>;
   getContext: () => LiveBoardState;
@@ -67,21 +77,8 @@ export interface LiveOptions {
    * Utelatt = serverens standard, den frosne Nyhavna-demoen.
    */
   dataset?: string;
-  /**
-   * Om serveren får kjøre kartkommandoen `reveal_places`. Kommer fra boardets
-   * funksjonsflagg (`LocalDemoFeatures.revealPlaces`), ikke fra datasett-ID-en:
-   * hooken skal ikke kjenne navnet på noen demo.
-   */
-  allowRevealPlaces?: boolean;
   /** Hilsenen, formulert som en instruksjon til stemmen (`session.instructions.append`). */
   greeting: string;
-  /** Ordinære boards bruker cookie-bundet gateway; demoer beholder legacy-headeren. */
-  endpoint?: string;
-  project?: {
-    customer: string;
-    projectSlug: string;
-    contentVersion: string;
-  };
 }
 
 interface Connection {
@@ -97,6 +94,11 @@ interface Connection {
   cookieAuth: boolean;
   serverSession: boolean;
   events?: EventSource;
+  control?: WebSocket;
+  stopping?: boolean;
+  drainTimer?: ReturnType<typeof setTimeout>;
+  finishDrain?: () => void;
+  warningMs?: number;
   audioContext?: AudioContext;
   meter?: ReturnType<typeof setInterval>;
   warningTimer?: ReturnType<typeof setTimeout>;
@@ -109,7 +111,8 @@ interface Connection {
   loudAt: number;
   lastAssistantAt: number;
   lastUserAt: number;
-  transcript: { role: "user" | "assistant"; id: string; endMs: number } | null;
+  pauseRequested: boolean;
+  transcript: { role: "user" | "assistant"; id: string; endMs: number; text: string } | null;
 }
 
 interface LiveEvent {
@@ -143,6 +146,7 @@ export function useLive(options: LiveOptions) {
   const [usage, setUsage] = useState({ voiceSeconds: 0, estimatedUsd: 0 });
   const connection = useRef<Connection | null>(null);
   const generation = useRef(0);
+  const startRequest = useRef(0);
   const contextSent = useRef("");
   const cleanupToken = useRef<string | undefined>(undefined);
   const cleanupEndpoint = useRef<string | undefined>(undefined);
@@ -158,7 +162,11 @@ export function useLive(options: LiveOptions) {
     if (!current) return;
     clearInterval(current.meter);
     clearTimeout(current.warningTimer);
+    clearTimeout(current.drainTimer);
+    current.finishDrain?.();
     current.abort.abort();
+    if (current.control?.readyState === WebSocket.OPEN && !current.ended && !current.stopping) current.control.send(JSON.stringify({ type: "stop" }));
+    current.control?.close();
     current.events?.close();
     current.stream?.getTracks().forEach(track => track.stop());
     current.channel.close();
@@ -170,17 +178,38 @@ export function useLive(options: LiveOptions) {
     // Serveren har alt ryddet når den selv avsluttet; en ny DELETE ville bare
     // treffe et ukjent token.
     if (current.serverSession && !current.ended) {
-      const headers = current.sessionToken ? { "X-Placy-Session": current.sessionToken } : undefined;
-      if (current.sessionToken) cleanupToken.current = current.sessionToken;
+      cleanupToken.current = current.sessionToken;
       cleanupEndpoint.current = current.endpoint;
-      cleanupPending.current = fetch(current.endpoint, { method: "DELETE", headers, keepalive: true }).then(response => response.ok).catch(() => false);
+      cleanupPending.current = fetch(current.endpoint, {
+        method: "DELETE",
+        headers: current.sessionToken ? { "X-Placy-Session": current.sessionToken } : undefined,
+        keepalive: true,
+      }).then(response => response.ok).catch(() => false);
     }
   }, []);
 
-  useEffect(() => dispose, [dispose]);
+  useEffect(() => () => { startRequest.current += 1; dispose(); }, [dispose]);
 
   const stop = useCallback(() => {
-    dispose();
+    startRequest.current += 1;
+    const current = connection.current;
+    if (current?.control && !current.ended) {
+      if (!current.stopping) {
+        current.stopping = true;
+        generation.current += 1;
+        current.abort.abort();
+        clearInterval(current.meter);
+        clearTimeout(current.warningTimer);
+        current.stream?.getTracks().forEach(track => { track.enabled = false; });
+        if (current.transceiver.sender.track) current.transceiver.sender.track.enabled = false;
+        current.audio.pause();
+        cleanupPending.current = new Promise(resolve => { current.finishDrain = () => resolve(true); });
+        if (current.control.readyState === WebSocket.OPEN) {
+          current.control.send(JSON.stringify({ type: "stop" }));
+          current.drainTimer = setTimeout(dispose, 8000);
+        } else dispose();
+      }
+    } else dispose();
     setNotice(null);
     setHearing(false);
     micLevel.current = 0;
@@ -196,7 +225,7 @@ export function useLive(options: LiveOptions) {
 
   const sendContext = useCallback((message: LiveContextMessage) => {
     const current = connection.current;
-    if (!current?.serverSession) return;
+    if (!current || current.stopping || (!current.serverSession && !current.control)) return;
     const body = JSON.stringify(message);
     // Karttilstanden meldes hver gang React committer; bare endringer er nytt
     // for serveren, og hver melding koster en kontekst-append hos stemmen.
@@ -204,12 +233,14 @@ export function useLive(options: LiveOptions) {
       if (contextSent.current === body) return;
       contextSent.current = body;
     }
+    if (current.control) {
+      if (current.control.readyState === WebSocket.OPEN) current.control.send(JSON.stringify({ type: "context", message }));
+      return;
+    }
+    if (!current.serverSession) return;
     void fetch(`${current.endpoint}/context`, {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        ...(current.sessionToken ? { "X-Placy-Session": current.sessionToken } : {}),
-      },
+      headers: { "Content-Type": "application/json", ...(current.sessionToken ? { "X-Placy-Session": current.sessionToken } : {}) },
       body,
     }).catch(() => {});
   }, []);
@@ -240,6 +271,9 @@ export function useLive(options: LiveOptions) {
   }, []);
 
   const start = useCallback(async () => {
+    const requestId = ++startRequest.current;
+    if (connection.current?.stopping) await cleanupPending.current;
+    if (requestId !== startRequest.current) return;
     dispose();
     const run = generation.current;
     setStatus("connecting");
@@ -250,33 +284,35 @@ export function useLive(options: LiveOptions) {
     try {
       let cleaned = await cleanupPending.current;
       if (!cleaned && cleanupEndpoint.current) {
-        cleaned = await fetch(cleanupEndpoint.current, {
-          method: "DELETE",
-          headers: cleanupToken.current ? { "X-Placy-Session": cleanupToken.current } : undefined,
-        }).then(response => response.ok).catch(() => false);
+        cleaned = await fetch(cleanupEndpoint.current, { method: "DELETE", headers: cleanupToken.current ? { "X-Placy-Session": cleanupToken.current } : undefined }).then(response => response.ok).catch(() => false);
         cleanupPending.current = Promise.resolve(cleaned);
       }
-      if (cleaned) { cleanupToken.current = undefined; cleanupEndpoint.current = undefined; }
+      if (cleaned) cleanupToken.current = undefined;
       if (run !== generation.current) return;
       if (!cleaned) throw new Error("Forrige samtale kunne ikke avsluttes. Vent på serverens opprydding før du prøver igjen.");
 
       // Sjekk oppsettet før vi ber om mikrofontillatelse.
-      const project = latestOptions.current.project;
-      const endpoint = latestOptions.current.endpoint ?? "/api/prototype/live";
       const dataset = latestOptions.current.dataset;
+      const project = latestOptions.current.project;
+      const hostedProjectSlug = latestOptions.current.hostedProjectSlug;
+      const endpoint = latestOptions.current.endpoint ?? "/api/prototype/live";
       const selectedVoice = latestOptions.current.voice;
-      const healthQuery = project
-        ? new URLSearchParams(project).toString()
-        : dataset ? `dataset=${encodeURIComponent(dataset)}` : "";
-      const health = await fetch(`${endpoint}${healthQuery ? `?${healthQuery}` : ""}`, { cache: "no-store" });
+      const selection = new URLSearchParams();
+      if (project) {
+        selection.set("customer", project.customer);
+        selection.set("projectSlug", project.projectSlug);
+        selection.set("contentVersion", project.contentVersion);
+      } else if (hostedProjectSlug) selection.set("project", hostedProjectSlug);
+      if (dataset) selection.set("dataset", dataset);
+      const health = await fetch(`${endpoint}${selection.size ? `?${selection}` : ""}`, { cache: "no-store" });
       if (run !== generation.current) return;
-      const configured = await health.json().catch(() => ({})) as { configured?: boolean; protocol?: string; snapshotId?: string; error?: string };
-      if (!health.ok) throw new Error(configured.error || "Talesamtalen er ikke tilgjengelig. Prøv igjen senere.");
+      if (!health.ok) throw new Error("Samtalen er ikke tilgjengelig. Kontroller tilgangen og prøv igjen.");
+      const configured = await health.json() as { configured?: boolean; protocol?: string; snapshotId?: string; transport?: string; warningMs?: number };
       if (run !== generation.current) return;
       // Ingen reservevei til Realtime: en server som ikke svarer «live» ville
       // gitt en samtale med andre turregler enn resten av koden regner med.
       if (configured.protocol !== "live") throw new Error("Serveren kjører ikke Live-protokollen. Start serveren på nytt med Live-ruten før du prøver igjen.");
-      if (!configured.configured) throw new Error("Tale er ikke koblet til ennå. Prøv igjen senere.");
+      if (!configured.configured) throw new Error("Tale er ikke koblet til ennå. Legg OPENAI_API_KEY i .env.local, og prøv igjen.");
       const snapshotId = latestOptions.current.snapshotId ?? configured.snapshotId;
       if (!project && !snapshotId) throw new Error("Last boardet på nytt med riktig dataversjon før du starter samtalen.");
       if (!window.RTCPeerConnection) throw new Error("Nettleseren støtter ikke talesamtaler. Prøv Chrome eller Safari.");
@@ -291,7 +327,7 @@ export function useLive(options: LiveOptions) {
         generation: run, pc, channel, audio, transceiver, abort: new AbortController(),
         endpoint, cookieAuth: Boolean(project), serverSession: false,
         started: false, ended: false, greetingEventId: `greeting-${crypto.randomUUID()}`, greetingKicked: false, speaking: false, loudAt: 0,
-        lastAssistantAt: 0, lastUserAt: 0, transcript: null,
+        lastAssistantAt: 0, lastUserAt: 0, pauseRequested: false, transcript: null, warningMs: configured.warningMs,
       };
       connection.current = current;
       const active = () => connection.current === current && run === generation.current;
@@ -306,7 +342,7 @@ export function useLive(options: LiveOptions) {
         // hverken ord eller lyd ute, og siste ord i rommet var brukerens.
         // Den lille pausen etter brukerens siste fragment holder etiketten på
         // «lytter» mens hen fortsatt snakker.
-        const waiting = current.lastUserAt > current.lastAssistantAt
+        const waiting = !current.pauseRequested && current.lastUserAt > current.lastAssistantAt
           && now - current.lastAssistantAt > THINKING_AFTER_MS
           && now - current.lastUserAt > USER_SETTLE_MS;
         setStatus(waiting ? "thinking" : "listening");
@@ -392,7 +428,11 @@ export function useLive(options: LiveOptions) {
         // eller det er en tydelig pause i den samme talerens tidslinje.
         const fresh = !previous || previous.role !== role || (startMs !== null && startMs - previous.endMs > TRANSCRIPT_GAP_MS);
         const id = fresh ? `${role}-${crypto.randomUUID()}` : previous.id;
-        current.transcript = { role, id, endMs: event.end_ms ?? startMs ?? (fresh ? 0 : previous.endMs) };
+        const text = fresh ? delta : previous.text + delta;
+        current.transcript = { role, id, text, endMs: event.end_ms ?? startMs ?? (fresh ? 0 : previous.endMs) };
+        // A pure pause request deliberately needs no answer. Additional words
+        // (including a question appended in later fragments) restore waiting.
+        if (role === "user") current.pauseRequested = /^(?:stopp|vent(?: litt)?)[.!?,…]*$/iu.test(text.trim());
         addMessage({ id, role, text: delta }, !fresh);
         settle();
       };
@@ -425,7 +465,7 @@ export function useLive(options: LiveOptions) {
         }
       };
       channel.onclose = () => {
-        if (!active()) return;
+        if (!active() || current.control) return; // Hosted control owns final cleanup.
         dispose();
         setError("Samtalen ble avsluttet. Du kan starte en ny.");
         setStatus("error");
@@ -434,30 +474,38 @@ export function useLive(options: LiveOptions) {
       // `session.started` er kvitteringen på at Live-sesjonen lever. Den kommer
       // på datakanalen, så ventingen må stå klar før den første meldingen.
       let sessionStarted: () => void = () => {};
+      let armSessionStartTimeout: () => void = () => {};
       let startedTimeout: ReturnType<typeof setTimeout> | undefined;
       const startedPromise = new Promise<void>((resolve, reject) => {
-        sessionStarted = resolve;
-        startedTimeout = setTimeout(() => reject(new Error("Samtalen svarte ikke i tide. Prøv igjen.")), SESSION_START_TIMEOUT_MS);
+        sessionStarted = () => { clearTimeout(startedTimeout); resolve(); };
+        // Permission and server setup are not time spent waiting for WebRTC media.
+        armSessionStartTimeout = () => {
+          if (!current.started) startedTimeout = setTimeout(() => reject(new Error("Samtalen svarte ikke i tide. Prøv igjen.")), SESSION_START_TIMEOUT_MS);
+        };
         current.abort.signal.addEventListener("abort", () => {
           clearTimeout(startedTimeout);
-          // Avbrudd kan skje før vi rekker å vente på kvitteringen (for
-          // eksempel når SDP-kallet svarer 409). Da ville en rejection her
-          // blitt en uobservert Promise-feil. `active()`-vaktene stopper den
-          // avbrutte oppstarten, så avbrudd skal bare løse ventingen.
-          resolve();
+          reject(new DOMException("Cancelled", "AbortError"));
         }, { once: true });
       });
 
+      // Cancellation may happen before SDP negotiation; keep rejection handled.
+      void startedPromise.catch(() => {});
+
       channel.onmessage = message => {
-        if (!active()) return;
+        if (connection.current !== current) return;
         let event: LiveEvent;
         try { event = JSON.parse(message.data) as LiveEvent; } catch { return; }
+        if (current.stopping) {
+          if (event.type === "session.usage.updated" || event.type === "session.closed") noteUsage(event);
+          return;
+        }
+        if (!active()) return;
         switch (event.type) {
           case "session.started":
             if (!current.started) {
               current.warningTimer = setTimeout(() => {
                 if (active()) setNotice("Samtalen avsluttes om cirka to minutter. Du kan starte en ny samtale etterpå.");
-              }, LIVE_SESSION_WARNING_MS);
+              }, current.warningMs ?? LIVE_SESSION_WARNING_MS);
             }
             current.started = true;
             sessionStarted();
@@ -484,6 +532,7 @@ export function useLive(options: LiveOptions) {
             break;
           case "session.closed":
             noteUsage(event);
+            if (current.control) break; // Server closes only after final accounting drains.
             current.ended = true;
             dispose();
             setError("Samtalen ble avsluttet. Du kan starte en ny.");
@@ -525,67 +574,110 @@ export function useLive(options: LiveOptions) {
       });
       if (!active()) return;
 
-      const response = await fetch(endpoint, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          sdp: pc.localDescription?.sdp ?? offer.sdp,
-          ...(project ?? { snapshotId, ...(dataset ? { dataset } : {}) }),
-          ...(selectedVoice ? { voice: selectedVoice } : {}),
-        }),
-        signal: current.abort.signal,
-      });
-      if (!active()) return;
-      if (!response.ok) {
-        const payload = await response.json().catch(() => ({})) as { error?: string };
-        throw new Error(payload.error || "Samtalen kunne ikke starte. Prøv igjen.");
+      const handleServerMessage = async (payload: LiveServerMessage) => {
+        if (connection.current !== current) return;
+        if (payload.type === "ended") {
+          const stopped = current.stopping;
+          current.ended = true;
+          dispose();
+          if (!stopped) { setError(payload.message); setStatus("error"); }
+          return;
+        }
+        if (!active() || current.stopping || payload.type !== "map") return;
+        const directive: MapDirective = payload.directive;
+        if (!directive || typeof directive.id !== "string" || typeof directive.name !== "string") return;
+        let output: unknown;
+        try {
+          if (!MAP_TOOLS.has(directive.name) && !(latestOptions.current.allowRevealPlaces && directive.name === "reveal_places")) throw new Error("Ukjent kartkommando");
+          if (directive.args && (typeof directive.args !== "object" || Array.isArray(directive.args))) throw new Error("Ugyldig kartkommando");
+          output = await latestOptions.current.executeTool(directive.name, directive.args ?? {});
+        } catch {
+          output = { error: "Kartkommandoen kunne ikke utføres. Ikke påstå at kartet ble flyttet." };
+        }
+        if (!active() || current.stopping) return;
+        const result = { id: directive.id, output: output ?? { ok: true } };
+        if (current.control?.readyState === WebSocket.OPEN) current.control.send(JSON.stringify({ type: "map_result", ...result }));
+        else if (current.serverSession) void fetch(`${current.endpoint}/map`, {
+          method: "POST", headers: { "Content-Type": "application/json", ...(current.sessionToken ? { "X-Placy-Session": current.sessionToken } : {}) }, body: JSON.stringify(result),
+        }).catch(() => {});
+      };
+      const request = {
+        sdp: pc.localDescription?.sdp ?? offer.sdp,
+        ...(snapshotId ? { snapshotId } : {}),
+        ...(hostedProjectSlug ? { project: hostedProjectSlug } : {}),
+        ...(dataset ? { dataset } : {}),
+        ...(selectedVoice ? { voice: selectedVoice } : {}),
+      };
+      let sdp: string | undefined;
+      if (configured.transport === "websocket") {
+        const url = new URL("/api/live/control", window.location.href);
+        url.protocol = url.protocol === "https:" ? "wss:" : "ws:";
+        const control = new WebSocket(url);
+        current.control = control;
+        sdp = await new Promise<string>((resolve, reject) => {
+          const timeout = setTimeout(() => reject(new Error("Samtalen svarte ikke i tide. Prøv igjen.")), HOSTED_HANDSHAKE_TIMEOUT_MS);
+          const fail = (message: string) => {
+            clearTimeout(timeout);
+            reject(new Error(message));
+            if (connection.current !== current) return;
+            const stopped = current.stopping;
+            dispose();
+            if (!stopped) { setError(message); setStatus("error"); }
+          };
+          current.abort.signal.addEventListener("abort", () => { clearTimeout(timeout); reject(new DOMException("Cancelled", "AbortError")); }, { once: true });
+          control.onopen = () => {
+            if (!active()) return;
+            control.send(JSON.stringify({ type: "start", ...request, ...(latestOptions.current.testRunId ? { testRunId: latestOptions.current.testRunId } : {}), ...(latestOptions.current.scenarioId ? { scenarioId: latestOptions.current.scenarioId } : {}) }));
+          };
+          control.onmessage = event => {
+            if (connection.current !== current) return;
+            let payload;
+            try { payload = JSON.parse(event.data); } catch { return; }
+            if (!payload || typeof payload !== "object") return;
+            if (payload.type === "ready") {
+              if (!active()) return;
+              if (typeof payload.sdp !== "string" || !payload.sdp) { fail("Serveren svarte uten lydforbindelse. Prøv igjen."); return; }
+              clearTimeout(timeout);
+              if (typeof payload.warningMs === "number" && payload.warningMs > 0) current.warningMs = payload.warningMs;
+              resolve(payload.sdp);
+            } else if (payload.type === "error") fail("Samtalen kunne ikke fortsette. Trykk start for å prøve igjen.");
+            else void handleServerMessage(payload);
+          };
+          control.onclose = () => fail("Forbindelsen ble brutt. Trykk start for å koble til igjen.");
+          control.onerror = () => fail("Forbindelsen ble brutt. Trykk start for å koble til igjen.");
+        });
+      } else {
+        const response = await fetch(endpoint, {
+          method: "POST", headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(project ? { sdp: request.sdp, ...project, ...(selectedVoice ? { voice: selectedVoice } : {}) } : request),
+          signal: current.abort.signal,
+        });
+        if (!active()) return;
+        if (!response.ok) {
+          const payload = await response.json().catch(() => ({})) as { error?: string };
+          throw new Error(payload.error || "Samtalen kunne ikke starte. Prøv igjen.");
+        }
+        current.sessionToken = response.headers?.get?.("X-Placy-Session") ?? undefined;
+        const payload = await response.json() as { sdp?: string };
+        sdp = payload.sdp;
+        current.serverSession = true;
       }
-      const token = response.headers?.get?.("X-Placy-Session") ?? undefined;
-      const payload = await response.json() as { sdp?: string; sessionId?: string };
       if (!active()) return;
-      if (!payload.sdp) throw new Error("Serveren svarte uten lydforbindelse. Prøv igjen.");
-      current.sessionToken = token;
-      current.serverSession = true;
-      await pc.setRemoteDescription({ type: "answer", sdp: payload.sdp });
+      if (!sdp) throw new Error("Serveren svarte uten lydforbindelse. Prøv igjen.");
+      armSessionStartTimeout();
+      await pc.setRemoteDescription({ type: "answer", sdp });
       if (!active()) return;
-
       await startedPromise;
       clearTimeout(startedTimeout);
       if (!active()) return;
       setStatus("listening");
-
-      if (current.serverSession && (current.cookieAuth || token)) {
-        const events = new EventSource(current.cookieAuth ? `${endpoint}/map` : `${endpoint}/map?session=${encodeURIComponent(token!)}`);
+      if (current.serverSession) {
+        const events = new EventSource(current.cookieAuth ? `${endpoint}/map` : `${endpoint}/map?session=${encodeURIComponent(current.sessionToken!)}`);
         current.events = events;
-        events.onmessage = async message => {
-          if (!active()) return;
+        events.onmessage = message => {
           let payload: LiveServerMessage;
           try { payload = JSON.parse(message.data) as LiveServerMessage; } catch { return; }
-          if (payload.type === "ended") {
-            current.ended = true;
-            dispose();
-            setError(payload.message);
-            setStatus("error");
-            return;
-          }
-          if (payload.type !== "map") return;
-          const directive: MapDirective = payload.directive;
-          let output: unknown;
-          try {
-            if (!MAP_TOOLS.has(directive.name) && !(latestOptions.current.allowRevealPlaces && directive.name === "reveal_places")) throw new Error("Ukjent kartkommando");
-            output = await latestOptions.current.executeTool(directive.name, directive.args ?? {});
-          } catch {
-            output = { error: "Kartkommandoen kunne ikke utføres. Ikke påstå at kartet ble flyttet." };
-          }
-          if (!active()) return;
-          void fetch(`${endpoint}/map`, {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-              ...(token ? { "X-Placy-Session": token } : {}),
-            },
-            body: JSON.stringify({ id: directive.id, output: output ?? { ok: true } }),
-          }).catch(() => {});
+          if (payload && typeof payload === "object") void handleServerMessage(payload);
         };
       }
 

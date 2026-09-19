@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
@@ -19,6 +19,7 @@ vi.mock("@/lib/pipeline/resolve-anchors-step", () => ({ resolveProjectAnchors: v
 vi.mock("@/lib/pipeline/hydrate-report", () => ({ hydrateReport: vi.fn() }));
 vi.mock("@/lib/pipeline/travel-times", () => ({ computeProjectTravelTimes: vi.fn() }));
 vi.mock("@/lib/pipeline/board-facts-step", () => ({ runBoardFactsStep: vi.fn() }));
+vi.mock("@/lib/pipeline/isochrones", () => ({ computeProjectIsochrones: vi.fn() }));
 vi.mock("@/lib/pipeline/inherit-area-editorial-via-route", () => ({ inheritAreaEditorialViaRoute: vi.fn() }));
 vi.mock("@/lib/pipeline/provision-acceptance", () => ({ runAcceptanceCheck: vi.fn() }));
 
@@ -32,6 +33,7 @@ import { resolveProjectAnchors } from "@/lib/pipeline/resolve-anchors-step";
 import { hydrateReport } from "@/lib/pipeline/hydrate-report";
 import { computeProjectTravelTimes } from "@/lib/pipeline/travel-times";
 import { runBoardFactsStep } from "@/lib/pipeline/board-facts-step";
+import { computeProjectIsochrones } from "@/lib/pipeline/isochrones";
 import { inheritAreaEditorialViaRoute } from "@/lib/pipeline/inherit-area-editorial-via-route";
 import { runAcceptanceCheck } from "@/lib/pipeline/provision-acceptance";
 import { provisionReportBoard, revalidateProject } from "./provision";
@@ -47,6 +49,7 @@ const m = {
   hydrate: vi.mocked(hydrateReport),
   travel: vi.mocked(computeProjectTravelTimes),
   boardFacts: vi.mocked(runBoardFactsStep),
+  isochrones: vi.mocked(computeProjectIsochrones),
   editorial: vi.mocked(inheritAreaEditorialViaRoute),
   acceptance: vi.mocked(runAcceptanceCheck),
 };
@@ -76,6 +79,7 @@ function setHappyDefaults(existed = false) {
     warnings: [],
   });
   m.boardFacts.mockResolvedValue({ skipped: true, warnings: [] });
+  m.isochrones.mockResolvedValue({ skipped: true, fetched: [], warnings: [] });
   m.editorial.mockResolvedValue({
     skipped: true, areaName: "", themesInherited: [], themesWithFaq: [], globalFaqAnswers: 0,
     highlights: { kept: 0, dropped: [] }, warnings: [],
@@ -88,9 +92,13 @@ const BASE = {
   has3dAddon: false, allowUpdate: false,
 };
 
+afterEach(() => vi.unstubAllGlobals());
+
 describe("provisionReportBoard (orkestrator-kjerne)", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    // Revalidation belongs to its own tests below; never call live hosts here.
+    vi.stubGlobal("fetch", vi.fn(async () => ({ ok: true, status: 200, json: async () => ({}) })));
     setHappyDefaults();
   });
 
@@ -140,6 +148,7 @@ describe("provisionReportBoard (orkestrator-kjerne)", () => {
     m.hydrate.mockImplementation(async () => { order.push("hydrate"); return { productPoisLinked: 0, featuredMarked: 0, categoriesPopulated: 0, warnings: [] }; });
     m.travel.mockImplementation(async () => { order.push("travel"); return { computed: 0, unchanged: 0, total: 0, coverage: { walk: 0, bike: 0, car: 0 }, warnings: [] }; });
     m.boardFacts.mockImplementation(async () => { order.push("board-facts"); return { skipped: true, warnings: [] }; });
+    m.isochrones.mockImplementation(async () => { order.push("isochrones"); return { skipped: true, fetched: [], warnings: [] }; });
     m.editorial.mockImplementation(async () => { order.push("editorial"); return { skipped: true, areaName: "", themesInherited: [], themesWithFaq: [], globalFaqAnswers: 0, highlights: { kept: 0, dropped: [] }, warnings: [] }; });
     m.acceptance.mockImplementation(async () => { order.push("acceptance"); return { ok: true, findings: [], urls: { local: "l", prod: "p" } }; });
 
@@ -150,7 +159,7 @@ describe("provisionReportBoard (orkestrator-kjerne)", () => {
     // resonnere om i stedet for to.
     // Anker-oppløsningen står mellom trust og hydrering: hele poolen må finnes
     // (3–4), og hydreringen skal se ett kjøpesenter, ikke 60 løse butikker.
-    expect(order).toEqual(["project", "public", "enrich", "trust", "anker", "hydrate", "travel", "board-facts", "editorial", "acceptance"]);
+    expect(order).toEqual(["project", "public", "enrich", "trust", "anker", "hydrate", "travel", "board-facts", "isochrones", "editorial", "acceptance"]);
   });
 
   it("reisetid-steget er fail-soft: warnings videreformidles, provisjonen fullfører", async () => {

@@ -1,0 +1,82 @@
+{
+  "checkedAt": "2026-09-17T14:37:19.823Z",
+  "status": "access_verified_comparison_needs_review",
+  "project": {
+    "id": "proj_YAUKxLUwNpPpbXE4YOp24E9i",
+    "name": "Placy"
+  },
+  "access": {
+    "adminProjectList": true,
+    "adminProjectKeyMetadata": true,
+    "adminCosts": true,
+    "normalModelKeyRead": true,
+    "localInferenceKeyMatchesProjectKeyRedaction": true,
+    "historicalPerSessionProviderMappingVerified": false,
+    "adminKeyLocation": "local ignored .env.local, not Vercel/public app",
+    "readOnly": true
+  },
+  "closedUtcPeriod": {
+    "from": "2026-09-10",
+    "toExclusive": "2026-09-17",
+    "providerUsd": 21.535466169400003,
+    "ledgerKnownUsd": 0.9909740666666668,
+    "unallocatedDifferenceUsd": 20.544492102733336,
+    "providerBuckets": 7,
+    "ledgerSessions": 7,
+    "earliestLedgerSession": "2026-09-16T20:29:59.617246+00:00",
+    "coverageNote": "Ledger begins at 2026-09-16T20:29:59.617246+00:00; earlier provider usage is outside its historical coverage. This does not establish the cause of every part of the difference."
+  },
+  "openUtcDay": {
+    "from": "2026-09-17",
+    "toExclusive": "2026-09-18",
+    "provisional": true,
+    "providerUsd": 13.754705499100002,
+    "ledgerKnownUsd": 13.349404999999999,
+    "completeUsd": 13.220196666666666,
+    "incompleteKnownUsd": 0.12920833333333334,
+    "reportDifferenceUsd": null,
+    "providerBackendUsd": 5.5972055,
+    "ledgerBackendUsd": 5.204405,
+    "cacheWritePremiumOmittedUsd": 0.39280049999999994,
+    "backendDifferenceUsd": 0.3928004999999999,
+    "providerVoiceUsd": 8.1574999991,
+    "ledgerVoiceUsd": 8.145,
+    "voiceDifferenceUsd": 0.012499999100000991,
+    "voiceDifferenceEquivalentSeconds": 14.99999892000119,
+    "completeSessions": 54,
+    "incompleteSessions": 2,
+    "providerLineItems": {
+      "gpt-5.6-terra, cache writes": 1.9640025,
+      "gpt-5.6-terra, cached input": 2.743509,
+      "gpt-5.6-terra, input": 0.532382,
+      "gpt-5.6-terra, output": 0.357312,
+      "gpt-live-1": 8.1574999991
+    }
+  },
+  "findings": [
+    {
+      "id": "cache-write-premium",
+      "status": "confirmed_unfixed",
+      "evidence": "Current normalized usage drops cache_write_tokens; JS and SQL v1 rate formula charge all noncached input at base rate. Official Terra price is 1.25x base for cache writes. Open-day backend difference matches omitted premium within floating-point tolerance.",
+      "source": "https://developers.openai.com/api/docs/models/gpt-5.6-terra",
+      "affected": [
+        "lib/live/usage.ts",
+        "lib/live/sideband.ts",
+        "lib/live/metering/index.ts",
+        "supabase/migrations/096_voice_close_lease.sql",
+        "lib/live/cost-report.ts"
+      ],
+      "requiredFollowup": "Preserve and validate cache-write usage end-to-end; add versioned pricing and durable column/RPC handling; preserve historical estimates and explicitly distinguish tariff uncertainty. Validate migrated SQL/JS parity and actual session accounting before production rollout. Do not allocate aggregate difference to individual historical calls."
+    },
+    {
+      "id": "voice-difference",
+      "status": "unresolved",
+      "evidence": "Open-day provider voice charge exceeds known ledger voice by about $0.0125, equivalent to 15 seconds. Daily aggregates and an open day do not prove a per-session cause."
+    }
+  ],
+  "noPaidInference": true,
+  "noProductionChanges": true,
+  "noLedgerCorrections": true,
+  "noBudgetChanges": true,
+  "noScheduledAutomation": true
+}

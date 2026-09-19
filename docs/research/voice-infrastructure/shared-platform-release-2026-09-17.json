@@ -1,0 +1,405 @@
+{
+  "applicationCommit": "11c78d1",
+  "deploymentId": "dpl_8RtoKwB491jQzDtwTPFCsRRwH6nZ",
+  "mainDeploymentUnchanged": "dpl_ENuhYMxhiAeAEtdSDxvLGQESZY1k",
+  "reviewRunId": "20260917-125511-f980b544",
+  "checks": {
+    "lintErrors": 0,
+    "lintWarnings": 54,
+    "testsPassed": 4511,
+    "optionalPgLiteSkipped": 1,
+    "typescript": "passed",
+    "productionBuild": "passed",
+    "independentPostgresProof": "passed; see U1 validation"
+  },
+  "publicVoiceProof": {
+    "origin": "https://placy-platform.vercel.app",
+    "checkedAt": "2026-09-17T11:30:44.794Z",
+    "frames": {
+      "ready": 1,
+      "map": 2,
+      "ended": 1
+    },
+    "pageStatus": 200,
+    "robotsHeader": "noindex, nofollow",
+    "metaNoindex": true,
+    "robotsAllowsDemo": true,
+    "health": 200,
+    "sessionId": "49645796-4e46-4d28-a823-def54c880b74",
+    "replied": true,
+    "heardUser": true,
+    "stoppedAndRestartAvailable": true,
+    "accessCookiePresent": false,
+    "passed": true
+  },
+  "costProof": {
+    "sessionId": "49645796-4e46-4d28-a823-def54c880b74",
+    "tenant": "nyhavna-public",
+    "customer": "nyhavna-utvikling",
+    "project": "nyhavna-utvikling_nyhavna",
+    "purpose": "public",
+    "internalDemo": null,
+    "environment": "production",
+    "testRunId": null,
+    "scenario": null,
+    "startedAt": "2026-09-17T11:30:56.965917+00:00",
+    "endedAt": "2026-09-17T11:32:14.139362+00:00",
+    "durationSeconds": 77.174,
+    "voiceSeconds": 73,
+    "inputTokens": 58815,
+    "cachedTokens": 0,
+    "outputTokens": 189,
+    "usageEventCount": 2,
+    "unknownUsageEvents": 0,
+    "knownVoiceUsd": 0.06083333333333333,
+    "knownBackendUsd": 0.119898,
+    "knownTotalUsd": 0.18073133333333333,
+    "accountingStatus": "complete",
+    "ledgerAccountingStatus": "complete",
+    "reconciles": true,
+    "termination": "manual",
+    "voiceModel": "gpt-live-1",
+    "backendModel": "gpt-5.6-terra",
+    "speaker": "willow",
+    "observedBackendModels": "gpt-5.6-terra",
+    "rateVersion": "openai-2026-09-16-v1",
+    "configVersion": "0d94ef7830012e44b2d246ec959b94d7c12d2c82dc1fa5aa3f1c8efecd25a4be",
+    "datasetVersion": "project-b818a836d61a11141b0b6d33a00dd639"
+  },
+  "cutover": {
+    "at": "2026-09-17T11:33:15.426Z",
+    "session": {
+      "id": "49645796-4e46-4d28-a823-def54c880b74",
+      "tenant_id": "nyhavna-public",
+      "customer_id": "nyhavna-utvikling",
+      "project_id": "nyhavna-utvikling_nyhavna",
+      "purpose": "public",
+      "state": "closed",
+      "accounting_status": "complete",
+      "known_cost_usd": 0.18073133333333333,
+      "voice_seconds": 73,
+      "backend_cost_usd": 0.119898
+    },
+    "before": [
+      {
+        "id": "nyhavna-lokal-demo",
+        "enabled": true,
+        "customer_id": null,
+        "project_id": null
+      },
+      {
+        "id": "nyhavna-lokal-benchmark",
+        "enabled": true,
+        "customer_id": null,
+        "project_id": null
+      }
+    ],
+    "after": [
+      {
+        "id": "nyhavna-lokal-demo",
+        "enabled": false
+      },
+      {
+        "id": "nyhavna-lokal-benchmark",
+        "enabled": false
+      }
+    ]
+  },
+  "postCutoverDatabase": {
+    "checkedAt": "2026-09-17T11:34:48.148Z",
+    "sessionCount": 61,
+    "nonclosed": [],
+    "newProjectSessions": [
+      {
+        "id": "49645796-4e46-4d28-a823-def54c880b74",
+        "tenant_id": "nyhavna-public",
+        "customer_id": "nyhavna-utvikling",
+        "project_id": "nyhavna-utvikling_nyhavna",
+        "purpose": "public",
+        "state": "closed",
+        "accounting_status": "complete",
+        "known_cost_usd": 0.18073133333333333,
+        "voice_seconds": 73,
+        "backend_cost_usd": 0.119898,
+        "models": {
+          "voice": "gpt-live-1",
+          "backend": "gpt-5.6-terra",
+          "speaker": "willow"
+        }
+      }
+    ],
+    "legacyCount": 60,
+    "tenants": [
+      {
+        "id": "nyhavna-lokal-demo",
+        "enabled": false
+      },
+      {
+        "id": "nyhavna-lokal-benchmark",
+        "enabled": false
+      },
+      {
+        "id": "nyhavna-public",
+        "enabled": true
+      },
+      {
+        "id": "nyhavna-benchmark",
+        "enabled": true
+      }
+    ],
+    "policies": [
+      {
+        "scope_type": "platform",
+        "scope_id": "platform",
+        "enabled": true,
+        "max_concurrent": 8,
+        "max_per_hour": 120,
+        "max_per_day": 300,
+        "daily_budget_usd": 200
+      },
+      {
+        "scope_type": "customer",
+        "scope_id": "nyhavna-utvikling",
+        "enabled": true,
+        "max_concurrent": 8,
+        "max_per_hour": 120,
+        "max_per_day": 300,
+        "daily_budget_usd": 150
+      },
+      {
+        "scope_type": "project",
+        "scope_id": "nyhavna-utvikling_nyhavna",
+        "enabled": true,
+        "max_concurrent": 8,
+        "max_per_hour": 120,
+        "max_per_day": 300,
+        "daily_budget_usd": 150
+      }
+    ],
+    "registry": [
+      {
+        "slug": "nyhavna",
+        "customer_id": "nyhavna-utvikling",
+        "project_id": "nyhavna-utvikling_nyhavna",
+        "content_source": "nyhavna-lokal",
+        "enabled": true,
+        "public_tenant_id": "nyhavna-public",
+        "benchmark_tenant_id": "nyhavna-benchmark"
+      }
+    ]
+  },
+  "httpChecks": {
+    "checkedAt": "2026-09-17T11:33:38.618Z",
+    "origin": "https://placy-platform.vercel.app",
+    "results": [
+      {
+        "name": "control_anonymous",
+        "status": 404,
+        "expected": 404,
+        "passed": true
+      },
+      {
+        "name": "control_wrong_origin",
+        "status": 404,
+        "expected": 404,
+        "passed": true
+      },
+      {
+        "name": "recover_anonymous",
+        "status": 401,
+        "expected": 401,
+        "passed": true
+      },
+      {
+        "name": "admin",
+        "status": 307,
+        "expected": 307,
+        "passed": true
+      },
+      {
+        "name": "unknown_project",
+        "status": 404,
+        "expected": 404,
+        "passed": true
+      },
+      {
+        "name": "local_start_blocked",
+        "status": 404,
+        "expected": 404,
+        "passed": true
+      }
+    ],
+    "health": {
+      "configured": true,
+      "voiceModel": "gpt-live-1",
+      "voice": "willow",
+      "backendModel": "gpt-5.6-terra",
+      "dataset": "nyhavna-lokal",
+      "snapshotId": "project-b818a836d61a11141b0b6d33a00dd639",
+      "protocol": "live",
+      "project": "nyhavna",
+      "transport": "websocket",
+      "warningMs": 1560000
+    },
+    "links": [
+      {
+        "entry": "https://placy-platform.vercel.app/p/nyhavna",
+        "status": 200,
+        "url": "https://placy-platform.vercel.app/p/nyhavna",
+        "noindex": true
+      },
+      {
+        "entry": "https://placy-nyhavna.vercel.app/demo/nyhavna-lokal?voicedev=1",
+        "status": 200,
+        "url": "https://placy-nyhavna.vercel.app/p/nyhavna?voicedev=1",
+        "noindex": true
+      },
+      {
+        "entry": "https://placy.no/nyhavna",
+        "status": 200,
+        "url": "https://placy-nyhavna.vercel.app/p/nyhavna",
+        "noindex": true
+      }
+    ],
+    "passed": true
+  },
+  "sharedBrowserCheck": {
+    "origin": "https://placy-platform.vercel.app",
+    "pages": [
+      {
+        "label": "desktop",
+        "errors": [],
+        "failedLocal": [],
+        "horizontalOverflow": false,
+        "images": [
+          {
+            "src": "/illustrations/nyhavna-lokal-logo.svg",
+            "loaded": true
+          },
+          {
+            "src": "/demo/nyhavna-nettside/contact-example.svg",
+            "loaded": true
+          },
+          {
+            "src": "/illustrations/nyhavna-lokal-logo.svg",
+            "loaded": true
+          }
+        ],
+        "noindex": "noindex, nofollow"
+      },
+      {
+        "label": "mobile",
+        "errors": [],
+        "failedLocal": [],
+        "horizontalOverflow": false,
+        "images": [
+          {
+            "src": "/illustrations/nyhavna-lokal-logo.svg",
+            "loaded": true
+          }
+        ],
+        "noindex": "noindex, nofollow"
+      }
+    ],
+    "checkedAt": "2026-09-17T11:33:36.944Z",
+    "unknownProjectStatus": 404,
+    "legacy": {
+      "status": 200,
+      "url": "https://placy-platform.vercel.app/p/nyhavna?voicedev=1"
+    },
+    "passed": true
+  },
+  "operationalHeadroom": {
+    "basis": "Unfiltered ledger across all purposes, environments and history. Separate REST reads, not a transactional snapshot or admission guarantee; tenant limits and the next call reservation also apply.",
+    "window": "Strictly newer than cutoff minus 1 hour/24 hours by created_at. Incomplete/provisional liability and nonclosed calls never age out.",
+    "warningThreshold": 0.8,
+    "scopes": [
+      {
+        "scopeType": "platform",
+        "scopeId": "platform",
+        "policy": {
+          "scope_type": "platform",
+          "scope_id": "platform",
+          "enabled": true,
+          "max_concurrent": 8,
+          "max_per_hour": 120,
+          "max_per_day": 300,
+          "daily_budget_usd": 200
+        },
+        "activeCalls": 0,
+        "attemptsLastHour": 1,
+        "attemptsLast24Hours": 61,
+        "completeLast24HoursUsd": 14.00850273333333,
+        "unresolvedReservationUsd": 10,
+        "unresolvedKnownLowerBoundUsd": 0.12920833333333334,
+        "unresolvedExposureUsd": 10,
+        "oldIncompleteExposureUsd": 0,
+        "exposureUsd": 24.00850273333333,
+        "concurrentRemaining": 8,
+        "hourlyRemaining": 119,
+        "dailyRemaining": 239,
+        "budgetRemainingUsd": 175.99149726666667,
+        "status": "ok"
+      },
+      {
+        "scopeType": "customer",
+        "scopeId": "nyhavna-utvikling",
+        "policy": {
+          "scope_type": "customer",
+          "scope_id": "nyhavna-utvikling",
+          "enabled": true,
+          "max_concurrent": 8,
+          "max_per_hour": 120,
+          "max_per_day": 300,
+          "daily_budget_usd": 150
+        },
+        "activeCalls": 0,
+        "attemptsLastHour": 1,
+        "attemptsLast24Hours": 1,
+        "completeLast24HoursUsd": 0.18073133333333333,
+        "unresolvedReservationUsd": 0,
+        "unresolvedKnownLowerBoundUsd": 0,
+        "unresolvedExposureUsd": 0,
+        "oldIncompleteExposureUsd": 0,
+        "exposureUsd": 0.18073133333333333,
+        "concurrentRemaining": 8,
+        "hourlyRemaining": 119,
+        "dailyRemaining": 299,
+        "budgetRemainingUsd": 149.81926866666666,
+        "status": "ok"
+      },
+      {
+        "scopeType": "project",
+        "scopeId": "nyhavna-utvikling_nyhavna",
+        "policy": {
+          "scope_type": "project",
+          "scope_id": "nyhavna-utvikling_nyhavna",
+          "enabled": true,
+          "max_concurrent": 8,
+          "max_per_hour": 120,
+          "max_per_day": 300,
+          "daily_budget_usd": 150
+        },
+        "activeCalls": 0,
+        "attemptsLastHour": 1,
+        "attemptsLast24Hours": 1,
+        "completeLast24HoursUsd": 0.18073133333333333,
+        "unresolvedReservationUsd": 0,
+        "unresolvedKnownLowerBoundUsd": 0,
+        "unresolvedExposureUsd": 0,
+        "oldIncompleteExposureUsd": 0,
+        "exposureUsd": 0.18073133333333333,
+        "concurrentRemaining": 8,
+        "hourlyRemaining": 119,
+        "dailyRemaining": 299,
+        "budgetRemainingUsd": 149.81926866666666,
+        "status": "ok"
+      }
+    ]
+  },
+  "notes": [
+    "One synthetic anonymous paid release call; not a customer invoice or representative average.",
+    "No transcripts, owner capabilities or access secrets in this receipt.",
+    "No Git push or DNS mutation; app.placy.no remains unconfigured."
+  ]
+}

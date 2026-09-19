@@ -1037,6 +1037,37 @@ export type Database = {
   };
   v2: {
     Tables: {
+      voice_projects: {
+        Row: import('@/lib/live/metering/types').VoiceProject
+        Insert: import('@/lib/live/metering/types').VoiceProject
+        Update: Partial<import('@/lib/live/metering/types').VoiceProject>
+        Relationships: []
+      }
+      voice_admission_policies: {
+        Row: import('@/lib/live/metering/types').VoiceAdmissionPolicy
+        Insert: import('@/lib/live/metering/types').VoiceAdmissionPolicy
+        Update: Partial<import('@/lib/live/metering/types').VoiceAdmissionPolicy>
+        Relationships: []
+      }
+      voice_tenants: {
+        Row: import('@/lib/live/metering/types').VoiceTenant
+        Insert: import('@/lib/live/metering/types').VoiceTenant
+        Update: Partial<import('@/lib/live/metering/types').VoiceTenant>
+        Relationships: []
+      }
+      voice_sessions: {
+        Row: import('@/lib/live/metering/types').VoiceSession
+        Insert: import('@/lib/live/metering/types').VoiceSession
+        Update: Partial<import('@/lib/live/metering/types').VoiceSession>
+        Relationships: []
+      }
+      voice_usage_events: {
+        Row: import('@/lib/live/metering/types').VoiceUsageEvent
+        Insert: import('@/lib/live/metering/types').VoiceUsageEvent
+        Update: Partial<import('@/lib/live/metering/types').VoiceUsageEvent>
+        Relationships: []
+      }
+
       areas: {
         Row: {
           active: boolean | null
@@ -2002,6 +2033,9 @@ export type Database = {
         Args: { p_payload: Json }
         Returns: Json
       }
+      voice_reserve: { Args: { p: Json }; Returns: Json }
+      voice_mutate: { Args: { p: Json }; Returns: Json }
+      voice_claim_recoveries: { Args: { p: Json }; Returns: Json }
     }
     Enums: {
       [_ in never]: never

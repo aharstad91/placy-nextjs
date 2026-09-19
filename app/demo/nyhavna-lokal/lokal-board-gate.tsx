@@ -6,7 +6,7 @@ import ReportReelsPage from "@/components/variants/report/reels/ReportReelsPage"
 type Props = Pick<ComponentProps<typeof ReportReelsPage>, "project" | "boardData">;
 
 /**
- * Klient-grensen for den lokale demoen.
+ * Klient-grensen for Nyhavna-boardet, lokalt og på felles plattform.
  *
  * `boardMode="report"` er poenget her: `ReportReelsPage` utleder ellers
  * EVENT-modus av at `boardData` kommer inn som prop (event-ruta var lenge den
@@ -23,8 +23,7 @@ type Props = Pick<ComponentProps<typeof ReportReelsPage>, "project" | "boardData
  * Mobil er uendret. Policyen sendes herfra og ikke fra en slug-sjekk, så andre
  * boards beholder flyten sin.
  *
- * Ingen `?embed`/`?from`/`?src` her: demoen er lokal og deles ikke som lenke,
- * og uten dem slipper ruta `useSearchParams`.
+ * Nyhavna-skallet brukes også på prosjektets delbare plattformside.
  */
 export default function LokalBoardGate({ project, boardData }: Props) {
   const brandedBoard = useMemo(() => boardData ? {

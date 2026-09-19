@@ -98,6 +98,13 @@ leses fra og skrives til v2-skjemaet i Supabase.
 
 Disse reglene håndheves av ESLint og pre-commit hooks der mulig, men gjelder ALLTID — også når verktøy ikke fanger det.
 
+### Offentlige prosjektadresser og hosting
+- **Alle nye prosjekter skal publiseres på `https://placy.no/<slug>`.** Adressen skal bli stående i nettleseren. Ikke bruk Vercel-adresser, `/p/<slug>`, kundesubdomener eller en videresending til en annen host som delingsadresse.
+- Bruk det felles prosjektregisteret og samme Placy-runtime. Ingen ny Vercel-app, domeneregel eller kopi av koden per kunde. En slug er globalt unik, eies av ett prosjekt og må godkjennes av `isPublicProjectSlug` i `lib/project-paths.ts`.
+- Prosjektet skal ha `noindex, nofollow` både i metadata og HTTP-header. Robots må tillate at søkemotorer leser direktivet. Ikke legg demo-/kundeprosjekter i sitemap.
+- Hovednettstedet ligger foreløpig på `www.placy.no`; behold eksisterende nettsider der til en egen kontrollert migrering. Kart, statiske filer, API, Server Actions og stemmens WebSocket skal følge prosjektplattformens origin.
+- Se `docs/architecture/shared-platform.md` for klargjøring, eierskap og driftsgrenser. En ny slug er ikke nok til å aktivere betalt stemmebruk; prosjekt, innhold og tilgang må være validert.
+
 ### Data-henting
 - ALDRI bruk `useEffect` for data-fetching — bruk server components eller server actions
 - ALDRI query Supabase direkte fra klientkomponenter — all data går via server (API routes eller server components)

@@ -14,6 +14,7 @@ import { nyhavnaProjectInfo } from "@/lib/realtime/nyhavna-project-info";
 import { createPresentation, presentationTool, similarPlacesTool, morePlacesTool } from "@/lib/demo/local-board/presentation";
 import { buildLocalVoiceInstructions } from "@/lib/demo/local-board/voice-instructions";
 import type { RealtimeTool } from "@/lib/realtime/types";
+import type { Project } from "@/lib/types";
 
 /**
  * Hvilket datagrunnlag en Live-samtale gjelder (2026-09-13).
@@ -55,6 +56,7 @@ export interface LiveDemo {
   /** Innholds-ID-en flaten må bære for å få snakke med dette grunnlaget. */
   snapshotId: string;
   board: BoardData;
+  project: Project;
   /** Den lange instruksen til Responses-backenden: regler, temaer, katalog. */
   backendInstructions: string;
   voiceInstructions?: string;
@@ -75,6 +77,7 @@ async function leveDemo(): Promise<LiveDemo> {
     id: DEFAULT_LIVE_DATASET,
     snapshotId: snapshot.snapshotId,
     board: snapshot.board,
+    project: snapshot.project,
     backendInstructions: nyhavnaInstructions(snapshot.board),
     // Navnene sendes EKSPLISITT, ikke som standard: snapshotet er frosset, og
     // teksten modellen leser skal ikke kunne endres av en standardverdi.
@@ -109,6 +112,7 @@ async function lokalDemo(descriptor: LocalDemoDescriptor, id: LiveDatasetId): Pr
     // fordi provisjonerte boards ikke har noe frosset datagrunnlag.
     snapshotId: project.demoSnapshotId!,
     board,
+    project,
     backendInstructions: buildLocalInstructions(dataset, board),
     voiceInstructions: buildLocalVoiceInstructions(dataset),
     tools: [...conversationTools(labels), presentationTool, similarPlacesTool, morePlacesTool],

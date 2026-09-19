@@ -1,0 +1,394 @@
+{
+  "releaseDate": "2026-09-17",
+  "status": "complete",
+  "canonicalUrl": "https://placy.no/nyhavna",
+  "projectUrlStandard": "https://placy.no/<slug>",
+  "deployment": {
+    "id": "dpl_3o3VM6GjRr2u2rxwCH67Eyvps8Ar",
+    "projectId": "prj_87r4xPF1YIH4UvUwrOZBAnFzx0SM",
+    "applicationTreeCommit": "c0a0b19",
+    "applicationTreeNote": "Candidate built before local commit; this identifies the recorded application tree, not deployment Git metadata.",
+    "aliases": [
+      "placy.no",
+      "placy-platform.vercel.app",
+      "placy-nyhavna.vercel.app"
+    ],
+    "apexRedirect": null,
+    "dnsChanged": false
+  },
+  "website": {
+    "hostname": "www.placy.no",
+    "projectId": "prj_azJSjvc6iE3lM35rGLvqxeuNXvLg",
+    "unchangedDeployment": "dpl_ENuhYMxhiAeAEtdSDxvLGQESZY1k",
+    "sourceCommit": "bef9ae2d0643fb249ce0b344a915ba61c1ef2cb2",
+    "nyhavnaRedirectVersion": "0022f206-e95b-4024-b653-10690fd999c9"
+  },
+  "finalBuild": {
+    "testFiles": 285,
+    "testsPassed": 4586,
+    "testsSkipped": 1,
+    "skip": "Optional PGlite test; passed in earlier local full suite.",
+    "lintErrors": 0,
+    "lintWarnings": 59,
+    "typecheck": "passed",
+    "productionBuild": "passed",
+    "focusedRegressionTestsPassed": 123
+  },
+  "domain": {
+    "origin": "https://placy.no",
+    "checkedAt": "2026-09-17T12:39:55.703Z",
+    "checks": [
+      {
+        "path": "/nyhavna",
+        "status": 200,
+        "location": null,
+        "noindex": "noindex, nofollow",
+        "metaNoindex": true,
+        "canonical": true,
+        "passed": true
+      },
+      {
+        "path": "/unknown-project-verification",
+        "status": 404,
+        "location": null,
+        "passed": true
+      },
+      {
+        "path": "/p/nyhavna?a=1&a=2",
+        "status": 307,
+        "location": "https://placy.no/nyhavna?a=1&a=2",
+        "passed": true
+      },
+      {
+        "path": "/p/another-project?a=1",
+        "status": 307,
+        "location": "https://placy.no/another-project?a=1",
+        "passed": true
+      },
+      {
+        "path": "/demo/nyhavna-lokal?voicedev=1",
+        "status": 307,
+        "location": "https://placy.no/nyhavna?voicedev=1",
+        "passed": true
+      },
+      {
+        "path": "/?utm=check",
+        "status": 307,
+        "location": "https://www.placy.no/?utm=check",
+        "passed": true
+      },
+      {
+        "path": "/eiendom/skanska/lillebytunet/rapport-board?t=check",
+        "status": 307,
+        "location": "https://www.placy.no/eiendom/skanska/lillebytunet/rapport-board?t=check",
+        "passed": true
+      },
+      {
+        "path": "/demo/nyhavna-nettside/symbol.svg",
+        "status": 200,
+        "location": null,
+        "passed": true
+      },
+      {
+        "path": "/api/prototype/live?project=nyhavna",
+        "status": 200,
+        "location": null,
+        "passed": true
+      },
+      {
+        "path": "/api/prototype/live?project=admin",
+        "status": 404,
+        "location": null,
+        "passed": true
+      }
+    ],
+    "sockets": [
+      {
+        "name": "same_origin",
+        "status": 101,
+        "passed": true
+      },
+      {
+        "name": "wrong_origin",
+        "status": 404,
+        "passed": true
+      },
+      {
+        "name": "no_origin",
+        "status": 404,
+        "passed": true
+      }
+    ],
+    "passed": true
+  },
+  "browser": {
+    "origin": "https://placy.no",
+    "pages": [
+      {
+        "label": "desktop",
+        "url": "https://placy.no/nyhavna",
+        "errors": [],
+        "failedLocal": [],
+        "mapErrors": [],
+        "horizontalOverflow": false,
+        "images": [
+          {
+            "src": "/illustrations/nyhavna-lokal-logo.svg",
+            "loaded": true
+          },
+          {
+            "src": "/demo/nyhavna-nettside/contact-example.svg",
+            "loaded": true
+          },
+          {
+            "src": "/illustrations/nyhavna-lokal-logo.svg",
+            "loaded": true
+          }
+        ],
+        "noindex": "noindex, nofollow"
+      },
+      {
+        "label": "mobile",
+        "url": "https://placy.no/nyhavna",
+        "errors": [],
+        "failedLocal": [],
+        "mapErrors": [],
+        "horizontalOverflow": false,
+        "images": [
+          {
+            "src": "/illustrations/nyhavna-lokal-logo.svg",
+            "loaded": true
+          }
+        ],
+        "noindex": "noindex, nofollow"
+      }
+    ],
+    "checkedAt": "2026-09-17T12:40:06.167Z",
+    "unknownProjectStatus": 404,
+    "legacy": {
+      "status": 200,
+      "url": "https://placy.no/nyhavna?voicedev=1"
+    },
+    "passed": true
+  },
+  "voice": {
+    "origin": "https://placy.no",
+    "checkedAt": "2026-09-17T12:40:17.004Z",
+    "frames": {
+      "ready": 1,
+      "map": 2,
+      "ended": 1
+    },
+    "pageStatus": 200,
+    "robotsHeader": "noindex, nofollow",
+    "metaNoindex": true,
+    "robotsAllowsDemo": true,
+    "health": 200,
+    "sessionId": "01d3b07f-0e99-46f8-8fc1-2c806ce3ed9d",
+    "replied": true,
+    "heardUser": true,
+    "stoppedAndRestartAvailable": true,
+    "accessCookiePresent": false,
+    "passed": true
+  },
+  "accounting": {
+    "sessionId": "01d3b07f-0e99-46f8-8fc1-2c806ce3ed9d",
+    "tenant": "nyhavna-public",
+    "customer": "nyhavna-utvikling",
+    "project": "nyhavna-utvikling_nyhavna",
+    "purpose": "public",
+    "environment": "production",
+    "startedAt": "2026-09-17T12:40:26.088671+00:00",
+    "endedAt": "2026-09-17T12:41:48.050429+00:00",
+    "voiceSeconds": 78,
+    "usageEventCount": 2,
+    "unknownUsageEvents": 0,
+    "knownVoiceUsd": 0.065,
+    "knownBackendUsd": 0.120168,
+    "knownTotalUsd": 0.185168,
+    "accountingStatus": "complete",
+    "ledgerAccountingStatus": "complete",
+    "reconciles": true,
+    "termination": "manual",
+    "voiceModel": "gpt-live-1",
+    "backendModel": "gpt-5.6-terra",
+    "speaker": "willow"
+  },
+  "security": {
+    "checkedAt": "2026-09-17T12:43:15.632Z",
+    "origin": "https://placy.no",
+    "results": [
+      {
+        "name": "control_anonymous",
+        "status": 404,
+        "expected": 404,
+        "passed": true
+      },
+      {
+        "name": "control_wrong_origin",
+        "status": 404,
+        "expected": 404,
+        "passed": true
+      },
+      {
+        "name": "recover_anonymous",
+        "status": 401,
+        "expected": 401,
+        "passed": true
+      },
+      {
+        "name": "admin",
+        "status": 307,
+        "expected": 307,
+        "passed": true
+      },
+      {
+        "name": "unknown_project",
+        "status": 404,
+        "expected": 404,
+        "passed": true
+      },
+      {
+        "name": "local_start_blocked",
+        "status": 404,
+        "expected": 404,
+        "passed": true
+      }
+    ],
+    "health": {
+      "configured": true,
+      "voiceModel": "gpt-live-1",
+      "voice": "willow",
+      "backendModel": "gpt-5.6-terra",
+      "dataset": "nyhavna-lokal",
+      "snapshotId": "project-b818a836d61a11141b0b6d33a00dd639",
+      "protocol": "live",
+      "project": "nyhavna",
+      "transport": "websocket",
+      "warningMs": 1560000
+    },
+    "links": [
+      {
+        "entry": "https://placy.no/nyhavna",
+        "status": 200,
+        "url": "https://placy.no/nyhavna",
+        "noindex": true
+      },
+      {
+        "entry": "https://placy-nyhavna.vercel.app/demo/nyhavna-lokal?voicedev=1",
+        "status": 200,
+        "url": "https://placy-nyhavna.vercel.app/nyhavna?voicedev=1",
+        "noindex": true
+      },
+      {
+        "entry": "https://placy.no/nyhavna",
+        "status": 200,
+        "url": "https://placy.no/nyhavna",
+        "noindex": true
+      }
+    ],
+    "passed": true
+  },
+  "systemMap": [
+    {
+      "label": "desktop",
+      "errors": [],
+      "tabs": 3,
+      "slider": true,
+      "passed": true
+    },
+    {
+      "label": "mobile",
+      "errors": [],
+      "tabs": 3,
+      "slider": true,
+      "passed": true
+    }
+  ],
+  "finalReadOnlyCheck": {
+    "checkedAt": "2026-09-17T13:42:38.425Z",
+    "website": [
+      {
+        "path": "/",
+        "status": 200,
+        "url": "https://www.placy.no/",
+        "title": "Placy",
+        "passed": true
+      },
+      {
+        "path": "/eiendom/skanska/lillebytunet/rapport-board",
+        "status": 200,
+        "url": "https://www.placy.no/eiendom/skanska/lillebytunet/rapport-board",
+        "title": "Nabolaget rundt Lillebytunet – Nabolagsrapport (Board) | Placy",
+        "passed": true
+      },
+      {
+        "path": "/demo/nyhavna-nettside",
+        "status": 404,
+        "url": "https://www.placy.no/demo/nyhavna-nettside",
+        "title": "404: This page could not be found.",
+        "passed": true
+      }
+    ],
+    "checks": [
+      {
+        "url": "https://placy.no/nyhavna",
+        "status": 200,
+        "location": null,
+        "noindex": "noindex, nofollow"
+      },
+      {
+        "url": "https://www.placy.no/nyhavna?test=1&test=2",
+        "status": 307,
+        "location": "https://placy.no/nyhavna?test=1&test=2",
+        "noindex": null
+      },
+      {
+        "url": "https://placy.no/robots.txt",
+        "status": 200,
+        "location": null,
+        "noindex": "noindex, nofollow",
+        "body": "User-Agent: *\nAllow: /\nDisallow: /api/\nDisallow: /dev/\n\n"
+      },
+      {
+        "url": "https://placy.no/sitemap.xml",
+        "status": 200,
+        "location": null,
+        "noindex": "noindex, nofollow",
+        "body": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<urlset xmlns=\"http://www.sitemaps.org/schemas/sitemap/0.9\">\n</urlset>\n"
+      }
+    ],
+    "passed": true
+  },
+  "ledgerAtRelease": {
+    "checkedAt": "2026-09-17T12:42:32.042Z",
+    "sessionCount": 62,
+    "nonclosed": [],
+    "preservedHistoricalSessions": 60,
+    "paidCallsForThisUrlRelease": 1,
+    "historicalIncompleteSessionsUnchanged": 2
+  },
+  "review": {
+    "run": "20260917-141035-67931205",
+    "receipt": "project-url-code-review.json",
+    "dispositions": [
+      {
+        "finding": 2,
+        "status": "fixed",
+        "evidence": "Apex-only website redirects; failing regression fixed, final candidate and apex checks passed."
+      },
+      {
+        "finding": 1,
+        "status": "accepted_monitoring_option",
+        "boundary": "Unknown valid root slugs may perform an indexed registry read. No high-load or bot-protection claim; monitor Vercel and Supabase usage."
+      }
+    ]
+  },
+  "limits": [
+    "Synthetic call cost is not a customer average or an invoice.",
+    "Physical microphone/speaker and subjective Norwegian voice quality require a human check.",
+    "Customer pricing and allocation of hosting/database/map costs are not settled by this release.",
+    "Existing historical incomplete accounting remains for provider reconciliation."
+  ],
+  "gitPushed": false
+}

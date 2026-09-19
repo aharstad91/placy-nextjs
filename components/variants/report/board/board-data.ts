@@ -213,6 +213,8 @@ export interface BoardHome {
 export interface BoardData {
   projectId?: string;
   projectCustomer?: string;
+  /** Hosted voice registry selector; accounting identity is resolved server-side. */
+  voiceProjectSlug?: string;
   /** Curated reserve, omitted from the initial local demo view. */
   demoReservePlaceIds?: string[];
   demoRadiusPlaces?: import("@/lib/demo/local-board/radius").RadiusPlace[];

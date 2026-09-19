@@ -1,4 +1,4 @@
-import { describe, it, expect } from "vitest";
+import { afterEach, beforeEach, describe, it, expect, vi } from "vitest";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { NextRequest } from "next/server";
@@ -9,6 +9,9 @@ import { proxy, config } from "./proxy";
  * bevart verbatim, /admin-branchen er en DOKUMENTERT passthrough (ikke
  * guard), og matcheren ekskluderer api/_next/statiske filer.
  */
+
+beforeEach(() => vi.stubEnv("PLACY_HOSTED_VOICE", "0"));
+afterEach(() => vi.unstubAllEnvs());
 
 function req(path: string): NextRequest {
   return new NextRequest(`https://placy.no${path}`);
@@ -128,5 +131,30 @@ describe("config.matcher (AC2)", () => {
     expect(config.matcher).toEqual([
       "/((?!api|_next|favicon.ico|sitemap.xml|robots.txt|.*\\..*).*)",
     ]);
+  });
+});
+
+
+describe("shared platform domain routing", () => {
+  beforeEach(() => vi.stubEnv("PLACY_HOSTED_VOICE", "true"));
+
+  it.each(["/nyhavna", "/another-project", "/demo/nyhavna-lokal", "/admin/projects"])("keeps platform path %s same-origin", path => {
+    expect(proxy(req(path)).headers.get("location")).toBeNull();
+  });
+
+  it.each(["/", "/midtbyen", "/eiendom/customer/project/rapport-board", "/event/customer/project", "/demo/nyhavna-nettside", "/kart/test", "/for/customer/project", "/scandic/hotel", "/pitch/wesselslokka", "/portefolje/test", "/generer", "/prototype"])("preserves the existing website at www for %s", path => {
+    const response = proxy(req(path + "?utm=one&utm=two"));
+    expect(response.status).toBe(307);
+    expect(response.headers.get("location")).toBe("https://www.placy.no" + path + "?utm=one&utm=two");
+  });
+
+  it("preserves existing noncanonical demo links on platform aliases", () => {
+    const response = proxy(new NextRequest("https://placy-platform.vercel.app/demo/nyhavna-nettside"));
+    expect(response.status).toBe(200);
+    expect(response.headers.get("location")).toBeNull();
+  });
+
+  it("redirects any old project path to its public slug, preserving query", () => {
+    expect(proxy(req("/p/another-project?a=1&a=2")).headers.get("location")).toBe("https://placy.no/another-project?a=1&a=2");
   });
 });

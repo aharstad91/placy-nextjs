@@ -180,7 +180,14 @@ function BoardVoiceSession({ children }: { children: ReactNode }) {
     return result;
   }, [data, state, dispatch, mapCamera, story, revealEnabled, faqProgressEnabled, followHighlightCategory, stopId, activePoiId, revealPlaces, reserveData, revealedPlaceIds, placePanel]);
 
+  const [benchmarkLabels, setBenchmarkLabels] = useState<{ testRunId?: string; scenarioId?: string }>({});
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.has(DEV_FLAG)) setBenchmarkLabels({ testRunId: params.get("voiceRun") ?? undefined, scenarioId: params.get("voiceScenario") ?? undefined });
+  }, []);
+
   const live = useLive({
+    ...benchmarkLabels,
     // Hilsenen og datagrunnlaget følger BOARDET, ikke koden: to demoer deler
     // denne flaten med hvert sitt innhold, og guiden skal si stedets egen
     // åpning og svare ut av stedets egne data.
@@ -194,6 +201,7 @@ function BoardVoiceSession({ children }: { children: ReactNode }) {
     dataset: data.demoDataset,
     allowRevealPlaces: revealEnabled,
     getContext: () => ({ selected_category_id: stopId ?? (state.activeCategoryId ? String(state.activeCategoryId) : null), selected_place_id: activePoiId, travel_mode: state.travelMode, ...(revealEnabled ? { revealed_place_ids: [...(revealedPlaceIds ?? [])] } : {}) }),
+    hostedProjectSlug: data.voiceProjectSlug,
     executeTool: runBoardTool,
     snapshotId: data.demoSnapshotId,
     ...(data.assistant?.enabled && data.projectCustomer && data.projectSlug && data.contentVersion
