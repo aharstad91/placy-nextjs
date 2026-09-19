@@ -1,9 +1,9 @@
 {
   "schemaVersion": 1,
-  "appliedAt": "2026-09-19T07:40:59.710Z",
+  "appliedAt": "2026-09-19T07:53:07.542Z",
   "packagePath": "docs/research/leangenbukta-lokal-demo/audited/2026-09-18-ledger-package.json",
-  "packageId": "leangenbukta-project-facts-2026-09-18",
-  "packageHash": "527bc6a7cf5f557587ed535c8c6013d885bb7b927c82f1f9a09e36732f996b59",
+  "packageId": "leangenbukta-project-facts-2026-09-18-r2",
+  "packageHash": "fd06f02ac7b6f3ce92c958d84e8532dcf3bc27f8cd2270bd30300bc18fd421a0",
   "projectId": "placy-demo_leangenbukta",
   "mode": "full_snapshot",
   "scopeKey": "project-facts",
@@ -11,12 +11,11 @@
   "claims": 565,
   "publicationStates": {
     "audit_only": 441,
-    "publishable": 78,
-    "missing_valid_until": 46
+    "publishable": 124
   },
   "import": {
     "status": "imported",
-    "package_hash": "527bc6a7cf5f557587ed535c8c6013d885bb7b927c82f1f9a09e36732f996b59",
+    "package_hash": "fd06f02ac7b6f3ce92c958d84e8532dcf3bc27f8cd2270bd30300bc18fd421a0",
     "entities": 70,
     "claims": 565,
     "route": {

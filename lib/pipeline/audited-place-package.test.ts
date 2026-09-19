@@ -36,6 +36,7 @@ function converted() {
     reviewedAt: "2026-09-18",
     scopeKey: "audited-places",
     sourcePath: "data/demo/leangenbukta-lokal/places-audited.json",
+    timeSensitiveValidUntil: "2026-09-25",
   });
 }
 
@@ -65,9 +66,12 @@ describe("buildAuditedPlacePackage", () => {
     const states = Object.groupBy(result.claims, (claim) =>
       claimPublicationState(claim, new Date("2026-09-19T12:00:00Z")),
     );
-    expect(states.publishable?.length).toBeGreaterThan(0);
-    expect(states.missing_valid_until?.length).toBeGreaterThan(0);
-    expect((states.publishable?.length ?? 0) + (states.missing_valid_until?.length ?? 0))
-      .toBe(80);
+    expect(states.publishable).toHaveLength(80);
+
+    const expired = Object.groupBy(result.claims, (claim) =>
+      claimPublicationState(claim, new Date("2026-09-26T12:00:00Z")),
+    );
+    expect(expired.publishable).toHaveLength(26);
+    expect(expired.expired).toHaveLength(54);
   });
 });

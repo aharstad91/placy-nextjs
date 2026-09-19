@@ -21,6 +21,7 @@ function converted() {
     reviewedAt: "2026-09-18",
     scopeKey: "project-facts",
     sourcePath: SOURCE_PATH,
+    timeSensitiveValidUntil: "2026-09-25",
   });
 }
 
@@ -41,15 +42,20 @@ describe("convertLegacyResearchPackage", () => {
     expect(statusCounts.historical).toHaveLength(11);
   });
 
-  it("publiserer bare stabile godkjenninger når tidsvindu mangler", () => {
+  it("publiserer tidsfølsomme godkjenninger bare i det eksplisitte refreshvinduet", () => {
     const result = converted();
     const states = Object.groupBy(result.claims, (claim) =>
       claimPublicationState(claim, new Date("2026-09-19T12:00:00Z")),
     );
 
-    expect(states.publishable).toHaveLength(78);
-    expect(states.missing_valid_until).toHaveLength(46);
+    expect(states.publishable).toHaveLength(124);
     expect(states.audit_only).toHaveLength(441);
+
+    const expired = Object.groupBy(result.claims, (claim) =>
+      claimPublicationState(claim, new Date("2026-09-26T12:00:00Z")),
+    );
+    expect(expired.publishable).toHaveLength(78);
+    expect(expired.expired).toHaveLength(46);
   });
 
   it("lager ingen POI-kobling fra navn eller koordinatlikhet", () => {

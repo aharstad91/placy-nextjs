@@ -36,12 +36,13 @@ async function main() {
       "docs/research/leangenbukta-lokal-demo/audited/2026-09-18-production-poi-mappings.json",
     ),
   }, {
-    packageId: "leangenbukta-audited-places-2026-09-18",
+    packageId: "leangenbukta-audited-places-2026-09-18-r2",
     projectId: "placy-demo_leangenbukta",
     projectName: "Leangenbukta",
     reviewedAt: "2026-09-18",
     scopeKey: "audited-places",
     sourcePath: SOURCE_PATH,
+    timeSensitiveValidUntil: "2026-09-25",
   });
   const publicationStates = Object.groupBy(researchPackage.claims, (claim) =>
     claimPublicationState(claim, new Date("2026-09-19T12:00:00Z")),
@@ -60,6 +61,7 @@ async function main() {
     publicationStateCounts: Object.fromEntries(
       Object.entries(publicationStates).map(([state, claims]) => [state, claims?.length ?? 0]),
     ),
+    freshnessPolicy: "Facts marked refresh-required expire after 2026-09-25 unless revalidated.",
   };
   await Promise.all([
     writeFile(OUTPUT_PATH, `${JSON.stringify(researchPackage, null, 2)}\n`),

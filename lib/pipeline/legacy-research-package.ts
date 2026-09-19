@@ -77,6 +77,8 @@ export interface LegacyResearchConversionOptions {
   reviewedAt: string;
   scopeKey: string;
   sourcePath: string;
+  /** Explicit editorial refresh deadline for reviewed time-sensitive claims. */
+  timeSensitiveValidUntil?: string;
 }
 
 /**
@@ -128,7 +130,11 @@ export function convertLegacyResearchPackage(
       sourceDate: claim.source_date,
       observedAt: claim.observed_at,
       validFrom: claim.valid_from,
-      validUntil: claim.valid_to,
+      validUntil: claim.valid_to ?? (
+        claim.status === "approved_time_sensitive"
+          ? options.timeSensitiveValidUntil ?? null
+          : null
+      ),
       confidence: claim.confidence,
       conflictNotes: claim.conflict_notes,
       editorialNote: claim.editorial_note,

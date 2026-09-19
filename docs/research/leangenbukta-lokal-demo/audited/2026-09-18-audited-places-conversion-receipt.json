@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
-  "packageId": "leangenbukta-audited-places-2026-09-18",
-  "packageHash": "8f51bf7344aaa02753f209a7bd883467cac2662ae0ef6dfdca72cbd8df175cc2",
+  "packageId": "leangenbukta-audited-places-2026-09-18-r2",
+  "packageHash": "f5bd3cbbdee74fc10f2a3b4cc89d20cdc7d56a4928ac62c2395411de1a8d0ac6",
   "projectId": "placy-demo_leangenbukta",
   "sourcePath": "data/demo/leangenbukta-lokal/places-audited.json",
   "outputPath": "docs/research/leangenbukta-lokal-demo/audited/2026-09-18-audited-places-ledger-package.json",
@@ -10,7 +10,7 @@
   "mappedEntities": 29,
   "unmappedEntities": 27,
   "publicationStateCounts": {
-    "missing_valid_until": 54,
-    "publishable": 26
-  }
+    "publishable": 80
+  },
+  "freshnessPolicy": "Facts marked refresh-required expire after 2026-09-25 unless revalidated."
 }

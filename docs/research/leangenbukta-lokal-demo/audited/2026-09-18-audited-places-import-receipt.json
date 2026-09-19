@@ -1,21 +1,20 @@
 {
   "schemaVersion": 1,
-  "appliedAt": "2026-09-19T07:46:41.011Z",
+  "appliedAt": "2026-09-19T07:53:08.782Z",
   "packagePath": "docs/research/leangenbukta-lokal-demo/audited/2026-09-18-audited-places-ledger-package.json",
-  "packageId": "leangenbukta-audited-places-2026-09-18",
-  "packageHash": "8f51bf7344aaa02753f209a7bd883467cac2662ae0ef6dfdca72cbd8df175cc2",
+  "packageId": "leangenbukta-audited-places-2026-09-18-r2",
+  "packageHash": "f5bd3cbbdee74fc10f2a3b4cc89d20cdc7d56a4928ac62c2395411de1a8d0ac6",
   "projectId": "placy-demo_leangenbukta",
   "mode": "full_snapshot",
   "scopeKey": "audited-places",
   "entities": 56,
   "claims": 80,
   "publicationStates": {
-    "missing_valid_until": 54,
-    "publishable": 26
+    "publishable": 80
   },
   "import": {
     "status": "imported",
-    "package_hash": "8f51bf7344aaa02753f209a7bd883467cac2662ae0ef6dfdca72cbd8df175cc2",
+    "package_hash": "f5bd3cbbdee74fc10f2a3b4cc89d20cdc7d56a4928ac62c2395411de1a8d0ac6",
     "entities": 56,
     "claims": 80,
     "route": {

@@ -16,12 +16,13 @@ const RECEIPT_PATH =
 async function main() {
   const input = JSON.parse(await readFile(SOURCE_PATH, "utf8"));
   const researchPackage = convertLegacyResearchPackage(input, {
-    packageId: "leangenbukta-project-facts-2026-09-18",
+    packageId: "leangenbukta-project-facts-2026-09-18-r2",
     projectId: "placy-demo_leangenbukta",
     projectName: "Leangenbukta",
     reviewedAt: "2026-09-18",
     scopeKey: "project-facts",
     sourcePath: SOURCE_PATH,
+    timeSensitiveValidUntil: "2026-09-25",
   });
   const publicationStates = Object.groupBy(researchPackage.claims, (claim) =>
     claimPublicationState(claim, new Date("2026-09-19T12:00:00Z")),
@@ -47,6 +48,7 @@ async function main() {
       Object.entries(publicationStates).map(([status, claims]) => [status, claims?.length ?? 0]),
     ),
     mappingPolicy: "No POI mapping without an authoritative identifier in the audited package.",
+    freshnessPolicy: "Claims reviewed as time-sensitive expire after 2026-09-25 unless revalidated.",
   };
 
   await Promise.all([

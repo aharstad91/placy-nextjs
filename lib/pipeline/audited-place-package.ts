@@ -45,6 +45,8 @@ export interface AuditedPlacePackageOptions {
   reviewedAt: string;
   scopeKey: string;
   sourcePath: string;
+  /** Required when a candidate review says refresh is needed before publish. */
+  timeSensitiveValidUntil?: string;
 }
 
 function selectedCandidates(categoryReviews: unknown[]) {
@@ -138,7 +140,9 @@ export function buildAuditedPlacePackage(
         sourceDate: null,
         observedAt: fact.checkedAt,
         validFrom: null,
-        validUntil: null,
+        validUntil: timeSensitive
+          ? options.timeSensitiveValidUntil ?? null
+          : null,
         confidence: "high" as const,
         conflictNotes: null,
         editorialNote: timeSensitive
