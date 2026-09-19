@@ -15,6 +15,7 @@ export const boardBrandInputSchema = z.object({
   assets: z.object({
     brand: z.literal(true),
     logoUrl: internalAssetPath,
+    pinLogoUrl: internalAssetPath.optional(),
     splashImageUrl: internalAssetPath,
     splashVideoUrl: internalAssetPath,
   }),

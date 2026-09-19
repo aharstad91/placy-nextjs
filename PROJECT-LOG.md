@@ -10476,3 +10476,9 @@ Etter migreringen viste både Nyhavna og Leangenbukta den tekniske blokken «Dok
 Standardadapteren bruker nå den validerte brandlogoen som `home.pinImage`. Det gjenoppretter logoen i prosjektmarkøren for alle brandede standardboards uten prosjektspesialkode. Den separate faktablokken og dens døde komponent er fjernet fra sidebaren. `publishedKnowledge` beholdes uendret i boarddata og Anja-kontekst; endringen gjelder bare presentasjonen.
 
 Visuell desktopkontroll i Chrome bekreftet logo i kartmarkøren og fravær av faktablokken på begge standardrutene. Verifisering: 146 målrettede tester besto; hele suiten besto med 324 testfiler og 4 823 tester, én integrasjonstest hoppet over; TypeScript 0 feil; lint 0 feil med 64 eksisterende advarsler; produksjonsbygg besto. Mobil- og fysisk stemmetest er fortsatt egne cutover-porter før demo-runtime slettes.
+
+## 2026-09-19 — Egen logoressurs for prosjektmarkøren
+
+Headerlogo og kartmarkør har ulike formkrav. Den horisontale logoen som fungerer i sidebaren ble beskåret av markørens sirkelform: Nyhavna viste både ikon og ordmerke i for liten skala, mens Leangenbukta endte med et utsnitt av bokstavene. Standardboardets brandkontrakt har derfor fått en valgfri `pinLogoUrl`, validert som en intern asset og prioritert foran den vanlige `logoUrl` i prosjektmarkøren.
+
+Nyhavna bruker nå bare det blå N-symbolet i boblen. Leangenbukta bruker hele ordmerket, sentrert og skalert ned med sikker luft rundt, slik at markørens eksisterende `cover`-visning og sirkelklipp ikke kutter teksten. Begge produksjonskonfigurasjonene og importkvitteringene er oppdatert. Headerlogoene er uendret. Kontrakten er prosjektuavhengig og kan brukes av alle senere standardboards.

@@ -2,6 +2,7 @@
   "assets": {
     "brand": true,
     "logoUrl": "/illustrations/leangenbukta-logo.svg",
+    "pinLogoUrl": "/illustrations/leangenbukta-pin.svg",
     "splashImageUrl": "/illustrations/leangenbukta-splash.jpg",
     "splashVideoUrl": "/illustrations/leangenbukta-splash-video.mp4"
   },

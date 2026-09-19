@@ -40,6 +40,15 @@ export function getProjectLogoSrc(
   return undefined;
 }
 
+/** Kvadratisk logo til prosjektmarkøren. Må konfigureres eksplisitt fordi en
+ * horisontal headerlogo vanligvis blir beskåret eller uleselig i en sirkel. */
+export function getProjectPinLogoSrc(
+  assets: ProjectAssetFlags | undefined,
+): string | undefined {
+  if (!assets?.brand || !assets.pinLogoUrl) return undefined;
+  return configuredAsset(assets.pinLogoUrl, assets.pinLogoUrl);
+}
+
 /** Dedikert splash-render (bredformat hero), eller undefined → fall tilbake til home.heroImage. */
 export function getProjectSplashImage(
   slug: string | undefined,

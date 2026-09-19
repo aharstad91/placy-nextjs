@@ -9,6 +9,7 @@ const input = boardBrandInputSchema.parse({
   assets: {
     brand: true,
     logoUrl: "/illustrations/demo-logo.svg",
+    pinLogoUrl: "/illustrations/demo-pin.svg",
     splashImageUrl: "/illustrations/demo-splash.jpg",
     splashVideoUrl: "/illustrations/demo-splash-video.mp4",
   },
@@ -66,6 +67,13 @@ describe("board brand config", () => {
     expect(() => boardBrandInputSchema.parse({
       ...input,
       assets: { ...input.assets, logoUrl },
+    })).toThrow();
+  });
+
+  it("rejects an unsafe pin logo path", () => {
+    expect(() => boardBrandInputSchema.parse({
+      ...input,
+      assets: { ...input.assets, pinLogoUrl: "https://example.com/pin.svg" },
     })).toThrow();
   });
 

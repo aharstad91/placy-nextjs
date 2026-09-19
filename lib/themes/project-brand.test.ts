@@ -6,6 +6,7 @@ import {
   getProjectSplashVideo,
   getProjectBrokers,
   getProjectPinThumbnail,
+  getProjectPinLogoSrc,
 } from "./project-brand";
 
 // PRD 9 Unit 6 (r09.6): project-brand-modellen aktiverer nivå-2-overflaten via
@@ -66,6 +67,24 @@ describe("getProjectSplashImage", () => {
     expect(getProjectSplashImage(SLUG, splashVideoOnly)).toBeUndefined();
     expect(getProjectSplashImage(SLUG, undefined)).toBeUndefined();
     expect(getProjectSplashImage(undefined, brandOnly)).toBeUndefined();
+  });
+});
+
+describe("getProjectPinLogoSrc", () => {
+  it("returns the explicit square marker logo for branded boards", () => {
+    expect(getProjectPinLogoSrc({
+      brand: true,
+      pinLogoUrl: "/illustrations/project-pin.svg",
+    })).toBe("/illustrations/project-pin.svg");
+  });
+
+  it("requires both brand and a safe explicit path", () => {
+    expect(getProjectPinLogoSrc({ pinLogoUrl: "/illustrations/project-pin.svg" })).toBeUndefined();
+    expect(getProjectPinLogoSrc({ brand: true })).toBeUndefined();
+    expect(getProjectPinLogoSrc({
+      brand: true,
+      pinLogoUrl: "https://example.com/project-pin.svg",
+    })).toBeUndefined();
   });
 });
 

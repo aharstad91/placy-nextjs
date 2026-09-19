@@ -911,6 +911,8 @@ export interface ProjectAssetFlags {
   brand?: boolean;
   /** Eksplisitt logo-URL. Utelatt = `/illustrations/{slug}-logo.svg`. */
   logoUrl?: string;
+  /** Kvadratisk, karttilpasset logomarkør. Hele flaten fylles i prosjektboblen. */
+  pinLogoUrl?: string;
   /** Eksplisitt splash-bilde. Utelatt = `/illustrations/{slug}-splash.jpg`. */
   splashImageUrl?: string;
   /** Eksplisitt splash-video. Utelatt = `/illustrations/{slug}-splash-video.mp4`. */

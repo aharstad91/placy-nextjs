@@ -343,6 +343,7 @@ describe("adaptBoardData", () => {
     const assetsFixture = {
       brand: true,
       logoUrl: "/illustrations/test-prosjekt-logo.svg",
+      pinLogoUrl: "/illustrations/test-prosjekt-pin.svg",
       customIllustrations: true,
       pinThumbnail: false,
     };
@@ -352,7 +353,7 @@ describe("adaptBoardData", () => {
       assets: assetsFixture,
     });
     expect(data.assets).toEqual(assetsFixture);
-    expect(data.home.pinImage).toBe("/illustrations/test-prosjekt-logo.svg");
+    expect(data.home.pinImage).toBe("/illustrations/test-prosjekt-pin.svg");
   });
 
   it("assets er undefined når reportData mangler det", () => {

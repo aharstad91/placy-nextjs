@@ -2,6 +2,7 @@
   "assets": {
     "brand": true,
     "logoUrl": "/illustrations/nyhavna-logo.svg",
+    "pinLogoUrl": "/illustrations/nyhavna-pin.svg",
     "splashImageUrl": "/illustrations/nyhavna-splash.jpg",
     "splashVideoUrl": "/illustrations/nyhavna-splash-video.mp4"
   },
