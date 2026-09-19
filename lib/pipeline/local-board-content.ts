@@ -13,6 +13,8 @@ const mappingSchema = z.array(z.object({
 
 const optionsSchema = z.object({
   ownCategoryThemeIds: z.array(z.string().min(1)).default([]),
+  /** Maps local demo category ids onto the canonical standard-board theme ids. */
+  themeIdMap: z.record(z.string().min(1), z.string().min(1)).default({}),
   faqAnswerOverrides: z.record(z.string(), z.string().min(1)).default({}),
   hideBrokerCard: z.boolean().default(true),
   standalonePoiIds: z.array(z.string().min(1)).default([]),
@@ -56,9 +58,10 @@ export function buildLocalBoardContent(
   });
   const themes = board.categories.map((category) => {
     const ownCategory = ownCategoryThemeIds.has(category.id);
+    const themeId = options.themeIdMap[category.id] ?? category.id;
     const presentation = board.presentation?.find((entry) => entry.categoryId === category.id);
     return {
-      id: category.id,
+      id: themeId,
       ...(ownCategory ? {
         prepend: true,
         name: category.name,

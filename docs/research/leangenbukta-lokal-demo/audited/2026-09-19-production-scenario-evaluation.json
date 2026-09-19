@@ -1,11 +1,11 @@
 {
   "schemaVersion": 1,
-  "evaluatedAt": "2026-09-19T08:09:48.942Z",
+  "evaluatedAt": "2026-09-19T10:50:11.306Z",
   "route": {
     "customer": "placy-demo",
     "projectSlug": "leangenbukta"
   },
-  "contentVersion": "0f972dd34070c47ed0cdfed98fd96f8bb8e569de2300500c322992e20957d7d6",
+  "contentVersion": "6b7dfcad6274d2a250dc07da765e707046f72f4811e48fee347f530ed947f6ba",
   "source": "production_direct_read",
   "scenarioSource": "data/demo/leangenbukta-lokal/conversations.json",
   "scenarios": 35,
@@ -528,9 +528,9 @@
       "passed": true,
       "checks": [
         {
-          "label": "Utelater offentlig kulturarena på torget, naboplan r20170034",
+          "label": "Inneholder Det finnes ikke dokumentasjon for det i korrekt Leangenbukta-plan, naboplan r20170034, avvist",
           "passed": true,
-          "evidence": "Ingen av de avviste påstandene ble publisert."
+          "evidence": "Det finnes ikke dokumentasjon for det i korrekt Leangenbukta-plan | naboplan r20170034 | avvist"
         }
       ]
     },

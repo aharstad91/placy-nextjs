@@ -178,7 +178,12 @@ async function main() {
     "opplevelser-broad": () => [includesAll(combined, "Ringve Musikkmuseum", "Lade kirke", "Leo's Lekeland", "Leangen gård", "Ladehammeren")],
     "opplevelser-specific": () => [includesAll(combined, "17.08.2026–01.04.2027", "tirsdag–søndag 11–16", "mandag stengt")],
     "opplevelser-follow-up": () => [includesAll(combined, "Ringve botaniske hage", "gratis", "Billettbelagt museum")],
-    "opplevelser-unknown": () => [excludesAll(combined, "offentlig kulturarena på torget", "naboplan r20170034")],
+    "opplevelser-unknown": () => [includesAll(
+      combined,
+      "Det finnes ikke dokumentasjon for det i korrekt Leangenbukta-plan",
+      "naboplan r20170034",
+      "avvist",
+    )],
     "opplevelser-interruption-resume": () => resume("opplevelser", ["Leo's Lekeland", "lør–søn 09–20"]),
   };
 

@@ -44,4 +44,41 @@ describe("buildLocalBoardContent", () => {
     });
     expect(result.reportConfig.standalonePoiIds).toEqual(["shared-harbour"]);
   });
+
+  it("maps local category ids onto canonical standard-board theme ids", () => {
+    const result = buildLocalBoardContent({
+      schemaVersion: 1,
+      profile: "housing-development",
+      id: "local",
+      name: "Local",
+      address: "Gate 1",
+      center: { lat: 63.4, lng: 10.4 },
+      map3d: true,
+      pinSubtitle: "",
+      greeting: "Hei",
+      projectInfoLabel: "prosjektet",
+      categories: [{
+        id: "hverdag",
+        name: "Hverdag",
+        icon: "ShoppingCart",
+        color: "#36d16f",
+        lead: "Hverdagen.",
+        body: "Tilbudene.",
+      }],
+    }, [{
+      id: "butikk",
+      categoryId: "hverdag",
+      question: "Hvor handler jeg?",
+      answer: "På butikken.",
+      origin: "local",
+      sourceIds: ["source"],
+    }], [], {
+      themeIdMap: { hverdag: "hverdagsliv" },
+    });
+
+    expect(result.themes).toEqual([expect.objectContaining({
+      id: "hverdagsliv",
+      faq: [expect.objectContaining({ id: "butikk" })],
+    })]);
+  });
 });

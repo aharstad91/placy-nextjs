@@ -1,0 +1,18 @@
+{
+  "schemaVersion": 1,
+  "convertedAt": "2026-09-19T10:48:52.100Z",
+  "outputPath": "docs/research/leangenbukta-lokal-demo/audited/2026-09-19-standard-content.json",
+  "themeCount": 8,
+  "themeFaqCounts": {
+    "leangenbukta-prosjektet": 6,
+    "hverdagsliv": 4,
+    "barn-oppvekst": 4,
+    "mat-drikke": 4,
+    "natur-friluftsliv": 4,
+    "transport": 4,
+    "trening-aktivitet": 4,
+    "opplevelser": 4
+  },
+  "globalFaqCount": 0,
+  "totalFaqCount": 34
+}

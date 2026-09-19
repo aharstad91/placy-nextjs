@@ -1,0 +1,183 @@
+{
+  "inspectedAt": "2026-09-19T10:50:12.119Z",
+  "project": {
+    "id": "placy-demo_leangenbukta",
+    "name": "Leangenbukta",
+    "customer": "placy-demo",
+    "slug": "leangenbukta"
+  },
+  "product": {
+    "id": "5df5eade-4fd5-4bd6-b41d-686b988d9d3b",
+    "version": 1,
+    "updatedAt": "2026-09-07T16:29:35.30202+00:00"
+  },
+  "inventory": {
+    "productPois": 1167,
+    "featuredPois": 90,
+    "projectPois": 1209,
+    "categories": 42
+  },
+  "research": {
+    "packages": 7,
+    "currentClaims": 648
+  },
+  "content": {
+    "themes": 8,
+    "themeIds": [
+      "leangenbukta-prosjektet",
+      "hverdagsliv",
+      "barn-oppvekst",
+      "mat-drikke",
+      "natur-friluftsliv",
+      "transport",
+      "trening-aktivitet",
+      "opplevelser"
+    ],
+    "themeDetails": [
+      {
+        "id": "leangenbukta-prosjektet",
+        "name": "Leangenbukta",
+        "icon": "Building2",
+        "color": "#91563e",
+        "categories": [
+          "leangenbukta-prosjektet"
+        ],
+        "hasEditorial": true,
+        "faqCount": 6
+      },
+      {
+        "id": "hverdagsliv",
+        "name": "Hverdag",
+        "icon": "ShoppingCart",
+        "color": "#36d16f",
+        "categories": [
+          "shopping",
+          "supermarket",
+          "pharmacy",
+          "convenience",
+          "liquor_store",
+          "doctor",
+          "dentist",
+          "hospital",
+          "haircare",
+          "bank",
+          "post",
+          "veterinar",
+          "trafikkskole",
+          "butikk"
+        ],
+        "hasEditorial": true,
+        "faqCount": 4
+      },
+      {
+        "id": "barn-oppvekst",
+        "name": "Oppvekst",
+        "icon": "GraduationCap",
+        "color": "#f8ae17",
+        "categories": [
+          "skole",
+          "barnehage",
+          "lekeplass",
+          "idrett",
+          "fritidsklubb"
+        ],
+        "hasEditorial": true,
+        "faqCount": 4
+      },
+      {
+        "id": "mat-drikke",
+        "name": "Servering",
+        "icon": "UtensilsCrossed",
+        "color": "#f35a5a",
+        "categories": [
+          "restaurant",
+          "cafe",
+          "bar",
+          "bakery"
+        ],
+        "hasEditorial": true,
+        "faqCount": 4
+      },
+      {
+        "id": "natur-friluftsliv",
+        "name": "Natur",
+        "icon": "Trees",
+        "color": "#22c68d",
+        "categories": [
+          "park",
+          "outdoor",
+          "badeplass",
+          "marina",
+          "campground",
+          "hundepark"
+        ],
+        "hasEditorial": true,
+        "faqCount": 4
+      },
+      {
+        "id": "transport",
+        "name": "Transport",
+        "icon": "Bus",
+        "color": "#4d93f8",
+        "categories": [
+          "bus",
+          "train",
+          "tram",
+          "bike",
+          "parking",
+          "carshare",
+          "taxi",
+          "charging_station",
+          "fuel"
+        ],
+        "hasEditorial": true,
+        "faqCount": 4
+      },
+      {
+        "id": "trening-aktivitet",
+        "name": "Trening",
+        "icon": "Dumbbell",
+        "color": "#f05da7",
+        "categories": [
+          "gym",
+          "swimming",
+          "spa",
+          "fitness_park"
+        ],
+        "hasEditorial": true,
+        "faqCount": 4
+      },
+      {
+        "id": "opplevelser",
+        "name": "Opplevelser",
+        "icon": "Film",
+        "color": "#a06cf5",
+        "categories": [
+          "library",
+          "cinema",
+          "museum",
+          "kirke",
+          "theatre",
+          "bowling"
+        ],
+        "hasEditorial": false,
+        "faqCount": 4
+      }
+    ],
+    "globalFaq": 0,
+    "boardFacts": 0,
+    "assistantEnabled": true,
+    "assistantFeatures": [
+      "faqProgress",
+      "followHighlightCategory",
+      "guidedPersona",
+      "narrationFocus",
+      "revealPlaces",
+      "unscopedCategoryList",
+      "voicePacing"
+    ],
+    "branded": true,
+    "initialView": "splash"
+  },
+  "publicRoute": null
+}
