@@ -1343,6 +1343,246 @@ export type Database = {
         }
         Relationships: []
       }
+      research_packages: {
+        Row: {
+          imported_at: string
+          package_hash: string
+          package_id: string
+          package_mode: string
+          project_id: string
+          project_name: string
+          reviewed_at: string
+          schema_version: number
+          scope_key: string
+          source_path: string | null
+        }
+        Insert: {
+          imported_at?: string
+          package_hash: string
+          package_id: string
+          package_mode: string
+          project_id: string
+          project_name: string
+          reviewed_at: string
+          schema_version: number
+          scope_key: string
+          source_path?: string | null
+        }
+        Update: {
+          imported_at?: string
+          package_hash?: string
+          package_id?: string
+          package_mode?: string
+          project_id?: string
+          project_name?: string
+          reviewed_at?: string
+          schema_version?: number
+          scope_key?: string
+          source_path?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "research_packages_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      research_entities: {
+        Row: {
+          board_id: string | null
+          canonical_id: string
+          created_at: string
+          entity_id: string
+          entity_kind: string
+          geography: string
+          mapped_poi_id: string | null
+          mapping_status: string
+          name: string
+          package_hash: string
+          reusable_across_boards: boolean
+          reuse_constraints: string | null
+          scope: string
+        }
+        Insert: {
+          board_id?: string | null
+          canonical_id: string
+          created_at?: string
+          entity_id: string
+          entity_kind: string
+          geography: string
+          mapped_poi_id?: string | null
+          mapping_status: string
+          name: string
+          package_hash: string
+          reusable_across_boards: boolean
+          reuse_constraints?: string | null
+          scope: string
+        }
+        Update: {
+          board_id?: string | null
+          canonical_id?: string
+          created_at?: string
+          entity_id?: string
+          entity_kind?: string
+          geography?: string
+          mapped_poi_id?: string | null
+          mapping_status?: string
+          name?: string
+          package_hash?: string
+          reusable_across_boards?: boolean
+          reuse_constraints?: string | null
+          scope?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "research_entities_package_hash_fkey"
+            columns: ["package_hash"]
+            isOneToOne: false
+            referencedRelation: "research_packages"
+            referencedColumns: ["package_hash"]
+          },
+          {
+            foreignKeyName: "research_entities_mapped_poi_id_fkey"
+            columns: ["mapped_poi_id"]
+            isOneToOne: false
+            referencedRelation: "pois"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      research_claims: {
+        Row: {
+          approved_copy: string | null
+          board_id: string | null
+          canonical_id: string
+          claim_id: string
+          confidence: string
+          conflict_notes: string | null
+          created_at: string
+          editorial_note: string | null
+          field: string
+          geography: string
+          id: string
+          mapped_poi_id: string | null
+          mapping_status: string
+          observed_at: string
+          package_hash: string
+          project_id: string
+          publication_eligible: boolean
+          reason: string | null
+          reusable_across_boards: boolean
+          reuse_constraints: string | null
+          review_status: string
+          scope: string
+          scope_key: string
+          source_date: string | null
+          source_titles: string[]
+          source_type: string | null
+          source_urls: string[]
+          subject_id: string
+          superseded_at: string | null
+          temporal_kind: string
+          valid_from: string | null
+          valid_until: string | null
+          value: Json
+        }
+        Insert: {
+          approved_copy?: string | null
+          board_id?: string | null
+          canonical_id: string
+          claim_id: string
+          confidence: string
+          conflict_notes?: string | null
+          created_at?: string
+          editorial_note?: string | null
+          field: string
+          geography: string
+          id?: string
+          mapped_poi_id?: string | null
+          mapping_status: string
+          observed_at: string
+          package_hash: string
+          project_id: string
+          publication_eligible?: boolean
+          reason?: string | null
+          reusable_across_boards: boolean
+          reuse_constraints?: string | null
+          review_status: string
+          scope: string
+          scope_key: string
+          source_date?: string | null
+          source_titles?: string[]
+          source_type?: string | null
+          source_urls?: string[]
+          subject_id: string
+          superseded_at?: string | null
+          temporal_kind: string
+          valid_from?: string | null
+          valid_until?: string | null
+          value: Json
+        }
+        Update: {
+          approved_copy?: string | null
+          board_id?: string | null
+          canonical_id?: string
+          claim_id?: string
+          confidence?: string
+          conflict_notes?: string | null
+          created_at?: string
+          editorial_note?: string | null
+          field?: string
+          geography?: string
+          id?: string
+          mapped_poi_id?: string | null
+          mapping_status?: string
+          observed_at?: string
+          package_hash?: string
+          project_id?: string
+          publication_eligible?: boolean
+          reason?: string | null
+          reusable_across_boards?: boolean
+          reuse_constraints?: string | null
+          review_status?: string
+          scope?: string
+          scope_key?: string
+          source_date?: string | null
+          source_titles?: string[]
+          source_type?: string | null
+          source_urls?: string[]
+          subject_id?: string
+          superseded_at?: string | null
+          temporal_kind?: string
+          valid_from?: string | null
+          valid_until?: string | null
+          value?: Json
+        }
+        Relationships: [
+          {
+            foreignKeyName: "research_claims_package_hash_fkey"
+            columns: ["package_hash"]
+            isOneToOne: false
+            referencedRelation: "research_packages"
+            referencedColumns: ["package_hash"]
+          },
+          {
+            foreignKeyName: "research_claims_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "research_claims_mapped_poi_id_fkey"
+            columns: ["mapped_poi_id"]
+            isOneToOne: false
+            referencedRelation: "pois"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       pois: {
         Row: {
           address: string | null
@@ -1729,7 +1969,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      import_research_package: {
+        Args: { p_payload: Json }
+        Returns: Json
+      }
     }
     Enums: {
       [_ in never]: never
