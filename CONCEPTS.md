@@ -19,6 +19,15 @@ Nabolagsrapporten som rendres for ett prosjekt: kartet, temaene og svarene, satt
 ### Anker
 Et sted som rommer andre steder — et kjøpesenter, et idrettsanlegg — og som viser dem som medlemmer i stedet for som egne markører på kartet. Medlemmet beholder sitt eget navn og sin egen avstand; ankeret bærer hvor det ligger.
 
+### Registersted
+Et sted som boardet kjenner fra den brede stedspoolen, med nok data til kartvisning og oppslag, men uten kildekontrollerte påstander som åpningstid, pris, kapasitet eller kvalitet.
+
+### Revidert sted
+Et sted der én eller flere atomiske påstander er kontrollert mot navngitte kilder og har eksplisitt reviewstatus. Et revidert sted kan samtidig være synlig i poolen, men det er påstandene — ikke markøren — som avgjør hva Anja kan si.
+
+### Researchledger
+Det varige auditsporet for researchpakker og atomiske påstander, inkludert godkjent, tidsfølsom, historisk, uavklart og avvist kunnskap. Ledgeren bevarer hele vurderingen; bare den publiserbare projeksjonen brukes som nåtidsfakta i boardet og av Anja.
+
 ## Prosesser
 
 ### Provisjonering
