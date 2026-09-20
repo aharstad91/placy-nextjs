@@ -10,6 +10,7 @@ interface Options {
   projectSlug: string;
   name: string;
   greeting: string | null;
+  enabled: boolean;
   receiptPath: string | null;
   write: boolean;
 }
@@ -30,6 +31,8 @@ function options(): Options {
     projectSlug,
     name: value("--name", "Anja")!,
     greeting: value("--greeting"),
+    // Slår Anja av uten å miste hilsen og funksjonsvalg.
+    enabled: !values.includes("--disable"),
     receiptPath: value("--receipt"),
     write: values.includes("--write"),
   };
@@ -61,6 +64,7 @@ async function main() {
   const assistant = mergeBoardAssistantConfig(reportConfig.assistant, {
     name: args.name,
     greeting: args.greeting,
+    enabled: args.enabled,
   });
   const nextConfig = {
     ...config,

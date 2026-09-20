@@ -1,0 +1,61 @@
+{
+  "status": "updated",
+  "appliedAt": "2026-09-20T21:49:15.323Z",
+  "schemaVersion": 1,
+  "projectId": "nyhavna-utvikling_nyhavna",
+  "customer": "nyhavna-utvikling",
+  "projectSlug": "nyhavna",
+  "productId": "063a0b6a-edb3-4fb2-885d-c594ddd46063",
+  "previousAssistant": {
+    "name": "Anja",
+    "guided": true,
+    "enabled": true,
+    "features": {
+      "faqProgress": true,
+      "voicePacing": true,
+      "revealPlaces": true,
+      "guidedPersona": true,
+      "narrationFocus": true,
+      "unscopedCategoryList": true,
+      "followHighlightCategory": true
+    },
+    "greeting": "Hei, jeg heter Anja og er din digitale guide på Nyhavna. Jeg kan fortelle om bydelen som vokser fram, og vise deg hva som finnes i nabolaget allerede i dag. Du kan spørre underveis eller trykke på kartet. Vil du først høre om planene for Nyhavna eller om nærområdet slik det er i dag?"
+  },
+  "assistant": {
+    "name": "Anja",
+    "guided": true,
+    "enabled": false,
+    "features": {
+      "faqProgress": true,
+      "voicePacing": true,
+      "revealPlaces": true,
+      "guidedPersona": true,
+      "narrationFocus": true,
+      "unscopedCategoryList": true,
+      "followHighlightCategory": true
+    },
+    "greeting": "Hei, jeg heter Anja og er din digitale guide på Nyhavna. Jeg kan fortelle om bydelen som vokser fram, og vise deg hva som finnes i nabolaget allerede i dag. Du kan spørre underveis eller trykke på kartet. Vil du først høre om planene for Nyhavna eller om nærområdet slik det er i dag?"
+  },
+  "preservedReportConfigKeys": [
+    "assets",
+    "assistant",
+    "boardFacts",
+    "city",
+    "district",
+    "globalFaq",
+    "heroIntro",
+    "hideBrokerCard",
+    "isochrones",
+    "label",
+    "pinAccent",
+    "pinSubtitle",
+    "presentation",
+    "reportTier",
+    "standalonePoiIds",
+    "themes"
+  ],
+  "updatedAt": "2026-09-10T08:14:21.415103+00:00",
+  "revalidated": [
+    "http://localhost:3000"
+  ]
+}

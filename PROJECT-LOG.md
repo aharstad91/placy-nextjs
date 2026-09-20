@@ -6,6 +6,28 @@
 
 ---
 
+## 2026-09-20 kveld — Alt pushet til remote, og en sekvenseringsfeil jeg gjorde
+
+`main` (90 commits), `feat/leangenbukta-board` og `feat/lillebytunet-standard-board` er pushet til `origin`. Alle tre Vercel-deployene ble grønne; produksjonsbygget tok ett minutt, og de tre `rapport-board`-rutene svarer 200.
+
+**Feilen:** jeg skrev brandkonfigurasjon til den delte produksjonsdatabasen før assetene fantes i den deployede koden. Etter pushen peker `assets.brand: true` på `/illustrations/lillebytunet-logo.png`, `-pin.png` og `-splash.jpg` — filer som bare finnes på funksjonsgrenen. Alle seks brand-assets 404-er i prod, også `nyhavna-logo.svg` og `leangenbukta-logo.svg`; de to har vært slik siden config-skrivene 2026-09-19, og Lillebytunet ble lagt til i samme tilstand i dag. Loggen fra 2026-09-19 advarte eksplisitt mot nettopp dette («skriv og deploy brand først etter at assets finnes i samme release»), og den ble lest uten å bli anvendt. Regelen er: **et config-skriv som peker på en fil er et løfte om at fila er deployet i samme release.**
+
+**Produksjon kjørte ikke standardboardet i det hele tatt.** `origin/main` sto på `fc83a56b` — prod-HTML hadde verken `data-board-brand` eller «Snakk med Anja». Hele standardboard-arbeidet for Nyhavna, Leangenbukta og Lillebytunet lå på `feat/leangenbukta-board` og grenen over den.
+
+**To Anja-transporter, ikke én.** En påstand om at «Anja ikke finnes i prod» var feil og ble korrigert av Andreas. `voice_projects` har én rad — `nyhavna` → `content_source: nyhavna-lokal`, enabled — og det er den `placy.no/nyhavna` bruker. Den ruta serverer demo-runtimen (`demoGreeting` ligger i HTML-en), trenger ingen Vercel-env og virker. Standardboardets Anja er en annen vei: `/api/board-assistant` → `ANJA_SERVICE_URL`, som slår inn så snart `reportConfig.assistant.enabled` er satt. Produksjonsmiljøet har sju env-variabler, og `ANJA_SERVICE_URL`, `ANJA_SERVICE_SECRET` og `OPENAI_API_KEY` er ikke blant dem. `placy.no/leangenbukta` og `placy.no/lillebytunet` 404-er — bare Nyhavna har binding.
+
+Konsekvensen er at `assistant.enabled: true` på et standardboard i prod ville gitt en synlig knapp uten backend, og for Nyhavna i tillegg byttet bort en fungerende hosted-Anja.
+
+**Harnessen kunne bare skru Anja på.** `mergeBoardAssistantConfig` hardkodet `enabled: true`, så det fantes ingen vei tilbake uten å redigere JSON for hånd. `configure-board-assistant.ts` har nå `--disable`, som setter `enabled: false` og beholder hilsen, navn og de sju funksjonsvalgene, slik at boardet skrus på igjen med én kommando når backenden finnes. Låst med egen test.
+
+**Anja er slått av på alle tre standardboardene** etter rollback-snapshot av hver (`audited/2026-09-20-preprod-snapshot-{lillebytunet,nyhavna,leangenbukta}.json`) og tørrkjøring. Verifisert med direkte produksjonslesing: `enabled=False`, hilsen bevart, `brand=True` på alle tre. `placy.no/nyhavna` med hosted-Anja er ikke berørt — den leser ikke `reportConfig.assistant`.
+
+**Verifisering:** lint 0 feil med 64 eksisterende advarsler; TypeScript 0 feil; 325 testfiler / 4 849 tester bestått og én hoppet over; produksjonsbygg bestått.
+
+**Åpent:** `ANJA_SERVICE_URL`, `ANJA_SERVICE_SECRET` og `OPENAI_API_KEY` må inn i Vercel Production, og sidecaren må ha et sted å kjøre, før `assistant.enabled` skrus på igjen på standardboardene. Vercel sender også en «import this project»-e-post for `scripts/lillebytunet/model` fordi mappa inneholder Python — den skal ikke importeres; det er 3D-pipelinen, ikke en app.
+
+---
+
 ## 2026-09-20 — Lillebytunet er det tredje prosjektet på standardboardet, og fant fem feil i den delte koden
 
 Gren `feat/lillebytunet-standard-board` i worktree `../placy-lillebytunet`, forgrenet fra `feat/leangenbukta-board` (som er et strikt supersett av `main`: 70 commits foran, 0 bak). Ikke pushet.
