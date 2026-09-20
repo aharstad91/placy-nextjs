@@ -216,6 +216,16 @@ describe("Live-oppkobling", () => {
     expect(FakePeer.instances).toHaveLength(0);
     expect(navigator.mediaDevices.getUserMedia).not.toHaveBeenCalled();
   });
+
+  it("forklarer at HTTPS-lenken må åpnes i Safari eller Chrome når en app-nettleser skjuler mikrofonen", async () => {
+    vi.stubGlobal("navigator", {});
+    const { result } = renderHook(() => useLive(options()));
+
+    await act(async () => { await result.current.start(); });
+
+    expect(result.current.status).toBe("error");
+    expect(result.current.error).toBe("Denne nettleseren gir ikke tilgang til mikrofon. Åpne HTTPS-lenken direkte i Safari eller Chrome.");
+  });
 });
 
 describe("Kartdirektiver over SSE", () => {

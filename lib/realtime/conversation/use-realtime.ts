@@ -256,7 +256,7 @@ export function useRealtime(options: RealtimeOptions) {
         }
       };
       if (mode === "voice") {
-        if (!navigator.mediaDevices?.getUserMedia) throw new Error("Mikrofon krever localhost eller HTTPS.");
+        if (!navigator.mediaDevices?.getUserMedia) throw new Error("Denne nettleseren gir ikke tilgang til mikrofon. Åpne HTTPS-lenken direkte i Safari eller Chrome.");
         const stream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true } });
         if (!active()) { stream.getTracks().forEach(track => track.stop()); return; }
         current.stream = stream;
