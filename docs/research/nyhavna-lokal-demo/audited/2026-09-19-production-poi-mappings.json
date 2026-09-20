@@ -1,0 +1,387 @@
+[
+  {
+    "localPlaceId": "lilleby-skole",
+    "poiId": "nsr-975278859",
+    "evidence": "Unique normalized name and coordinates 0 m apart."
+  },
+  {
+    "localPlaceId": "rosenborg-skole",
+    "poiId": "13778d6f-734e-4441-be24-891ff66236bb",
+    "evidence": "Unique normalized name and coordinates 0 m apart."
+  },
+  {
+    "localPlaceId": "nedre-elvehavn-bhg",
+    "poiId": "36d882f4-2001-4af9-8937-46ad9598a6f7",
+    "evidence": "Unique normalized name and coordinates 1 m apart."
+  },
+  {
+    "localPlaceId": "voldsminde-bhg",
+    "poiId": "a72a9699-220f-484c-9096-4940b87dc5d7",
+    "evidence": "Unique normalized name and coordinates 0 m apart."
+  },
+  {
+    "localPlaceId": "nyhavna-padel",
+    "poiId": "osm-node-9546096858",
+    "evidence": "Unique normalized name and coordinates 0 m apart."
+  },
+  {
+    "localPlaceId": "snurr-nyhavna",
+    "poiId": "google-ChIJO6r3WQAxbUYRIwblKoirXeU",
+    "evidence": "Unique normalized name and coordinates 42 m apart."
+  },
+  {
+    "localPlaceId": "dora-kaffebar",
+    "poiId": "google-ChIJkSttw-sxbUYRAanGtarSMo0",
+    "evidence": "Unique normalized name and coordinates 17 m apart."
+  },
+  {
+    "localPlaceId": "nyhavna-bistro",
+    "poiId": "google-ChIJNzs1uMMxbUYRFHxPylbUTSg",
+    "evidence": "Unique normalized name and coordinates 28 m apart."
+  },
+  {
+    "localPlaceId": "ladejarlen",
+    "poiId": "google-ChIJJ5VwkqAxbUYRVB3X034TK3g",
+    "evidence": "Unique normalized name and coordinates 3 m apart."
+  },
+  {
+    "localPlaceId": "kiwi-lilleby",
+    "poiId": "google-ChIJTweFjGYxbUYRz2lXeNSRp2Q",
+    "evidence": "Unique normalized name and coordinates 0 m apart."
+  },
+  {
+    "localPlaceId": "meny-solsiden",
+    "poiId": "google-ChIJm6lLfZ8xbUYRFYo0NaeG5sk",
+    "evidence": "Unique normalized name and coordinates 33 m apart."
+  },
+  {
+    "localPlaceId": "losgata",
+    "poiId": "entur-NSR-StopPlace-42926",
+    "evidence": "Same Entur stop place and coordinates."
+  },
+  {
+    "localPlaceId": "dora-holdeplass",
+    "poiId": "entur-NSR-StopPlace-43469",
+    "evidence": "Same Entur stop place and coordinates."
+  },
+  {
+    "localPlaceId": "ladestien",
+    "poiId": "ladestien",
+    "evidence": "Exact POI identifier in the standard project pool."
+  },
+  {
+    "localPlaceId": "trondheim-s",
+    "poiId": "google-ChIJ5ZCzXW0xbUYRscnihNFt18g",
+    "evidence": "Unique normalized name and coordinates 147 m apart."
+  },
+  {
+    "localPlaceId": "transittkaia",
+    "poiId": "project:nyhavna-utvikling_nyhavna:transittkaia",
+    "evidence": "Audited local-board identity, coordinates and project ownership are preserved in the standard POI."
+  },
+  {
+    "localPlaceId": "kullkranpiren",
+    "poiId": "project:nyhavna-utvikling_nyhavna:kullkranpiren",
+    "evidence": "Audited local-board identity, coordinates and project ownership are preserved in the standard POI."
+  },
+  {
+    "localPlaceId": "strandveikaia",
+    "poiId": "project:nyhavna-utvikling_nyhavna:strandveikaia",
+    "evidence": "Audited local-board identity, coordinates and project ownership are preserved in the standard POI."
+  },
+  {
+    "localPlaceId": "ladehammerkaia",
+    "poiId": "project:nyhavna-utvikling_nyhavna:ladehammerkaia",
+    "evidence": "Audited local-board identity, coordinates and project ownership are preserved in the standard POI."
+  },
+  {
+    "localPlaceId": "bunkerkvartalet",
+    "poiId": "project:nyhavna-utvikling_nyhavna:bunkerkvartalet",
+    "evidence": "Audited local-board identity, coordinates and project ownership are preserved in the standard POI."
+  },
+  {
+    "localPlaceId": "crossfit-trondheim",
+    "poiId": "google-ChIJUwRsXGMxbUYRSCDGuoLrNcQ",
+    "evidence": "Unique normalized name and coordinates 0 m apart."
+  },
+  {
+    "localPlaceId": "lilleby-treningssenter",
+    "poiId": "google-ChIJMfCgQlYxbUYRjXwo6KQhl0I",
+    "evidence": "Unique normalized name and coordinates 0 m apart."
+  },
+  {
+    "localPlaceId": "pool-3t-solsiden",
+    "poiId": "google-ChIJSUfPIqAxbUYRiyIKq4-hSPs",
+    "evidence": "Unique normalized name and coordinates 0 m apart."
+  },
+  {
+    "localPlaceId": "pool-fresh-fitness-trondheim-sentrum",
+    "poiId": "google-ChIJhQ_hSpkxbUYRWqS19GSEX74",
+    "evidence": "Unique normalized name and coordinates 0 m apart."
+  },
+  {
+    "localPlaceId": "pool-3t-lade",
+    "poiId": "google-ChIJIxSO7s0xbUYRQTZSjmjBkjk",
+    "evidence": "Unique normalized name and coordinates 0 m apart."
+  },
+  {
+    "localPlaceId": "pool-3t-leangen",
+    "poiId": "google-ChIJUdaOG_8wbUYRthFAqcjZ5kM",
+    "evidence": "Unique normalized name and coordinates 0 m apart."
+  },
+  {
+    "localPlaceId": "pool-lademoparken",
+    "poiId": "park-lademoparken",
+    "evidence": "Same municipal park; the stable municipal POI is preferred over duplicate catalog records."
+  },
+  {
+    "localPlaceId": "pool-ladeparken",
+    "poiId": "park-ladeparken",
+    "evidence": "Same municipal park; the stable municipal POI is preferred over duplicate catalog records."
+  },
+  {
+    "localPlaceId": "pool-korsvika",
+    "poiId": "badeplass-korsvika",
+    "evidence": "Same municipal bathing place; the stable municipal POI is preferred over duplicate catalog records."
+  },
+  {
+    "localPlaceId": "pool-ntnu-ringve-botaniske-hage",
+    "poiId": "google-ChIJZZmfpBwxbUYRgEXlKQkTmmc",
+    "evidence": "Unique normalized name and coordinates 0 m apart."
+  },
+  {
+    "localPlaceId": "pool-ilaparken",
+    "poiId": "park-ilaparken",
+    "evidence": "Same municipal park; the stable municipal POI is preferred over duplicate catalog records."
+  },
+  {
+    "localPlaceId": "ec-dahls",
+    "poiId": "google-ChIJQdOI4QsxbUYRawbfIv9XA00",
+    "evidence": "Same named restaurant and brewery venue at the audited address."
+  },
+  {
+    "localPlaceId": "ramp",
+    "poiId": "google-ChIJ81aNcAoxbUYR9A3T2-hoyz4",
+    "evidence": "Unique normalized name and coordinates 3 m apart."
+  },
+  {
+    "localPlaceId": "una-solsiden",
+    "poiId": "google-ChIJFSxqCp8xbUYRxlNF2ntkSWg",
+    "evidence": "Unique normalized name and coordinates 3 m apart."
+  },
+  {
+    "localPlaceId": "godt-brod-solsiden",
+    "poiId": "google-ChIJa5PTYPQxbUYRMhl1-tTmyJs",
+    "evidence": "Unique normalized name and coordinates 87 m apart."
+  },
+  {
+    "localPlaceId": "sabrura-solsiden",
+    "poiId": "google-ChIJYTz8R6AxbUYRz_IhEP_oOVk",
+    "evidence": "Unique normalized name and coordinates 37 m apart."
+  },
+  {
+    "localPlaceId": "lademoen-bhg",
+    "poiId": "e8923d5b-5353-41c5-80ea-6bb4e2720d01",
+    "evidence": "Unique normalized name and coordinates 0 m apart."
+  },
+  {
+    "localPlaceId": "svartlamon-bhg",
+    "poiId": "95122dfa-509d-4c78-9d1b-2f2b2700f6ba",
+    "evidence": "Unique normalized name and coordinates 0 m apart."
+  },
+  {
+    "localPlaceId": "strandveiparken",
+    "poiId": "park-strandveiparken",
+    "evidence": "Same municipal park; the stable municipal POI is preferred over duplicate catalog records."
+  },
+  {
+    "localPlaceId": "strandveikaia-badeplass",
+    "poiId": "badeplass-strandveikaia",
+    "evidence": "Same municipal bathing place and coordinates."
+  },
+  {
+    "localPlaceId": "buranbanen",
+    "poiId": "osm-way-10260237",
+    "evidence": "Unique normalized name and coordinates 21 m apart."
+  },
+  {
+    "localPlaceId": "egon-solsiden",
+    "poiId": "google-ChIJ4ccQcZ8xbUYR6Xl1I85wHrg",
+    "evidence": "Same named restaurant at Solsiden, 3 m from the reviewed point."
+  },
+  {
+    "localPlaceId": "olivia-solsiden",
+    "poiId": "google-ChIJ88TAqZ8xbUYR7lTSrj19f4k",
+    "evidence": "Unique normalized name and coordinates 22 m apart."
+  },
+  {
+    "localPlaceId": "cafe-lokka",
+    "poiId": "google-ChIJs-DHJJ8xbUYRslPZTW18HJo",
+    "evidence": "Unique normalized name and coordinates 5 m apart."
+  },
+  {
+    "localPlaceId": "hector-solsiden",
+    "poiId": "google-ChIJs5Q50UYxbUYRgJFfKVmyTvE",
+    "evidence": "Unique normalized name and coordinates 3 m apart."
+  },
+  {
+    "localPlaceId": "tollbua",
+    "poiId": "google-ChIJSY81O1wxbUYRGf59dfwcssw",
+    "evidence": "Same named restaurant, 1 m from the reviewed point."
+  },
+  {
+    "localPlaceId": "bror-solsiden",
+    "poiId": "google-ChIJWdP_Oa8xbUYRAfEFK2UmYOM",
+    "evidence": "Unique normalized name and coordinates 5 m apart."
+  },
+  {
+    "localPlaceId": "sot-solsiden",
+    "poiId": "google-ChIJobCJYp8xbUYRyD1DuGunCOQ",
+    "evidence": "Unique normalized name and coordinates 19 m apart."
+  },
+  {
+    "localPlaceId": "rockheim",
+    "poiId": "google-ChIJ_SQZi50xbUYR2we35aFCaSU",
+    "evidence": "Unique normalized name and coordinates 17 m apart."
+  },
+  {
+    "localPlaceId": "pirbadet",
+    "poiId": "osm-node-1291410914",
+    "evidence": "Unique normalized name and coordinates 41 m apart."
+  },
+  {
+    "localPlaceId": "apotek-1-solsiden",
+    "poiId": "google-ChIJ2eVZ0aExbUYRnHI5tHoOjQo",
+    "evidence": "Unique normalized name and coordinates 1 m apart."
+  },
+  {
+    "localPlaceId": "vinmonopolet-solsiden",
+    "poiId": "google-ChIJIYkLg58xbUYRlOSxB_0Hhu0",
+    "evidence": "Same operator inside Solsiden and 34 m from the shared centre coordinate."
+  },
+  {
+    "localPlaceId": "rema-1000-solsiden",
+    "poiId": "google-ChIJSUfPIqAxbUYRPU0CMflqgNM",
+    "evidence": "Unique normalized name and coordinates 2 m apart."
+  },
+  {
+    "localPlaceId": "solsiden-senter",
+    "poiId": "google-ChIJyVBZnZ8xbUYRhB-s_crA_YQ",
+    "evidence": "Same Solsiden shopping centre POI, verified elsewhere in the same standard project pool."
+  },
+  {
+    "localPlaceId": "city-lade",
+    "poiId": "google-ChIJt8f3LKQxbUYRDtDL6UWLq4Y",
+    "evidence": "Unique normalized name and coordinates 66 m apart."
+  },
+  {
+    "localPlaceId": "trondheim-torg",
+    "poiId": "google-ChIJS1CB5ZoxbUYR-PEX9qTtNcA",
+    "evidence": "Unique normalized name and coordinates 26 m apart."
+  },
+  {
+    "localPlaceId": "sirkus-shopping",
+    "poiId": "google-ChIJVZdRQJoxbUYRTcToJ4smjeM",
+    "evidence": "Unique normalized name and coordinates 150 m apart."
+  },
+  {
+    "localPlaceId": "obs-city-lade",
+    "poiId": "google-ChIJU0r-QgQxbUYRt6CgoPAVKKs",
+    "evidence": "Unique normalized name and coordinates 93 m apart."
+  },
+  {
+    "localPlaceId": "coop-mega-sirkus",
+    "poiId": "google-ChIJ_bGcGQAxbUYRV8c0jX3elYo",
+    "evidence": "Unique normalized name and coordinates 160 m apart."
+  },
+  {
+    "localPlaceId": "rema-1000-torvet",
+    "poiId": "google-ChIJpSsF-ZoxbUYRoRSu4akDizQ",
+    "evidence": "Unique normalized name and coordinates 30 m apart."
+  },
+  {
+    "localPlaceId": "bunnpris-buran",
+    "poiId": "google-ChIJsaC_rqAxbUYR3ZmuAyV_KZI",
+    "evidence": "Unique normalized name and coordinates 39 m apart."
+  },
+  {
+    "localPlaceId": "bunnpris-lade",
+    "poiId": "google-ChIJCzDwmgUxbUYRbM0LlUcPfu0",
+    "evidence": "Unique normalized name and coordinates 0 m apart."
+  },
+  {
+    "localPlaceId": "extra-lilleby",
+    "poiId": "google-ChIJ83MSjCwxbUYRoJlhfmWQ0NQ",
+    "evidence": "Unique normalized name and coordinates 3 m apart."
+  },
+  {
+    "localPlaceId": "vitusapotek-trondheim-torg",
+    "poiId": "google-ChIJIWUg4poxbUYRPlsv59xND6A",
+    "evidence": "Unique normalized name and coordinates 60 m apart."
+  },
+  {
+    "localPlaceId": "ark-trondheim-torg",
+    "poiId": "google-ChIJkYRa5ZoxbUYRVpAQehPwgKM",
+    "evidence": "Unique normalized name and coordinates 60 m apart."
+  },
+  {
+    "localPlaceId": "vitusapotek-sirkus-shopping",
+    "poiId": "google-ChIJTd-l4P8wbUYRfp1y1hLVyMI",
+    "evidence": "Unique normalized name and coordinates 78 m apart."
+  },
+  {
+    "localPlaceId": "clas-ohlson-sirkus-shopping",
+    "poiId": "google-ChIJuUBzcjAxbUYRRp6Tz5ioCG4",
+    "evidence": "Same named shop inside Sirkus Shopping, 26 m from the shared centre coordinate."
+  },
+  {
+    "localPlaceId": "lademoen-stasjon",
+    "poiId": "entur-NSR-StopPlace-271",
+    "evidence": "Unique normalized name and coordinates 0 m apart."
+  },
+  {
+    "localPlaceId": "bysykkel-92",
+    "poiId": "bysykkel-92",
+    "evidence": "Exact POI identifier in the standard project pool."
+  },
+  {
+    "localPlaceId": "bysykkel-18",
+    "poiId": "bysykkel-18",
+    "evidence": "Exact POI identifier in the standard project pool."
+  },
+  {
+    "localPlaceId": "bysykkel-108",
+    "poiId": "bysykkel-108",
+    "evidence": "Exact POI identifier in the standard project pool."
+  },
+  {
+    "localPlaceId": "bysykkel-7696",
+    "poiId": "bysykkel-7696",
+    "evidence": "Exact POI identifier in the standard project pool."
+  },
+  {
+    "localPlaceId": "bysykkel-85",
+    "poiId": "bysykkel-85",
+    "evidence": "Exact POI identifier in the standard project pool."
+  },
+  {
+    "localPlaceId": "bysykkel-65",
+    "poiId": "bysykkel-65",
+    "evidence": "Exact POI identifier in the standard project pool."
+  },
+  {
+    "localPlaceId": "lilleby-stasjon",
+    "poiId": "entur-NSR-StopPlace-62369",
+    "evidence": "Unique normalized name and coordinates 0 m apart."
+  },
+  {
+    "localPlaceId": "flex-gym",
+    "poiId": "google-ChIJjWQhOA8xbUYRAUjUe7p7l8Y",
+    "evidence": "Same named gym and coordinates."
+  },
+  {
+    "localPlaceId": "trikkestallen",
+    "poiId": "osm-way-112442103",
+    "evidence": "Same named venue; the OSM building footprint is 36 m from the reviewed entrance point."
+  }
+]

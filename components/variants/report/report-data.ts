@@ -226,7 +226,12 @@ const PROJECT_3D_HEADINGS: Record<string, number> = {
 };
 
 export interface ReportData {
+  projectId: string;
+  projectCustomer: string;
   demoSnapshotId?: string;
+  contentVersion?: string;
+  publishedKnowledge?: import("@/lib/types").PublishedKnowledge[];
+  assistant?: import("@/lib/types").ReportAssistantConfig;
   projectName: string;
   /** URL-slug, eks. "stasjonskvartalet". Brukes til å slå opp prosjekt-
    *  spesifikke ressurser (illustrasjoner, audio-stier, etc.). */
@@ -645,6 +650,9 @@ export function transformToReportData(project: Project, locale: Locale = "no"): 
 
   // Rekkevidde-konturene, hentet build-time i provisjoneringens steg 7c.
   const isochrones = parseIsochronesOrLog(project.reportConfig?.isochrones, project);
+  const standalonePoiIds = new Set(
+    project.reportConfig?.standalonePoiIds ?? [],
+  );
 
   for (const themeDef of themeDefinitions) {
     const cats = new Set(themeDef.categories);
@@ -693,11 +701,18 @@ export function transformToReportData(project: Project, locale: Locale = "no"): 
       categoryFiltered.filter(isAnchorPOI).map((p) => p.id),
     );
     const filtered = categoryFiltered
-      .filter((p) => !(p.parentPoiId && anchorIdsInTheme.has(p.parentPoiId)))
+      .filter(
+        (p) =>
+          !(
+            p.parentPoiId &&
+            anchorIdsInTheme.has(p.parentPoiId) &&
+            !standalonePoiIds.has(p.id)
+          ),
+      )
       .map((p) => {
         if (!anchorIdsInTheme.has(p.id)) return p;
-        const children = (childByParent.get(p.id) ?? []).filter((c) =>
-          cats.has(c.category.id),
+        const children = (childByParent.get(p.id) ?? []).filter(
+          (c) => cats.has(c.category.id) && !standalonePoiIds.has(c.id),
         );
         return children.length > 0 ? { ...p, childPOIs: children } : p;
       });
@@ -795,7 +810,12 @@ export function transformToReportData(project: Project, locale: Locale = "no"): 
     ?? interpolate(t(locale, getIntroKey(project.tags)), { name: project.name });
 
   return {
+    projectId: project.id,
+    projectCustomer: project.customer,
     demoSnapshotId: project.demoSnapshotId,
+    contentVersion: project.contentVersion,
+    publishedKnowledge: project.publishedKnowledge,
+    assistant: project.reportConfig?.assistant,
     projectName: project.name,
     projectSlug: project.urlSlug,
     address: project.pois[0]?.address ?? "",

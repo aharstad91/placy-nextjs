@@ -1,7 +1,10 @@
 import type { BoardData, BoardPOI } from "@/components/variants/report/board/board-data";
 import { buildChapter, chapterSummary, NO_PROJECT_INFO, NYHAVNA_CURATED, type ChapterPack, type CuratedProvider, type ProjectInfoProvider } from "@/lib/realtime/nyhavna-chapters";
 import { nyhavnaMapTools } from "@/lib/realtime/map-tools";
-import { createNyhavnaKnowledge, nyhavnaKnowledgeTools, type KnowledgeOptions } from "@/lib/realtime/nyhavna-knowledge";
+import { createNyhavnaKnowledge, knowledgeTools, type KnowledgeOptions } from "@/lib/realtime/nyhavna-knowledge";
+import { NYHAVNA_LABELS, shortProjectInfoLabel, type ConversationLabels } from "@/lib/realtime/conversation-labels";
+import { boardAddressBook, spokenBoardProjection } from "@/lib/realtime/spoken-projection";
+import { isLiveTransportTool, liveTransportTools, type LiveTransportExecutor, type LiveTransportToolName } from "@/lib/realtime/live-transport";
 import {
   applyTourEvent, defaultTourOrder, initialTourState, nextThemes, themesForInterests, tourNote,
   type HighlightedPlace, type TourState, type TourTheme,
@@ -34,7 +37,12 @@ const schema = (properties: Record<string, unknown>, required: string[] = []) =>
   type: "object", properties, required, additionalProperties: false,
 });
 
-export const nyhavnaTourTools: RealtimeTool[] = [
+/**
+ * Omvisningens verktøy. En funksjon av navnene fordi `find_project_info`
+ * beskriver HVILKET kildemateriale den søker i, og det materialet er
+ * datasettets – ikke kodens.
+ */
+export const tourTools = (labels: ConversationLabels): RealtimeTool[] => [
   {
     type: "function", name: "set_interests",
     description: "Kall når brukeren har sagt hva som er viktig for hen, eller ber om en generell tur (tom liste). Lagrer interessene, lager temarekkefølge og åpner første tema; returnerer plan og kapittel med kart-ID-er. Kall igjen når brukeren endrer mening.",
@@ -60,13 +68,14 @@ export const nyhavnaTourTools: RealtimeTool[] = [
   },
   {
     type: "function", name: "find_project_info",
-    description: "Søk i Nyhavna Utviklings eget innhold (nyhavna.no): prosjektet, hvem som står bak, visjon, planer, status, hverdagsliv. Returnerer kildebelagte utsagn med status (eksisterende, planlagt, vedtatt plan, visjon, uavklart).",
+    description: `Søk i ${labels.projectInfoLabel}: prosjektet, hvem som står bak, visjon, planer, status, hverdagsliv. Returnerer kildebelagte utsagn med status (eksisterende, planlagt, vedtatt plan, visjon, uavklart).`,
     parameters: schema({ query: { type: "string", maxLength: 200 }, theme_id: { type: "string" } }, ["query"]),
   },
 ];
 
 /** Alle verktøyene backenden får: kunnskap og omvisning (server) + kart (nettleser). */
-export const nyhavnaTools: RealtimeTool[] = [...nyhavnaKnowledgeTools, ...nyhavnaTourTools, ...nyhavnaMapTools];
+export const conversationTools = (labels: ConversationLabels, liveTransport = false): RealtimeTool[] =>
+  [...knowledgeTools(labels), ...tourTools(labels), ...(liveTransport ? liveTransportTools : []), ...nyhavnaMapTools];
 
 /** Karttilstanden nettleseren melder inn mellom turene. */
 export interface BoardState {
@@ -78,7 +87,10 @@ export interface BoardState {
 
 export interface NyhavnaConversation {
   /** Utfør et server-verktøy: resultatet til backenden, og kartdirektiver serveren selv utløser. */
-  execute: (name: string, args: Record<string, unknown>) => ToolOutcome;
+  execute: {
+    (name: LiveTransportToolName, args: Record<string, unknown>): Promise<ToolOutcome>;
+    (name: string, args: Record<string, unknown>): ToolOutcome;
+  };
   /** Nettleserens kartsvar – speiler kartets faktiske tilstand inn i omvisningen. */
   observeBrowserResult: (name: string, args: Record<string, unknown>, output: unknown) => void;
   /** Notatet hvis tilstanden har endret seg siden sist det ble hentet, ellers null. Legges SIST i backendens instruksjon. */
@@ -104,6 +116,15 @@ export interface ConversationDeps {
   knowledge?: KnowledgeOptions;
   /** Omtalene kapitlene bærer. Utelatt = Nyhavna-snapshotets kobling. */
   curatedFor?: CuratedProvider;
+  /**
+   * Stedsnavnene verktøytekstene og de tomme svarene bruker. Utelatt =
+   * `NYHAVNA_LABELS`, så det frosne snapshotet sier nøyaktig det samme som før.
+   */
+  labels?: ConversationLabels;
+  /** Levende kollektivoppslag. Utelatt for datasett som ikke har serverklient. */
+  liveTransport?: LiveTransportExecutor;
+  /** Ordinære områdeboards svarer på «i nærheten» med faktisk reisetid. */
+  preferNearestPlaces?: boolean;
 }
 
 const strings = (value: unknown, max = 10): string[] =>
@@ -125,11 +146,16 @@ const autoHighlights = (pack: ChapterPack): HighlightedPlace[] =>
   pack.places.filter((p) => p.id).slice(0, 3).map((p) => ({ id: p.id, name: p.name }));
 
 export function createNyhavnaConversation(board: BoardData, deps: ConversationDeps = {}): NyhavnaConversation {
+  const conversationBoard = spokenBoardProjection(board);
   const projectInfo = deps.projectInfo ?? NO_PROJECT_INFO;
   const travelMode = deps.travelMode ?? "walk";
-  const knowledge = createNyhavnaKnowledge(board, deps.knowledge);
-  const pois = new Map<string, BoardPOI>(board.categories.flatMap((c) => c.pois).map((p) => [String(p.id), p]));
-  const themes: (TourTheme & { sourced: boolean })[] = board.categories.map((c) => ({
+  const labels = deps.labels ?? NYHAVNA_LABELS;
+  const knowledge = createNyhavnaKnowledge(conversationBoard, {
+    ...deps.knowledge,
+    addresses: deps.knowledge?.addresses ?? boardAddressBook(board),
+  });
+  const pois = new Map<string, BoardPOI>(conversationBoard.categories.flatMap((c) => c.pois).map((p) => [String(p.id), p]));
+  const themes: (TourTheme & { sourced: boolean })[] = conversationBoard.categories.map((c) => ({
     id: String(c.id), name: c.label, sourced: Boolean(c.editorial?.source),
   }));
   const themeIds = new Set(themes.map((t) => t.id));
@@ -143,9 +169,16 @@ export function createNyhavnaConversation(board: BoardData, deps: ConversationDe
   const chapter = (themeId: string): ChapterPack => {
     let pack = chapters.get(themeId);
     if (!pack) {
-      const category = board.categories.find((c) => String(c.id) === themeId);
+      const category = conversationBoard.categories.find((c) => String(c.id) === themeId);
       if (!category) throw new Error(`Ukjent tema: ${themeId}`);
-      pack = buildChapter(board, category, travelMode, projectInfo, deps.curatedFor ?? NYHAVNA_CURATED);
+      pack = buildChapter(
+        conversationBoard,
+        category,
+        travelMode,
+        projectInfo,
+        deps.curatedFor ?? NYHAVNA_CURATED,
+        deps.preferNearestPlaces ?? false,
+      );
       chapters.set(themeId, pack);
     }
     const fresh = pack.project_info.filter((p) => !sentProjectInfo.has(p.id));
@@ -171,7 +204,12 @@ export function createNyhavnaConversation(board: BoardData, deps: ConversationDe
     };
   };
 
-  const execute = (name: string, args: Record<string, unknown>): ToolOutcome => {
+  const execute = (name: string, args: Record<string, unknown>): ToolOutcome | Promise<ToolOutcome> => {
+    if (isLiveTransportTool(name)) {
+      return deps.liveTransport
+        ? deps.liveTransport(name, args).then((result) => ({ result }))
+        : { result: { error: "Levende kollektivdata er ikke aktivert for dette boardet." } };
+    }
     switch (name) {
       case "set_interests": {
         const interests = strings(args.interests, 6);
@@ -225,10 +263,14 @@ export function createNyhavnaConversation(board: BoardData, deps: ConversationDe
       case "find_project_info": {
         const query = typeof args.query === "string" ? args.query.slice(0, 200) : "";
         const themeId = typeof args.theme_id === "string" && themeIds.has(args.theme_id) ? args.theme_id : state.currentThemeId;
-        const results = projectInfo.search(query, themeId ? [themeId, "nyhavna"] : ["nyhavna"], 4);
+        // Områdets egen nøkkel står ved siden av kapittelets tema, så et
+        // spørsmål om stedet som helhet også treffer. Et datasett uten en slik
+        // nøkkel søker bare i kapittelets tema.
+        const areaTheme = labels.areaThemeId ? [labels.areaThemeId] : [];
+        const results = projectInfo.search(query, themeId ? [themeId, ...areaTheme] : areaTheme, 4);
         if (!results.length) {
           state = applyTourEvent(state, { type: "open_question", question: query }, themes);
-          return { result: { matches: 0, results: [], note: "Ingen kildebelagt omtale i Nyhavnas eget innhold. Si kort at du ikke har grunnlag for det, uten å gjette." } };
+          return { result: { matches: 0, results: [], note: `Ingen kildebelagt omtale i ${shortProjectInfoLabel(labels)}. Si kort at du ikke har grunnlag for det, uten å gjette.` } };
         }
         return { result: { matches: results.length, results, note: "Kildebelagte utsagn fra prosjektets datagrunnlag. Bruk kilden ved hvert resultat. Behold status-ordene (planlagt, visjon, vedtatt) når du gjengir dem." } };
       }
@@ -303,7 +345,7 @@ export function createNyhavnaConversation(board: BoardData, deps: ConversationDe
     // ikke fylle hullene med generell kunnskap.
     const basis = texts.length
       ? `Bekreftede fakta: ${texts.join(" ")}`
-      : `Du har bare registerdata om stedet (navn, type, adresse og lagret reisetid), ingen kontrollerte fakta. Si kort hva det er, og at du ikke har mer om det.`;
+      : `Du har bare registerdata om stedet (navn, type og lagret reisetid), ingen kontrollerte fakta. Si kort hva det er, og at du ikke har mer om det.`;
     return {
       commentary: `Brukeren trykket på «${name}» i kartet, og stedet er alt åpnet der. ${basis}${caveat} Fortell kort om stedet ut fra dette. Ikke still spørsmål tilbake.`,
       directives: [],
@@ -312,5 +354,5 @@ export function createNyhavnaConversation(board: BoardData, deps: ConversationDe
 
   const setBoardState = (next: BoardState) => { boardState = next; };
 
-  return { execute, observeBrowserResult, noteIfChanged, mapContextIfChanged, onMapSelection, setBoardState, state: () => state, themes };
+  return { execute: execute as NyhavnaConversation["execute"], observeBrowserResult, noteIfChanged, mapContextIfChanged, onMapSelection, setBoardState, state: () => state, themes };
 }

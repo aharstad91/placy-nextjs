@@ -20,6 +20,7 @@ import { createServerClient } from "./client";
 import { chunkIds } from "./chunk-ids";
 import { fetchAllRows } from "./fetch-all-rows";
 import type { TablesV2 } from "./types";
+import type { Database } from "./types";
 import type { DbCategory, DbPoi } from "./types";
 import type {
   Project,
@@ -28,12 +29,45 @@ import type {
   Category,
   Story,
   PoiGrounding,
+  PublishedKnowledge,
 } from "../types";
 import { PoiGroundingViewSchema } from "../types";
 import { MIN_TRUST_SCORE } from "../utils/poi-trust";
+import { projectContentVersion } from "@/lib/board/content-version";
 
 type V2Project = TablesV2<"projects">;
 type V2Product = TablesV2<"products">;
+type V2PublishedKnowledge =
+  Database["v2"]["Views"]["published_knowledge"]["Row"];
+
+export function transformPublishedKnowledge(
+  row: V2PublishedKnowledge,
+): PublishedKnowledge {
+  return {
+    id: row.id,
+    sourceClaimId: row.source_claim_id ?? undefined,
+    projectId: row.project_id ?? undefined,
+    poiId: row.poi_id ?? undefined,
+    scope: row.scope as PublishedKnowledge["scope"],
+    subjectId: row.subject_id,
+    subjectName: row.subject_name ?? undefined,
+    topic: row.topic,
+    field: row.field,
+    factText: row.fact_text,
+    structuredData: row.structured_data ?? undefined,
+    confidence: row.confidence as PublishedKnowledge["confidence"],
+    sourceUrls: row.source_urls,
+    sourceTitles: row.source_titles,
+    reviewStatus: row.review_status as PublishedKnowledge["reviewStatus"],
+    temporalKind: row.temporal_kind as PublishedKnowledge["temporalKind"],
+    observedAt: row.observed_at ?? undefined,
+    validFrom: row.valid_from ?? undefined,
+    validUntil: row.valid_until ?? undefined,
+    reusableAcrossBoards: row.reusable_across_boards,
+    boardId: row.board_id ?? undefined,
+    mappingStatus: row.mapping_status as PublishedKnowledge["mappingStatus"],
+  };
+}
 
 // ============================================
 // Trust-filter + transformere (flyttet hit fra legacy queries.ts ved cutover)
@@ -139,6 +173,18 @@ export function transformPOI(
   dbPoi: DbPoi,
   category: Category | undefined
 ): POI {
+  const poiMetadata = dbPoi.poi_metadata && typeof dbPoi.poi_metadata === "object" &&
+      !Array.isArray(dbPoi.poi_metadata)
+    ? dbPoi.poi_metadata as Record<string, unknown>
+    : {};
+  const locationPrecision = poiMetadata.location_precision === "approximate" ||
+      poiMetadata.location_precision === "sourced"
+    ? poiMetadata.location_precision
+    : undefined;
+  const developmentStatus = poiMetadata.development_status === "planned" ||
+      poiMetadata.development_status === "existing"
+    ? poiMetadata.development_status
+    : undefined;
   return {
     id: dbPoi.id,
     name: dbPoi.name,
@@ -155,6 +201,15 @@ export function transformPOI(
     },
     description: dbPoi.description ?? undefined,
     featuredImage: dbPoi.featured_image ?? undefined,
+    markerImage: typeof poiMetadata.marker_image === "string"
+      ? poiMetadata.marker_image
+      : undefined,
+    developmentStatus,
+    locationPrecision,
+    locationNote: locationPrecision === "approximate" &&
+        typeof poiMetadata.location_note === "string"
+      ? poiMetadata.location_note
+      : undefined,
     // POI.galleryImages har eksistert i lib/types.ts uten mapping her — ingen
     // konsument leste feltet, så hullet var usynlig. Utforsk-modalens
     // bildekarusell er første leser.
@@ -400,8 +455,38 @@ export async function getProductFromSupabaseV2(
     ? await readLocalActivities(activityIds)
     : undefined;
 
-  return {
+  // 7. Publiserbar research fra samme autoritative prosjektlesning. Viewet
+  // håndterer status, gyldighet og dedup mot promotert place_knowledge.
+  const { rows: knowledgeRows, error: knowledgeError } = await fetchAllRows(
+    (from, to) =>
+      db
+        .from("published_knowledge")
+        .select("*")
+        .or(`project_id.eq.${project.id},project_id.is.null`)
+        .order("id")
+        .range(from, to),
+  );
+  if (knowledgeError) {
+    console.error(
+      "[v2-queries] published_knowledge-oppslag feilet:",
+      knowledgeError,
+    );
+    return null;
+  }
+  const poolPoiIds = new Set(projectPois.map((row) => row.poi_id));
+  const publishedKnowledge = (knowledgeRows as V2PublishedKnowledge[])
+    .filter(
+      (row) =>
+        row.project_id === project.id ||
+        (row.project_id === null &&
+          row.poi_id !== null &&
+          poolPoiIds.has(row.poi_id)),
+    )
+    .map(transformPublishedKnowledge);
+
+  const result: Project = {
     localActivities,
+    publishedKnowledge,
     id: product.id,
     name: project.name,
     customer: customerSlug,
@@ -420,6 +505,7 @@ export async function getProductFromSupabaseV2(
     pois,
     categories,
   };
+  return { ...result, contentVersion: projectContentVersion(result) };
 }
 
 function buildStory(product: V2Product, project: V2Project): Story {

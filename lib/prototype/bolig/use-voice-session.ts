@@ -217,7 +217,7 @@ export function useVoiceSession(fixture: BoligFixture): VoiceSession {
       if (!configured.configured) throw new Error("Tale er ikke koblet til. Legg OPENAI_API_KEY i .env.local og prøv igjen.");
       if (configured.version !== fixture.version) throw new Error("Datagrunnlaget er oppdatert. Last siden på nytt.");
       if (!window.RTCPeerConnection) throw new Error("Nettleseren støtter ikke talesamtaler. Prøv Chrome eller Safari.");
-      if (!navigator.mediaDevices?.getUserMedia) throw new Error("Mikrofon krever HTTPS eller localhost. På telefon: bruk en sikker adresse til Mac-en.");
+      if (!navigator.mediaDevices?.getUserMedia) throw new Error("Denne nettleseren gir ikke tilgang til mikrofon. Åpne HTTPS-lenken direkte i Safari eller Chrome.");
       const pc = new RTCPeerConnection();
       const channel = pc.createDataChannel("oai-events");
       const audio = new Audio();

@@ -1,6 +1,6 @@
 "use client";
 
-import { discoveryGeometry } from "@/lib/demo/nyhavna-lokal/radius";
+import { discoveryGeometry } from "@/lib/demo/local-board/radius";
 
 import dynamic from "next/dynamic";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -1078,7 +1078,11 @@ export function BoardMap3D({
       {/* Auto/Fri + Kart/3D-kontrollene bor nå i den felles BoardMapControls
           (rendret av BoardMap, sentrert nederst-midt). Drag-takeover-lytteren
           over varsler BoardMap via onDragTakeover. */}
-      {popupMode === "mini" && !placePanel && state.activePOIId && (
+      {/* Google-motoren forblir montert under Mapbox i 2D. Popupen er et
+          vanlig HTML-overlegg og må derfor gates på frontmotoren, på samme
+          måte som tidschipen og konturetikettene over. Uten gaten sto både
+          Google- og Mapbox-popupen synlig etter bytte fra satellitt til kart. */}
+      {isFront && popupMode === "mini" && !placePanel && state.activePOIId && (
         <BoardPOI3DMiniPopup
           map3d={map3dInstance}
           pinScale={declutter.pinScale}

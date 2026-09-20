@@ -1,0 +1,59 @@
+{
+  "status": "updated",
+  "appliedAt": "2026-09-20T21:49:14.226Z",
+  "schemaVersion": 1,
+  "projectId": "skanska_lillebytunet",
+  "customer": "skanska",
+  "projectSlug": "lillebytunet",
+  "productId": "5eca9b02-0891-4397-813d-753b78af5a1c",
+  "previousAssistant": {
+    "name": "Anja",
+    "guided": true,
+    "enabled": true,
+    "features": {
+      "faqProgress": true,
+      "voicePacing": true,
+      "revealPlaces": true,
+      "guidedPersona": true,
+      "narrationFocus": true,
+      "unscopedCategoryList": true,
+      "followHighlightCategory": true
+    },
+    "greeting": "Hei, jeg heter Anja og er din digitale guide for Lillebytunet på Lilleby i Trondheim. Jeg kjenner nabolaget rundt prosjektet — hva som finnes der, og hvor lang tid du bruker dit til fots, på sykkel eller med bil. Hva vil du vite om nærområdet?"
+  },
+  "assistant": {
+    "name": "Anja",
+    "guided": true,
+    "enabled": false,
+    "features": {
+      "faqProgress": true,
+      "voicePacing": true,
+      "revealPlaces": true,
+      "guidedPersona": true,
+      "narrationFocus": true,
+      "unscopedCategoryList": true,
+      "followHighlightCategory": true
+    },
+    "greeting": "Hei, jeg heter Anja og er din digitale guide for Lillebytunet på Lilleby i Trondheim. Jeg kjenner nabolaget rundt prosjektet — hva som finnes der, og hvor lang tid du bruker dit til fots, på sykkel eller med bil. Hva vil du vite om nærområdet?"
+  },
+  "preservedReportConfigKeys": [
+    "assets",
+    "assistant",
+    "boardFacts",
+    "city",
+    "district",
+    "heroIntro",
+    "hideBrokerCard",
+    "isochrones",
+    "label",
+    "pinAccent",
+    "pinSubtitle",
+    "presentation",
+    "reportTier",
+    "themes"
+  ],
+  "updatedAt": "2026-09-08T11:54:25.210422+00:00",
+  "revalidated": [
+    "http://localhost:3000"
+  ]
+}

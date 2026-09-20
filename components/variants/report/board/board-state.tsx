@@ -19,7 +19,7 @@ import type {
   VisibleIdsSource,
   ViewportRect,
 } from "@/lib/board/board-types";
-import { visibleReserveBoard } from "@/lib/demo/nyhavna-lokal/reserve";
+import { visibleReserveBoard } from "@/lib/demo/local-board/reserve";
 import { intersectVisible } from "@/lib/event-board/marker-visibility";
 import { availableTravelModes } from "@/lib/board/neighbourhood-list";
 import { contourTravelModes } from "@/lib/board/contour-modes";

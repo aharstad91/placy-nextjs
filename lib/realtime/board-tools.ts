@@ -37,6 +37,8 @@ export interface BoardToolEnvironment {
    * gruppefremheving åpner aldri et panel.
    */
   placePanel?: boolean;
+  /** Behold prosjektpunktet i utsnittet når guiden viser et områdeutvalg. */
+  keepHomeInView?: boolean;
 }
 
 export interface HighlightedPlaceStatus {
@@ -74,7 +76,10 @@ export function executeBoardTool(name: string, args: Record<string, unknown>, en
       const unchanged = sameOrder(ids, state.highlightedPoiIds);
       dispatch({ type: "HIGHLIGHT_POIS", ids });
       // Ny gruppe → ramm den inn én gang. Samme gruppe → brukerens utsnitt står.
-      if (!unchanged) mapCamera?.fitCoordinates(found.map((p) => p.coordinates), { maxZoom: 16.5, durationMs: 1000 });
+      if (!unchanged) mapCamera?.fitCoordinates([
+        ...(env.keepHomeInView ? [data.home.coordinates] : []),
+        ...found.map((p) => p.coordinates),
+      ], { maxZoom: 16.5, durationMs: 1000 });
       return {
         ok: true,
         shown: found.map((p) => p.name).join(", "),
@@ -100,7 +105,16 @@ export function executeBoardTool(name: string, args: Record<string, unknown>, en
       if (!category) return { error: "Ukjent tema-ID. Bruk en tema-ID fra boardets temaer." };
       if (env.onCategory) env.onCategory(data.categories.indexOf(category));
       else dispatch({ type: "SELECT_CATEGORY", id: category.id, source: "voice" });
-      mapCamera?.fitCoordinates((category.topRankedPois.length ? category.topRankedPois.slice(0, 5) : category.pois.slice(0, 8)).map((p) => p.coordinates), { maxZoom: 16, durationMs: 1000 });
+      const nearest = category.pois
+        .filter((poi) => poi.raw.travelTime?.[state.travelMode] !== undefined)
+        .slice()
+        .sort((a, b) => (a.raw.travelTime?.[state.travelMode] ?? Infinity) - (b.raw.travelTime?.[state.travelMode] ?? Infinity))
+        .slice(0, 8);
+      const visible = nearest.length ? nearest : category.pois.slice(0, 8);
+      mapCamera?.fitCoordinates([
+        ...(env.keepHomeInView ? [data.home.coordinates] : []),
+        ...visible.map((p) => p.coordinates),
+      ], { maxZoom: 16, durationMs: 1000 });
       return { ok: true, shown: category.label, category_id: String(category.id) };
     }
     case "set_travel_mode": {

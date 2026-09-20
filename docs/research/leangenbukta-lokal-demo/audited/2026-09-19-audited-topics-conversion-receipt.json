@@ -1,0 +1,13 @@
+{
+  "schemaVersion": 1,
+  "packageId": "leangenbukta-audited-topics-2026-09-19",
+  "packageHash": "228bf4588c821998e7fbd2ff6102763dfda0db42ce8bd551de048ccbb2e66735",
+  "projectId": "placy-demo_leangenbukta",
+  "sourcePath": "docs/research/leangenbukta-lokal-demo/categories/*.json",
+  "outputPath": "docs/research/leangenbukta-lokal-demo/audited/2026-09-19-audited-topics-ledger-package.json",
+  "entityCount": 1,
+  "claimCount": 2,
+  "publicationStateCounts": {
+    "publishable": 2
+  }
+}

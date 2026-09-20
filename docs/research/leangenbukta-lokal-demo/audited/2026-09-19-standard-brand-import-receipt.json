@@ -1,0 +1,52 @@
+{
+  "status": "updated",
+  "appliedAt": "2026-09-19T12:56:48.644Z",
+  "schemaVersion": 1,
+  "projectId": "placy-demo_leangenbukta",
+  "customer": "placy-demo",
+  "projectSlug": "leangenbukta",
+  "productId": "5df5eade-4fd5-4bd6-b41d-686b988d9d3b",
+  "previousAssets": {
+    "brand": true,
+    "logoUrl": "/illustrations/leangenbukta-logo.svg",
+    "splashImageUrl": "/illustrations/leangenbukta-splash.jpg",
+    "splashVideoUrl": "/illustrations/leangenbukta-splash-video.mp4"
+  },
+  "previousPresentation": {
+    "brand": {
+      "radius": "2px",
+      "inkColor": "#2a2c2e",
+      "mutedColor": "#f3ece8",
+      "accentColor": "#90553e",
+      "surfaceColor": "#eeedec",
+      "headingFontFamily": "Mukta",
+      "headingFontWeight": 500,
+      "mutedForegroundColor": "#5a5f62",
+      "accentForegroundColor": "#ffffff"
+    },
+    "initialView": "splash"
+  },
+  "assets": {
+    "brand": true,
+    "logoUrl": "/illustrations/leangenbukta-logo.svg",
+    "pinLogoUrl": "/illustrations/leangenbukta-pin.svg",
+    "splashImageUrl": "/illustrations/leangenbukta-splash.jpg",
+    "splashVideoUrl": "/illustrations/leangenbukta-splash-video.mp4"
+  },
+  "presentation": {
+    "initialView": "splash",
+    "brand": {
+      "surfaceColor": "#eeedec",
+      "inkColor": "#2a2c2e",
+      "accentColor": "#90553e",
+      "accentForegroundColor": "#ffffff",
+      "mutedColor": "#f3ece8",
+      "mutedForegroundColor": "#5a5f62",
+      "radius": "2px",
+      "headingFontFamily": "Mukta",
+      "headingFontWeight": 500
+    }
+  },
+  "updatedAt": "2026-09-07T16:29:35.30202+00:00",
+  "revalidated": []
+}

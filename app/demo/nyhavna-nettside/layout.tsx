@@ -7,15 +7,15 @@ import "@/app/demo/nyhavna-nettside/demo.css";
 const unbounded = localFont({
   src: [
     {
-      path: "../../../public/demo/nyhavna-nettside/unbounded-400.ttf",
+      path: "../../../public/brand-fonts/unbounded-400.ttf",
       weight: "400",
     },
     {
-      path: "../../../public/demo/nyhavna-nettside/unbounded-600.ttf",
+      path: "../../../public/brand-fonts/unbounded-600.ttf",
       weight: "600",
     },
     {
-      path: "../../../public/demo/nyhavna-nettside/unbounded-700.ttf",
+      path: "../../../public/brand-fonts/unbounded-700.ttf",
       weight: "700",
     },
   ],

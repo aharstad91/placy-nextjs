@@ -130,7 +130,11 @@ export function NeighbourhoodSurface({
           contentRestKey="story"
         >
           <StoryCard
-            assistant={data.demoSnapshotId ? <BoardVoiceControl /> : undefined}
+            assistant={
+              data.assistant?.enabled || data.demoSnapshotId ? (
+                <BoardVoiceControl />
+              ) : undefined
+            }
           />
         </NeighbourhoodSheet>
         <StoryDeck />
@@ -190,7 +194,7 @@ function NeighbourhoodList({
       {/* Samtalen er tilgjengelig FØR omvisningen er begynt: den som lander
           kaldt fra en annonse skal kunne spørre med én gang. Samme forbindelse
           som knappen inne i omvisningen (se board-voice.tsx). */}
-      {data.demoSnapshotId && (
+      {(data.assistant?.enabled || data.demoSnapshotId) && (
         <div className="mb-3 px-1">
           <BoardVoiceControl />
         </div>

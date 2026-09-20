@@ -6,6 +6,7 @@ import {
   getProjectSplashVideo,
   getProjectBrokers,
   getProjectPinThumbnail,
+  getProjectPinLogoSrc,
 } from "./project-brand";
 
 // PRD 9 Unit 6 (r09.6): project-brand-modellen aktiverer nivå-2-overflaten via
@@ -24,6 +25,25 @@ describe("getProjectLogoSrc", () => {
       "/illustrations/stasjonskvartalet-logo.svg",
     );
   });
+
+  it("prioriterer eksplisitte asset-URL-er når boardet har egen filstruktur", () => {
+    const assets: ProjectAssetFlags = {
+      brand: true,
+      logoUrl: "/brand/logo.svg",
+      splashImageUrl: "/brand/hero.jpg",
+      splashVideoUrl: "/brand/hero.mp4",
+    };
+    expect(getProjectLogoSrc(SLUG, assets)).toBe("/brand/logo.svg");
+    expect(getProjectSplashImage(SLUG, assets)).toBe("/brand/hero.jpg");
+    expect(getProjectSplashVideo(SLUG, assets)).toBe("/brand/hero.mp4");
+  });
+
+  it.each(["https://example.com/logo.svg", "//example.com/logo.svg", "/brand/../secret.svg"])(
+    "avviser utrygg eksplisitt asset-sti %s ved rendergrensen",
+    (logoUrl) => {
+      expect(getProjectLogoSrc(SLUG, { brand: true, logoUrl })).toBeUndefined();
+    },
+  );
 
   it("returnerer undefined uten brand-flagg (→ tekst-wordmark-fallback)", () => {
     expect(getProjectLogoSrc(SLUG, splashVideoOnly)).toBeUndefined();
@@ -50,17 +70,51 @@ describe("getProjectSplashImage", () => {
   });
 });
 
+describe("getProjectPinLogoSrc", () => {
+  it("returns the explicit square marker logo for branded boards", () => {
+    expect(getProjectPinLogoSrc({
+      brand: true,
+      pinLogoUrl: "/illustrations/project-pin.svg",
+    })).toBe("/illustrations/project-pin.svg");
+  });
+
+  it("requires both brand and a safe explicit path", () => {
+    expect(getProjectPinLogoSrc({ pinLogoUrl: "/illustrations/project-pin.svg" })).toBeUndefined();
+    expect(getProjectPinLogoSrc({ brand: true })).toBeUndefined();
+    expect(getProjectPinLogoSrc({
+      brand: true,
+      pinLogoUrl: "https://example.com/project-pin.svg",
+    })).toBeUndefined();
+  });
+});
+
 describe("getProjectSplashVideo (reels-video-gate)", () => {
-  it("aktiveres av brand-flagget", () => {
-    expect(getProjectSplashVideo(SLUG, brandOnly)).toBe(
+  it("gjetter ikke en filmsti for et brandet prosjekt uten film", () => {
+    // Et brandet prosjekt uten hero-film pekte tidligere på en
+    // `{slug}-splash-video.mp4` som ikke var lastet opp, og splash fikk et tomt
+    // videoelement i stedet for stillbildet (Lillebytunet-gjenbrukstesten).
+    expect(getProjectSplashVideo(SLUG, brandOnly)).toBeUndefined();
+  });
+
+  it("bruker den eksplisitte filmstien når et brandet prosjekt har film", () => {
+    expect(getProjectSplashVideo(SLUG, {
+      ...brandOnly,
+      splashVideoUrl: "/illustrations/stasjonskvartalet-splash-video.mp4",
+    })).toBe("/illustrations/stasjonskvartalet-splash-video.mp4");
+  });
+
+  it("aktiveres også av splashVideo alene (levende splash uten logo/hero)", () => {
+    // Flagget BETYR at slug-konvensjonsfila finnes, så stien kan utledes.
+    expect(getProjectSplashVideo(SLUG, splashVideoOnly)).toBe(
       "/illustrations/stasjonskvartalet-splash-video.mp4",
     );
   });
 
-  it("aktiveres også av splashVideo alene (levende splash uten logo/hero)", () => {
-    expect(getProjectSplashVideo(SLUG, splashVideoOnly)).toBe(
-      "/illustrations/stasjonskvartalet-splash-video.mp4",
-    );
+  it("avviser en usikker eksplisitt filmsti", () => {
+    expect(getProjectSplashVideo(SLUG, {
+      ...brandOnly,
+      splashVideoUrl: "https://example.com/film.mp4",
+    })).toBeUndefined();
   });
 
   it("returnerer undefined når verken brand eller splashVideo er på", () => {

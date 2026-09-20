@@ -1,0 +1,26 @@
+{
+  "schemaVersion": 1,
+  "appliedAt": "2026-09-19T08:06:35.298Z",
+  "packagePath": "docs/research/leangenbukta-lokal-demo/audited/2026-09-19-audited-topics-ledger-package.json",
+  "packageId": "leangenbukta-audited-topics-2026-09-19",
+  "packageHash": "228bf4588c821998e7fbd2ff6102763dfda0db42ce8bd551de048ccbb2e66735",
+  "projectId": "placy-demo_leangenbukta",
+  "mode": "full_snapshot",
+  "scopeKey": "audited-topics",
+  "entities": 1,
+  "claims": 2,
+  "publicationStates": {
+    "publishable": 2
+  },
+  "import": {
+    "status": "imported",
+    "package_hash": "228bf4588c821998e7fbd2ff6102763dfda0db42ce8bd551de048ccbb2e66735",
+    "entities": 1,
+    "claims": 2,
+    "route": {
+      "customer": "placy-demo",
+      "projectSlug": "leangenbukta"
+    },
+    "revalidated": []
+  }
+}

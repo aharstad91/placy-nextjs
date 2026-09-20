@@ -5,7 +5,7 @@ import { join } from 'node:path';
 import { MAP_TOOLS } from '@/lib/realtime/types';
 import { backendModel } from '@/lib/live/session-config';
 import { getLiveSupervisor } from '@/lib/live/supervisor';
-import { disposeMapBridge, getMapBridge, MAP_CANCELLED_OUTPUT, type MapBridge } from '@/lib/live/map-bridge';
+import { createMapBridge, disposeMapBridge, getMapBridge, MAP_CANCELLED_OUTPUT, type MapBridge } from '@/lib/live/map-bridge';
 import { backendCostUsd, liveVoiceCostUsd, type BackendTokenUsage } from '@/lib/live/usage';
 import type {
   DelegationTiming, LiveContextMessage, LiveConversation, LiveEndReason, LiveUsage, MapDirective,
@@ -62,7 +62,18 @@ interface Delegation {
   settleTimer?: ReturnType<typeof setTimeout>;
 }
 
+/** Content-free provider evidence; terminal usage is normalized before delivery. */
+export type SidebandMeteringEvent =
+  | { type: 'backend.started'; responseId: string }
+  | { type: 'backend.terminal'; responseId: string | null; status: 'completed' | 'failed' | 'incomplete'; model: string; usage: BackendTokenUsage | null }
+  | { type: 'voice.snapshot'; seconds: number | null; final: boolean }
+  | { type: 'finalized'; complete: boolean; observedResponses: number; terminalResponses: number; finalVoiceConfirmed: boolean };
+
 export interface LiveSidebandOptions {
+  hosted?: boolean;
+  bridge?: MapBridge;
+  supervisor?: LiveSessionOwner;
+  onMeteringEvent?: (event: SidebandMeteringEvent) => void;
   browserTools?: Set<string>;
   /** Modellnavn for kostnadsestimatet. Standard: den konfigurerte backend-modellen. */
   backendModelName?: string;
@@ -72,6 +83,15 @@ export interface LiveSidebandOptions {
   backendInstructions?: string;
   onTiming?: (timing: DelegationTiming) => void;
   onUsage?: (usage: LiveUsage & { reason: string }) => void;
+  /** Eieren av akkurat denne prosessen. Produksjonstjenesten kan eie mange. */
+  sessionOwner?: LiveSessionOwner;
+  /** Produksjon lagrer ikke transkriptfragmenter eller verktøyargumenter i driftslogg. */
+  logging?: "demo" | "silent";
+}
+
+export interface LiveSessionOwner {
+  end(token: string, reason?: string): Promise<boolean>;
+  setCleanup(token: string, cleanup: (reason: string) => void): void;
 }
 
 export interface LiveSidebandHandle {
@@ -98,17 +118,17 @@ export async function connectLiveSideband(
   const idleMs = options.idleMs ?? IDLE_MS;
   const maxRounds = options.maxRounds ?? MAX_ROUNDS;
   const baseInstructions = options.backendInstructions ?? '';
-  const supervisor = getLiveSupervisor();
-  const bridge: MapBridge = getMapBridge(token);
+  const supervisor = options.supervisor ?? options.sessionOwner ?? getLiveSupervisor();
+  const bridge: MapBridge = options.bridge ?? (options.hosted ? createMapBridge() : getMapBridge(token));
   // Loggen går både til stdout og til `.context/nyhavna-live.log` (ikke i git):
   // demoens server kjører i et terminalvindu ingen leser under møtet, og
   // målepunktene skal kunne hentes etterpå.
   const log = (line: string) => {
-    if (process.env.NODE_ENV === 'test') return;
+    if (options.hosted || process.env.NODE_ENV === 'test' || options.logging === "silent") return;
     process.stdout.write(line);
     void appendFile(join(process.cwd(), '.context', 'nyhavna-live.log'), `${new Date().toISOString()} ${line}`).catch(() => {});
   };
-  const onTiming = options.onTiming ?? ((timing: DelegationTiming) => log(`nyhavna_live_turn ${JSON.stringify(timing)}\n`));
+  const onTiming = options.hosted ? () => {} : options.onTiming ?? ((timing: DelegationTiming) => log(`nyhavna_live_turn ${JSON.stringify(timing)}\n`));
   const onUsage = options.onUsage ?? ((usage: LiveUsage & { reason: string }) => log(`nyhavna_live_usage ${JSON.stringify(usage)}\n`));
 
   const socket = new WebSocket(`wss://api.openai.com/v1/live/sessions/${sessionId}/attach`, {
@@ -117,21 +137,26 @@ export async function connectLiveSideband(
 
   let ended = false;
   let closing = false;
-  let sawClosed = false;
   let lastActivity = Date.now();
   let lastUserEndMs: number | null = null;
   let eventCounter = 0;
   const usage: LiveUsage = {
     voiceSeconds: 0, backendResponses: 0, backendInputTokens: 0, backendCachedTokens: 0,
-    backendOutputTokens: 0, estimatedUsd: 0, complete: true,
+    backendOutputTokens: 0, estimatedUsd: 0, complete: false,
   };
+  const startedResponses = new Set<string>();
+  const terminalResponses = new Set<string>();
+  let evidenceValid = true;
+  let finalVoiceConfirmed = false;
+  let endPromise: Promise<void> | null = null;
+  const meter = (event: SidebandMeteringEvent) => options.onMeteringEvent?.(event);
   const delegations = new Map<string, Delegation>();
   const byResponse = new Map<string, Delegation>();
   let active: Delegation | null = null;
   let closedWaiter: (() => void) | null = null;
 
   const send = (event: Record<string, unknown>) => {
-    if (ended || socket.readyState !== WebSocket.OPEN) return;
+    if (ended || (closing && event.type !== 'session.close') || socket.readyState !== WebSocket.OPEN) return;
     socket.send(JSON.stringify({ event_id: `evt_${++eventCounter}`, ...event }));
   };
   const since = (delegation: Delegation) => Date.now() - delegation.startedAt;
@@ -143,12 +168,14 @@ export async function connectLiveSideband(
     if (active === delegation) active = null;
     clearTimeout(delegation.settleTimer);
     onTiming({ ...delegation.timing, end });
+    if (!active) bridge.send({ type: 'activity', activity: 'idle' });
   };
 
   const finish = (delegation: Delegation, end: DelegationTiming['end']) => {
     if (delegation.finished) return;
     delegation.finished = true;
     if (delegation.timing.backend_done_ms === null) delegation.timing.backend_done_ms = since(delegation);
+    bridge.send({ type: 'activity', activity: 'answering' });
     // Rundetaket var en nødbrems for ÉN delegering; neste forespørsel skal ha verktøy igjen.
     if (delegation.toolChoiceLimited) {
       send({ type: 'session.update', session: { delegation: { type: 'responses', responses: { tool_choice: 'auto' } } } });
@@ -176,6 +203,7 @@ export async function connectLiveSideband(
 
   /** Sender ett direktiv og husker ID-en, så en superseded delegering kan trekke det tilbake. */
   const dispatchMap = (delegation: Delegation, name: string, args: Record<string, unknown>) => {
+    if (ended || closing) return Promise.resolve(MAP_CANCELLED_OUTPUT);
     const { id, result } = bridge.dispatch(name, args);
     delegation.mapIds.add(id);
     return result.finally(() => delegation.mapIds.delete(id));
@@ -253,15 +281,50 @@ export async function connectLiveSideband(
     maybeContinue(delegation);
   };
 
-  const nestedUsage = (raw: unknown) => {
-    const value = raw as BackendTokenUsage | undefined;
-    if (!value || typeof value.input_tokens !== 'number') return null;
-    return value;
+  const nestedUsage = (raw: unknown): BackendTokenUsage | null => {
+    if (!raw || typeof raw !== 'object') return null;
+    const value = raw as BackendTokenUsage;
+    const valid = (n: unknown) => typeof n === 'number' && Number.isSafeInteger(n) && n >= 0;
+    const cached = value.input_tokens_details?.cached_tokens;
+    if (!valid(value.input_tokens) || !valid(value.output_tokens) || !valid(cached) || cached! > value.input_tokens) return null;
+    return { input_tokens: value.input_tokens, output_tokens: value.output_tokens, input_tokens_details: { cached_tokens: cached } };
+  };
+
+  const observeVoice = (raw: unknown, final: boolean) => {
+    const seconds = typeof raw === 'number' && Number.isFinite(raw) && raw >= 0 ? raw : null;
+    if (seconds !== null) usage.voiceSeconds = Math.max(usage.voiceSeconds, seconds);
+    if (final) finalVoiceConfirmed = seconds !== null;
+    meter({ type: 'voice.snapshot', seconds: seconds === null ? null : usage.voiceSeconds, final });
   };
 
   const handleResponseEvent = (delegationId: string | null, nested: Record<string, unknown>) => {
     const type = typeof nested.type === 'string' ? nested.type : '';
     const response = nested.response as { id?: string; status?: string; usage?: unknown; error?: { code?: string; message?: string }; incomplete_details?: { reason?: string } } | undefined;
+    const responseId = typeof response?.id === 'string' && response.id ? response.id : null;
+    if (type === 'response.created' && !responseId) evidenceValid = false;
+    if (type === 'response.created' && responseId && !startedResponses.has(responseId)) {
+      startedResponses.add(responseId);
+      meter({ type: 'backend.started', responseId });
+    }
+    const terminal = type === 'response.completed' || type === 'response.failed' || type === 'response.incomplete';
+    const tokens = terminal ? nestedUsage(response?.usage) : null;
+    if (terminal) {
+      if (responseId && terminalResponses.has(responseId)) return;
+      if (responseId) terminalResponses.add(responseId);
+      else evidenceValid = false;
+      const cost = tokens ? backendCostUsd(model, tokens) : null;
+      evidenceValid &&= tokens !== null && cost !== null;
+      usage.backendResponses += 1;
+      if (tokens) {
+        usage.backendInputTokens += tokens.input_tokens;
+        usage.backendCachedTokens += tokens.input_tokens_details?.cached_tokens ?? 0;
+        usage.backendOutputTokens += tokens.output_tokens;
+        usage.estimatedUsd += cost ?? 0;
+      }
+      meter({ type: 'backend.terminal', responseId, status: type.slice(9) as 'completed' | 'failed' | 'incomplete', model, usage: tokens });
+    }
+    // Usage must survive supersession and shutdown even when the tool owner is gone.
+    if (closing) return;
     const delegation = (delegationId && delegations.get(delegationId))
       || (response?.id ? byResponse.get(response.id) : undefined)
       || (typeof nested.item_id === 'string' ? active : null)
@@ -293,16 +356,6 @@ export async function connectLiveSideband(
     }
     if (type !== 'response.completed' && type !== 'response.failed' && type !== 'response.incomplete') return;
     const round = delegation.current;
-    const tokens = nestedUsage(response?.usage);
-    if (tokens) {
-      usage.backendResponses += 1;
-      usage.backendInputTokens += tokens.input_tokens;
-      usage.backendCachedTokens += tokens.input_tokens_details?.cached_tokens ?? 0;
-      usage.backendOutputTokens += tokens.output_tokens ?? 0;
-      const cost = backendCostUsd(model, tokens);
-      usage.estimatedUsd += cost ?? 0;
-      usage.complete &&= cost !== null;
-    } else usage.complete = false;
     const errorText = `${response?.incomplete_details?.reason ?? ''} ${response?.error?.code ?? ''} ${response?.error?.message ?? ''}`.replace(/\s+/g, ' ').trim();
     delegation.timing.rounds.push({
       done_ms: since(delegation),
@@ -324,6 +377,7 @@ export async function connectLiveSideband(
     try { event = JSON.parse(raw.toString()); } catch { return; }
     const type = typeof event.type === 'string' ? event.type : '';
     if (type === 'session.delegation.created') {
+      if (closing) return;
       const delegationInfo = event.delegation as { id?: string; target?: string; response_id?: string } | undefined;
       if (delegationInfo?.target !== 'responses' || !delegationInfo.id) return;
       lastActivity = Date.now();
@@ -342,6 +396,7 @@ export async function connectLiveSideband(
       delegations.set(delegation.id, delegation);
       if (delegation.responseId) byResponse.set(delegation.responseId, delegation);
       active = delegation;
+      bridge.send({ type: 'activity', activity: 'working' });
       return;
     }
     if (type === 'response.event') {
@@ -375,13 +430,12 @@ export async function connectLiveSideband(
     if (type === 'session.usage.updated') {
       const seconds = (event.usage as { seconds?: number } | undefined)?.seconds;
       // Snapshot, ikke et tillegg: skal settes, aldri summeres.
-      if (typeof seconds === 'number') usage.voiceSeconds = seconds;
+      observeVoice(seconds, false);
       return;
     }
     if (type === 'session.closed') {
-      sawClosed = true;
       const seconds = (event.usage as { seconds?: number } | undefined)?.seconds;
-      if (typeof seconds === 'number') usage.voiceSeconds = seconds;
+      observeVoice(seconds, true);
       closedWaiter?.();
       const reason = typeof event.reason === 'string' ? event.reason : 'connection';
       cleanup(reason);
@@ -401,29 +455,38 @@ export async function connectLiveSideband(
   function cleanup(reason: string) {
     if (ended) return;
     ended = true;
+    closedWaiter?.();
     clearInterval(idleTimer);
     for (const delegation of [...delegations.values()]) settle(delegation, 'ended');
     usage.estimatedUsd += liveVoiceCostUsd(usage.voiceSeconds);
-    onUsage({ ...usage, reason });
-    disposeMapBridge(token);
+    usage.complete = finalVoiceConfirmed && evidenceValid && [...startedResponses].every(id => terminalResponses.has(id));
+    meter({ type: 'finalized', complete: usage.complete, observedResponses: startedResponses.size, terminalResponses: terminalResponses.size, finalVoiceConfirmed });
+    onUsage({ ...usage, reason: options.hosted ? 'closed' : reason });
+    if (options.hosted || options.bridge) bridge.close();
+    else disposeMapBridge(token);
+    if (!options.hosted) globals.placyLiveSidebands?.delete(token);
     socket.close();
   }
 
-  const end = async (reason: LiveEndReason) => {
-    if (closing || ended) return;
+  const end = (reason: LiveEndReason): Promise<void> => {
+    if (endPromise) return endPromise;
+    if (ended) return Promise.resolve();
     closing = true;
+    // Install the final-event waiter before send: providers/fakes may reply synchronously.
+    const drained = new Promise<void>(resolve => {
+      const timer = setTimeout(resolve, CLOSE_GRACE_MS);
+      timer.unref?.();
+      closedWaiter = () => { clearTimeout(timer); resolve(); };
+    });
+    endPromise = (async () => {
+      await drained;
+      closedWaiter = null;
+      cleanup(reason);
+      await supervisor.end(token, reason).catch(() => {});
+    })();
     bridge.send({ type: 'ended', reason, message: END_MESSAGES[reason] });
     send({ type: 'session.close' });
-    if (!sawClosed) {
-      await new Promise<void>(resolve => {
-        const timer = setTimeout(resolve, CLOSE_GRACE_MS);
-        timer.unref?.();
-        closedWaiter = () => { clearTimeout(timer); resolve(); };
-      });
-      closedWaiter = null;
-    }
-    // Supervisorens `stop` er `liveHangup`; 404 der betyr at close-veien vant.
-    await supervisor.end(token, reason).catch(() => {});
+    return endPromise;
   };
 
   const idleTimer = setInterval(() => {
@@ -433,7 +496,7 @@ export async function connectLiveSideband(
 
   let selectionVersion = 0;
   const onContext = (message: LiveContextMessage) => {
-    if (ended) return;
+    if (ended || closing) return;
     lastActivity = Date.now();
     if (message.kind === 'state') {
       conversation.setBoardState({
@@ -458,12 +521,12 @@ export async function connectLiveSideband(
     if (!selection) return;
     void (async () => {
       for (const directive of selection.directives) {
-        if (ended || version !== selectionVersion) return;
+        if (ended || closing || version !== selectionVersion) return;
         const output = await bridge.dispatch(directive.name, directive.args).result;
-        if (ended || version !== selectionVersion) return;
+        if (ended || closing || version !== selectionVersion) return;
         conversation.observeBrowserResult(directive.name, directive.args, output);
       }
-      if (ended || version !== selectionVersion) return;
+      if (ended || closing || version !== selectionVersion) return;
       const note = conversation.noteIfChanged();
       if (note) send({ type: 'session.update', session: { delegation: { type: 'responses', responses: { instructions: `${baseInstructions}\n\n${note}` } } } });
       // Kommentar, ikke instruks: stemmen skal FORTELLE dette, parafrasert.
@@ -471,21 +534,8 @@ export async function connectLiveSideband(
     })();
   };
 
-  socket.on('message', onMessage);
-  socket.on('close', () => { if (!ended) void supervisor.end(token, 'connection').catch(() => {}); });
-  socket.on('error', () => { if (!ended) void supervisor.end(token, 'connection').catch(() => {}); });
-
-  await new Promise<void>((resolve, reject) => {
-    const timeout = setTimeout(() => { cleanup('connection'); reject(new Error('Serverkontrollen fikk ikke kontakt.')); }, 10000);
-    socket.once('open', () => { clearTimeout(timeout); resolve(); });
-    socket.once('error', () => { clearTimeout(timeout); reject(new Error('Serverkontrollen kunne ikke starte.')); });
-  });
-
-  const handle: LiveSidebandHandle = { onContext, end };
-  globals.placyLiveSidebands ??= new Map();
-  globals.placyLiveSidebands.set(token, handle);
   supervisor.setCleanup(token, reason => {
-    globals.placyLiveSidebands?.delete(token);
+    if (!options.hosted) globals.placyLiveSidebands?.delete(token);
     if (!closing) {
       // Supervisoren avsluttet oss (tidsgrense eller DELETE): meld fra og be
       // pent om å lukke. Hangupen supervisoren gjør etterpå er nødbremsen.
@@ -494,5 +544,21 @@ export async function connectLiveSideband(
     }
     cleanup(reason);
   });
+
+  socket.on('message', onMessage);
+  socket.on('close', () => { if (!ended) void supervisor.end(token, 'connection').catch(() => {}); });
+  socket.on('error', () => { if (!ended) void supervisor.end(token, 'connection').catch(() => {}); });
+
+  await new Promise<void>((resolve, reject) => {
+    const timeout = setTimeout(() => { cleanup('connection'); reject(new Error('Serverkontrollen fikk ikke kontakt.')); }, 10000);
+    socket.once('open', () => { clearTimeout(timeout); resolve(); });
+    socket.once('error', () => { clearTimeout(timeout); cleanup('connection'); reject(new Error('Serverkontrollen kunne ikke starte.')); });
+  });
+
+  const handle: LiveSidebandHandle = { onContext, end };
+  if (!options.hosted) {
+    globals.placyLiveSidebands ??= new Map();
+    globals.placyLiveSidebands.set(token, handle);
+  }
   return handle;
 }

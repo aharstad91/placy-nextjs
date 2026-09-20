@@ -1,0 +1,24 @@
+{
+  "ownCategoryThemeIds": [
+    "leangenbukta-prosjektet"
+  ],
+  "themeIdMap": {
+    "hverdag": "hverdagsliv",
+    "oppvekst": "barn-oppvekst",
+    "servering": "mat-drikke",
+    "natur": "natur-friluftsliv",
+    "transport": "transport",
+    "trening": "trening-aktivitet",
+    "opplevelser": "opplevelser"
+  },
+  "hideBrokerCard": true,
+  "standalonePoiIds": [
+    "google-ChIJadfBocAxbUYRfeuufpAKBYc",
+    "google-ChIJqeBnd_4wbUYR4SUbbftcyoo",
+    "google-ChIJ1-nTGgIxbUYR_L6AbKF6Qcw",
+    "google-ChIJV8IlNxgxbUYRTCxNJCxp0pc",
+    "google-ChIJrxBFQdMxbUYR31McpnjJ5kw",
+    "google-ChIJ2wDh0f8wbUYRlfCrsUTpnnQ"
+  ],
+  "faqAnswerOverrides": {}
+}

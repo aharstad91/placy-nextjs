@@ -1,0 +1,466 @@
+[
+  {
+    "id": "citylade-6434272b",
+    "label": "City Lade",
+    "page": "apningtider",
+    "url": "https://citylade.no/apningtider/",
+    "publisher": "City Lade",
+    "checkedAt": "2026-09-18"
+  },
+  {
+    "id": "citylade-93943a3e",
+    "label": "City Lade",
+    "page": "spisesteder",
+    "url": "https://citylade.no/spisesteder/",
+    "publisher": "City Lade",
+    "checkedAt": "2026-09-18"
+  },
+  {
+    "id": "digg-b4485831",
+    "label": "DIGG",
+    "page": "sirkus",
+    "url": "https://digg.no/sirkus",
+    "publisher": "DIGG",
+    "checkedAt": "2026-09-18"
+  },
+  {
+    "id": "egon-bdf5a615",
+    "label": "egon.no",
+    "page": "restauranter/troendelag/egon lade",
+    "url": "https://egon.no/restauranter/troendelag/egon-lade",
+    "publisher": "egon.no",
+    "checkedAt": "2026-09-18"
+  },
+  {
+    "id": "impulse-e97cf9a0",
+    "label": "Impulse",
+    "page": "senter/lade",
+    "url": "https://impulse.no/senter/lade/",
+    "publisher": "Impulse",
+    "checkedAt": "2026-09-18"
+  },
+  {
+    "id": "impulse-1a17f3d2",
+    "label": "Impulse",
+    "page": "senter/leangen",
+    "url": "https://impulse.no/senter/leangen/",
+    "publisher": "Impulse",
+    "checkedAt": "2026-09-18"
+  },
+  {
+    "id": "kotengjenssen-1cc99ca4",
+    "label": "Koteng Jenssen",
+    "page": "Leangenbukta – Koteng Jenssen",
+    "url": "https://kotengjenssen.no/boligprosjekter-trondheim/leangenbukta",
+    "publisher": "Koteng Jenssen",
+    "checkedAt": "2026-09-18"
+  },
+  {
+    "id": "ladearena-cf5df9d7",
+    "label": "Lade Arena",
+    "page": "butikker",
+    "url": "https://ladearena.no/butikker/",
+    "publisher": "Lade Arena",
+    "checkedAt": "2026-09-18"
+  },
+  {
+    "id": "ladekaia-c3a8f67a",
+    "label": "Ladekaia",
+    "page": "ladekaia.no",
+    "url": "https://ladekaia.no/",
+    "publisher": "Ladekaia",
+    "checkedAt": "2026-09-18"
+  },
+  {
+    "id": "leangenbukta-3df06abf",
+    "label": "Leangenbukta",
+    "page": "Leangenbukta (forside)",
+    "url": "https://leangenbukta.no/",
+    "publisher": "Leangenbukta",
+    "checkedAt": "2026-09-18"
+  },
+  {
+    "id": "leangenbukta-fbbc3f74",
+    "label": "Leangenbukta",
+    "page": "24 nye leiligheter for salg i Byvilla 1 og 2 – Leangenbukta",
+    "url": "https://leangenbukta.no/byvilla-1-og-2/",
+    "publisher": "Leangenbukta",
+    "checkedAt": "2026-09-18"
+  },
+  {
+    "id": "leangenbukta-6e190f5f",
+    "label": "Leangenbukta",
+    "page": "Knutepunktet – Leangenbukta",
+    "url": "https://leangenbukta.no/knutepunktet/",
+    "publisher": "Leangenbukta",
+    "checkedAt": "2026-09-18"
+  },
+  {
+    "id": "leangenbukta-29db079d",
+    "label": "Leangenbukta",
+    "page": "Om prosjektet – Leangenbukta",
+    "url": "https://leangenbukta.no/om-prosjektet/",
+    "publisher": "Leangenbukta",
+    "checkedAt": "2026-09-18"
+  },
+  {
+    "id": "leangenbukta-67122df8",
+    "label": "Leangenbukta",
+    "page": "Parktunet 1 - bygg D – Leangenbukta",
+    "url": "https://leangenbukta.no/parktunet1-2/",
+    "publisher": "Leangenbukta",
+    "checkedAt": "2026-09-18"
+  },
+  {
+    "id": "leangenkulturbarnehage-c3d859f4",
+    "label": "Leangen kulturbarnehage",
+    "page": "sok barnehageplass",
+    "url": "https://leangenkulturbarnehage.no/sok-barnehageplass/",
+    "publisher": "Leangen kulturbarnehage",
+    "checkedAt": "2026-09-18"
+  },
+  {
+    "id": "luckybowl-704d6618",
+    "label": "Lucky Bowl",
+    "page": "trondheim",
+    "url": "https://luckybowl.no/trondheim/",
+    "publisher": "Lucky Bowl",
+    "checkedAt": "2026-09-18"
+  },
+  {
+    "id": "miljopakken-e9e6ecd5",
+    "label": "Miljøpakken",
+    "page": "prosjekter/sykkelforbindelse pirbrua ranheim",
+    "url": "https://miljopakken.no/prosjekter/sykkelforbindelse-pirbrua-ranheim",
+    "publisher": "Miljøpakken",
+    "checkedAt": "2026-09-18"
+  },
+  {
+    "id": "pir2-a1b575e4",
+    "label": "PIR II",
+    "page": "Leangenbukta – PIR2",
+    "url": "https://pir2.no/prosjekter/leangenbukta",
+    "publisher": "PIR II",
+    "checkedAt": "2026-09-18"
+  },
+  {
+    "id": "ringve-e3d7e676",
+    "label": "Ringve Musikkmuseum",
+    "page": "besok oss/apningstider, billetter og kar",
+    "url": "https://ringve.no/besok-oss/apningstider,-billetter-og-kar",
+    "publisher": "Ringve Musikkmuseum",
+    "checkedAt": "2026-09-18"
+  },
+  {
+    "id": "rockheim-b18ad3e5",
+    "label": "Rockheim",
+    "page": "apningstider og priser",
+    "url": "https://rockheim.no/apningstider-og-priser",
+    "publisher": "Rockheim",
+    "checkedAt": "2026-09-18"
+  },
+  {
+    "id": "sirkusshopping-63ecbf55",
+    "label": "Sirkus Shopping",
+    "page": "aapningstider",
+    "url": "https://sirkusshopping.no/aapningstider/",
+    "publisher": "Sirkus Shopping",
+    "checkedAt": "2026-09-18"
+  },
+  {
+    "id": "sirkusshopping-7e0c9148",
+    "label": "Sirkus Shopping",
+    "page": "butikker/293",
+    "url": "https://sirkusshopping.no/butikker/293/",
+    "publisher": "Sirkus Shopping",
+    "checkedAt": "2026-09-18"
+  },
+  {
+    "id": "sirkusshopping-901d6d5e",
+    "label": "Sirkus Shopping",
+    "page": "butikker/298",
+    "url": "https://sirkusshopping.no/butikker/298/",
+    "publisher": "Sirkus Shopping",
+    "checkedAt": "2026-09-18"
+  },
+  {
+    "id": "sirkusshopping-a2329a3c",
+    "label": "Sirkus Shopping",
+    "page": "butikker/krem",
+    "url": "https://sirkusshopping.no/butikker/krem/",
+    "publisher": "Sirkus Shopping",
+    "checkedAt": "2026-09-18"
+  },
+  {
+    "id": "sites-57a7ecdf",
+    "label": "sites.google.com",
+    "page": "trondheim.kommune.no/leangenidrettspark/kunstisbane/sesong og %C3%A5pningstider",
+    "url": "https://sites.google.com/trondheim.kommune.no/leangenidrettspark/kunstisbane/sesong-og-%C3%A5pningstider",
+    "publisher": "sites.google.com",
+    "checkedAt": "2026-09-18"
+  },
+  {
+    "id": "sites-e7207c5a",
+    "label": "sites.google.com",
+    "page": "trondheim.kommune.no/leangenidrettspark/start",
+    "url": "https://sites.google.com/trondheim.kommune.no/leangenidrettspark/start",
+    "publisher": "sites.google.com",
+    "checkedAt": "2026-09-18"
+  },
+  {
+    "id": "vitensenteret-8d637c49",
+    "label": "Vitensenteret",
+    "page": "besok",
+    "url": "https://vitensenteret.com/besok",
+    "publisher": "Vitensenteret",
+    "checkedAt": "2026-09-18"
+  },
+  {
+    "id": "3t-e7fadada",
+    "label": "3T",
+    "page": "treningssenter/3t lade",
+    "url": "https://www.3t.no/treningssenter/3t-lade",
+    "publisher": "3T",
+    "checkedAt": "2026-09-18"
+  },
+  {
+    "id": "banenor-5c4f1b79",
+    "label": "Bane NOR",
+    "page": "reise og trafikk/stasjoner/ l /leangen",
+    "url": "https://www.banenor.no/reise-og-trafikk/stasjoner/-l-/leangen/",
+    "publisher": "Bane NOR",
+    "checkedAt": "2026-09-18"
+  },
+  {
+    "id": "barnehagefakta-28025e1b",
+    "label": "Utdanningsdirektoratet",
+    "page": "barnehage/979289952/leangen kulturbarnehage sa",
+    "url": "https://www.barnehagefakta.no/barnehage/979289952/leangen-kulturbarnehage-sa",
+    "publisher": "Utdanningsdirektoratet",
+    "checkedAt": "2026-09-18"
+  },
+  {
+    "id": "finn-a001c883",
+    "label": "FINN eiendom",
+    "page": "Knutepunktet. Nytt salgstrinn med 28 leiligheter i populære Leangenbukta – FINN eiendom",
+    "url": "https://www.finn.no/realestate/project/ad.html?finnkode=393294324",
+    "publisher": "FINN eiendom",
+    "checkedAt": "2026-09-18"
+  },
+  {
+    "id": "finn-79459f26",
+    "label": "FINN eiendom",
+    "page": "Parktunet 1 — Leangenbukta, Haakon VIIs gate, Trondheim (FINN-kode 459052231)",
+    "url": "https://www.finn.no/realestate/project/ad.html?finnkode=459052231",
+    "publisher": "FINN eiendom",
+    "checkedAt": "2026-09-18"
+  },
+  {
+    "id": "finn-326cfe2b",
+    "label": "FINN eiendom",
+    "page": "Moderne 2-roms selveier på 42m² i attraktivt og nyetablert område | Under oppføring (Saltakshus H102)",
+    "url": "https://www.finn.no/realestate/projectsingle/ad.html?finnkode=435721835",
+    "publisher": "FINN eiendom",
+    "checkedAt": "2026-09-18"
+  },
+  {
+    "id": "finn-26b889ce",
+    "label": "FINN eiendom",
+    "page": "Leilighet: Leangenbukta Saltakhus C",
+    "url": "https://www.finn.no/realestate/projectunit/ad.html?finnkode=431996499",
+    "publisher": "FINN eiendom",
+    "checkedAt": "2026-09-18"
+  },
+  {
+    "id": "kirken-60c88d28",
+    "label": "kirken.no",
+    "page": "nb NO/fellesrad/trondheim kirkelige fellesrad/menigheter/Lade/Hva skjer Lade/diakoni og omsorg/apen kirke",
+    "url": "https://www.kirken.no/nb-NO/fellesrad/trondheim-kirkelige-fellesrad/menigheter/Lade/Hva_skjer_Lade/diakoni-og-omsorg/apen-kirke/",
+    "publisher": "kirken.no",
+    "checkedAt": "2026-09-18"
+  },
+  {
+    "id": "kompisnorge-626e7987",
+    "label": "Kompis",
+    "page": "restauranter/trondelag/kompis lade",
+    "url": "https://www.kompisnorge.no/restauranter/trondelag/kompis-lade/",
+    "publisher": "Kompis",
+    "checkedAt": "2026-09-18"
+  },
+  {
+    "id": "ladetorget-15d604f6",
+    "label": "LadeTorget",
+    "page": "butikker",
+    "url": "https://www.ladetorget.no/butikker",
+    "publisher": "LadeTorget",
+    "checkedAt": "2026-09-18"
+  },
+  {
+    "id": "leoslekeland-f8abbf60",
+    "label": "Leo's Lekeland",
+    "page": "vare lekeland/trondheim",
+    "url": "https://www.leoslekeland.no/vare-lekeland/trondheim",
+    "publisher": "Leo's Lekeland",
+    "checkedAt": "2026-09-18"
+  },
+  {
+    "id": "ntnu-79fbb589",
+    "label": "NTNU Vitenskapsmuseet",
+    "page": "museum/praktisk ringve",
+    "url": "https://www.ntnu.no/museum/praktisk-ringve",
+    "publisher": "NTNU Vitenskapsmuseet",
+    "checkedAt": "2026-09-18"
+  },
+  {
+    "id": "ntnu-4f3d38b5",
+    "label": "NTNU Vitenskapsmuseet",
+    "page": "museum/ringve botaniske hage",
+    "url": "https://www.ntnu.no/museum/ringve-botaniske-hage",
+    "publisher": "NTNU Vitenskapsmuseet",
+    "checkedAt": "2026-09-18"
+  },
+  {
+    "id": "trondheim-ecd78393",
+    "label": "Trondheim kommune",
+    "page": "Planbeskrivelse, Haakon VIIs gate 14, r20160019",
+    "url": "https://www.trondheim.kommune.no/globalassets/10-bilder-og-filer/10-byutvikling/byplankontoret/1c_vedtatt-plan/2019/haakon-viis-gate-14.-r20160019/planbeskrivelse.pdf",
+    "publisher": "Trondheim kommune",
+    "checkedAt": "2026-09-18"
+  },
+  {
+    "id": "trondheim-0d7df32b",
+    "label": "Trondheim kommune",
+    "page": "Haakon VII's gate 14, detaljregulering – Reguleringsbestemmelser (r20160019)",
+    "url": "https://www.trondheim.kommune.no/globalassets/10-bilder-og-filer/10-byutvikling/byplankontoret/1c_vedtatt-plan/2019/haakon-viis-gate-14.-r20160019/reguleringsbestemmelser.pdf",
+    "publisher": "Trondheim kommune",
+    "checkedAt": "2026-09-18"
+  },
+  {
+    "id": "trondheim-e649dcc2",
+    "label": "Trondheim kommune",
+    "page": "Reguleringskart, Haakon VIIs gate 14, r20160019",
+    "url": "https://www.trondheim.kommune.no/globalassets/10-bilder-og-filer/10-byutvikling/byplankontoret/1c_vedtatt-plan/2019/haakon-viis-gate-14.-r20160019/reguleringskart.pdf",
+    "publisher": "Trondheim kommune",
+    "checkedAt": "2026-09-18"
+  },
+  {
+    "id": "trondheim-f303f1b2",
+    "label": "Trondheim kommune",
+    "page": "Haakon VIIs gate 14, detaljregulering r20160019",
+    "url": "https://www.trondheim.kommune.no/haakon-viis-gate-14-r20160019/",
+    "publisher": "Trondheim kommune",
+    "checkedAt": "2026-09-18"
+  },
+  {
+    "id": "trondheim-a9d869bd",
+    "label": "Trondheim kommune",
+    "page": "org/oppvekst/barnehager/ladestien bhgr",
+    "url": "https://www.trondheim.kommune.no/org/oppvekst/barnehager/ladestien-bhgr/",
+    "publisher": "Trondheim kommune",
+    "checkedAt": "2026-09-18"
+  },
+  {
+    "id": "trondheim-60a02168",
+    "label": "Trondheim kommune",
+    "page": "org/oppvekst/skoler/lade skole",
+    "url": "https://www.trondheim.kommune.no/org/oppvekst/skoler/lade-skole/",
+    "publisher": "Trondheim kommune",
+    "checkedAt": "2026-09-18"
+  },
+  {
+    "id": "trondheim-96778447",
+    "label": "Trondheim kommune",
+    "page": "org/oppvekst/skoler/lade skole/lade skole sfo",
+    "url": "https://www.trondheim.kommune.no/org/oppvekst/skoler/lade-skole/lade-skole-sfo/",
+    "publisher": "Trondheim kommune",
+    "checkedAt": "2026-09-18"
+  },
+  {
+    "id": "trondheim-5747a8f9",
+    "label": "Trondheim kommune",
+    "page": "tema/kultur og fritid/aktivitetstilbudkulturtilbud/fritidsklubber/lade fritidsklubb",
+    "url": "https://www.trondheim.kommune.no/tema/kultur-og-fritid/aktivitetstilbudkulturtilbud/fritidsklubber/lade-fritidsklubb/",
+    "publisher": "Trondheim kommune",
+    "checkedAt": "2026-09-18"
+  },
+  {
+    "id": "trondheim-e3878fe6",
+    "label": "Trondheim kommune",
+    "page": "tema/kultur og fritid/lokaler/husebybadet",
+    "url": "https://www.trondheim.kommune.no/tema/kultur-og-fritid/lokaler/husebybadet/",
+    "publisher": "Trondheim kommune",
+    "checkedAt": "2026-09-18"
+  },
+  {
+    "id": "trondheim-5c884f0a",
+    "label": "Trondheim kommune",
+    "page": "tema/kultur og fritid/park og mark/badeplasser",
+    "url": "https://www.trondheim.kommune.no/tema/kultur-og-fritid/park-og-mark/badeplasser/",
+    "publisher": "Trondheim kommune",
+    "checkedAt": "2026-09-18"
+  },
+  {
+    "id": "trondheim-45a68fde",
+    "label": "Trondheim kommune",
+    "page": "tema/kultur og fritid/park og mark/badeplasser/badeplasser i saltvann/korsvika",
+    "url": "https://www.trondheim.kommune.no/tema/kultur-og-fritid/park-og-mark/badeplasser/badeplasser-i-saltvann/korsvika/",
+    "publisher": "Trondheim kommune",
+    "checkedAt": "2026-09-18"
+  },
+  {
+    "id": "trondheim-6389ab9b",
+    "label": "Trondheim kommune",
+    "page": "tema/kultur og fritid/park og mark/lekeplasser/lade skole lek",
+    "url": "https://www.trondheim.kommune.no/tema/kultur-og-fritid/park-og-mark/lekeplasser/lade-skole-lek/",
+    "publisher": "Trondheim kommune",
+    "checkedAt": "2026-09-18"
+  },
+  {
+    "id": "trondheim-521880da",
+    "label": "Trondheim kommune",
+    "page": "tema/kultur og fritid/park og mark/parker og byrom/ladeparken",
+    "url": "https://www.trondheim.kommune.no/tema/kultur-og-fritid/park-og-mark/parker-og-byrom/ladeparken/",
+    "publisher": "Trondheim kommune",
+    "checkedAt": "2026-09-18"
+  },
+  {
+    "id": "trondheim-f36a7a5b",
+    "label": "Trondheim kommune",
+    "page": "tema/kultur og fritid/park og mark/parker og byrom/ringvebukta",
+    "url": "https://www.trondheim.kommune.no/tema/kultur-og-fritid/park-og-mark/parker-og-byrom/ringvebukta/",
+    "publisher": "Trondheim kommune",
+    "checkedAt": "2026-09-18"
+  },
+  {
+    "id": "trondheimkino-b3fa446e",
+    "label": "Trondheim Kino",
+    "page": "nova kinosenter",
+    "url": "https://www.trondheimkino.no/nova-kinosenter",
+    "publisher": "Trondheim Kino",
+    "checkedAt": "2026-09-18"
+  },
+  {
+    "id": "trondheimkino-3bb3c878",
+    "label": "Trondheim Kino",
+    "page": "prinsen kinosenter",
+    "url": "https://www.trondheimkino.no/prinsen-kinosenter",
+    "publisher": "Trondheim Kino",
+    "checkedAt": "2026-09-18"
+  },
+  {
+    "id": "trygglade-017fd19c",
+    "label": "SK Trygg/Lade",
+    "page": "treningssenter",
+    "url": "https://www.trygglade.no/treningssenter",
+    "publisher": "SK Trygg/Lade",
+    "checkedAt": "2026-09-18"
+  },
+  {
+    "id": "trygglade-45b62cef",
+    "label": "SK Trygg/Lade",
+    "page": "tryggladehallen",
+    "url": "https://www.trygglade.no/tryggladehallen",
+    "publisher": "SK Trygg/Lade",
+    "checkedAt": "2026-09-18"
+  }
+]

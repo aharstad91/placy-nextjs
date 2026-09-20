@@ -1,0 +1,32 @@
+{
+  "status": "updated",
+  "appliedAt": "2026-09-19T10:38:28.016Z",
+  "schemaVersion": 1,
+  "projectId": "nyhavna-utvikling_nyhavna",
+  "customer": "nyhavna-utvikling",
+  "projectSlug": "nyhavna",
+  "productId": "063a0b6a-edb3-4fb2-885d-c594ddd46063",
+  "themeIds": [
+    "nyhavna-bydel",
+    "hverdagsliv",
+    "barn-oppvekst",
+    "mat-drikke",
+    "natur-friluftsliv",
+    "transport",
+    "trening-aktivitet",
+    "opplevelser"
+  ],
+  "themeFaqCounts": {
+    "nyhavna-bydel": 7,
+    "hverdagsliv": 1,
+    "barn-oppvekst": 3,
+    "mat-drikke": 3,
+    "natur-friluftsliv": 0,
+    "transport": 4,
+    "trening-aktivitet": 0,
+    "opplevelser": 1
+  },
+  "globalFaqCount": 1,
+  "updatedAt": "2026-09-10T08:14:21.415103+00:00",
+  "revalidated": []
+}

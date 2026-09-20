@@ -1,0 +1,44 @@
+{
+  "status": "updated",
+  "appliedAt": "2026-09-20T21:00:45.556Z",
+  "schemaVersion": 1,
+  "projectId": "skanska_lillebytunet",
+  "customer": "skanska",
+  "projectSlug": "lillebytunet",
+  "productId": "5eca9b02-0891-4397-813d-753b78af5a1c",
+  "previousAssistant": null,
+  "assistant": {
+    "enabled": true,
+    "name": "Anja",
+    "guided": true,
+    "features": {
+      "faqProgress": true,
+      "revealPlaces": true,
+      "followHighlightCategory": true,
+      "unscopedCategoryList": true,
+      "narrationFocus": true,
+      "voicePacing": true,
+      "guidedPersona": true
+    },
+    "greeting": "Hei, jeg heter Anja og er din digitale guide for Lillebytunet på Lilleby i Trondheim. Jeg kjenner nabolaget rundt prosjektet — hva som finnes der, og hvor lang tid du bruker dit til fots, på sykkel eller med bil. Hva vil du vite om nærområdet?"
+  },
+  "preservedReportConfigKeys": [
+    "assets",
+    "boardFacts",
+    "city",
+    "district",
+    "heroIntro",
+    "hideBrokerCard",
+    "isochrones",
+    "label",
+    "pinAccent",
+    "pinSubtitle",
+    "presentation",
+    "reportTier",
+    "themes"
+  ],
+  "updatedAt": "2026-09-08T11:54:25.210422+00:00",
+  "revalidated": [
+    "http://localhost:3000"
+  ]
+}

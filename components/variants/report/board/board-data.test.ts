@@ -13,6 +13,10 @@ import type { BoardPOI } from "./board-data";
 import type { ReportData, ReportTheme } from "../report-data";
 import type { POI, ReportThemeAudio } from "@/lib/types";
 import type { BoardCategoryId } from "@/lib/board/board-types";
+import {
+  productionContentContractFixture,
+  PRODUCTION_CONTRACT_IDS,
+} from "./__fixtures__/production-content-contract";
 
 function makePOI(id: string, overrides: Partial<POI> = {}): POI {
   return {
@@ -65,6 +69,8 @@ function makeTheme(id: string, pois: POI[], overrides: Partial<ReportTheme> = {}
 
 function makeReportData(themes: ReportTheme[]): ReportData {
   return {
+    projectId: "project-test",
+    projectCustomer: "test-customer",
     projectName: "Test Prosjekt",
     address: "Testveien 1, 0001 Test",
     district: "Midtbyen",
@@ -77,6 +83,132 @@ function makeReportData(themes: ReportTheme[]): ReportData {
 }
 
 describe("adaptBoardData", () => {
+  describe("ordinary production content contract", () => {
+    it("keeps the pre-assistant projection stable and contains no demo identity", () => {
+      const data = adaptBoardData(productionContentContractFixture());
+
+      expect({
+        projectSlug: data.projectSlug,
+        home: data.home,
+        categoryIds: data.categories.map((category) => category.id),
+        poiIds: data.categories.flatMap((category) =>
+          category.pois.map((poi) => poi.id),
+        ),
+      }).toEqual({
+        projectSlug: "produksjonskontrakt",
+        home: {
+          name: "Produksjonskontrakt",
+          coordinates: { lat: 63.44, lng: 10.46 },
+          address: "Kontraktveien 1",
+          district: "Testområdet",
+          city: "Trondheim",
+          heroImage: undefined,
+          heroIntro: undefined,
+          pinSubtitle: undefined,
+          pinAccent: undefined,
+          audio: undefined,
+        },
+        categoryIds: ["steder"],
+        poiIds: [
+          PRODUCTION_CONTRACT_IDS.audited,
+          PRODUCTION_CONTRACT_IDS.register,
+          PRODUCTION_CONTRACT_IDS.approximate,
+          PRODUCTION_CONTRACT_IDS.planned,
+        ],
+      });
+      expect(data.demoSnapshotId).toBeUndefined();
+      expect(data.demoDataset).toBeUndefined();
+      expect(data.demoFeatures).toBeUndefined();
+    });
+
+    it("drops both an empty category and a topic-only category from the map projection", () => {
+      const data = adaptBoardData(productionContentContractFixture());
+
+      expect(data.categories.map((category) => category.id)).not.toContain(
+        PRODUCTION_CONTRACT_IDS.empty,
+      );
+      expect(data.categories.map((category) => category.id)).not.toContain(
+        PRODUCTION_CONTRACT_IDS.topicOnly,
+      );
+    });
+
+    it("does not invent audited claims for a register-only place", () => {
+      const data = adaptBoardData(productionContentContractFixture());
+      const register = findBoardPOI(
+        data.categories,
+        PRODUCTION_CONTRACT_IDS.register,
+      );
+
+      expect(register).not.toBeNull();
+      expect(register?.body).toBeUndefined();
+      expect(register?.raw.editorialHook).toBeUndefined();
+      expect(register?.raw.localInsight).toBeUndefined();
+      expect(register?.raw.editorialSources).toBeUndefined();
+    });
+
+    it("preserves planned status without turning the facility into an open offer", () => {
+      const data = adaptBoardData(productionContentContractFixture());
+      const planned = findBoardPOI(
+        data.categories,
+        PRODUCTION_CONTRACT_IDS.planned,
+      );
+
+      expect(planned?.raw.developmentStatus).toBe("planned");
+      expect(planned?.raw.development).toEqual({
+        facts: [{ label: "Status", value: "Regulert" }],
+        caveats: ["Byggebeslutning og åpningsdato er ikke dokumentert."],
+      });
+      expect(JSON.stringify(planned)).not.toMatch(/åpen|i drift/i);
+    });
+
+    it("preserves coordinate uncertainty as map metadata", () => {
+      const data = adaptBoardData(productionContentContractFixture());
+      const approximate = findBoardPOI(
+        data.categories,
+        PRODUCTION_CONTRACT_IDS.approximate,
+      );
+
+      expect(approximate?.raw.locationPrecision).toBe("approximate");
+      expect(approximate?.raw.locationNote).toBe(
+        "Plasseringen er ikke verifisert mot besøksinngangen.",
+      );
+    });
+
+    it("threads content version and topic knowledge without inventing a map pin", () => {
+      const fixture = productionContentContractFixture();
+      const data = adaptBoardData({
+        ...fixture,
+        contentVersion: "a".repeat(64),
+        publishedKnowledge: [
+          {
+            id: "research:topic-1",
+            sourceClaimId: "topic-1",
+            projectId: "project-1",
+            scope: "project",
+            subjectId: "topic:school-capacity",
+            subjectName: "Skolekapasitet",
+            topic: "topic",
+            field: "status",
+            factText: "Kapasiteten er ikke avklart.",
+            confidence: "high",
+            sourceUrls: ["https://example.com/source"],
+            sourceTitles: ["Kilde"],
+            reviewStatus: "approved",
+            temporalKind: "existing",
+            reusableAcrossBoards: false,
+            mappingStatus: "not_applicable",
+          },
+        ],
+      });
+
+      expect(data.contentVersion).toBe("a".repeat(64));
+      expect(data.publishedKnowledge).toHaveLength(1);
+      expect(
+        data.categories.flatMap((category) => category.pois),
+      ).toHaveLength(4);
+    });
+  });
+
   it("maps themes to BoardCategory with normaliserte feltnavn", () => {
     const theme = makeTheme("hverdagsliv", [makePOI("p1")]);
     const data = adaptBoardData(makeReportData([theme]));
@@ -210,14 +342,18 @@ describe("adaptBoardData", () => {
   it("tråder assets-flagg fra reportData til boardData", () => {
     const assetsFixture = {
       brand: true,
+      logoUrl: "/illustrations/test-prosjekt-logo.svg",
+      pinLogoUrl: "/illustrations/test-prosjekt-pin.svg",
       customIllustrations: true,
       pinThumbnail: false,
     };
     const data = adaptBoardData({
       ...makeReportData([makeTheme("x", [makePOI("p1")])]),
+      projectSlug: "test-prosjekt",
       assets: assetsFixture,
     });
     expect(data.assets).toEqual(assetsFixture);
+    expect(data.home.pinImage).toBe("/illustrations/test-prosjekt-pin.svg");
   });
 
   it("assets er undefined når reportData mangler det", () => {

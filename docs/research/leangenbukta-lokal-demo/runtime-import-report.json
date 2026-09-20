@@ -1,0 +1,36 @@
+{
+  "schema_version": 1,
+  "built_at": "2026-09-18",
+  "inputs": {
+    "reviewed_candidates": 145,
+    "project_claims": 565,
+    "coordinate_checks": 56,
+    "travel_time_receipt": true
+  },
+  "candidate_decisions": {
+    "defer": 33,
+    "exclude": 8,
+    "external_reference": 6,
+    "member": 29,
+    "start_set": 26,
+    "topic_only": 43
+  },
+  "runtime": {
+    "sources": 58,
+    "audited_places": 56,
+    "register_layer_written": false,
+    "curated_start_places": 26,
+    "structural_anchors": 1,
+    "members": 29,
+    "topics": 36,
+    "faqs": 34,
+    "conversation_questions": 35,
+    "approved_project_claims_in_topics": 124
+  },
+  "guards": {
+    "raw_report_fields_imported": false,
+    "unresolved_or_rejected_project_claims_imported": false,
+    "conversations_used_as_runtime_knowledge": false,
+    "derived_anchor": "LadeTorget is added only to host three reviewed members whose parent canonical ID was otherwise absent."
+  }
+}

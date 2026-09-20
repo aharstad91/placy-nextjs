@@ -1,0 +1,26 @@
+{
+  "status": "imported",
+  "appliedAt": "2026-09-19T10:22:37.086Z",
+  "schemaVersion": 1,
+  "projectId": "nyhavna-utvikling_nyhavna",
+  "customer": "nyhavna-utvikling",
+  "projectSlug": "nyhavna",
+  "category": {
+    "id": "nyhavna-bydel",
+    "name": "Delområde",
+    "icon": "Building2",
+    "color": "#8b6cc4"
+  },
+  "poiIds": [
+    "project:nyhavna-utvikling_nyhavna:transittkaia",
+    "project:nyhavna-utvikling_nyhavna:kullkranpiren",
+    "project:nyhavna-utvikling_nyhavna:strandveikaia",
+    "project:nyhavna-utvikling_nyhavna:ladehammerkaia",
+    "project:nyhavna-utvikling_nyhavna:bunkerkvartalet"
+  ],
+  "productIds": [
+    "063a0b6a-edb3-4fb2-885d-c594ddd46063"
+  ],
+  "verifiedPoiCount": 5,
+  "revalidated": []
+}

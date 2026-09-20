@@ -6,6 +6,7 @@ import type {
   IsochroneSet,
   POI,
   ProjectAssetFlags,
+  PublishedKnowledge,
   ReportCTA,
   ReportSummary,
   ReportThemeAudio,
@@ -14,7 +15,11 @@ import type {
 import type { ReportData, ReportTheme, ThemeIllustration } from "../report-data";
 import type { FaqEntry } from "@/lib/generators/faq-generator";
 import { estimateWalkMin, getHeroInsightPOIIds } from "../hero-insight-pois";
-import { getProjectBrokers } from "@/lib/themes/project-brand";
+import {
+  getProjectBrokers,
+  getProjectLogoSrc,
+  getProjectPinLogoSrc,
+} from "@/lib/themes/project-brand";
 import { computeSpreadCoordinates } from "@/lib/board/spread-co-located";
 import { isAnchorPOI } from "@/lib/board/anchor-poi";
 import {
@@ -210,10 +215,20 @@ export interface BoardHome {
 }
 
 export interface BoardData {
+  projectId?: string;
+  projectCustomer?: string;
+  /** Hosted voice registry selector; accounting identity is resolved server-side. */
+  voiceProjectSlug?: string;
   /** Curated reserve, omitted from the initial local demo view. */
   demoReservePlaceIds?: string[];
-  demoRadiusPlaces?: import("@/lib/demo/nyhavna-lokal/radius").RadiusPlace[];
+  demoRadiusPlaces?: import("@/lib/demo/local-board/radius").RadiusPlace[];
   demoSnapshotId?: string;
+  /** Samme autoritative innholdsversjon som serverens samtalekilde. */
+  contentVersion?: string;
+  /** Kildebelagt kunnskap, også prosjekt-/temafakta uten kartpunkt. */
+  publishedKnowledge?: PublishedKnowledge[];
+  /** Eksplisitt opt-in for Anja på ordinære boards. */
+  assistant?: import("@/lib/types").ReportAssistantConfig;
   /**
    * Hvilket demo-datasett stemmen skal snakke ut fra.
    *
@@ -225,6 +240,15 @@ export interface BoardData {
    * (`nyhavna-leve`).
    */
   demoDataset?: string;
+  /**
+   * Hvilke felles funksjoner denne demoen har slått på.
+   *
+   * Sto tidligere som en sammenligning mot slug-en `nyhavna-lokal` på hver
+   * flate. Da var «hvilken demo» og «hvilke funksjoner» samme spørsmål, og et
+   * nytt datasett måtte arve alt eller ingenting. Registeret
+   * (`lib/demo/local-board/registry.ts`) eier svaret, og boardet bærer det hit.
+   */
+  demoFeatures?: import("@/lib/demo/local-board/registry").LocalDemoFeatures;
   /**
    * Førstesetningen guiden sier. Utelatt = demoens standardhilsen.
    *
@@ -382,7 +406,12 @@ export function adaptBoardData(report: ReportData): BoardData {
   }
 
   return {
+    projectId: report.projectId,
+    projectCustomer: report.projectCustomer,
     demoSnapshotId: report.demoSnapshotId,
+    contentVersion: report.contentVersion,
+    publishedKnowledge: report.publishedKnowledge,
+    assistant: report.assistant,
     projectSlug: report.projectSlug,
     home: {
       name: report.projectName,
@@ -395,6 +424,11 @@ export function adaptBoardData(report: ReportData): BoardData {
       city: report.city,
       pinSubtitle: report.pinSubtitle,
       pinAccent: report.pinAccent,
+      // Kartmarkøren kan bruke en kvadratisk variant som tåler sirkelbeskjæring.
+      // Eldre brandkonfigurasjoner faller tilbake til headerlogoen.
+      pinImage:
+        getProjectPinLogoSrc(report.assets) ??
+        getProjectLogoSrc(report.projectSlug, report.assets),
       audio: pickPlayableAudio(report.heroAudio),
     },
     categories,

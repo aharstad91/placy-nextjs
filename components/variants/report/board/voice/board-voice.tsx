@@ -5,18 +5,18 @@ import { useBoard } from "@/components/variants/report/board/board-state";
 import { useDesktopPlacePanel } from "@/components/variants/report/board/use-popup-mode";
 import { AREA_STEP, useStoryTour } from "@/components/variants/report/board/story/story-tour";
 import { useAudioTourStore } from "@/lib/stores/audio-tour-store";
-import { revealAfterCamera } from "@/lib/demo/nyhavna-lokal/reveal-transition";
-import { DISCOVERY_CATEGORIES, radiusOptions } from "@/lib/demo/nyhavna-lokal/radius";
-import { LOCAL_VOICE_PACING } from "@/lib/demo/nyhavna-lokal/voice-instructions";
+import { revealAfterCamera } from "@/lib/demo/local-board/reveal-transition";
+import { isDiscoveryCategory, radiusOptions } from "@/lib/demo/local-board/radius";
+import { LOCAL_VOICE_PACING } from "@/lib/demo/local-board/voice-instructions";
 import { useLive } from "@/lib/live/use-live";
-import { useNarrationFocus } from "@/lib/demo/nyhavna-lokal/use-narration-focus";
+import { useNarrationFocus } from "@/lib/demo/local-board/use-narration-focus";
 import type { BoardPOIId } from "@/components/variants/report/board/board-data";
-import { useFaqProgress } from "@/lib/demo/nyhavna-lokal/use-faq-progress";
+import { useFaqProgress } from "@/lib/demo/local-board/use-faq-progress";
 import { parseLinkedText, boardLinkResolvers } from "@/lib/board/poi-link-text";
 import type { FaqEntry } from "@/lib/generators/faq-generator";
 import type { LiveMessage, LiveStatus } from "@/lib/live/types";
 import { boardToolTargets, executeBoardTool, type BoardToolResult } from "@/lib/realtime/board-tools";
-import { greetingInstruction, NYHAVNA_GREETING_INSTRUCTION } from "@/lib/realtime/nyhavna-greeting";
+import { defaultGreetingInstruction, greetingInstruction } from "@/lib/realtime/board-greeting";
 
 /**
  * Samtalen med guiden som ÉN tilstand for hele boardet (2026-09-13).
@@ -28,8 +28,8 @@ import { greetingInstruction, NYHAVNA_GREETING_INSTRUCTION } from "@/lib/realtim
  * nytt ha lagt på. Derfor eier provideren forbindelsen, og kontrollene er bare
  * knapper mot den. Montert én gang, inne i board- og omvisningskonteksten.
  *
- * Bare boards med et frosset datagrunnlag (`demoSnapshotId`) har samtale;
- * andre boards får ingen kontekst, og kontrollen rendrer ingenting.
+ * Ordinære boards må aktivere `assistant`; lokale demoer kan fortsatt bruke
+ * et frosset `demoSnapshotId` mens migreringsoraklene finnes.
  *
  * ## Brukerens trykk er kontekst, ikke en brukertur
  *
@@ -59,6 +59,10 @@ export interface BoardVoice {
   ended: boolean;
   notice: string | null;
   error: string | null;
+  name: string;
+  consentPending: boolean;
+  confirmConsent: () => void;
+  cancelConsent: () => void;
   /** Spill/stopp. */
   toggle: () => void;
   faq?: {
@@ -77,7 +81,7 @@ export function useBoardVoice(): BoardVoice | null {
 
 export function BoardVoiceProvider({ children }: { children: ReactNode }) {
   const { data } = useBoard();
-  if (!data.demoSnapshotId) return <>{children}</>;
+  if (!data.assistant?.enabled && !data.demoSnapshotId) return <>{children}</>;
   return <BoardVoiceSession>{children}</BoardVoiceSession>;
 }
 
@@ -115,14 +119,24 @@ function BoardVoiceSession({ children }: { children: ReactNode }) {
   const activePoiId = state.activePOIId ? String(state.activePOIId) : null;
 
   const progressRef = useRef<ReturnType<typeof useFaqProgress> | null>(null);
-  const localDemo = data.demoDataset === "nyhavna-lokal";
-  const faqIds = useMemo(() => localDemo ? [...(data.globalFaq ?? []), ...data.categories.flatMap(c => c.editorial?.faq ?? [])].map(f => f.id) : [], [data.globalFaq, data.categories, localDemo]);
+  // Hver funksjon spør om SITT eget flagg, ikke om hvilken demo dette er
+  // (`LocalDemoFeatures`). En samle-boolean ville gjort «hvilket datasett» og
+  // «hvilke funksjoner» til samme spørsmål igjen, og et nytt datasett måtte da
+  // arve enten alt eller ingenting.
+  const features = data.assistant?.features ?? data.demoFeatures;
+  const faqProgressEnabled = features?.faqProgress ?? false;
+  const revealEnabled = features?.revealPlaces ?? false;
+  const followHighlightCategory = features?.followHighlightCategory ?? false;
+  const narrationFocusEnabled = features?.narrationFocus ?? false;
+  const voicePacing = features?.voicePacing ?? false;
+  const guidedPersona = features?.guidedPersona ?? data.assistant?.guided;
+  const faqIds = useMemo(() => faqProgressEnabled ? [...(data.globalFaq ?? []), ...data.categories.flatMap(c => c.editorial?.faq ?? [])].map(f => f.id) : [], [data.globalFaq, data.categories, faqProgressEnabled]);
 
   const commandVersion = useRef(0);
   useEffect(() => () => { commandVersion.current++; }, []);
   const runBoardTool = useCallback(async (name: string, args: Record<string, unknown>): Promise<BoardToolResult> => {
     const version = ++commandVersion.current;
-    const revealing = localDemo && name === "reveal_places";
+    const revealing = revealEnabled && name === "reveal_places";
     const ids = Array.isArray(args.poi_ids) ? args.poi_ids.filter((id): id is string => typeof id === "string") : [];
     const validReveal = revealing && reserveData && typeof args.category_id === "string"
       ? radiusOptions(reserveData.demoRadiusPlaces ?? [], args.category_id, revealedPlaceIds ?? new Set()).options.find(o => o.radiusKm === args.radius_km)
@@ -148,8 +162,9 @@ function BoardVoiceSession({ children }: { children: ReactNode }) {
     if (!toolData) return { error: "Visningen ble avbrutt av et nytt valg." };
     const result = executeBoardTool(revealing ? "highlight_places" : name, revealing ? { ...args, poi_ids: ids } : args, {
       data: toolData, state, dispatch, mapCamera: revealing ? null : mapCamera,
-      followHighlightCategory: localDemo,
+      followHighlightCategory,
       placePanel,
+      keepHomeInView: Boolean(data.assistant?.enabled),
       highlightLimit: revealing ? ids.length : undefined,
       onCategory: (index) => { if (!revealing && (String(data.categories[index]?.id) !== stopId || activePoiId)) story.begin(index); },
       onReset: () => story.begin(AREA_STEP),
@@ -157,31 +172,57 @@ function BoardVoiceSession({ children }: { children: ReactNode }) {
     if (revealing && "ok" in result) {
       await new Promise<void>(resolve => requestAnimationFrame(() => requestAnimationFrame(() => resolve())));
     }
-    if (localDemo && "ok" in result && !result.rejected?.length && Array.isArray(args.answered_faq_ids)) {
+    if (faqProgressEnabled && "ok" in result && !result.rejected?.length && Array.isArray(args.answered_faq_ids)) {
       progressRef.current?.queue(args.answered_faq_ids.filter((id): id is string => typeof id === "string"));
     }
     const targets = boardToolTargets(revealing ? "highlight_places" : name, result, toolData, state.activeCategoryId);
     for (const id of targets.categoryIds) if (id !== stopId) voiceNav.current.categoryIds.add(id);
     for (const id of targets.poiIds) if (id !== activePoiId) voiceNav.current.poiIds.add(id);
     return result;
-  }, [data, state, dispatch, mapCamera, story, localDemo, stopId, activePoiId, revealPlaces, reserveData, revealedPlaceIds, placePanel]);
+  }, [data, state, dispatch, mapCamera, story, revealEnabled, faqProgressEnabled, followHighlightCategory, stopId, activePoiId, revealPlaces, reserveData, revealedPlaceIds, placePanel]);
+
+  const [benchmarkLabels, setBenchmarkLabels] = useState<{ testRunId?: string; scenarioId?: string }>({});
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.has(DEV_FLAG)) setBenchmarkLabels({ testRunId: params.get("voiceRun") ?? undefined, scenarioId: params.get("voiceScenario") ?? undefined });
+  }, []);
 
   const live = useLive({
-    // Hilsenen og datagrunnlaget følger BOARDET, ikke koden: to demoer deler
-    // denne flaten med hvert sitt innhold, og guiden skal si stedets egen
-    // åpning og svare ut av stedets egne data.
-    greeting: (data.demoGreeting ? greetingInstruction(data.demoGreeting) : NYHAVNA_GREETING_INSTRUCTION) + (localDemo ? `\n${LOCAL_VOICE_PACING}` : ""),
+    ...benchmarkLabels,
+    // Hilsenen og datagrunnlaget følger BOARDET, ikke koden: flere prosjekter
+    // deler denne flaten med hvert sitt innhold, og guiden skal si stedets egen
+    // åpning og svare ut av stedets egne data. Uten egen hilsen navngir
+    // fallbacken boardets eget sted — aldri et annet prosjekt.
+    greeting:
+      (data.assistant?.greeting
+        ? greetingInstruction(data.assistant.greeting)
+        : data.demoGreeting
+          ? greetingInstruction(data.demoGreeting)
+          : defaultGreetingInstruction(data.home.name)) +
+      (voicePacing ? `\n${LOCAL_VOICE_PACING}` : ""),
     dataset: data.demoDataset,
-    getContext: () => ({ selected_category_id: stopId ?? (state.activeCategoryId ? String(state.activeCategoryId) : null), selected_place_id: activePoiId, travel_mode: state.travelMode, ...(localDemo ? { revealed_place_ids: [...(revealedPlaceIds ?? [])] } : {}) }),
+    allowRevealPlaces: revealEnabled,
+    getContext: () => ({ selected_category_id: stopId ?? (state.activeCategoryId ? String(state.activeCategoryId) : null), selected_place_id: activePoiId, travel_mode: state.travelMode, ...(revealEnabled ? { revealed_place_ids: [...(revealedPlaceIds ?? [])] } : {}) }),
+    hostedProjectSlug: data.voiceProjectSlug,
     executeTool: runBoardTool,
     snapshotId: data.demoSnapshotId,
+    ...(data.assistant?.enabled && data.projectCustomer && data.projectSlug && data.contentVersion
+      ? {
+          endpoint: "/api/board-assistant",
+          project: {
+            customer: data.projectCustomer,
+            projectSlug: data.projectSlug,
+            contentVersion: data.contentVersion,
+          },
+        }
+      : {}),
   });
   const { status, hearing, micLevel, notice, error, messages, start, stop, sendContext, sendText, replaceMicrophoneTrack } = live;
   const narrationPlaces = useMemo(() => state.highlightedPoiIds.flatMap(id => {
     const poi = data.poisById.get(id);
     return poi ? [{ id: String(id), name: poi.name.split(" – ")[0] }] : [];
   }), [state.highlightedPoiIds, data.poisById]);
-  useNarrationFocus(localDemo, narrationPlaces, status, messages,
+  useNarrationFocus(narrationFocusEnabled, narrationPlaces, status, messages,
     id => dispatch({ type: "FOCUS_NARRATION", id: id as BoardPOIId | null }));
   const progress = useFaqProgress(faqIds, status, messages, live.interruptionVersion);
   progressRef.current = progress;
@@ -191,6 +232,7 @@ function BoardVoiceSession({ children }: { children: ReactNode }) {
   const running = connected || connecting;
   // «Snakk med Anja igjen»: bare etter en samtale som faktisk kom i gang.
   const [ended, setEnded] = useState(false);
+  const [consentPending, setConsentPending] = useState(false);
   const wasConnected = useRef(false);
   useEffect(() => {
     if (connected) wasConnected.current = true;
@@ -201,8 +243,8 @@ function BoardVoiceSession({ children }: { children: ReactNode }) {
   // uten at stemmen sier noe om det. Hooken dedupliserer uendret tilstand.
   useEffect(() => {
     if (!connected) return;
-    sendContext({ kind: "state", selected_category_id: stopId ?? (state.activeCategoryId ? String(state.activeCategoryId) : null), selected_place_id: activePoiId, travel_mode: state.travelMode, ...(localDemo ? { revealed_place_ids: [...(revealedPlaceIds ?? [])] } : {}) });
-  }, [connected, sendContext, stopId, state.activeCategoryId, activePoiId, state.travelMode, localDemo, revealedPlaceIds]);
+    sendContext({ kind: "state", selected_category_id: stopId ?? (state.activeCategoryId ? String(state.activeCategoryId) : null), selected_place_id: activePoiId, travel_mode: state.travelMode, ...(revealEnabled ? { revealed_place_ids: [...(revealedPlaceIds ?? [])] } : {}) });
+  }, [connected, sendContext, stopId, state.activeCategoryId, activePoiId, state.travelMode, revealEnabled, revealedPlaceIds]);
 
   // Brukeren valgte et tema i raden/rutenettet: serveren åpner kapittelet,
   // fremhever stedene og gir stemmen en kommentar.
@@ -242,7 +284,17 @@ function BoardVoiceSession({ children }: { children: ReactNode }) {
 
   const highlightedCategory = state.highlightedPoiIds.length ? data.poisById.get(state.highlightedPoiIds[0])?.category.id : null;
   const selectedCategory = stopId ?? (state.activeCategoryId ? String(state.activeCategoryId) : null) ?? highlightedCategory;
-  const radius = radiusOptions(reserveData?.demoRadiusPlaces ?? [], selectedCategory ?? "", revealedPlaceIds ?? new Set());
+  // Begge er rene oppslag i boardets avstandsliste, og begge kjøres hver gang
+  // provideren rendrer – også når ingenting av det de leser har endret seg.
+  const radiusPlaces = reserveData?.demoRadiusPlaces;
+  const radius = useMemo(
+    () => radiusOptions(radiusPlaces ?? [], selectedCategory ?? "", revealedPlaceIds ?? new Set()),
+    [radiusPlaces, selectedCategory, revealedPlaceIds],
+  );
+  const discoveryCategory = useMemo(
+    () => isDiscoveryCategory(radiusPlaces, selectedCategory),
+    [radiusPlaces, selectedCategory],
+  );
   const showMore = (radiusKm: number) => {
     const option = radius.options.find(o => o.radiusKm === radiusKm);
     if (!option || connecting) return;
@@ -253,10 +305,23 @@ function BoardVoiceSession({ children }: { children: ReactNode }) {
     }
   };
 
+  const beginConversation = () => {
+    setConsentPending(false);
+    setEnded(false);
+    pauseTour("manual");
+    dispatch({ type: "END_INTRO" });
+    dispatch({ type: "CLEAR_HIGHLIGHTS" });
+    void start();
+  };
+
   const value: BoardVoice = {
-    status, hearing: hearing ?? false, micLevel: micLevel ?? { current: 0 }, running, connecting, ended, notice, error, guided: localDemo,
-    ...(localDemo && selectedCategory && (DISCOVERY_CATEGORIES as readonly string[]).includes(selectedCategory) ? { morePlaces: { current: radius.current, options: radius.options.map(o => ({ radiusKm: o.radiusKm, count: o.ids.length })), show: showMore } } : {}),
-    ...(localDemo ? { faq: { explored: progress.explored, active: progress.active, select: selectFaq, reset: progress.reset } } : {}),
+    name: data.assistant?.name?.trim() || (guidedPersona ? "Anja" : "Placy"),
+    consentPending,
+    confirmConsent: beginConversation,
+    cancelConsent: () => setConsentPending(false),
+    status, hearing: hearing ?? false, micLevel: micLevel ?? { current: 0 }, running, connecting, ended, notice, error, guided: guidedPersona,
+    ...(revealEnabled && discoveryCategory ? { morePlaces: { current: radius.current, options: radius.options.map(o => ({ radiusKm: o.radiusKm, count: o.ids.length })), show: showMore } } : {}),
+    ...(faqProgressEnabled ? { faq: { explored: progress.explored, active: progress.active, select: selectFaq, reset: progress.reset } } : {}),
     toggle: () => {
       if (connecting) return;
       if (running) {
@@ -265,12 +330,7 @@ function BoardVoiceSession({ children }: { children: ReactNode }) {
         dispatch({ type: "CLEAR_HIGHLIGHTS" });
         return;
       }
-      setEnded(false);
-      pauseTour("manual");
-      dispatch({ type: "END_INTRO" });
-      // Ny samtale, tom profil – også i kartet.
-      dispatch({ type: "CLEAR_HIGHLIGHTS" });
-      void start();
+      setConsentPending(true);
     },
   };
 

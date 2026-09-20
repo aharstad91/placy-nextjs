@@ -1,0 +1,50 @@
+{
+  "schemaVersion": 1,
+  "reviewedAt": "2026-09-19",
+  "projectId": "placy-demo_leangenbukta",
+  "method": "Exact identity review against the production product POI pool: matching place name, role and documented address or municipal register identity.",
+  "mappings": [
+    {
+      "localPlaceId": "djupvika",
+      "poiId": "badeplass-djupvika",
+      "productionName": "Djupvika",
+      "evidence": "Same municipal bathing-place identity used by the production board."
+    },
+    {
+      "localPlaceId": "egon-lade",
+      "poiId": "google-ChIJrxBFQdMxbUYR31McpnjJ5kw",
+      "productionName": "Egon",
+      "evidence": "Exact Lade branch at Haakon VIIs gate 9."
+    },
+    {
+      "localPlaceId": "impulse-lade",
+      "poiId": "google-ChIJm29xIwUxbUYRo845XVoq2_0",
+      "productionName": "Impulse Treningssenter",
+      "evidence": "Exact Lade branch at Østmarkveien 4."
+    },
+    {
+      "localPlaceId": "impulse-leangen",
+      "poiId": "google-ChIJ2wDh0f8wbUYRlfCrsUTpnnQ",
+      "productionName": "Impulse Treningssenter",
+      "evidence": "Exact Leangen branch at Haakon VIIs gate 27."
+    },
+    {
+      "localPlaceId": "korsvika",
+      "poiId": "badeplass-korsvika",
+      "productionName": "Korsvika",
+      "evidence": "Same municipal bathing-place identity used by the production board."
+    },
+    {
+      "localPlaceId": "ladekaia",
+      "poiId": "google-ChIJV8IlNxgxbUYRTCxNJCxp0pc",
+      "productionName": "Ladekaia",
+      "evidence": "Exact venue and documented address Leiv Eirikssons vei 42."
+    },
+    {
+      "localPlaceId": "ringve-botaniske-hage",
+      "poiId": "google-ChIJZZmfpBwxbUYRgEXlKQkTmmc",
+      "productionName": "NTNU Ringve botaniske hage",
+      "evidence": "Exact NTNU garden and documented address Lade allé 58."
+    }
+  ]
+}

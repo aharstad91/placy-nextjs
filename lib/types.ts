@@ -104,6 +104,28 @@ export interface POI {
    */
   locationNote?: string;
 
+  /**
+   * Strukturert utviklingsopplysning om stedet: status, åpning, tidspunkt,
+   * adgang — og forbeholdene som følger dem.
+   *
+   * Eget felt og ikke et avsnitt i `editorialHook`, av samme grunn som
+   * `locationNote` er det: teksten om stedet er redaksjonell prosa, dette er
+   * opplysninger med hvert sitt felt og hver sin kilde. Blandet inn i prosaen
+   * ville «åpning ikke oppgitt» lest som en beskrivelse av stedet i stedet for
+   * som det den er — en opplysning om hva kilden IKKE sier.
+   *
+   * `developmentStatus` over er kartets grove skille (her nå / kommer) og kan
+   * ikke bære dette: et ferdig bygg med et uåpnet treningsrom er `existing` i
+   * kartet og «ikke åpnet» i opplysningene, samtidig.
+   *
+   * Fylles av `lib/demo/local-board/development.ts`. Tom liste = ingen linje;
+   * en manglende opplysning skal aldri vises som en falsk negativ.
+   */
+  development?: {
+    facts: Array<{ label: string; value: string }>;
+    caveats: string[];
+  };
+
   // Trust validation
   trustScore?: number;
   trustFlags?: string[];
@@ -153,6 +175,8 @@ export interface POI {
   // Parent-child POI hierarchy (e.g., shopping center → stores)
   parentPoiId?: string;
   anchorSummary?: string;
+  /** Behold ankerets eget navn selv når bare ett medlem er synlig. */
+  anchorKeepsOwnName?: boolean;
   childPOIs?: POI[];
 
   // Reisetider fra prosjekt-origo. Enhets-KONTRAKT: MINUTTER (ceil) — samme
@@ -851,18 +875,58 @@ export interface ReportCTA {
   shareTitle?: string;
 }
 
+/** Eksplisitt opt-in for den samtalende board-assistenten. */
+export interface ReportAssistantConfig {
+  enabled: boolean;
+  /** Navnet kontrollen og tilgjengelighetstekst bruker. */
+  name?: string;
+  /** Guidet persona bruker «AI-guide» i kontrollen. */
+  guided?: boolean;
+  /** Prosjektets egen første replikk. */
+  greeting?: string;
+  /**
+   * Uttalehint for stedsnavnet, f.eks. «Uttal Leangenbukta som
+   * «Leangen-bukta», naturlig norsk og uten å dele Leangen i stavelser.»
+   *
+   * Norske stedsnavn er TTS-eksplosiver, men HVILKET hint et navn trenger kan
+   * bare avgjøres av en lyttetest. Derfor er dette data per board og ikke en
+   * slug-sjekk i koden: et nytt prosjekt setter sitt hint etter lyttetesten,
+   * uten kodeendring. Utelatt → den generiske «uttal naturlig på norsk».
+   */
+  pronunciation?: string;
+  /** Datadrevne samtale- og kartfunksjoner for ordinære boards. */
+  features?: {
+    faqProgress?: boolean;
+    revealPlaces?: boolean;
+    followHighlightCategory?: boolean;
+    unscopedCategoryList?: boolean;
+    narrationFocus?: boolean;
+    voicePacing?: boolean;
+    guidedPersona?: boolean;
+  };
+}
+
 /**
  * Per-prosjekt opt-in for prosjekt-spesifikke asset-filer. Erstatter de gamle
  * hardkodede slug-settene (PROJECTS_WITH_BRAND / PROJECTS_WITH_CUSTOM_ILLUSTRATIONS)
  * — et nytt prosjekt skrur på flagget i Supabase når filene er lastet opp, uten
  * kodeendring. Når et flagg er av, faller render-laget tilbake (tekst-wordmark,
- * generiske tema-illustrasjoner, bygnings-glyph-pin). Filene følger slug-
- * konvensjonen: `/illustrations/{slug}-logo.svg`, `-splash.jpg`,
- * `-splash-video.mp4`, `-{categoryId}.jpg`, `-pin-thumb.jpg`.
+ * generiske tema-illustrasjoner, bygnings-glyph-pin). Eksplisitte, interne
+ * asset-stier overstyrer slug-konvensjonen. Uten eksplisitte stier brukes
+ * `/illustrations/{slug}-logo.svg`, `-splash.jpg`, `-splash-video.mp4`,
+ * `-{categoryId}.jpg`, `-pin-thumb.jpg`.
  */
 export interface ProjectAssetFlags {
   /** Egen logo + splash-hero + splash-video finnes for prosjektet. */
   brand?: boolean;
+  /** Eksplisitt logo-URL. Utelatt = `/illustrations/{slug}-logo.svg`. */
+  logoUrl?: string;
+  /** Kvadratisk, karttilpasset logomarkør. Hele flaten fylles i prosjektboblen. */
+  pinLogoUrl?: string;
+  /** Eksplisitt splash-bilde. Utelatt = `/illustrations/{slug}-splash.jpg`. */
+  splashImageUrl?: string;
+  /** Eksplisitt splash-video. Utelatt = `/illustrations/{slug}-splash-video.mp4`. */
+  splashVideoUrl?: string;
   /** Kun splash-video (`{slug}-splash-video.mp4` + `.jpg`-poster) finnes — uten
    *  logo/splash-hero. Lar et prosjekt få levende splash-bakgrunn uten å skru på
    *  hele `brand`-flagget (som også krever logo + splash-stillbilde). */
@@ -871,6 +935,28 @@ export interface ProjectAssetFlags {
   customIllustrations?: boolean;
   /** Egen kvadratisk pin-thumbnail (`{slug}-pin-thumb.jpg`) finnes for 3D-markøren. */
   pinThumbnail?: boolean;
+}
+
+export interface ReportBrandPresentation {
+  surfaceColor?: string;
+  inkColor?: string;
+  accentColor?: string;
+  accentForegroundColor?: string;
+  mutedColor?: string;
+  mutedForegroundColor?: string;
+  radius?: string;
+  headingFontFamily?: "Mukta" | "Unbounded" | "Figtree";
+  headingFontWeight?: number;
+}
+
+export interface ReportPresentationConfig {
+  /** `splash` er standard. `revealed` brukes når boardet er selve landingen. */
+  initialView?: "splash" | "revealed";
+  /**
+   * Visuelt skin. Aktiveres sammen med `assets.brand`; rendergrensen validerer
+   * verdiene mot et lukket sett før de blir CSS-variabler.
+   */
+  brand?: ReportBrandPresentation;
 }
 
 /**
@@ -930,6 +1016,13 @@ export interface CuratedGeometryFeature {
 export interface ReportConfig {
   /** Selected shared place_knowledge records; prose is assembled at render. */
   localActivityIds?: string[];
+  /**
+   * POI-er som skal stå som egne kartpunkter selv om den delte
+   * ankeroppløsningen også har klassifisert dem som medlemmer av et senter.
+   * Brukes til et lite, redaksjonelt valgt sett; øvrige medlemmer forblir i
+   * ankerets register.
+   */
+  standalonePoiIds?: string[];
   label?: string;
   heroIntro?: string;
   /** Bydel, eks. "Midtbyen". Subline i Nabolaget-seksjonen + splash. */
@@ -988,6 +1081,13 @@ export interface ReportConfig {
    */
   hideBrokerCard?: boolean;
   cta?: ReportCTA;
+  /** Runtime-assistenten er av med mindre prosjektet uttrykkelig slår den på. */
+  assistant?: ReportAssistantConfig;
+  /**
+   * Små, eksplisitte presentasjonsvalg som faktisk varierer mellom boards.
+   * Selve POI-interaksjonen er en Placy-standard og ligger derfor ikke her.
+   */
+  presentation?: ReportPresentationConfig;
   mapStyle?: string;
   trails?: TrailCollection;
   /** Linjer og flater boardet tegner ved siden av punktene. Tom/utelatt =
@@ -1066,6 +1166,10 @@ export interface ProjectTheme {
  */
 export interface Project {
   demoSnapshotId?: string;
+  /** Publiserbar, kildebelagt kunnskap fra samme v2-lesning som POI-poolen. */
+  publishedKnowledge?: PublishedKnowledge[];
+  /** Hash over kart-, kunnskaps- og konfigurasjonsdata i denne lesningen. */
+  contentVersion?: string;
   /** Server-resolved, source-backed activities selected by the board. */
   localActivities?: LocalActivity[];
   id: string;
@@ -1096,6 +1200,39 @@ export interface Project {
    * instead of calling getSchoolZone() directly.
    */
   schoolZone?: { barneskole: string | null; ungdomsskole: string | null };
+}
+
+export interface PublishedKnowledge {
+  id: string;
+  sourceClaimId?: string;
+  projectId?: string;
+  poiId?: string;
+  scope: "global_place" | "project" | "address" | "board_view";
+  subjectId: string;
+  subjectName?: string;
+  topic: string;
+  field: string;
+  factText: string;
+  structuredData?: unknown;
+  confidence: "low" | "medium" | "high";
+  sourceUrls: string[];
+  sourceTitles: string[];
+  reviewStatus: "approved" | "approved_time_sensitive";
+  temporalKind:
+    | "existing"
+    | "regulated"
+    | "planned"
+    | "marketed"
+    | "under_construction"
+    | "inference"
+    | "absence_of_evidence"
+    | "historical";
+  observedAt?: string;
+  validFrom?: string;
+  validUntil?: string;
+  reusableAcrossBoards: boolean;
+  boardId?: string;
+  mappingStatus: "mapped" | "unmapped" | "not_applicable" | "rejected";
 }
 
 // === Global State ===

@@ -1,0 +1,28 @@
+{
+  "groups": [
+    {
+      "category": { "id": "bowling", "name": "Bowling", "icon": "Disc", "color": "#0ea5e9" },
+      "placeIds": ["dora-bowling"]
+    },
+    {
+      "category": { "id": "gym", "name": "Treningssenter", "icon": "Dumbbell", "color": "#ec4899" },
+      "placeIds": ["buld-no"]
+    },
+    {
+      "category": { "id": "bar", "name": "Bar", "icon": "Wine", "color": "#f35a5a" },
+      "placeIds": ["monkey-brew"]
+    },
+    {
+      "category": { "id": "outdoor", "name": "Utendørs aktivitet", "icon": "Mountain", "color": "#22c68d" },
+      "placeIds": ["elvepromenaden"]
+    },
+    {
+      "category": { "id": "museum", "name": "Museum og kultur", "icon": "Landmark", "color": "#23b1f0" },
+      "placeIds": ["kulturaksen", "fyringsbunkeren", "dora2"]
+    },
+    {
+      "category": { "id": "park", "name": "Park", "icon": "Trees", "color": "#22c68d" },
+      "placeIds": ["bunkerparken"]
+    }
+  ]
+}

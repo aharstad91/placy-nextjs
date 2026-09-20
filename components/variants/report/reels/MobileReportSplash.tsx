@@ -6,8 +6,8 @@ import { ArrowUpRight, ChevronUp, Play } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface Props {
-  /** Styrer synlighet. Komponenten holdes montert (kartet varmes opp bak) og
-   *  veksler kun opacity/pointer-events — re-åpning er momentan. */
+  /** Styrer synlighet. Skallet holdes montert mens kartet varmes opp bak;
+   *  tunge media avmonteres når laget er skjult. */
   visible: boolean;
   /** Prosjektnavn, eks. "Stasjonskvartalet". */
   name: string;
@@ -131,7 +131,7 @@ export function MobileReportSplash({
     >
       {/* Full-bleed hero — video (foretrukket) eller bilde. */}
       <div className="absolute inset-0">
-        {heroVideo ? (
+        {visible && heroVideo ? (
           <video
             src={heroVideo}
             poster={heroPoster}
@@ -142,7 +142,7 @@ export function MobileReportSplash({
             className="absolute inset-0 h-full w-full object-cover"
           />
         ) : (
-          heroImage && (
+          visible && heroImage && (
             <Image
               src={heroImage}
               alt={`${name} – nabolag`}
@@ -164,6 +164,7 @@ export function MobileReportSplash({
             <Image
               src={logoSrc}
               alt={name}
+              data-board-logo=""
               width={150}
               height={58}
               unoptimized

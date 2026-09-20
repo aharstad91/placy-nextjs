@@ -1,0 +1,128 @@
+<div id="placy-system-map">
+  <style>
+    #placy-system-map .system-diagram { position:relative; min-height:520px; margin:18px 0 12px; }
+    #placy-system-map .system-node { position:absolute; width:29%; z-index:2; }
+    #placy-system-map .system-node .node-copy { display:grid; gap:4px; text-align:left; }
+    #placy-system-map .system-wires { position:absolute; inset:0; width:100%; height:100%; overflow:visible; pointer-events:none; }
+    #placy-system-map .system-wires path { fill:none; stroke:var(--border); stroke-width:1.5; }
+    #placy-system-map .system-wires path.selected { stroke:var(--viz-series-1); stroke-width:2; }
+    #placy-system-map .map-detail { min-height:62px; margin-top:8px; }
+    #placy-system-map .flow-label { position:absolute; text-align:center; color:var(--muted-foreground); pointer-events:none; }
+    #placy-system-map .cost-stages { display:grid; grid-template-columns:1fr auto 1fr auto 1fr; align-items:center; gap:10px; margin:24px 0; }
+    #placy-system-map .cost-stage { display:grid; gap:8px; }
+    #placy-system-map .cost-stage output { font-weight:500; }
+    @media(max-width:480px) {
+      #placy-system-map .system-node { width:44%; }
+      #placy-system-map .cost-stages { grid-template-columns:1fr; }
+      #placy-system-map .cost-arrow { transform:rotate(90deg); justify-self:center; }
+    }
+  </style>
+  <h2>Placy · systemkart</h2>
+  <div class="viz-row text-small"><span class="viz-badge">Kontrollert 17. september 2026</span><span>Nyhavna er live på placy.no/nyhavna</span></div>
+  <div class="nav nav-pills viz-row" role="tablist" aria-label="Systemvisning">
+    <button type="button" class="nav-link active" id="placy-now-tab" role="tab" aria-controls="placy-now-panel" aria-selected="true">Systemer og koblinger</button>
+    <button type="button" class="nav-link" id="placy-next-tab" role="tab" aria-controls="placy-next-panel" aria-selected="false">Kunder og prosjekter</button>
+    <button type="button" class="nav-link" id="placy-cost-tab" role="tab" aria-controls="placy-cost-panel" aria-selected="false">Hva driver forbruket?</button>
+  </div>
+  <div id="placy-now-panel" role="tabpanel" aria-labelledby="placy-now-tab">
+    <div class="system-diagram" data-diagram="now" aria-label="Dagens systemer. Velg en boks for ansvar og koblinger."></div>
+    <div class="map-detail" aria-live="polite" data-detail="now"></div>
+  </div>
+  <div id="placy-next-panel" role="tabpanel" aria-labelledby="placy-next-tab" hidden>
+    <div class="system-diagram" data-diagram="next" aria-label="Kunder og prosjekter på felles plattform. Neste kunde er ikke aktivert."></div>
+    <div class="map-detail" aria-live="polite" data-detail="next"></div>
+  </div>
+  <div id="placy-cost-panel" role="tabpanel" aria-labelledby="placy-cost-tab" hidden>
+    <div class="viz-controls">
+      <label class="form-label">Årlige besøk <output id="placy-visits-out" class="tabular-nums">100 000</output><input class="form-range" id="placy-visits" aria-label="Årlige besøk" type="range" min="10000" max="200000" step="10000" value="100000"></label>
+      <label class="form-label">Starter stemmen <output id="placy-share-out" class="tabular-nums">5 %</output><input class="form-range" id="placy-share" aria-label="Andel som starter stemmen" type="range" min="1" max="30" step="1" value="5"></label>
+      <label class="form-label">Minutter per samtale <output id="placy-length-out" class="tabular-nums">3</output><input class="form-range" id="placy-length" aria-label="Minutter per samtale" type="range" min="1" max="20" step="1" value="3"></label>
+    </div>
+    <div class="cost-stages" aria-live="polite">
+      <div class="cost-stage"><span>Besøk / år</span><output id="placy-visit-count" class="tabular-nums">100 000</output><span class="text-small">Side, kart og dataoverføring</span></div>
+      <span class="cost-arrow" aria-hidden="true">→</span>
+      <div class="cost-stage"><span>Samtaler / år</span><output id="placy-call-count" class="tabular-nums">5 000</output><span class="text-small">Oppstart og AI-arbeid</span></div>
+      <span class="cost-arrow" aria-hidden="true">→</span>
+      <div class="cost-stage"><span>Tilkoblede stemmeminutter / år</span><output id="placy-minute-count" class="tabular-nums">15 000</output><span class="text-small">GPT-Live: <output id="placy-voice-cost" class="tabular-nums">750 USD</output> + separat AI-arbeid</span></div>
+    </div>
+    <span class="viz-badge">Regneeksempel · ikke målt trafikk eller pristilbud</span>
+    <hr>
+    <div class="viz-grid">
+      <div><h3>Direkte bruk</h3><div>GPT-Live · AI-modell · kart-API</div></div>
+      <div><h3>Felles drift</h3><div>Vercel · Supabase · lagring</div></div>
+      <div><h3>Kapasitet</h3><div>Samtidige besøk og samtaler</div></div>
+    </div>
+  </div>
+  <script>
+    (() => {
+      const root = document.getElementById('placy-system-map');
+      const models = {
+        now: {
+          nodes: [
+            ['browser','Besøkende','Nettleser og mikrofon',1,0,'Besøkende','Viser siden og kartet. Lyd går direkte til OpenAI; Placy styrer innhold, kart og forbruksgrenser.'],
+            ['main','www.placy.no','Eksisterende hovednettside',0,1,'Placy-hovedsiden','Hovednettsiden beholder sin eksisterende publisering på www. Prosjektene åpnes direkte på placy.no/<slug>. DNS ligger fortsatt hos PRO ISP; ingen DNS-endring var nødvendig.'],
+            ['voice','placy.no/<slug>','Felles Placy-plattform',1,2,'Felles runtime','Nyhavna vises direkte på placy.no/nyhavna, og adressen blir stående. Samme app og prosjektregister brukes for nye prosjekter. Maks 5 offentlige Nyhavna-samtaler og 8 totalt; dette er grenser, ikke en full lasttest.'],
+            ['maps','Google / Mapbox','Kart og kartdata',2,1,'Karttjenestene','Nettleseren henter kart fra Google eller Mapbox avhengig av kartvisning. Kartbruk er en egen kostnad.'],
+            ['live','GPT-Live + AI-modell','OpenAI',2,3,'OpenAI','GPT-Live-1 koster 0,05 USD per tilkoblet minutt. GPT-5.6-Terra besvarer spørsmål og bruker verktøy, med separat tokenkostnad. Ingen Live Light er dokumentert.'],
+            ['db','Supabase','Felles database',0,3,'Databasen','Felles prosjektregister, kundeidentitet og samtaleregnskap. Nye samtaler knyttes til kunde, prosjekt og formål. Historiske demoer beholdes separat.'],
+            ['files','Nyhavna-filer','Kuraterte fakta og bilder',1,4,'Kunnskapsgrunnlaget','Demoens kuraterte fakta ligger i versjonerte filer i kodebasen og følger publiseringen. De ligger ikke alle i databasen.']
+          ],
+          edges:[['browser','main'],['browser','voice'],['browser','maps'],['browser','live'],['voice','live'],['voice','db'],['files','voice']],
+          selected:'voice'
+        },
+        next: {
+          nodes:[
+            ['nyhavna','Nyhavna','placy.no/nyhavna',0,0,'Nyhavna','Første prosjekt på felles plattform. Eksisterende kunde- og prosjektidentitet brukes i innhold og regnskap. Åpnes uten adgangskode, med noindex.'],
+            ['koteng','Neste prosjekter','Koteng · Leangen',2,0,'Ikke aktivert','Nye prosjekter tas inn i samme app. Koteng er ikke opprettet her; Leangenbukta står fortsatt under demokunden placy-demo. Eierskap må bekreftes før aktivering.'],
+            ['platform','Felles Placy-app','placy.no/<slug>',1,1,'Felles Placy','Alle nye prosjekter får en unik slug på placy.no. Samme kart, stemmemotor, database og oppdateringer. Ingen egen Vercel-app eller domeneregel per kunde. Nyhavna er aktivert; neste prosjekt må klargjøres i registeret.'],
+            ['knowledge','Innhold per prosjekt','Fakta, profil og funksjoner',0,2,'Prosjektinnhold','Felles steder kan gjenbrukes. Prosjektets egne fakta og innstillinger holdes adskilt og velges på serveren.'],
+            ['limits','Grenser før oppstart','Placy → kunde → prosjekt',2,2,'Forbruksgrenser','Databasen kontrollerer alle grensene samlet før betalt start. Placy: 8 samtidige og 200 USD i rullerende eksponering. Interne tester og uavklart forbruk teller også.'],
+            ['providers','Felles leverandører','OpenAI · Google · Mapbox',2,3,'Leverandørtjenester','Felles integrasjoner. OpenAI- og databasehemmeligheter ligger på serveren. Kart har også egne nettlesernøkler. Kartkostnader er ennå ikke fordelt per prosjekt.'],
+            ['ledger','Felles Supabase','Identitet + forbruksregnskap',0,3,'Forbruksregnskap','Hver samtale får kunde, prosjekt og bruksformål. Kundebruk og interne tester kan skilles i rapportene.'],
+            ['operator','Andreas / drift','Oversikt per kunde og totalt',1,4,'Driftsoversikt','Privat rapport viser prosjektbruk, beregnet kostnad, ufullstendige målinger og gjenværende kapasitet. Foreløpig et operatørverktøy, ikke et kundedashboard. Prisavtaler bestemmes separat.']
+          ],
+          edges:[['nyhavna','platform'],['koteng','platform'],['knowledge','platform'],['platform','limits'],['limits','providers'],['platform','ledger'],['providers','ledger'],['ledger','operator']],
+          selected:'platform'
+        }
+      };
+      const svgNS='http://www.w3.org/2000/svg';
+      function draw(key) {
+        const model=models[key], box=root.querySelector('[data-diagram="'+key+'"]');
+        if (!box.clientWidth) return;
+        const narrow=box.clientWidth<480, width=box.clientWidth;
+        const rows=narrow ? model.nodes.length : 5;
+        const pitch=narrow?96:112;
+        box.style.height=(rows*pitch+8)+'px';
+        box.replaceChildren();
+        const svg=document.createElementNS(svgNS,'svg');svg.classList.add('system-wires');svg.setAttribute('aria-hidden','true');svg.setAttribute('viewBox','0 0 '+width+' '+(rows*pitch+8));box.append(svg);
+        model.nodes.forEach((n,i)=>{
+          const wrapper=document.createElement('div');wrapper.className='system-node';wrapper.style.left=(narrow?(i%2===0?2:54):n[3]*35)+'%';wrapper.style.top=(narrow?i:n[4])*pitch+'px';
+          const button=document.createElement('button');button.type='button';button.className='btn btn-block';button.setAttribute('aria-pressed',String(n[0]===model.selected));button.dataset.node=n[0];
+          const copy=document.createElement('span');copy.className='node-copy';const title=document.createElement('span');title.textContent=n[1];const sub=document.createElement('span');sub.className='text-small';sub.textContent=n[2];copy.append(title,sub);button.append(copy);wrapper.append(button);box.append(wrapper);
+          button.addEventListener('click',()=>{model.selected=n[0];select(key);});
+        });
+        const rect=box.getBoundingClientRect();
+        model.edges.forEach(([a,b])=>{
+          const ra=box.querySelector('[data-node="'+a+'"]').getBoundingClientRect(),rb=box.querySelector('[data-node="'+b+'"]').getBoundingClientRect();
+          const down=ra.top<rb.top;const x1=ra.left+ra.width/2-rect.left,x2=rb.left+rb.width/2-rect.left,y1=(down?ra.bottom:ra.top)-rect.top,y2=(down?rb.top:rb.bottom)-rect.top;
+          const path=document.createElementNS(svgNS,'path');const mid=(y1+y2)/2;path.setAttribute('d','M '+x1+' '+y1+' C '+x1+' '+mid+' '+x2+' '+mid+' '+x2+' '+y2);path.dataset.from=a;path.dataset.to=b;svg.append(path);
+        });select(key);
+      }
+      function select(key) {
+        const model=models[key],box=root.querySelector('[data-diagram="'+key+'"]');
+        box.querySelectorAll('button').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.node===model.selected)));
+        box.querySelectorAll('path').forEach(p=>p.classList.toggle('selected',p.dataset.from===model.selected||p.dataset.to===model.selected));
+        const node=model.nodes.find(n=>n[0]===model.selected),detail=root.querySelector('[data-detail="'+key+'"]');detail.textContent=node[5]+': '+node[6];
+      }
+      const observer=new ResizeObserver(()=>{draw('now');draw('next');});observer.observe(root);
+      root.querySelectorAll('[role="tab"]').forEach(tab=>tab.addEventListener('click',()=>requestAnimationFrame(()=>{draw('now');draw('next');})));
+      const fmt=n=>new Intl.NumberFormat('nb-NO').format(n);
+      function updateCosts(){
+        const v=Number(root.querySelector('#placy-visits').value),s=Number(root.querySelector('#placy-share').value),m=Number(root.querySelector('#placy-length').value),calls=Math.round(v*s/100);
+        const vals={'placy-visits-out':fmt(v),'placy-share-out':s+' %','placy-length-out':String(m),'placy-visit-count':fmt(v),'placy-call-count':fmt(calls),'placy-minute-count':fmt(calls*m),'placy-voice-cost':fmt(calls*m*0.05)+' USD'};
+        Object.entries(vals).forEach(([id,val])=>root.querySelector('#'+id).textContent=val);
+      }
+      root.querySelectorAll('input').forEach(input=>input.addEventListener('input',updateCosts));draw('now');updateCosts();
+    })();
+  </script>
+</div>

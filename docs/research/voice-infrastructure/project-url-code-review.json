@@ -1,0 +1,219 @@
+{
+  "status": "complete",
+  "verdict": "Ready with fixes",
+  "verdict_reasoning": "The reviewed snapshot breaks existing alias demo links (#2, P1). Verify the caller-reported hostname fix in the rebuilt candidate before promotion. Treat #1 as moderate crawler/query exposure requiring an explicit protection or monitoring decision, without publishing project slugs.",
+  "scope": {
+    "base": "424e41c",
+    "branch": "feat/voice-infrastructure",
+    "head_sha": "424e41c0444a7a00cea1cc23cc3e0c239523a81d",
+    "pr_url": null,
+    "files_changed": 17,
+    "snapshot": "Saved pre-fix diff; later caller changes are not re-reviewed."
+  },
+  "intent": "Every public project renders at https://placy.no/<slug>, preserving URL, anonymous access, noindex and shared runtime. Apex moves to shared deployment while www remains the existing website. Legacy /p paths preserve queries and redirect relatively; assets, APIs and sockets stay same-origin.",
+  "intent_confidence": "explicit",
+  "reviewers": [
+    "correctness",
+    "project-standards",
+    "testing",
+    "maintainability",
+    "security",
+    "api-contract",
+    "learnings",
+    "adversarial-claude"
+  ],
+  "findings": [
+    {
+      "#": 2,
+      "autofix_class": "gated_auto",
+      "confidence": 75,
+      "evidence": [
+        "Reviewed proxy.ts:41-48 redirects matching website paths without checking hostname.",
+        "Existing neutral-alias /demo/nyhavna-nettside returned 200; the candidate returned 307 to www, where .context/slug-www-before.json records 404.",
+        "The shared tree contains app/demo/nyhavna-nettside/page.tsx; existing alias compatibility is required."
+      ],
+      "file": "proxy.ts",
+      "first_evidence": "proxy.ts:48: if (websitePage) return NextResponse.redirect(new URL(`${pathname}${search}`, \"https://www.placy.no\"));",
+      "independent_reviewers": [
+        "adversarial-claude"
+      ],
+      "line": 48,
+      "owner": "downstream-resolver",
+      "pre_existing": false,
+      "requires_verification": true,
+      "reviewers": [
+        "adversarial-claude"
+      ],
+      "severity": "P1",
+      "suggested_fix": "Gate only the websitePage redirect on request.nextUrl.hostname === \"placy.no\". Preserve the preceding relative /p/<slug> redirects on every host. Add regression cases showing the existing neutral alias demo route stays same-origin, the apex website paths still redirect to www, and compatibility /p paths still redirect relatively on both hosts.",
+      "title": "Shared deployment aliases redirect working demo pages to a www 404",
+      "why_it_matters": "Existing noncanonical demo links on the neutral deployment alias stop working after promotion: /demo/nyhavna-nettside currently returns 200, but the candidate redirects that same path to www where it returns 404. The website handoff is intended for the apex; applying it to every deployment host removes an existing compatibility surface.",
+      "validation_status": "confirmed",
+      "validation_reason": "The new hosted-mode branch has no hostname guard and therefore redirects a neutral-alias request for /demo/nyhavna-nettside to https://www.placy.no (proxy.ts:41-48) before its existing shared-tree page can render, while the inspected old-site check records that destination as 404 (.context/slug-www-before.json:13-18); the precondition is an alias request with PLACY_HOSTED_VOICE=true, and the supplied candidate reproduction establishes that reachable compatibility regression.",
+      "protected_subject": "public-contract"
+    },
+    {
+      "#": 1,
+      "autofix_class": "manual",
+      "confidence": 75,
+      "evidence": [
+        "Reviewed app/robots.ts:30-31 allows every path when PLACY_HOSTED_VOICE=true; .context/slug-candidate-crawlers.json confirms deployed Allow: /.",
+        "app/[slug]/page.tsx:10,18 uses force-dynamic and resolveVoiceProject; lib/live/projects.ts:34-37,71-73 queries voice_projects for valid unknown slugs.",
+        "Previously /p/<unknown> was already crawlable and incurred the same lookup; the change broadens exposure, rather than introducing the query cost itself."
+      ],
+      "file": "app/robots.ts",
+      "first_evidence": "app/robots.ts:31: return { rules: [{ userAgent: \"*\", allow: \"/\" }] };",
+      "independent_reviewers": [
+        "adversarial-claude"
+      ],
+      "line": 31,
+      "owner": "downstream-resolver",
+      "pre_existing": false,
+      "requires_verification": true,
+      "reviewers": [
+        "adversarial-claude"
+      ],
+      "severity": "P2",
+      "suggested_fix": "Keep project URLs crawlable so their noindex directives can be read, and keep customer slugs out of robots.txt and sitemap. Choose page-only protection for unknown-slug lookups, such as a bounded short-lived negative cache or request budget, or explicitly accept the exposure with request/query monitoring. Preserve uncached paid-admission checks and verify newly enabled slugs become reachable.",
+      "title": "Root crawler access increases uncached registry lookup exposure",
+      "why_it_matters": "In hosted mode, a crawler requesting an unknown valid root slug reaches the dynamic page and performs an uncached indexed registry query before 404. Allowing all root paths expands the exposed namespace beyond the already-crawlable /p/ route. Extra database work is established; crawler volume, saturation and real-user impact were not measured.",
+      "validation_status": "confirmed",
+      "validation_reason": "With PLACY_HOSTED_VOICE=true the diff emits User-Agent: * Allow: / (app/robots.ts:30-31), while any lowercase non-reserved one-segment path passes isPublicProjectSlug (lib/project-paths.ts:13-14), reaches the force-dynamic catch-all (app/[slug]/page.tsx:10,18), and invokes the uncached readBinding Supabase query (lib/live/projects.ts:34-37,71-73); this newly exposes bot probes to one database lookup per request, though actual crawler volume and saturation incidence were not measured.",
+      "protected_subject": null
+    }
+  ],
+  "actionable_findings": [
+    {
+      "#": 2,
+      "autofix_class": "gated_auto",
+      "confidence": 75,
+      "evidence": [
+        "Reviewed proxy.ts:41-48 redirects matching website paths without checking hostname.",
+        "Existing neutral-alias /demo/nyhavna-nettside returned 200; the candidate returned 307 to www, where .context/slug-www-before.json records 404.",
+        "The shared tree contains app/demo/nyhavna-nettside/page.tsx; existing alias compatibility is required."
+      ],
+      "file": "proxy.ts",
+      "first_evidence": "proxy.ts:48: if (websitePage) return NextResponse.redirect(new URL(`${pathname}${search}`, \"https://www.placy.no\"));",
+      "independent_reviewers": [
+        "adversarial-claude"
+      ],
+      "line": 48,
+      "owner": "downstream-resolver",
+      "pre_existing": false,
+      "requires_verification": true,
+      "reviewers": [
+        "adversarial-claude"
+      ],
+      "severity": "P1",
+      "suggested_fix": "Gate only the websitePage redirect on request.nextUrl.hostname === \"placy.no\". Preserve the preceding relative /p/<slug> redirects on every host. Add regression cases showing the existing neutral alias demo route stays same-origin, the apex website paths still redirect to www, and compatibility /p paths still redirect relatively on both hosts.",
+      "title": "Shared deployment aliases redirect working demo pages to a www 404",
+      "why_it_matters": "Existing noncanonical demo links on the neutral deployment alias stop working after promotion: /demo/nyhavna-nettside currently returns 200, but the candidate redirects that same path to www where it returns 404. The website handoff is intended for the apex; applying it to every deployment host removes an existing compatibility surface.",
+      "validation_status": "confirmed",
+      "validation_reason": "The new hosted-mode branch has no hostname guard and therefore redirects a neutral-alias request for /demo/nyhavna-nettside to https://www.placy.no (proxy.ts:41-48) before its existing shared-tree page can render, while the inspected old-site check records that destination as 404 (.context/slug-www-before.json:13-18); the precondition is an alias request with PLACY_HOSTED_VOICE=true, and the supplied candidate reproduction establishes that reachable compatibility regression.",
+      "protected_subject": "public-contract"
+    },
+    {
+      "#": 1,
+      "autofix_class": "manual",
+      "confidence": 75,
+      "evidence": [
+        "Reviewed app/robots.ts:30-31 allows every path when PLACY_HOSTED_VOICE=true; .context/slug-candidate-crawlers.json confirms deployed Allow: /.",
+        "app/[slug]/page.tsx:10,18 uses force-dynamic and resolveVoiceProject; lib/live/projects.ts:34-37,71-73 queries voice_projects for valid unknown slugs.",
+        "Previously /p/<unknown> was already crawlable and incurred the same lookup; the change broadens exposure, rather than introducing the query cost itself."
+      ],
+      "file": "app/robots.ts",
+      "first_evidence": "app/robots.ts:31: return { rules: [{ userAgent: \"*\", allow: \"/\" }] };",
+      "independent_reviewers": [
+        "adversarial-claude"
+      ],
+      "line": 31,
+      "owner": "downstream-resolver",
+      "pre_existing": false,
+      "requires_verification": true,
+      "reviewers": [
+        "adversarial-claude"
+      ],
+      "severity": "P2",
+      "suggested_fix": "Keep project URLs crawlable so their noindex directives can be read, and keep customer slugs out of robots.txt and sitemap. Choose page-only protection for unknown-slug lookups, such as a bounded short-lived negative cache or request budget, or explicitly accept the exposure with request/query monitoring. Preserve uncached paid-admission checks and verify newly enabled slugs become reachable.",
+      "title": "Root crawler access increases uncached registry lookup exposure",
+      "why_it_matters": "In hosted mode, a crawler requesting an unknown valid root slug reaches the dynamic page and performs an uncached indexed registry query before 404. Allowing all root paths expands the exposed namespace beyond the already-crawlable /p/ route. Extra database work is established; crawler volume, saturation and real-user impact were not measured.",
+      "validation_status": "confirmed",
+      "validation_reason": "With PLACY_HOSTED_VOICE=true the diff emits User-Agent: * Allow: / (app/robots.ts:30-31), while any lowercase non-reserved one-segment path passes isPublicProjectSlug (lib/project-paths.ts:13-14), reaches the force-dynamic catch-all (app/[slug]/page.tsx:10,18), and invokes the uncached readBinding Supabase query (lib/live/projects.ts:34-37,71-73); this newly exposes bot probes to one database lookup per request, though actual crawler volume and saturation incidence were not measured.",
+      "protected_subject": null
+    }
+  ],
+  "triage_groups": [],
+  "pre_existing_findings": [],
+  "requirements_completeness": null,
+  "learnings": [
+    {
+      "type": "known_pattern",
+      "title": "nextjs-redirect-for-legacy-urls-20260413",
+      "citation": "docs/solutions/architecture-patterns/nextjs-redirect-for-legacy-urls-20260413.md",
+      "note": "Compatibility links and query parameters remain preserved; 307 is explicitly deliberate during reversible cutover. The historic permanent-redirect preference does not override this constraint."
+    },
+    {
+      "type": "known_pattern",
+      "title": "eiendom-url-arkitektur-migration-20260307",
+      "citation": "docs/solutions/architecture-patterns/eiendom-url-arkitektur-migration-20260307.md",
+      "note": "Central reserved namespace list and directory-enumeration test follow the established root-route ownership pattern."
+    },
+    {
+      "type": "known_pattern",
+      "title": "public-seo-site-route-architecture-20260213",
+      "citation": "docs/solutions/architecture-patterns/public-seo-site-route-architecture-20260213.md",
+      "note": "First-segment namespace ownership is explicit and tested."
+    },
+    {
+      "type": "known_pattern",
+      "title": "sitemap-robots-404-production-PublicSite-20260213",
+      "citation": "docs/solutions/integration-issues/sitemap-robots-404-production-PublicSite-20260213.md",
+      "note": "Candidate special metadata routes, project and compatibility paths have deployed verification; final apex/www smoke remains a release step."
+    }
+  ],
+  "agent_native_gaps": [],
+  "deployment_notes": [],
+  "residual_risks": [
+    "Apex domain assignment and final apex/www smoke remain release gates. Candidate checks do not prove the not-yet-performed cutover.",
+    "Crawler volume and user impact are unmeasured; no capacity or saturation conclusion is established."
+  ],
+  "testing_gaps": [
+    "Rebuild and verify the caller-reported alias redirect fix on the deployed candidate; then verify apex/www after the domain move."
+  ],
+  "coverage": {
+    "depth": "full",
+    "mode": "agent report-only",
+    "notes": [
+      "Review covers the saved pre-fix snapshot against 424e41c, including explicitly requested untracked root-slug files; prior platform changes are outside scope.",
+      "Standards: CLAUDE.md and AGENTS.md fallback, including the new canonical URL contract. No untracked files were excluded.",
+      "Independent adversarial cross-model review via claude; requested and actual claude-opus-5; requested effort high, actual effort unverified; receipt_supported=true; independence_verified=true. Job terminal and directory deleted.",
+      "Both initial and evidence-driven follow-up validator verdicts arrived and confirmed their findings; no wait bound was exceeded.",
+      "Finding #1 calibrated from P1 to P2 after the explicit incidence and unlisted-project constraints: indexed query exposure is verified, saturation is not. The registry-derived public robots allowlist suggestion is rejected because it would enumerate customer slugs.",
+      "Three claim formulations rejected during synthesis: omitted old website namespace, duplicate noindex header unit coverage, and unchanged render-branch coverage. Actual old-site route inventory and deployed evidence cover these claims.",
+      "Settlement suppression was not evaluated because no plan was discovered. Deliberate temporary 307 redirects and empty sitemap are accepted constraints.",
+      "Parent reports 4586 tests, lint with 0 errors, TypeScript and production build passed for the reviewed candidate. Candidate evidence includes 10 HTTP and 3 WebSocket assertions, desktop/mobile browser checks, robots/sitemap responses and tracing of all 9 content files.",
+      "Caller subsequently reports an apex-only website redirect guard and a regression test that failed before the fix, then 123 scoped tests passing. Caller also reports hosted global noindex headers and robots exclusions for /api/ and /dev/, without listing slugs. These later changes were not part of this snapshot; candidate rebuild and deployment verification remain pending. The robots exclusions do not by themselves remove unknown-root lookup exposure."
+    ],
+    "validator": {
+      "confirmed": 2,
+      "rejected": 0,
+      "unresolved": 0,
+      "malformed": 0,
+      "failed": 0,
+      "shortcut_skipped": 0,
+      "protected_subject_reclassifications": 0
+    },
+    "suppressed_by_confidence": {},
+    "first_evidence_backfilled": 0,
+    "quote_gate_demotions": 0,
+    "mode_aware_demotions": 0,
+    "failed_reviewers": [],
+    "compound_packs": {
+      "roots": [],
+      "warnings": [],
+      "errors": []
+    }
+  },
+  "artifact_path": "/tmp/compound-engineering-501/ce-code-review/20260917-141035-67931205",
+  "run_id": "20260917-141035-67931205"
+}

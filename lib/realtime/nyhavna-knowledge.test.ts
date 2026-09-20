@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { getNyhavnaSnapshot } from '@/lib/demo/nyhavna-leve/snapshot';
 import { nyhavnaKnowledge } from '@/lib/demo/nyhavna-leve/knowledge';
 import { createNyhavnaKnowledge, NYHAVNA_INSTRUCTIONS, nyhavnaFaqCatalog, nyhavnaInstructions } from '@/lib/realtime/nyhavna-knowledge';
+import { spokenBoardProjection } from '@/lib/realtime/spoken-projection';
 import { NYHAVNA_GREETING_INSTRUCTION, NYHAVNA_GREETING_TEXT } from '@/lib/realtime/nyhavna-greeting';
 import { NYHAVNA_VOICE_INSTRUCTIONS } from '@/lib/live/voice-instructions';
 
@@ -31,6 +32,29 @@ describe('server knowledge boundary', () => {
     expect(result.places.length).toBeGreaterThan(1);
     expect(result.places.some(p => /Fyringsbunkeren/i.test(p.name))).toBe(true);
   });
+  it('prefers an exact map-register place over a partial curated name match', async () => {
+    const { board } = await getNyhavnaSnapshot();
+    const sample = board.categories[0]!.pois[0]!;
+    const bowling = {
+      ...sample,
+      id: 'project:nyhavna:dora-bowling' as typeof sample.id,
+      name: 'Dora 1 Bowling',
+      raw: { ...sample.raw, id: 'project:nyhavna:dora-bowling', name: 'Dora 1 Bowling' },
+    };
+    const withBowling = {
+      ...board,
+      categories: board.categories.map((category, index) =>
+        index === 0 ? { ...category, pois: [...category.pois, bowling] } : category),
+    };
+    const result = createNyhavnaKnowledge(withBowling)('find_places', {
+      query: 'Dora 1 Bowling',
+    }) as { places: Array<{ name: string; map_poi_id: string | null }> };
+
+    expect(result.places[0]).toMatchObject({
+      name: 'Dora 1 Bowling',
+      map_poi_id: 'project:nyhavna:dora-bowling',
+    });
+  });
   it('serves unreviewed base records as labelled register data, never as facts', async () => {
     const { board } = await getNyhavnaSnapshot();
     const execute = createNyhavnaKnowledge(board);
@@ -42,6 +66,7 @@ describe('server knowledge boundary', () => {
       expect(packet).toMatchObject({ basis: 'register', map_poi_id: String(poi.id) });
       expect(packet).not.toHaveProperty('facts');
       expect(packet).not.toHaveProperty('sources');
+      expect(packet).not.toHaveProperty('address');
     }
     const grocery = execute('find_places', { query: 'REMA 1000' }) as { basis?: string; places: Array<{ name: string; basis: string }> };
     expect(grocery.basis).toBe('register');
@@ -50,6 +75,11 @@ describe('server knowledge boundary', () => {
     expect(execute('find_places', { query: 'skriv pythonkode' })).toMatchObject({ matches: 0, places: [] });
     expect(execute('get_place_facts', { poi_id: 'finnes-ikke' })).toHaveProperty('error');
     expect(execute('unknown_tool', {})).toHaveProperty('error');
+    const addressed = uncurated.find(poi => poi.address);
+    expect(addressed).toBeTruthy();
+    expect(execute('get_place_address', { poi_id: String(addressed!.id), purpose: 'address' }))
+      .toMatchObject({ id: String(addressed!.id), address: addressed!.address, purpose: 'address' });
+    expect(execute('get_place_address', { poi_id: String(addressed!.id), purpose: 'other' })).toHaveProperty('error');
   });
   it('turns every board FAQ into a spoken catalog line with map ids instead of link markup', async () => {
     const { board } = await getNyhavnaSnapshot();
@@ -63,8 +93,19 @@ describe('server knowledge boundary', () => {
     for (const category of board.categories) if (category.editorial?.faq?.length) expect(catalog).toContain(`[${String(category.id)}] ${category.label}`);
     const instructions = nyhavnaInstructions(board);
     expect(instructions).toContain(NYHAVNA_INSTRUCTIONS);
-    expect(instructions).toContain(catalog);
+    expect(instructions).toContain(nyhavnaFaqCatalog(spokenBoardProjection(board)));
     expect(instructions.split(/\s+/).length).toBeLessThan(3400);
+  });
+  it('navngir området katalogen faktisk gjelder, ikke Nyhavna', async () => {
+    // Overskriften på de ukategoriserte spørsmålene er det ENESTE stedet
+    // stedsnavnet står i katalogen. Sto Nyhavna igjen der, ville et annet
+    // datasett fått en spørsmålsliste merket med feil sted.
+    const { board } = await getNyhavnaSnapshot();
+    const single = { ...board, globalFaq: (board.globalFaq ?? []).slice(0, 1), categories: [] };
+    expect(single.globalFaq.length).toBe(1);
+    const catalog = nyhavnaFaqCatalog(single, 'Leangenbukta');
+    expect(catalog).toContain('[nabolaget] Leangenbukta');
+    expect(catalog).not.toContain('Nyhavna');
   });
   it('deler instruksjonen: stemmen eier uttale og samspill, backenden eier fakta og verktøy', () => {
     const spoken = `${NYHAVNA_VOICE_INSTRUCTIONS}\n${NYHAVNA_GREETING_INSTRUCTION}`;

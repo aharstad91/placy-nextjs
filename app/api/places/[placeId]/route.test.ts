@@ -119,7 +119,7 @@ describe("GET /api/places/[placeId] — validering", () => {
   });
 
   it("manglende API-nøkkel → 500 (unikt place ID, ikke cachet)", async () => {
-    vi.unstubAllEnvs(); // fjern GOOGLE_PLACES_API_KEY
+    vi.stubEnv("GOOGLE_PLACES_API_KEY", "");
 
     const req = makeRequest(PLACE_ID_NO_KEY);
     const res = await GET(req, makeParams(PLACE_ID_NO_KEY));

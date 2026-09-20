@@ -1,0 +1,599 @@
+[
+  {
+    "id": "project-status",
+    "categoryId": "leangenbukta-prosjektet",
+    "question": "Hvor stort er Leangenbukta, og hvor mye er ferdig?",
+    "answer": "Reguleringsplanen krever minst 450 boliger, mens utbygger omtaler prosjektet som rundt 500 boliger. FINN-materialet oppga rundt 260 overleverte boliger sommeren 2026. Det er ikke et prosentmål for ferdigstillelse, og status må oppfriskes senere.",
+    "origin": "local",
+    "sourceIds": [
+      "trondheim-0d7df32b",
+      "leangenbukta-29db079d",
+      "finn-79459f26"
+    ],
+    "caveats": [
+      "Antall overleverte boliger er tidsfølsomt og kontrollert 18.09.2026."
+    ]
+  },
+  {
+    "id": "project-plan",
+    "categoryId": "leangenbukta-prosjektet",
+    "question": "Hva er vedtatt i reguleringsplanen?",
+    "answer": "Plan r20160019 ble vedtatt av Trondheim bystyre 31.01.2019. Den regulerer boligfelt B1–B5, offentlig barnehage, felles uteoppholdsareal, offentlig turveg og friområde, og åpner for inntil 3 000 m² kontor eller tjenesteyting i deler av første og andre etasje langs Lade allé.",
+    "origin": "local",
+    "sourceIds": [
+      "trondheim-f303f1b2",
+      "trondheim-0d7df32b"
+    ],
+    "caveats": []
+  },
+  {
+    "id": "project-knutepunktet",
+    "categoryId": "leangenbukta-prosjektet",
+    "question": "Når er Knutepunktet ventet klart?",
+    "answer": "Utbyggers salgsoppgave oppgir 28 selveierleiligheter og forventet innflytting i siste kvartal 2026, med en mer presis opplysning om oktober–november. Dette er forventet innflytting, ikke dokumentasjon på at alle fellesfasiliteter er åpnet.",
+    "origin": "local",
+    "sourceIds": [
+      "finn-a001c883"
+    ],
+    "caveats": [
+      "Ferdigstillelse og åpning av hver fasilitet er ikke bekreftet."
+    ]
+  },
+  {
+    "id": "project-parktunet",
+    "categoryId": "leangenbukta-prosjektet",
+    "question": "Når er Parktunet 1 ventet ferdig?",
+    "answer": "FINN-annonsen brukte varslet byggestart 1. februar 2027 som forutsetning og oppga antatt ferdigstillelse mellom 1. august og 1. desember 2028. Det er et betinget estimat, ikke en bekreftet ferdigdato.",
+    "origin": "local",
+    "sourceIds": [
+      "finn-79459f26"
+    ],
+    "caveats": [
+      "Tidspunktet er uttrykkelig avhengig av varslet byggestart."
+    ]
+  },
+  {
+    "id": "project-kindergarten",
+    "categoryId": "leangenbukta-prosjektet",
+    "question": "Er barnehagen i prosjektet vedtatt bygget?",
+    "answer": "Planen avsetter felt o_BBH til offentlig barnehage med inntil 1 700 m² BRA. Revisjonen fant ikke tilstrekkelig dokumentasjon på byggebeslutning, byggestart eller åpningsdato, så barnehagen behandles som regulert og uavklart.",
+    "origin": "local",
+    "sourceIds": [
+      "trondheim-0d7df32b"
+    ],
+    "caveats": [
+      "Regulert areal er ikke det samme som vedtatt bygging."
+    ]
+  },
+  {
+    "id": "project-facilities",
+    "categoryId": "leangenbukta-prosjektet",
+    "question": "Er lounge, treningsrom og andre fellesfasiliteter åpne?",
+    "answer": "Salgsoppgavene beskriver lounge og planlagte fellesfasiliteter, og lounge er omtalt for alle beboere. Det er ikke dokumentert at hver fasilitet er ferdigstilt eller åpnet. De presenteres derfor som planlagte eller uavklarte beboerfasiliteter, ikke som offentlige tilbud.",
+    "origin": "local",
+    "sourceIds": [
+      "finn-a001c883"
+    ],
+    "caveats": [
+      "Adgang og åpning må bekreftes per fasilitet."
+    ]
+  },
+  {
+    "id": "hverdag-broad-1",
+    "categoryId": "hverdag",
+    "question": "Hvilke hverdagstilbud er dokumentert?",
+    "answer": "City Lade, Sirkus Shopping og Lade Arena er kontrollerte ankre. Dagligvare, apotek, post og servering representeres som medlemmer under sentrene.",
+    "origin": "local",
+    "sourceIds": [
+      "citylade-6434272b",
+      "citylade-93943a3e",
+      "ladearena-cf5df9d7",
+      "ladetorget-15d604f6",
+      "sirkusshopping-63ecbf55"
+    ],
+    "caveats": []
+  },
+  {
+    "id": "hverdag-specific-2",
+    "categoryId": "hverdag",
+    "question": "Hva er åpent på City Lade på søndag?",
+    "answer": "Selve senteret er stengt. City Lade oppgir egne søndagstider for Solrekka: Egon 12–22 og Snurr 10–16.",
+    "origin": "local",
+    "sourceIds": [
+      "citylade-6434272b",
+      "citylade-93943a3e",
+      "ladearena-cf5df9d7",
+      "ladetorget-15d604f6",
+      "sirkusshopping-63ecbf55"
+    ],
+    "caveats": []
+  },
+  {
+    "id": "hverdag-follow-up-3",
+    "categoryId": "hverdag",
+    "question": "Finnes dagligvare og apotek på Lade Arena?",
+    "answer": "Ja. Senterets gjeldende butikkside lister Rema 1000 og Vitusapotek. Åpningstid må leses per virksomhet.",
+    "origin": "local",
+    "sourceIds": [
+      "citylade-6434272b",
+      "citylade-93943a3e",
+      "ladearena-cf5df9d7",
+      "ladetorget-15d604f6",
+      "sirkusshopping-63ecbf55"
+    ],
+    "caveats": []
+  },
+  {
+    "id": "hverdag-unknown-4",
+    "categoryId": "hverdag",
+    "question": "Hvilket apotek kommer man raskest til?",
+    "answer": "Det er ikke beregnet. Flere apotek er dokumentert, men en slik sammenlikning krever kontrollert startpunkt og rute.",
+    "origin": "local",
+    "sourceIds": [
+      "citylade-6434272b",
+      "citylade-93943a3e",
+      "ladearena-cf5df9d7",
+      "ladetorget-15d604f6",
+      "sirkusshopping-63ecbf55"
+    ],
+    "caveats": [
+      "Svaret beskriver et dokumentert kunnskapshull."
+    ]
+  },
+  {
+    "id": "oppvekst-broad-1",
+    "categoryId": "oppvekst",
+    "question": "Hvilke oppveksttilbud er dokumentert?",
+    "answer": "Lade skole, Lade SFO, Ladesletta barnehage, Leangen kulturbarnehage, kommunale lekeområder og Lade fritidsklubb er relevante kandidater. Skolekretsen for adressen er fortsatt uavklart.",
+    "origin": "local",
+    "sourceIds": [
+      "barnehagefakta-28025e1b",
+      "leangenkulturbarnehage-c3d859f4",
+      "sites-57a7ecdf",
+      "trondheim-521880da",
+      "trondheim-5747a8f9",
+      "trondheim-60a02168",
+      "trondheim-6389ab9b",
+      "trondheim-96778447",
+      "trondheim-a9d869bd",
+      "trondheim-f36a7a5b"
+    ],
+    "caveats": []
+  },
+  {
+    "id": "oppvekst-specific-2",
+    "categoryId": "oppvekst",
+    "question": "Hva er åpningstiden til Lade SFO?",
+    "answer": "Skolens gjeldende SFO-side oppgir 07.15–16.30.",
+    "origin": "local",
+    "sourceIds": [
+      "barnehagefakta-28025e1b",
+      "leangenkulturbarnehage-c3d859f4",
+      "sites-57a7ecdf",
+      "trondheim-521880da",
+      "trondheim-5747a8f9",
+      "trondheim-60a02168",
+      "trondheim-6389ab9b",
+      "trondheim-96778447",
+      "trondheim-a9d869bd",
+      "trondheim-f36a7a5b"
+    ],
+    "caveats": []
+  },
+  {
+    "id": "oppvekst-follow-up-3",
+    "categoryId": "oppvekst",
+    "question": "Sokner Haakon VIIs gate 14 til Lade skole?",
+    "answer": "Det er ikke verifisert. Lade skole er en relevant skole i området, men skolekrets må slås opp for adressen i kommunens løsning.",
+    "origin": "local",
+    "sourceIds": [
+      "barnehagefakta-28025e1b",
+      "leangenkulturbarnehage-c3d859f4",
+      "sites-57a7ecdf",
+      "trondheim-521880da",
+      "trondheim-5747a8f9",
+      "trondheim-60a02168",
+      "trondheim-6389ab9b",
+      "trondheim-96778447",
+      "trondheim-a9d869bd",
+      "trondheim-f36a7a5b"
+    ],
+    "caveats": []
+  },
+  {
+    "id": "oppvekst-unknown-4",
+    "categoryId": "oppvekst",
+    "question": "Er det ledig plass i barnehagen?",
+    "answer": "Det kan ikke utledes fra kapasitetstall. Ledig plass varierer og må avklares gjennom kommunens opptak.",
+    "origin": "local",
+    "sourceIds": [
+      "barnehagefakta-28025e1b",
+      "leangenkulturbarnehage-c3d859f4",
+      "sites-57a7ecdf",
+      "trondheim-521880da",
+      "trondheim-5747a8f9",
+      "trondheim-60a02168",
+      "trondheim-6389ab9b",
+      "trondheim-96778447",
+      "trondheim-a9d869bd",
+      "trondheim-f36a7a5b"
+    ],
+    "caveats": [
+      "Svaret beskriver et dokumentert kunnskapshull."
+    ]
+  },
+  {
+    "id": "servering-broad-1",
+    "categoryId": "servering",
+    "question": "Hvilke serveringssteder er dokumentert?",
+    "answer": "Ladekaia, Egon Lade, Kompis Lade og Burger King Lade Arena er reviderte, selvstendige kartpunkter. Fyr på Lade og Franske Nytelser vises som selvstendige registerpunkter. Øvrige spisesteder beholdes som medlemmer under kjøpesentre eller andre ankre.",
+    "origin": "local",
+    "sourceIds": [
+      "citylade-6434272b",
+      "citylade-93943a3e",
+      "digg-b4485831",
+      "egon-bdf5a615",
+      "kompisnorge-626e7987",
+      "ladearena-cf5df9d7",
+      "ladekaia-c3a8f67a",
+      "ladetorget-15d604f6",
+      "ringve-e3d7e676",
+      "sirkusshopping-7e0c9148",
+      "sirkusshopping-901d6d5e",
+      "sirkusshopping-a2329a3c"
+    ],
+    "caveats": []
+  },
+  {
+    "id": "servering-specific-2",
+    "categoryId": "servering",
+    "question": "Hva er åpent på City Lade søndag?",
+    "answer": "Egon i Solrekka oppgis åpent 12–22 og Snurr 10–16. Resten av senteret er stengt med mindre virksomheten publiserer egen tid.",
+    "origin": "local",
+    "sourceIds": [
+      "citylade-6434272b",
+      "citylade-93943a3e",
+      "digg-b4485831",
+      "egon-bdf5a615",
+      "kompisnorge-626e7987",
+      "ladearena-cf5df9d7",
+      "ladekaia-c3a8f67a",
+      "ladetorget-15d604f6",
+      "ringve-e3d7e676",
+      "sirkusshopping-7e0c9148",
+      "sirkusshopping-901d6d5e",
+      "sirkusshopping-a2329a3c"
+    ],
+    "caveats": []
+  },
+  {
+    "id": "servering-follow-up-3",
+    "categoryId": "servering",
+    "question": "Kan jeg bestille takeaway fra Kompis?",
+    "answer": "Kompis publiserer egne takeaway-tider som følger restauranttidene, inkludert søndag 13–22.",
+    "origin": "local",
+    "sourceIds": [
+      "citylade-6434272b",
+      "citylade-93943a3e",
+      "digg-b4485831",
+      "egon-bdf5a615",
+      "kompisnorge-626e7987",
+      "ladearena-cf5df9d7",
+      "ladekaia-c3a8f67a",
+      "ladetorget-15d604f6",
+      "ringve-e3d7e676",
+      "sirkusshopping-7e0c9148",
+      "sirkusshopping-901d6d5e",
+      "sirkusshopping-a2329a3c"
+    ],
+    "caveats": []
+  },
+  {
+    "id": "servering-unknown-4",
+    "categoryId": "servering",
+    "question": "Leverer de til Haakon VIIs gate 14?",
+    "answer": "Det er ikke kontrollert. Leveringsområde må sjekkes for den konkrete adressen i bestillingstjenesten.",
+    "origin": "local",
+    "sourceIds": [
+      "citylade-6434272b",
+      "citylade-93943a3e",
+      "digg-b4485831",
+      "egon-bdf5a615",
+      "kompisnorge-626e7987",
+      "ladearena-cf5df9d7",
+      "ladekaia-c3a8f67a",
+      "ladetorget-15d604f6",
+      "ringve-e3d7e676",
+      "sirkusshopping-7e0c9148",
+      "sirkusshopping-901d6d5e",
+      "sirkusshopping-a2329a3c"
+    ],
+    "caveats": [
+      "Svaret beskriver et dokumentert kunnskapshull."
+    ]
+  },
+  {
+    "id": "natur-broad-1",
+    "categoryId": "natur",
+    "question": "Hvilke natur- og badesteder er dokumentert i området?",
+    "answer": "Korsvika, Ringvebukta og Djupvika er dokumenterte kommunale kandidater. Ringve botaniske hage er et gratis helårstilbud. Faktisk rute og reisetid fra boligen er ikke beregnet.",
+    "origin": "local",
+    "sourceIds": [
+      "kirken-60c88d28",
+      "ladekaia-c3a8f67a",
+      "ntnu-4f3d38b5",
+      "ntnu-79fbb589",
+      "ringve-e3d7e676",
+      "trondheim-45a68fde",
+      "trondheim-5c884f0a",
+      "trondheim-f36a7a5b"
+    ],
+    "caveats": []
+  },
+  {
+    "id": "natur-specific-2",
+    "categoryId": "natur",
+    "question": "Hva finnes i Korsvika?",
+    "answer": "Kommunen oppgir blant annet benker og bord, toalett, grill, badestige og lekeplass. Adkomst beskrives fra enden av Korsvik allé.",
+    "origin": "local",
+    "sourceIds": [
+      "kirken-60c88d28",
+      "ladekaia-c3a8f67a",
+      "ntnu-4f3d38b5",
+      "ntnu-79fbb589",
+      "ringve-e3d7e676",
+      "trondheim-45a68fde",
+      "trondheim-5c884f0a",
+      "trondheim-f36a7a5b"
+    ],
+    "caveats": []
+  },
+  {
+    "id": "natur-follow-up-3",
+    "categoryId": "natur",
+    "question": "Er Ringve botaniske hage gratis hele året?",
+    "answer": "Ja. NTNU oppgir gratis adgang og åpent hver dag hele året. Enkelte stier er bratte, så tilgjengelighet må vurderes per rute.",
+    "origin": "local",
+    "sourceIds": [
+      "kirken-60c88d28",
+      "ladekaia-c3a8f67a",
+      "ntnu-4f3d38b5",
+      "ntnu-79fbb589",
+      "ringve-e3d7e676",
+      "trondheim-45a68fde",
+      "trondheim-5c884f0a",
+      "trondheim-f36a7a5b"
+    ],
+    "caveats": []
+  },
+  {
+    "id": "natur-unknown-4",
+    "categoryId": "natur",
+    "question": "Er adkomststien fra Leangenbukta til Ladestien åpen akkurat nå?",
+    "answer": "Det er ikke verifisert. Planmateriale og eldre kilder dokumenterer ulike forbindelser, men nåstatus og faktisk inngang må kontrolleres før den kan vises.",
+    "origin": "local",
+    "sourceIds": [
+      "kirken-60c88d28",
+      "ladekaia-c3a8f67a",
+      "ntnu-4f3d38b5",
+      "ntnu-79fbb589",
+      "ringve-e3d7e676",
+      "trondheim-45a68fde",
+      "trondheim-5c884f0a",
+      "trondheim-f36a7a5b"
+    ],
+    "caveats": [
+      "Svaret beskriver et dokumentert kunnskapshull."
+    ]
+  },
+  {
+    "id": "transport-broad-1",
+    "categoryId": "transport",
+    "question": "Hvilke transporttilbud kan vi dokumentere?",
+    "answer": "Leangen stasjon og hovedsykkelvegprosjektet kan beskrives fra gjeldende primærkilder. Busslinjer og holdeplasser i rårapporten må oppfriskes mot AtB/Entur før publisering.",
+    "origin": "local",
+    "sourceIds": [
+      "banenor-5c4f1b79",
+      "miljopakken-e9e6ecd5"
+    ],
+    "caveats": []
+  },
+  {
+    "id": "transport-specific-2",
+    "categoryId": "transport",
+    "question": "Hva vet vi om Leangen stasjon?",
+    "answer": "Bane NOR oppgir R70, adresse Leangenvegen 14, 15 parkeringsplasser og 2 HC-plasser. Trinnfri rute finnes, men er lengre, og planovergangen til plattformen har trapper.",
+    "origin": "local",
+    "sourceIds": [
+      "banenor-5c4f1b79",
+      "miljopakken-e9e6ecd5"
+    ],
+    "caveats": []
+  },
+  {
+    "id": "transport-follow-up-3",
+    "categoryId": "transport",
+    "question": "Er heisen på Leangen stasjon ute av drift?",
+    "answer": "Det kan ikke bekreftes fra dagens stasjonsside. Den eldre driftsmeldingen i rårapporten skal ikke brukes som nåstatus.",
+    "origin": "local",
+    "sourceIds": [
+      "banenor-5c4f1b79",
+      "miljopakken-e9e6ecd5"
+    ],
+    "caveats": []
+  },
+  {
+    "id": "transport-unknown-4",
+    "categoryId": "transport",
+    "question": "Hvilken buss går fra prosjektet akkurat nå?",
+    "answer": "Det må hentes fra gjeldende AtB/Entur-data for konkret holdeplass og dato. 2022-ruteplaner brukes ikke som dagens svar.",
+    "origin": "local",
+    "sourceIds": [
+      "banenor-5c4f1b79",
+      "miljopakken-e9e6ecd5"
+    ],
+    "caveats": [
+      "Svaret beskriver et dokumentert kunnskapshull."
+    ]
+  },
+  {
+    "id": "trening-broad-1",
+    "categoryId": "trening",
+    "question": "Hvilke treningstilbud er dokumentert?",
+    "answer": "3T-Lade, Impulse Leangen, Impulse Lade, Leangen idrettspark og Trygg/Lade-hallen er kontrollerte kandidater. Fresh Fitness skal ikke vises som aktivt tilbud.",
+    "origin": "local",
+    "sourceIds": [
+      "3t-e7fadada",
+      "impulse-1a17f3d2",
+      "impulse-e97cf9a0",
+      "sites-57a7ecdf",
+      "sites-e7207c5a",
+      "trondheim-e3878fe6",
+      "trygglade-017fd19c",
+      "trygglade-45b62cef"
+    ],
+    "caveats": []
+  },
+  {
+    "id": "trening-specific-2",
+    "categoryId": "trening",
+    "question": "Når kan publikum bruke Leangen kunstisbane?",
+    "answer": "I sesong er gratis tid uten reservasjon publisert tirsdag/torsdag 11.15–16 og onsdag/fredag 10–16. Kveld og helg varierer og må sjekkes.",
+    "origin": "local",
+    "sourceIds": [
+      "3t-e7fadada",
+      "impulse-1a17f3d2",
+      "impulse-e97cf9a0",
+      "sites-57a7ecdf",
+      "sites-e7207c5a",
+      "trondheim-e3878fe6",
+      "trygglade-017fd19c",
+      "trygglade-45b62cef"
+    ],
+    "caveats": []
+  },
+  {
+    "id": "trening-follow-up-3",
+    "categoryId": "trening",
+    "question": "Har 3T-Lade basseng?",
+    "answer": "Ja. Avdelingens gjeldende side oppgir spa-basseng, dampbad og kaldkulp.",
+    "origin": "local",
+    "sourceIds": [
+      "3t-e7fadada",
+      "impulse-1a17f3d2",
+      "impulse-e97cf9a0",
+      "sites-57a7ecdf",
+      "sites-e7207c5a",
+      "trondheim-e3878fe6",
+      "trygglade-017fd19c",
+      "trygglade-45b62cef"
+    ],
+    "caveats": []
+  },
+  {
+    "id": "trening-unknown-4",
+    "categoryId": "trening",
+    "question": "Er beboertreningsrommet i Knutepunktet ferdig?",
+    "answer": "Det er ikke dokumentert ferdigstilt. Det behandles som en planlagt beboerfasilitet, uten offentlig adgang eller kjent utstyrsliste.",
+    "origin": "local",
+    "sourceIds": [
+      "3t-e7fadada",
+      "impulse-1a17f3d2",
+      "impulse-e97cf9a0",
+      "sites-57a7ecdf",
+      "sites-e7207c5a",
+      "trondheim-e3878fe6",
+      "trygglade-017fd19c",
+      "trygglade-45b62cef"
+    ],
+    "caveats": [
+      "Svaret beskriver et dokumentert kunnskapshull."
+    ]
+  },
+  {
+    "id": "opplevelser-broad-1",
+    "categoryId": "opplevelser",
+    "question": "Hvilke opplevelser er dokumentert på Lade?",
+    "answer": "Ringve Musikkmuseum, Lade kirke og Leo's Lekeland er valgt som lokale startsteder. Hagen, Leangen gård og Ladehammeren gjenbrukes fra Natur.",
+    "origin": "local",
+    "sourceIds": [
+      "kirken-60c88d28",
+      "ladekaia-c3a8f67a",
+      "leoslekeland-f8abbf60",
+      "luckybowl-704d6618",
+      "ntnu-4f3d38b5",
+      "ntnu-79fbb589",
+      "ringve-e3d7e676",
+      "rockheim-b18ad3e5",
+      "trondheimkino-3bb3c878",
+      "trondheimkino-b3fa446e",
+      "vitensenteret-8d637c49"
+    ],
+    "caveats": []
+  },
+  {
+    "id": "opplevelser-specific-2",
+    "categoryId": "opplevelser",
+    "question": "Når er Ringve åpent nå?",
+    "answer": "Vintersesongen 17.08.2026–01.04.2027 har tirsdag–søndag 11–16 og mandag stengt.",
+    "origin": "local",
+    "sourceIds": [
+      "kirken-60c88d28",
+      "ladekaia-c3a8f67a",
+      "leoslekeland-f8abbf60",
+      "luckybowl-704d6618",
+      "ntnu-4f3d38b5",
+      "ntnu-79fbb589",
+      "ringve-e3d7e676",
+      "rockheim-b18ad3e5",
+      "trondheimkino-3bb3c878",
+      "trondheimkino-b3fa446e",
+      "vitensenteret-8d637c49"
+    ],
+    "caveats": []
+  },
+  {
+    "id": "opplevelser-follow-up-3",
+    "categoryId": "opplevelser",
+    "question": "Er hagen gratis selv om museet koster penger?",
+    "answer": "Ja. Ringve botaniske hage drives av NTNU og er gratis hele året; museets utstillinger krever billett.",
+    "origin": "local",
+    "sourceIds": [
+      "kirken-60c88d28",
+      "ladekaia-c3a8f67a",
+      "leoslekeland-f8abbf60",
+      "luckybowl-704d6618",
+      "ntnu-4f3d38b5",
+      "ntnu-79fbb589",
+      "ringve-e3d7e676",
+      "rockheim-b18ad3e5",
+      "trondheimkino-3bb3c878",
+      "trondheimkino-b3fa446e",
+      "vitensenteret-8d637c49"
+    ],
+    "caveats": []
+  },
+  {
+    "id": "opplevelser-unknown-4",
+    "categoryId": "opplevelser",
+    "question": "Kommer det en offentlig kulturarena på torget i Leangenbukta?",
+    "answer": "Det finnes ikke dokumentasjon for det i korrekt Leangenbukta-plan. Rårapportens torgpåstand kommer fra naboplan r20170034 og er avvist.",
+    "origin": "local",
+    "sourceIds": [
+      "kirken-60c88d28",
+      "ladekaia-c3a8f67a",
+      "leoslekeland-f8abbf60",
+      "luckybowl-704d6618",
+      "ntnu-4f3d38b5",
+      "ntnu-79fbb589",
+      "ringve-e3d7e676",
+      "rockheim-b18ad3e5",
+      "trondheimkino-3bb3c878",
+      "trondheimkino-b3fa446e",
+      "vitensenteret-8d637c49"
+    ],
+    "caveats": [
+      "Svaret beskriver et dokumentert kunnskapshull."
+    ]
+  }
+]

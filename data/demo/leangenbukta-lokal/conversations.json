@@ -1,0 +1,240 @@
+[
+  {
+    "id": "review-hverdag",
+    "recordedAt": "2026-09-18",
+    "topic": "Kontrollerte kjøperspørsmål – hverdag",
+    "notes": "Fem innholdsscenarier fra den reviderte kategoripakken. De er testgrunnlag og lastes ikke inn som fakta.",
+    "transcript": [],
+    "questions": [
+      {
+        "id": "hverdag-broad",
+        "text": "Hvilke hverdagstilbud er dokumentert?",
+        "expectation": "City Lade, Sirkus Shopping og Lade Arena er kontrollerte ankre. Dagligvare, apotek, post og servering representeres som medlemmer under sentrene."
+      },
+      {
+        "id": "hverdag-specific",
+        "text": "Hva er åpent på City Lade på søndag?",
+        "expectation": "Selve senteret er stengt. City Lade oppgir egne søndagstider for Solrekka: Egon 12–22 og Snurr 10–16."
+      },
+      {
+        "id": "hverdag-follow-up",
+        "text": "Finnes dagligvare og apotek på Lade Arena?",
+        "expectation": "Ja. Senterets gjeldende butikkside lister Rema 1000 og Vitusapotek. Åpningstid må leses per virksomhet."
+      },
+      {
+        "id": "hverdag-unknown",
+        "text": "Hvilket apotek kommer man raskest til?",
+        "expectation": "Det er ikke beregnet. Flere apotek er dokumentert, men en slik sammenlikning krever kontrollert startpunkt og rute."
+      },
+      {
+        "id": "hverdag-interruption-resume",
+        "text": "Fortsett om sentrene etter et avbrudd.",
+        "expectation": "Fortsett fra valgt senter og dets medlemmer; ikke opprett egne kartmarkører for hvert medlem."
+      }
+    ]
+  },
+  {
+    "id": "review-oppvekst",
+    "recordedAt": "2026-09-18",
+    "topic": "Kontrollerte kjøperspørsmål – oppvekst",
+    "notes": "Fem innholdsscenarier fra den reviderte kategoripakken. De er testgrunnlag og lastes ikke inn som fakta.",
+    "transcript": [],
+    "questions": [
+      {
+        "id": "oppvekst-broad",
+        "text": "Hvilke oppveksttilbud er dokumentert?",
+        "expectation": "Lade skole, Lade SFO, Ladesletta barnehage, Leangen kulturbarnehage, kommunale lekeområder og Lade fritidsklubb er relevante kandidater. Skolekretsen for adressen er fortsatt uavklart."
+      },
+      {
+        "id": "oppvekst-specific",
+        "text": "Hva er åpningstiden til Lade SFO?",
+        "expectation": "Skolens gjeldende SFO-side oppgir 07.15–16.30."
+      },
+      {
+        "id": "oppvekst-follow-up",
+        "text": "Sokner Haakon VIIs gate 14 til Lade skole?",
+        "expectation": "Det er ikke verifisert. Lade skole er en relevant skole i området, men skolekrets må slås opp for adressen i kommunens løsning."
+      },
+      {
+        "id": "oppvekst-unknown",
+        "text": "Er det ledig plass i barnehagen?",
+        "expectation": "Det kan ikke utledes fra kapasitetstall. Ledig plass varierer og må avklares gjennom kommunens opptak."
+      },
+      {
+        "id": "oppvekst-interruption-resume",
+        "text": "Fortsett om fritidstilbud etter et avbrudd.",
+        "expectation": "Fortsett med Lade fritidsklubb og tilknyttede tilbud; bruk oppdatert mandagsprogram og ikke rårapportens onsdagsopplysning."
+      }
+    ]
+  },
+  {
+    "id": "review-servering",
+    "recordedAt": "2026-09-18",
+    "topic": "Kontrollerte kjøperspørsmål – servering",
+    "notes": "Fem innholdsscenarier fra den reviderte kategoripakken. De er testgrunnlag og lastes ikke inn som fakta.",
+    "transcript": [],
+    "questions": [
+      {
+        "id": "servering-broad",
+        "text": "Hvilke serveringssteder er dokumentert?",
+        "expectation": "Ladekaia, Egon Lade, Kompis Lade og Burger King Lade Arena er reviderte, selvstendige kartpunkter. Fyr på Lade og Franske Nytelser vises som selvstendige registerpunkter. Øvrige spisesteder beholdes som medlemmer under kjøpesentre eller andre ankre."
+      },
+      {
+        "id": "servering-specific",
+        "text": "Hva er åpent på City Lade søndag?",
+        "expectation": "Egon i Solrekka oppgis åpent 12–22 og Snurr 10–16. Resten av senteret er stengt med mindre virksomheten publiserer egen tid."
+      },
+      {
+        "id": "servering-follow-up",
+        "text": "Kan jeg bestille takeaway fra Kompis?",
+        "expectation": "Kompis publiserer egne takeaway-tider som følger restauranttidene, inkludert søndag 13–22."
+      },
+      {
+        "id": "servering-unknown",
+        "text": "Leverer de til Haakon VIIs gate 14?",
+        "expectation": "Det er ikke kontrollert. Leveringsområde må sjekkes for den konkrete adressen i bestillingstjenesten."
+      },
+      {
+        "id": "servering-interruption-resume",
+        "text": "Fortsett om sjøservering etter et avbrudd.",
+        "expectation": "Fortsett med Ladekaia og sesongforbeholdet; ikke love at publisert tid gjelder uten oppfriskning."
+      }
+    ]
+  },
+  {
+    "id": "review-natur",
+    "recordedAt": "2026-09-18",
+    "topic": "Kontrollerte kjøperspørsmål – natur",
+    "notes": "Fem innholdsscenarier fra den reviderte kategoripakken. De er testgrunnlag og lastes ikke inn som fakta.",
+    "transcript": [],
+    "questions": [
+      {
+        "id": "natur-broad",
+        "text": "Hvilke natur- og badesteder er dokumentert i området?",
+        "expectation": "Korsvika, Ringvebukta og Djupvika er dokumenterte kommunale kandidater. Ringve botaniske hage er et gratis helårstilbud. Faktisk rute og reisetid fra boligen er ikke beregnet."
+      },
+      {
+        "id": "natur-specific",
+        "text": "Hva finnes i Korsvika?",
+        "expectation": "Kommunen oppgir blant annet benker og bord, toalett, grill, badestige og lekeplass. Adkomst beskrives fra enden av Korsvik allé."
+      },
+      {
+        "id": "natur-follow-up",
+        "text": "Er Ringve botaniske hage gratis hele året?",
+        "expectation": "Ja. NTNU oppgir gratis adgang og åpent hver dag hele året. Enkelte stier er bratte, så tilgjengelighet må vurderes per rute."
+      },
+      {
+        "id": "natur-unknown",
+        "text": "Er adkomststien fra Leangenbukta til Ladestien åpen akkurat nå?",
+        "expectation": "Det er ikke verifisert. Planmateriale og eldre kilder dokumenterer ulike forbindelser, men nåstatus og faktisk inngang må kontrolleres før den kan vises."
+      },
+      {
+        "id": "natur-interruption-resume",
+        "text": "Fortsett om badeplassene etter et avbrudd.",
+        "expectation": "Fortsett fra sist omtalte sted uten å starte kategorien på nytt; ikke legg til avstand eller rangering."
+      }
+    ]
+  },
+  {
+    "id": "review-transport",
+    "recordedAt": "2026-09-18",
+    "topic": "Kontrollerte kjøperspørsmål – transport",
+    "notes": "Fem innholdsscenarier fra den reviderte kategoripakken. De er testgrunnlag og lastes ikke inn som fakta.",
+    "transcript": [],
+    "questions": [
+      {
+        "id": "transport-broad",
+        "text": "Hvilke transporttilbud kan vi dokumentere?",
+        "expectation": "Leangen stasjon og hovedsykkelvegprosjektet kan beskrives fra gjeldende primærkilder. Busslinjer og holdeplasser i rårapporten må oppfriskes mot AtB/Entur før publisering."
+      },
+      {
+        "id": "transport-specific",
+        "text": "Hva vet vi om Leangen stasjon?",
+        "expectation": "Bane NOR oppgir R70, adresse Leangenvegen 14, 15 parkeringsplasser og 2 HC-plasser. Trinnfri rute finnes, men er lengre, og planovergangen til plattformen har trapper."
+      },
+      {
+        "id": "transport-follow-up",
+        "text": "Er heisen på Leangen stasjon ute av drift?",
+        "expectation": "Det kan ikke bekreftes fra dagens stasjonsside. Den eldre driftsmeldingen i rårapporten skal ikke brukes som nåstatus."
+      },
+      {
+        "id": "transport-unknown",
+        "text": "Hvilken buss går fra prosjektet akkurat nå?",
+        "expectation": "Det må hentes fra gjeldende AtB/Entur-data for konkret holdeplass og dato. 2022-ruteplaner brukes ikke som dagens svar."
+      },
+      {
+        "id": "transport-interruption-resume",
+        "text": "Fortsett om sykkelforbindelsen etter et avbrudd.",
+        "expectation": "Fortsett med hvilke delstrekninger Miljøpakken sier er bygget og hvilke som gjenstår; ikke hev en sammenhengende rute fra prosjektet."
+      }
+    ]
+  },
+  {
+    "id": "review-trening",
+    "recordedAt": "2026-09-18",
+    "topic": "Kontrollerte kjøperspørsmål – trening",
+    "notes": "Fem innholdsscenarier fra den reviderte kategoripakken. De er testgrunnlag og lastes ikke inn som fakta.",
+    "transcript": [],
+    "questions": [
+      {
+        "id": "trening-broad",
+        "text": "Hvilke treningstilbud er dokumentert?",
+        "expectation": "3T-Lade, Impulse Leangen, Impulse Lade, Leangen idrettspark og Trygg/Lade-hallen er kontrollerte kandidater. Fresh Fitness skal ikke vises som aktivt tilbud."
+      },
+      {
+        "id": "trening-specific",
+        "text": "Når kan publikum bruke Leangen kunstisbane?",
+        "expectation": "I sesong er gratis tid uten reservasjon publisert tirsdag/torsdag 11.15–16 og onsdag/fredag 10–16. Kveld og helg varierer og må sjekkes."
+      },
+      {
+        "id": "trening-follow-up",
+        "text": "Har 3T-Lade basseng?",
+        "expectation": "Ja. Avdelingens gjeldende side oppgir spa-basseng, dampbad og kaldkulp."
+      },
+      {
+        "id": "trening-unknown",
+        "text": "Er beboertreningsrommet i Knutepunktet ferdig?",
+        "expectation": "Det er ikke dokumentert ferdigstilt. Det behandles som en planlagt beboerfasilitet, uten offentlig adgang eller kjent utstyrsliste."
+      },
+      {
+        "id": "trening-interruption-resume",
+        "text": "Fortsett om treningssentre etter et avbrudd.",
+        "expectation": "Fortsett fra valgt senter og hold adgangstid og bemannet tid adskilt."
+      }
+    ]
+  },
+  {
+    "id": "review-opplevelser",
+    "recordedAt": "2026-09-18",
+    "topic": "Kontrollerte kjøperspørsmål – opplevelser",
+    "notes": "Fem innholdsscenarier fra den reviderte kategoripakken. De er testgrunnlag og lastes ikke inn som fakta.",
+    "transcript": [],
+    "questions": [
+      {
+        "id": "opplevelser-broad",
+        "text": "Hvilke opplevelser er dokumentert på Lade?",
+        "expectation": "Ringve Musikkmuseum, Lade kirke og Leo's Lekeland er valgt som lokale startsteder. Hagen, Leangen gård og Ladehammeren gjenbrukes fra Natur."
+      },
+      {
+        "id": "opplevelser-specific",
+        "text": "Når er Ringve åpent nå?",
+        "expectation": "Vintersesongen 17.08.2026–01.04.2027 har tirsdag–søndag 11–16 og mandag stengt."
+      },
+      {
+        "id": "opplevelser-follow-up",
+        "text": "Er hagen gratis selv om museet koster penger?",
+        "expectation": "Ja. Ringve botaniske hage drives av NTNU og er gratis hele året; museets utstillinger krever billett."
+      },
+      {
+        "id": "opplevelser-unknown",
+        "text": "Kommer det en offentlig kulturarena på torget i Leangenbukta?",
+        "expectation": "Det finnes ikke dokumentasjon for det i korrekt Leangenbukta-plan. Rårapportens torgpåstand kommer fra naboplan r20170034 og er avvist."
+      },
+      {
+        "id": "opplevelser-interruption-resume",
+        "text": "Fortsett om familieaktiviteter etter et avbrudd.",
+        "expectation": "Fortsett med Leo's og gjeldende 09–20 i helgen; skill faste stedstider fra program og enkeltarrangementer."
+      }
+    ]
+  }
+]

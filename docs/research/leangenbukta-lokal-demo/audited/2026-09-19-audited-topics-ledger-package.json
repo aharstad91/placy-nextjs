@@ -1,0 +1,88 @@
+{
+  "schemaVersion": 1,
+  "packageId": "leangenbukta-audited-topics-2026-09-19",
+  "projectId": "placy-demo_leangenbukta",
+  "projectName": "Leangenbukta",
+  "mode": "full_snapshot",
+  "scopeKey": "audited-topics",
+  "reviewedAt": "2026-09-18",
+  "sourcePath": "docs/research/leangenbukta-lokal-demo/categories/*.json",
+  "entities": [
+    {
+      "entityId": "topic:pirbrua-ranheim-cycle-route",
+      "canonicalId": "topic:pirbrua-ranheim-cycle-route",
+      "name": "Hangarbrua over Leangen stasjon",
+      "entityKind": "reviewed_topic",
+      "scope": "project",
+      "geography": "Leangenbukta",
+      "reusableAcrossBoards": true,
+      "reuseConstraints": "Conversation knowledge only until a place, route or current service instance is modelled.",
+      "boardId": "placy-demo_leangenbukta",
+      "mappingStatus": "not_applicable"
+    }
+  ],
+  "claims": [
+    {
+      "claimId": "LB-TOPIC-pirbrua-ranheim-cycle-route-1",
+      "subjectId": "topic:pirbrua-ranheim-cycle-route",
+      "canonicalId": "topic:pirbrua-ranheim-cycle-route",
+      "scope": "project",
+      "geography": "Leangenbukta",
+      "field": "topic_fact",
+      "value": "Hangarbrua åpnet i september 2025; flere delstrekninger er bygget, mens gjenstående strekning avhenger av finansiering.",
+      "temporalKind": "existing",
+      "reviewStatus": "approved",
+      "sourceUrls": [
+        "https://miljopakken.no/prosjekter/sykkelforbindelse-pirbrua-ranheim"
+      ],
+      "sourceTitles": [
+        "miljopakken.no"
+      ],
+      "sourceType": "audited_category_review",
+      "sourceDate": null,
+      "observedAt": "2026-09-18",
+      "validFrom": null,
+      "validUntil": null,
+      "confidence": "high",
+      "conflictNotes": null,
+      "editorialNote": "Tema uten kartpunkt (transport).",
+      "approvedCopy": "Hangarbrua åpnet i september 2025; flere delstrekninger er bygget, mens gjenstående strekning avhenger av finansiering.",
+      "reason": null,
+      "reusableAcrossBoards": true,
+      "reuseConstraints": "Conversation knowledge only until a place, route or current service instance is modelled.",
+      "boardId": "placy-demo_leangenbukta",
+      "mappingStatus": "not_applicable"
+    },
+    {
+      "claimId": "LB-TOPIC-pirbrua-ranheim-cycle-route-2",
+      "subjectId": "topic:pirbrua-ranheim-cycle-route",
+      "canonicalId": "topic:pirbrua-ranheim-cycle-route",
+      "scope": "project",
+      "geography": "Leangenbukta",
+      "field": "topic_fact",
+      "value": "Miljøpakken oppgir prosjektstatus Pågår.",
+      "temporalKind": "existing",
+      "reviewStatus": "approved",
+      "sourceUrls": [
+        "https://miljopakken.no/prosjekter/sykkelforbindelse-pirbrua-ranheim"
+      ],
+      "sourceTitles": [
+        "miljopakken.no"
+      ],
+      "sourceType": "audited_category_review",
+      "sourceDate": null,
+      "observedAt": "2026-09-18",
+      "validFrom": null,
+      "validUntil": null,
+      "confidence": "high",
+      "conflictNotes": null,
+      "editorialNote": "Tema uten kartpunkt (transport).",
+      "approvedCopy": "Miljøpakken oppgir prosjektstatus Pågår.",
+      "reason": null,
+      "reusableAcrossBoards": true,
+      "reuseConstraints": "Conversation knowledge only until a place, route or current service instance is modelled.",
+      "boardId": "placy-demo_leangenbukta",
+      "mappingStatus": "not_applicable"
+    }
+  ]
+}

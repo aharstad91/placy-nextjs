@@ -77,9 +77,10 @@ export function anchorRepresentsFilter(
  * følger med ned i board-laget.
  */
 export function anchorMarkerName(
-  poi: Pick<POI, "name" | "anchorSummary" | "childPOIs">,
+  poi: Pick<POI, "name" | "anchorSummary" | "anchorKeepsOwnName" | "childPOIs">,
   hiddenCategoryIds: ReadonlySet<string> = NO_HIDDEN_CATEGORIES,
 ): string {
+  if (poi.anchorKeepsOwnName) return poi.name;
   const visible = visibleAnchorMembers(poi, hiddenCategoryIds);
   return visible.length === 1 ? `${visible[0].name} — i ${poi.name}` : poi.name;
 }

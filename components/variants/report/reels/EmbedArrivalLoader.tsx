@@ -104,6 +104,7 @@ export function EmbedArrivalLoader({
           <Image
             src={logoSrc}
             alt={projectName}
+            data-board-logo=""
             width={180}
             height={70}
             unoptimized
@@ -112,7 +113,7 @@ export function EmbedArrivalLoader({
           />
         )}
 
-        {(heroVideo || heroImage) && (
+        {visible && (heroVideo || heroImage) && (
           <div className="relative mb-7 aspect-video w-full overflow-hidden rounded-2xl shadow-xl ring-1 ring-black/5">
             {heroVideo ? (
               <video

@@ -1,0 +1,52 @@
+{
+  "status": "updated",
+  "appliedAt": "2026-09-19T13:13:54.500Z",
+  "schemaVersion": 1,
+  "projectId": "nyhavna-utvikling_nyhavna",
+  "customer": "nyhavna-utvikling",
+  "projectSlug": "nyhavna",
+  "productId": "063a0b6a-edb3-4fb2-885d-c594ddd46063",
+  "previousStandalonePoiIds": [
+    "google-ChIJm6lLfZ8xbUYRFYo0NaeG5sk"
+  ],
+  "standalonePoiIds": [
+    "google-ChIJm6lLfZ8xbUYRFYo0NaeG5sk",
+    "google-ChIJfQ6rZJ8xbUYR-va16LFeoGE",
+    "google-ChIJA-Q83OkxbUYRxlJ_XhxJhcI",
+    "google-ChIJWdP_Oa8xbUYRAfEFK2UmYOM",
+    "google-ChIJ4ccQcZ8xbUYR6Xl1I85wHrg",
+    "google-ChIJLQtHY58xbUYR4cj-xu--2Lc",
+    "google-ChIJs5Q50UYxbUYRgJFfKVmyTvE",
+    "google-ChIJmxJ5cJ8xbUYRB1gNbagHlLw",
+    "google-ChIJ88TAqZ8xbUYR7lTSrj19f4k",
+    "google-ChIJ39iadJ8xbUYRRczbteBUpAc",
+    "google-ChIJobCJYp8xbUYRyD1DuGunCOQ",
+    "google-ChIJFSxqCp8xbUYRxlNF2ntkSWg"
+  ],
+  "preservedReportConfigKeys": [
+    "assets",
+    "assistant",
+    "boardFacts",
+    "city",
+    "district",
+    "globalFaq",
+    "heroIntro",
+    "hideBrokerCard",
+    "isochrones",
+    "label",
+    "pinAccent",
+    "pinSubtitle",
+    "presentation",
+    "reportTier",
+    "standalonePoiIds",
+    "themes"
+  ],
+  "updatedAt": "2026-09-10T08:14:21.415103+00:00",
+  "revalidated": [],
+  "manualRevalidation": {
+    "endpoint": "/api/admin/revalidate",
+    "tag": "product:nyhavna-utvikling_nyhavna",
+    "path": "/eiendom/nyhavna-utvikling/nyhavna/rapport-board",
+    "status": 200
+  }
+}

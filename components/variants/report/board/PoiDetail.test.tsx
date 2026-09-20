@@ -122,3 +122,49 @@ describe("PoiDetailBody — lånt innhold", () => {
     expect(queryByTestId("poi-facts")).toBeNull();
   });
 });
+
+/**
+ * Prosjektopplysningene (2026-09-18).
+ *
+ * Blokka finnes fordi status, åpning, tidspunkt og adgang er fire påstander med
+ * hver sin kilde. Testene låser det som ellers ville glidd: at forbeholdene
+ * følger verdiene, og at et sted UTEN opplysninger ikke får en tom ramme som
+ * leser som «ingenting er avklart».
+ */
+describe("PoiDetailBody — prosjektopplysninger", () => {
+  it("viser opplysningene og forbeholdene som følger dem", () => {
+    const { getByTestId, getAllByTestId } = render(
+      <PoiDetailBody
+        poi={poi({
+          development: {
+            facts: [
+              { label: "Status", value: "under bygging" },
+              { label: "Åpning", value: "åpning ikke oppgitt" },
+              { label: "Forventet tidspunkt", value: "Q1 2027" },
+            ],
+            caveats: ["Kildene sier ikke om «Treningsrommet» er åpen. Ikke slutt at den er åpen."],
+          },
+        })}
+      />,
+    );
+    const block = getByTestId("poi-development");
+    expect(block.textContent).toContain("under bygging");
+    expect(block.textContent).toContain("åpning ikke oppgitt");
+    expect(block.textContent).toContain("Q1 2027");
+    expect(getAllByTestId("poi-development-caveat")).toHaveLength(1);
+    // Ingen tekst påstår at noe er åpent.
+    expect(block.textContent).not.toContain("Åpning: åpnet");
+  });
+
+  it("rendrer ingenting for et sted uten prosjektopplysninger", () => {
+    const { queryByTestId } = render(<PoiDetailBody poi={poi()} />);
+    expect(queryByTestId("poi-development")).toBeNull();
+  });
+
+  it("rendrer ingenting når objektet er tomt — en manglende opplysning er ingen ramme", () => {
+    const { queryByTestId } = render(
+      <PoiDetailBody poi={poi({ development: { facts: [], caveats: [] } })} />,
+    );
+    expect(queryByTestId("poi-development")).toBeNull();
+  });
+});

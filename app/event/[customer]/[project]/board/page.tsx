@@ -4,7 +4,7 @@ import { getProductAsync } from "@/lib/data-server";
 import { getBransjeprofil } from "@/lib/themes";
 import { getCollectionBySlug } from "@/lib/supabase/collections";
 import { eventToBoardData } from "@/lib/event-board/event-board-data";
-import { hexToHslChannels, pickContrastForeground } from "@/lib/theme-utils";
+import { buildReportBoardStyle } from "@/lib/board/report-board-style";
 import { buildBoardMetadata } from "@/lib/seo/board-metadata";
 import ReportReelsPage from "@/components/variants/report/reels/ReportReelsPage";
 
@@ -85,33 +85,7 @@ export default async function EventBoardPage({ params, searchParams }: PageProps
   // Theme-CSS-var-wrapper (speiler rapport-board minimalt). Events har som regel
   // ingen `theme` → themeStyle blir `{}` og skallet bruker default Tailwind-
   // tokens. Når et event-prosjekt har en theme respekteres den.
-  const themeStyle: React.CSSProperties = {};
-  const t = projectData.theme;
-  if (t) {
-    const setIf = (cssVar: string, hex?: string) => {
-      if (hex) {
-        const channels = hexToHslChannels(hex);
-        if (channels) (themeStyle as Record<string, string>)[cssVar] = channels;
-      }
-    };
-    setIf("--background", t.backgroundColor);
-    setIf("--foreground", t.foregroundColor);
-    setIf("--primary", t.primaryColor);
-    setIf("--primary-foreground", t.primaryForegroundColor);
-    setIf("--card", t.cardColor);
-    setIf("--muted", t.mutedColor);
-    setIf("--muted-foreground", t.mutedForegroundColor);
-    setIf("--border", t.borderColor);
-    if (t.fontFamily) {
-      (themeStyle as Record<string, string>)["--font-family"] = t.fontFamily;
-    }
-    if (t.primaryColor && !t.primaryForegroundColor) {
-      const autoFg = pickContrastForeground(t.primaryColor);
-      if (autoFg) {
-        (themeStyle as Record<string, string>)["--primary-foreground"] = autoFg;
-      }
-    }
-  }
+  const themeStyle = buildReportBoardStyle(projectData);
 
   return (
     <div style={themeStyle} className="min-h-screen bg-background text-foreground">

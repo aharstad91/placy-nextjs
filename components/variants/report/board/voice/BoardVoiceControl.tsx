@@ -96,7 +96,7 @@ export function BoardVoiceControl() {
   }, [hearing, micLevel]);
 
   if (!voice) return null;
-  const name = voice.guided ? "Anja" : "Placy";
+  const name = voice.name;
   const state = fieldState(voice);
   const active = ACTIVE.has(state);
   const text = copy(state, voice, name);
@@ -105,6 +105,38 @@ export function BoardVoiceControl() {
     : state === "thinking" || state === "speaking" ? "dots"
       : state === "ended" ? "again"
         : state === "attention" ? "warn" : null;
+
+  if (voice.consentPending) {
+    return (
+      <div
+        data-testid="board-voice-consent"
+        className="rounded-xl border border-stone-200 bg-stone-50 px-3 py-3"
+      >
+        <p className="text-[13px] font-medium text-stone-800">
+          Start en talesamtale med {name}?
+        </p>
+        <p className="mt-1 text-[12px] leading-[1.45] text-stone-600">
+          Mikrofonen brukes mens samtalen pågår. Du kan avslutte når som helst.
+        </p>
+        <div className="mt-2.5 flex gap-2">
+          <button
+            type="button"
+            onClick={voice.confirmConsent}
+            className="rounded-full bg-stone-900 px-3 py-1.5 text-[12px] font-semibold text-white"
+          >
+            Tillat og start
+          </button>
+          <button
+            type="button"
+            onClick={voice.cancelConsent}
+            className="rounded-full border border-stone-300 px-3 py-1.5 text-[12px] font-semibold text-stone-700"
+          >
+            Avbryt
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   // Inngangen: én linje, hele linjen er knappen. Teksten ER knappens navn.
   if (state === "idle" || state === "ended") {

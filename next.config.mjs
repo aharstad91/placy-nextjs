@@ -34,8 +34,20 @@ function localDevOrigins() {
   return [...new Set([...measured, ...privateRanges])];
 }
 
+const voiceContentFiles = [
+  './data/demo/nyhavna-lokal/*.json',
+  './data/demo/nyhavna-snapshot.json',
+  './data/demo/nyhavna-review-ledger.json',
+];
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  outputFileTracingIncludes: {
+    '/demo/nyhavna-lokal': ['./data/demo/nyhavna-lokal/*.json'],
+    '/\\[slug\\]': voiceContentFiles,
+    '/api/prototype/live': voiceContentFiles,
+    '/api/live/control': voiceContentFiles,
+  },
   allowedDevOrigins: [...localDevOrigins(), "*.ngrok-free.app", "*.ngrok.app"],
   // Aktiver eksperimentelle funksjoner for bedre ytelse
   experimental: {
@@ -94,7 +106,23 @@ const nextConfig = {
         headers: [
           { key: "X-Content-Type-Options", value: "nosniff" },
           { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
+          // Hosted aliases also expose legacy pages. None should be indexed.
+          ...(process.env.PLACY_HOSTED_VOICE === "true"
+            ? [{ key: "X-Robots-Tag", value: "noindex, nofollow" }]
+            : []),
         ],
+      },
+      {
+        source: "/demo/nyhavna-lokal/:path*",
+        headers: [{ key: "X-Robots-Tag", value: "noindex, nofollow" }],
+      },
+      {
+        source: "/:slug",
+        headers: [{ key: "X-Robots-Tag", value: "noindex, nofollow" }],
+      },
+      {
+        source: "/p/:path*",
+        headers: [{ key: "X-Robots-Tag", value: "noindex, nofollow" }],
       },
       {
         source: "/admin/:path*",

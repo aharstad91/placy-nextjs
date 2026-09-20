@@ -1,0 +1,51 @@
+{
+  "inspectedAt": "2026-09-20T21:00:58.693Z",
+  "project": {
+    "id": "skanska_lillebytunet",
+    "name": "Lillebytunet",
+    "customer": "skanska",
+    "slug": "lillebytunet"
+  },
+  "product": {
+    "id": "5eca9b02-0891-4397-813d-753b78af5a1c",
+    "version": 1,
+    "updatedAt": "2026-09-08T11:54:25.210422+00:00"
+  },
+  "inventory": {
+    "productPois": 1423,
+    "featuredPois": 103,
+    "projectPois": 1465,
+    "categories": 40
+  },
+  "research": {
+    "packages": 0,
+    "currentClaims": 0
+  },
+  "content": {
+    "themes": 7,
+    "themeIds": [
+      "hverdagsliv",
+      "barn-oppvekst",
+      "mat-drikke",
+      "natur-friluftsliv",
+      "transport",
+      "trening-aktivitet",
+      "opplevelser"
+    ],
+    "globalFaq": 0,
+    "boardFacts": 0,
+    "assistantEnabled": true,
+    "assistantFeatures": [
+      "faqProgress",
+      "followHighlightCategory",
+      "guidedPersona",
+      "narrationFocus",
+      "revealPlaces",
+      "unscopedCategoryList",
+      "voicePacing"
+    ],
+    "branded": true,
+    "initialView": "splash"
+  },
+  "publicRoute": null
+}

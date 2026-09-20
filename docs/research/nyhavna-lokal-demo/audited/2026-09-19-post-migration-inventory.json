@@ -1,0 +1,188 @@
+{
+  "inspectedAt": "2026-09-19T10:42:23.685Z",
+  "project": {
+    "id": "nyhavna-utvikling_nyhavna",
+    "name": "Nyhavna",
+    "customer": "nyhavna-utvikling",
+    "slug": "nyhavna"
+  },
+  "product": {
+    "id": "063a0b6a-edb3-4fb2-885d-c594ddd46063",
+    "version": 1,
+    "updatedAt": "2026-09-10T08:14:21.415103+00:00"
+  },
+  "inventory": {
+    "productPois": 1392,
+    "featuredPois": 119,
+    "projectPois": 1445,
+    "categories": 41
+  },
+  "research": {
+    "packages": 2,
+    "currentClaims": 184
+  },
+  "content": {
+    "themes": 8,
+    "themeIds": [
+      "nyhavna-bydel",
+      "hverdagsliv",
+      "barn-oppvekst",
+      "mat-drikke",
+      "natur-friluftsliv",
+      "transport",
+      "trening-aktivitet",
+      "opplevelser"
+    ],
+    "themeDetails": [
+      {
+        "id": "nyhavna-bydel",
+        "name": "Nyhavna som bydel",
+        "icon": "Building2",
+        "color": "#8b6cc4",
+        "categories": [
+          "nyhavna-bydel"
+        ],
+        "hasEditorial": true,
+        "faqCount": 7
+      },
+      {
+        "id": "hverdagsliv",
+        "name": "Hverdag",
+        "icon": "ShoppingCart",
+        "color": "#36d16f",
+        "categories": [
+          "shopping",
+          "supermarket",
+          "pharmacy",
+          "convenience",
+          "liquor_store",
+          "doctor",
+          "dentist",
+          "hospital",
+          "haircare",
+          "bank",
+          "post",
+          "veterinar",
+          "trafikkskole",
+          "butikk"
+        ],
+        "hasEditorial": true,
+        "faqCount": 1
+      },
+      {
+        "id": "barn-oppvekst",
+        "name": "Oppvekst",
+        "icon": "GraduationCap",
+        "color": "#f8ae17",
+        "categories": [
+          "skole",
+          "barnehage",
+          "lekeplass",
+          "idrett",
+          "fritidsklubb"
+        ],
+        "hasEditorial": true,
+        "faqCount": 3
+      },
+      {
+        "id": "mat-drikke",
+        "name": "Servering",
+        "icon": "UtensilsCrossed",
+        "color": "#f35a5a",
+        "categories": [
+          "restaurant",
+          "cafe",
+          "bar",
+          "bakery"
+        ],
+        "hasEditorial": true,
+        "faqCount": 3
+      },
+      {
+        "id": "natur-friluftsliv",
+        "name": "Natur",
+        "icon": "Trees",
+        "color": "#22c68d",
+        "categories": [
+          "park",
+          "outdoor",
+          "badeplass",
+          "marina",
+          "campground",
+          "hundepark"
+        ],
+        "hasEditorial": true,
+        "faqCount": 0
+      },
+      {
+        "id": "transport",
+        "name": "Transport",
+        "icon": "Bus",
+        "color": "#4d93f8",
+        "categories": [
+          "bus",
+          "train",
+          "tram",
+          "bike",
+          "parking",
+          "carshare",
+          "taxi",
+          "charging_station",
+          "fuel"
+        ],
+        "hasEditorial": true,
+        "faqCount": 4
+      },
+      {
+        "id": "trening-aktivitet",
+        "name": "Trening",
+        "icon": "Dumbbell",
+        "color": "#f05da7",
+        "categories": [
+          "gym",
+          "swimming",
+          "spa",
+          "fitness_park"
+        ],
+        "hasEditorial": true,
+        "faqCount": 0
+      },
+      {
+        "id": "opplevelser",
+        "name": "Opplevelser",
+        "icon": "Film",
+        "color": "#a06cf5",
+        "categories": [
+          "library",
+          "cinema",
+          "museum",
+          "kirke",
+          "theatre",
+          "bowling"
+        ],
+        "hasEditorial": false,
+        "faqCount": 1
+      }
+    ],
+    "globalFaq": 1,
+    "boardFacts": 0,
+    "assistantEnabled": true,
+    "assistantFeatures": [
+      "faqProgress",
+      "followHighlightCategory",
+      "guidedPersona",
+      "narrationFocus",
+      "revealPlaces",
+      "unscopedCategoryList",
+      "voicePacing"
+    ],
+    "branded": true,
+    "initialView": "splash"
+  },
+  "publicRoute": {
+    "slug": "nyhavna",
+    "content_source": "nyhavna-lokal",
+    "enabled": true,
+    "public_tenant_id": "nyhavna-public"
+  }
+}

@@ -8,6 +8,7 @@ import type { BoardData, BoardPOI } from "../board-data";
 import { BoardProvider, useBoard } from "../board-state";
 import { NeighbourhoodSurface } from "./NeighbourhoodSurface";
 import { StoryTourProvider } from "../story/story-tour";
+import { BoardVoiceProvider } from "../voice/board-voice";
 
 /**
  * Unit 3b + 4 — navigasjonsstakken, mot en EKTE BoardProvider.
@@ -235,6 +236,37 @@ describe("NeighbourhoodSurface — nabolagslista", () => {
     });
     expect(queryAllByTestId("neighbourhood-card")).toHaveLength(0);
     expect(getByTestId("neighbourhood-empty")).toBeTruthy();
+  });
+
+  it("viser Anja på standardboards når assistenten er aktivert", () => {
+    const data = boardData();
+    data.assistant = {
+      enabled: true,
+      name: "Anja",
+      guided: true,
+      greeting: "Hei! Jeg er Anja.",
+      features: {
+        faqProgress: true,
+        revealPlaces: true,
+        followHighlightCategory: true,
+        unscopedCategoryList: true,
+        narrationFocus: true,
+        voicePacing: true,
+        guidedPersona: true,
+      },
+    };
+    const { getByRole } = render(
+      <BoardProvider data={data}>
+        <StoryTourProvider>
+          <BoardVoiceProvider>
+            <Probe rect={RECT} camera={makeCamera()} gesture={false} />
+            <NeighbourhoodSurface onSurfaceHeightChange={vi.fn()} />
+          </BoardVoiceProvider>
+        </StoryTourProvider>
+      </BoardProvider>,
+    );
+
+    expect(getByRole("button", { name: "Snakk med Anja" })).toBeTruthy();
   });
 });
 

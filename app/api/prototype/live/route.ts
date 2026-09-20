@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
+import { hostedVoiceEnabled, requestDemoAccess } from '@/lib/live/hosted-access';
 import { LIVE_VOICES } from '@/lib/live/voices';
 import { backendModel, liveModel, liveSessionConfig, liveVoice } from '@/lib/live/session-config';
 import { createLiveSession, LiveSessionError } from '@/lib/live/create-session';
@@ -9,7 +10,7 @@ import { LIVE_SESSION_ID } from '@/lib/live/hangup';
 import { NYHAVNA_VOICE_INSTRUCTIONS } from '@/lib/live/voice-instructions';
 import { localRequest } from '@/lib/live/local-request';
 import { DEFAULT_LIVE_DATASET, isLiveDataset, loadLiveDemo, type LiveDemo } from '@/lib/live/demos';
-import { nyhavnaTools } from '@/lib/realtime/nyhavna-conversation';
+import { resolveVoiceProject, VoiceProjectError } from '@/lib/live/projects';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -33,7 +34,31 @@ function requestedDataset(value: string | null | undefined) {
 
 
 export async function GET(request: NextRequest) {
-  if (!localRequest(request)) return new NextResponse(null, { status: 404 });
+  const hosted = hostedVoiceEnabled();
+  const access = hosted ? requestDemoAccess(request) : null;
+  if (hosted ? !access : !localRequest(request)) return new NextResponse(null, { status: 404 });
+  if (hosted) {
+    try {
+      const project = request.nextUrl.searchParams.get('project') ?? undefined;
+      const dataset = request.nextUrl.searchParams.get('dataset') ?? undefined;
+      const resolved = await resolveVoiceProject(
+        { ...(project ? { project } : {}), ...(dataset ? { dataset } : {}) },
+        access?.role === 'benchmark' ? 'benchmark' : 'public',
+      );
+      return NextResponse.json({
+        configured: Boolean(process.env.OPENAI_API_KEY),
+        voiceModel: liveModel(), voice: liveVoice(), backendModel: backendModel(),
+        dataset: resolved.demo.id, snapshotId: resolved.demo.snapshotId,
+        protocol: 'live', project: resolved.slug, transport: 'websocket', warningMs: 26 * 60 * 1000,
+      }, { headers: { 'Cache-Control': 'no-store' } });
+    } catch (error) {
+      if (error instanceof VoiceProjectError && error.kind === 'not_found') {
+        return new NextResponse(null, { status: 404, headers: { 'Cache-Control': 'no-store' } });
+      }
+      console.error('hosted_voice_project_load_failed', error);
+      return NextResponse.json({ error: 'Prosjektet er midlertidig utilgjengelig. Prøv igjen om litt.' }, { status: 503, headers: { 'Cache-Control': 'no-store' } });
+    }
+  }
   const dataset = requestedDataset(request.nextUrl.searchParams.get('dataset'));
   if (!dataset) return NextResponse.json({ error: 'Ukjent datasett.' }, { status: 400 });
   try {
@@ -89,7 +114,7 @@ export async function POST(request: NextRequest) {
   const backendInstructions = demo.backendInstructions;
   let identityKnown = false;
   try {
-    const session = liveSessionConfig(demo.voiceInstructions ?? NYHAVNA_VOICE_INSTRUCTIONS, backendInstructions, [...nyhavnaTools, ...(demo.additionalTools ?? [])], parsed.data.voice);
+    const session = liveSessionConfig(demo.voiceInstructions ?? NYHAVNA_VOICE_INSTRUCTIONS, backendInstructions, demo.tools, parsed.data.voice);
     session.delegation.responses.parallel_tool_calls = demo.parallelTools ?? true;
     const created = await createLiveSession(session, parsed.data.sdp);
     identityKnown = true;

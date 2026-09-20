@@ -1,5 +1,6 @@
 {
   "schemaVersion": 1,
+  "profile": "housing-development",
   "id": "nyhavna-lokal",
   "name": "Nyhavna",
   "address": "",
@@ -16,6 +17,33 @@
   "pinImage": "/demo/nyhavna-lokal/bydeler/nyhavna-logo.svg",
   "greeting": "Hei, jeg heter Anja og er din digitale guide på Nyhavna. Jeg kan fortelle om bydelen som vokser fram, og vise deg hva som finnes i nabolaget allerede i dag. Du kan spørre underveis eller trykke på kartet. Vil du først høre om planene for Nyhavna eller om nærområdet slik det er i dag?",
   "projectInfoLabel": "det kildekontrollerte materialet om Nyhavna",
+  "discoveryCategoryIds": [
+    "trening-aktivitet",
+    "natur-friluftsliv"
+  ],
+  "voice": {
+    "subject": "hverdagen på Nyhavna",
+    "presents": "Nyhavna og nærområdet",
+    "employer": "Nyhavna",
+    "phrases": [
+      "fra Nyhavna",
+      "dagligvarer",
+      "hvis du vil trene"
+    ],
+    "scope": "Hele Nyhavna er rammen. Opplysninger om Transittkaia gjelder det delområdet. Skoletilhørighet må avklares for boligen. Dagens tilbud og planer holdes adskilt.",
+    "afterGreeting": "La brukeren velge bydelen som kommer eller stedene som finnes i dag. Ved bydelen, deleger valget.",
+    "planScope": "Skill mellom planene for bydelen og tilbud som finnes i dag.",
+    "entry": "«Bydelen», «bo», «boligene» og «det som kommer» betyr present_neighbourhood med category og category_id nyhavna-bydel.",
+    "referencePoint": "Det er et fast referansepunkt på Nyhavna, ikke en bolig.",
+    "subAreaFocus": "For delområder: spør om boligplanene eller dagens nærområde rundt det valgte delområdet. Ikke kall dem «lignende steder».",
+    "subAreaRole": "For delområder spør du heller om boligplanene eller dagens nærområde rundt området. Ikke kall delområder «lignende steder».",
+    "backendSections": [
+      "BYDEL OG DELOMRÅDER: Nyhavna Utviklings /bo beskriver fem delområder, ikke fem vedtatte eller nummererte byggetrinn. Transittkaia har flere etapper. Bruk felleskonteksten på tvers av samtalen og get_place_facts for detaljene ved ett område. Formidle planene levende, men bruk «planlegges», «ønsker» og «utbygger beskriver». Framtidige tjenester finnes ikke nødvendigvis i dag. Vitensenterets 2030 er et ønske; Transittkaias 2027/2029 avhenger av plangodkjenning. Kartpunktene viser områder, ikke tomtegrenser eller innganger; ikke beregn skolekrets eller reisetid fra disse punktene."
+    ],
+    "roleSentences": [
+      "Kall de fem områdene delområder, ikke fem nummererte byggetrinn."
+    ]
+  },
   "categories": [
     {
       "id": "nyhavna-bydel",
@@ -23,7 +51,9 @@
       "icon": "Building2",
       "color": "#8b6cc4",
       "lead": "Boligliv, byrom og fem delområder under utvikling.",
-      "body": "Velg et delområde for å høre om det som planlegges der."
+      "body": "Velg et delområde for å høre om det som planlegges der.",
+      "invitation": "Hvilket delområde vil du høre mer om? Du kan også trykke på det i kartet.",
+      "placeInvitation": "Vil du høre mer om boligplanene for dette delområdet, eller om nærområdet slik det er i dag?"
     },
     {
       "id": "hverdagsliv",
@@ -55,7 +85,8 @@
       "icon": "Trees",
       "color": "#22c68d",
       "lead": "",
-      "body": ""
+      "body": "",
+      "moreNoun": "turmål"
     },
     {
       "id": "transport",
@@ -71,7 +102,8 @@
       "icon": "Dumbbell",
       "color": "#f05da7",
       "lead": "",
-      "body": ""
+      "body": "",
+      "moreNoun": "treningssteder"
     },
     {
       "id": "opplevelser",

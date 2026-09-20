@@ -79,6 +79,11 @@ import {
   getProjectSplashVideo,
 } from "@/lib/themes/project-brand";
 import type { BoardData } from "../board/board-data";
+import {
+  DEFAULT_REPORT_LAYOUT,
+  DEFAULT_REPORT_PLACE_PANEL,
+  isInitiallyRevealed,
+} from "@/lib/board/report-presentation";
 
 // ── Lazy-load-grenser (PRD 9 Unit 7 / PRD 2 Beslutning 14) ──────────────────
 // De tre verifiserte tunge nivå-2-/ortogonale modulene `dynamic()`-importeres
@@ -148,25 +153,26 @@ interface Props {
    *
    * Fram til 2026-09-13 var event-modus UTLEDET av at `boardData` kom inn som
    * prop, fordi event-ruta var den eneste som bygde BoardData selv. Den lokale
-   * Nyhavna-demoen bygger den også (`lib/demo/nyhavna-lokal/board.ts`) og er et
+   * Nyhavna-demoen bygger den også (`lib/demo/local-board/board.ts`) og er et
    * BOLIG-board — med utledningen ville den arvet event-chromet: programfilter,
    * samlings-skuff og «Utforsk programmet» på splashen. Utelatt = utledning som
    * før, så event-ruta er uendret.
    */
   boardMode?: "report" | "event";
   /**
-   * Desktop-skallet. `floating` (default): kolonnen svømmer som et panel over et
-   * kart i full bredde (Apple Maps-modellen). `framed`: kolonnen står inntil
+   * Desktop-skallet. `framed` (default): kolonnen står inntil
    * venstre kant i full høyde, og kartet er en innrammet modul i feltet til
-   * høyre for den — brukt av den lokale Nyhavna-demoen. Mobil er lik i begge.
+   * høyre for den. `floating` beholder det eldre panelet over et kart i full
+   * bredde. Nyhavna validerte modellen; fra 2026-09-19 er `framed` standarden
+   * for alle Placy-boards. Mobil er lik i begge.
    */
   layout?: "floating" | "framed";
   /**
    * Desktop-policy for stedene (2026-09-15): `true` = alle steder åpner ETT
    * felles detaljpanel over kolonnen, uten kartpopup, stedsfane eller
-   * utfolding i raden. Sendes fra demo-grensen (den lokale Nyhavna-demoen) og
-   * bæres av `BoardProvider`; komponentene leser den via `useDesktopPlacePanel`,
-   * som også legger 1024-grensen på. Mobil er uendret. Default `false`.
+   * utfolding i raden. Bæres av `BoardProvider`; komponentene leser den via
+   * `useDesktopPlacePanel`, som også legger 1024-grensen på. Nyhavna validerte
+   * modellen; fra 2026-09-19 er den felles standard. Mobil er uendret.
    */
   placePanel?: boolean;
   /**
@@ -199,9 +205,14 @@ interface Props {
 }
 
 export default function ReportReelsPage(props: Props) {
+  const brandEnabled =
+    props.boardData?.assets?.brand === true ||
+    props.project.reportConfig?.assets?.brand === true;
   return (
     <LocaleProvider>
-      <Inner {...props} />
+      <div className="contents" data-board-brand={brandEnabled ? "true" : undefined}>
+        <Inner {...props} />
+      </div>
     </LocaleProvider>
   );
 }
@@ -211,8 +222,8 @@ function Inner({
   enTranslations = {},
   boardData: inputBoardData,
   boardMode,
-  layout = "floating",
-  placePanel = false,
+  layout = DEFAULT_REPORT_LAYOUT,
+  placePanel = DEFAULT_REPORT_PLACE_PANEL,
   collection,
   embed = false,
   fromEmbed = false,
@@ -243,6 +254,10 @@ function Inner({
   const boardData = useMemo(
     () => inputBoardData ?? adaptBoardData(reportData!),
     [inputBoardData, reportData],
+  );
+  const initiallyRevealed = isInitiallyRevealed(
+    effectiveProject.reportConfig,
+    boardData.projectSlug === "nyhavna",
   );
 
   const cards = useMemo(
@@ -394,6 +409,7 @@ function Inner({
                   embed={embed}
                   fromEmbed={fromEmbed}
                   layout={layout}
+                  initiallyRevealed={initiallyRevealed}
                 />
               </ReelsAudioShell>
             </BoardVoiceProvider>
@@ -655,6 +671,7 @@ function ResponsiveLayoutInner({
   embed,
   fromEmbed,
   layout,
+  initiallyRevealed,
 }: {
   boardData: BoardData;
   has3dAddon: boolean;
@@ -676,6 +693,8 @@ function ResponsiveLayoutInner({
   fromEmbed: boolean;
   /** Desktop-skall: flytende panel over kartet, eller kolonne + innrammet kart. */
   layout: "floating" | "framed";
+  /** Boardet er selve landingen og hopper eksplisitt over velkomst-splashen. */
+  initiallyRevealed: boolean;
 }) {
   const visibleBoard = useBoard().data;
   const home = boardData.home;
@@ -701,12 +720,8 @@ function ResponsiveLayoutInner({
   // flaten over kart-peeken (z-index) så det inn-glidende slidet ikke klippes av
   // peek-sheeten. Play/pause + swipe-navigasjon eier ReelSwipeStack selv.
   const [isDragging, setIsDragging] = useState(false);
-  const [splashVisible, setSplashVisible] = useState(
-    boardData.projectSlug !== "nyhavna",
-  );
-  const [boardRevealed, setBoardRevealed] = useState(
-    boardData.projectSlug === "nyhavna",
-  );
+  const [splashVisible, setSplashVisible] = useState(!initiallyRevealed);
+  const [boardRevealed, setBoardRevealed] = useState(initiallyRevealed);
   // Nabolagsflaten (mobil, boards uten VO): sheetens MÅLTE høyde i gjeldende
   // hvileposisjon. Driver kartets bottom-padding OG okklusjonen i det
   // publiserte viewport-rektangelet, så lista aldri teller punkter som ligger
@@ -886,7 +901,7 @@ function ResponsiveLayoutInner({
     );
 
     if (layout === "framed") {
-      // Innrammet desktop (Nyhavna-demoen, 2026-09-14): kolonnen står som en
+      // Innrammet desktop (validert i Nyhavna 2026-09-14): kolonnen står som en
       // vegg helt inntil venstre kant i full høyde, og kartet er en MODUL i
       // feltet til høyre for den, med 16 px luft mot topp, høyre og bunn. Kartet
       // fortsetter ikke bak kolonnen, så det trenger ingen `mapPaddingLeft`:

@@ -165,7 +165,7 @@ export function StoryColumn({ noBrokers = false }: { noBrokers?: boolean }) {
           (2026-09-15). Den vokser på samme sted til statusfeltet mens samtalen
           går. Tilstanden bor fortsatt i provideren, så flyttingen påvirker
           ikke forbindelsen eller et åpent stedspanel. */}
-      {data.demoSnapshotId && (
+      {(data.assistant?.enabled || data.demoSnapshotId) && (
         <div data-story-assistant className="shrink-0 px-6 pb-3">
           <BoardVoiceControl />
         </div>
@@ -473,6 +473,7 @@ export function DesktopStorySidebar({
             <Image
               src={logoSrc}
               alt={home.name}
+              data-board-logo=""
               width={132}
               height={51}
               unoptimized

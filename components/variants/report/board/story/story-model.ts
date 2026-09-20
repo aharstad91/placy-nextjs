@@ -50,13 +50,13 @@ export const AREA_RAIL_LABEL = "Tilbake";
 
 /**
  * Områdets undertittel: dekningen i tall, der kategori-stoppene har spørsmålet
- * sitt. Summen over kategoriene, ikke unike steder — samme tall kortet «Hele
- * nabolaget» viste, og samme tall du får ved å legge sammen brikkene i raden.
+ * sitt. Et anker kan finnes i flere temaer (for eksempel et kjøpesenter med
+ * både hverdag og servering), men er fortsatt ett sted på kartet.
  */
 export function areaSubline(
-  categories: readonly { pois: readonly unknown[] }[],
+  categories: readonly { pois: readonly { id: string }[] }[],
 ): string {
-  const places = categories.reduce((n, c) => n + c.pois.length, 0);
+  const places = new Set(categories.flatMap(category => category.pois.map(poi => poi.id))).size;
   const themes = categories.length;
   // Entall på stedene også: et provisjonert board har alltid mange, men et
   // board som fylles for hånd går gjennom 1.

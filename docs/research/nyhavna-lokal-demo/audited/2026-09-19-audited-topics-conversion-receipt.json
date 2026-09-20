@@ -1,0 +1,16 @@
+{
+  "schemaVersion": 1,
+  "packageId": "nyhavna-audited-topics-2026-09-19",
+  "packageHash": "495320c565b3b1cd655819e4e729e56b98814a08de4c7616324d52ada4f86ba5",
+  "projectId": "nyhavna-utvikling_nyhavna",
+  "sourcePath": "data/demo/nyhavna-lokal/topics.json",
+  "outputPath": "docs/research/nyhavna-lokal-demo/audited/2026-09-19-audited-topics-ledger-package.json",
+  "entityCount": 17,
+  "claimCount": 17,
+  "mappedEntities": 0,
+  "unmappedEntities": 0,
+  "publicationStateCounts": {
+    "publishable": 17
+  },
+  "freshnessPolicy": "Migrated claims expire after 2026-10-19 unless revalidated."
+}

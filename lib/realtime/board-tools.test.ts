@@ -76,6 +76,15 @@ describe("Kartkommandoene i nettleseren", () => {
     expect(env.mapCamera?.fitCoordinates).toHaveBeenCalledWith([{ lat: 63.42, lng: 10.4 }, { lat: 63.4, lng: 10.4 }], expect.objectContaining({ maxZoom: 16.5 }));
   });
 
+  it("beholder prosjektet i utsnittet for ordinære assistentboards", () => {
+    const env = fixture();
+    executeBoardTool("highlight_places", { poi_ids: ["cafe"] }, { ...env, keepHomeInView: true });
+    expect(env.mapCamera?.fitCoordinates).toHaveBeenCalledWith(
+      [env.data.home.coordinates, { lat: 63.42, lng: 10.4 }],
+      expect.objectContaining({ maxZoom: 16.5 }),
+    );
+  });
+
   it("gjentatt fremheving av samme gruppe lar brukerens utsnitt stå", () => {
     const env = fixture();
     env.state = { ...env.state, highlightedPoiIds: ["cafe", "planned-park"] as BoardPOIId[] };
@@ -114,6 +123,25 @@ describe("Kartkommandoene i nettleseren", () => {
     expect(executeBoardTool("show_category", { category_id: "food" }, env)).toEqual({ ok: true, shown: "Servering", category_id: "food" });
     expect(env.dispatch).toHaveBeenCalledWith({ type: "SELECT_CATEGORY", id: "food", source: "voice" });
     expect(executeBoardTool("show_category", { category_id: "fake" }, env)).toHaveProperty("error");
+  });
+
+  it("viser de nærmeste kategoristedene og holder hjemmepunktet synlig", () => {
+    const env = fixture();
+    const food = env.data.categories[1]!;
+    const far = {
+      ...food.pois[0]!,
+      id: "far" as BoardPOIId,
+      name: "Langt unna",
+      coordinates: { lat: 63.6, lng: 10.4 },
+      raw: { ...food.pois[0]!.raw, travelTime: { walk: 40 } },
+    };
+    food.pois = [far, food.pois[0]!];
+    food.topRankedPois = [far];
+    executeBoardTool("show_category", { category_id: "food" }, { ...env, keepHomeInView: true });
+    expect(env.mapCamera?.fitCoordinates).toHaveBeenCalledWith(
+      [env.data.home.coordinates, { lat: 63.42, lng: 10.4 }, { lat: 63.6, lng: 10.4 }],
+      expect.objectContaining({ maxZoom: 16 }),
+    );
   });
 
   it("nekter reisemåter uten lagrede tider og ukjente kommandoer", () => {

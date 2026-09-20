@@ -1,5 +1,5 @@
 /**
- * Den talte hilsenen – delt av klienten (som sender den som
+ * Nyhavnas egen talte hilsen – delt av klienten (som sender den som
  * `session.instructions.append` rett etter `session.started`) og
  * serverinstruksjonen, så de aldri sier ulike ting om språk og identitet.
  * Live har ingen `response.create` for hilsener og ingen «hilsen ferdig»-event;
@@ -13,19 +13,18 @@
  *
  * ETT åpent spørsmål, ikke et intervju: svaret er det som avgjør hvilket tema
  * omvisningen begynner med (`set_interests`).
- */
-export const NYHAVNA_GREETING_TEXT =
-  "Hei! Jeg kan vise deg rundt på Nyhavna. Hva er viktigst for deg når du vurderer et nytt sted å bo?";
-
-/**
- * Hilsenen som instruksjon til stemmen.
  *
- * Teksten er et argument og ikke en konstant fordi hilsenen hører til
- * DATASETTET: den lokale demoen oppgir sin i `board.json`. Reglene rundt den
- * (start nå, si den ordrett, ikke legg til navn, vent) er kodens og skal være
- * de samme uansett hvilket board som snakker.
+ * Formen er den felles standardhilsenen i `board-greeting.ts` med Nyhavna som
+ * sted. Konstanten er beholdt fordi Nyhavna-datasettets kunnskaps- og
+ * paritetstester refererer den direkte.
  */
-export const greetingInstruction = (text: string) =>
-  `Begynn samtalen nå, uten å vente på brukeren. Si nøyaktig dette, på norsk: «${text}» Ikke legg til andre navn enn de som står i hilsenen. Vent så, og lytt. Ikke be backenden om hjelp før brukeren har svart.`;
+import {
+  defaultGreetingInstruction,
+  defaultGreetingText,
+} from "@/lib/realtime/board-greeting";
 
-export const NYHAVNA_GREETING_INSTRUCTION = greetingInstruction(NYHAVNA_GREETING_TEXT);
+export { greetingInstruction } from "@/lib/realtime/board-greeting";
+
+export const NYHAVNA_GREETING_TEXT = defaultGreetingText("Nyhavna");
+
+export const NYHAVNA_GREETING_INSTRUCTION = defaultGreetingInstruction("Nyhavna");

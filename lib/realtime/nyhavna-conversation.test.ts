@@ -1,7 +1,8 @@
 import { describe, expect, it } from "vitest";
 import { getNyhavnaSnapshot } from "@/lib/demo/nyhavna-leve/snapshot";
 import { buildChapter, chapterSummary, spokenFaq, type ProjectInfoProvider } from "@/lib/realtime/nyhavna-chapters";
-import { createNyhavnaConversation, nyhavnaTools } from "@/lib/realtime/nyhavna-conversation";
+import { conversationTools, createNyhavnaConversation } from "@/lib/realtime/nyhavna-conversation";
+import { NYHAVNA_LABELS } from "@/lib/realtime/conversation-labels";
 import { MAP_TOOLS } from "@/lib/realtime/types";
 
 const fakeProjectInfo: ProjectInfoProvider = {
@@ -11,7 +12,7 @@ const fakeProjectInfo: ProjectInfoProvider = {
 
 describe("Nyhavna-samtalen på serveren", () => {
   it("verktøylista har ett navn per verktøy, og kartverktøyene er nøyaktig MAP_TOOLS", () => {
-    const names = nyhavnaTools.map((t) => t.name);
+    const names = conversationTools(NYHAVNA_LABELS).map((t) => t.name);
     expect(new Set(names).size).toBe(names.length);
     expect(names.filter((n) => MAP_TOOLS.has(n)).sort()).toEqual([...MAP_TOOLS].sort());
     for (const name of ["set_interests", "open_theme", "note_detour", "return_to_tour", "find_project_info", "find_places", "get_place_facts", "get_board_facts"]) expect(names).toContain(name);
@@ -181,5 +182,66 @@ describe("Nyhavna-samtalen på serveren", () => {
     // Kunnskapsverktøyene går fortsatt gjennom, pakket i result.
     expect(conversation.execute("find_places", { query: "Dora Kaffebar" }).result).toMatchObject({ places: [{ id: "dora-kaffebar" }] });
     expect(conversation.execute("ukjent", {}).result).toHaveProperty("error");
+  });
+});
+
+/**
+ * Verktøytekstene er det modellen leser. Sto stedsnavnet i koden, ville enhver
+ * ny demo fått en guide som sa at den leter på Nyhavna mens boardet viste noe
+ * annet. Testene holder to løfter samtidig: snapshotet sier ordrett det samme
+ * som før, og et annet prosjekt nevner ikke Nyhavna med ett ord.
+ */
+describe("verktøytekstene følger datasettets navn", () => {
+  const description = (labels: Parameters<typeof conversationTools>[0], name: string) =>
+    conversationTools(labels).find((tool) => tool.name === name)?.description;
+
+  it("er ordrett uendret for det frosne snapshotet", () => {
+    expect(description(NYHAVNA_LABELS, "find_places")).toBe(
+      "Finn steder på Nyhavna: først kildekontrollerte omtaler, så boardets register. Opptil 6 treff med ID; ikke-plasserte omtaler kan forklares, ikke vises.",
+    );
+    expect(description(NYHAVNA_LABELS, "get_board_facts")).toBe(
+      "Kort kildekontrollert introduksjon til Nyhavna og temaene.",
+    );
+    expect(description(NYHAVNA_LABELS, "find_project_info")).toBe(
+      "Søk i Nyhavna Utviklings eget innhold (nyhavna.no): prosjektet, hvem som står bak, visjon, planer, status, hverdagsliv. Returnerer kildebelagte utsagn med status (eksisterende, planlagt, vedtatt plan, visjon, uavklart).",
+    );
+  });
+
+  it("nevner ikke Nyhavna for et annet prosjekt", () => {
+    const labels = { areaName: "Leangenbukta", projectInfoLabel: "det kildekontrollerte materialet om Leangenbukta" };
+    const texts = conversationTools(labels).map((tool) => `${tool.name} ${tool.description ?? ""}`).join("\n");
+    expect(texts).not.toMatch(/Nyhavna/i);
+    expect(texts).toContain("Finn steder på Leangenbukta");
+    expect(texts).toContain("Søk i det kildekontrollerte materialet om Leangenbukta");
+  });
+
+  it("henter det tomme svaret fra datasettets navn, uten å bytte ordlyd for snapshotet", async () => {
+    const { board } = await getNyhavnaSnapshot();
+    const empty = { forTheme: () => [], search: () => [] };
+    const nyhavna = createNyhavnaConversation(board, { projectInfo: empty, labels: NYHAVNA_LABELS });
+    expect(nyhavna.execute("find_project_info", { query: "pizza" }).result).toMatchObject({
+      matches: 0,
+      note: "Ingen kildebelagt omtale i Nyhavnas eget innhold. Si kort at du ikke har grunnlag for det, uten å gjette.",
+    });
+    const other = createNyhavnaConversation(board, {
+      projectInfo: empty,
+      labels: { areaName: "Leangenbukta", projectInfoLabel: "det kildekontrollerte materialet om Leangenbukta" },
+    });
+    const note = String((other.execute("find_project_info", { query: "pizza" }).result as { note: string }).note);
+    expect(note).toBe("Ingen kildebelagt omtale i det kildekontrollerte materialet om Leangenbukta. Si kort at du ikke har grunnlag for det, uten å gjette.");
+    expect(note).not.toMatch(/Nyhavna/i);
+  });
+
+  it("legger bare til områdets egen temanøkkel når datasettet har en", async () => {
+    const { board } = await getNyhavnaSnapshot();
+    const seen: string[][] = [];
+    const spy = { forTheme: () => [], search: (_q: string, themes: readonly string[]) => { seen.push([...themes]); return []; } };
+    createNyhavnaConversation(board, { projectInfo: spy, labels: NYHAVNA_LABELS }).execute("find_project_info", { query: "visjon" });
+    expect(seen[0]).toEqual(["nyhavna"]);
+    createNyhavnaConversation(board, {
+      projectInfo: spy,
+      labels: { areaName: "Leangenbukta", projectInfoLabel: "materialet" },
+    }).execute("find_project_info", { query: "visjon" });
+    expect(seen[1]).toEqual([]);
   });
 });

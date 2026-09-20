@@ -1,287 +1,47 @@
 import { NextRequest, NextResponse } from "next/server";
+import { EnturClientError, fetchEnturDepartures, planEnturTrip } from "@/lib/entur/client";
 import { createRateLimiter, getClientIp } from "@/lib/utils/rate-limit";
-// Audit-fiks 2026-07-05: oppstrøms-API uten timeout holder rute-funksjonen
-// åpen ubestemt ved treg leverandør (connection-utsulting under last).
-const UPSTREAM_TIMEOUT_MS = 8000;
 
-// Audit-fiks 2026-07-06: per-IP rate-limit på alle offentlige Entur-ruter.
 const limiter = createRateLimiter({ limit: 60, windowMs: 60_000 });
 
-// Maks antall reise-alternativer per POST-kall — stopper unødvendig stor
-// GraphQL-query mot Entur JourneyPlanner.
-const MAX_NUM_TRIPS = 10;
-
-
-// Entur JourneyPlanner API for sanntidsdata og reiseplanlegging
-// Dokumentasjon: https://developer.entur.org/
-
-const ENTUR_API_URL = "https://api.entur.io/journey-planner/v3/graphql";
-
-// GraphQL query for å hente avganger fra en holdeplass — per quay (retning)
-const DEPARTURES_QUERY = `
-  query GetDepartures($stopPlaceId: String!, $numberOfDepartures: Int!) {
-    stopPlace(id: $stopPlaceId) {
-      id
-      name
-      quays {
-        id
-        estimatedCalls(numberOfDepartures: $numberOfDepartures) {
-          expectedDepartureTime
-          actualDepartureTime
-          realtime
-          destinationDisplay {
-            frontText
-          }
-          serviceJourney {
-            line {
-              id
-              publicCode
-              transportMode
-              presentation {
-                colour
-                textColour
-              }
-            }
-          }
-        }
-      }
-    }
+const errorResponse = (error: unknown, fallback: string) => {
+  if (error instanceof EnturClientError && error.code === "not_found") {
+    return NextResponse.json({ error: error.message }, { status: 404 });
   }
-`;
-
-// GraphQL query for reiseplanlegging
-const TRIP_QUERY = `
-  query GetTrip($from: Location!, $to: Location!, $numTripPatterns: Int!) {
-    trip(from: $from, to: $to, numTripPatterns: $numTripPatterns) {
-      tripPatterns {
-        duration
-        walkDistance
-        legs {
-          mode
-          distance
-          duration
-          fromPlace {
-            name
-          }
-          toPlace {
-            name
-          }
-          line {
-            publicCode
-            name
-            transportMode
-          }
-        }
-      }
-    }
-  }
-`;
-
-type RawCall = {
-  expectedDepartureTime: string;
-  actualDepartureTime: string | null;
-  realtime: boolean;
-  destinationDisplay: { frontText: string };
-  serviceJourney: {
-    line: {
-      publicCode: string;
-      transportMode: string;
-      presentation: { colour: string; textColour: string };
-    };
-  };
+  console.error("Entur API error:", error);
+  return NextResponse.json({ error: fallback }, { status: 500 });
 };
-
-function formatCall(call: RawCall) {
-  return {
-    departureTime: call.actualDepartureTime || call.expectedDepartureTime,
-    isRealtime: call.realtime,
-    destination: call.destinationDisplay?.frontText,
-    lineCode: call.serviceJourney?.line?.publicCode,
-    transportMode: call.serviceJourney?.line?.transportMode,
-    lineColor: call.serviceJourney?.line?.presentation?.colour,
-  };
-}
 
 export async function GET(request: NextRequest) {
   if (!limiter.check(getClientIp(request.headers))) {
     return NextResponse.json({ error: "Too many requests" }, { status: 429 });
   }
-
-  const searchParams = request.nextUrl.searchParams;
-  const stopPlaceId = searchParams.get("stopPlaceId");
-  const numberOfDepartures = parseInt(searchParams.get("limit") || "5");
-
-  if (!stopPlaceId) {
-    return NextResponse.json(
-      { error: "stopPlaceId is required" },
-      { status: 400 }
-    );
-  }
-
+  const stopPlaceId = request.nextUrl.searchParams.get("stopPlaceId");
+  const limit = Number.parseInt(request.nextUrl.searchParams.get("limit") || "5", 10);
+  if (!stopPlaceId) return NextResponse.json({ error: "stopPlaceId is required" }, { status: 400 });
   try {
-    const response = await fetch(ENTUR_API_URL, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "ET-Client-Name": "placy-neighborhood-stories",
-      },
-      signal: AbortSignal.timeout(UPSTREAM_TIMEOUT_MS),
-      body: JSON.stringify({
-        query: DEPARTURES_QUERY,
-        variables: {
-          stopPlaceId,
-          numberOfDepartures,
-        },
-      }),
-      next: { revalidate: 30 },
-    });
-
-    if (!response.ok) {
-      throw new Error(`Entur API error: ${response.status}`);
-    }
-
-    const data = await response.json();
-
-    if (data.errors) {
-      throw new Error(data.errors[0]?.message || "GraphQL error");
-    }
-
-    const stopPlace = data.data?.stopPlace;
-    if (!stopPlace) {
-      return NextResponse.json(
-        { error: "Stop place not found" },
-        { status: 404 }
-      );
-    }
-
-    // Build per-quay groups — skip quays with no departures
-    const rawQuays: Array<{ id: string; estimatedCalls: RawCall[] }> =
-      stopPlace.quays || [];
-
-    const quays = rawQuays
-      .filter((q) => q.estimatedCalls?.length > 0)
-      .map((q) => ({
-        quayId: q.id,
-        departures: q.estimatedCalls.map(formatCall),
-      }));
-
-    // Flat departures: first departure from each quay — backward compat for map tooltips
-    const departures = quays.map((q) => q.departures[0]).filter(Boolean);
-
-    return NextResponse.json({
-      stopPlace: {
-        id: stopPlace.id,
-        name: stopPlace.name,
-      },
-      quays,
-      departures,
-    });
+    return NextResponse.json(await fetchEnturDepartures(stopPlaceId, limit));
   } catch (error) {
-    console.error("Entur API error:", error);
-    return NextResponse.json(
-      { error: "Failed to fetch departures" },
-      { status: 500 }
-    );
+    return errorResponse(error, "Failed to fetch departures");
   }
 }
 
-// POST for reiseplanlegging
 export async function POST(request: NextRequest) {
   if (!limiter.check(getClientIp(request.headers))) {
     return NextResponse.json({ error: "Too many requests" }, { status: 429 });
   }
-
   const body = await request.json();
   const { fromLat, fromLng, toLat, toLng, numTrips = 3 } = body;
-
-  // Number.isFinite avviser undefined/null/NaN/Infinity + sikrer at 0-koordinater
-  // (gyldig verdi) ikke feilaktig avvises av truthy-sjekk.
-  if (
-    !Number.isFinite(fromLat) ||
-    !Number.isFinite(fromLng) ||
-    !Number.isFinite(toLat) ||
-    !Number.isFinite(toLng)
-  ) {
-    return NextResponse.json(
-      { error: "from and to coordinates are required" },
-      { status: 400 }
-    );
+  if (![fromLat, fromLng, toLat, toLng].every(Number.isFinite)) {
+    return NextResponse.json({ error: "from and to coordinates are required" }, { status: 400 });
   }
-
-  const clampedNumTrips = Math.min(Number.isFinite(numTrips) ? numTrips : 3, MAX_NUM_TRIPS);
-
   try {
-    const response = await fetch(ENTUR_API_URL, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "ET-Client-Name": "placy-neighborhood-stories",
-      },
-      signal: AbortSignal.timeout(UPSTREAM_TIMEOUT_MS),
-      body: JSON.stringify({
-        query: TRIP_QUERY,
-        variables: {
-          from: {
-            coordinates: {
-              latitude: fromLat,
-              longitude: fromLng,
-            },
-          },
-          to: {
-            coordinates: {
-              latitude: toLat,
-              longitude: toLng,
-            },
-          },
-          numTripPatterns: clampedNumTrips,
-        },
-      }),
-    });
-
-    if (!response.ok) {
-      throw new Error(`Entur API error: ${response.status}`);
-    }
-
-    const data = await response.json();
-
-    if (data.errors) {
-      throw new Error(data.errors[0]?.message || "GraphQL error");
-    }
-
-    const tripPatterns = data.data?.trip?.tripPatterns || [];
-
-    // Formater reisealternativene
-    const trips = tripPatterns.map((pattern: {
-      duration: number;
-      walkDistance: number;
-      legs: Array<{
-        mode: string;
-        distance: number;
-        duration: number;
-        fromPlace: { name: string };
-        toPlace: { name: string };
-        line: { publicCode: string; name: string; transportMode: string } | null;
-      }>;
-    }) => ({
-      duration: Math.ceil(pattern.duration / 60), // Minutter
-      walkDistance: Math.round(pattern.walkDistance),
-      legs: pattern.legs.map((leg) => ({
-        mode: leg.mode,
-        distance: Math.round(leg.distance),
-        duration: Math.ceil(leg.duration / 60),
-        from: leg.fromPlace?.name,
-        to: leg.toPlace?.name,
-        lineCode: leg.line?.publicCode,
-        lineName: leg.line?.name,
-      })),
-    }));
-
-    return NextResponse.json({ trips });
+    return NextResponse.json(await planEnturTrip(
+      { lat: fromLat, lng: fromLng },
+      { lat: toLat, lng: toLng },
+      numTrips,
+    ));
   } catch (error) {
-    console.error("Entur API error:", error);
-    return NextResponse.json(
-      { error: "Failed to plan trip" },
-      { status: 500 }
-    );
+    return errorResponse(error, "Failed to plan trip");
   }
 }

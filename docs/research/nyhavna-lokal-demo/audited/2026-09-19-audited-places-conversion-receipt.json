@@ -1,0 +1,16 @@
+{
+  "schemaVersion": 1,
+  "packageId": "nyhavna-audited-places-2026-09-19",
+  "packageHash": "9814e74d6831ec742a2d598dd3466b77116b0a2499a68f9f14f807d8020448e2",
+  "projectId": "nyhavna-utvikling_nyhavna",
+  "sourcePath": "data/demo/nyhavna-lokal/places.json",
+  "outputPath": "docs/research/nyhavna-lokal-demo/audited/2026-09-19-audited-places-ledger-package.json",
+  "entityCount": 118,
+  "claimCount": 167,
+  "mappedEntities": 77,
+  "unmappedEntities": 41,
+  "publicationStateCounts": {
+    "publishable": 167
+  },
+  "freshnessPolicy": "Migrated claims expire after 2026-10-19 unless revalidated."
+}

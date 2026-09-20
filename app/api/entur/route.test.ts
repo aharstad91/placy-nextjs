@@ -19,6 +19,7 @@ vi.mock("@/lib/utils/rate-limit", () => ({
 }));
 
 import { GET, POST } from "./route";
+import { clearEnturCache } from "@/lib/entur/client";
 
 /**
  * Kontrakt-vakter for r11.1 (PRD 11 Unit 1): Entur kollektiv-proxyen ble portet
@@ -72,6 +73,8 @@ afterEach(() => {
   vi.unstubAllGlobals();
   vi.restoreAllMocks();
 });
+
+beforeEach(() => clearEnturCache());
 
 describe("entur GET — dobbel respons-form (AC1)", () => {
   beforeEach(() => {
@@ -263,7 +266,7 @@ describe("entur POST — reiseplanlegging (AC1)", () => {
 });
 
 describe("entur source-vakt — ingen nøkkel i URL (AC2, speiler grep)", () => {
-  const src = readFileSync(join(process.cwd(), "app", "api", "entur", "route.ts"), "utf8");
+  const src = readFileSync(join(process.cwd(), "lib", "entur", "client.ts"), "utf8");
 
   it("URL-konstanten har ingen auth-querystring", () => {
     expect(src).toContain('ENTUR_API_URL = "https://api.entur.io/journey-planner/v3/graphql"');
@@ -272,6 +275,6 @@ describe("entur source-vakt — ingen nøkkel i URL (AC2, speiler grep)", () => 
   });
 
   it("klient-ID sendes kun i ET-Client-Name-header", () => {
-    expect(src).toContain('"ET-Client-Name": "placy-neighborhood-stories"');
+    expect(src).toContain('"ET-Client-Name": ENTUR_CLIENT_NAME');
   });
 });

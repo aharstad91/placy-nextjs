@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { disposeMapBridge, getMapBridge, MAP_CANCELLED_OUTPUT, MAP_TIMEOUT_OUTPUT } from '@/lib/live/map-bridge';
+import { disposeMapBridge, createMapBridge, getMapBridge, MAP_CANCELLED_OUTPUT, MAP_TIMEOUT_OUTPUT } from '@/lib/live/map-bridge';
 import type { LiveServerMessage } from '@/lib/live/types';
 
 afterEach(() => { disposeMapBridge('token'); vi.useRealTimers(); });
@@ -53,4 +53,18 @@ describe('map bridge', () => {
     bridge.close();
     expect(await result).toEqual(MAP_TIMEOUT_OUTPUT);
   });
+});
+
+
+it('keeps independently owned bridges and results isolated', async () => {
+  const first = createMapBridge();
+  const second = createMapBridge();
+  const listener = vi.fn();
+  second.subscribe(listener);
+  const pending = first.dispatch('move', { id: 'one' });
+  expect(listener).not.toHaveBeenCalled();
+  expect(second.resolve(pending.id, 'wrong')).toBe(false);
+  expect(first.resolve(pending.id, 'right')).toBe(true);
+  await expect(pending.result).resolves.toBe('right');
+  first.close(); second.close();
 });

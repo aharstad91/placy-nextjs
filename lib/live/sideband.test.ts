@@ -19,8 +19,8 @@ vi.mock('@/lib/live/supervisor', () => ({ getLiveSupervisor: () => ({
   end: state.ended,
 }) }));
 
-import { connectLiveSideband } from '@/lib/live/sideband';
-import { disposeMapBridge, getMapBridge } from '@/lib/live/map-bridge';
+import { connectLiveSideband, getLiveSideband } from '@/lib/live/sideband';
+import { createMapBridge, disposeMapBridge, getMapBridge } from '@/lib/live/map-bridge';
 
 const TOKEN = 'token';
 const emit = (event: unknown) => (state.socket as EventEmitter).emit('message', Buffer.from(JSON.stringify(event)));
@@ -97,6 +97,21 @@ describe('live sideband delegation loop', () => {
     emit(nested('del_1', completed('resp_1')));
     await flush();
     expect(typesSent()).not.toContain('response.create');
+  });
+
+  it('keeps the browser in a stable work state until the backend is ready to answer', async () => {
+    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout', 'setInterval', 'clearInterval', 'Date'] });
+    const bridge = getMapBridge(TOKEN);
+    const activities: string[] = [];
+    bridge.subscribe(message => { if (message.type === 'activity') activities.push(message.activity); });
+    await connect(fakeConversation());
+    emit(delegationCreated());
+    emit(nested('del_1', { type: 'response.created', response: { id: 'resp_1' } }));
+    emit(nested('del_1', completed('resp_1')));
+    await vi.advanceTimersByTimeAsync(0);
+    expect(activities).toEqual(['working', 'answering']);
+    await vi.advanceTimersByTimeAsync(4000);
+    expect(activities).toEqual(['working', 'answering', 'idle']);
   });
 
   it('sends map work to the browser and mirrors the browser answer in conversation state', async () => {
@@ -265,5 +280,99 @@ describe('live sideband when Live closes the session on its own', () => {
     await flush();
     expect(state.ended).toHaveBeenCalledWith(TOKEN, 'connection');
     expect(usages[0]).toMatchObject({ reason: 'remote_hangup', voiceSeconds: 15 });
+  });
+});
+
+describe('hosted metering and ownership', () => {
+  it('counts orphan terminal responses once and keeps cumulative voice monotonic', async () => {
+    const events: unknown[] = [];
+    await connect(fakeConversation(), { hosted: true, onMeteringEvent: (event: unknown) => events.push(event) });
+    emit(nested('gone', { type: 'response.created', response: { id: 'orphan' } }));
+    const terminal = nested('gone', completed('orphan', { input_tokens: 100, output_tokens: 10, input_tokens_details: { cached_tokens: 20 }, secret: 'SENTINEL' }));
+    emit(terminal); emit(terminal);
+    emit({ type: 'session.usage.updated', usage: { seconds: 20 } });
+    emit({ type: 'session.closed', usage: { seconds: 10 } });
+    expect(usages[0]).toMatchObject({ backendResponses: 1, voiceSeconds: 20, complete: true });
+    expect(events.filter(e => (e as {type:string}).type === 'backend.terminal')).toHaveLength(1);
+    expect(JSON.stringify(events)).not.toContain('SENTINEL');
+  });
+
+  it('never calls hosted timing diagnostics with transcript, arguments or errors', async () => {
+    await connect(fakeConversation(), { hosted: true });
+    emit(delegationCreated());
+    emit({ type: 'session.output_transcript.delta', delta: 'SENTINEL' });
+    emit(nested('del_1', { type: 'response.failed', response: { id: 'resp_1', error: { message: 'SENTINEL' } } }));
+    state.cleanup?.('manual');
+    expect(timings).toEqual([]);
+    expect(usages[0].complete).toBe(false);
+  });
+});
+
+
+describe('hosted graceful shutdown', () => {
+  it('installs its waiter before session.close and returns one shared shutdown promise', async () => {
+    const events: unknown[] = [];
+    const owner = { setCleanup: vi.fn(), end: vi.fn(async () => true) };
+    const handle = await connect(fakeConversation(), { hosted: true, bridge: createMapBridge(), supervisor: owner, onMeteringEvent: (event: unknown) => events.push(event) });
+    expect(getLiveSideband(TOKEN)).toBeUndefined();
+    const socket = state.socket as { send: (data: string) => void };
+    const original = socket.send.bind(socket);
+    socket.send = data => {
+      original(data);
+      if (JSON.parse(data).type === 'session.close') emit({ type: 'session.closed', usage: { seconds: 8 } });
+    };
+    const ending = handle.end('manual');
+    expect(handle.end('manual')).toBe(ending);
+    await ending;
+    expect(owner.end).toHaveBeenCalledTimes(1);
+    expect(events.at(-1)).toMatchObject({ type: 'finalized', complete: true, finalVoiceConfirmed: true });
+  });
+
+  it('rejects commands while draining but observes late terminal usage', async () => {
+    const owner = { setCleanup: vi.fn(), end: vi.fn(async () => true) };
+    const handle = await connect(fakeConversation(), { hosted: true, supervisor: owner });
+    emit(nested('gone', { type: 'response.created', response: { id: 'late' } }));
+    const ending = handle.end('manual');
+    const count = state.sent.length;
+    handle.onContext({ kind: 'text', text: 'SENTINEL' });
+    emit(nested('gone', completed('late', { input_tokens: 3, output_tokens: 2, input_tokens_details: { cached_tokens: 0 } })));
+    expect(state.sent).toHaveLength(count);
+    emit({ type: 'session.closed', usage: { seconds: 8 } });
+    await ending;
+    expect(usages[0]).toMatchObject({ complete: true, backendResponses: 1 });
+  });
+
+  it.each([
+    ['missing output', { input_tokens: 3, input_tokens_details: { cached_tokens: 0 } }],
+    ['negative', { input_tokens: -1, output_tokens: 2, input_tokens_details: { cached_tokens: 0 } }],
+    ['invalid cache', { input_tokens: 1, output_tokens: 2, input_tokens_details: { cached_tokens: 3 } }],
+  ])('keeps %s usage incomplete', async (_label, usage) => {
+    await connect(fakeConversation(), { hosted: true });
+    emit(nested('gone', completed('bad', usage)));
+    emit({ type: 'session.closed', usage: { seconds: 5 } });
+    expect(usages[0].complete).toBe(false);
+  });
+
+  it('keeps an observed but unterminated backend incomplete', async () => {
+    await connect(fakeConversation(), { hosted: true });
+    emit(nested('gone', { type: 'response.created', response: { id: 'missing' } }));
+    emit({ type: 'session.closed', usage: { seconds: 5 } });
+    expect(usages[0].complete).toBe(false);
+  });
+
+  it('keeps unknown model pricing incomplete', async () => {
+    await connect(fakeConversation(), { hosted: true, backendModelName: 'unknown' });
+    emit(nested('gone', completed('bad', { input_tokens: 3, output_tokens: 2, input_tokens_details: { cached_tokens: 0 } })));
+    emit({ type: 'session.closed', usage: { seconds: 5 } });
+    expect(usages[0].complete).toBe(false);
+  });
+
+  it('times out gracefully with incomplete evidence when final usage is missing', async () => {
+    vi.useFakeTimers();
+    const handle = await connect(fakeConversation(), { hosted: true });
+    const ending = handle.end('limit');
+    await vi.advanceTimersByTimeAsync(5000);
+    await ending;
+    expect(usages[0].complete).toBe(false);
   });
 });

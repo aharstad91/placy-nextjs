@@ -1,0 +1,186 @@
+{
+  "reportConfig": {
+    "label": "Nyhavna",
+    "heroIntro": "Utforsk Nyhavna som framtidig bydel, eller bli kjent med stedene som finnes i nærområdet i dag. Velg et område i kartet eller start en samtale.",
+    "district": "Nyhavna",
+    "city": "Trondheim",
+    "pinSubtitle": "Ny bydel",
+    "pinAccent": "#005ef5",
+    "hideBrokerCard": true,
+    "standalonePoiIds": [
+      "google-ChIJm6lLfZ8xbUYRFYo0NaeG5sk",
+      "google-ChIJfQ6rZJ8xbUYR-va16LFeoGE",
+      "google-ChIJA-Q83OkxbUYRxlJ_XhxJhcI",
+      "google-ChIJWdP_Oa8xbUYRAfEFK2UmYOM",
+      "google-ChIJ4ccQcZ8xbUYR6Xl1I85wHrg",
+      "google-ChIJLQtHY58xbUYR4cj-xu--2Lc",
+      "google-ChIJs5Q50UYxbUYRgJFfKVmyTvE",
+      "google-ChIJmxJ5cJ8xbUYRB1gNbagHlLw",
+      "google-ChIJ88TAqZ8xbUYR7lTSrj19f4k",
+      "google-ChIJ39iadJ8xbUYRRczbteBUpAc",
+      "google-ChIJobCJYp8xbUYRyD1DuGunCOQ",
+      "google-ChIJFSxqCp8xbUYRxlNF2ntkSWg"
+    ]
+  },
+  "themes": [
+    {
+      "id": "nyhavna-bydel",
+      "prepend": true,
+      "name": "Nyhavna som bydel",
+      "icon": "Building2",
+      "color": "#8b6cc4",
+      "categories": [
+        "nyhavna-bydel"
+      ],
+      "intro": "Boligliv, byrom og fem delområder under utvikling.",
+      "editorial": {
+        "body": "Nyhavna skal bli et sted å bo, jobbe og møtes ved vannet. Tanken er at boliger, kultur og grønne uterom sammen skal forme hverdagen. Utviklingen omfatter fem delområder. Transittkaia er starten; de øvrige områdene har egne planer og karakter. Du kan velge et av områdene i kartet, så forteller jeg om det.",
+        "highlightPoiIds": [
+          "project:nyhavna-utvikling_nyhavna:transittkaia",
+          "project:nyhavna-utvikling_nyhavna:kullkranpiren",
+          "project:nyhavna-utvikling_nyhavna:strandveikaia",
+          "project:nyhavna-utvikling_nyhavna:ladehammerkaia",
+          "project:nyhavna-utvikling_nyhavna:bunkerkvartalet"
+        ]
+      },
+      "faq": [
+        {
+          "id": "bo-felles",
+          "spørsmål": "Hva slags bydel skal Nyhavna bli?",
+          "svar": "Målet er en bydel med boliger, arbeidsliv, kultur og grøntområder ved vannet. Fellesrom og møteplasser skal bidra til naboskap."
+        },
+        {
+          "id": "bo-transittkaia",
+          "spørsmål": "Hvor kommer de første boligene?",
+          "svar": "Transittkaia er utpekt som første område. Se [Transittkaia](poi:project:nyhavna-utvikling_nyhavna:transittkaia) for boligplanene og framdriftsanslaget."
+        },
+        {
+          "id": "bo-kullkranpiren",
+          "spørsmål": "Hva er planlagt på Kullkranpiren?",
+          "svar": "Boliger, grøntområder og kultur inngår i planene for [Kullkranpiren](poi:project:nyhavna-utvikling_nyhavna:kullkranpiren). Detaljene er ikke presentert som vedtatte planer."
+        },
+        {
+          "id": "bo-strandveikaia",
+          "spørsmål": "Hva skal skje på Strandveikaia?",
+          "svar": "[Strandveikaia](poi:project:nyhavna-utvikling_nyhavna:strandveikaia) er planlagt som et bydelssentrum med kultur, sjøbad og forbindelser over havnebassenget."
+        },
+        {
+          "id": "bo-ladehammerkaia",
+          "spørsmål": "Hvordan kan det bli å bo på Ladehammerkaia?",
+          "svar": "[Ladehammerkaia](poi:project:nyhavna-utvikling_nyhavna:ladehammerkaia) er tenkt med en høy boligandel, parker og tilbud i sørvendte omgivelser ved vannet."
+        },
+        {
+          "id": "bo-bunkerkvartalet",
+          "spørsmål": "Hva er Bunkerkvartalet?",
+          "svar": "[Bunkerkvartalet](poi:project:nyhavna-utvikling_nyhavna:bunkerkvartalet) handler særlig om kultur, kunnskap og havteknologi rundt Dora 2, blant annet ønsket om et nytt Vitensenter."
+        },
+        {
+          "id": "bo-folg-utviklingen",
+          "spørsmål": "Hvordan kan jeg følge boligplanene?",
+          "svar": "På Nyhavnas nettside kan du melde deg på nyhetsbrevet for oppdateringer og invitasjon til forsalg. Påmeldingen skjer hos Nyhavna Utvikling."
+        }
+      ]
+    },
+    {
+      "id": "hverdagsliv",
+      "prepend": false,
+      "faq": [
+        {
+          "id": "dagligvarer",
+          "spørsmål": "Hvor handler vi dagligvarer?",
+          "svar": "MENY Solsiden og KIWI Lilleby er to kartlagte dagligvarebutikker. Åpne stedskortene for plassering og en aktuell rute. KIWI har også utendørs pakkebokser fra Posten og PostNord."
+        }
+      ]
+    },
+    {
+      "id": "barn-oppvekst",
+      "prepend": false,
+      "faq": [
+        {
+          "id": "krets",
+          "spørsmål": "Hvilke skoler er aktuelle?",
+          "svar": "[Lilleby barneskole](poi:nsr-975278859) og [Rosenborg ungdomsskole](poi:13778d6f-734e-4441-be24-891ff66236bb) er de aktuelle skolene i planmaterialet for Transittkaia. Skoletilhørigheten må avklares for den aktuelle boligen."
+        },
+        {
+          "id": "skolevei",
+          "spørsmål": "Hvor langt er det til skolene?",
+          "svar": "Åpne stedskortet for Lilleby skole eller Rosenborg skole for å beregne en aktuell rute fra boardets startpunkt. Boardet kan vise gang- og sykkelruter, men har ikke vurdert kryssinger eller om skoleveien er trygg."
+        },
+        {
+          "id": "barnehage-dekning",
+          "spørsmål": "Hvilke barnehager finnes i nærområdet?",
+          "svar": "Nedre Elvehavn og Voldsminde er to kommunale barnehager som er kartlagt i området. Åpne stedskortet for plassering, og se kommunens sider for opptak. Ledige plasser er ikke undersøkt."
+        }
+      ]
+    },
+    {
+      "id": "mat-drikke",
+      "prepend": false,
+      "faq": [
+        {
+          "id": "kafe",
+          "spørsmål": "Hvor finner vi kaféer og bakerier?",
+          "svar": "Dora Kaffebar og Snurr i Ladebekken er to kartlagte alternativer for kaffe og bakst. Åpne stedskortene for plassering og rute, og bruk stedenes egne sider for gjeldende åpningstider."
+        },
+        {
+          "id": "spisesteder",
+          "spørsmål": "Hvilke restauranter finnes i nærheten?",
+          "svar": "Ladejarlen og Nyhavna BistroBar er to kartlagte spisesteder i området. Åpne stedskortene for plassering og rute; meny og åpningstider må kontrolleres hos virksomheten."
+        },
+        {
+          "id": "aktuelle-menyer",
+          "spørsmål": "Hvor finner vi aktuelle åpningstider og menyer?",
+          "svar": "Åpne kortet til [Snurr](poi:google-ChIJO6r3WQAxbUYRIwblKoirXeU), [Ladejarlen](poi:google-ChIJJ5VwkqAxbUYRVB3X034TK3g) eller [Nyhavna BistroBar](poi:google-ChIJNzs1uMMxbUYRFHxPylbUTSg) og følg lenken til stedets egen nettside. Der finner dere oppdaterte menyer og åpningstider."
+        }
+      ]
+    },
+    {
+      "id": "natur-friluftsliv",
+      "prepend": false,
+      "faq": []
+    },
+    {
+      "id": "transport",
+      "prepend": false,
+      "faq": [
+        {
+          "id": "holdeplass",
+          "spørsmål": "Hvor er nærmeste holdeplass?",
+          "svar": "Losgata og Dora er to kartlagte holdeplasser ved Nyhavna. Spør Anja om avganger eller en reise til et konkret mål; da henter hun oppdaterte kollektivdata fra Entur."
+        },
+        {
+          "id": "sentrum",
+          "spørsmål": "Hvordan kommer vi oss til sentrum?",
+          "svar": "Dora er et aktuelt utgangspunkt for buss mot Trondheim sentrum. Be Anja planlegge reisen til et konkret sted; da bruker hun oppdaterte reisedata fra Entur i stedet for en lagret rutetabell."
+        },
+        {
+          "id": "bildeling",
+          "spørsmål": "Kan vi bruke bildeling?",
+          "svar": "Trondheim Bilkollektiv har et kartlagt hentested i Mellomveien. Tjenesten krever medlemskap og reservasjon, og bilen returneres til hentestedet. Se operatørens side for tilgjengelighet og gjeldende vilkår."
+        },
+        {
+          "id": "parkering",
+          "spørsmål": "Hvordan fungerer parkering?",
+          "svar": "Det finnes korttidsparkering ved Dora, oppgitt av Trondheim parkering i Maskinistgata. Følg skiltingen på stedet. Parkering som følger en framtidig bolig må avklares med boligprosjektet."
+        }
+      ]
+    },
+    {
+      "id": "trening-aktivitet",
+      "prepend": false,
+      "faq": []
+    },
+    {
+      "id": "opplevelser",
+      "prepend": false,
+      "faq": [
+        {
+          "id": "familie-aktiviteter",
+          "spørsmål": "Hva kan vi gjøre som familie i nærområdet?",
+          "svar": "Dere kan blant annet se på bowling på Dora 1, padel ved E.C. Dahls og turmuligheter langs Ladestien. Åpne stedskortene for plassering, rute og bookinginformasjon."
+        }
+      ]
+    }
+  ],
+  "globalFaq": []
+}

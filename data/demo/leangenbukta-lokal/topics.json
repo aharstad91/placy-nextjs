@@ -1,0 +1,1302 @@
+[
+  {
+    "id": "project-leangenbukta-byvilla-1-2",
+    "title": "Byvilla 1 og 2",
+    "categoryIds": [
+      "leangenbukta-prosjektet"
+    ],
+    "status": "unresolved",
+    "text": "De to siste byvillaene. 24 leiligheter til sammen. 30–127 m².",
+    "keywords": [
+      "byvilla"
+    ],
+    "sourceIds": [
+      "leangenbukta-fbbc3f74"
+    ],
+    "relatedPlaceIds": [],
+    "checkedAt": "2026-09-18",
+    "caveats": []
+  },
+  {
+    "id": "project-leangenbukta-rekkehus",
+    "title": "Rekkehusene",
+    "categoryIds": [
+      "leangenbukta-prosjektet"
+    ],
+    "status": "unresolved",
+    "text": "124 m². 4 soverom. 2 stuer.",
+    "keywords": [
+      "rekkehusene"
+    ],
+    "sourceIds": [
+      "leangenbukta-3df06abf"
+    ],
+    "relatedPlaceIds": [],
+    "checkedAt": "2026-09-18",
+    "caveats": []
+  },
+  {
+    "id": "project-leangenbukta-knutepunktet-e",
+    "title": "Knutepunktet 1. etasje mot torget",
+    "categoryIds": [
+      "leangenbukta-prosjektet"
+    ],
+    "status": "unresolved",
+    "text": "fra 2 450 000 kr. egen sportsbod i kjeller. 28 leiligheter. Selveierleiligheter. 7 etasjer. Siste kvartal 2026. Okt–nov 2026. Huser prosjektets felles fasiliteter. innflytting i siste kvartal 2026 etter utbyggers egen informasjon. 28 leiligheter. innflytting Q4 2026. Knutepunktet = Bygg E. «BT3.2 – Knutepunktet».",
+    "keywords": [
+      "etasje",
+      "knutepunktet",
+      "mot",
+      "torget"
+    ],
+    "sourceIds": [
+      "finn-a001c883",
+      "leangenbukta-3df06abf",
+      "leangenbukta-67122df8",
+      "leangenbukta-6e190f5f"
+    ],
+    "relatedPlaceIds": [],
+    "checkedAt": "2026-09-18",
+    "caveats": [
+      "Opplysningene er tidsfølsomme og må kontrolleres på nytt ved senere publisering."
+    ],
+    "development": {
+      "objectType": "building",
+      "buildStatus": "unresolved",
+      "availability": "expected",
+      "timing": {
+        "text": "siste kvartal 2026",
+        "qualifier": "expected",
+        "claimId": "lb-a-027"
+      },
+      "access": {
+        "scope": "unresolved",
+        "buildingIds": []
+      },
+      "mapAnchor": {
+        "approximateArea": "Knutepunktet i Leangenbukta"
+      },
+      "claims": [
+        {
+          "id": "lb-c-029",
+          "text": "fra 2 450 000 kr",
+          "sourceId": "leangenbukta-6e190f5f",
+          "checkedAt": "2026-09-18",
+          "verification": "confirmed"
+        },
+        {
+          "id": "lb-c-035",
+          "text": "egen sportsbod i kjeller",
+          "sourceId": "finn-a001c883",
+          "checkedAt": "2026-09-18",
+          "verification": "confirmed"
+        },
+        {
+          "id": "lb-b-044",
+          "text": "28 leiligheter",
+          "sourceId": "finn-a001c883",
+          "checkedAt": "2026-09-18",
+          "verification": "confirmed"
+        },
+        {
+          "id": "lb-b-045",
+          "text": "Selveierleiligheter",
+          "sourceId": "finn-a001c883",
+          "checkedAt": "2026-09-18",
+          "verification": "confirmed"
+        },
+        {
+          "id": "lb-b-046",
+          "text": "7 etasjer",
+          "sourceId": "finn-a001c883",
+          "checkedAt": "2026-09-18",
+          "verification": "confirmed"
+        },
+        {
+          "id": "lb-b-048",
+          "text": "Siste kvartal 2026",
+          "sourceId": "leangenbukta-3df06abf",
+          "checkedAt": "2026-09-18",
+          "verification": "confirmed"
+        },
+        {
+          "id": "lb-b-049",
+          "text": "Okt–nov 2026",
+          "sourceId": "finn-a001c883",
+          "checkedAt": "2026-09-18",
+          "verification": "confirmed"
+        },
+        {
+          "id": "lb-b-050",
+          "text": "Huser prosjektets felles fasiliteter",
+          "sourceId": "leangenbukta-67122df8",
+          "checkedAt": "2026-09-18",
+          "verification": "confirmed"
+        },
+        {
+          "id": "lb-a-016",
+          "text": "innflytting i siste kvartal 2026 etter utbyggers egen informasjon",
+          "sourceId": "finn-a001c883",
+          "checkedAt": "2026-09-18",
+          "verification": "confirmed"
+        },
+        {
+          "id": "lb-a-026",
+          "text": "28 leiligheter",
+          "sourceId": "finn-a001c883",
+          "checkedAt": "2026-09-18",
+          "verification": "confirmed"
+        },
+        {
+          "id": "lb-a-027",
+          "text": "innflytting Q4 2026",
+          "sourceId": "finn-a001c883",
+          "checkedAt": "2026-09-18",
+          "verification": "confirmed"
+        },
+        {
+          "id": "lb-a-073",
+          "text": "Knutepunktet = Bygg E",
+          "sourceId": "leangenbukta-3df06abf",
+          "checkedAt": "2026-09-18",
+          "verification": "confirmed"
+        },
+        {
+          "id": "lb-a-117",
+          "text": "«BT3.2 – Knutepunktet»",
+          "sourceId": "finn-a001c883",
+          "checkedAt": "2026-09-18",
+          "verification": "confirmed"
+        }
+      ],
+      "moveInLinks": [],
+      "conflicts": []
+    }
+  },
+  {
+    "id": "project-leangenbukta-parktunet-1-d",
+    "title": "Parktunet 1, 1-roms",
+    "categoryIds": [
+      "leangenbukta-prosjektet"
+    ],
+    "status": "unresolved",
+    "text": "37,5 m². toppleilighet med privat takterrasse. 38,5-45,5 m². fra 3 300 000 kr. 71,5-76 m². fra 5 500 000 kr. 100,5 m². fra 7 500 000 kr. 87-107 m². fra 8 500 000 kr. 41 leiligheter. Selveierleiligheter. FINN-annonsen brukte varslet byggestart 01.02.2027 som forutsetning for det oppgitte ferdigstillelsesvinduet. Ved varslet byggestart 01.02.2027 oppga FINN-annonsen antatt ferdigstillelse mellom 01.08.2028 og 01.12.2028. Gnr. 412, bnr. 467. 41 leiligheter. Parktunet 1 = Bygg D. markedsnavn «Parktunet 1». «BT4.2 – Parktunet 1».",
+    "keywords": [
+      "parktunet",
+      "roms"
+    ],
+    "sourceIds": [
+      "finn-79459f26",
+      "leangenbukta-67122df8"
+    ],
+    "relatedPlaceIds": [],
+    "checkedAt": "2026-09-18",
+    "caveats": [
+      "Opplysningene er tidsfølsomme og må kontrolleres på nytt ved senere publisering."
+    ],
+    "development": {
+      "objectType": "building",
+      "buildStatus": "planned",
+      "availability": "expected",
+      "buildStatusClaimId": "lb-b-056",
+      "timing": {
+        "text": "01.08.–01.12.2028 ved varslet byggestart 01.02.2027",
+        "qualifier": "expected",
+        "claimId": "lb-b-057"
+      },
+      "access": {
+        "scope": "unresolved",
+        "buildingIds": []
+      },
+      "mapAnchor": {
+        "approximateArea": "Parktunet 1 i Leangenbukta"
+      },
+      "claims": [
+        {
+          "id": "lb-c-037",
+          "text": "37,5 m²",
+          "sourceId": "leangenbukta-67122df8",
+          "checkedAt": "2026-09-18",
+          "verification": "confirmed"
+        },
+        {
+          "id": "lb-c-039",
+          "text": "toppleilighet med privat takterrasse",
+          "sourceId": "leangenbukta-67122df8",
+          "checkedAt": "2026-09-18",
+          "verification": "confirmed"
+        },
+        {
+          "id": "lb-c-040",
+          "text": "38,5-45,5 m²",
+          "sourceId": "leangenbukta-67122df8",
+          "checkedAt": "2026-09-18",
+          "verification": "confirmed"
+        },
+        {
+          "id": "lb-c-041",
+          "text": "fra 3 300 000 kr",
+          "sourceId": "leangenbukta-67122df8",
+          "checkedAt": "2026-09-18",
+          "verification": "confirmed"
+        },
+        {
+          "id": "lb-c-043",
+          "text": "71,5-76 m²",
+          "sourceId": "leangenbukta-67122df8",
+          "checkedAt": "2026-09-18",
+          "verification": "confirmed"
+        },
+        {
+          "id": "lb-c-044",
+          "text": "fra 5 500 000 kr",
+          "sourceId": "leangenbukta-67122df8",
+          "checkedAt": "2026-09-18",
+          "verification": "confirmed"
+        },
+        {
+          "id": "lb-c-045",
+          "text": "100,5 m²",
+          "sourceId": "leangenbukta-67122df8",
+          "checkedAt": "2026-09-18",
+          "verification": "confirmed"
+        },
+        {
+          "id": "lb-c-046",
+          "text": "fra 7 500 000 kr",
+          "sourceId": "leangenbukta-67122df8",
+          "checkedAt": "2026-09-18",
+          "verification": "confirmed"
+        },
+        {
+          "id": "lb-c-047",
+          "text": "87-107 m²",
+          "sourceId": "leangenbukta-67122df8",
+          "checkedAt": "2026-09-18",
+          "verification": "confirmed"
+        },
+        {
+          "id": "lb-c-048",
+          "text": "fra 8 500 000 kr",
+          "sourceId": "leangenbukta-67122df8",
+          "checkedAt": "2026-09-18",
+          "verification": "confirmed"
+        },
+        {
+          "id": "lb-b-053",
+          "text": "41 leiligheter",
+          "sourceId": "finn-79459f26",
+          "checkedAt": "2026-09-18",
+          "verification": "confirmed"
+        },
+        {
+          "id": "lb-b-054",
+          "text": "Selveierleiligheter",
+          "sourceId": "finn-79459f26",
+          "checkedAt": "2026-09-18",
+          "verification": "confirmed"
+        },
+        {
+          "id": "lb-b-056",
+          "text": "FINN-annonsen brukte varslet byggestart 01.02.2027 som forutsetning for det oppgitte ferdigstillelsesvinduet.",
+          "sourceId": "finn-79459f26",
+          "checkedAt": "2026-09-18",
+          "verification": "confirmed"
+        },
+        {
+          "id": "lb-b-057",
+          "text": "Ved varslet byggestart 01.02.2027 oppga FINN-annonsen antatt ferdigstillelse mellom 01.08.2028 og 01.12.2028.",
+          "sourceId": "finn-79459f26",
+          "checkedAt": "2026-09-18",
+          "verification": "confirmed"
+        },
+        {
+          "id": "lb-b-059",
+          "text": "Gnr. 412, bnr. 467",
+          "sourceId": "finn-79459f26",
+          "checkedAt": "2026-09-18",
+          "verification": "confirmed"
+        },
+        {
+          "id": "lb-a-029",
+          "text": "41 leiligheter",
+          "sourceId": "finn-79459f26",
+          "checkedAt": "2026-09-18",
+          "verification": "confirmed"
+        },
+        {
+          "id": "lb-a-031",
+          "text": "Parktunet 1 = Bygg D",
+          "sourceId": "finn-79459f26",
+          "checkedAt": "2026-09-18",
+          "verification": "confirmed"
+        },
+        {
+          "id": "lb-a-114",
+          "text": "markedsnavn «Parktunet 1»",
+          "sourceId": "leangenbukta-67122df8",
+          "checkedAt": "2026-09-18",
+          "verification": "confirmed"
+        },
+        {
+          "id": "lb-a-118",
+          "text": "«BT4.2 – Parktunet 1»",
+          "sourceId": "finn-79459f26",
+          "checkedAt": "2026-09-18",
+          "verification": "confirmed"
+        }
+      ],
+      "moveInLinks": [],
+      "conflicts": []
+    }
+  },
+  {
+    "id": "project-leangenbukta-saltakshus-c",
+    "title": "Saltakshus C, 2-roms",
+    "categoryIds": [
+      "leangenbukta-prosjektet"
+    ],
+    "status": "unresolved",
+    "text": "34 leiligheter. 41–79 m². «Bygging igangsatt». Estimert ferdig 2027/2028. 34 leiligheter. bygging igangsatt. ferdig 2027/2028.",
+    "keywords": [
+      "roms",
+      "saltakshus"
+    ],
+    "sourceIds": [
+      "finn-26b889ce",
+      "leangenbukta-3df06abf"
+    ],
+    "relatedPlaceIds": [],
+    "checkedAt": "2026-09-18",
+    "caveats": [
+      "Opplysningene er tidsfølsomme og må kontrolleres på nytt ved senere publisering."
+    ],
+    "development": {
+      "objectType": "building",
+      "buildStatus": "under-construction",
+      "availability": "expected",
+      "buildStatusClaimId": "lb-b-041",
+      "timing": {
+        "text": "2027/2028",
+        "qualifier": "expected",
+        "claimId": "lb-b-042"
+      },
+      "access": {
+        "scope": "unresolved",
+        "buildingIds": []
+      },
+      "mapAnchor": {
+        "approximateArea": "Saltakshus C i Leangenbukta"
+      },
+      "claims": [
+        {
+          "id": "lb-b-039",
+          "text": "34 leiligheter",
+          "sourceId": "finn-26b889ce",
+          "checkedAt": "2026-09-18",
+          "verification": "confirmed"
+        },
+        {
+          "id": "lb-b-040",
+          "text": "41–79 m²",
+          "sourceId": "finn-26b889ce",
+          "checkedAt": "2026-09-18",
+          "verification": "confirmed"
+        },
+        {
+          "id": "lb-b-041",
+          "text": "«Bygging igangsatt»",
+          "sourceId": "leangenbukta-3df06abf",
+          "checkedAt": "2026-09-18",
+          "verification": "confirmed"
+        },
+        {
+          "id": "lb-b-042",
+          "text": "Estimert ferdig 2027/2028",
+          "sourceId": "leangenbukta-3df06abf",
+          "checkedAt": "2026-09-18",
+          "verification": "confirmed"
+        },
+        {
+          "id": "lb-a-022",
+          "text": "34 leiligheter",
+          "sourceId": "finn-26b889ce",
+          "checkedAt": "2026-09-18",
+          "verification": "confirmed"
+        },
+        {
+          "id": "lb-a-023",
+          "text": "bygging igangsatt",
+          "sourceId": "leangenbukta-3df06abf",
+          "checkedAt": "2026-09-18",
+          "verification": "confirmed"
+        },
+        {
+          "id": "lb-a-024",
+          "text": "ferdig 2027/2028",
+          "sourceId": "leangenbukta-3df06abf",
+          "checkedAt": "2026-09-18",
+          "verification": "confirmed"
+        }
+      ],
+      "moveInLinks": [],
+      "conflicts": []
+    }
+  },
+  {
+    "id": "project-leangenbukta-saltakshus-h",
+    "title": "Saltakshus H, usolgte enheter",
+    "categoryIds": [
+      "leangenbukta-prosjektet"
+    ],
+    "status": "unresolved",
+    "text": "32 leiligheter. innflyttingsklart.",
+    "keywords": [
+      "enheter",
+      "saltakshus",
+      "usolgte"
+    ],
+    "sourceIds": [
+      "leangenbukta-3df06abf"
+    ],
+    "relatedPlaceIds": [],
+    "checkedAt": "2026-09-18",
+    "caveats": [
+      "Opplysningene er tidsfølsomme og må kontrolleres på nytt ved senere publisering."
+    ],
+    "development": {
+      "objectType": "building",
+      "buildStatus": "existing",
+      "availability": "open",
+      "buildStatusClaimId": "lb-a-033",
+      "availabilityClaimId": "lb-a-033",
+      "access": {
+        "scope": "unresolved",
+        "buildingIds": []
+      },
+      "mapAnchor": {
+        "approximateArea": "Saltakshus H i Leangenbukta"
+      },
+      "claims": [
+        {
+          "id": "lb-b-029",
+          "text": "32 leiligheter",
+          "sourceId": "leangenbukta-3df06abf",
+          "checkedAt": "2026-09-18",
+          "verification": "confirmed"
+        },
+        {
+          "id": "lb-a-033",
+          "text": "innflyttingsklart",
+          "sourceId": "leangenbukta-3df06abf",
+          "checkedAt": "2026-09-18",
+          "verification": "confirmed"
+        }
+      ],
+      "moveInLinks": [],
+      "conflicts": []
+    }
+  },
+  {
+    "id": "project-leangenbukta-bygg-e-h",
+    "title": "Bygg E og H-sameiet",
+    "categoryIds": [
+      "leangenbukta-prosjektet"
+    ],
+    "status": "unresolved",
+    "text": "60 leiligheter. planlagt med 60 leiligheter. planlagt med ett næringslokale. planlagt med selskapsrom. planlagt med treningsrom. planlagt med gjesteleilighet.",
+    "keywords": [
+      "bygg",
+      "sameiet"
+    ],
+    "sourceIds": [
+      "finn-326cfe2b"
+    ],
+    "relatedPlaceIds": [],
+    "checkedAt": "2026-09-18",
+    "caveats": [
+      "Opplysningene er tidsfølsomme og må kontrolleres på nytt ved senere publisering."
+    ]
+  },
+  {
+    "id": "project-leangenbukta-lounge",
+    "title": "Treningsrom, selskapsrom og lounge",
+    "categoryIds": [
+      "leangenbukta-prosjektet"
+    ],
+    "status": "unresolved",
+    "text": "Alle beboere i Leangenbukta.",
+    "keywords": [
+      "lounge",
+      "selskapsrom",
+      "treningsrom"
+    ],
+    "sourceIds": [
+      "leangenbukta-67122df8"
+    ],
+    "relatedPlaceIds": [],
+    "checkedAt": "2026-09-18",
+    "caveats": [
+      "Opplysningene er tidsfølsomme og må kontrolleres på nytt ved senere publisering."
+    ],
+    "development": {
+      "objectType": "facility",
+      "buildStatus": "planned",
+      "availability": "unknown",
+      "access": {
+        "scope": "all-residents",
+        "buildingIds": [],
+        "claimId": "lb-d-078"
+      },
+      "mapAnchor": {
+        "approximateArea": "Knutepunktet i Leangenbukta"
+      },
+      "claims": [
+        {
+          "id": "lb-d-078",
+          "text": "Alle beboere i Leangenbukta",
+          "sourceId": "leangenbukta-67122df8",
+          "checkedAt": "2026-09-18",
+          "verification": "confirmed"
+        }
+      ],
+      "moveInLinks": [],
+      "conflicts": []
+    }
+  },
+  {
+    "id": "project-koteng-jenssen-as",
+    "title": "Koteng Jenssen",
+    "categoryIds": [
+      "leangenbukta-prosjektet"
+    ],
+    "status": "unresolved",
+    "text": "Koteng Jenssen står bak Leangenbukta AS. Koteng Jenssen står for salget sammen med OBOS. Koteng Jenssen har prosjektledelsen. Koteng Jenssen har byggeledelsen.",
+    "keywords": [
+      "jenssen",
+      "koteng"
+    ],
+    "sourceIds": [
+      "kotengjenssen-1cc99ca4",
+      "leangenbukta-29db079d"
+    ],
+    "relatedPlaceIds": [],
+    "checkedAt": "2026-09-18",
+    "caveats": []
+  },
+  {
+    "id": "project-leangenbukta-as",
+    "title": "Støyskjerm mot Haakon VIIs gate",
+    "categoryIds": [
+      "leangenbukta-prosjektet"
+    ],
+    "status": "unresolved",
+    "text": "Grunneier for gnr. 412 bnr. 256 og gnr. 412 bnr. 361. prosjektet er utviklet av Leangenbukta AS.",
+    "keywords": [
+      "gate",
+      "haakon",
+      "mot",
+      "stoyskjerm",
+      "viis"
+    ],
+    "sourceIds": [
+      "leangenbukta-29db079d",
+      "trondheim-ecd78393"
+    ],
+    "relatedPlaceIds": [],
+    "checkedAt": "2026-09-18",
+    "caveats": []
+  },
+  {
+    "id": "project-obos-nye-hjem-as",
+    "title": "OBOS",
+    "categoryIds": [
+      "leangenbukta-prosjektet"
+    ],
+    "status": "unresolved",
+    "text": "OBOS står bak Leangenbukta AS. OBOS står for salget.",
+    "keywords": [
+      "obos"
+    ],
+    "sourceIds": [
+      "leangenbukta-29db079d"
+    ],
+    "relatedPlaceIds": [],
+    "checkedAt": "2026-09-18",
+    "caveats": []
+  },
+  {
+    "id": "project-pir-ii-as",
+    "title": "PIR II arkitekter (Pir II AS)",
+    "categoryIds": [
+      "leangenbukta-prosjektet"
+    ],
+    "status": "unresolved",
+    "text": "utformet reguleringsplanen.",
+    "keywords": [
+      "arkitekter",
+      "pir"
+    ],
+    "sourceIds": [
+      "leangenbukta-29db079d"
+    ],
+    "relatedPlaceIds": [],
+    "checkedAt": "2026-09-18",
+    "caveats": []
+  },
+  {
+    "id": "project-r20160019-1",
+    "title": "Diagonalt grøntdrag – del 1",
+    "categoryIds": [
+      "leangenbukta-prosjektet"
+    ],
+    "status": "adopted-plan",
+    "text": "Detaljregulering r20160019 heter «Haakon VIIs gate 14». Vedtatt av Trondheim bystyre. 31.01.2019. 15/5501. «å utvikle eiendommen fra lager og logistikkvirksomhet til et boligområde, med barnehage og mulighet for innslag av næring.». Haakon VII's gate 14 AS. Pir II AS. Boligfelt B1–B5. Offentlig barnehage med feltkode o_BBH. Felles uteoppholdsareal med feltkode f_BUT. Offentlig turveg med feltkode o_GT. Friområde med feltkode o_GF. Samferdselsformål o_SKV, o_SF, o_SPP m.fl. Reguleringsbestemmelsene § 3.2-2: «Innenfor planområdet skal det etableres minimum 450 boenheter.». Maks 45 250 m² BRA totalt. Samlet utnyttelse 120 %. Maks 3 000 m² BRA kontor/tjenesteyting. Maks 15 % ettromsleiligheter. Minst 10 % fireroms eller større. «Foreslått bebyggelse varierer fra to etasjer med sokkel til fem etasjer med loft». Mønehøyden tilsvarer seks etasjer. Høyest mot Lade allé, opptil ca. 20,8 m mønehøyde. Avvik oppover fra kommunedelplanen for Lade, Leangen og Rotvoll. Maks fire etasjer / 14 m. Offentlig kjøreveg/fortau ferdig før brukstillatelse til bebyggelse. Turveg ferdig før brukstillatelse for barnehage. Uteoppholdsareal/småbarnslekeplass ferdig per byggetrinn. Avfallssuganlegg og returpunkt før første boliger. Minimum 0,5 bilplass per boenhet iht. plan. Gjelder «Hele planområdet». minimum 450 boenheter. vedtatt av Trondheim bystyre 31.01.2019. arkivsak 15/5501. klagefrist 24.03.2019. «å utvikle eiendommen fra lager og logistikkvirksomhet til et boligområde, med barnehage og mulighet for innslag av næring.».",
+    "keywords": [
+      "del",
+      "diagonalt",
+      "grontdrag"
+    ],
+    "sourceIds": [
+      "trondheim-0d7df32b",
+      "trondheim-e649dcc2",
+      "trondheim-ecd78393",
+      "trondheim-f303f1b2"
+    ],
+    "relatedPlaceIds": [],
+    "checkedAt": "2026-09-18",
+    "caveats": []
+  },
+  {
+    "id": "project-r20160019-2",
+    "title": "Diagonalt grøntdrag – del 2",
+    "categoryIds": [
+      "leangenbukta-prosjektet"
+    ],
+    "status": "adopted-plan",
+    "text": "samlet utnyttelse 120 %. Reguleringsplanen tillater samlet inntil 43 550 m² BRA og 12 000 m² BYA i boligfeltene B1–B5. Planbeskrivelsen oppgir 45 250 m² BRA for hele planområdet, inkludert barnehagefeltet. Reguleringsbestemmelsene krever dokumentasjon av tilstrekkelig skolekapasitet før boligtiltak kan godkjennes. Planen tillater inntil 3 000 m² BRA kontor eller tjenesteyting i første og andre etasje langs Lade allé i felt B1 og B2. Reguleringsbestemmelsene tillater ikke svalgang som adkomst til boenhetene.",
+    "keywords": [
+      "del",
+      "diagonalt",
+      "grontdrag"
+    ],
+    "sourceIds": [
+      "pir2-a1b575e4",
+      "trondheim-0d7df32b",
+      "trondheim-ecd78393"
+    ],
+    "relatedPlaceIds": [],
+    "checkedAt": "2026-09-18",
+    "caveats": []
+  },
+  {
+    "id": "project-r20160019-b1-b5",
+    "title": "Boligfelt B1–B5",
+    "categoryIds": [
+      "leangenbukta-prosjektet"
+    ],
+    "status": "adopted-plan",
+    "text": "Maks 43 550 m² BRA. Maks 12 000 m² BYA.",
+    "keywords": [
+      "boligfelt"
+    ],
+    "sourceIds": [
+      "trondheim-0d7df32b"
+    ],
+    "relatedPlaceIds": [],
+    "checkedAt": "2026-09-18",
+    "caveats": []
+  },
+  {
+    "id": "project-r20160019-o-bbh",
+    "title": "Barnehagefeltet o_BBH",
+    "categoryIds": [
+      "leangenbukta-prosjektet"
+    ],
+    "status": "adopted-plan",
+    "text": "Maks 1 700 m² BRA. Reguleringsplanen avsetter felt o_BBH til offentlig barnehage, med maksimal utnyttelse på 1 700 m² BRA.",
+    "keywords": [
+      "barnehagefeltet",
+      "bbh"
+    ],
+    "sourceIds": [
+      "trondheim-0d7df32b",
+      "trondheim-e649dcc2"
+    ],
+    "relatedPlaceIds": [],
+    "checkedAt": "2026-09-18",
+    "caveats": [],
+    "development": {
+      "objectType": "facility",
+      "buildStatus": "adopted-plan",
+      "availability": "not-open",
+      "buildStatusClaimId": "lb-cor-007",
+      "access": {
+        "scope": "unresolved",
+        "buildingIds": []
+      },
+      "mapAnchor": {
+        "approximateArea": "Regulert felt o_BBH i planområdet"
+      },
+      "claims": [
+        {
+          "id": "lb-f-023",
+          "text": "Maks 1 700 m² BRA",
+          "sourceId": "trondheim-0d7df32b",
+          "checkedAt": "2026-09-18",
+          "verification": "confirmed"
+        },
+        {
+          "id": "lb-cor-007",
+          "text": "Reguleringsplanen avsetter felt o_BBH til offentlig barnehage, med maksimal utnyttelse på 1 700 m² BRA.",
+          "sourceId": "trondheim-0d7df32b",
+          "checkedAt": "2026-09-18",
+          "verification": "confirmed"
+        }
+      ],
+      "moveInLinks": [],
+      "conflicts": []
+    }
+  },
+  {
+    "id": "project-r20160019-o-gt",
+    "title": "Turveg o_GT",
+    "categoryIds": [
+      "leangenbukta-prosjektet"
+    ],
+    "status": "adopted-plan",
+    "text": "Minimum 2,5 m bred. Maks stigning 1:10. Skal bestå i hele utbyggingsperioden. Minimum 2,5 m. Allmennheten. Planen regulerer en offentlig turveg i planområdets østkant, med planlagt tilkobling i retning Ladestien.",
+    "keywords": [
+      "turveg"
+    ],
+    "sourceIds": [
+      "trondheim-0d7df32b",
+      "trondheim-e649dcc2",
+      "trondheim-ecd78393"
+    ],
+    "relatedPlaceIds": [],
+    "checkedAt": "2026-09-18",
+    "caveats": [],
+    "development": {
+      "objectType": "outdoor-area",
+      "buildStatus": "adopted-plan",
+      "availability": "unknown",
+      "buildStatusClaimId": "lb-cor-006",
+      "access": {
+        "scope": "public",
+        "buildingIds": [],
+        "claimId": "lb-f-053"
+      },
+      "mapAnchor": {
+        "approximateArea": "Planområdets østkant"
+      },
+      "claims": [
+        {
+          "id": "lb-e-025",
+          "text": "Minimum 2,5 m bred",
+          "sourceId": "trondheim-0d7df32b",
+          "checkedAt": "2026-09-18",
+          "verification": "confirmed"
+        },
+        {
+          "id": "lb-e-026",
+          "text": "Maks stigning 1:10",
+          "sourceId": "trondheim-0d7df32b",
+          "checkedAt": "2026-09-18",
+          "verification": "confirmed"
+        },
+        {
+          "id": "lb-e-027",
+          "text": "Skal bestå i hele utbyggingsperioden",
+          "sourceId": "trondheim-0d7df32b",
+          "checkedAt": "2026-09-18",
+          "verification": "confirmed"
+        },
+        {
+          "id": "lb-f-050",
+          "text": "Minimum 2,5 m",
+          "sourceId": "trondheim-0d7df32b",
+          "checkedAt": "2026-09-18",
+          "verification": "confirmed"
+        },
+        {
+          "id": "lb-f-053",
+          "text": "Allmennheten",
+          "sourceId": "trondheim-0d7df32b",
+          "checkedAt": "2026-09-18",
+          "verification": "confirmed"
+        },
+        {
+          "id": "lb-cor-006",
+          "text": "Planen regulerer en offentlig turveg i planområdets østkant, med planlagt tilkobling i retning Ladestien.",
+          "sourceId": "trondheim-0d7df32b",
+          "checkedAt": "2026-09-18",
+          "verification": "confirmed"
+        }
+      ],
+      "moveInLinks": [],
+      "conflicts": []
+    }
+  },
+  {
+    "id": "project-leangenbukta-eksisterende-bebyggelse-pa-planeiendommen",
+    "title": "Eksisterende bebyggelse på planeiendommen",
+    "categoryIds": [
+      "leangenbukta-prosjektet"
+    ],
+    "status": "unresolved",
+    "text": "«Eksisterende bebyggelse på eiendommen forutsettes revet.».",
+    "keywords": [
+      "bebyggelse",
+      "eksisterende",
+      "planeiendommen"
+    ],
+    "sourceIds": [
+      "trondheim-ecd78393"
+    ],
+    "relatedPlaceIds": [],
+    "checkedAt": "2026-09-18",
+    "caveats": []
+  },
+  {
+    "id": "project-leangenbukta-trondheim-kommune-som-grunneier",
+    "title": "Trondheim kommune som grunneier",
+    "categoryIds": [
+      "leangenbukta-prosjektet"
+    ],
+    "status": "unresolved",
+    "text": "Grunneier for gnr. 412 bnr. 1.",
+    "keywords": [
+      "grunneier",
+      "kommune",
+      "som",
+      "trondheim"
+    ],
+    "sourceIds": [
+      "trondheim-ecd78393"
+    ],
+    "relatedPlaceIds": [],
+    "checkedAt": "2026-09-18",
+    "caveats": []
+  },
+  {
+    "id": "project-leangenbukta",
+    "title": "Leangenbukta-leilighetene (standard)",
+    "categoryIds": [
+      "leangenbukta-prosjektet"
+    ],
+    "status": "existing",
+    "text": "260 boliger overlevert. ca. 500 boliger. rundt 260 boliger overlevert per sommeren 2026. eies av Leangenbukta AS. omtales gjennomgående som «ca. 500 boliger». «Leangenbukta består av 500 leiligheter og rekkehus». «fordelt på en variert bebyggelse i hovedsaklig teglstein og trefasader». «ca. 500».",
+    "keywords": [
+      "leangenbukta",
+      "leilighetene",
+      "standard"
+    ],
+    "sourceIds": [
+      "finn-79459f26",
+      "kotengjenssen-1cc99ca4",
+      "leangenbukta-29db079d"
+    ],
+    "relatedPlaceIds": [],
+    "checkedAt": "2026-09-18",
+    "caveats": [
+      "Opplysningene er tidsfølsomme og må kontrolleres på nytt ved senere publisering."
+    ],
+    "development": {
+      "objectType": "project",
+      "buildStatus": "unresolved",
+      "availability": "unknown",
+      "access": {
+        "scope": "unresolved",
+        "buildingIds": []
+      },
+      "mapAnchor": {
+        "approximateArea": "Leangenbukta ved Haakon VIIs gate 14"
+      },
+      "claims": [
+        {
+          "id": "lb-b-067",
+          "text": "260 boliger overlevert",
+          "sourceId": "finn-79459f26",
+          "checkedAt": "2026-09-18",
+          "verification": "confirmed"
+        },
+        {
+          "id": "lb-a-003",
+          "text": "ca. 500 boliger",
+          "sourceId": "kotengjenssen-1cc99ca4",
+          "checkedAt": "2026-09-18",
+          "verification": "confirmed"
+        },
+        {
+          "id": "lb-a-013",
+          "text": "rundt 260 boliger overlevert per sommeren 2026",
+          "sourceId": "finn-79459f26",
+          "checkedAt": "2026-09-18",
+          "verification": "confirmed"
+        },
+        {
+          "id": "lb-a-036",
+          "text": "eies av Leangenbukta AS",
+          "sourceId": "leangenbukta-29db079d",
+          "checkedAt": "2026-09-18",
+          "verification": "confirmed"
+        },
+        {
+          "id": "lb-a-102",
+          "text": "omtales gjennomgående som «ca. 500 boliger»",
+          "sourceId": "leangenbukta-29db079d",
+          "checkedAt": "2026-09-18",
+          "verification": "confirmed"
+        },
+        {
+          "id": "lb-a-103",
+          "text": "«Leangenbukta består av 500 leiligheter og rekkehus»",
+          "sourceId": "leangenbukta-29db079d",
+          "checkedAt": "2026-09-18",
+          "verification": "confirmed"
+        },
+        {
+          "id": "lb-a-104",
+          "text": "«fordelt på en variert bebyggelse i hovedsaklig teglstein og trefasader»",
+          "sourceId": "leangenbukta-29db079d",
+          "checkedAt": "2026-09-18",
+          "verification": "confirmed"
+        },
+        {
+          "id": "lb-g-026",
+          "text": "«ca. 500»",
+          "sourceId": "leangenbukta-29db079d",
+          "checkedAt": "2026-09-18",
+          "verification": "confirmed"
+        }
+      ],
+      "moveInLinks": [],
+      "conflicts": []
+    }
+  },
+  {
+    "id": "project-knowledge-gaps",
+    "title": "Dette er fortsatt uavklart",
+    "categoryIds": [
+      "leangenbukta-prosjektet"
+    ],
+    "status": "unresolved",
+    "text": "Er Knutepunktet ferdigstilt, og er hver fellesfasilitet faktisk åpnet? Hva er endelig antall boliger i Saltakshus L? Hva er dagens status for den regulerte barnehagen i o_BBH? Hvilke prosjektfasiliteter er tilgjengelige for hvilke sameier og på hvilke vilkår? Hvilke deler av parkerings- og sykkelkapasiteten er faktisk etablert og tilgjengelig? Hva er dagens KPA-formål for eiendommen? Hvor ligger faktiske besøksinnganger og prosjektfasiliteter? Hva er dagens farbare forbindelse fra prosjektet til Ladestien?",
+    "keywords": [
+      "uavklart",
+      "ferdigstilt",
+      "fellesfasiliteter",
+      "adgang",
+      "barnehage",
+      "byggestart"
+    ],
+    "sourceIds": [],
+    "relatedPlaceIds": [],
+    "checkedAt": "2026-09-18",
+    "caveats": [
+      "Dette er spørsmål revisjonen ikke fant tilstrekkelig dokumentasjon til å besvare."
+    ]
+  },
+  {
+    "id": "category-oppvekst-ringvebukta",
+    "title": "Ringvebukta lek",
+    "categoryIds": [
+      "oppvekst"
+    ],
+    "status": "existing",
+    "text": "Kommunalt park- og lekeområde ved sjøen med offentlig toalett og lekeelementer.",
+    "keywords": [
+      "lek",
+      "ringvebukta"
+    ],
+    "sourceIds": [
+      "trondheim-f36a7a5b"
+    ],
+    "relatedPlaceIds": [],
+    "checkedAt": "2026-09-18",
+    "caveats": []
+  },
+  {
+    "id": "category-oppvekst-leangen-kunstisbane",
+    "title": "Leangen idrettspark (kunstisbane)",
+    "categoryIds": [
+      "oppvekst"
+    ],
+    "status": "existing",
+    "text": "Gratis publikumstid uten reservasjon tirsdag/torsdag 11.15–16 og onsdag/fredag 10–16 i sesong. Sesongen er væravhengig, normalt omtrent 1. november–15. mars; kveld og helg må sjekkes i aktivitetskalenderen.",
+    "keywords": [
+      "idrettspark",
+      "kunstisbane",
+      "leangen"
+    ],
+    "sourceIds": [
+      "sites-57a7ecdf"
+    ],
+    "relatedPlaceIds": [],
+    "checkedAt": "2026-09-18",
+    "caveats": []
+  },
+  {
+    "id": "category-natur-grilstadstranda",
+    "title": "Grilstadstranda",
+    "categoryIds": [
+      "natur"
+    ],
+    "status": "existing",
+    "text": "Kommunens badeplassoversikt oppgir rullestolmatte og toalett med stellebenk.",
+    "keywords": [
+      "grilstadstranda"
+    ],
+    "sourceIds": [
+      "trondheim-5c884f0a"
+    ],
+    "relatedPlaceIds": [],
+    "checkedAt": "2026-09-18",
+    "caveats": [
+      "Dette tilbudet ligger utenfor Lade/Leangen og vises som referanse, ikke som kartpunkt."
+    ]
+  },
+  {
+    "id": "category-natur-ringve-musikkmuseum",
+    "title": "Ringve musikkmuseum",
+    "categoryIds": [
+      "natur"
+    ],
+    "status": "existing",
+    "text": "Billettbelagt museum i Lade allé 60 med offisielle koordinater 63.44748, 10.45351. Vintersesong 17.08.2026–01.04.2027: tirsdag–søndag 11–16, mandag stengt. Barn 0–15 år har gratis inngang i følge med betalende voksen.",
+    "keywords": [
+      "musikkmuseum",
+      "ringve"
+    ],
+    "sourceIds": [
+      "ringve-e3d7e676"
+    ],
+    "relatedPlaceIds": [],
+    "checkedAt": "2026-09-18",
+    "caveats": []
+  },
+  {
+    "id": "category-natur-lade-kirke",
+    "title": "Lade kirke",
+    "categoryIds": [
+      "natur"
+    ],
+    "status": "existing",
+    "text": "Lade kirke har Åpen kirke tirsdager 12–13; øvrig adgang følger gudstjenester og arrangementer.",
+    "keywords": [
+      "kirke",
+      "lade"
+    ],
+    "sourceIds": [
+      "kirken-60c88d28"
+    ],
+    "relatedPlaceIds": [],
+    "checkedAt": "2026-09-18",
+    "caveats": []
+  },
+  {
+    "id": "category-natur-ladekaia",
+    "title": "Ladekaia",
+    "categoryIds": [
+      "natur"
+    ],
+    "status": "existing",
+    "text": "Serveringssted i Leiv Eirikssons vei 42 med bordbooking. Virksomheten oppgir 11–22 alle dager og kjøkken til 21; tiden er sesongfølsom og må oppfriskes.",
+    "keywords": [
+      "ladekaia"
+    ],
+    "sourceIds": [
+      "ladekaia-c3a8f67a"
+    ],
+    "relatedPlaceIds": [],
+    "checkedAt": "2026-09-18",
+    "caveats": []
+  },
+  {
+    "id": "category-transport-leangen-stasjon",
+    "title": "Leangen stasjon: 2 HC-plasser",
+    "categoryIds": [
+      "transport"
+    ],
+    "status": "existing",
+    "text": "Bane NOR oppgir adresse Leangenvegen 14 og togforbindelse på R70. Det finnes 15 parkeringsplasser og 2 HC-plasser ved den gamle stasjonsbygningen. Trinnfri rute finnes, men er lengre; planovergangen til plattformen har trapper.",
+    "keywords": [
+      "leangen",
+      "plasser",
+      "stasjon"
+    ],
+    "sourceIds": [
+      "banenor-5c4f1b79"
+    ],
+    "relatedPlaceIds": [],
+    "checkedAt": "2026-09-18",
+    "caveats": []
+  },
+  {
+    "id": "category-transport-pirbrua-ranheim-cycle-route",
+    "title": "Hangarbrua over Leangen stasjon",
+    "categoryIds": [
+      "transport"
+    ],
+    "status": "planned",
+    "text": "Miljøpakken oppgir prosjektstatus Pågår. Hangarbrua åpnet i september 2025; flere delstrekninger er bygget, mens gjenstående strekning avhenger av finansiering.",
+    "keywords": [
+      "hangarbrua",
+      "leangen",
+      "over",
+      "stasjon"
+    ],
+    "sourceIds": [
+      "miljopakken-e9e6ecd5"
+    ],
+    "relatedPlaceIds": [],
+    "checkedAt": "2026-09-18",
+    "caveats": []
+  },
+  {
+    "id": "category-trening-husebybadet",
+    "title": "Husebybadet",
+    "categoryIds": [
+      "trening"
+    ],
+    "status": "existing",
+    "text": "Kommunalt publikumsbad på Saupstad med publikumstider og billettpriser publisert 24.08.2026.",
+    "keywords": [
+      "husebybadet"
+    ],
+    "sourceIds": [
+      "trondheim-e3878fe6"
+    ],
+    "relatedPlaceIds": [],
+    "checkedAt": "2026-09-18",
+    "caveats": [
+      "Dette tilbudet ligger utenfor Lade/Leangen og vises som referanse, ikke som kartpunkt."
+    ]
+  },
+  {
+    "id": "category-opplevelser-ringve-botaniske-hage",
+    "title": "Ringve botaniske hage",
+    "categoryIds": [
+      "opplevelser"
+    ],
+    "status": "existing",
+    "text": "NTNU oppgir at hagen er gratis og åpen hver dag hele året. Hagen er 130 dekar og har inngang fra nord ved Olav Engelbrektssons allé.",
+    "keywords": [
+      "botaniske",
+      "hage",
+      "ringve"
+    ],
+    "sourceIds": [
+      "ntnu-4f3d38b5",
+      "ntnu-79fbb589"
+    ],
+    "relatedPlaceIds": [],
+    "checkedAt": "2026-09-18",
+    "caveats": []
+  },
+  {
+    "id": "category-opplevelser-rockheim",
+    "title": "Rockheim",
+    "categoryIds": [
+      "opplevelser"
+    ],
+    "status": "existing",
+    "text": "Nasjonalt museum for populærmusikk i Brattørkaia 14. Åpningstid i 2026 er tirsdag–fredag 10–16, lørdag–søndag 11–17 og mandag stengt.",
+    "keywords": [
+      "rockheim"
+    ],
+    "sourceIds": [
+      "rockheim-b18ad3e5"
+    ],
+    "relatedPlaceIds": [],
+    "checkedAt": "2026-09-18",
+    "caveats": [
+      "Dette tilbudet ligger utenfor Lade/Leangen og vises som referanse, ikke som kartpunkt."
+    ]
+  },
+  {
+    "id": "category-opplevelser-lucky-bowl-trondheim",
+    "title": "Lucky Bowl Trondheim",
+    "categoryIds": [
+      "opplevelser"
+    ],
+    "status": "existing",
+    "text": "Aktivitetssenter i Heggstadmoen 55 med bowling, lasertag, go-kart, lekeland og andre aktiviteter. Virksomheten publiserer egne åpningstider per aktivitet; de må oppfriskes før bruk.",
+    "keywords": [
+      "bowl",
+      "lucky",
+      "trondheim"
+    ],
+    "sourceIds": [
+      "luckybowl-704d6618"
+    ],
+    "relatedPlaceIds": [],
+    "checkedAt": "2026-09-18",
+    "caveats": [
+      "Dette tilbudet ligger utenfor Lade/Leangen og vises som referanse, ikke som kartpunkt."
+    ]
+  },
+  {
+    "id": "category-opplevelser-trondheim-kino-nova-prinsen",
+    "title": "Trondheim Kino (Nova/Prinsen)",
+    "categoryIds": [
+      "opplevelser"
+    ],
+    "status": "existing",
+    "text": "Trondheim Kino driver Nova i Olav Tryggvasons gate 5 og Prinsen i Prinsens gate 2B. Nova har 11 saler og Prinsen 8.",
+    "keywords": [
+      "kino",
+      "nova",
+      "prinsen",
+      "trondheim"
+    ],
+    "sourceIds": [
+      "trondheimkino-b3fa446e",
+      "trondheimkino-3bb3c878"
+    ],
+    "relatedPlaceIds": [],
+    "checkedAt": "2026-09-18",
+    "caveats": [
+      "Dette tilbudet ligger utenfor Lade/Leangen og vises som referanse, ikke som kartpunkt."
+    ]
+  },
+  {
+    "id": "category-opplevelser-vitensenteret",
+    "title": "Vitensenteret",
+    "categoryIds": [
+      "opplevelser"
+    ],
+    "status": "existing",
+    "text": "Interaktivt vitensenter i Kongens gate 1. Åpent mandag–fredag 10–16 og lørdag–søndag 10–17 per kontrollen; barn under 10 år må være i følge med voksen.",
+    "keywords": [
+      "vitensenteret"
+    ],
+    "sourceIds": [
+      "vitensenteret-8d637c49"
+    ],
+    "relatedPlaceIds": [],
+    "checkedAt": "2026-09-18",
+    "caveats": [
+      "Dette tilbudet ligger utenfor Lade/Leangen og vises som referanse, ikke som kartpunkt."
+    ]
+  },
+  {
+    "id": "category-opplevelser-ladekaia",
+    "title": "Ladekaia",
+    "categoryIds": [
+      "opplevelser"
+    ],
+    "status": "existing",
+    "text": "Serveringssted i Leiv Eirikssons vei 42 med bordbooking. Virksomheten oppgir 11–22 alle dager og kjøkken til 21; tiden er sesongfølsom og må oppfriskes.",
+    "keywords": [
+      "ladekaia"
+    ],
+    "sourceIds": [
+      "ladekaia-c3a8f67a"
+    ],
+    "relatedPlaceIds": [],
+    "checkedAt": "2026-09-18",
+    "caveats": []
+  }
+]

@@ -1,0 +1,26 @@
+{
+  "schemaVersion": 1,
+  "appliedAt": "2026-09-19T10:22:38.674Z",
+  "packagePath": "docs/research/nyhavna-lokal-demo/audited/2026-09-19-audited-places-ledger-package.json",
+  "packageId": "nyhavna-audited-places-2026-09-19",
+  "packageHash": "9814e74d6831ec742a2d598dd3466b77116b0a2499a68f9f14f807d8020448e2",
+  "projectId": "nyhavna-utvikling_nyhavna",
+  "mode": "full_snapshot",
+  "scopeKey": "audited-places",
+  "entities": 118,
+  "claims": 167,
+  "publicationStates": {
+    "publishable": 167
+  },
+  "import": {
+    "status": "imported",
+    "package_hash": "9814e74d6831ec742a2d598dd3466b77116b0a2499a68f9f14f807d8020448e2",
+    "entities": 118,
+    "claims": 167,
+    "route": {
+      "customer": "nyhavna-utvikling",
+      "projectSlug": "nyhavna"
+    },
+    "revalidated": []
+  }
+}

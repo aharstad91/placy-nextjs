@@ -1,0 +1,26 @@
+{
+  "schemaVersion": 1,
+  "appliedAt": "2026-09-19T10:22:39.368Z",
+  "packagePath": "docs/research/nyhavna-lokal-demo/audited/2026-09-19-audited-topics-ledger-package.json",
+  "packageId": "nyhavna-audited-topics-2026-09-19",
+  "packageHash": "495320c565b3b1cd655819e4e729e56b98814a08de4c7616324d52ada4f86ba5",
+  "projectId": "nyhavna-utvikling_nyhavna",
+  "mode": "full_snapshot",
+  "scopeKey": "audited-topics",
+  "entities": 17,
+  "claims": 17,
+  "publicationStates": {
+    "publishable": 17
+  },
+  "import": {
+    "status": "imported",
+    "package_hash": "495320c565b3b1cd655819e4e729e56b98814a08de4c7616324d52ada4f86ba5",
+    "entities": 17,
+    "claims": 17,
+    "route": {
+      "customer": "nyhavna-utvikling",
+      "projectSlug": "nyhavna"
+    },
+    "revalidated": []
+  }
+}

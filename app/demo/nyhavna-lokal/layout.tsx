@@ -4,8 +4,8 @@ import "./nyhavna-brand.css";
 
 const unbounded = localFont({
   src: [
-    { path: "../../../public/demo/nyhavna-nettside/unbounded-600.ttf", weight: "600" },
-    { path: "../../../public/demo/nyhavna-nettside/unbounded-700.ttf", weight: "700" },
+    { path: "../../../public/brand-fonts/unbounded-600.ttf", weight: "600" },
+    { path: "../../../public/brand-fonts/unbounded-700.ttf", weight: "700" },
   ],
   variable: "--font-nyhavna-board",
   display: "swap",

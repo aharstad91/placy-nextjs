@@ -303,6 +303,30 @@ describe("stoppet", () => {
     expect(camera.fitCoordinates).not.toHaveBeenCalled();
     expect(camera.flyToPoint).not.toHaveBeenCalled();
   });
+
+  it("viser faktasvar uten å late som et rent faktatema mangler steder", () => {
+    const utils = setup((data) => ({
+      ...data,
+      categories: data.categories.map((category, index) =>
+        index === 0 ? { ...category, pois: [], topRankedPois: [] } : category,
+      ),
+    }));
+
+    utils.begin();
+    expect(utils.getByText("Spørsmål (1)")).not.toBeNull();
+    expect(utils.queryByText("Steder (0)")).toBeNull();
+    expect(utils.queryByText("Nærmest hjemmefra")).toBeNull();
+    expect(utils.queryByTestId("story-empty-category")).toBeNull();
+
+    act(() =>
+      fireEvent.click(
+        document.querySelector('button[aria-label="Tilbake"]')!,
+      ),
+    );
+    expect(
+      document.querySelector('[data-story-theme="mat"]')?.textContent,
+    ).toContain("1 svar");
+  });
 });
 
 describe("stedsfanen", () => {

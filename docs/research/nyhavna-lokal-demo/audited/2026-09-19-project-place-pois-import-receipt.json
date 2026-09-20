@@ -1,0 +1,61 @@
+{
+  "status": "imported",
+  "appliedAt": "2026-09-19T10:38:21.835Z",
+  "schemaVersion": 1,
+  "projectId": "nyhavna-utvikling_nyhavna",
+  "customer": "nyhavna-utvikling",
+  "projectSlug": "nyhavna",
+  "categories": [
+    {
+      "id": "bowling",
+      "name": "Bowling",
+      "icon": "Disc",
+      "color": "#0ea5e9"
+    },
+    {
+      "id": "gym",
+      "name": "Treningssenter",
+      "icon": "Dumbbell",
+      "color": "#ec4899"
+    },
+    {
+      "id": "bar",
+      "name": "Bar",
+      "icon": "Wine",
+      "color": "#f35a5a"
+    },
+    {
+      "id": "outdoor",
+      "name": "Utendørs aktivitet",
+      "icon": "Mountain",
+      "color": "#22c68d"
+    },
+    {
+      "id": "museum",
+      "name": "Museum og kultur",
+      "icon": "Landmark",
+      "color": "#23b1f0"
+    },
+    {
+      "id": "park",
+      "name": "Park",
+      "icon": "Trees",
+      "color": "#22c68d"
+    }
+  ],
+  "poiIds": [
+    "project:nyhavna-utvikling_nyhavna:dora-bowling",
+    "project:nyhavna-utvikling_nyhavna:buld-no",
+    "project:nyhavna-utvikling_nyhavna:monkey-brew",
+    "project:nyhavna-utvikling_nyhavna:elvepromenaden",
+    "project:nyhavna-utvikling_nyhavna:kulturaksen",
+    "project:nyhavna-utvikling_nyhavna:fyringsbunkeren",
+    "project:nyhavna-utvikling_nyhavna:dora2",
+    "project:nyhavna-utvikling_nyhavna:bunkerparken"
+  ],
+  "productIds": [
+    "063a0b6a-edb3-4fb2-885d-c594ddd46063"
+  ],
+  "verifiedPoiCount": 8,
+  "revalidated": []
+}

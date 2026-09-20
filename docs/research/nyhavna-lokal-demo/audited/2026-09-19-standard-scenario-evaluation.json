@@ -1,0 +1,856 @@
+{
+  "schemaVersion": 1,
+  "evaluatedAt": "2026-09-19T15:06:27.272Z",
+  "route": {
+    "customer": "nyhavna-utvikling",
+    "projectSlug": "nyhavna"
+  },
+  "source": "production_direct_read",
+  "contentVersion": "286dc7a1d3bbba1bd5d693a64e9841c36bdf88ec83a9a4fd865df2af27276b8f",
+  "scenarioSource": "data/demo/nyhavna-lokal/conversations.json",
+  "inventory": {
+    "categories": 8,
+    "pois": 1103,
+    "facts": 294,
+    "faq": 70
+  },
+  "scenarios": 43,
+  "automated": {
+    "passed": 35,
+    "failed": 0,
+    "allPassed": true
+  },
+  "manual": {
+    "pending": 8,
+    "scenarioIds": [
+      "kart-flere-steder",
+      "kart-ett-sted",
+      "samtale-avbrudd",
+      "kart-klikk",
+      "drift-samtykke",
+      "drift-mikrofon",
+      "drift-stemme",
+      "drift-rate-limit"
+    ]
+  },
+  "results": [
+    {
+      "groupId": "paritet-inngang",
+      "id": "inngang-hilsen",
+      "question": "Start samtalen.",
+      "expectation": "Anja presenterer seg som digital guide for Nyhavna, holder hilsenen kort og tilbyr ett valg mellom planene for bydelen og nærområdet slik det er i dag.",
+      "status": "passed",
+      "automatedPassed": true,
+      "manualReason": null,
+      "checks": [
+        {
+          "label": "Inneholder Nyhavna, AI-guide",
+          "passed": true,
+          "evidence": "Nyhavna | AI-guide"
+        }
+      ]
+    },
+    {
+      "groupId": "paritet-inngang",
+      "id": "inngang-planer",
+      "question": "Fortell om det som kommer.",
+      "expectation": "Tolkes som Nyhavna som bydel og åpner temaet nyhavna-bydel. Planlagt, ønsket og vedtatt holdes fra hverandre.",
+      "status": "passed",
+      "automatedPassed": true,
+      "manualReason": null,
+      "checks": [
+        {
+          "label": "Inneholder Transittkaia, planlagt",
+          "passed": true,
+          "evidence": "Transittkaia | planlagt"
+        }
+      ]
+    },
+    {
+      "groupId": "paritet-inngang",
+      "id": "inngang-dagens-omrade",
+      "question": "Hva finnes her allerede i dag?",
+      "expectation": "Anja presenterer eksisterende tilbud og lar brukeren velge tema. Framtidige tilbud omtales ikke som åpne.",
+      "status": "passed",
+      "automatedPassed": true,
+      "manualReason": null,
+      "checks": [
+        {
+          "label": "Dora Kaffebar finnes i standardboardets POI-pool",
+          "passed": true,
+          "evidence": "google-ChIJkSttw-sxbUYRAanGtarSMo0 · Kafé"
+        },
+        {
+          "label": "Snurr Nyhavna finnes i standardboardets POI-pool",
+          "passed": true,
+          "evidence": "google-ChIJO6r3WQAxbUYRIwblKoirXeU · Bakeri"
+        }
+      ]
+    },
+    {
+      "groupId": "paritet-inngang",
+      "id": "inngang-identitet",
+      "question": "Jobber du for Nyhavna Utvikling?",
+      "expectation": "Anja er Placys digitale guide og skal ikke utgi seg for å være ansatt hos Nyhavna eller megler.",
+      "status": "passed",
+      "automatedPassed": true,
+      "manualReason": null,
+      "checks": [
+        {
+          "label": "Inneholder ikke megler",
+          "passed": true,
+          "evidence": "ikke megler"
+        }
+      ]
+    },
+    {
+      "groupId": "paritet-inngang",
+      "id": "inngang-adresse-stoy",
+      "question": "Fortell om Dora Kaffebar.",
+      "expectation": "Anja bruker navn og relevant revidert kunnskap uten å lese opp Kobbes gate 2. Adresse hentes bare hvis brukeren spør om adressen eller trenger veibeskrivelse.",
+      "status": "passed",
+      "automatedPassed": true,
+      "manualReason": null,
+      "checks": [
+        {
+          "label": "Utelater Kobbes gate 2",
+          "passed": true,
+          "evidence": "Ingen av de avviste uttrykkene i publisert innhold."
+        },
+        {
+          "label": "Vanlig stedsøk sender ikke adresse",
+          "passed": true,
+          "evidence": "{\"matches\":1,\"places\":[{\"id\":\"google-ChIJkSttw-sxbUYRAanGtarSMo0\",\"name\":\"Dora kaffebar\",\"map_poi_id\":\"google-ChIJkSttw-sxbUYRAanGtarSMo0\",\"has_map_location\":true,\"basis\":\"register\",\"category_id\":\"mat-drikke\",\"type\":\"Kafé\",\"status\":\"existing\",\"location_precision\":\"unknown\",\"travel_minutes_from_board_origin\":{\"walk\":2,\"bike\":2,\"car\":1},\"sort_minutes\":2,\"note\":\"Boardets register: navn, type og lagret reisetid. Ikke redaksjonelt kontrollerte fakta. Ikke legg til åpningstider, priser, kvalitet, adresse eller tilbud.\"}],\"next_offset\":null,\"basis\":\"register\",\"note\":\"Boardets register: navn, type og lagret reisetid. Ikke redaksjonelt kontrollerte fakta. Ikke legg til åpningstider, priser, kvalitet,"
+        }
+      ]
+    },
+    {
+      "groupId": "paritet-bydel",
+      "id": "bydel-formal",
+      "question": "Hva slags bydel skal Nyhavna bli?",
+      "expectation": "Målet beskrives som boliger, arbeidsliv, kultur og grøntområder ved vannet, med møteplasser som kan bidra til naboskap. Dette formidles som mål og plan, ikke dagens tilbud.",
+      "status": "passed",
+      "automatedPassed": true,
+      "manualReason": null,
+      "checks": [
+        {
+          "label": "Inneholder bolig, kultur, grønt",
+          "passed": true,
+          "evidence": "bolig | kultur | grønt"
+        }
+      ]
+    },
+    {
+      "groupId": "paritet-bydel",
+      "id": "bydel-transittkaia",
+      "question": "Hvor kommer de første boligene?",
+      "expectation": "Transittkaia oppgis som første område. Framdrift og etapper omtales med forbehold om plangodkjenning.",
+      "status": "passed",
+      "automatedPassed": true,
+      "manualReason": null,
+      "checks": [
+        {
+          "label": "Transittkaia finnes i standardboardets POI-pool",
+          "passed": true,
+          "evidence": "project:nyhavna-utvikling_nyhavna:transittkaia · Delområde"
+        },
+        {
+          "label": "Søk etter Transittkaia finner Transittkaia",
+          "passed": true,
+          "evidence": "{\"matches\":1,\"places\":[{\"id\":\"place:transittkaia\",\"name\":\"Transittkaia\",\"map_poi_id\":\"project:nyhavna-utvikling_nyhavna:transittkaia\",\"uncertainties\":[],\"status\":\"existing\",\"has_map_location\":true,\"location_precision\":\"approximate\",\"location_note\":\"Områdemarkør ved Kartverkets navnepunkt for kaia. Viser ikke tomtegrense eller framtidig inngang.\",\"facts\":[{\"text\":\"Doratorget, elvepark og Transittparken ytterst mot fjorden skal gi plass til opphold og aktiviteter. Mobilitetshuset er foreslått med parkering og publikumsrettede funksjoner.\",\"source_id\":\"source-97\",\"checked_at\":\"2026-09-14\"},{\"text\":\"Nettsiden oppgir byggestart i stedet0stedet og mulig innflytting i stedet0stedet9, forutsatt plan"
+        }
+      ]
+    },
+    {
+      "groupId": "paritet-bydel",
+      "id": "bydel-kullkranpiren",
+      "question": "Hva er planlagt på Kullkranpiren?",
+      "expectation": "Boliger, grøntområder og kultur inngår i planene. Detaljene presenteres ikke som vedtatte eller ferdige tilbud.",
+      "status": "passed",
+      "automatedPassed": true,
+      "manualReason": null,
+      "checks": [
+        {
+          "label": "Kullkranpiren finnes i standardboardets POI-pool",
+          "passed": true,
+          "evidence": "project:nyhavna-utvikling_nyhavna:kullkranpiren · Delområde"
+        },
+        {
+          "label": "Søk etter Kullkranpiren finner Kullkranpiren",
+          "passed": true,
+          "evidence": "{\"matches\":1,\"places\":[{\"id\":\"place:kullkranpiren\",\"name\":\"Kullkranpiren\",\"map_poi_id\":\"project:nyhavna-utvikling_nyhavna:kullkranpiren\",\"uncertainties\":[],\"status\":\"existing\",\"has_map_location\":true,\"location_precision\":\"approximate\",\"location_note\":\"Områdemarkør ved Kartverkets navnepunkt for kaia. Viser ikke tomtegrense eller framtidig inngang.\",\"facts\":[{\"text\":\"Det arbeides med ideen om et bygg for akustisk musikk. Illustrasjonen viser muligheter, ikke vedtatte planer.\",\"source_id\":\"source-120\",\"checked_at\":\"2026-09-14\"},{\"text\":\"Utbygger beskriver boliger, barnehage og næringsbygg, og en gang- og sykkelbro til Strandveikaia. En ny kai mot vest er en mulighet som skal undersøkes.\",\"sour"
+        }
+      ]
+    },
+    {
+      "groupId": "paritet-bydel",
+      "id": "bydel-strandveikaia",
+      "question": "Hva skal skje på Strandveikaia?",
+      "expectation": "Strandveikaia omtales som planlagt bydelssentrum med kultur, sjøbad og forbindelser. Dette er plan, ikke dagens tilbud.",
+      "status": "passed",
+      "automatedPassed": true,
+      "manualReason": null,
+      "checks": [
+        {
+          "label": "Strandveikaia finnes i standardboardets POI-pool",
+          "passed": true,
+          "evidence": "project:nyhavna-utvikling_nyhavna:strandveikaia · Delområde"
+        },
+        {
+          "label": "Søk etter Strandveikaia finner Strandveikaia",
+          "passed": true,
+          "evidence": "{\"matches\":3,\"places\":[{\"id\":\"place:strandveikaia\",\"name\":\"Strandveikaia\",\"map_poi_id\":\"project:nyhavna-utvikling_nyhavna:strandveikaia\",\"uncertainties\":[],\"status\":\"existing\",\"has_map_location\":true,\"location_precision\":\"approximate\",\"location_note\":\"Områdemarkør ved Kartverkets navnepunkt for kaia. Viser ikke tomtegrense eller framtidig inngang.\",\"facts\":[{\"text\":\"Nettsiden sier at videre arbeid med Strandveien stedet00 er satt på vent i påvente av finansiering. Det er derfor ikke en bekreftet kommende åpning.\",\"source_id\":\"source-61\",\"checked_at\":\"2026-09-14\"},{\"text\":\"Kulturminnene skal rehabiliteres og brukes særlig til kunst og kultur. Strandveien stedet00 er et pilotprosjekt med mål o"
+        }
+      ]
+    },
+    {
+      "groupId": "paritet-bydel",
+      "id": "bydel-ladehammerkaia",
+      "question": "Hvordan kan det bli å bo på Ladehammerkaia?",
+      "expectation": "Ladehammerkaia omtales som et område tenkt med høy boligandel, parker og tilbud i sørvendte omgivelser ved vannet.",
+      "status": "passed",
+      "automatedPassed": true,
+      "manualReason": null,
+      "checks": [
+        {
+          "label": "Ladehammerkaia finnes i standardboardets POI-pool",
+          "passed": true,
+          "evidence": "project:nyhavna-utvikling_nyhavna:ladehammerkaia · Delområde"
+        },
+        {
+          "label": "Søk etter Ladehammerkaia finner Ladehammerkaia",
+          "passed": true,
+          "evidence": "{\"matches\":1,\"places\":[{\"id\":\"place:ladehammerkaia\",\"name\":\"Ladehammerkaia\",\"map_poi_id\":\"project:nyhavna-utvikling_nyhavna:ladehammerkaia\",\"uncertainties\":[],\"status\":\"existing\",\"has_map_location\":true,\"location_precision\":\"approximate\",\"location_note\":\"Områdemarkør ved Kartverkets navnepunkt for kaia. Viser ikke tomtegrense eller framtidig inngang.\",\"facts\":[{\"text\":\"Planene omfatter barnehage og servicetilbud, med enten to mindre parker eller én større ved spissbunkerne.\",\"source_id\":\"source-96\",\"checked_at\":\"2026-09-14\"},{\"text\":\"Galleri og klatrevegg nevnes som mulige bruksområder, ikke som avklarte tilbud. Siden oppgir ingen fast byggestart eller innflyttingsdato.\",\"source_id\":\"source-"
+        }
+      ]
+    },
+    {
+      "groupId": "paritet-bydel",
+      "id": "bydel-bunkerkvartalet",
+      "question": "Hva er Bunkerkvartalet?",
+      "expectation": "Kultur, kunnskap og havteknologi rundt Dora 2 forklares. Et nytt Vitensenter i 2030 omtales som et ønske eller en plan, ikke som vedtatt åpning.",
+      "status": "passed",
+      "automatedPassed": true,
+      "manualReason": null,
+      "checks": [
+        {
+          "label": "Bunkerkvartalet finnes i standardboardets POI-pool",
+          "passed": true,
+          "evidence": "project:nyhavna-utvikling_nyhavna:bunkerkvartalet · Delområde"
+        },
+        {
+          "label": "Søk etter Bunkerkvartalet finner Bunkerkvartalet",
+          "passed": true,
+          "evidence": "{\"matches\":1,\"places\":[{\"id\":\"place:bunkerkvartalet\",\"name\":\"Bunkerkvartalet\",\"map_poi_id\":\"project:nyhavna-utvikling_nyhavna:bunkerkvartalet\",\"uncertainties\":[],\"status\":\"existing\",\"has_map_location\":true,\"location_precision\":\"approximate\",\"location_note\":\"Omtrentlig områdemarkør ved Dora 2. Viser ikke tomtegrense eller framtidig inngang.\",\"facts\":[{\"text\":\"Planinitiativet ble ifølge utbygger levert i januar stedet0stedet6. Nye næringsbygg skal betjene miljøet innen havteknologi, mens Dora stedet er tenkt brukt til både næring og kultur.\",\"source_id\":\"source-57\",\"checked_at\":\"2026-09-14\"},{\"text\":\"Vitensenteret ønsker et nybygg på taket av Dora stedet i stedet030. Dette er en ambisjon, ikke"
+        }
+      ]
+    },
+    {
+      "groupId": "paritet-bydel",
+      "id": "bydel-folg-planene",
+      "question": "Hvordan kan jeg følge boligplanene?",
+      "expectation": "Anja viser til Nyhavnas nyhetsbrev for oppdateringer og invitasjon til forsalg, uten å love tidspunkt eller tilgjengelige boliger.",
+      "status": "passed",
+      "automatedPassed": true,
+      "manualReason": null,
+      "checks": [
+        {
+          "label": "Inneholder nyhetsbrev",
+          "passed": true,
+          "evidence": "nyhetsbrev"
+        }
+      ]
+    },
+    {
+      "groupId": "paritet-hverdag-oppvekst",
+      "id": "hverdag-dagligvarer",
+      "question": "Hvor handler vi dagligvarer?",
+      "expectation": "MENY Solsiden og KIWI Lilleby nevnes med de beregnede gangtidene fra referansepunktet. KIWI sine pakkebokser kan nevnes.",
+      "status": "passed",
+      "automatedPassed": true,
+      "manualReason": null,
+      "checks": [
+        {
+          "label": "MENY Solsiden finnes i standardboardets POI-pool",
+          "passed": true,
+          "evidence": "google-ChIJm6lLfZ8xbUYRFYo0NaeG5sk · Dagligvare"
+        },
+        {
+          "label": "KIWI Lilleby finnes i standardboardets POI-pool",
+          "passed": true,
+          "evidence": "google-ChIJTweFjGYxbUYRz2lXeNSRp2Q · Dagligvare"
+        }
+      ]
+    },
+    {
+      "groupId": "paritet-hverdag-oppvekst",
+      "id": "oppvekst-skoler",
+      "question": "Hvilke skoler er aktuelle?",
+      "expectation": "Lilleby barneskole og Rosenborg ungdomsskole oppgis som aktuelle i planmaterialet for Transittkaia. Skoletilhørighet må avklares for den konkrete boligen.",
+      "status": "passed",
+      "automatedPassed": true,
+      "manualReason": null,
+      "checks": [
+        {
+          "label": "Inneholder Lilleby, Rosenborg",
+          "passed": true,
+          "evidence": "Lilleby | Rosenborg"
+        },
+        {
+          "label": "Inneholder må avklares",
+          "passed": true,
+          "evidence": "må avklares"
+        }
+      ]
+    },
+    {
+      "groupId": "paritet-hverdag-oppvekst",
+      "id": "oppvekst-skolevei",
+      "question": "Hvor langt er det til skolene?",
+      "expectation": "De lagrede beregnede gang- og sykkeltidene kan oppgis, men Anja sier at kryssinger og trygghet ikke er vurdert.",
+      "status": "passed",
+      "automatedPassed": true,
+      "manualReason": null,
+      "checks": [
+        {
+          "label": "Inneholder trygghet, ikke vurdert",
+          "passed": true,
+          "evidence": "trygghet | ikke vurdert"
+        }
+      ]
+    },
+    {
+      "groupId": "paritet-hverdag-oppvekst",
+      "id": "oppvekst-barnehager",
+      "question": "Hvilke barnehager finnes i nærområdet?",
+      "expectation": "Nedre Elvehavn og Voldsminde nevnes som kommunale barnehager med beregnede gangtider. Ledige plasser er ikke undersøkt.",
+      "status": "passed",
+      "automatedPassed": true,
+      "manualReason": null,
+      "checks": [
+        {
+          "label": "Inneholder Nedre Elvehavn, Voldsminde",
+          "passed": true,
+          "evidence": "Nedre Elvehavn | Voldsminde"
+        },
+        {
+          "label": "Utelater ledig plass",
+          "passed": true,
+          "evidence": "Ingen av de avviste uttrykkene i publisert innhold."
+        }
+      ]
+    },
+    {
+      "groupId": "paritet-hverdag-oppvekst",
+      "id": "oppvekst-ledig-plass",
+      "question": "Er det ledig plass i barnehagen?",
+      "expectation": "Anja sier at dette ikke finnes i boardets data og viser til kommunens opptak. Hun utleder ikke ledighet fra nærhet eller kapasitet.",
+      "status": "passed",
+      "automatedPassed": true,
+      "manualReason": null,
+      "checks": [
+        {
+          "label": "Utelater ledig plass nå",
+          "passed": true,
+          "evidence": "Ingen av de avviste uttrykkene i publisert innhold."
+        }
+      ]
+    },
+    {
+      "groupId": "paritet-servering-natur",
+      "id": "servering-kafe",
+      "question": "Hvor finner vi kaféer og bakerier?",
+      "expectation": "Dora Kaffebar og Snurr Nyhavna nevnes og fremheves. Åpningstider henvises til stedenes egne sider dersom de ikke er ferskt verifisert.",
+      "status": "passed",
+      "automatedPassed": true,
+      "manualReason": null,
+      "checks": [
+        {
+          "label": "Dora Kaffebar finnes i standardboardets POI-pool",
+          "passed": true,
+          "evidence": "google-ChIJkSttw-sxbUYRAanGtarSMo0 · Kafé"
+        },
+        {
+          "label": "Snurr Nyhavna finnes i standardboardets POI-pool",
+          "passed": true,
+          "evidence": "google-ChIJO6r3WQAxbUYRIwblKoirXeU · Bakeri"
+        }
+      ]
+    },
+    {
+      "groupId": "paritet-servering-natur",
+      "id": "servering-restauranter",
+      "question": "Hvilke restauranter finnes i nærheten?",
+      "expectation": "Ladejarlen og Nyhavna BistroBar nevnes som alternativer med lagrede beregnede gangtider, uten kvalitetsrangering.",
+      "status": "passed",
+      "automatedPassed": true,
+      "manualReason": null,
+      "checks": [
+        {
+          "label": "Ladejarlen finnes i standardboardets POI-pool",
+          "passed": true,
+          "evidence": "google-ChIJJ5VwkqAxbUYRVB3X034TK3g · Restaurant"
+        },
+        {
+          "label": "Nyhavna BistroBar finnes i standardboardets POI-pool",
+          "passed": true,
+          "evidence": "google-ChIJNzs1uMMxbUYRFHxPylbUTSg · Restaurant"
+        }
+      ]
+    },
+    {
+      "groupId": "paritet-servering-natur",
+      "id": "servering-menyer",
+      "question": "Hvor finner vi aktuelle åpningstider og menyer?",
+      "expectation": "Anja viser til stedskort og virksomhetenes egne sider. Hun fremstiller ikke eldre research som levende åpningstid.",
+      "status": "passed",
+      "automatedPassed": true,
+      "manualReason": null,
+      "checks": [
+        {
+          "label": "Inneholder åpningstider, egne sider",
+          "passed": true,
+          "evidence": "åpningstider | egne sider"
+        }
+      ]
+    },
+    {
+      "groupId": "paritet-servering-natur",
+      "id": "opplevelser-familie",
+      "question": "Hva kan vi gjøre som familie i nærområdet?",
+      "expectation": "Dora 1 Bowling, Nyhavna Padel og Ladestien kan nevnes og fremheves, med lagrede reisetider der de finnes.",
+      "status": "passed",
+      "automatedPassed": true,
+      "manualReason": null,
+      "checks": [
+        {
+          "label": "Dora 1 Bowling finnes i standardboardets POI-pool",
+          "passed": true,
+          "evidence": "project:nyhavna-utvikling_nyhavna:dora-bowling · Bowling"
+        },
+        {
+          "label": "Nyhavna Padel finnes i standardboardets POI-pool",
+          "passed": true,
+          "evidence": "osm-node-9546096858 · Idrettsanlegg"
+        },
+        {
+          "label": "Ladestien finnes i standardboardets POI-pool",
+          "passed": true,
+          "evidence": "ladestien · Utendørs aktivitet"
+        }
+      ]
+    },
+    {
+      "groupId": "paritet-servering-natur",
+      "id": "natur-ladestien",
+      "question": "Hvor kan jeg gå en tur?",
+      "expectation": "Ladestien og relevante naturpunkter finnes via boardets POI-pool. Anja skiller beregnet rute fra vurdering av trygghet og tilgjengelighet.",
+      "status": "passed",
+      "automatedPassed": true,
+      "manualReason": null,
+      "checks": [
+        {
+          "label": "Ladestien finnes i standardboardets POI-pool",
+          "passed": true,
+          "evidence": "ladestien · Utendørs aktivitet"
+        },
+        {
+          "label": "Søk etter Ladestien finner Ladestien",
+          "passed": true,
+          "evidence": "{\"matches\":1,\"places\":[{\"id\":\"ladestien\",\"name\":\"Ladestien\",\"map_poi_id\":\"ladestien\",\"has_map_location\":true,\"basis\":\"register\",\"category_id\":\"natur-friluftsliv\",\"type\":\"Utendørs aktivitet\",\"status\":\"existing\",\"location_precision\":\"unknown\",\"travel_minutes_from_board_origin\":{\"walk\":17,\"bike\":7,\"car\":5},\"sort_minutes\":17,\"note\":\"Boardets register: navn, type og lagret reisetid. Ikke redaksjonelt kontrollerte fakta. Ikke legg til åpningstider, priser, kvalitet, adresse eller tilbud.\"}],\"next_offset\":null,\"basis\":\"register\",\"note\":\"Boardets register: navn, type og lagret reisetid. Ikke redaksjonelt kontrollerte fakta. Ikke legg til åpningstider, priser, kvalitet, adresse eller tilbud.\"}"
+        }
+      ]
+    },
+    {
+      "groupId": "paritet-transport",
+      "id": "transport-holdeplass",
+      "question": "Hvor er nærmeste holdeplass?",
+      "expectation": "Losgata og Dora sammenlignes med de lagrede gangtidene. Ordet nærmeste brukes bare fordi spørsmålet ber om sammenligning og de samme målte rutene finnes.",
+      "status": "passed",
+      "automatedPassed": true,
+      "manualReason": null,
+      "checks": [
+        {
+          "label": "Søk etter Losgata finner Losgata bussholdeplass",
+          "passed": true,
+          "evidence": "{\"matches\":1,\"places\":[{\"id\":\"entur-NSR-StopPlace-42926\",\"name\":\"Losgata bussholdeplass\",\"map_poi_id\":\"entur-NSR-StopPlace-42926\",\"has_map_location\":true,\"basis\":\"register\",\"category_id\":\"transport\",\"type\":\"Buss\",\"status\":\"existing\",\"location_precision\":\"unknown\",\"travel_minutes_from_board_origin\":{\"walk\":4,\"bike\":2,\"car\":1},\"sort_minutes\":4,\"note\":\"Boardets register: navn, type og lagret reisetid. Ikke redaksjonelt kontrollerte fakta. Ikke legg til åpningstider, priser, kvalitet, adresse eller tilbud.\"}],\"next_offset\":null,\"basis\":\"register\",\"note\":\"Boardets register: navn, type og lagret reisetid. Ikke redaksjonelt kontrollerte fakta. Ikke legg til åpningstider, priser, kvalitet, adresse e"
+        },
+        {
+          "label": "Søk etter Dora finner Dora",
+          "passed": true,
+          "evidence": "{\"matches\":2,\"places\":[{\"id\":\"place:dora-holdeplass\",\"name\":\"Dora\",\"map_poi_id\":\"entur-NSR-StopPlace-43469\",\"uncertainties\":[],\"status\":\"existing\",\"has_map_location\":true,\"location_precision\":\"unknown\",\"facts\":[{\"text\":\"AtBs linje stedet0-tabell fra stedet0.08.stedet0stedet6 viser for eksempel Dora 08.3stedet til Trondheim S 08.35 på hverdager: omtrent fire minutter på bussen.\",\"source_id\":\"source-75\",\"checked_at\":\"2026-09-14\"}],\"sources\":[{\"id\":\"source-75\",\"label\":\"AtB – Linje 20 fra 10. august 2026\",\"page\":\"AtB – Linje 20 fra 10. august 2026\",\"url\":\"https://www.atb.no/getfile.php/13126090-1782724709/Rutetabeller/26_27_by/AtB_linje20.pdf\",\"checked_at\":\"2026-09-14\"}],\"travel_minutes_from_boa"
+        }
+      ]
+    },
+    {
+      "groupId": "paritet-transport",
+      "id": "transport-sentrum-live",
+      "question": "Hvordan kommer vi oss til sentrum?",
+      "expectation": "Anja avklarer et konkret mål dersom sentrum er tvetydig. Deretter bruker hun plan_live_transit_trip og presenterer tidsstemplet Entur-resultat, ikke den gamle eksempelavgangen 08.31.",
+      "status": "passed",
+      "automatedPassed": true,
+      "manualReason": null,
+      "checks": [
+        {
+          "label": "Reiseplan bruker tidsstemplet Entur-resultat",
+          "passed": true,
+          "evidence": "{\"live\":true,\"fetched_at\":\"2026-09-19T10:30:00.000Z\",\"from\":\"Nyhavna\",\"destination\":{\"poi_id\":\"google-ChIJSUfPIqAxbUYRPU0CMflqgNM\",\"name\":\"REMA 1000 SOLSIDEN\"},\"trips\":[{\"duration\":900,\"walkDistance\":250,\"legs\":[{\"mode\":\"foot\",\"distance\":250,\"duration\":180,\"from\":\"Nyhavna\",\"to\":\"63.43640813466283,10.416263173653137\"}]}],\"note\":\"Levende reisealternativer fra Entur.\"}"
+        }
+      ]
+    },
+    {
+      "groupId": "paritet-transport",
+      "id": "transport-avganger-live",
+      "question": "Når går neste buss fra Dora?",
+      "expectation": "Anja bruker get_live_departures for et servervalidert holdeplasspunkt og oppgir linje, retning og tidspunkt sammen med når dataene ble hentet.",
+      "status": "passed",
+      "automatedPassed": true,
+      "manualReason": null,
+      "checks": [
+        {
+          "label": "Live Entur-verktøy er aktivert",
+          "passed": true,
+          "evidence": "get_live_departures, plan_live_transit_trip"
+        },
+        {
+          "label": "Levende Entur-oppslag bruker boardvalidert stopp",
+          "passed": true,
+          "evidence": "{\"poi\":\"Losgata bussholdeplass\",\"id\":\"entur-NSR-StopPlace-42926\",\"entur\":\"NSR:StopPlace:42926\",\"result\":{\"live\":true,\"fetched_at\":\"2026-09-19T10:30:00.000Z\",\"stop\":{\"poi_id\":\"entur-NSR-StopPlace-42926\",\"name\":\"Dora\"},\"departures\":[{\"line\":\"2\",\"direction\":\"Sentrum\",\"expected_departure_time\":\"2026-09-19T10:35:00+02:00\",\"actual_departure_time\":\"2026-09-19T10:36:00+02:00\",\"departure_time\":\"2026-09-19T10:36:00+02:00\",\"realtime\":true,\"mode\":\"bus\"}],\"note\":\"Levende data fra Entur.\"}}"
+        }
+      ]
+    },
+    {
+      "groupId": "paritet-transport",
+      "id": "transport-live-feil",
+      "question": "Når går bussen hvis Entur er nede?",
+      "expectation": "Anja sier at levende kollektivdata ikke er tilgjengelig. Hun bruker ikke en gammel rutetabell som om den var sanntid og beholder samtalens tema og karttilstand.",
+      "status": "passed",
+      "automatedPassed": true,
+      "manualReason": null,
+      "checks": [
+        {
+          "label": "Entur-feil faller tilbake uten gammel rutetabell",
+          "passed": true,
+          "evidence": "{\"live\":false,\"error\":\"unavailable\",\"note\":\"Jeg fikk ikke hentet levende kollektivdata nå. Jeg bruker ikke eldre research som om den var sanntid.\"}"
+        }
+      ]
+    },
+    {
+      "groupId": "paritet-transport",
+      "id": "transport-bildeling",
+      "question": "Kan vi bruke bildeling?",
+      "expectation": "Bildeling i Mellomveien omtales med medlemskap, reservasjon og retur til hentestedet. Tilgjengelighet må sjekkes hos operatøren.",
+      "status": "passed",
+      "automatedPassed": true,
+      "manualReason": null,
+      "checks": [
+        {
+          "label": "Inneholder Mellomveien",
+          "passed": true,
+          "evidence": "Mellomveien"
+        },
+        {
+          "label": "Inneholder reservasjon",
+          "passed": true,
+          "evidence": "reservasjon"
+        }
+      ]
+    },
+    {
+      "groupId": "paritet-transport",
+      "id": "transport-parkering",
+      "question": "Hvordan fungerer parkering?",
+      "expectation": "Korttidsparkering ved Dora omtales med krav om å følge lokal skilting. Parkering som følger en framtidig bolig må avklares med prosjektet.",
+      "status": "passed",
+      "automatedPassed": true,
+      "manualReason": null,
+      "checks": [
+        {
+          "label": "Inneholder parkering",
+          "passed": true,
+          "evidence": "parkering"
+        },
+        {
+          "label": "Inneholder skilting",
+          "passed": true,
+          "evidence": "skilting"
+        }
+      ]
+    },
+    {
+      "groupId": "paritet-trening-opplevelser",
+      "id": "trening-bredde",
+      "question": "Hvor kan jeg trene?",
+      "expectation": "Anja kan finne flere typer tilbud i hele boardets POI-pool, blant annet Nyhavna Padel, CrossFit Trondheim, 3T-Solsiden, Flex Gym og Buld.no.",
+      "status": "passed",
+      "automatedPassed": true,
+      "manualReason": null,
+      "checks": [
+        {
+          "label": "Nyhavna Padel finnes i standardboardets POI-pool",
+          "passed": true,
+          "evidence": "osm-node-9546096858 · Idrettsanlegg"
+        },
+        {
+          "label": "CrossFit Trondheim finnes i standardboardets POI-pool",
+          "passed": true,
+          "evidence": "google-ChIJUwRsXGMxbUYRSCDGuoLrNcQ · Treningssenter"
+        },
+        {
+          "label": "3T-Solsiden finnes i standardboardets POI-pool",
+          "passed": true,
+          "evidence": "google-ChIJSUfPIqAxbUYRiyIKq4-hSPs · Treningssenter"
+        },
+        {
+          "label": "Søk etter Flex Gym finner Flex Gym",
+          "passed": true,
+          "evidence": "{\"matches\":1,\"places\":[{\"id\":\"place:flex-gym\",\"name\":\"Flex Gym\",\"map_poi_id\":\"google-ChIJjWQhOA8xbUYRAUjUe7p7l8Y\",\"uncertainties\":[],\"status\":\"existing\",\"has_map_location\":true,\"location_precision\":\"unknown\",\"facts\":[{\"text\":\"Senteret har frivekter, treningsapparater og garderober med dusj.\",\"source_id\":\"source-70\",\"checked_at\":\"2026-09-14\"},{\"text\":\"Prøvetime kan avtales med senteret før man bestemmer seg for medlemskap.\",\"source_id\":\"source-72\",\"checked_at\":\"2026-09-14\"}],\"sources\":[{\"id\":\"source-70\",\"label\":\"Flex Gym – Treningstilbud på Flex Gym\",\"page\":\"Flex Gym – Treningstilbud på Flex Gym\",\"url\":\"https://flexgym.no/\",\"checked_at\":\"2026-09-14\"},{\"id\":\"source-72\",\"label\":\"Flex Gym – Ofte"
+        },
+        {
+          "label": "Buld.no finnes i standardboardets POI-pool",
+          "passed": true,
+          "evidence": "project:nyhavna-utvikling_nyhavna:buld-no · Treningssenter"
+        }
+      ]
+    },
+    {
+      "groupId": "paritet-trening-opplevelser",
+      "id": "trening-skjult-poi",
+      "question": "Vis meg Buld.no.",
+      "expectation": "Et gyldig sted utenfor gjeldende utsnitt kan åpnes som et midlertidig markert resultat uten å endre permanente kategori- eller radiusfiltre.",
+      "status": "passed",
+      "automatedPassed": true,
+      "manualReason": null,
+      "checks": [
+        {
+          "label": "Søk etter Buld.no finner Buld.no",
+          "passed": true,
+          "evidence": "{\"matches\":1,\"places\":[{\"id\":\"place:buld-no\",\"name\":\"Buld.no\",\"map_poi_id\":null,\"uncertainties\":[],\"status\":\"existing\",\"has_map_location\":false,\"location_precision\":\"unknown\",\"facts\":[{\"text\":\"Klatreskolen for barn omfatter både buldring og tauklatring.\",\"source_id\":\"source-80\",\"checked_at\":\"2026-09-14\"},{\"text\":\"Senteret har kafé og tilbyr introduksjonskurs i buldring.\",\"source_id\":\"source-80\",\"checked_at\":\"2026-09-14\"}],\"sources\":[{\"id\":\"source-80\",\"label\":\"Buld.no – Buld.no – buldresenter, klatreskole og besøksadresse\",\"page\":\"Buld.no – Buld.no – buldresenter, klatreskole og besøksadresse\",\"url\":\"https://buld.no/\",\"checked_at\":\"2026-09-14\"}],\"travel_minutes_from_board_origin\":null,\"note\":"
+        }
+      ]
+    },
+    {
+      "groupId": "paritet-trening-opplevelser",
+      "id": "opplevelser-bowling",
+      "question": "Finnes det bowling?",
+      "expectation": "Dora 1 Bowling finnes, åpnes i kartet og omtales uten å dikte pris eller ledig kapasitet.",
+      "status": "passed",
+      "automatedPassed": true,
+      "manualReason": null,
+      "checks": [
+        {
+          "label": "Dora 1 Bowling finnes i standardboardets POI-pool",
+          "passed": true,
+          "evidence": "project:nyhavna-utvikling_nyhavna:dora-bowling · Bowling"
+        },
+        {
+          "label": "Søk etter Dora 1 Bowling finner Dora 1 Bowling",
+          "passed": true,
+          "evidence": "{\"matches\":1,\"places\":[{\"id\":\"project:nyhavna-utvikling_nyhavna:dora-bowling\",\"name\":\"Dora 1 Bowling\",\"map_poi_id\":\"project:nyhavna-utvikling_nyhavna:dora-bowling\",\"has_map_location\":true,\"basis\":\"register\",\"category_id\":\"opplevelser\",\"type\":\"Bowling\",\"status\":\"existing\",\"location_precision\":\"approximate\",\"location_note\":\"Kartpunktet viser adressen, ikke en bestemt inngang.\",\"travel_minutes_from_board_origin\":null,\"sort_minutes\":null,\"note\":\"Boardets register: navn, type og lagret reisetid. Ikke redaksjonelt kontrollerte fakta. Ikke legg til åpningstider, priser, kvalitet, adresse eller tilbud.\"}],\"next_offset\":null,\"basis\":\"register\",\"note\":\"Boardets register: navn, type og lagret reisetid."
+        }
+      ]
+    },
+    {
+      "groupId": "paritet-trening-opplevelser",
+      "id": "trening-registersted",
+      "question": "Hva vet du om et treningssted som bare ligger i registeret?",
+      "expectation": "Anja bruker bare sikre grunndata som navn, type og lagret reisetid. Hun lager ikke kvalitetsvurdering, åpningstid eller redaksjonell omtale.",
+      "status": "passed",
+      "automatedPassed": true,
+      "manualReason": null,
+      "checks": [
+        {
+          "label": "Søk etter Buld.no finner Buld.no",
+          "passed": true,
+          "evidence": "{\"matches\":1,\"places\":[{\"id\":\"place:buld-no\",\"name\":\"Buld.no\",\"map_poi_id\":null,\"uncertainties\":[],\"status\":\"existing\",\"has_map_location\":false,\"location_precision\":\"unknown\",\"facts\":[{\"text\":\"Klatreskolen for barn omfatter både buldring og tauklatring.\",\"source_id\":\"source-80\",\"checked_at\":\"2026-09-14\"},{\"text\":\"Senteret har kafé og tilbyr introduksjonskurs i buldring.\",\"source_id\":\"source-80\",\"checked_at\":\"2026-09-14\"}],\"sources\":[{\"id\":\"source-80\",\"label\":\"Buld.no – Buld.no – buldresenter, klatreskole og besøksadresse\",\"page\":\"Buld.no – Buld.no – buldresenter, klatreskole og besøksadresse\",\"url\":\"https://buld.no/\",\"checked_at\":\"2026-09-14\"}],\"travel_minutes_from_board_origin\":null,\"note\":"
+        }
+      ]
+    },
+    {
+      "groupId": "paritet-trening-opplevelser",
+      "id": "opplevelser-ukjent",
+      "question": "Er det ledige baner akkurat nå?",
+      "expectation": "Anja sier at bookingkapasitet ikke finnes i boardets data og viser til operatøren.",
+      "status": "passed",
+      "automatedPassed": true,
+      "manualReason": null,
+      "checks": [
+        {
+          "label": "Utelater ledige baner akkurat nå",
+          "passed": true,
+          "evidence": "Ingen av de avviste uttrykkene i publisert innhold."
+        }
+      ]
+    },
+    {
+      "groupId": "paritet-kart-samtale",
+      "id": "kart-flere-steder",
+      "question": "Vis de tre stedene du nettopp nevnte.",
+      "expectation": "Anja kaller highlight_places med servervaliderte POI-ID-er i samme rekkefølge som omtalen. Hun sier først at de vises etter vellykket kartkvittering.",
+      "status": "manual_pending",
+      "automatedPassed": true,
+      "manualReason": "Krever faktisk klientkvittering fra highlight_places, ikke bare serverkontrakt.",
+      "checks": [
+        {
+          "label": "Kartverktøyet highlight_places er registrert",
+          "passed": true,
+          "evidence": "Klientkvittering er fortsatt manuell."
+        }
+      ]
+    },
+    {
+      "groupId": "paritet-kart-samtale",
+      "id": "kart-ett-sted",
+      "question": "Fortell mer om det andre stedet.",
+      "expectation": "Rekkefølgen i fremhevingen brukes til å løse referansen. show_place åpner ett sted i felles detaljpanel uten å fjerne resten av samtalekonteksten.",
+      "status": "manual_pending",
+      "automatedPassed": true,
+      "manualReason": "Krever faktisk detaljpanel og klientkvittering fra show_place.",
+      "checks": [
+        {
+          "label": "Kartverktøyet show_place er registrert",
+          "passed": true,
+          "evidence": "Klientkvittering er fortsatt manuell."
+        }
+      ]
+    },
+    {
+      "groupId": "paritet-kart-samtale",
+      "id": "samtale-avbrudd",
+      "question": "Avbryt oppveksttemaet med et spørsmål om buss, og fortsett etterpå.",
+      "expectation": "Kollektivspørsmålet besvares, deretter returnerer Anja til samme oppveksttema uten å starte presentasjonen på nytt.",
+      "status": "manual_pending",
+      "automatedPassed": true,
+      "manualReason": "Automatisk serverkontrakt testes, men stemmeavbrudd må prøves fysisk.",
+      "checks": [
+        {
+          "label": "Avbrudd går tilbake til barn-oppvekst",
+          "passed": true,
+          "evidence": "{\"opened\":{\"ok\":true,\"interests\":[\"barn-oppvekst\"],\"general_tour\":false,\"plan\":{\"current\":{\"theme_id\":\"barn-oppvekst\",\"name\":\"Oppvekst\"},\"next\":[{\"theme_id\":\"nyhavna-bydel\",\"name\":\"Nyhavna som bydel\"},{\"theme_id\":\"hverdagsliv\",\"name\":\"Hverdag\"},{\"theme_id\":\"mat-drikke\",\"name\":\"Servering\"}]},\"chapter\":{\"theme_id\":\"barn-oppvekst\",\"name\":\"Oppvekst\",\"intro\":\"Lilleby skole er kretsskolen for Nyhavna og Lademoen, og ungdomstrinnet går til Rosenborg skole. Barnehagene ligger tett i kvartalene — Lademoen, Voldsminde og Svartlamon Kunst- og kulturbarnehage — og lekeplassene i Lademoparken, Jarlebanen og Lillebyparken tar ettermiddagene.\",\"faq_ids\":[\"krets\",\"vgs-naerhet\",\"barnehage-dekning\",\"lekeplass"
+        }
+      ]
+    },
+    {
+      "groupId": "paritet-kart-samtale",
+      "id": "kart-klikk",
+      "question": "Trykk på Dora 2 mens Anja snakker.",
+      "expectation": "Kartklikket sendes som kontekst, åpner riktig sted og bevarer én samtale. Det skal ikke opprettes en falsk brukerytring eller en ny Anja-sesjon.",
+      "status": "manual_pending",
+      "automatedPassed": true,
+      "manualReason": "Automatisk kartklikk-kontrakt testes, men UI-integrasjonen må prøves i nettleser.",
+      "checks": [
+        {
+          "label": "Kartklikk bruker samme server-samtale",
+          "passed": true,
+          "evidence": "{\"commentary\":\"Brukeren trykket på «Dora 2» i kartet, og stedet er alt åpnet der. Du har bare registerdata om stedet (navn, type og lagret reisetid), ingen kontrollerte fakta. Si kort hva det er, og at du ikke har mer om det. Fortell kort om stedet ut fra dette. Ikke still spørsmål tilbake.\",\"directives\":[]}"
+        }
+      ]
+    },
+    {
+      "groupId": "paritet-kart-samtale",
+      "id": "kart-ukjent-id",
+      "question": "Vis et sted med en ID som ikke finnes på boardet.",
+      "expectation": "Verktøyet avviser ID-en. Anja hevder ikke at stedet vises og karttilstanden forblir intakt.",
+      "status": "passed",
+      "automatedPassed": true,
+      "manualReason": null,
+      "checks": [
+        {
+          "label": "Ukjent POI-ID avvises av kunnskapsverktøyet",
+          "passed": true,
+          "evidence": "{\"error\":\"Ukjent sted. Finn ID med find_places før du forsøker igjen.\"}"
+        },
+        {
+          "label": "Ukjent POI-ID endrer ikke karttilstand",
+          "passed": true,
+          "evidence": "{\"result\":{\"error\":\"Ukjent sted. Bruk en kart-ID fra kapittelet, katalogen eller map_poi_id.\"},\"actions\":[]}"
+        },
+        {
+          "label": "Ukjent kartklikk lager ikke falsk samtalehandling",
+          "passed": true,
+          "evidence": "null"
+        }
+      ]
+    },
+    {
+      "groupId": "paritet-drift-stemme",
+      "id": "drift-content-version",
+      "question": "Start en gammel fane etter at boardet er oppdatert.",
+      "expectation": "Serveren avviser innholdsversjonen før en betalt samtale starter og ber brukeren laste boardet på nytt. Kart og Anja skal alltid bruke samme contentVersion.",
+      "status": "passed",
+      "automatedPassed": true,
+      "manualReason": null,
+      "checks": [
+        {
+          "label": "Standardboardet har en innholdsversjon",
+          "passed": true,
+          "evidence": "286dc7a1d3bbba1bd5d693a64e9841c36bdf88ec83a9a4fd865df2af27276b8f"
+        }
+      ]
+    },
+    {
+      "groupId": "paritet-drift-stemme",
+      "id": "drift-samtykke",
+      "question": "Start Anja uten å ha samtykket til mikrofon og OpenAI-behandling.",
+      "expectation": "Ingen betalt stemmesesjon starter før eksplisitt samtykke. Brukeren får en kort og forståelig forklaring.",
+      "status": "manual_pending",
+      "automatedPassed": true,
+      "manualReason": "Bekreft i nettleseren at dialogen vises før mikrofon- og OpenAI-sesjon startes.",
+      "checks": [
+        {
+          "label": "Krever fysisk/manuell test",
+          "passed": false,
+          "evidence": "Samtykke er en klientinteraksjon og kan ikke bevises av serverens datasett."
+        }
+      ]
+    },
+    {
+      "groupId": "paritet-drift-stemme",
+      "id": "drift-mikrofon",
+      "question": "Nekt mikrofontilgang.",
+      "expectation": "Kontrollen forklarer feilen og tilbyr trygg prøv-igjen. Boardet og kartet kan fortsatt brukes.",
+      "status": "manual_pending",
+      "automatedPassed": true,
+      "manualReason": "Avvis mikrofon i nettleseren og kontroller gjenopprettingsmeldingen på telefon.",
+      "checks": [
+        {
+          "label": "Krever fysisk/manuell test",
+          "passed": false,
+          "evidence": "Mikrofontillatelse og feiltekst må kontrolleres i en ekte mobilnettleser."
+        }
+      ]
+    },
+    {
+      "groupId": "paritet-drift-stemme",
+      "id": "drift-stemme",
+      "question": "Gjennomfør en samtale på telefon.",
+      "expectation": "Anja snakker stabilt, naturlig norsk med samme stemme og tempo gjennom hilsen, temabytte, kartverktøy og avbrudd. Ingen amerikansk aksentdrift eller teknisk verktøynarrasjon aksepteres.",
+      "status": "manual_pending",
+      "automatedPassed": true,
+      "manualReason": "Fysisk samtale på telefon: norsk uttale, stabil stemme, avbrudd og kartutfall.",
+      "checks": [
+        {
+          "label": "Krever fysisk/manuell test",
+          "passed": false,
+          "evidence": "Audio, uttale og avbrudd er ikke simulerbare i denne scriptsjekken."
+        }
+      ]
+    },
+    {
+      "groupId": "paritet-drift-stemme",
+      "id": "drift-rate-limit",
+      "question": "Start Anja etter at sesjons- eller kostnadsgrensen er nådd.",
+      "expectation": "Ingen ny betalt sesjon reserveres. Kontrollen viser en kort forklaring uten å lekke token, intern feil eller samtaleinnhold.",
+      "status": "manual_pending",
+      "automatedPassed": true,
+      "manualReason": "Krever kontrollert sesjons-/kostnadsgrense i integrert miljø.",
+      "checks": [
+        {
+          "label": "Krever fysisk/manuell test",
+          "passed": false,
+          "evidence": "Må kjøres mot en kontrollert grense uten å bruke produksjonskvote."
+        }
+      ]
+    }
+  ]
+}
