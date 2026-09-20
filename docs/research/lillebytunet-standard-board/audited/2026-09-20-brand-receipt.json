@@ -1,0 +1,35 @@
+{
+  "status": "updated",
+  "appliedAt": "2026-09-20T21:00:36.185Z",
+  "schemaVersion": 1,
+  "projectId": "skanska_lillebytunet",
+  "customer": "skanska",
+  "projectSlug": "lillebytunet",
+  "productId": "5eca9b02-0891-4397-813d-753b78af5a1c",
+  "previousAssets": null,
+  "previousPresentation": null,
+  "assets": {
+    "brand": true,
+    "logoUrl": "/illustrations/lillebytunet-logo.png",
+    "pinLogoUrl": "/illustrations/lillebytunet-pin.png",
+    "splashImageUrl": "/illustrations/lillebytunet-splash.jpg"
+  },
+  "presentation": {
+    "initialView": "splash",
+    "brand": {
+      "surfaceColor": "#fff9e1",
+      "inkColor": "#304323",
+      "accentColor": "#5fc091",
+      "accentForegroundColor": "#1b3c27",
+      "mutedColor": "#fffdf3",
+      "mutedForegroundColor": "#6f7b67",
+      "radius": "2px",
+      "headingFontFamily": "Figtree",
+      "headingFontWeight": 600
+    }
+  },
+  "updatedAt": "2026-09-08T11:54:25.210422+00:00",
+  "revalidated": [
+    "http://localhost:3000"
+  ]
+}

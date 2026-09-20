@@ -17,7 +17,10 @@ export const boardBrandInputSchema = z.object({
     logoUrl: internalAssetPath,
     pinLogoUrl: internalAssetPath.optional(),
     splashImageUrl: internalAssetPath,
-    splashVideoUrl: internalAssetPath,
+    /** Valgfri: ikke alle prosjekter har en hero-film. Uten den viser splash
+     *  stillbildet. Var påkrevd fram til Lillebytunet-gjenbrukstesten, som
+     *  ikke har film på prosjektets egen side. */
+    splashVideoUrl: internalAssetPath.optional(),
   }),
   presentation: z.object({
     initialView: z.enum(["splash", "revealed"]).optional(),

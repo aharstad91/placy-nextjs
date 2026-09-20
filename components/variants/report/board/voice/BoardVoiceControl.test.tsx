@@ -115,6 +115,24 @@ describe("BoardVoiceControl", () => {
     expect(String(capturedOptions?.greeting)).not.toMatch(/Placy/);
   });
 
+  it("navngir boardets eget sted i standardhilsenen, aldri et annet prosjekt", () => {
+    // Fallbacken var tidligere Nyhavnas egen hilsen. Et tredje prosjekt uten
+    // egen `assistant.greeting` presenterte seg da som Nyhavna
+    // (funnet under Lillebytunet-gjenbrukstesten 2026-09-20).
+    const original = data.home.name;
+    data.home.name = "Lillebytunet";
+    try {
+      mount();
+      fireEvent.click(screen.getByRole("button", { name: "Snakk med Placy" }));
+      fireEvent.click(screen.getByRole("button", { name: "Tillat og start" }));
+      const greeting = String(capturedOptions?.greeting);
+      expect(greeting).toContain("Lillebytunet");
+      expect(greeting).not.toMatch(/Nyhavna/);
+    } finally {
+      data.home.name = original;
+    }
+  });
+
   it("sier «Snakker» uten transkript mens samtalen går, og sirkelen avslutter og rydder kartet på trykk", () => {
     resetLive({ status: "speaking", messages: [{ id: "u1", role: "user", text: "Hvor handler jeg?" }, { id: "a1", role: "assistant", text: "REMA 1000 Solsiden er nærmest, seks minutter til fots." }] });
     mount();

@@ -164,6 +164,7 @@ export function MobileReportSplash({
             <Image
               src={logoSrc}
               alt={name}
+              data-board-logo=""
               width={150}
               height={58}
               unoptimized

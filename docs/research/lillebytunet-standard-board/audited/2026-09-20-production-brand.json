@@ -1,0 +1,22 @@
+{
+  "assets": {
+    "brand": true,
+    "logoUrl": "/illustrations/lillebytunet-logo.png",
+    "pinLogoUrl": "/illustrations/lillebytunet-pin.png",
+    "splashImageUrl": "/illustrations/lillebytunet-splash.jpg"
+  },
+  "presentation": {
+    "initialView": "splash",
+    "brand": {
+      "surfaceColor": "#fff9e1",
+      "inkColor": "#304323",
+      "accentColor": "#5fc091",
+      "accentForegroundColor": "#1b3c27",
+      "mutedColor": "#fffdf3",
+      "mutedForegroundColor": "#6f7b67",
+      "radius": "2px",
+      "headingFontFamily": "Figtree",
+      "headingFontWeight": 600
+    }
+  }
+}

@@ -155,6 +155,7 @@ export function DesktopReportSplash({
               <Image
                 src={logoSrc}
                 alt={name}
+                data-board-logo=""
                 width={168}
                 height={65}
                 unoptimized

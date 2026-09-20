@@ -473,6 +473,7 @@ export function DesktopStorySidebar({
             <Image
               src={logoSrc}
               alt={home.name}
+              data-board-logo=""
               width={132}
               height={51}
               unoptimized

@@ -62,18 +62,23 @@ export function getProjectSplashImage(
 
 /** Dedikert splash-video (16:9) som spilles i høyre panel i stedet for et
  *  stillbilde. Poster avledes ved å bytte `.mp4` → `.jpg` (samme filnavn).
- *  Gates av enten `brand` (full pakke) eller `splashVideo` (kun video, uten
- *  logo/splash-hero) — sistnevnte lar et prosjekt få levende splash uten å måtte
- *  ha logo. Undefined → høyre panel faller tilbake til splash-render/heroImage. */
+ *  Undefined → høyre panel faller tilbake til splash-render/heroImage.
+ *
+ *  `splashVideo`-flagget BETYR at slug-konvensjonsfila finnes, og bare da
+ *  gjettes stien. `brand` alene gjør det ikke: et brandet prosjekt uten film
+ *  pekte tidligere på en `{slug}-splash-video.mp4` som ikke var lastet opp, og
+ *  splash-skjermen fikk et tomt videoelement i stedet for stillbildet
+ *  (funnet under Lillebytunet-gjenbrukstesten 2026-09-20). */
 export function getProjectSplashVideo(
   slug: string | undefined,
   assets: ProjectAssetFlags | undefined,
 ): string | undefined {
-  if (slug && (assets?.splashVideo || assets?.brand)) {
-    return configuredAsset(
-      assets.splashVideoUrl,
-      `/illustrations/${slug}-splash-video.mp4`,
-    );
+  if (!slug) return undefined;
+  if (assets?.splashVideoUrl && (assets.brand || assets.splashVideo)) {
+    return configuredAsset(assets.splashVideoUrl, assets.splashVideoUrl);
+  }
+  if (assets?.splashVideo) {
+    return `/illustrations/${slug}-splash-video.mp4`;
   }
   return undefined;
 }

@@ -90,6 +90,15 @@ body {
 [data-board-brand="true"] [data-story-heading] h3 {
   font-family: var(--board-heading-font, var(--font-family, var(--font-figtree))), sans-serif;
   font-weight: var(--board-heading-weight, 700);
+}
+
+/* Farge bare på flater som HAR prosjektets bakgrunn. Mobilsplashen er et
+ * full-bleed foto der komponenten selv setter hvit tekst; `--foreground` er en
+ * mørk merkefarge og gjorde overskriften uleselig på bildet. Regelen traff før
+ * begge splashene, mens bakgrunnsregelen over alltid har vært desktop-only. */
+[data-board-brand="true"] [data-report-splash="desktop"] h1,
+[data-board-brand="true"] [data-report-sidebar] h2,
+[data-board-brand="true"] [data-story-heading] h3 {
   color: hsl(var(--foreground));
 }
 
@@ -99,12 +108,12 @@ body {
   letter-spacing: -0.02em;
 }
 
-[data-board-brand="true"] [data-report-splash] img[src$="-logo.svg"] {
+[data-board-brand="true"] [data-report-splash] img[data-board-logo] {
   height: 44px;
   width: auto;
 }
 
-[data-board-brand="true"] [data-report-sidebar] img[src$="-logo.svg"] {
+[data-board-brand="true"] [data-report-sidebar] img[data-board-logo] {
   height: 30px;
   width: auto;
 }

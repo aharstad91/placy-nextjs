@@ -104,6 +104,7 @@ export function EmbedArrivalLoader({
           <Image
             src={logoSrc}
             alt={projectName}
+            data-board-logo=""
             width={180}
             height={70}
             unoptimized

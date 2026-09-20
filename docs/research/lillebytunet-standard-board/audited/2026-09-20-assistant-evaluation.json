@@ -1,0 +1,90 @@
+{
+  "schemaVersion": 1,
+  "evaluatedAt": "2026-09-20T21:11:27.895Z",
+  "customer": "skanska",
+  "projectSlug": "lillebytunet",
+  "projectName": "Lillebytunet",
+  "inventory": {
+    "pois": 1074,
+    "poisWithTravelTime": 1074,
+    "themes": 7,
+    "auditedClaims": 119
+  },
+  "automatic": {
+    "passed": 13,
+    "total": 13
+  },
+  "checks": [
+    {
+      "label": "Oppstart: boardet har en egen hilsen som navngir prosjektet",
+      "passed": true,
+      "evidence": "{\"projectName\":\"Lillebytunet\",\"greeting\":\"Hei, jeg heter Anja og er din digitale guide for Lillebytunet på Lilleby i Trondheim. Jeg kjenner nabolaget rundt prosjektet — hva som finnes der, og hvor lang \"}"
+    },
+    {
+      "label": "Oppstart: hverken hilsen eller instruksjoner navngir et annet prosjekt",
+      "passed": true,
+      "evidence": "[]"
+    },
+    {
+      "label": "Bredt prosjektspørsmål gir enten kildebelagte treff eller et uttrykkelig «ikke grunnlag»",
+      "passed": true,
+      "evidence": "{\"auditedClaims\":119,\"result\":{\"matches\":0,\"results\":[],\"note\":\"Ingen kildebelagt omtale i prosjektets reviderte kilder. Si kort at du ikke har grunnlag for det, uten å gjette.\"}}"
+    },
+    {
+      "label": "Nærhetsoppslag finner et sted som faktisk står på boardet",
+      "passed": true,
+      "evidence": "{\"query\":\"Extra Lilleby\",\"count\":1,\"first\":[{\"id\":\"google-ChIJ83MSjCwxbUYRoJlhfmWQ0NQ\",\"name\":\"Extra Lilleby\",\"map_poi_id\":\"google-ChIJ83MSjCwxbUYRoJlhfmWQ0NQ\",\"has_map_location\":true,\"basis\":\"register\",\"category_id\":\"hverdagsliv\",\"type\":\"Dagligvare\",\"status\":\"existing\",\"location_precision\":\"unknown\",\"travel_minutes_from_board_origin\":{\"walk\":3,\"bike\":2,\"car\":1},\"sort_minutes\":3,\"note\":\"Boardets register: navn, type og lagret reisetid. Ikke redaksjonelt kontrollerte fakta. Ikke legg til åpningst"
+    },
+    {
+      "label": "Nærhetssvaret bærer lagret reisetid, så minutter ikke gjettes",
+      "passed": true,
+      "evidence": "{\"withTravelTime\":1074,\"total\":1074,\"hit\":{\"id\":\"google-ChIJ83MSjCwxbUYRoJlhfmWQ0NQ\",\"name\":\"Extra Lilleby\",\"map_poi_id\":\"google-ChIJ83MSjCwxbUYRoJlhfmWQ0NQ\",\"has_map_location\":true,\"basis\":\"register\",\"category_id\":\"hverdagsliv\",\"type\":\"Dagligvare\",\"status\":\"existing\",\"location_precision\":\"unknown\",\"travel_minutes_from_board_origin\":{\"walk\":3,\"bike\":2,\"car\":1},\"sort_minutes\":3,\"note\":\"Boardets register: navn, type og lagret reisetid. Ikke redaksjonelt kontrollerte fakta. Ikke legg til åpningstid"
+    },
+    {
+      "label": "Vis ett sted: kartet endres når oppslaget lykkes",
+      "passed": true,
+      "evidence": "{\"poi\":\"Extra Lilleby\",\"result\":{\"ok\":true,\"shown\":\"Extra Lilleby\",\"poi_id\":\"google-ChIJ83MSjCwxbUYRoJlhfmWQ0NQ\"},\"actions\":[{\"type\":\"OPEN_POI\",\"id\":\"google-ChIJ83MSjCwxbUYRoJlhfmWQ0NQ\",\"source\":\"voice\",\"detail\":false}]}"
+    },
+    {
+      "label": "Vis flere steder: alle id-ene havner i karttilstanden",
+      "passed": true,
+      "evidence": "{\"ids\":[\"google-ChIJ83MSjCwxbUYRoJlhfmWQ0NQ\",\"google-ChIJCzDwmgUxbUYRbM0LlUcPfu0\",\"google-ChIJMYfNDwUxbUYRCESjyfStM1c\"],\"result\":{\"ok\":true,\"shown\":\"Extra Lilleby, Bunnpris Lade, Agaton Sax frisører avd Lade\",\"highlighted\":[{\"ord\":1,\"id\":\"google-ChIJ83MSjCwxbUYRoJlhfmWQ0NQ\",\"name\":\"Extra Lilleby\"},{\"ord\":2,\"id\":\"google-ChIJCzDwmgUxbUYRbM0LlUcPfu0\",\"name\":\"Bunnpris Lade\"},{\"ord\":3,\"id\":\"google-ChIJMYfNDwUxbUYRCESjyfStM1c\",\"name\":\"Agaton Sax frisører avd Lade\"}]},\"actions\":[{\"type\":\"HIGHLIGHT_POIS"
+    },
+    {
+      "label": "Mislykket oppslag endrer ikke kartet (ingen påstand før verktøyet lykkes)",
+      "passed": true,
+      "evidence": "{\"result\":{\"error\":\"Ukjent sted. Bruk en kart-ID fra kapittelet, katalogen eller map_poi_id.\"},\"actions\":[]}"
+    },
+    {
+      "label": "Ukjent kartklikk lager ikke en falsk samtalehandling",
+      "passed": true,
+      "evidence": "null"
+    },
+    {
+      "label": "Instruksjonen krever fullført backend-svar før Anja avslutter",
+      "passed": true,
+      "evidence": "\"amdriftssetning mens backenden arbeider, vent på hele resultatet og formidle så svaret. Ikke avslutt en tur etter bare «jeg sjekker» eller «kartet er åpnet». Si bare det backenden gir deg, og stopp når brukeren avbryter.\""
+    },
+    {
+      "label": "Avbrudd og fortsettelse går tilbake til det åpnede temaet",
+      "passed": true,
+      "evidence": "{\"themeId\":\"hverdagsliv\",\"opened\":{\"ok\":true,\"interests\":[\"hverdagsliv\"],\"general_tour\":false,\"plan\":{\"current\":{\"theme_id\":\"hverdagsliv\",\"name\":\"Hverdag\"},\"next\":[{\"theme_id\":\"barn-oppvekst\",\"name\":\"Oppvekst\"},{\"theme_id\":\"mat-drikke\",\"name\":\"Servering\"},{\"theme_id\":\"natur-friluftsliv\",\"name\":\"Natur\"}]},\"chapter\":{\"theme_id\":\"hverdagsliv\",\"name\":\"Hverdag\",\"intro\":\"Extra Lilleby og Bunnpris Lade i gangavstand gir godt utvalg. Det meste ordnes uten bil.\",\"faq_ids\":[\"hverdagshandel\",\"apotek\",\"tann"
+    },
+    {
+      "label": "Stedsoppslag oppgir grunnlaget sitt",
+      "passed": true,
+      "evidence": "{\"poi\":\"Extra Lilleby\",\"result\":{\"id\":\"google-ChIJ83MSjCwxbUYRoJlhfmWQ0NQ\",\"name\":\"Extra Lilleby\",\"map_poi_id\":\"google-ChIJ83MSjCwxbUYRoJlhfmWQ0NQ\",\"has_map_location\":true,\"basis\":\"register\",\"category_id\":\"hverdagsliv\",\"type\":\"Dagligvare\",\"status\":\"existing\",\"location_precision\":\"unknown\",\"travel_minutes_from_board_origin\":{\"walk\":3,\"bike\":2,\"car\":1},\"sort_minutes\":3,\"note\":\"Boardets register: navn, type og lagret reisetid. Ikke redaksjonelt kontrollerte fakta. Ikke legg til åpningstider, priser"
+    },
+    {
+      "label": "Ukjent POI-ID avvises av kunnskapsverktøyet",
+      "passed": true,
+      "evidence": "{\"error\":\"Ukjent sted. Finn ID med find_places før du forsøker igjen.\"}"
+    }
+  ],
+  "manualGates": [
+    "Samtykkedialog før mikrofon og sesjon starter.",
+    "Avvist mikrofon gir forståelig gjenopprettingsmelding.",
+    "Fysisk lyttetest på HTTPS-origin: norsk uttale, tempo, avbrudd midt i et svar.",
+    "Visuell kvittering i klienten for ett sted og for flere steder."
+  ]
+}

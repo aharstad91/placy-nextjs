@@ -89,16 +89,32 @@ describe("getProjectPinLogoSrc", () => {
 });
 
 describe("getProjectSplashVideo (reels-video-gate)", () => {
-  it("aktiveres av brand-flagget", () => {
-    expect(getProjectSplashVideo(SLUG, brandOnly)).toBe(
+  it("gjetter ikke en filmsti for et brandet prosjekt uten film", () => {
+    // Et brandet prosjekt uten hero-film pekte tidligere på en
+    // `{slug}-splash-video.mp4` som ikke var lastet opp, og splash fikk et tomt
+    // videoelement i stedet for stillbildet (Lillebytunet-gjenbrukstesten).
+    expect(getProjectSplashVideo(SLUG, brandOnly)).toBeUndefined();
+  });
+
+  it("bruker den eksplisitte filmstien når et brandet prosjekt har film", () => {
+    expect(getProjectSplashVideo(SLUG, {
+      ...brandOnly,
+      splashVideoUrl: "/illustrations/stasjonskvartalet-splash-video.mp4",
+    })).toBe("/illustrations/stasjonskvartalet-splash-video.mp4");
+  });
+
+  it("aktiveres også av splashVideo alene (levende splash uten logo/hero)", () => {
+    // Flagget BETYR at slug-konvensjonsfila finnes, så stien kan utledes.
+    expect(getProjectSplashVideo(SLUG, splashVideoOnly)).toBe(
       "/illustrations/stasjonskvartalet-splash-video.mp4",
     );
   });
 
-  it("aktiveres også av splashVideo alene (levende splash uten logo/hero)", () => {
-    expect(getProjectSplashVideo(SLUG, splashVideoOnly)).toBe(
-      "/illustrations/stasjonskvartalet-splash-video.mp4",
-    );
+  it("avviser en usikker eksplisitt filmsti", () => {
+    expect(getProjectSplashVideo(SLUG, {
+      ...brandOnly,
+      splashVideoUrl: "https://example.com/film.mp4",
+    })).toBeUndefined();
   });
 
   it("returnerer undefined når verken brand eller splashVideo er på", () => {

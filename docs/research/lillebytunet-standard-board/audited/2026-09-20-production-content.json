@@ -1,0 +1,13 @@
+{
+  "reportConfig": {
+    "label": "Lillebytunet",
+    "city": "Trondheim",
+    "district": "Lilleby",
+    "pinSubtitle": "Nybygg 2028",
+    "pinAccent": "#5fc091",
+    "hideBrokerCard": true,
+    "heroIntro": "Lillebytunet er leiligheter og rekkehus på Lilleby, mellom Trondheim sentrum og Lade. Utforsk nabolaget rundt prosjektet — hva som ligger der, og hvor lang tid du bruker dit."
+  },
+  "themes": [],
+  "globalFaq": []
+}

@@ -16,7 +16,7 @@ import { parseLinkedText, boardLinkResolvers } from "@/lib/board/poi-link-text";
 import type { FaqEntry } from "@/lib/generators/faq-generator";
 import type { LiveMessage, LiveStatus } from "@/lib/live/types";
 import { boardToolTargets, executeBoardTool, type BoardToolResult } from "@/lib/realtime/board-tools";
-import { greetingInstruction, NYHAVNA_GREETING_INSTRUCTION } from "@/lib/realtime/nyhavna-greeting";
+import { defaultGreetingInstruction, greetingInstruction } from "@/lib/realtime/board-greeting";
 
 /**
  * Samtalen med guiden som ÉN tilstand for hele boardet (2026-09-13).
@@ -189,15 +189,16 @@ function BoardVoiceSession({ children }: { children: ReactNode }) {
 
   const live = useLive({
     ...benchmarkLabels,
-    // Hilsenen og datagrunnlaget følger BOARDET, ikke koden: to demoer deler
-    // denne flaten med hvert sitt innhold, og guiden skal si stedets egen
-    // åpning og svare ut av stedets egne data.
+    // Hilsenen og datagrunnlaget følger BOARDET, ikke koden: flere prosjekter
+    // deler denne flaten med hvert sitt innhold, og guiden skal si stedets egen
+    // åpning og svare ut av stedets egne data. Uten egen hilsen navngir
+    // fallbacken boardets eget sted — aldri et annet prosjekt.
     greeting:
       (data.assistant?.greeting
         ? greetingInstruction(data.assistant.greeting)
         : data.demoGreeting
           ? greetingInstruction(data.demoGreeting)
-          : NYHAVNA_GREETING_INSTRUCTION) +
+          : defaultGreetingInstruction(data.home.name)) +
       (voicePacing ? `\n${LOCAL_VOICE_PACING}` : ""),
     dataset: data.demoDataset,
     allowRevealPlaces: revealEnabled,
