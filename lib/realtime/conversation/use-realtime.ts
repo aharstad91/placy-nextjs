@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { REALTIME_GROUNDING } from "@/lib/realtime/conversation/session-config";
 import type { RealtimeMessage, RealtimeOptions, RealtimeStartOptions, RealtimeStatus } from "@/lib/realtime/conversation/types";
+import { newClientId } from "@/lib/browser/client-id";
 
 interface ServerEvent {
   type: string;
@@ -117,7 +118,7 @@ export function useRealtime(options: RealtimeOptions) {
     if (!content || connection.current?.channel.readyState !== "open") return;
     interrupt();
     updateContext();
-    const id = `user-${crypto.randomUUID()}`;
+    const id = `user-${newClientId()}`;
     addMessage({ id, role: "user", text: content });
     send({ type: "conversation.item.create", item: { type: "message", role: "user", content: [{ type: "input_text", text: content }] } });
     send({ type: "response.create" });

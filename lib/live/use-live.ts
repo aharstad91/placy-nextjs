@@ -6,6 +6,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import type { LiveBoardState, LiveContextMessage, LiveMessage, LiveServerMessage, LiveStatus, MapDirective } from "@/lib/live/types";
 import { LIVE_SESSION_WARNING_MS } from "@/lib/live/session-limits";
 import { MAP_TOOLS } from "@/lib/realtime/types";
+import { newClientId } from "@/lib/browser/client-id";
 
 /**
  * Nyhavna-samtalen på GPT-Live-1 (2026-09-13).
@@ -259,7 +260,7 @@ export function useLive(options: LiveOptions) {
     if (!content) return;
     setError(null);
     setNotice(null);
-    addMessage({ id: `user-${crypto.randomUUID()}`, role: "user", text: content });
+    addMessage({ id: `user-${newClientId()}`, role: "user", text: content });
     sendContext({ kind: "text", text: content });
   }, [addMessage, sendContext]);
 
@@ -327,7 +328,7 @@ export function useLive(options: LiveOptions) {
       const current: Connection = {
         generation: run, pc, channel, audio, transceiver, abort: new AbortController(),
         endpoint, cookieAuth: Boolean(project), serverSession: false,
-        started: false, ended: false, greetingEventId: `greeting-${crypto.randomUUID()}`, greetingKicked: false, speaking: false, loudAt: 0,
+        started: false, ended: false, greetingEventId: `greeting-${newClientId()}`, greetingKicked: false, speaking: false, loudAt: 0,
         lastAssistantAt: 0, lastUserAt: 0, pauseRequested: false, transcript: null, warningMs: configured.warningMs,
         backendActivity: "idle",
       };
@@ -431,7 +432,7 @@ export function useLive(options: LiveOptions) {
         // assistent kan overlappe. Et nytt innslag begynner når taleren bytter
         // eller det er en tydelig pause i den samme talerens tidslinje.
         const fresh = !previous || previous.role !== role || (startMs !== null && startMs - previous.endMs > TRANSCRIPT_GAP_MS);
-        const id = fresh ? `${role}-${crypto.randomUUID()}` : previous.id;
+        const id = fresh ? `${role}-${newClientId()}` : previous.id;
         const text = fresh ? delta : previous.text + delta;
         current.transcript = { role, id, text, endMs: event.end_ms ?? startMs ?? (fresh ? 0 : previous.endMs) };
         // A pure pause request deliberately needs no answer. Additional words
@@ -522,7 +523,7 @@ export function useLive(options: LiveOptions) {
             // puffet ikke kommer før teksten det peker på.
             if (event.client_event_id === current.greetingEventId && !current.greetingKicked) {
               current.greetingKicked = true;
-              send({ type: "session.commentary.append", event_id: `greeting-kick-${crypto.randomUUID()}`, delegation_id: null, content: GREETING_KICK });
+              send({ type: "session.commentary.append", event_id: `greeting-kick-${newClientId()}`, delegation_id: null, content: GREETING_KICK });
             }
             break;
           case "session.input_transcript.delta":
