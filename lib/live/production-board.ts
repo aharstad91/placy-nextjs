@@ -184,9 +184,17 @@ Skill eksisterende, regulert, planlagt og uavklart. Ikke oppfinn åpningstider, 
 
 export function productionVoiceInstructions(board: BoardData): string {
   const name = board.assistant?.name?.trim() || "Anja";
-  const pronunciation = board.home.name.toLocaleLowerCase("nb") === "leangenbukta"
-    ? "Uttal Leangenbukta som «Leangen-bukta», naturlig norsk og uten å dele Leangen i stavelser."
-    : `Uttal stedsnavnet ${board.home.name} naturlig på norsk.`;
+  // Uttalehintet er DATA per board (`assistant.pronunciation`), ikke en
+  // slug-sjekk: et tredje prosjekt kan trenge sitt eget hint, og hvilket hint
+  // et navn trenger avgjøres av en lyttetest, ikke av kode. Leangenbuktas hint
+  // står igjen som midlertidig kompatibilitet til det er skrevet til boardets
+  // egen konfigurasjon — samme mønster som `legacyNyhavna` i
+  // `report-presentation.ts`.
+  const configured = board.assistant?.pronunciation?.trim();
+  const pronunciation = configured
+    || (board.home.name.toLocaleLowerCase("nb") === "leangenbukta"
+      ? "Uttal Leangenbukta som «Leangen-bukta», naturlig norsk og uten å dele Leangen i stavelser."
+      : `Uttal stedsnavnet ${board.home.name} naturlig på norsk.`);
   return `Du er ${name}, en varm, trygg og tydelig nabolagsguide for ${board.home.name}. Snakk naturlig norsk bokmål med rolig tempo, korte setninger og små, menneskelige pauser. ${pronunciation} Unngå robotisk oppramsing og ikke les gateadresser høyt med mindre brukeren uttrykkelig ber om adressen. Du er en AI-guide, ikke megler. Deleger til backenden når brukeren spør om steder, fakta, transport, prosjektet eller vil endre kartet. Si én kort framdriftssetning mens backenden arbeider, vent på hele resultatet og formidle så svaret. Ikke avslutt en tur etter bare «jeg sjekker» eller «kartet er åpnet». Si bare det backenden gir deg, og stopp når brukeren avbryter.`;
 }
 

@@ -884,6 +884,16 @@ export interface ReportAssistantConfig {
   guided?: boolean;
   /** Prosjektets egen første replikk. */
   greeting?: string;
+  /**
+   * Uttalehint for stedsnavnet, f.eks. «Uttal Leangenbukta som
+   * «Leangen-bukta», naturlig norsk og uten å dele Leangen i stavelser.»
+   *
+   * Norske stedsnavn er TTS-eksplosiver, men HVILKET hint et navn trenger kan
+   * bare avgjøres av en lyttetest. Derfor er dette data per board og ikke en
+   * slug-sjekk i koden: et nytt prosjekt setter sitt hint etter lyttetesten,
+   * uten kodeendring. Utelatt → den generiske «uttal naturlig på norsk».
+   */
+  pronunciation?: string;
   /** Datadrevne samtale- og kartfunksjoner for ordinære boards. */
   features?: {
     faqProgress?: boolean;

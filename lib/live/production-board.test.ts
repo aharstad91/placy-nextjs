@@ -136,6 +136,23 @@ describe("production board assistant source", () => {
     expect(source.tools.map((tool) => tool.name)).toContain("get_live_departures");
   });
 
+  it("bruker boardets eget uttalehint framfor navnebasert kompatibilitet", () => {
+    const input = board();
+    input.assistant = { ...input.assistant!, pronunciation: "Uttal Lillebytunet som «Lille-by-tunet»." };
+    const source = buildProductionAssistantSource(input);
+    expect(source.voiceInstructions).toContain("Lille-by-tunet");
+    expect(source.voiceInstructions).not.toContain("Leangen-bukta");
+  });
+
+  it("faller tilbake til generisk uttale for et board uten eget hint", () => {
+    // Et tredje prosjekt skal ikke arve et annet prosjekts uttalehint.
+    const input = board();
+    input.home = { ...input.home, name: "Lillebytunet" };
+    const source = buildProductionAssistantSource(input);
+    expect(source.voiceInstructions).toContain("Uttal stedsnavnet Lillebytunet naturlig på norsk.");
+    expect(source.voiceInstructions).not.toContain("Leangen-bukta");
+  });
+
   it("prioriterer faktisk nærhet foran redaksjonelle temahøydepunkter", () => {
     const input = board();
     const category = input.categories[0]!;

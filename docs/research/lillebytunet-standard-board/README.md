@@ -45,7 +45,7 @@ rulles tilbake med `scripts/restore-product-config.ts` mot
 
 ## Hva det tredje prosjektet avdekket i den DELTE koden
 
-Fire feil som lå i felles kode og ikke kunne ses med bare to prosjekter:
+Fem ting som lå i felles kode og ikke kunne ses med bare to prosjekter:
 
 1. **Hilsenen falt tilbake til Nyhavnas.** Et board uten egen
    `assistant.greeting` presenterte seg som Nyhavna. Fallbacken navngir nå
@@ -56,7 +56,12 @@ Fire feil som lå i felles kode og ikke kunne ses med bare to prosjekter:
    `getProjectSplashVideo` gjettet `{slug}-splash-video.mp4` ut fra
    `brand`-flagget alene. Stien utledes nå bare når `splashVideo`-flagget sier
    at fila finnes.
-4. **Mobilsplashens overskrift var uleselig.** CSS-regelen farget `h1` med
+4. **Uttalehintet var en slug-sjekk.** `productionVoiceInstructions` hadde en
+   hardkodet `if` for Leangenbukta. Hintet er nå `assistant.pronunciation` per
+   board, så et nytt prosjekt kan sette sitt eget etter en lyttetest uten
+   kodeendring. Leangenbuktas verdi står igjen som midlertidig kompatibilitet
+   til den er skrevet til boardets egen konfigurasjon.
+5. **Mobilsplashens overskrift var uleselig.** CSS-regelen farget `h1` med
    prosjektets mørke `--foreground` også på mobil, der splashen er et full-bleed
    foto med hvit tekst. Regelen gjaldt Nyhavna like mye; den er nå scopet til
    desktop-splashen. Samme runde byttet logo-selektoren fra `src$="-logo.svg"`
@@ -79,6 +84,7 @@ er neste steg hvis Lillebytunet skal opp på nivå 2.
 ## Manuelle porter som står igjen
 
 - Fysisk lyttetest på en HTTPS-origin: norsk uttale av «Lillebytunet», tempo,
-  avbrudd midt i et svar.
+  avbrudd midt i et svar. Viser testen at navnet trenger et uttalehint, settes
+  det i `assistant.pronunciation` — ikke i kode.
 - Avvist mikrofon → forståelig gjenopprettingsmelding.
 - Visuell klientkvittering for «vis flere steder» (server­kontrakten er testet).
