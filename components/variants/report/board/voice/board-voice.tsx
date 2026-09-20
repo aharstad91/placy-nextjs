@@ -204,9 +204,10 @@ function BoardVoiceSession({ children }: { children: ReactNode }) {
     allowRevealPlaces: revealEnabled,
     getContext: () => ({ selected_category_id: stopId ?? (state.activeCategoryId ? String(state.activeCategoryId) : null), selected_place_id: activePoiId, travel_mode: state.travelMode, ...(revealEnabled ? { revealed_place_ids: [...(revealedPlaceIds ?? [])] } : {}) }),
     hostedProjectSlug: data.voiceProjectSlug,
+    hostedSource: data.voiceProjectSlug && data.assistant?.enabled ? "report" : undefined,
     executeTool: runBoardTool,
-    snapshotId: data.demoSnapshotId,
-    ...(data.assistant?.enabled && data.projectCustomer && data.projectSlug && data.contentVersion
+    snapshotId: data.voiceProjectSlug && data.assistant?.enabled ? data.contentVersion : data.demoSnapshotId,
+    ...(!data.voiceProjectSlug && data.assistant?.enabled && data.projectCustomer && data.projectSlug && data.contentVersion
       ? {
           endpoint: "/api/board-assistant",
           project: {

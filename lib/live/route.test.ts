@@ -182,6 +182,16 @@ describe('shared project health',()=>{
     expect(response.headers.get('cache-control')).toBe('no-store');
     expect(fetch).not.toHaveBeenCalled();
   });
+  it('forwards the standard report source and rejects unknown source modes',async()=>{
+    mocks.resolveProject.mockResolvedValueOnce({slug:'nyhavna',demo:{id:'report',snapshotId:'report-content-version'}});
+    const response=await GET(new NextRequest('https://platform.example/api/prototype/live?project=nyhavna&source=report'));
+    expect(response.status).toBe(200);
+    expect(mocks.resolveProject).toHaveBeenCalledWith({project:'nyhavna',source:'report'},'public');
+    expect(await response.json()).toMatchObject({dataset:'report',snapshotId:'report-content-version'});
+    const invalid=await GET(new NextRequest('https://platform.example/api/prototype/live?project=nyhavna&source=attacker'));
+    expect(invalid.status).toBe(400);
+    expect(mocks.resolveProject).toHaveBeenCalledTimes(1);
+  });
   it('routes the legacy dataset through the registry without a fallback',async()=>{
     const response=await GET(new NextRequest('https://platform.example/api/prototype/live?dataset=nyhavna-lokal'));
     expect(response.status).toBe(200);

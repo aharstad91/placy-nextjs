@@ -3,7 +3,9 @@ import * as supabase from '@/lib/supabase/client';
 import { parseLogEventInput } from '@/lib/instrumentation/event-schema';
 import { loadLiveDemo } from '@/lib/live/demos';
 import { resolveVoiceProject, type VoiceProjectDependencies } from '@/lib/live/projects';
+import { buildProductionAssistantSource } from '@/lib/live/production-board';
 import type { VoiceProject, VoiceTenant } from '@/lib/live/metering/types';
+import type { Project } from '@/lib/types';
 
 const bindings: Record<string, VoiceProject> = {
   nyhavna: { slug:'nyhavna', customer_id:'owner-a', project_id:'owner-a_nyhavna', content_source:'nyhavna-lokal', enabled:true, public_tenant_id:'a-public', benchmark_tenant_id:'a-benchmark', internal_tenant_id:null },
@@ -17,6 +19,19 @@ function dependencies(): VoiceProjectDependencies {
     readTenant: vi.fn(async id => ({id, customer_id:id.startsWith('a-')?'owner-a':'owner-b', project_id:id.startsWith('a-')?'owner-a_nyhavna':'owner-b_fixture', internal_demo_id:null, purpose:id.endsWith('benchmark')?'benchmark':'public', enabled:true}) as VoiceTenant),
     readPolicy: vi.fn(async (scope_type,scope_id) => ({scope_type,scope_id,enabled:true,max_concurrent:5,max_per_hour:60,max_per_day:200,daily_budget_usd:100})),
     loadDemo: vi.fn(loadLiveDemo),
+    loadReport: vi.fn(async (customer, slug) => {
+      const demo=await loadLiveDemo('nyhavna-lokal');
+      const project={
+        ...demo.project,
+        id:customer==='owner-a'?'00000000-0000-4000-8000-000000000001':'00000000-0000-4000-8000-000000000002',
+        customer,
+        urlSlug:slug,
+        contentVersion:`${slug}-content-version`,
+        reportConfig:{...demo.project.reportConfig,assistant:{enabled:true,name:'Anja'}},
+      } as Project;
+      const board={...demo.board,contentVersion:project.contentVersion,assistant:{enabled:true,name:'Anja'}};
+      return {project,source:buildProductionAssistantSource(board)};
+    }),
   };
 }
 describe('server project resolution', () => {
@@ -56,6 +71,40 @@ describe('server project resolution', () => {
     const second=await resolveVoiceProject({project:'fixture'},'public',deps);
     expect(second.demo.snapshotId).not.toBe(explicit.demo.snapshotId);
   });
+  it('loads an authorized standard report into the production assistant contract', async () => {
+    const deps=dependencies();
+    const resolved=await resolveVoiceProject({project:'nyhavna',source:'report'},'public',deps);
+    expect(deps.loadReport).toHaveBeenCalledWith('owner-a','nyhavna');
+    expect(deps.loadDemo).not.toHaveBeenCalled();
+    expect(resolved.project).toMatchObject({
+      id:'00000000-0000-4000-8000-000000000001',customer:'owner-a',urlSlug:'nyhavna',contentVersion:'nyhavna-content-version',
+    });
+    expect(resolved.demo).toMatchObject({id:'report',snapshotId:'nyhavna-content-version'});
+    expect(resolved.demo.board.contentVersion).toBe('nyhavna-content-version');
+    expect(resolved.demo.backendInstructions).toContain(resolved.demo.board.home.name);
+    expect(resolved.demo.voiceInstructions).toContain('Anja');
+    expect(resolved.demo.tools.length).toBeGreaterThan(0);
+    expect(resolved.demo.createConversation()).toBeDefined();
+  });
+  it.each([
+    ['missing report', null],
+    ['disabled assistant', {reportConfig:{assistant:{enabled:false}}}],
+    ['product identity mismatch', {id:'00000000-0000-4000-8000-000000000099'}],
+    ['customer identity mismatch', {customer:'wrong'}],
+    ['slug identity mismatch', {urlSlug:'wrong'}],
+  ])('rejects report content with %s', async (_name, override) => {
+    const deps=dependencies();
+    const valid=await vi.mocked(deps.loadReport)('owner-a','nyhavna');
+    vi.mocked(deps.loadReport).mockResolvedValue(override===null?null:{...valid!,project:{...valid!.project,...override}});
+    await expect(resolveVoiceProject({project:'nyhavna',source:'report'},'public',deps)).rejects.toThrow('Voice project unavailable');
+    expect(deps.loadDemo).not.toHaveBeenCalled();
+  });
+  it('requires a registered project slug for report content', async () => {
+    const deps=dependencies();
+    await expect(resolveVoiceProject({project:'missing',source:'report'},'public',deps)).rejects.toMatchObject({kind:'not_found'});
+    await expect(resolveVoiceProject({dataset:'nyhavna-lokal',source:'report'},'public',deps)).rejects.toMatchObject({kind:'not_found'});
+    expect(deps.loadReport).not.toHaveBeenCalled();
+  });
   it.each([
     ['unknown', {project:'missing'}], ['missing selector', {}], ['invalid slug', {project:'../nyhavna'}],
     ['unknown legacy source',{dataset:'nyhavna-leve'}], ['mismatched source',{project:'fixture',dataset:'nyhavna-lokal'}],
@@ -85,10 +134,10 @@ describe('server project resolution', () => {
       await expect(resolveVoiceProject({project:'nyhavna'},'public',deps)).rejects.toThrow('Voice project unavailable');
     }
   });
-  it.each(['readBinding','readProject','readProduct','readTenant','readPolicy','loadDemo'] as const)('classifies %s rejection as retryable without dependency details', async method => {
+  it.each(['readBinding','readProject','readProduct','readTenant','readPolicy','loadDemo','loadReport'] as const)('classifies %s rejection as retryable without dependency details', async method => {
     const deps=dependencies();
     vi.mocked(deps[method]).mockRejectedValue(new Error('secret database URL /private/file'));
-    await expect(resolveVoiceProject({project:'nyhavna'},'public',deps)).rejects.toMatchObject({kind:'unavailable',message:'Voice project unavailable'});
+    await expect(resolveVoiceProject({project:'nyhavna',...(method==='loadReport'?{source:'report' as const}:{})},'public',deps)).rejects.toMatchObject({kind:'unavailable',message:'Voice project unavailable'});
   });
   it('distinguishes Supabase registry errors from an absent registry row', async () => {
     const maybeSingle=vi.fn().mockResolvedValue({data:null,error:{message:'private database details'}});

@@ -19,7 +19,7 @@ const contextSchema = z.discriminatedUnion('kind', [
   z.object({ kind: z.literal('text'), text: z.string().max(2000) }),
 ]);
 const label = z.string().regex(/^[a-zA-Z0-9_.:-]{1,100}$/);
-const startSchema = z.object({ type: z.literal('start'), sdp: z.string().startsWith('v=0').max(32000), snapshotId: z.string().max(150), project: z.string().regex(/^[a-z0-9][a-z0-9-]{0,79}$/).optional(), dataset: z.string().max(100).optional(), voice: z.literal('willow').optional(), testRunId: label.optional(), scenarioId: label.optional() }).strict();
+const startSchema = z.object({ type: z.literal('start'), sdp: z.string().startsWith('v=0').max(32000), snapshotId: z.string().max(150), project: z.string().regex(/^[a-z0-9][a-z0-9-]{0,79}$/).optional(), dataset: z.string().max(100).optional(), source: z.literal('report').optional(), voice: z.literal('willow').optional(), testRunId: label.optional(), scenarioId: label.optional() }).strict();
 const messageSchema = z.discriminatedUnion('type', [
   startSchema,
   z.object({ type: z.literal('context'), message: contextSchema }).strict(),
@@ -144,7 +144,7 @@ export function runHostedControl(socket: WebSocket, access: DemoAccess, override
   async function start(input: z.infer<typeof startSchema>) {
     clearTimeout(admissionTimer);
     if (access.role !== 'benchmark' && (input.testRunId || input.scenarioId)) throw new Error('test_authorization');
-    const resolved = await deps.resolveProject({...(input.project === undefined ? {} : {project:input.project}),...(input.dataset === undefined ? {} : {dataset:input.dataset})},access.role === 'benchmark' ? 'benchmark' : 'public');
+    const resolved = await deps.resolveProject({...(input.project === undefined ? {} : {project:input.project}),...(input.dataset === undefined ? {} : {dataset:input.dataset}),...(input.source === undefined ? {} : {source:input.source})},access.role === 'benchmark' ? 'benchmark' : 'public');
     const demo = resolved.demo;
     if (closing) return;
     if (demo.snapshotId !== input.snapshotId) throw new Error('snapshot');

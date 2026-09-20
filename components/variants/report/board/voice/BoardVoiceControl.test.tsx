@@ -89,10 +89,25 @@ afterEach(() => {
   Object.assign(data, { demoSnapshotId: "nyhavna-snapshot-v1" });
   Reflect.deleteProperty(data, "assistant");
   Reflect.deleteProperty(data, "contentVersion");
+  Reflect.deleteProperty(data, "voiceProjectSlug");
+  Reflect.deleteProperty(data, "projectCustomer");
   resetLive();
 });
 
 resetLive();
+
+it("uses hosted standard-board voice instead of the sidecar when a public binding is supplied", () => {
+  Object.assign(data, {
+    assistant: { enabled: true, name: "Anja" },
+    contentVersion: "report-version-2",
+    voiceProjectSlug: "nyhavna",
+    projectCustomer: "nyhavna-utvikling",
+  });
+  mount();
+  expect(capturedOptions).toMatchObject({ hostedProjectSlug: "nyhavna", hostedSource: "report", snapshotId: "report-version-2" });
+  expect(capturedOptions).not.toHaveProperty("endpoint");
+  expect(capturedOptions).not.toHaveProperty("project");
+});
 
 describe("BoardVoiceControl", () => {
   it("krever eksplisitt samtykke før tale starter, og tømmer fremhevingen ved ny samtale", () => {

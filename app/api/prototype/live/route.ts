@@ -41,8 +41,10 @@ export async function GET(request: NextRequest) {
     try {
       const project = request.nextUrl.searchParams.get('project') ?? undefined;
       const dataset = request.nextUrl.searchParams.get('dataset') ?? undefined;
+      const source = request.nextUrl.searchParams.get('source');
+      if (source !== null && source !== 'report') return new NextResponse(null, { status: 400 });
       const resolved = await resolveVoiceProject(
-        { ...(project ? { project } : {}), ...(dataset ? { dataset } : {}) },
+        { ...(project ? { project } : {}), ...(dataset ? { dataset } : {}), ...(source === 'report' ? { source } : {}) },
         access?.role === 'benchmark' ? 'benchmark' : 'public',
       );
       return NextResponse.json({

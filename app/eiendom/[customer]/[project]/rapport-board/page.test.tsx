@@ -5,16 +5,25 @@ import type { Project } from "@/lib/types";
 
 const getProduct = vi.fn();
 const getTranslations = vi.fn(async () => ({}));
+const findHostedVoiceProjectSlug = vi.fn(async (customer: string, project: string) => {
+  void customer;
+  void project;
+  return "nyhavna";
+});
 
 vi.mock("@/lib/supabase/cached-board-reads", () => ({
   getCachedReportProduct: () => getProduct(),
   getCachedProjectTranslations: () => getTranslations(),
 }));
 vi.mock("@/lib/utils/school-zones", () => ({ getSchoolZone: () => null }));
+vi.mock("@/lib/public-projects", () => ({
+  findHostedVoiceProjectSlug: (customer: string, project: string) =>
+    findHostedVoiceProjectSlug(customer, project),
+}));
 vi.mock("next/navigation", () => ({ notFound: vi.fn() }));
 vi.mock("./board-embed-gate", () => ({
-  default: ({ project }: { project: Project }) => (
-    <div data-testid="board-gate">{project.name}</div>
+  default: ({ project, voiceProjectSlug }: { project: Project; voiceProjectSlug?: string }) => (
+    <div data-testid="board-gate" data-voice-project={voiceProjectSlug}>{project.name}</div>
   ),
 }));
 
@@ -61,6 +70,7 @@ describe("ordinary report-board presentation", () => {
   beforeEach(() => {
     getProduct.mockReset();
     getTranslations.mockClear();
+    findHostedVoiceProjectSlug.mockClear();
     getProduct.mockResolvedValue(project());
   });
 
@@ -81,5 +91,31 @@ describe("ordinary report-board presentation", () => {
       "--board-heading-weight": "500",
     });
     expect(view.getByTestId("board-gate")).toHaveTextContent("Leangenbukta");
+  });
+
+  it("forwards the hosted voice binding only when the assistant is enabled", async () => {
+    const enabled = project();
+    enabled.reportConfig = {
+      ...enabled.reportConfig,
+      assistant: { enabled: true, name: "Anja" },
+    };
+    getProduct.mockResolvedValueOnce(enabled);
+
+    const view = render(
+      await EiendomReportBoardPage({
+        params: Promise.resolve({ customer: "nyhavna-utvikling", project: "nyhavna" }),
+      }),
+    );
+
+    expect(findHostedVoiceProjectSlug).toHaveBeenCalledWith("nyhavna-utvikling", "nyhavna");
+    expect(view.getByTestId("board-gate")).toHaveAttribute("data-voice-project", "nyhavna");
+
+    getProduct.mockResolvedValueOnce(project());
+    render(
+      await EiendomReportBoardPage({
+        params: Promise.resolve({ customer: "placy-demo", project: "leangenbukta" }),
+      }),
+    );
+    expect(findHostedVoiceProjectSlug).toHaveBeenCalledTimes(1);
   });
 });

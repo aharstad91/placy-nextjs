@@ -14,7 +14,7 @@ import type {
   KnowledgeEntityLike,
   KnowledgeSourceLike,
 } from "@/lib/realtime/knowledge-base";
-import type { PublishedKnowledge } from "@/lib/types";
+import type { Project, PublishedKnowledge } from "@/lib/types";
 import { boardAddressBook, spokenBoardProjection } from "@/lib/realtime/spoken-projection";
 import { fetchEnturDepartures, planEnturTrip } from "@/lib/entur/client";
 import { createLiveTransportExecutor, type LiveTransportClient } from "@/lib/realtime/live-transport";
@@ -207,6 +207,11 @@ export interface ProductionAssistantSource {
   createConversation: ReturnType<typeof createConversationFactory>;
 }
 
+export interface ProductionAssistantProjectSource {
+  project: Project;
+  source: ProductionAssistantSource;
+}
+
 const defaultTransportClient: LiveTransportClient = {
   departures: (stopPlaceId, limit) => fetchEnturDepartures(stopPlaceId, limit),
   trip: (from, to, limit) => planEnturTrip(from, to, limit),
@@ -259,6 +264,14 @@ export async function loadProductionAssistantSource(
   customer: string,
   projectSlug: string,
 ): Promise<ProductionAssistantSource | null> {
+  return (await loadProductionAssistantProjectSource(customer, projectSlug))?.source ?? null;
+}
+
+/** Same authoritative read, retaining the project for registry identity checks. */
+export async function loadProductionAssistantProjectSource(
+  customer: string,
+  projectSlug: string,
+): Promise<ProductionAssistantProjectSource | null> {
   // Samtaletjenesten kjører som en egen Node-prosess. Nexts `unstable_cache`
   // krever en aktiv Next-requestkontekst og kaster ellers
   // "incrementalCache missing". Sidecaren leser derfor den autoritative
@@ -266,5 +279,5 @@ export async function loadProductionAssistantSource(
   const project = await getProductAsync(customer, projectSlug, "report");
   if (!project?.reportConfig?.assistant?.enabled) return null;
   const board = adaptBoardData(transformToReportData(project));
-  return buildProductionAssistantSource(board);
+  return { project, source: buildProductionAssistantSource(board) };
 }

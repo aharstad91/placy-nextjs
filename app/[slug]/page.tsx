@@ -7,6 +7,7 @@ import { buildReportBoardStyle } from "@/lib/board/report-board-style";
 import { PublicProjectError, resolvePublicProjectRoute } from "@/lib/public-projects";
 import { getCachedProjectTranslations, getCachedReportProduct } from "@/lib/supabase/cached-board-reads";
 import { getSchoolZone } from "@/lib/utils/school-zones";
+import { hostedVoiceEnabled } from "@/lib/live/hosted-access";
 
 export const dynamic = "force-dynamic";
 
@@ -18,7 +19,8 @@ const getPublicBoard = cache(async (slug: string) => {
   try {
     const route = await resolvePublicProjectRoute(slug);
     const project = await getCachedReportProduct(route.customer, route.projectSlug);
-    if (!project || project.id !== route.projectId) notFound();
+    // Project.id is the report PRODUCT UUID, not the registry's project ID.
+    if (!project || project.customer !== route.customer || project.urlSlug !== route.projectSlug) notFound();
     return { route, project };
   } catch (error) {
     if (error instanceof PublicProjectError && error.kind === "not_found") notFound();
@@ -59,7 +61,11 @@ export default async function ProjectPage({ params }: PageProps) {
   return (
     <div style={buildReportBoardStyle(project)} className="min-h-screen bg-background text-foreground">
       <Suspense fallback={null}>
-        <BoardEmbedGate project={projectWithZone} enTranslations={enTranslations} />
+        <BoardEmbedGate
+          project={projectWithZone}
+          enTranslations={enTranslations}
+          voiceProjectSlug={hostedVoiceEnabled() ? route.slug : undefined}
+        />
       </Suspense>
     </div>
   );

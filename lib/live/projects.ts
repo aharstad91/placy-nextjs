@@ -2,14 +2,16 @@ import 'server-only';
 import { createHash } from 'node:crypto';
 import { createServerClient } from '@/lib/supabase/client';
 import { isLiveDataset, loadLiveDemo, type LiveDemo } from '@/lib/live/demos';
+import { loadProductionAssistantProjectSource, type ProductionAssistantProjectSource } from '@/lib/live/production-board';
 import type { VoiceAdmissionPolicy, VoiceProject, VoiceTenant } from '@/lib/live/metering/types';
 import type { Project } from '@/lib/types';
 import { isPublicProjectSlug } from '@/lib/project-paths';
 
-export interface VoiceProjectSelection { project?: string; dataset?: string }
+export interface VoiceProjectSelection { project?: string; dataset?: string; source?: 'report' }
 type HostedPurpose = 'public' | 'benchmark';
 type ProjectIdentity = { id: string; customer_id: string; url_slug: string };
 type ReportProductIdentity = { id: string; project_id: string; product_type: string };
+type HostedLiveDemo = Omit<LiveDemo,'id'> & {id:LiveDemo['id'] | 'report'};
 export interface VoiceProjectDependencies {
   readBinding(slug: string): Promise<VoiceProject | null>;
   readProject(id: string): Promise<ProjectIdentity | null>;
@@ -17,11 +19,12 @@ export interface VoiceProjectDependencies {
   readTenant(id: string): Promise<VoiceTenant | null>;
   readPolicy(scope: VoiceAdmissionPolicy['scope_type'], id: string): Promise<VoiceAdmissionPolicy | null>;
   loadDemo: typeof loadLiveDemo;
+  loadReport(customer: string, projectSlug: string): Promise<ProductionAssistantProjectSource | null>;
 }
 export interface ResolvedVoiceProject {
   slug: string;
   project: Project;
-  demo: LiveDemo;
+  demo: HostedLiveDemo;
   tenant: VoiceTenant;
 }
 /** Do not expose database errors, registry IDs, credentials or local file paths. */
@@ -57,6 +60,7 @@ function defaultDependencies(): VoiceProjectDependencies {
       return data;
     },
     loadDemo: loadLiveDemo,
+    loadReport: loadProductionAssistantProjectSource,
   };
 }
 
@@ -67,8 +71,9 @@ function defaultDependencies(): VoiceProjectDependencies {
  */
 export async function resolveVoiceProject(selection: VoiceProjectSelection, purpose: HostedPurpose = 'public', dependencies?: VoiceProjectDependencies): Promise<ResolvedVoiceProject> {
   try {
-    const slug=selection.project ?? (selection.dataset==='nyhavna-lokal'?'nyhavna':undefined);
+    const slug=selection.project ?? (selection.source===undefined && selection.dataset==='nyhavna-lokal'?'nyhavna':undefined);
     if(!slug || !isPublicProjectSlug(slug) || !['public','benchmark'].includes(purpose)) throw new VoiceProjectError();
+    if(selection.source==='report' && selection.dataset!==undefined) throw new VoiceProjectError();
     const deps=dependencies ?? defaultDependencies();
     const binding=await deps.readBinding(slug);
     if(!binding?.enabled || binding.slug!==slug || !isLiveDataset(binding.content_source)
@@ -86,6 +91,19 @@ export async function resolveVoiceProject(selection: VoiceProjectSelection, purp
       || !tenant?.enabled || tenant.id!==tenantId || tenant.customer_id!==binding.customer_id || tenant.project_id!==binding.project_id
       || tenant.internal_demo_id!==null || tenant.purpose!==purpose
       || policies.some((policy,index)=>!policy?.enabled || policy.scope_type!==scopes[index][0] || policy.scope_id!==scopes[index][1])) throw new VoiceProjectError();
+    if(selection.source==='report') {
+      const loadedReport=await deps.loadReport(identity.customer_id,identity.url_slug);
+      const report=loadedReport?.project;
+      if(!report || report.id!==product.id || report.customer!==identity.customer_id || report.urlSlug!==identity.url_slug
+        || !report.reportConfig?.assistant?.enabled) throw new VoiceProjectError();
+      const source=loadedReport.source;
+      const demo: HostedLiveDemo={
+        id:'report',snapshotId:source.contentVersion,board:source.board,project:report,
+        backendInstructions:source.backendInstructions,voiceInstructions:source.voiceInstructions,
+        tools:source.tools,createConversation:source.createConversation,
+      };
+      return {slug,project:report,demo,tenant};
+    }
     const loaded=await deps.loadDemo(binding.content_source);
     if(loaded.id!==binding.content_source || !loaded.snapshotId || !loaded.project || !loaded.board) throw new VoiceProjectError('unavailable');
     // Even projects temporarily sharing a trusted source have distinct rendered versions.

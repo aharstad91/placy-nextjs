@@ -116,6 +116,14 @@ describe('hosted project admission boundary',()=>{
     a.socket.message({type:'map_result',id:command.id,output:{ok:true}});await command.result;
     a.socket.message({type:'stop'});b.socket.message({type:'stop'});await Promise.all([a.done,b.done]);
   });
+  it('passes the report source through the trusted project resolver',async()=>{
+    const s=setup('demo');
+    s.socket.message({type:'start',sdp:'v=0',snapshotId:'snapshot',project:'nyhavna',source:'report'});
+    await tick();
+    expect(s.deps.resolveProject).toHaveBeenCalledWith({project:'nyhavna',source:'report'},'public');
+    expect(s.deps.createSession).toHaveBeenCalledOnce();
+    s.socket.message({type:'stop'});await s.done;
+  });
   it.each(['customerId','tenantId','purpose','models','rates','instructions'])('rejects browser accounting/config field %s before paid creation',async field=>{
     const s=setup();s.socket.message({...start,[field]:'attacker'});await s.done;
     expect(s.deps.resolveProject).not.toHaveBeenCalled();expect(s.ledger.reserve).not.toHaveBeenCalled();expect(s.deps.createSession).not.toHaveBeenCalled();

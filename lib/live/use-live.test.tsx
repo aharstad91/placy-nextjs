@@ -476,6 +476,16 @@ describe("Hosted control ownership", () => {
     expect(control.frames()[0]).toMatchObject({ type: "start", project: "fixture-project", dataset: "nyhavna-lokal", snapshotId: "snapshot-test" });
   });
 
+  it("binds hosted standard-board calls to the displayed content version without SSE", async () => {
+    const { control } = await hosted({ ...options(), hostedProjectSlug: "nyhavna", hostedSource: "report", snapshotId: "board-content-v2" });
+    const healthCall = vi.mocked(fetch).mock.calls.find(([, init]) => !init?.method);
+    const healthUrl = new URL(String(healthCall?.[0]), window.location.origin);
+    expect(healthUrl.searchParams.get("project")).toBe("nyhavna");
+    expect(healthUrl.searchParams.get("source")).toBe("report");
+    expect(control.frames()[0]).toMatchObject({ type: "start", project: "nyhavna", source: "report", snapshotId: "board-content-v2" });
+    expect(FakeEventSource.instances).toHaveLength(0);
+  });
+
   it("does not spend the media acknowledgement timeout waiting for microphone permission", async () => {
     vi.useFakeTimers();
     let grant!: (stream: MediaStream) => void;

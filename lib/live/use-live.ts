@@ -62,6 +62,7 @@ export interface LiveOptions {
   voice?: LiveVoice;
   /** Public registry slug; the server resolves ownership and accounting. */
   hostedProjectSlug?: string;
+  hostedSource?: "report";
   /** Standard-board identity; bound to the same content version as the map. */
   project?: { customer: string; projectSlug: string; contentVersion: string };
   endpoint?: string;
@@ -305,6 +306,7 @@ export function useLive(options: LiveOptions) {
         selection.set("projectSlug", project.projectSlug);
         selection.set("contentVersion", project.contentVersion);
       } else if (hostedProjectSlug) selection.set("project", hostedProjectSlug);
+      if (latestOptions.current.hostedSource) selection.set("source", latestOptions.current.hostedSource);
       if (dataset) selection.set("dataset", dataset);
       const health = await fetch(`${endpoint}${selection.size ? `?${selection}` : ""}`, { cache: "no-store" });
       if (run !== generation.current) return;
@@ -615,6 +617,7 @@ export function useLive(options: LiveOptions) {
         sdp: pc.localDescription?.sdp ?? offer.sdp,
         ...(snapshotId ? { snapshotId } : {}),
         ...(hostedProjectSlug ? { project: hostedProjectSlug } : {}),
+        ...(latestOptions.current.hostedSource ? { source: latestOptions.current.hostedSource } : {}),
         ...(dataset ? { dataset } : {}),
         ...(selectedVoice ? { voice: selectedVoice } : {}),
       };

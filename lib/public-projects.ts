@@ -2,6 +2,8 @@ import "server-only";
 
 import { isPublicProjectSlug } from "@/lib/project-paths";
 import { createServerClient } from "@/lib/supabase/client";
+import { hostedVoiceEnabled } from "@/lib/live/hosted-access";
+import { unstable_cache } from "next/cache";
 
 export interface PublicProjectRoute {
   slug: string;
@@ -33,6 +35,26 @@ async function databaseLookup(slug: string) {
     .maybeSingle();
   if (error) throw new PublicProjectError("unavailable");
   return data;
+}
+
+/** Reuse hosted voice on the canonical report URL as well as the public alias. */
+export async function findHostedVoiceProjectSlug(customer: string, projectSlug: string): Promise<string | undefined> {
+  if (!hostedVoiceEnabled()) return undefined;
+  return unstable_cache(
+    async () => {
+      const { data, error } = await createServerClient().schema("v2")
+        .from("voice_projects").select("slug")
+        .eq("customer_id", customer).eq("project_id", `${customer}_${projectSlug}`)
+        .eq("enabled", true).abortSignal(AbortSignal.timeout(8_000)).maybeSingle();
+      if (error) throw new PublicProjectError("unavailable");
+      return data && isPublicProjectSlug(data.slug) ? data.slug : undefined;
+    },
+    ["hosted-voice-project", customer, projectSlug],
+    {
+      tags: [`product:${customer}_${projectSlug}`],
+      revalidate: 3600,
+    },
+  )();
 }
 
 /**

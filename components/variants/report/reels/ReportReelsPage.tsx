@@ -139,6 +139,8 @@ const ReelsAudioOrchestrator = dynamic(
 
 interface Props {
   project: Project;
+  /** Server-resolved public identity for the hosted voice transport. */
+  voiceProjectSlug?: string;
   enTranslations?: TranslationMap;
   /**
    * Event-rute (D2): ferdig-bygget BoardData fra `eventToBoardData`. Når satt
@@ -219,6 +221,7 @@ export default function ReportReelsPage(props: Props) {
 
 function Inner({
   project,
+  voiceProjectSlug,
   enTranslations = {},
   boardData: inputBoardData,
   boardMode,
@@ -252,8 +255,11 @@ function Inner({
   );
 
   const boardData = useMemo(
-    () => inputBoardData ?? adaptBoardData(reportData!),
-    [inputBoardData, reportData],
+    () => {
+      const data = inputBoardData ?? adaptBoardData(reportData!);
+      return voiceProjectSlug ? { ...data, voiceProjectSlug } : data;
+    },
+    [inputBoardData, reportData, voiceProjectSlug],
   );
   const initiallyRevealed = isInitiallyRevealed(
     effectiveProject.reportConfig,

@@ -8,6 +8,7 @@ import { buildBoardMetadata } from "@/lib/seo/board-metadata";
 import BoardEmbedGate from "./board-embed-gate";
 import { buildReportBoardStyle } from "@/lib/board/report-board-style";
 import { getSchoolZone } from "@/lib/utils/school-zones";
+import { findHostedVoiceProjectSlug } from "@/lib/public-projects";
 
 export const revalidate = 3600;
 
@@ -47,16 +48,20 @@ export default async function EiendomReportBoardPage({ params }: PageProps) {
 
   const poiIds = projectData.pois.map((p) => p.id);
   const themeIds = (projectData.reportConfig?.themes || []).map((t) => t.id);
-  const enTranslations = await getCachedProjectTranslations(
-    customer,
-    projectSlug,
-    "en",
-    poiIds,
-    themeIds,
-    projectData.id,
-  );
-
   const themeStyle = buildReportBoardStyle(projectData);
+  const [enTranslations, voiceProjectSlug] = await Promise.all([
+    getCachedProjectTranslations(
+      customer,
+      projectSlug,
+      "en",
+      poiIds,
+      themeIds,
+      projectData.id,
+    ),
+    projectData.reportConfig?.assistant?.enabled
+      ? findHostedVoiceProjectSlug(customer, projectSlug)
+      : undefined,
+  ]);
 
   return (
     <div style={themeStyle} className="min-h-screen bg-background text-foreground">
@@ -64,6 +69,7 @@ export default async function EiendomReportBoardPage({ params }: PageProps) {
         <BoardEmbedGate
           project={projectDataWithZone}
           enTranslations={enTranslations}
+          voiceProjectSlug={voiceProjectSlug}
         />
       </Suspense>
     </div>

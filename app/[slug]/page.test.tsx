@@ -17,6 +17,7 @@ vi.mock("@/lib/supabase/cached-board-reads", () => ({
   getCachedProjectTranslations: mocks.translations,
 }));
 vi.mock("@/lib/utils/school-zones", () => ({ getSchoolZone: () => undefined }));
+vi.mock("@/lib/live/hosted-access", () => ({ hostedVoiceEnabled: () => true }));
 vi.mock("@/lib/board/report-board-style", () => ({ buildReportBoardStyle: () => ({}) }));
 vi.mock("@/app/eiendom/[customer]/[project]/rapport-board/board-embed-gate", () => ({ default: () => null }));
 
@@ -24,7 +25,9 @@ import { PublicProjectError } from "@/lib/public-projects";
 import ProjectPage, { generateMetadata } from "@/app/[slug]/page";
 
 const project = {
-  id: "kunde_prosjekt",
+  id: "00000000-0000-4000-8000-000000000001",
+  customer: "kunde",
+  urlSlug: "prosjekt",
   name: "Prosjekt",
   centerCoordinates: { lat: 63.4, lng: 10.4 },
   pois: [],
@@ -33,7 +36,7 @@ const project = {
 
 beforeEach(() => {
   vi.clearAllMocks();
-  mocks.resolve.mockResolvedValue({ slug: "prosjekt", customer: "kunde", projectSlug: "prosjekt", projectId: project.id });
+  mocks.resolve.mockResolvedValue({ slug: "prosjekt", customer: "kunde", projectSlug: "prosjekt", projectId: "kunde_prosjekt" });
   mocks.report.mockResolvedValue(project);
   mocks.translations.mockResolvedValue(null);
 });
@@ -58,6 +61,16 @@ describe("public standard board", () => {
   it("returns not found for unknown projects", async () => {
     mocks.resolve.mockRejectedValueOnce(new PublicProjectError());
     await expect(ProjectPage({ params: Promise.resolve({ slug: "missing" }) })).rejects.toThrow("NEXT_NOT_FOUND");
+  });
+
+  it("rejects a report belonging to another project", async () => {
+    mocks.report.mockResolvedValueOnce({ ...project, customer: "other" });
+    await expect(ProjectPage({ params: Promise.resolve({ slug: "prosjekt" }) })).rejects.toThrow("NEXT_NOT_FOUND");
+  });
+
+  it("passes the public voice identity to the standard board", async () => {
+    const page = await ProjectPage({ params: Promise.resolve({ slug: "prosjekt" }) });
+    expect(page.props.children.props.children.props.voiceProjectSlug).toBe("prosjekt");
   });
 
   it("keeps dependency outages retryable", async () => {
