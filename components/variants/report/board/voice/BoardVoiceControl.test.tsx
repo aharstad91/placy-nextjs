@@ -91,7 +91,6 @@ afterEach(() => {
   Reflect.deleteProperty(data, "contentVersion");
   Reflect.deleteProperty(data, "voiceProjectSlug");
   Reflect.deleteProperty(data, "projectCustomer");
-  Reflect.deleteProperty(data, "demoDataset");
   resetLive();
 });
 
@@ -108,24 +107,6 @@ it("uses hosted standard-board voice instead of the sidecar when a public bindin
   expect(capturedOptions).toMatchObject({ hostedProjectSlug: "nyhavna", hostedSource: "report", snapshotId: "report-version-2" });
   expect(capturedOptions).not.toHaveProperty("endpoint");
   expect(capturedOptions).not.toHaveProperty("project");
-});
-
-it("uses the exact local dataset through hosted voice on the public board", () => {
-  Object.assign(data, {
-    assistant: { enabled: true, name: "Anja" },
-    contentVersion: "report-version-2",
-    voiceProjectSlug: "nyhavna",
-    demoDataset: "nyhavna-lokal",
-  });
-  mount();
-
-  expect(capturedOptions).toMatchObject({
-    hostedProjectSlug: "nyhavna",
-    dataset: "nyhavna-lokal",
-  });
-  expect(capturedOptions).not.toHaveProperty("hostedSource");
-  expect(capturedOptions).not.toHaveProperty("snapshotId");
-  Reflect.deleteProperty(data, "demoDataset");
 });
 
 describe("BoardVoiceControl", () => {

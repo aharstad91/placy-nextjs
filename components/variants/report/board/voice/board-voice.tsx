@@ -187,8 +187,6 @@ function BoardVoiceSession({ children }: { children: ReactNode }) {
     if (params.has(DEV_FLAG)) setBenchmarkLabels({ testRunId: params.get("voiceRun") ?? undefined, scenarioId: params.get("voiceScenario") ?? undefined });
   }, []);
 
-  const hostedLocalDataset = Boolean(data.voiceProjectSlug && data.demoDataset);
-
   const live = useLive({
     ...benchmarkLabels,
     // Hilsenen og datagrunnlaget følger BOARDET, ikke koden: flere prosjekter
@@ -206,12 +204,9 @@ function BoardVoiceSession({ children }: { children: ReactNode }) {
     allowRevealPlaces: revealEnabled,
     getContext: () => ({ selected_category_id: stopId ?? (state.activeCategoryId ? String(state.activeCategoryId) : null), selected_place_id: activePoiId, travel_mode: state.travelMode, ...(revealEnabled ? { revealed_place_ids: [...(revealedPlaceIds ?? [])] } : {}) }),
     hostedProjectSlug: data.voiceProjectSlug,
+    hostedSource: data.voiceProjectSlug && data.assistant?.enabled ? "report" : undefined,
     executeTool: runBoardTool,
-    ...(hostedLocalDataset
-      ? {}
-      : data.voiceProjectSlug && data.assistant?.enabled
-        ? { hostedSource: "report" as const, snapshotId: data.contentVersion }
-        : { snapshotId: data.demoSnapshotId }),
+    snapshotId: data.voiceProjectSlug && data.assistant?.enabled ? data.contentVersion : data.demoSnapshotId,
     ...(!data.voiceProjectSlug && data.assistant?.enabled && data.projectCustomer && data.projectSlug && data.contentVersion
       ? {
           endpoint: "/api/board-assistant",

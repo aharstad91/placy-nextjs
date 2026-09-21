@@ -3,7 +3,7 @@
 import { useMemo, type ComponentProps } from "react";
 import ReportReelsPage from "@/components/variants/report/reels/ReportReelsPage";
 
-type Props = Pick<ComponentProps<typeof ReportReelsPage>, "project" | "boardData" | "voiceProjectSlug">;
+type Props = Pick<ComponentProps<typeof ReportReelsPage>, "project" | "boardData">;
 
 /**
  * Klient-grensen for Nyhavna-boardet, lokalt og på felles plattform.
@@ -25,7 +25,7 @@ type Props = Pick<ComponentProps<typeof ReportReelsPage>, "project" | "boardData
  *
  * Nyhavna-skallet brukes også på prosjektets delbare plattformside.
  */
-export default function LokalBoardGate({ project, boardData, voiceProjectSlug }: Props) {
+export default function LokalBoardGate({ project, boardData }: Props) {
   const brandedBoard = useMemo(() => boardData ? {
     ...boardData,
     assets: { ...boardData.assets, brand: true },
@@ -42,5 +42,5 @@ export default function LokalBoardGate({ project, boardData, voiceProjectSlug }:
     ...project,
     reportConfig: { ...project.reportConfig, hideBrokerCard: false },
   }), [project]);
-  return <ReportReelsPage project={brandedProject} boardData={brandedBoard} voiceProjectSlug={voiceProjectSlug} boardMode="report" layout="framed" placePanel />;
+  return <ReportReelsPage project={brandedProject} boardData={brandedBoard} boardMode="report" layout="framed" placePanel />;
 }

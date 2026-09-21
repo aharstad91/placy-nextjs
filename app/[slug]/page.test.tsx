@@ -2,17 +2,26 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const mocks = vi.hoisted(() => ({
   resolve: vi.fn(),
+  report: vi.fn(),
+  translations: vi.fn(),
   notFound: vi.fn(() => { throw new Error("NEXT_NOT_FOUND"); }),
 }));
 
 vi.mock("next/navigation", () => ({ notFound: mocks.notFound }));
-vi.mock("@/lib/live/projects", async (importOriginal) => ({
-  ...await importOriginal<typeof import("@/lib/live/projects")>(),
-  resolveVoiceProject: mocks.resolve,
+vi.mock("@/lib/public-projects", async (importOriginal) => ({
+  ...await importOriginal<typeof import("@/lib/public-projects")>(),
+  resolvePublicProjectRoute: mocks.resolve,
 }));
-vi.mock("@/app/demo/nyhavna-lokal/lokal-board-gate", () => ({ default: () => null }));
+vi.mock("@/lib/supabase/cached-board-reads", () => ({
+  getCachedReportProduct: mocks.report,
+  getCachedProjectTranslations: mocks.translations,
+}));
+vi.mock("@/lib/utils/school-zones", () => ({ getSchoolZone: () => undefined }));
+vi.mock("@/lib/live/hosted-access", () => ({ hostedVoiceEnabled: () => true }));
+vi.mock("@/lib/board/report-board-style", () => ({ buildReportBoardStyle: () => ({}) }));
+vi.mock("@/app/eiendom/[customer]/[project]/rapport-board/board-embed-gate", () => ({ default: () => null }));
 
-import { VoiceProjectError } from "@/lib/live/projects";
+import { PublicProjectError } from "@/lib/public-projects";
 import ProjectPage, { generateMetadata } from "@/app/[slug]/page";
 
 const project = {
@@ -22,59 +31,50 @@ const project = {
   name: "Prosjekt",
   centerCoordinates: { lat: 63.4, lng: 10.4 },
   pois: [],
-  reportConfig: { themes: [] },
-};
-const board = {
-  demoDataset: "nyhavna-lokal",
-  demoSnapshotId: "nyhavna-lokal-snapshot",
-  home: {
-    name: "Prosjekt",
-    address: "",
-    coordinates: { lat: 63.4, lng: 10.4 },
-    pinImage: "/demo/nyhavna-lokal/bydeler/nyhavna-logo.svg",
-  },
-  categories: [],
-  poisById: new Map(),
-  audioTourEnabled: false,
+  reportConfig: { themes: [], assets: { logoUrl: "/illustrations/prosjekt-logo.svg" } },
 };
 
 beforeEach(() => {
   vi.clearAllMocks();
-  mocks.resolve.mockResolvedValue({
-    slug: "prosjekt",
-    project,
-    demo: { id: "nyhavna-lokal", board, snapshotId: board.demoSnapshotId },
-    tenant: { id: "tenant" },
-  });
+  mocks.resolve.mockResolvedValue({ slug: "prosjekt", customer: "kunde", projectSlug: "prosjekt", projectId: "kunde_prosjekt" });
+  mocks.report.mockResolvedValue(project);
+  mocks.translations.mockResolvedValue(null);
 });
 
 describe("public standard board", () => {
-  it("renders the exact registered local board behind the public slug", async () => {
-    const page = await ProjectPage({ params: Promise.resolve({ slug: "prosjekt" }) });
-    expect(mocks.resolve).toHaveBeenCalledWith({ project: "prosjekt" }, "public");
-    expect(page.props.children.props).toMatchObject({
-      project,
-      boardData: board,
-      voiceProjectSlug: "prosjekt",
-    });
+  it("renders the ordinary report product behind the public slug", async () => {
+    const props = { params: Promise.resolve({ slug: "prosjekt" }) };
+    expect(await ProjectPage(props)).toBeTruthy();
+    expect(mocks.resolve).toHaveBeenCalledWith("prosjekt");
+    expect(mocks.report).toHaveBeenCalledWith("kunde", "prosjekt");
   });
 
-  it("keeps the public URL, noindex and board branding in metadata", async () => {
+  it("keeps the public URL, noindex and project branding in metadata", async () => {
     const metadata = await generateMetadata({ params: Promise.resolve({ slug: "prosjekt" }) });
     expect(metadata).toMatchObject({
       robots: { index: false, follow: false },
       alternates: { canonical: "https://placy.no/prosjekt" },
-      icons: { icon: "/demo/nyhavna-lokal/bydeler/nyhavna-logo.svg" },
+      icons: { icon: "/illustrations/prosjekt-logo.svg" },
     });
   });
 
   it("returns not found for unknown projects", async () => {
-    mocks.resolve.mockRejectedValueOnce(new VoiceProjectError());
+    mocks.resolve.mockRejectedValueOnce(new PublicProjectError());
     await expect(ProjectPage({ params: Promise.resolve({ slug: "missing" }) })).rejects.toThrow("NEXT_NOT_FOUND");
   });
 
+  it("rejects a report belonging to another project", async () => {
+    mocks.report.mockResolvedValueOnce({ ...project, customer: "other" });
+    await expect(ProjectPage({ params: Promise.resolve({ slug: "prosjekt" }) })).rejects.toThrow("NEXT_NOT_FOUND");
+  });
+
+  it("passes the public voice identity to the standard board", async () => {
+    const page = await ProjectPage({ params: Promise.resolve({ slug: "prosjekt" }) });
+    expect(page.props.children.props.children.props.voiceProjectSlug).toBe("prosjekt");
+  });
+
   it("keeps dependency outages retryable", async () => {
-    const outage = new VoiceProjectError("unavailable");
+    const outage = new PublicProjectError("unavailable");
     mocks.resolve.mockRejectedValueOnce(outage);
     await expect(ProjectPage({ params: Promise.resolve({ slug: "outage" }) })).rejects.toBe(outage);
   });
