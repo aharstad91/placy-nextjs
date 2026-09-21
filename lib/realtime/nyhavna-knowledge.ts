@@ -24,6 +24,7 @@ export const knowledgeTools = (labels: ConversationLabels): RealtimeTool[] => [
   { type: 'function', name: 'get_board_facts', description: `Kort kildekontrollert introduksjon til ${labels.areaName} og temaene.`, parameters: schema({}) },
 ];
 const normalize = (s: string) => s.toLocaleLowerCase('nb').normalize('NFKD').replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9æøå]/g, '');
+const looseNormalize = (s: string) => normalize(s).replace(/(.)\1+/g, '$1');
 /**
  * Ordboka som løfter et temaspørsmål («kaffe») til kildens egne temanøkler.
  * Standarden er `knowledge.ts` sine fire; et annet datasett har andre nøkler og
@@ -144,6 +145,7 @@ export function createNyhavnaKnowledge(board: BoardData, options: KnowledgeOptio
     if (name !== 'find_places') return { error: 'Ukjent kunnskapsverktøy.' };
     const query = typeof args.query === 'string' ? args.query.slice(0, 200) : '';
     const q = normalize(query);
+    const looseQ = looseNormalize(query);
     // Et eksakt stedsnavn i kartregisteret vinner over et delvis treff i
     // researchen. Uten denne porten traff «Dora 1 Bowling» først den kuraterte
     // entiteten «Dora» fordi hele spørsmålet inneholder ordet Dora, og det
@@ -156,7 +158,8 @@ export function createNyhavnaKnowledge(board: BoardData, options: KnowledgeOptio
     const hasStrongCurated = knowledge.entities.some((entity) =>
       [entity.name, ...entity.aliases].some((name) => {
         const normalized = normalize(name);
-        return normalized === q || normalized.includes(q);
+        return normalized === q || normalized.includes(q)
+          || (looseQ.length >= 6 && looseNormalize(name) === looseQ);
       }));
     const exactRegister = [...register.values()]
       .filter((place) => normalize(place.name) === q)
@@ -169,9 +172,11 @@ export function createNyhavnaKnowledge(board: BoardData, options: KnowledgeOptio
     const ranked = knowledge.entities.filter(e => !coffeeOnly || e.facts.some(f => f.verification === "confirmed" && /kaffe|kafe|cafe/i.test(normalize(f.text)))).map(e => {
       const names = [e.name, ...e.aliases].map(normalize);
       const exact = names.some(n => n === q);
+      const looseExact = looseQ.length >= 6
+        && [e.name, ...e.aliases].some((name) => looseNormalize(name) === looseQ);
       const partial = q.length > 1 && names.some(n => n.includes(q) || q.includes(n));
       const topic = e.themes.some(t => requestedThemes.includes(t));
-      return { entity: e, score: exact ? 100 : partial ? 50 : topic ? 20 : !q ? 1 : 0 };
+      return { entity: e, score: exact ? 100 : looseExact ? 90 : partial ? 50 : topic ? 20 : !q ? 1 : 0 };
     }).filter(x => x.score > 0).sort((a, b) => b.score - a.score || Number(Boolean(b.entity.mapPoiId)) - Number(Boolean(a.entity.mapPoiId)) || a.entity.name.localeCompare(b.entity.name, 'nb'));
     const genericTheme = Object.prototype.hasOwnProperty.call(themes, q);
     const matches = ranked[0]?.score >= 50 && !genericTheme ? ranked.filter(r => r.score >= 50) : ranked;

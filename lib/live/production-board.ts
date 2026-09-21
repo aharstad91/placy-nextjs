@@ -22,6 +22,21 @@ import { createLiveTransportExecutor, type LiveTransportClient } from "@/lib/rea
 const checkedAt = (fact: PublishedKnowledge) =>
   fact.observedAt ?? fact.validFrom ?? new Date(0).toISOString();
 
+const knowledgeOrder = new Intl.Collator("nb", {
+  numeric: true,
+  sensitivity: "base",
+});
+
+const compareKnowledgeOrder = (a: PublishedKnowledge, b: PublishedKnowledge) =>
+  knowledgeOrder.compare(a.sourceClaimId ?? a.id, b.sourceClaimId ?? b.id);
+
+const looseSearchText = (value: string) => value
+  .toLocaleLowerCase("nb")
+  .normalize("NFKD")
+  .replace(/[̀-ͯ]/g, "")
+  .replace(/[^a-z0-9æøå]/g, "")
+  .replace(/(.)\1+/g, "$1");
+
 const status = (fact: PublishedKnowledge) => {
   if (fact.temporalKind === "regulated") return "regulated";
   if (fact.temporalKind === "planned") return "planned";
@@ -58,7 +73,9 @@ export function boardKnowledgeBase(board: BoardData): KnowledgeBase {
   );
   const entityIds = new Set(entityFacts.map((fact) => fact.subjectId));
   const entities: KnowledgeEntityLike[] = [...entityIds].map((id) => {
-    const rows = entityFacts.filter((fact) => fact.subjectId === id);
+    const rows = entityFacts
+      .filter((fact) => fact.subjectId === id)
+      .sort(compareKnowledgeOrder);
     const first = rows[0]!;
     return {
       id,
@@ -126,7 +143,8 @@ export function boardKnowledgeBase(board: BoardData): KnowledgeBase {
 }
 
 function projectInfoProvider(board: BoardData): ProjectInfoProvider {
-  const facts = (board.publishedKnowledge ?? []).filter((fact) => !fact.poiId);
+  const searchableFacts = board.publishedKnowledge ?? [];
+  const areaFacts = searchableFacts.filter((fact) => !fact.poiId);
   const pack = (fact: PublishedKnowledge) => ({
     id: fact.id,
     title: fact.subjectName || fact.topic,
@@ -140,7 +158,7 @@ function projectInfoProvider(board: BoardData): ProjectInfoProvider {
   });
   return {
     forTheme: (themeId, limit) =>
-      facts
+      areaFacts
         .filter((fact) =>
           [fact.topic, fact.subjectId]
             .map((value) => value.toLocaleLowerCase("nb"))
@@ -149,18 +167,41 @@ function projectInfoProvider(board: BoardData): ProjectInfoProvider {
         .slice(0, limit)
         .map(pack),
     search: (query, themes, limit) => {
-      const words = query.toLocaleLowerCase("nb").split(/\s+/).filter((word) => word.length > 2);
-      return facts
+      const normalizedQuery = query.toLocaleLowerCase("nb");
+      const words = (normalizedQuery.match(/[\p{L}\p{N}]+/gu) ?? [])
+        .filter((word) => word.length > 2);
+      const asksForBuildOrder = /først|bygge|bygges|utbygg/.test(normalizedQuery);
+      // A named development area is both a map place and project knowledge.
+      // Excluding mapped facts made report-backed Anja blind to Transittkaia.
+      return searchableFacts
         .map((fact, index) => {
           const haystack = `${fact.subjectName ?? ""} ${fact.topic} ${fact.factText}`.toLocaleLowerCase("nb");
-          const wordHits = words.filter((word) => haystack.includes(word)).length;
+          const looseHaystack = looseSearchText(haystack);
+          const wordHits = words.filter((word) =>
+            haystack.includes(word)
+            || (word.length >= 6 && looseHaystack.includes(looseSearchText(word))),
+          ).length;
           const themeHit = themes.some((theme) =>
             [fact.topic, fact.subjectId].some((value) => value.toLocaleLowerCase("nb") === theme.toLocaleLowerCase("nb")),
           );
-          return { fact, index, score: wordHits * 10 + (themeHit ? 25 : 0) };
+          const buildOrderHit = asksForBuildOrder
+            && (
+              /utbyggingsrekkefølge|utbyggingsrekkefolge/.test(fact.field.toLocaleLowerCase("nb"))
+              || /-plan-1$/i.test(fact.sourceClaimId ?? "")
+            );
+          return {
+            fact,
+            index,
+            score: wordHits * 10 + (themeHit ? 25 : 0) + (buildOrderHit ? 50 : 0),
+          };
         })
         .filter(({ score }) => score > 0)
-        .sort((a, b) => b.score - a.score || a.index - b.index)
+        .sort((a, b) =>
+          b.score - a.score
+          || (a.fact.subjectId === b.fact.subjectId
+            ? compareKnowledgeOrder(a.fact, b.fact)
+            : a.index - b.index),
+        )
         .slice(0, limit)
         .map(({ fact }) => pack(fact));
     },

@@ -247,6 +247,67 @@ describe("production board assistant source", () => {
     ]);
   });
 
+  it("finner kartkoblet prosjektkunnskap om et navngitt delområde", () => {
+    const input = board();
+    input.publishedKnowledge![0] = {
+      ...input.publishedKnowledge![0]!,
+      id: "claim-transittkaia-plan-3",
+      sourceClaimId: "NYH-PLACE-transittkaia-plan-3",
+      subjectId: "place-transittkaia",
+      subjectName: "Transittkaia",
+      topic: "Nyhavna som bydel",
+      field: "uterom",
+      factText: "Doratorget, elvepark og Transittparken er planlagte uteområder.",
+      temporalKind: "planned",
+    };
+    input.publishedKnowledge!.push({
+      ...input.publishedKnowledge![0]!,
+      id: "claim-transittkaia-plan-2",
+      sourceClaimId: "NYH-PLACE-transittkaia-plan-2",
+      factText: "Nettsiden oppgir byggestart i 2027, forutsatt plangodkjenning.",
+    });
+    input.publishedKnowledge!.push({
+      ...input.publishedKnowledge![0]!,
+      id: "claim-transittkaia-plan-1",
+      sourceClaimId: "NYH-PLACE-transittkaia-plan-1",
+      field: "place_fact",
+      factText: "Utbyggingen starter i sør ved brannstasjonen og skjer etappevis.",
+    });
+
+    const found = buildProductionAssistantSource(input).createConversation()
+      .execute("find_project_info", {
+        query: "Hva skal bygges først på Transit Kaia?",
+      }).result as { matches: number; results: Array<{ text: string }> };
+
+    expect(found.matches).toBeGreaterThan(0);
+    expect(found.results[0]?.text).toBe(
+      "Utbyggingen starter i sør ved brannstasjonen og skjer etappevis.",
+    );
+    const shortenedToolQuery = buildProductionAssistantSource(input).createConversation()
+      .execute("find_project_info", { query: "Transitkaia" }).result as {
+        results: Array<{ text: string }>;
+      };
+    expect(shortenedToolQuery.results[0]?.text).toBe(
+      "Utbyggingen starter i sør ved brannstasjonen og skjer etappevis.",
+    );
+
+    const spokenName = buildProductionAssistantSource(input).createConversation()
+      .execute("find_places", { query: "Transitkaia" }).result as {
+        places: Array<{ name: string }>;
+      };
+    expect(spokenName.places[0]?.name).toBe("Transittkaia");
+
+    const place = buildProductionAssistantSource(input).createConversation()
+      .execute("get_place_facts", { poi_id: "cafe-1" }).result as {
+        facts: Array<{ text: string }>;
+      };
+    expect(place.facts.slice(0, 3).map((fact) => fact.text)).toEqual([
+      "Utbyggingen starter i sør ved brannstasjonen og skjer etappevis.",
+      "Nettsiden oppgir byggestart i 2027, forutsatt plangodkjenning.",
+      "Doratorget, elvepark og Transittparken er planlagte uteområder.",
+    ]);
+  });
+
   it("lar en kartkoblet filial vinne over et fjernt, generisk kjedenavn", () => {
     const input = board();
     const category = input.categories[0]!;
