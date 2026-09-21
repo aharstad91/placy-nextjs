@@ -1,0 +1,26 @@
+{
+  "schemaVersion": 1,
+  "appliedAt": "2026-09-21T20:53:28.330Z",
+  "packagePath": "docs/research/leangenbukta-lokal-demo/audited/2026-09-21-active-building-phases-ledger-package.json",
+  "packageId": "leangenbukta-active-building-phases-2026-09-21-r1",
+  "packageHash": "d22c8afaca552617a57a273f6efdabcaa8f6bcd0504689e4b0cad762de58116a",
+  "projectId": "placy-demo_leangenbukta",
+  "mode": "full_snapshot",
+  "scopeKey": "active-building-phases",
+  "entities": 4,
+  "claims": 12,
+  "publicationStates": {
+    "publishable": 12
+  },
+  "import": {
+    "status": "imported",
+    "package_hash": "d22c8afaca552617a57a273f6efdabcaa8f6bcd0504689e4b0cad762de58116a",
+    "entities": 4,
+    "claims": 12,
+    "route": {
+      "customer": "placy-demo",
+      "projectSlug": "leangenbukta"
+    },
+    "revalidated": []
+  }
+}

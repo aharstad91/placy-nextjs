@@ -2141,5 +2141,210 @@
     "parentPlaceId": "trygg-lade-hallen",
     "poiCategoryId": "trening",
     "locationNote": "Kartpunktet viser stedet eller adressen; selve publikumsinngangen er ikke bekreftet."
+  },
+  {
+    "id": "parktunet-1",
+    "name": "Parktunet 1",
+    "aliases": [
+      "Parktunet",
+      "Parktunet 1 Bygg D",
+      "Bygg D"
+    ],
+    "categoryId": "leangenbukta-prosjektet",
+    "coordinates": {
+      "lat": 63.43929,
+      "lng": 10.46659
+    },
+    "placeType": "Byggetrinn",
+    "image": "/illustrations/leangenbukta-parktunet-1.webp",
+    "status": "planned",
+    "summary": "Parktunet 1 er Bygg D ved Torget og Aktivitetsparken. Her planlegges selveierleiligheter fra ett til fire rom, med estimert ferdigstillelse i 2028.",
+    "locationPrecision": "approximate",
+    "locationNote": "Punktet viser omtrentlig plassering i prosjektområdet, basert på Leangenbuktas boligvelger – ikke en oppmålt bygningsflate.",
+    "facts": [
+      {
+        "id": "fact-lb-d-availability-20260921",
+        "text": "33 ledige boliger i boligvelgeren per 21.09.2026.",
+        "sourceId": "leangenbukta-plyo-20260921",
+        "checkedAt": "2026-09-21",
+        "verification": "confirmed"
+      },
+      {
+        "id": "fact-lb-d-timing-20260921",
+        "text": "Utbygger oppgir estimert ferdigstillelse i 2028.",
+        "sourceId": "leangenbukta-3df06abf",
+        "checkedAt": "2026-09-21",
+        "verification": "confirmed"
+      },
+      {
+        "id": "fact-lb-d-homes-20260921",
+        "text": "Parktunet 1 markedsføres med ett- til fireroms selveierleiligheter fra 37,5 til 107 m².",
+        "sourceId": "leangenbukta-67122df8",
+        "checkedAt": "2026-09-21",
+        "verification": "confirmed"
+      }
+    ],
+    "sourceIds": [
+      "leangenbukta-3df06abf",
+      "leangenbukta-67122df8",
+      "leangenbukta-plyo-20260921"
+    ],
+    "checkedAt": "2026-09-21",
+    "caveats": [
+      "Antall ledige boliger er et øyeblikksbilde fra boligvelgeren og kan endre seg etter kontrolldatoen.",
+      "Ferdigstillelse er utbyggers estimat, ikke en bekreftet innflyttingsdato."
+    ]
+  },
+  {
+    "id": "saltakshus-c",
+    "name": "Saltakshus C",
+    "aliases": [
+      "Saltakshus C Bygg C",
+      "Bygg C"
+    ],
+    "categoryId": "leangenbukta-prosjektet",
+    "coordinates": {
+      "lat": 63.4393,
+      "lng": 10.4659
+    },
+    "placeType": "Byggetrinn",
+    "image": "/illustrations/leangenbukta-saltakshus-c.webp",
+    "status": "planned",
+    "summary": "Saltakshus C er et pågående byggetrinn mellom Torget og Lade allé. Bygget rommer 34 leiligheter, og utbygger oppgir estimert ferdigstillelse i 2027/2028.",
+    "locationPrecision": "approximate",
+    "locationNote": "Punktet viser omtrentlig plassering i prosjektområdet, basert på Leangenbuktas boligvelger – ikke en oppmålt bygningsflate.",
+    "facts": [
+      {
+        "id": "fact-lb-c-availability-20260921",
+        "text": "24 ledige boliger i boligvelgeren per 21.09.2026.",
+        "sourceId": "leangenbukta-plyo-20260921",
+        "checkedAt": "2026-09-21",
+        "verification": "confirmed"
+      },
+      {
+        "id": "fact-lb-c-status-20260921",
+        "text": "Byggingen er igangsatt, og utbygger oppgir estimert ferdigstillelse i 2027/2028.",
+        "sourceId": "leangenbukta-saltakshus-c-20260921",
+        "checkedAt": "2026-09-21",
+        "verification": "confirmed"
+      },
+      {
+        "id": "fact-lb-c-homes-20260921",
+        "text": "Saltakshus C rommer 34 leiligheter fra 41 til 79 m².",
+        "sourceId": "leangenbukta-saltakshus-c-20260921",
+        "checkedAt": "2026-09-21",
+        "verification": "confirmed"
+      }
+    ],
+    "sourceIds": [
+      "leangenbukta-saltakshus-c-20260921",
+      "leangenbukta-plyo-20260921"
+    ],
+    "checkedAt": "2026-09-21",
+    "caveats": [
+      "Antall ledige boliger er et øyeblikksbilde fra boligvelgeren og kan endre seg etter kontrolldatoen.",
+      "Ferdigstillelse er utbyggers estimat, ikke en bekreftet innflyttingsdato."
+    ]
+  },
+  {
+    "id": "knutepunktet",
+    "name": "Knutepunktet",
+    "aliases": [
+      "Knutepunktet Bygg E",
+      "Bygg E"
+    ],
+    "categoryId": "leangenbukta-prosjektet",
+    "coordinates": {
+      "lat": 63.43959,
+      "lng": 10.46572
+    },
+    "placeType": "Byggetrinn",
+    "image": "/illustrations/leangenbukta-knutepunktet.webp",
+    "status": "planned",
+    "summary": "Knutepunktet er Bygg E og skal romme prosjektets fellesfasiliteter. Utbygger oppgir forventet innflytting i fjerde kvartal 2026.",
+    "locationPrecision": "approximate",
+    "locationNote": "Punktet viser omtrentlig plassering i prosjektområdet, basert på Leangenbuktas boligvelger – ikke en oppmålt bygningsflate.",
+    "facts": [
+      {
+        "id": "fact-lb-e-availability-20260921",
+        "text": "2 ledige boliger i boligvelgeren per 21.09.2026.",
+        "sourceId": "leangenbukta-plyo-20260921",
+        "checkedAt": "2026-09-21",
+        "verification": "confirmed"
+      },
+      {
+        "id": "fact-lb-e-timing-20260921",
+        "text": "Utbygger oppgir forventet innflytting i fjerde kvartal 2026.",
+        "sourceId": "leangenbukta-6e190f5f",
+        "checkedAt": "2026-09-21",
+        "verification": "confirmed"
+      },
+      {
+        "id": "fact-lb-e-facilities-20260921",
+        "text": "Knutepunktet skal inneholde lounge, selskapsrom, treningsrom og gjesteleilighet for beboerne i Leangenbukta.",
+        "sourceId": "leangenbukta-6e190f5f",
+        "checkedAt": "2026-09-21",
+        "verification": "confirmed"
+      }
+    ],
+    "sourceIds": [
+      "leangenbukta-6e190f5f",
+      "leangenbukta-plyo-20260921"
+    ],
+    "checkedAt": "2026-09-21",
+    "caveats": [
+      "Antall ledige boliger er et øyeblikksbilde fra boligvelgeren og kan endre seg etter kontrolldatoen.",
+      "Innflytting og fellesfasiliteter er utbyggers forventede plan fram til de er bekreftet åpnet."
+    ]
+  },
+  {
+    "id": "saltakshus-h",
+    "name": "Saltakshus H",
+    "aliases": [
+      "Saltakshus H Bygg H",
+      "Bygg H"
+    ],
+    "categoryId": "leangenbukta-prosjektet",
+    "coordinates": {
+      "lat": 63.4396,
+      "lng": 10.46643
+    },
+    "placeType": "Byggetrinn",
+    "image": "/illustrations/leangenbukta-saltakshus-h.webp",
+    "status": "existing",
+    "summary": "Saltakshus H er innflyttingsklart og ligger ved Torget i Leangenbukta. Bygget rommer 32 leiligheter fra 42 til 109 m².",
+    "locationPrecision": "approximate",
+    "locationNote": "Punktet viser omtrentlig plassering i prosjektområdet, basert på Leangenbuktas boligvelger – ikke en oppmålt bygningsflate.",
+    "facts": [
+      {
+        "id": "fact-lb-h-availability-20260921",
+        "text": "2 ledige boliger i boligvelgeren per 21.09.2026.",
+        "sourceId": "leangenbukta-plyo-20260921",
+        "checkedAt": "2026-09-21",
+        "verification": "confirmed"
+      },
+      {
+        "id": "fact-lb-h-status-20260921",
+        "text": "Saltakshus H er innflyttingsklart.",
+        "sourceId": "leangenbukta-saltakshus-h-20260921",
+        "checkedAt": "2026-09-21",
+        "verification": "confirmed"
+      },
+      {
+        "id": "fact-lb-h-homes-20260921",
+        "text": "Saltakshus H rommer 32 leiligheter fra 42 til 109 m².",
+        "sourceId": "leangenbukta-saltakshus-h-20260921",
+        "checkedAt": "2026-09-21",
+        "verification": "confirmed"
+      }
+    ],
+    "sourceIds": [
+      "leangenbukta-saltakshus-h-20260921",
+      "leangenbukta-plyo-20260921"
+    ],
+    "checkedAt": "2026-09-21",
+    "caveats": [
+      "Antall ledige boliger er et øyeblikksbilde fra boligvelgeren og kan endre seg etter kontrolldatoen."
+    ]
   }
 ]

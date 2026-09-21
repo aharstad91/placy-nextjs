@@ -37,15 +37,24 @@ function converted() {
     scopeKey: "audited-places",
     sourcePath: "data/demo/leangenbukta-lokal/places-audited.json",
     timeSensitiveValidUntil: "2026-09-25",
+    excludedCategoryIds: ["leangenbukta-prosjektet"],
   });
 }
 
 describe("buildAuditedPlacePackage", () => {
-  it("bevarer de 56 stedene og 81 atomiske fakta", () => {
+  it("bevarer de 56 nabolagsstedene og 81 atomiske fakta", () => {
     const result = converted();
     expect(result.entities).toHaveLength(56);
     expect(result.claims).toHaveLength(81);
     expect(new Set(result.claims.map((claim) => claim.claimId)).size).toBe(81);
+    expect(result.entities.map((entity) => entity.entityId)).not.toEqual(
+      expect.arrayContaining([
+        "place:parktunet-1",
+        "place:saltakshus-c",
+        "place:knutepunktet",
+        "place:saltakshus-h",
+      ]),
+    );
   });
 
   it("bruker bare den eksplisitte mappingkvitteringen", () => {

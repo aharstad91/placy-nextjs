@@ -31,6 +31,14 @@ const status = (fact: PublishedKnowledge) => {
   return "existing";
 };
 
+const entityStatus = (facts: PublishedKnowledge[]) => {
+  const lifecycle = ["under_construction", "existing", "planned", "regulated"] as const;
+  const definingFact = lifecycle
+    .map((kind) => facts.find((fact) => fact.temporalKind === kind))
+    .find((fact): fact is PublishedKnowledge => Boolean(fact));
+  return status(definingFact ?? facts[0]!);
+};
+
 /** Kildebelagt ledger-kunnskap i samme strukturelle form som samtaleverktøyene. */
 export function boardKnowledgeBase(board: BoardData): KnowledgeBase {
   const facts = board.publishedKnowledge ?? [];
@@ -69,7 +77,7 @@ export function boardKnowledgeBase(board: BoardData): KnowledgeBase {
         id,
       aliases: [],
       themes: [...new Set(rows.map((fact) => fact.topic))],
-      status: status(first),
+      status: entityStatus(rows),
       mapPoiId: first.poiId ?? null,
       summary: rows.map((fact) => fact.factText).join(" "),
       facts: rows.map((fact) => ({

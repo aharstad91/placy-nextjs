@@ -1,0 +1,27 @@
+{
+  "status": "imported",
+  "appliedAt": "2026-09-21T20:53:25.683Z",
+  "schemaVersion": 1,
+  "projectId": "placy-demo_leangenbukta",
+  "customer": "placy-demo",
+  "projectSlug": "leangenbukta",
+  "categories": [
+    {
+      "id": "leangenbukta-prosjektet",
+      "name": "Byggetrinn",
+      "icon": "Building2",
+      "color": "#91563e"
+    }
+  ],
+  "poiIds": [
+    "project:placy-demo_leangenbukta:parktunet-1",
+    "project:placy-demo_leangenbukta:saltakshus-c",
+    "project:placy-demo_leangenbukta:knutepunktet",
+    "project:placy-demo_leangenbukta:saltakshus-h"
+  ],
+  "productIds": [
+    "5df5eade-4fd5-4bd6-b41d-686b988d9d3b"
+  ],
+  "verifiedPoiCount": 4,
+  "revalidated": []
+}

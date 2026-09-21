@@ -167,6 +167,40 @@ describe("et sted i datasettet", () => {
     expect(category.pois.map((poi) => poi.id)).toEqual(["register-sted", "test-sted"]);
     expect(category.editorial?.highlights.map((highlight) => highlight.id)).toEqual(["test-sted"]);
   });
+
+  it("beholder tre highlights i et vanlig tema selv når manuset presenterer fire steder", async () => {
+    const dataset = await withPlace();
+    dataset.places = localPlacesSchema.parse(
+      ["a", "b", "c", "d"].map((suffix, index) => ({
+        ...places[0],
+        id: `test-sted-${suffix}`,
+        name: `Test Sted ${suffix.toUpperCase()}`,
+        coordinates: { lat: 63.44 + index * 0.001, lng: 10.42 },
+        travelTime: { walk: index + 1 },
+      })),
+    );
+    dataset.board = {
+      ...dataset.board,
+      categories: dataset.board.categories.map((category) =>
+        category.id === "mat-drikke" ? { ...category, body: "Fire presenterte steder." } : category,
+      ),
+      presentation: [{
+        id: "fire-steder",
+        categoryId: "mat-drikke",
+        text: "Fire steder i kuratert rekkefølge.",
+        placeIds: ["test-sted-d", "test-sted-c", "test-sted-b", "test-sted-a"],
+        sourceIds: ["kilde-a"],
+        checkedAt: "2026-09-13",
+      }],
+    };
+
+    const category = buildLocalBoard(dataset, NYHAVNA).categories.find((item) => item.id === "mat-drikke")!;
+    expect(category.editorial?.highlights.map((highlight) => highlight.id)).toEqual([
+      "test-sted-d",
+      "test-sted-c",
+      "test-sted-b",
+    ]);
+  });
 });
 
 describe("spørsmål og svar", () => {

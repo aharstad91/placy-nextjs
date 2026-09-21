@@ -1,0 +1,15 @@
+{
+  "category": {
+    "id": "leangenbukta-prosjektet",
+    "name": "Byggetrinn",
+    "icon": "Building2",
+    "color": "#91563e"
+  },
+  "placeIds": [
+    "parktunet-1",
+    "saltakshus-c",
+    "knutepunktet",
+    "saltakshus-h"
+  ],
+  "markerImagePrefix": "/illustrations/leangenbukta-"
+}

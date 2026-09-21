@@ -15,6 +15,7 @@ const place = {
   locationNote: "Area marker, not a boundary.",
   facts: [],
   caveats: [],
+  image: "/illustrations/nyhavna-harbour.webp",
 };
 
 describe("buildLocalBoardPoiPackage", () => {
@@ -27,6 +28,7 @@ describe("buildLocalBoardPoiPackage", () => {
     });
     expect(result.pois[0]).toMatchObject({
       id: "project:customer_project:harbour",
+      featured_image: "/illustrations/nyhavna-harbour.webp",
       poi_tier: 1,
       poi_metadata: {
         owner_project_id: "customer_project",

@@ -39,6 +39,9 @@ import type { LocalCategory, LocalDataset, LocalFaq, LocalPlace } from "@/lib/de
 /** Farge markørene faller tilbake på hvis en kategori mangler farge. */
 const FALLBACK_COLOR = "#94a3b8";
 
+/** Prosjektfortellingen viser alle fire aktive byggetrinn; øvrige temaer beholder standardutvalget på tre. */
+const LEANGENBUKTA_PROJECT_CATEGORY_ID = "leangenbukta-prosjektet";
+
 /** Boardets `developmentStatus` kjenner bare to verdier; resten er ikke «her nå». */
 const isExisting = (status: LocalPlace["status"]) => status === "existing";
 
@@ -334,12 +337,14 @@ export function buildLocalBoard(
               // Det brede registeret skal kunne fylle kart og søkeresultater,
               // men aldri skyve manusets kildekontrollerte steder ut av
               // redaksjonelle highlights bare fordi registerstedet er nærmere.
-              highlights: highlightPool.slice(0, 3).map((poi) => ({
-                id: poi.id,
-                name: poi.name,
-                icon: poi.icon,
-                color: poi.color,
-              })),
+              highlights: highlightPool
+                .slice(0, category.id === LEANGENBUKTA_PROJECT_CATEGORY_ID ? 4 : 3)
+                .map((poi) => ({
+                  id: poi.id,
+                  name: poi.name,
+                  icon: poi.icon,
+                  color: poi.color,
+                })),
               ...(source ? { source: { label: source.label, page: source.page, url: source.url } } : {}),
               ...(category.unplaced.length ? { unplaced: category.unplaced } : {}),
               ...(faq.length ? { faq } : {}),
