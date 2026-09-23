@@ -61,7 +61,24 @@ Enhetstester dekker ukonfigurert produksjon (404 også med forfalsket `Host: loc
 - `/demo/leangenbukta-lokal`: splash med Leangenbukta-logo, 311 steder · 8 temaer, «Snakk med Anja», 0 konsollfeil. `GET /api/prototype/live?dataset=leangenbukta-lokal`: konfigurert, `gpt-live-1`/`gpt-5.6-terra`, egen innholds-ID.
 - `/demo/nyhavna-lokal`: laster med egne 75 steder og «Snakk med Anja», 0 konsollfeil, Live-helse 200.
 - Røyk (dev): `/`, `/demo/nyhavna-lokal`, `/demo/nyhavna-nettside`, `/eiendom/placy-demo/leangenbukta/rapport-board`, `/demo/lillebytunet-3d`, `/midtbyen` svarer 200; `/prototype` 307 som før. `/nyhavna` og `/eiendom/placy-demo/nyhavna/rapport-board` gir 404 i dev; ingen av de rutene eller deres lesesti er endret på grenen (tom diff mot 46c29011), så dette er ikke en regresjon herfra.
-- Mekanisk: `npm test` 337 filer bestått + 1 hoppet over / 4 946 tester bestått + 1 hoppet over (etter rettelse av `embed`-reservasjonen, som fanget at `public/embed/` manglet i reserverte slugger), `npm run lint` 0 feil, `npx tsc --noEmit` 0 feil, `npm run build` bestått.
+- Mekanisk etter kodegjennomgangens rettelser: `npm test` 339 filer bestått + 1 hoppet over / 4 975 tester bestått + 1 hoppet over, `npm run lint` 0 feil (61 eksisterende advarsler), `npx tsc --noEmit` 0 feil, `npm run build` bestått, og byggets sporingsfil for chat-ruta inneholder alle `data/demo/leangenbukta-lokal/*.json`. Full suite fanget underveis at `public/embed/` manglet i reserverte prosjektslugger; rettet.
+
+## Kodegjennomgang
+
+Forenkling (gjenbruk, kvalitet, effektivitet): 2 rettet (faktabevis krever innhold; felles konstanttids-sammenligning), 5 bevisst hoppet over (memoisering av datasettet ville brutt redigering mens serveren kjører; parallelle verktøykall er av for lokale demoer og tilstandsfulle; øvrige uten reell gevinst).
+
+`ce-code-review` kjøring `20260923-233311-e03a392d`: 7 lokale granskere (korrekthet, sikkerhet, prosjektstandard, testing, vedlikehold, pålitelighet, datamigrering) og et uavhengig kryssmodell-pass (Codex, ønsket gpt-5.6-luna xhigh; faktisk modell ikke kvittert). 11 funn etter sammenslåing; én valideringsbatch bekreftet 8 av 9 og avviste 1. Rettet: kvote trekkes nå etter reservasjon og deterministiske kontroller (stemme og chat), stemmens kart- og kontekstkanal slipper inn demobesøkende på delt miljø, Leangenbukta-data spores inn i produksjonsbygget, innloggingens neste-sti avviser punktsegmenter, besøks-ID beholdes ved ny innlogging og koden må ha minst 16 tegn, runtime-LLM-unntaket er ført inn i `CLAUDE.md`, og nye tester for catch-all-ruta, innloggingen og widgetens feilstier. I tillegg: tekstchatten kjører bare verktøy den selv tilbyr, og tekstfeltet stopper ved 600 tegn.
+
+**Restfunn — ikke rettet, registrert her:**
+
+1. *Beslutning for Andreas:* mediefilene under `/demo/leangenbukta-nettside/*.jpg|png|mp4` går utenom tilgangsgaten (proxyens matcher hopper over stier med punktum). Alle er hentet fra kundens offentlige nettsted, så eksponeringen er lav; gate dem bare hvis det kommer ikke-offentlige renders.
+2. Innloggingen har ingen forsøksbegrensning. Med kode på minst 16 tilfeldige tegn er gjetting upraktisk; legg til begrensning hvis koden skal velges av mennesker.
+3. Innbygging på et annet domene (kundens WordPress) har ingen autentisert chatøkt — dokumentert grense (validert som bevisst).
+4. Signering av cookie og chathistorikk bruker samme hemmelighet uten domeneprefiks; nyttelastene kan ikke forveksles i dag.
+5. Tre steder bygger HMAC-token hver for seg (demotilgang, chathistorikk, eksisterende stemmetilgang); kvotebeskjedene kartlegges i to ruter. Refaktorering, ingen feil.
+6. En utviklingsserver som eksponeres på lokalnettet uten tilgangskode stoler på `Host: localhost` (samme som eksisterende `localRequest`). Sett tilgangskoden ved mobiltest over LAN.
+7. Svært lange historikker med mye ikke-ASCII kan i teorien sprenge tokengrensen; da startes samtalen på nytt. Widgeten prøver ikke forslag på nytt etter en feilet henting for samme side.
+8. `PLACY_LOCAL_REALTIME_DEMO=1` slipper fortsatt loopback-stien forbi Leangenbuktas tilgang og kvote (eldre atferd); skal aldri settes på en offentlig vert.
 
 ## Ikke gjennomført
 

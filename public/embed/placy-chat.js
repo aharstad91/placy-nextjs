@@ -158,6 +158,8 @@
   inputRow.className = "inputrow";
   var textarea = document.createElement("textarea");
   textarea.setAttribute("aria-label", "Skriv en melding");
+  // Samme grense som serveren håndhever (600 tegn); lenger tekst ville gitt 400.
+  textarea.maxLength = 600;
   textarea.rows = 1;
   var sendBtn = document.createElement("button");
   sendBtn.type = "button";

@@ -53,6 +53,34 @@ describe("leangenbukta-chat/backend — mot det ekte leangenbukta-lokal-datasett
     expect(fetchImpl).toHaveBeenCalledTimes(2);
   });
 
+  it("kjører aldri et verktøy som ikke er i tekstchattens verktøyliste", async () => {
+    // Modellen kan finne på et navn fra instruksen (f.eks. kartverktøyet
+    // `show_category`); bare verktøy tekstchatten faktisk tilbyr får kjøre.
+    const demo = await loadLiveDemo("leangenbukta-lokal");
+    const conversation = demo.createConversation();
+    const execute = vi.spyOn(conversation, "execute");
+    const fetchImpl = vi
+      .fn()
+      .mockResolvedValueOnce(responsesPayload([functionCall("call_1", "show_category", { category_id: "hverdag" })]))
+      .mockResolvedValueOnce(responsesPayload([finalMessage("Her er hverdagstilbudet.", "smalltalk")]));
+    await runLeangenbuktaChat({
+      apiKey: "test-key",
+      model: "gpt-5.6-terra",
+      effort: "low",
+      instructions: "instruks",
+      tools: textChatTools(demo.tools),
+      parallelToolCalls: false,
+      conversation,
+      previousTurns: [],
+      userText: "Vis hverdag",
+      fetchImpl: fetchImpl as unknown as typeof fetch,
+    });
+    expect(execute).not.toHaveBeenCalled();
+    const second = JSON.parse(fetchImpl.mock.calls[1][1].body as string);
+    const output = second.input.find((item: { type: string }) => item.type === "function_call_output");
+    expect(JSON.parse(output.output)).toEqual({ error: expect.stringContaining("show_category") });
+  });
+
   it("teller ikke et verktøykall uten treff som bevis", async () => {
     // AE5/R9: «ingen kildebelagt omtale» fra verktøyet er fravær av bevis, ikke bevis.
     const demo = await loadLiveDemo("leangenbukta-lokal");

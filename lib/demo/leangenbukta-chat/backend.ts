@@ -214,6 +214,7 @@ export async function runLeangenbuktaChat(input: RunInput): Promise<ChatBackendR
   ];
 
   const evidence: ChatEvidence[] = [];
+  const allowedTools = new Set(input.tools.map((tool) => tool.name));
   let usageTotal: BackendTokenUsage | null = null;
   const addUsage = (raw: unknown) => {
     const normalized = normalizeBackendUsage(raw);
@@ -257,6 +258,12 @@ export async function runLeangenbuktaChat(input: RunInput): Promise<ChatBackendR
     if (Array.isArray(response.output)) conversationInput.push(...(response.output as InputItem[]));
 
     for (const call of calls) {
+      // Bare verktøyene tekstchatten tilbyr kan kjøres. Et navn modellen har
+      // plukket fra instruksen (f.eks. et kartverktøy) får en feil tilbake.
+      if (!allowedTools.has(call.name)) {
+        conversationInput.push({ type: "function_call_output", call_id: call.callId, output: JSON.stringify({ error: `Verktøyet «${call.name}» finnes ikke i tekstchatten.` }) });
+        continue;
+      }
       let args: Record<string, unknown> = {};
       try {
         const parsedArgs = JSON.parse(call.args || "{}");
