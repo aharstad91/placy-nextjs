@@ -1,0 +1,242 @@
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { NextRequest } from "next/server";
+import { issueLbDemoCookie, LB_DEMO_COOKIE } from "@/lib/demo/leangenbukta-site/access";
+import { issueTranscript } from "@/lib/demo/leangenbukta-chat/transcript";
+import { loadLiveDemo } from "@/lib/live/demos";
+
+const ACCESS_CODE = "leangenbukta-demo-code";
+const COOKIE_SECRET = "s".repeat(40);
+
+function setDemoEnv() {
+  process.env.PLACY_LB_DEMO_ACCESS_CODE = ACCESS_CODE;
+  process.env.PLACY_LB_DEMO_COOKIE_SECRET = COOKIE_SECRET;
+  process.env.OPENAI_API_KEY = "test-key";
+  delete process.env.PLACY_LB_DEMO_USAGE_STORE;
+}
+
+function visitorCookie() {
+  const token = issueLbDemoCookie(ACCESS_CODE)!;
+  return `${LB_DEMO_COOKIE}=${token}`;
+}
+
+function visitorIdFromCookie(cookie: string): string {
+  const token = cookie.split("=")[1];
+  const body = token.split(".")[0];
+  return (JSON.parse(Buffer.from(body, "base64url").toString()) as { visitorId: string }).visitorId;
+}
+
+function post(body: unknown, headers: Record<string, string> = {}) {
+  const raw = JSON.stringify(body);
+  return new NextRequest("http://localhost/api/demo/leangenbukta-chat", {
+    method: "POST",
+    headers: { "content-type": "application/json", "content-length": String(Buffer.byteLength(raw)), ...headers },
+    body: raw,
+  });
+}
+
+function responsesPayload(output: unknown) {
+  return { ok: true, json: async () => ({ status: "completed", output, usage: { input_tokens: 10, output_tokens: 5, input_tokens_details: { cached_tokens: 0 } } }) };
+}
+
+function finalMessage(reply: string, answerType: string, linkIds: string[] = []) {
+  return [{ type: "message", content: [{ type: "output_text", text: JSON.stringify({ reply, answer_type: answerType, link_ids: linkIds }) }] }];
+}
+
+beforeEach(() => {
+  setDemoEnv();
+});
+
+afterEach(() => {
+  vi.unstubAllGlobals();
+  vi.restoreAllMocks();
+  delete process.env.PLACY_LB_DEMO_ACCESS_CODE;
+  delete process.env.PLACY_LB_DEMO_COOKIE_SECRET;
+  delete process.env.OPENAI_API_KEY;
+  delete process.env.PLACY_LB_CHAT_ALLOWED_ORIGINS;
+});
+
+describe("POST /api/demo/leangenbukta-chat", () => {
+  it("svarer 401 uten tilgang", async () => {
+    const { POST } = await import("./route");
+    const res = await POST(post({ message: "Hei", pageId: "forside" }));
+    expect(res.status).toBe(401);
+  });
+
+  it("svarer 400 på ukjent pageId uten å kalle modellen", async () => {
+    vi.stubGlobal("fetch", vi.fn());
+    const { POST } = await import("./route");
+    const cookie = visitorCookie();
+    const res = await POST(post({ message: "Hei", pageId: "ukjent-side" }, { cookie }));
+    expect(res.status).toBe(400);
+    expect(global.fetch).not.toHaveBeenCalled();
+  });
+
+  it("avviser en fremmed origin", async () => {
+    const { POST } = await import("./route");
+    const cookie = visitorCookie();
+    const res = await POST(post({ message: "Hei", pageId: "forside" }, { cookie, origin: "https://ikke-tillatt.example.com" }));
+    expect(res.status).toBe(403);
+  });
+
+  it("godtar en origin i PLACY_LB_CHAT_ALLOWED_ORIGINS", async () => {
+    process.env.PLACY_LB_CHAT_ALLOWED_ORIGINS = "https://leangenbukta.no";
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValueOnce(responsesPayload(finalMessage("Hei der.", "smalltalk"))));
+    const { POST } = await import("./route");
+    const cookie = visitorCookie();
+    const res = await POST(post({ message: "Hei", pageId: "forside" }, { cookie, origin: "https://leangenbukta.no" }));
+    expect(res.status).toBe(200);
+    expect(res.headers.get("access-control-allow-origin")).toBe("https://leangenbukta.no");
+  });
+
+  it("svarer 429 og kaller ikke modellen når kvoten er brukt", async () => {
+    process.env.PLACY_LB_DEMO_CHAT_VISITOR_DAILY = "0";
+    vi.stubGlobal("fetch", vi.fn());
+    const { POST } = await import("./route");
+    const cookie = visitorCookie();
+    const res = await POST(post({ message: "Hei", pageId: "forside" }, { cookie }));
+    expect(res.status).toBe(429);
+    expect(global.fetch).not.toHaveBeenCalled();
+    delete process.env.PLACY_LB_DEMO_CHAT_VISITOR_DAILY;
+  });
+
+  it("gir et faktasvar med lenker og et nytt transcript ved en gyldig, godkjent samtale", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi
+        .fn()
+        .mockResolvedValueOnce(
+          responsesPayload([{ type: "function_call", call_id: "call_1", name: "find_project_info", arguments: JSON.stringify({ query: "treningsrom Knutepunktet", theme_id: "leangenbukta-prosjektet" }) }]),
+        )
+        .mockResolvedValueOnce(responsesPayload(finalMessage("Knutepunktet er planlagt med treningsrom, ikke bekreftet ferdig.", "fact", ["board"]))),
+    );
+    const { POST } = await import("./route");
+    const cookie = visitorCookie();
+    const res = await POST(post({ message: "Er treningsrommet i Knutepunktet ferdig?", pageId: "forside" }, { cookie }));
+    expect(res.status).toBe(200);
+    const data = await res.json();
+    expect(data.reply).toContain("Knutepunktet");
+    expect(data.links).toEqual([{ id: "board", label: "Åpne Board", href: "/demo/leangenbukta-lokal" }]);
+    expect(typeof data.transcript).toBe("string");
+    expect(typeof data.datasetVersion).toBe("string");
+  });
+
+  it("erstatter et fact-svar uten verktøybevis med det faste kunnskapshull-svaret", async () => {
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValueOnce(responsesPayload(finalMessage("Ja, boligen koster 4 millioner.", "fact"))));
+    const { POST } = await import("./route");
+    const cookie = visitorCookie();
+    const res = await POST(post({ message: "Hva koster Knutepunktet?", pageId: "forside" }, { cookie }));
+    const data = await res.json();
+    expect(data.answerType).toBe("gap");
+    expect(data.reply).toContain("kildebelagt grunnlag");
+  });
+
+  it("ignorerer en forfalsket eller en annen besøkendes transcript og starter uten historikk", async () => {
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValueOnce(responsesPayload(finalMessage("Hei igjen.", "smalltalk"))));
+    const { POST } = await import("./route");
+    const otherToken = issueTranscript({ visitorId: "en-annen-besøkende", snapshotId: "uansett", previousTurns: [], userText: "a", assistantText: "b" });
+    const cookie = visitorCookie();
+    const res = await POST(post({ message: "Hei", pageId: "forside", transcript: otherToken }, { cookie }));
+    expect(res.status).toBe(200);
+    const [, init] = (global.fetch as ReturnType<typeof vi.fn>).mock.calls[0] as [string, RequestInit];
+    const sentBody = JSON.parse(init.body as string);
+    // Bare den nye brukermeldingen skal være med i input — ingen turer fra det forfalskede tokenet.
+    expect(sentBody.input).toHaveLength(1);
+  });
+
+  it("svarer 409 når transcriptets snapshotId ikke matcher dagens datagrunnlag", async () => {
+    vi.stubGlobal("fetch", vi.fn());
+    const { POST } = await import("./route");
+    const cookie = visitorCookie();
+    const visitorId = visitorIdFromCookie(cookie);
+    const staleToken = issueTranscript({ visitorId, snapshotId: "en-gammel-versjon-som-ikke-finnes", previousTurns: [], userText: "a", assistantText: "b" });
+    const res = await POST(post({ message: "Hei", pageId: "forside", transcript: staleToken }, { cookie }));
+    expect(res.status).toBe(409);
+    expect(global.fetch).not.toHaveBeenCalled();
+  });
+
+  it("dropper forsøk på vilkårlige lenke-ID-er (URL/javascript:) fra modellen", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValueOnce(responsesPayload(finalMessage("Se her.", "smalltalk", ["https://evil.example.com", "javascript:alert(1)"]))),
+    );
+    const { POST } = await import("./route");
+    const cookie = visitorCookie();
+    const res = await POST(post({ message: "Hei", pageId: "forside" }, { cookie }));
+    const data = await res.json();
+    expect(data.links).toEqual([]);
+  });
+
+  it("saner <script> i svaret til ren tekst i responsen (ingen HTML sendes)", async () => {
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValueOnce(responsesPayload(finalMessage("<script>alert(1)</script> er bare tekst.", "smalltalk"))));
+    const { POST } = await import("./route");
+    const cookie = visitorCookie();
+    const res = await POST(post({ message: "Hei", pageId: "forside" }, { cookie }));
+    const data = await res.json();
+    expect(data.reply).toBe("<script>alert(1)</script> er bare tekst.");
+    expect(typeof data.reply).toBe("string");
+  });
+
+  it("svarer 502 ved leverandørfeil uten å lekke leverandørens feiltekst eller nøkkel", async () => {
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValueOnce({ ok: false, status: 500, json: async () => ({ error: { message: "hemmelig intern feil fra OpenAI" } }) }));
+    const { POST } = await import("./route");
+    const cookie = visitorCookie();
+    const res = await POST(post({ message: "Hei", pageId: "forside" }, { cookie }));
+    expect(res.status).toBe(502);
+    const data = await res.json();
+    expect(data.error).not.toContain("hemmelig intern feil");
+    expect(JSON.stringify(data)).not.toContain(process.env.OPENAI_API_KEY);
+    expect(data.links[0].href).toBe("/demo/leangenbukta-lokal");
+  });
+
+  it("svarer 504 ved tidsavbrudd", async () => {
+    process.env.PLACY_LB_CHAT_TIMEOUT_MS = "20";
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockImplementation((_url: string, init: { signal: AbortSignal }) => new Promise((_resolve, reject) => {
+        init.signal.addEventListener("abort", () => {
+          const err = new Error("aborted");
+          err.name = "AbortError";
+          reject(err);
+        });
+      })),
+    );
+    const { POST } = await import("./route");
+    const cookie = visitorCookie();
+    const res = await POST(post({ message: "Hei", pageId: "forside" }, { cookie }));
+    expect(res.status).toBe(504);
+    delete process.env.PLACY_LB_CHAT_TIMEOUT_MS;
+  });
+
+  it("kobler side-ID til byggkontekst i instruksjonen som sendes til modellen", async () => {
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValueOnce(responsesPayload(finalMessage("Ok.", "smalltalk"))));
+    const { POST } = await import("./route");
+    const cookie = visitorCookie();
+    await POST(post({ message: "Hei", pageId: "beliggenhet" }, { cookie }));
+    const [, init] = (global.fetch as ReturnType<typeof vi.fn>).mock.calls[0] as [string, RequestInit];
+    const sentBody = JSON.parse(init.body as string);
+    expect(sentBody.instructions).toContain("Beliggenhet");
+  });
+});
+
+describe("GET /api/demo/leangenbukta-chat", () => {
+  it("gir sidetittel, forslag og datasettversjon uten modellkall og uten kvotebruk", async () => {
+    vi.stubGlobal("fetch", vi.fn());
+    const { GET } = await import("./route");
+    const cookie = visitorCookie();
+    const demo = await loadLiveDemo("leangenbukta-lokal");
+    const req = new NextRequest("http://localhost/api/demo/leangenbukta-chat?pageId=forside", { headers: { cookie } });
+    const res = await GET(req);
+    expect(res.status).toBe(200);
+    const data = await res.json();
+    expect(data.starters.length).toBeGreaterThan(0);
+    expect(data.datasetVersion).toBe(demo.snapshotId);
+    expect(global.fetch).not.toHaveBeenCalled();
+  });
+
+  it("svarer 401 uten tilgang", async () => {
+    const { GET } = await import("./route");
+    const req = new NextRequest("http://localhost/api/demo/leangenbukta-chat?pageId=forside");
+    const res = await GET(req);
+    expect(res.status).toBe(401);
+  });
+});
