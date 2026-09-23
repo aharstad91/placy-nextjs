@@ -1,6 +1,7 @@
 import "server-only";
 
-import { createHash, createHmac, randomUUID, timingSafeEqual } from "node:crypto";
+import { createHash, createHmac, randomUUID } from "node:crypto";
+import { constantTimeEqual } from "@/lib/live/hosted-access";
 
 /**
  * Tilgangen til Leangenbukta-kundedemoen (2026-09-23).
@@ -59,12 +60,6 @@ function config(): AccessConfig | null {
   const secret = process.env.PLACY_LB_DEMO_COOKIE_SECRET ?? "";
   if (code.length < MIN_CODE_LENGTH || secret.length < MIN_SECRET_LENGTH) return null;
   return { code, secret };
-}
-
-function constantTimeEqual(a: string, b: string): boolean {
-  const first = createHash("sha256").update(a).digest();
-  const second = createHash("sha256").update(b).digest();
-  return timingSafeEqual(first, second);
 }
 
 function codeVersion(code: string): string {

@@ -186,6 +186,22 @@ async function callResponses(
  * tidsavbrudd eller et sluttsvar som aldri kom i gyldig form — kallstedet
  * (ruta) oversetter det til 502/503 uten å lekke leverandørens egen tekst.
  */
+/**
+ * Om et verktøysvar faktisk bærer kunnskap (AE5/R9).
+ *
+ * En feil, `ok: false`, `matches: 0`, en tom resultatliste eller et tema uten
+ * kapittel er fravær av bevis — verktøyet har selv sagt at grunnlaget mangler.
+ * Bare et svar med innhold kan slippe et faktasvar gjennom tekstserveren.
+ */
+function isEvidence(output: unknown): boolean {
+  if (!output || typeof output !== "object") return false;
+  const value = output as Record<string, unknown>;
+  if ("error" in value || value.ok === false || value.matches === 0) return false;
+  if (Array.isArray(value.results) && value.results.length === 0) return false;
+  if ("chapter" in value && !value.chapter) return false;
+  return true;
+}
+
 export async function runLeangenbuktaChat(input: RunInput): Promise<ChatBackendResult> {
   const fetchImpl = input.fetchImpl ?? fetch;
   const timeoutMs = input.timeoutMs ?? DEFAULT_TIMEOUT_MS;
@@ -254,8 +270,7 @@ export async function runLeangenbuktaChat(input: RunInput): Promise<ChatBackendR
         output = outcome.result;
         // Kartdirektiver droppes med vilje her — se `text-tools.ts`: det finnes
         // ingen bro å sende dem til i en tekstsamtale.
-        const hasContent = output && typeof output === "object" && !("error" in (output as Record<string, unknown>));
-        if (FACT_TOOL_NAMES.has(call.name) && hasContent) evidence.push({ tool: call.name });
+        if (FACT_TOOL_NAMES.has(call.name) && isEvidence(output)) evidence.push({ tool: call.name });
       } catch {
         output = { error: "Verktøykallet kunne ikke fullføres." };
       }

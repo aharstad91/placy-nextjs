@@ -1,6 +1,7 @@
 import "server-only";
 
-import { createHmac, randomBytes, timingSafeEqual } from "node:crypto";
+import { createHmac, randomBytes } from "node:crypto";
+import { constantTimeEqual } from "@/lib/live/hosted-access";
 
 /**
  * Samtaletokenet tekstchatten sender frem og tilbake (2026-09-23).
@@ -56,12 +57,6 @@ function secret(): string {
 
 function sign(body: string): string {
   return createHmac("sha256", secret()).update(body).digest("base64url");
-}
-
-function constantTimeEqual(a: string, b: string): boolean {
-  const first = Buffer.from(a);
-  const second = Buffer.from(b);
-  return first.length === second.length && timingSafeEqual(first, second);
 }
 
 /**

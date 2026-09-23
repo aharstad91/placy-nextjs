@@ -47,6 +47,6 @@ export function textChatTools(tools: readonly RealtimeTool[]): RealtimeTool[] {
  * bare på samtaletilstand. `set_interests`/`open_theme`/`note_detour`/
  * `return_to_tour` styrer bare omvisningens posisjon og telles ikke alene —
  * MEN `open_theme` og `set_interests` returnerer et kapittel med fakta, så de
- * telles når kapittelet faktisk inneholder noe (sjekkes av kallstedet, ikke her).
+ * telles når kapittelet faktisk inneholder noe (`isEvidence` i backend.ts).
  */
 export const FACT_TOOL_NAMES = new Set(["find_places", "get_place_facts", "get_place_address", "get_board_facts", "find_project_info", "open_theme", "set_interests"]);

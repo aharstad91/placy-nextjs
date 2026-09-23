@@ -53,6 +53,28 @@ describe("leangenbukta-chat/backend — mot det ekte leangenbukta-lokal-datasett
     expect(fetchImpl).toHaveBeenCalledTimes(2);
   });
 
+  it("teller ikke et verktøykall uten treff som bevis", async () => {
+    // AE5/R9: «ingen kildebelagt omtale» fra verktøyet er fravær av bevis, ikke bevis.
+    const demo = await loadLiveDemo("leangenbukta-lokal");
+    const fetchImpl = vi
+      .fn()
+      .mockResolvedValueOnce(responsesPayload([functionCall("call_1", "find_project_info", { query: "helikopterlandingsplass på taket" })]))
+      .mockResolvedValueOnce(responsesPayload([finalMessage("Ja, det finnes en helikopterlandingsplass.", "fact")]));
+    const result = await runLeangenbuktaChat({
+      apiKey: "test-key",
+      model: "gpt-5.6-terra",
+      effort: "low",
+      instructions: "instruks",
+      tools: textChatTools(demo.tools),
+      parallelToolCalls: false,
+      conversation: demo.createConversation(),
+      previousTurns: [],
+      userText: "Er det helikopterlandingsplass på taket?",
+      fetchImpl: fetchImpl as unknown as typeof fetch,
+    });
+    expect(result.evidence).toEqual([]);
+  });
+
   it("gir gap uten verktøybevis når modellen påstår fact uten å ha kalt noe verktøy", async () => {
     const demo = await loadLiveDemo("leangenbukta-lokal");
     const conversation = demo.createConversation();
