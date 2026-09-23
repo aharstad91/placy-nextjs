@@ -6,6 +6,22 @@
 
 ---
 
+## 2026-09-23 — Leangenbukta: komplett kundedemo med Placy på hver byggside og tekstchat
+
+Plan `docs/plans/2026-09-23-2201-feat-leangenbukta-komplett-kundedemo-plan.md`, gren `feat/leangenbukta-kundedemo` i worktree `../placy-lb-kundedemo`, bygd på `feat/leangenbukta-board` (46c29011). Ikke pushet, ikke publisert.
+
+**Base valgt bort fra planens antakelse.** Planen sa at `lib/demo/local-board/` ikke fantes. Den gjorde det: Board-planens U1–U8 er landet i `main` og `feat/leangenbukta-board` (lokal demo med revidert innhold, byggetrinn-historien, standardboard). Kopien i hovedrepoets arbeidskatalog var en eldre, ucommittet versjon. Arbeidet er derfor bygd på `feat/leangenbukta-board`, ikke på `feat/placy-intelligence-prototype`, og ingen filer i hovedrepoets arbeidskatalog er endret.
+
+**Bygd.** (U1) Frosset inventar av leangenbukta.no: 295 av 295 URL-er disponert, snapshot og ressurser i `docs/research/leangenbukta-nettside/`. (U2) Alle 48 lokale sider fra rensede fragmenter via én catch-all-rute; kundens CSS for innlegg, portefølje og sidenes inline-stiler avgrenset til kopien; body-klasser per side; interne lenker lokale, dokumenter og boligvelger eksterne og merket. (U3) Placy-felt rett etter byggidentiteten på 12 av 12 byggsider, på Beliggenhet, tidlig på forsiden og nederst på 12 relevante sider. (U5) Frittstående chat-widget (`public/embed/placy-chat.js`) og Responses-endepunkt over Anjas datasett og verktøy, `store: false`, signert historikk, verktøybevis for faktasvar. (U6) Én tilgangskode → signert httpOnly-cookie for kopi, Board, chat og Leangenbuktas stemme; `noindex`; ukonfigurert produksjon feiler lukket; døgnkvoter for chat og stemme med migrasjon `098_demo_usage.sql` (ikke kjørt). (U7) `qa-pages.mjs` og kvittering i `docs/research/leangenbukta-nettside/qa/README.md`. (U8) Prøveguide-utkast i `docs/reports/2026-09-23-leangenbukta-proveguide.md`.
+
+**Funn underveis.** Sidenes egne inline-stiler og body-klassene manglet først helt, og innleggsmalen (8 av 12 byggsider er WordPress-innlegg) fikk Placy-feltet nederst — begge oppdaget ved sammenligning mot originalen og rettet. Chatpanelets `display:flex` overstyrte `hidden`, så et lukket panel lå i tabulatorrekken; rettet. Hos originalen: e-postlenke uten `mailto:` på 13 sider, en brukket forsidelenke, feil relativ personvernlenke.
+
+**Verifisert.** 48 av 48 sider × desktop og mobil uten avvik; ekte chatsvar for AE2, AE3, injeksjon, pris/ledighet og årstall («2008»); tilgangsgaten prøvd i produksjonsbygg; Nyhavna-demoen og Leangenbukta-boardet uten konsollfeil. Mekaniske sjekker: se kvitteringen.
+
+**Åpent.** (1) Faktisk lydprøve med Anja. (2) Andreas' beslutninger før deling: preview-miljø, tilgangskode, kjøring av migrasjon 098, eget OpenAI-prosjekt med spendtak, tilbakemeldingsadresse, og om tilbudsrammen skal inkludere byggsidefelt og chat. (3) Innbygging på kundens WordPress med kvoter på tvers av domener er ikke løst. (4) Repoet får ~175 MB nye medier (bilder og én film) for kopien.
+
+---
+
 ## 2026-09-18 — Leangenbukta: serveringssteder fristilt fra handelsankre
 
 Fyr på Lade og Franske Nytelser var med i det brede registeret, men lå som medlemmer under henholdsvis Lade Arena og Hangaren Lade. Burger King var både et revidert medlem under Lade Arena og en duplikat i registerimporten. De var derfor søkbare for Anja, men navnene fikk ikke egne kartmarkører. Dette forklarte hvorfor den synlige Servering-kategorien virket langt tynnere enn området faktisk er.

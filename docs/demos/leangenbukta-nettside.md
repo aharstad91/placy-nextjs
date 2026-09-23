@@ -1,59 +1,89 @@
-# Leangenbukta-nettside for Koteng-demoen
+# Leangenbukta-nettside med Placy — komplett kundedemo
 
-Lokal inngang: <http://localhost:3103/demo/leangenbukta-nettside> (porten er den dev-serveren din kjører på).
+Lokal inngang: `http://localhost:<port>/demo/leangenbukta-nettside` (porten er dev-serveren din). Plan: [`docs/plans/2026-09-23-2201-feat-leangenbukta-komplett-kundedemo-plan.md`](../plans/2026-09-23-2201-feat-leangenbukta-komplett-kundedemo-plan.md). Prøveguide for kunden: [`docs/reports/2026-09-23-leangenbukta-proveguide.md`](../reports/2026-09-23-leangenbukta-proveguide.md). Kontrollkvittering: [`docs/research/leangenbukta-nettside/qa/README.md`](../research/leangenbukta-nettside/qa/README.md).
 
-Flyt: forsiden → deres eget illustrerte kart → **Utforsk nabolaget** → den kildekontrollerte lokale demoen `/demo/leangenbukta-lokal` i ny fane. Samme knapp ligger på **Beliggenhet**, som er nytt punkt i hovedmenyen. Kun forsiden og Beliggenhet er bygd; alle andre menypunkter går til de ekte sidene på leangenbukta.no.
+Demoen er en frosset kopi av hele den offentlige lesereisen på leangenbukta.no per 23.09.2026, med Placy lagt inn der en boligkjøper trenger det: høyt på hver byggside, øverst på Beliggenhet, tidlig på forsiden, i forsidens kartseksjon og nederst på relevante artikler. Hver Placy-inngang åpner enten Leangenbukta-boardet med Anja (`/demo/leangenbukta-lokal`, ny fane) eller tekstchatten med et forslag til spørsmål om akkurat den siden.
 
-## Poenget med demoen
+## Dekning
 
-Leangenbukta har allerede en nabolagsseksjon på forsiden: først deres eget illustrerte kart, så et Leaflet-kart med åpne OpenStreetMap-fliser og én markør. Replikaen beholder illustrasjonen og setter Placy der Leaflet-kartet ligger i dag. Det er altså ikke et nytt felt limt oppå siden — det er den eksisterende kartseksjonen med et bedre innhold, og det er hele argumentet i møtet.
+Inventaret (`docs/research/leangenbukta-nettside/manifest.json`, lesbar oppsummering i `inventory.md`) regnskapsfører **295 av 295** oppdagede URL-er fra sitemapene og alle første-parts lenker, samlet i 175 oppføringer. 122 av URL-ene er to lenkefeil hos originalen som er samlet til én oppføring hver (en relativ `personvern`-lenke i cookie-banneret som gir 103 skinn-URL-er, og en e-postlenke uten `mailto:` som gir 19).
 
-## Filer og drift
+| Disposisjon | Oppføringer | Hva kopien gjør |
+|---|---|---|
+| Lokal side | 48 | Bygd i kopien; lenker skrevet om til lokale ruter |
+| Duplikat | 22 | Lenker går til den kanoniske lokale siden |
+| Ekstern | 93 | Dokumenter (prospekter, prislister, kjøpebekreftelser), boligvelger (Plyo), kundeportaler, Koteng/OBOS — åpnes hos originalen, merket ↗ |
+| Utilgjengelig | 12 | 10 boligvelger-dyplenker og én forsidelenke som gir 404 også hos originalen, samt samleoppføringen for e-postlenkefeilen |
 
-- `app/demo/leangenbukta-nettside/`: `page.tsx` (forsiden), `beliggenhet/page.tsx`, `site-chrome.tsx` (header, mobilmeny, bunnfelt), `placy-row.tsx` (Placy-inngangen), `arrow.tsx`. `original.css` er kundens stilark med hver selektor avgrenset til `.leangenbukta-site`; `demo.css` er våre tillegg. Ingen global Placy-CSS er endret.
-- `public/demo/leangenbukta-nettside/`: bilder, logoer, fonter, ikonfonter og forsidefilmen. Ingen forespørsel går til leangenbukta.no eller fonts.gstatic.com ved lasting — kontrollert i nettverksfanen.
-- Rutene er sperret i produksjon: `layout.tsx` kaller `notFound()` når `NODE_ENV === "production"`, og begge sidene har `robots: noindex, nofollow`.
-- Lenken til boardet er relativ, så port- og domenebytte ikke krever endring.
-- Slett `app/demo/leangenbukta-nettside/` og `public/demo/leangenbukta-nettside/` for å fjerne demoen. Ingenting annet er rørt — boardet, Nyhavna-demoen og produksjonsdataene står som før.
+Byggeskriptet snur fire inventar-disposisjoner, begrunnet i `scripts/demo/leangenbukta-site/pages-config.json`: WordPress serverer samme innlegg under to slugger, og kopien bruker den nettstedet selv lenker til (`/om-prosjektet`, `/parktunet1`, `/saltakshusk`), mens `/fritidstilbud-for-hele-familien` serveres som `/kort-vei-til-alt` og derfor er et duplikat. Innholdslikheten er kontrollert tekst mot tekst.
 
-## Hva som er vårt og hva som er deres
+**12 byggsider**, alle med Placy-felt rett etter byggidentiteten: Knutepunktet, Parktunet 1 (bygg D), Bygg C, Bygg C — tilvalg, Saltakshus H, I, J, K og L, Toppleilighet L504, Byvilla 1 og 2, Rekkehus 19–27. Sju av dem er koblet til sitt prosjekttema i boardet (`boardTopicId`), slik at chatten prioriterer riktig bygg.
 
-Markupen er kundens egen, hentet fra et øyeblikksbilde av forsiden. Klasse- og data-attributtene fra Salient/WPBakery er beholdt slik at temaets CSS treffer nøyaktig som på deres side. Tre ting er våre:
+«Beliggenhet» i hovedmenyen er Placys tillegg; siden den åpner er kundens egen `/beliggenhet/` (kartsiden) med Placy-feltet under kartet. Den håndskrevne Beliggenhet-siden fra 16.09 er slettet.
 
-1. **Filmen i helten** spilles av et ekte `<video>`-element. Originalen lar plugin-en Advanced Backgrounds sette den inn med JavaScript vi ikke importerer.
-2. **Leaflet-raden er byttet ut** med Placy-inngangen (`placy-row.tsx`), som bruker kundens egne klasser (`wpb_row`, `nectar-button`) og fargene fra deres eget stilark.
-3. **Beliggenhet** er en ny side. Teksten er bygd på kundens eget språk fra `/om-prosjektet/#beliggenhet` og fra forsidens «En del av Ladestien, fjæra og kulturlandskapet».
+## Slik er kopien bygd
 
-Kontaktskjemaet vises, men sender ingenting: `method="dialog"` gjør at knappen ikke poster noe sted. Originalens Contact Form 7-, cookie-, sporing- og reCAPTCHA-skript er ikke importert.
+```
+docs/research/leangenbukta-nettside/     inventar, snapshot (rå HTML per side), asset-map, stilark, QA
+scripts/demo/leangenbukta-inventory/     crawler og nedlasting (U1)
+scripts/demo/leangenbukta-site/
+  scope-page-css.mjs                     sidetypenes stilark + sidenes inline-stiler → pages.css
+  build-pages.mjs                        snapshot → rensede fragmenter + sideregister
+  pages-config.json                      Placy-plasseringer, chatforslag, kanoniske slugger
+  qa-pages.mjs                           nettleserkontroll av hver side, desktop og mobil
+data/demo/leangenbukta-nettside/
+  pages.json                             sideregisteret (eneste liste over lokale sider)
+  pages/<id>.html                        rensede fragmenter
+  body-attributes.json                   body-klassene hver side trenger
+app/demo/leangenbukta-nettside/
+  page.tsx                               forsiden (håndskrevet 16.09, lenker nå lokale)
+  [...slug]/page.tsx                     de øvrige 47 sidene fra fragmentene
+  site-chrome.tsx                        header, mobilmeny, bunnfelt; body-klasser per side
+  placy-field.tsx, placy-row.tsx         Placy-feltene
+  original.css, pages.css, demo.css      kundens CSS (avgrenset til .leangenbukta-site) og våre tillegg
+public/demo/leangenbukta-nettside/       forsidens ressurser + pages/ (bilder ≤ 1600 px, én film)
+public/embed/placy-chat.js               den frittstående chat-widgeten
+```
 
-## Kilder og ressurser
+Etter endring i inventar eller konfig: `node scripts/demo/leangenbukta-site/scope-page-css.mjs && node scripts/demo/leangenbukta-site/build-pages.mjs`. `--check` på byggeskriptet feiler hvis fragmentene ikke er à jour. Byggeskriptet sletter medier ingen side bruker.
 
-Øyeblikksbilde av <https://leangenbukta.no/> og <https://leangenbukta.no/om-prosjektet/>, hentet 16.09.2026, sammen med de 37 stilarkene og de 13 inline-blokkene forsiden laster. Tekst, design, logo, bilder og film tilhører Koteng Jenssen og OBOS og brukes i den lokale replikaen.
+Rensingen fjerner skript, stilark, `on*`-handlere, iframes og skjema-innsending; skjemaer erstattes av en synlig vei til originalens skjema. Fragmentene rendres som React (`lib/demo/leangenbukta-site/html-to-react.tsx`), ikke som rå HTML: bilder blir `next/image`, interne lenker `next/link`, og Placy-plassholderne blir ekte komponenter. En intern lenke uten disposisjon i inventaret stopper bygget.
 
-- Film: `Film-til-landingside_low.mov` fra deres mediebibliotek, omkodet til H.264 (`hero-film.mp4`) fordi HEVC i .mov ikke er trygt i Chrome. `hero-poster.jpg` er et stillbilde fra 1 sekund.
-- Illustrert kart: `wp-content/uploads/2024/08/Kart-over-leangenbukta-1.png`.
-- Fonter: Mukta, Zilla Slab og Open Sans fra Google Fonts, lagret lokalt som woff2. Salients ikonfont (icomoon) og Font Awesome 4.7 er lagret som woff.
-- Stilark som ikke er tatt med fordi forsiden ikke bruker dem: Gutenberg block-library, image-map-pro, nectar-slider, TablePress, cookie-consent og Font Awesome 6.
+Tre ting gjøres annerledes enn hos originalen fordi temaets JavaScript ikke kjøres: bakgrunner fra «Advanced WordPress Backgrounds» flyttes inn i radens bakgrunnslag, bildekolonner uten innhold får bildets sideforhold på mobil, og innganimasjonene står i ferdig tilstand. Selektorer som starter med en body-klasse (`.single-post .container-wrap`) skrives om til wrapperen, som bærer sidens body-klasser.
 
-## Kjente forskjeller fra originalen
+## Funn hos originalen (nyttig for kunden)
 
-- **Salients innganimasjoner er slått av.** Temaet flytter og toner inn seksjoner med waypoints i `init.js`. Vi importerer ikke temaets skript, så elementene settes rett i ferdig tilstand i `demo.css`. Uten dette ville halve siden stått forskjøvet.
-- **Det illustrerte kartet vises ikke på mobil.** Kunden har selv satt `vc_hidden-sm vc_hidden-xs` på den kolonnen — på telefon viser originalen Leaflet-kartet i stedet. I replikaen står Placy-inngangen der. Kjør demoen på desktop hvis du vil vise før/etter-poenget med illustrasjonen.
-- **Undermenyene i mobilmenyen har ikke pil-ikoner.** Salient legger dem inn med JavaScript.
-- **Lukkeknappen i mobilmenyen** er vår egen enkle X. Temaets versjon tegnes av JavaScript vi ikke kjører.
+- 13 sider lenker til Jan Erik Fjeldseths e-postadresse uten `mailto:`. Hos originalen gir lenken 404; kopien retter den slik at kontaktknappen virker.
+- Cookie-banneret lenker til `personvern` uten ledende skråstrek, som gir en kopi av personvernsiden under hver side og 404 to nivåer ned.
+- Forsidens lenke «Byvilla 3, Rekkehus 1–4» går til en side som gir 404. Kopien lenker til originalen (merket ekstern), der den fortsatt er brukket.
+- 13 steder har tomme salgslederbilder (`src=""`); de vises ikke hos originalen heller.
+- `/test-framside/` er et offentlig tilgjengelig utkast av en ny forside. Det er kopiert fordi det er offentlig, men ingen side lenker til det.
 
-## Fallgruver i CSS-en (verdt å huske til neste replika)
+## Tekstchat
 
-Tre ting stoppet arbeidet og er fikset i skriptet som bygger `original.css`:
+Knappen «Spør om Leangenbukta» nederst til høyre står over «til toppen» og åpner chatten på alle sider: sidepanel på desktop, bottom sheet på mobil, modal dialog etter WAI-ARIA (fokus inn, fokusfelle, Escape, fokus tilbake). Den lastes som en frittstående widget (`<script src="/embed/placy-chat.js" data-endpoint=… data-page-id=…>`), samme innbyggingskode som en WordPress-side ville brukt, og leser gjeldende side fra `data-placy-page-id`. Serveren (`app/api/demo/leangenbukta-chat/route.ts`, `lib/demo/leangenbukta-chat/`) bruker Anjas datasett, instruks og kunnskapsverktøy (`loadLiveDemo("leangenbukta-lokal")`) uten kartstyrende verktøy, kaller Responses med `store: false`, krever verktøybevis for faktasvar og slipper bare gjennom lenke-ID-er fra sideregisteret. Historikken bæres av et signert, besøksbundet token; serveren lagrer ingen samtaler og logger bare metadata. Hver feil gir lenker til Board og salgsteamet.
 
-1. **`html`/`body` må fjernes fra selektorene, men spesifisiteten må kompenseres.** `html body .vc_row-fluid>.span_12` er avhengig av å slå `.col`; stryker du bare `html body`, snur rekkefølgen og kolonnene kollapser. Hver fjernet rot-node erstattes derfor av `:is(div)`, som har spesifisiteten til ett type-selektor og alltid treffer wrapperen.
-2. **`display:-ms-flexbox` rett etter `display:flex`** får Lightning CSS i Next 16 til å droppe hele `display`-erklæringen. Alle `-ms-`-erklæringer fjernes.
-3. **IE-hacks og skrivefeil i kundens egen CSS** (`*line-height`, `!improtant`) stopper bygget. De ryddes bort før parsing.
+Runtime-LLM-kallet er et navngitt unntak fra `CLAUDE.md`s regel, bestilt av Andreas for denne demoen (planens KTD4).
 
-Salient setter også `material-ocm-open` på `<body>` og har regler der body-klassen er forfar til bakteppet. Når klassen i stedet står på wrapperen, må de tre reglene gjentas med klassen slått sammen med scope-klassen — det ligger i `demo.css`.
+## Tilgang, kvoter og deling
 
-## Kontroll
+Én tilgangskode gir én signert, httpOnly-cookie (14 dager) som proxyen, boardet, chatten og Leangenbuktas stemmesamtale leser (`lib/demo/leangenbukta-site/access.ts`, `proxy.ts`). Alle svar er `noindex`.
 
-Chrome, nystartet profil. Desktop 1440 × 900: forsiden sammenlignet rad for rad med originalen — alle radene ligger på samme y-posisjon og har samme høyde som på leangenbukta.no. Mobil 390 × 844: samme kontroll, radhøydene er innenfor noen få piksler av originalen. Mobilmenyen åpner, viser Beliggenhet, lukker seg ved valg, ved klikk på bakteppet og med Escape. CTA-en åpner boardet i ny fane. 0 feil og 0 advarsler i konsollen, og ingen forespørsler til leangenbukta.no.
+| Miljø | Atferd |
+|---|---|
+| Dev-server uten kode | Bare localhost slipper inn — ingen innlogging lokalt |
+| Kode satt (også lokalt) | Innlogging på `/demo/leangenbukta-tilgang`, deretter fri navigasjon |
+| Produksjonsbygg uten kode | 404 overalt (feiler lukket) |
 
-`npx tsc --noEmit`, `npm run lint`, `npm test` (4 384 tester) og `npm run build` er grønne. Nyhavna-demoen er kontrollert uendret i samme runde — `git diff` viser ingen endringer i `app/demo/nyhavna-nettside/` eller `public/demo/nyhavna-nettside/`.
+Miljøvariabler for en delt preview:
+
+- `PLACY_LB_DEMO_ACCESS_CODE` (≥ 12 tegn) og `PLACY_LB_DEMO_COOKIE_SECRET` (≥ 32 tegn). Ny kode ugyldiggjør alle utstedte cookies.
+- `PLACY_LB_DEMO_USAGE_STORE=supabase` og migrasjon `supabase/migrations/098_demo_usage.sql` (ikke kjørt). Uten sentralt kvotelager nekter et produksjonsbygg chat (503) og stemme — med vilje.
+- `OPENAI_API_KEY` i et eget OpenAI-prosjekt med hardt månedlig spendtak (KTD6). Valgfritt: `PLACY_LB_CHAT_MODEL`, døgnkvoter `PLACY_LB_DEMO_{CHAT,VOICE}_{VISITOR,GLOBAL}_DAILY` (standard 60/600 meldinger og 8/60 stemmesesjoner), `PLACY_LB_DEMO_FEEDBACK_EMAIL` (standard hei@placy.no).
+- `PLACY_LB_CHAT_ALLOWED_ORIGINS` bare hvis widgeten skal bygges inn på et annet domene. Innbygging på kundens WordPress med kvoter på tvers av domener er ikke løst i denne demoen.
+
+Stemmesamtalen på en delt preview går gjennom den lokale Live-ruta med demotilgangen, bare for datasettet `leangenbukta-lokal`, og har fortsatt serverens begrensning på én samtidig stemmesesjon per instans.
+
+## Fjerne demoen
+
+Slett `app/demo/leangenbukta-nettside/`, `app/demo/leangenbukta-tilgang/`, `app/api/demo/leangenbukta-chat/`, `data/demo/leangenbukta-nettside/`, `lib/demo/leangenbukta-site/`, `lib/demo/leangenbukta-chat/`, `public/demo/leangenbukta-nettside/`, `public/embed/`, proxy-grenen for `/demo/leangenbukta-*` og Leangenbukta-grenen i `app/api/prototype/live/route.ts`. Boardet, Nyhavna og produksjonsdataene er ikke avhengige av noe av dette.
