@@ -11,8 +11,8 @@ describe("leangenbukta-chat/links", () => {
     expect(resolveLinkIds(["board"])).toEqual([{ id: "board", label: "Åpne Board", href: "/demo/leangenbukta-lokal" }]);
   });
 
-  it("dropper contact stille når ingen kontaktside finnes i registeret", () => {
-    expect(resolveLinkIds(["contact"])).toEqual([]);
+  it("sender contact til salgsteamets kontaktrad når nettstedet ikke har egen kontaktside", () => {
+    expect(resolveLinkIds(["contact"])).toEqual([{ id: "contact", label: "Kontakt salgsteamet", href: "/demo/leangenbukta-nettside#kontakt" }]);
   });
 
   it("dropper ukjente side-ID-er, vilkårlige URL-er og javascript: stille", () => {

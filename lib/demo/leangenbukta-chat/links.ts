@@ -1,6 +1,6 @@
 import "server-only";
 
-import { getSitePage, getSitePages, sitePageHref } from "@/lib/demo/leangenbukta-site/pages";
+import { getSitePage, getSitePages, SITE_BASE, sitePageHref } from "@/lib/demo/leangenbukta-site/pages";
 
 /**
  * Oversetter modellens `link_ids` til faktiske lenker (KTD6, R9).
@@ -31,8 +31,12 @@ export function resolveLinkIds(linkIds: readonly unknown[]): ResolvedLink[] {
       continue;
     }
     if (raw === "contact") {
+      // Leangenbukta har ingen egen kontaktside; salgsteamet står i
+      // kontaktraden på forsiden (samme som menyens «Meld interesse»).
       const contactPage = getSitePages().find((page) => page.kind === "contact");
-      if (contactPage) resolved.push({ id: "contact", label: contactPage.title, href: sitePageHref(contactPage) });
+      resolved.push(contactPage
+        ? { id: "contact", label: contactPage.title, href: sitePageHref(contactPage) }
+        : { id: "contact", label: "Kontakt salgsteamet", href: `${SITE_BASE}#kontakt` });
       continue;
     }
     if (raw.startsWith("page:")) {
@@ -43,4 +47,9 @@ export function resolveLinkIds(linkIds: readonly unknown[]): ResolvedLink[] {
     // Ukjent form (bl.a. forsøk på en vilkårlig URL): droppes stille.
   }
   return resolved;
+}
+
+/** Veien videre når chatten ikke kan svare: Boardet og salgsteamet (AE5). */
+export function fallbackLinks(): ResolvedLink[] {
+  return resolveLinkIds(["board", "contact"]);
 }

@@ -9,7 +9,7 @@ import { textChatTools } from "@/lib/demo/leangenbukta-chat/text-tools";
 import { textModeAddendum, KNOWLEDGE_GAP_REPLY, BACKEND_ERROR_REPLY } from "@/lib/demo/leangenbukta-chat/instructions";
 import { runLeangenbuktaChat, ChatBackendError } from "@/lib/demo/leangenbukta-chat/backend";
 import { issueTranscript, verifyTranscript } from "@/lib/demo/leangenbukta-chat/transcript";
-import { resolveLinkIds } from "@/lib/demo/leangenbukta-chat/links";
+import { fallbackLinks, resolveLinkIds } from "@/lib/demo/leangenbukta-chat/links";
 import { sanitizeReply } from "@/lib/demo/leangenbukta-chat/sanitize";
 
 /**
@@ -93,10 +93,10 @@ export async function GET(request: NextRequest) {
   if (!isAllowedOrigin(request)) return new NextResponse(null, { status: 403 });
   const headers = { ...corsHeaders(request), "Cache-Control": "no-store" };
   const visitor = lbDemoAccess(request);
-  if (!visitor) return NextResponse.json({ error: "Ingen tilgang til demoen." }, { status: 401, headers });
+  if (!visitor) return NextResponse.json({ error: "Ingen tilgang til demoen. Last siden på nytt, eller åpne demolenken du fikk tilsendt." }, { status: 401, headers });
   const pageId = request.nextUrl.searchParams.get("pageId") ?? "";
   const page = getSitePage(pageId);
-  if (!page) return NextResponse.json({ error: "Ukjent side." }, { status: 400, headers });
+  if (!page) return NextResponse.json({ error: "Chatten kjenner ikke denne siden. Bruk Boardet eller kontakt salgsteamet.", links: fallbackLinks() }, { status: 400, headers });
   try {
     const demo = await loadLiveDemo("leangenbukta-lokal");
     return NextResponse.json(
@@ -127,18 +127,18 @@ export async function POST(request: NextRequest) {
   if (!parsed.success) return NextResponse.json({ error: "Ugyldig forespørsel." }, { status: 400, headers });
 
   const visitor = lbDemoAccess(request);
-  if (!visitor) return NextResponse.json({ error: "Ingen tilgang til demoen." }, { status: 401, headers });
+  if (!visitor) return NextResponse.json({ error: "Ingen tilgang til demoen. Last siden på nytt, eller åpne demolenken du fikk tilsendt." }, { status: 401, headers });
 
   const page = getSitePage(parsed.data.pageId);
-  if (!page) return NextResponse.json({ error: "Ukjent side." }, { status: 400, headers });
+  if (!page) return NextResponse.json({ error: "Chatten kjenner ikke denne siden. Bruk Boardet eller kontakt salgsteamet.", links: fallbackLinks() }, { status: 400, headers });
 
   const quota = await consumeDemoQuota(visitor.visitorId, "chat_message");
   if (!quota.allowed) {
-    return NextResponse.json({ error: QUOTA_MESSAGES[quota.reason ?? "store"] }, { status: 429, headers });
+    return NextResponse.json({ error: QUOTA_MESSAGES[quota.reason ?? "store"], links: fallbackLinks() }, { status: 429, headers });
   }
 
   if (!process.env.OPENAI_API_KEY) {
-    return NextResponse.json({ error: "Chatten er ikke koblet til. Kontroller den lokale API-konfigurasjonen." }, { status: 503, headers });
+    return NextResponse.json({ error: "Chatten er ikke koblet til akkurat nå. Bruk Boardet eller kontakt salgsteamet.", links: fallbackLinks() }, { status: 503, headers });
   }
 
   let demo;
@@ -146,7 +146,7 @@ export async function POST(request: NextRequest) {
     demo = await loadLiveDemo("leangenbukta-lokal");
   } catch (error) {
     console.error("lb_chat_dataset_load_failed", error instanceof Error ? error.message : "unknown");
-    return NextResponse.json({ error: "Chattens datagrunnlag kunne ikke lastes." }, { status: 503, headers });
+    return NextResponse.json({ error: "Chattens datagrunnlag kunne ikke lastes.", links: fallbackLinks() }, { status: 503, headers });
   }
 
   const verified = verifyTranscript(parsed.data.transcript, visitor.visitorId);
@@ -178,7 +178,7 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     const kind = error instanceof ChatBackendError ? error.kind : "upstream";
     console.error("lb_chat_backend_failed", { kind, ms: Date.now() - startedAt, message: error instanceof Error ? error.message.slice(0, 200) : "unknown" });
-    return NextResponse.json({ error: BACKEND_ERROR_REPLY, links: [{ id: "board", label: "Åpne Board", href: "/demo/leangenbukta-lokal" }] }, { status: kind === "timeout" ? 504 : 502, headers });
+    return NextResponse.json({ error: BACKEND_ERROR_REPLY, links: fallbackLinks() }, { status: kind === "timeout" ? 504 : 502, headers });
   }
 
   // AE5/R9: et "fact"-svar uten verktøybevis erstattes av et fast

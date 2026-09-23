@@ -81,6 +81,9 @@
     "display:flex;flex-direction:column;box-shadow:0 8px 30px rgba(0,0,0,.28);",
     "top:0;right:0;bottom:0;width:400px;max-width:100vw;transform:translateX(100%);transition:transform .22s ease}",
     ".panel.open{transform:translateX(0)}",
+    // `display:flex` over overstyrer `hidden`-attributtet; uten denne regelen
+    // ligger et lukket panel igjen i tilgjengelighetstreet og tabulatorrekken.
+    ".panel[hidden]{display:none}",
     "@media (max-width:700px){.panel{top:auto;left:0;right:0;bottom:0;width:100%;height:85vh;",
     "transform:translateY(100%);border-radius:16px 16px 0 0}.panel.open{transform:translateY(0)}}",
     "@media (prefers-reduced-motion:reduce){.panel{transition:none}}",

@@ -69,6 +69,9 @@ describe("POST /api/demo/leangenbukta-chat", () => {
     const res = await POST(post({ message: "Hei", pageId: "ukjent-side" }, { cookie }));
     expect(res.status).toBe(400);
     expect(global.fetch).not.toHaveBeenCalled();
+    // AE5: aldri et svar fra et annet grunnlag, men alltid en vei videre.
+    const body = await res.json();
+    expect(body.links.map((link: { id: string }) => link.id)).toEqual(["board", "contact"]);
   });
 
   it("avviser en fremmed origin", async () => {
