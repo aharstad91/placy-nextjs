@@ -102,6 +102,17 @@ describe("POST /api/demo/leangenbukta-chat", () => {
     delete process.env.PLACY_LB_DEMO_CHAT_VISITOR_DAILY;
   });
 
+  it("feiler lukket med 503 i produksjon uten sentralt kvotelager", async () => {
+    vi.stubEnv("NODE_ENV", "production");
+    vi.stubGlobal("fetch", vi.fn());
+    const { POST } = await import("./route");
+    const res = await POST(post({ message: "Hei", pageId: "forside" }, { cookie: visitorCookie() }));
+    expect(res.status).toBe(503);
+    expect((await res.json()).links.map((link: { id: string }) => link.id)).toEqual(["board", "contact"]);
+    expect(global.fetch).not.toHaveBeenCalled();
+    vi.unstubAllEnvs();
+  });
+
   it("gir et faktasvar med lenker og et nytt transcript ved en gyldig, godkjent samtale", async () => {
     vi.stubGlobal(
       "fetch",

@@ -134,7 +134,9 @@ export async function POST(request: NextRequest) {
 
   const quota = await consumeDemoQuota(visitor.visitorId, "chat_message");
   if (!quota.allowed) {
-    return NextResponse.json({ error: QUOTA_MESSAGES[quota.reason ?? "store"], links: fallbackLinks() }, { status: 429, headers });
+    // En brukt kvote er 429; et utilgjengelig kvotelager er en tjenestefeil (503).
+    const status = quota.reason === "visitor" || quota.reason === "global" ? 429 : 503;
+    return NextResponse.json({ error: QUOTA_MESSAGES[quota.reason ?? "store"], links: fallbackLinks() }, { status, headers });
   }
 
   if (!process.env.OPENAI_API_KEY) {
