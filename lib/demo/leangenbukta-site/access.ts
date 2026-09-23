@@ -149,9 +149,18 @@ export function lbDemoAccessFromHeaders(
 
 export function lbDemoAccess(request: Request, now = Date.now()): LbDemoVisitor | null {
   return lbDemoAccessFromHeaders(
-    { cookie: request.headers.get("cookie"), host: request.headers.get("host") },
+    { cookie: request.headers.get("cookie"), host: request.headers.get("host") ?? new URL(request.url).host },
     now,
   );
+}
+
+/**
+ * Adressen kunden sender tilbakemeldinger til. Miljøstyrt fordi det er Andreas
+ * som bestemmer hvilken innboks en kundetest skal lande i.
+ */
+export function lbDemoFeedbackEmail(): string {
+  const value = process.env.PLACY_LB_DEMO_FEEDBACK_EMAIL ?? "";
+  return /^[^\s@<>"]+@[^\s@<>"]+\.[a-z]{2,}$/i.test(value) ? value : "hei@placy.no";
 }
 
 /** Bare stier inne i demoen kan være mål etter innlogging — aldri en ekstern URL. */

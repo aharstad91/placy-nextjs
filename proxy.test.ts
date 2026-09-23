@@ -158,3 +158,65 @@ describe("shared platform domain routing", () => {
     expect(proxy(req("/p/another-project?a=1&a=2")).headers.get("location")).toBe("https://placy.no/another-project?a=1&a=2");
   });
 });
+
+describe("Leangenbukta-kundedemoen (tilgangsgate)", () => {
+  const CODE = "prov-leangenbukta-2026";
+  const SECRET = "s".repeat(40);
+  const local = (path: string) => new NextRequest(`http://localhost:3000${path}`);
+  const shared = (path: string, cookie?: string) =>
+    new NextRequest(`https://leangenbukta-demo.vercel.app${path}`, cookie ? { headers: { cookie } } : undefined);
+
+  it("slipper inn loopback på en ukonfigurert utviklingsserver", () => {
+    vi.stubEnv("NODE_ENV", "development");
+    expect(proxy(local("/demo/leangenbukta-nettside")).status).toBe(200);
+    expect(proxy(local("/demo/leangenbukta-lokal")).status).toBe(200);
+  });
+
+  it("gir 404 til en ikke-loopback-host når koden ikke er konfigurert", () => {
+    vi.stubEnv("NODE_ENV", "development");
+    expect(proxy(shared("/demo/leangenbukta-nettside/knutepunktet")).status).toBe(404);
+  });
+
+  it("feiler lukket i produksjon uten konfigurasjon, også med forfalsket Host", () => {
+    vi.stubEnv("NODE_ENV", "production");
+    const forged = new NextRequest("https://leangenbukta-demo.vercel.app/demo/leangenbukta-nettside", { headers: { host: "localhost" } });
+    expect(proxy(forged).status).toBe(404);
+    expect(proxy(local("/demo/leangenbukta-lokal")).status).toBe(404);
+  });
+
+  it("sender uten cookie til innloggingen med neste-sti når koden er konfigurert", () => {
+    vi.stubEnv("NODE_ENV", "production");
+    vi.stubEnv("PLACY_LB_DEMO_ACCESS_CODE", CODE);
+    vi.stubEnv("PLACY_LB_DEMO_COOKIE_SECRET", SECRET);
+    const response = proxy(shared("/demo/leangenbukta-nettside/knutepunktet?x=1"));
+    expect(response.status).toBe(307);
+    const location = new URL(response.headers.get("location")!);
+    expect(location.pathname).toBe("/demo/leangenbukta-tilgang");
+    expect(location.searchParams.get("neste")).toBe("/demo/leangenbukta-nettside/knutepunktet?x=1");
+    expect(response.headers.get("x-robots-tag")).toBe("noindex, nofollow");
+  });
+
+  it("slipper inn med gyldig cookie og merker svaret noindex", async () => {
+    vi.stubEnv("NODE_ENV", "production");
+    vi.stubEnv("PLACY_LB_DEMO_ACCESS_CODE", CODE);
+    vi.stubEnv("PLACY_LB_DEMO_COOKIE_SECRET", SECRET);
+    const { issueLbDemoCookie, LB_DEMO_COOKIE } = await import("@/lib/demo/leangenbukta-site/access");
+    const cookie = `${LB_DEMO_COOKIE}=${issueLbDemoCookie(CODE)}`;
+    const response = proxy(shared("/demo/leangenbukta-lokal", cookie));
+    expect(response.status).toBe(200);
+    expect(response.headers.get("x-robots-tag")).toBe("noindex, nofollow");
+  });
+
+  it("lar innloggingssiden selv være åpen", () => {
+    vi.stubEnv("NODE_ENV", "production");
+    vi.stubEnv("PLACY_LB_DEMO_ACCESS_CODE", CODE);
+    vi.stubEnv("PLACY_LB_DEMO_COOKIE_SECRET", SECRET);
+    expect(proxy(shared("/demo/leangenbukta-tilgang")).status).toBe(200);
+  });
+
+  it("rører ikke Nyhavna-demoene", () => {
+    vi.stubEnv("NODE_ENV", "production");
+    expect(proxy(shared("/demo/nyhavna-nettside")).status).toBe(200);
+    expect(proxy(shared("/demo/nyhavna-lokal")).status).toBe(200);
+  });
+});

@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { NextRequest } from 'next/server';
-const mocks = vi.hoisted(() => ({ reserve: vi.fn(), attach: vi.fn(), end: vi.fn(), blockUnknown: vi.fn(), isActive: vi.fn(), connect: vi.fn(), resolveProject: vi.fn() }));
+const mocks = vi.hoisted(() => ({ reserve: vi.fn(), attach: vi.fn(), end: vi.fn(), blockUnknown: vi.fn(), isActive: vi.fn(), connect: vi.fn(), resolveProject: vi.fn(), quota: vi.fn() }));
+vi.mock('@/lib/demo/leangenbukta-site/usage', () => ({ consumeDemoQuota: mocks.quota }));
 vi.mock('@/lib/live/projects', async importOriginal => ({...await importOriginal<typeof import('@/lib/live/projects')>(),resolveVoiceProject: mocks.resolveProject}));
 vi.mock('@/lib/live/supervisor', () => ({ getLiveSupervisor: () => mocks }));
 vi.mock('@/lib/live/sideband', () => ({ connectLiveSideband: mocks.connect, getLiveSideband: () => undefined }));
@@ -14,6 +15,7 @@ import { buildLocalVoiceInstructions } from '@/lib/demo/local-board/voice-instru
 import { loadDataset } from '@/lib/demo/local-board/dataset';
 import { getLocalDemo } from '@/lib/demo/local-board/registry';
 import { issueDemoAccess } from '@/lib/live/hosted-access';
+import { issueLbDemoCookie, LB_DEMO_COOKIE } from '@/lib/demo/leangenbukta-site/access';
 import { VoiceProjectError } from '@/lib/live/projects';
 import { GET, POST, DELETE } from '@/app/api/prototype/live/route';
 
@@ -27,6 +29,7 @@ beforeEach(() => {
   vi.stubEnv('PLACY_HOSTED_VOICE', 'false');
   for (const fn of Object.values(mocks)) fn.mockReset();
   mocks.reserve.mockResolvedValue('session-token'); mocks.end.mockResolvedValue(true); mocks.blockUnknown.mockResolvedValue(undefined);
+  mocks.quota.mockResolvedValue({ allowed: true });
   vi.stubGlobal('fetch', vi.fn(async () => created()));
 });
 afterEach(() => { vi.unstubAllEnvs(); vi.unstubAllGlobals(); });
@@ -207,5 +210,64 @@ describe('shared project health',()=>{
     expect(token).toBeTruthy();
     await GET(new NextRequest('https://platform.example/api/prototype/live?project=nyhavna',{headers:{cookie:`placy_demo_access=${token}`}}));
     expect(mocks.resolveProject).toHaveBeenCalledWith({project:'nyhavna'},'benchmark');
+  });
+});
+
+
+describe('Leangenbukta-kundedemoens stemme på et delt miljø', () => {
+  const SHARED = 'https://leangenbukta-demo.example';
+  const CODE = 'prov-leangenbukta-2026';
+  beforeEach(() => {
+    vi.stubEnv('NODE_ENV', 'production');
+    vi.stubEnv('PLACY_LB_DEMO_ACCESS_CODE', CODE);
+    vi.stubEnv('PLACY_LB_DEMO_COOKIE_SECRET', 'k'.repeat(40));
+  });
+  const shared = async (extra: Record<string, unknown>, withCookie = true, origin = SHARED) => new NextRequest(`${SHARED}/api/prototype/live`, {
+    method: 'POST',
+    body: JSON.stringify({ sdp: 'v=0\r\n', ...extra }),
+    headers: { 'Content-Type': 'application/json', origin, ...(withCookie ? { cookie: `${LB_DEMO_COOKIE}=${issueLbDemoCookie(CODE)}` } : {}) },
+  });
+
+  it('starter Leangenbukta med gyldig demotilgang og trekker én stemmesesjon av kvoten', async () => {
+    const demo = await loadLiveDemo('leangenbukta-lokal');
+    const response = await POST(await shared({ dataset: 'leangenbukta-lokal', snapshotId: demo.snapshotId }));
+    expect(response.status).toBe(200);
+    expect(mocks.quota).toHaveBeenCalledWith(expect.stringMatching(/^[0-9a-f-]{36}$/), 'voice_session');
+  });
+
+  it('gir ikke demotilgangen til Nyhavna eller snapshotet', async () => {
+    const nyhavna = await loadLiveDemo('nyhavna-lokal');
+    expect((await POST(await shared({ dataset: 'nyhavna-lokal', snapshotId: nyhavna.snapshotId }))).status).toBe(404);
+    expect((await POST(await shared({ snapshotId: 'snapshot-test' }))).status).toBe(404);
+    expect(fetch).not.toHaveBeenCalled();
+  });
+
+  it('avviser uten cookie og fra fremmed origin', async () => {
+    const demo = await loadLiveDemo('leangenbukta-lokal');
+    expect((await POST(await shared({ dataset: 'leangenbukta-lokal', snapshotId: demo.snapshotId }, false))).status).toBe(404);
+    expect((await POST(await shared({ dataset: 'leangenbukta-lokal', snapshotId: demo.snapshotId }, true, 'https://evil.example'))).status).toBe(404);
+    expect(mocks.quota).not.toHaveBeenCalled();
+    expect(fetch).not.toHaveBeenCalled();
+  });
+
+  it('stopper ved brukt kvote før samtalen reserveres eller betales', async () => {
+    mocks.quota.mockResolvedValueOnce({ allowed: false, reason: 'visitor' });
+    const demo = await loadLiveDemo('leangenbukta-lokal');
+    const response = await POST(await shared({ dataset: 'leangenbukta-lokal', snapshotId: demo.snapshotId }));
+    expect(response.status).toBe(429);
+    expect((await response.json()).error).toMatch(/tekstchatten|kartet/);
+    expect(mocks.reserve).not.toHaveBeenCalled();
+    expect(fetch).not.toHaveBeenCalled();
+  });
+
+  it('svarer på helsesjekk og avslutning for Leangenbukta med demotilgang', async () => {
+    const cookie = `${LB_DEMO_COOKIE}=${issueLbDemoCookie(CODE)}`;
+    const health = await GET(new NextRequest(`${SHARED}/api/prototype/live?dataset=leangenbukta-lokal`, { headers: { cookie } }));
+    expect(health.status).toBe(200);
+    expect(await health.json()).toMatchObject({ dataset: 'leangenbukta-lokal', protocol: 'live' });
+    expect((await GET(new NextRequest(`${SHARED}/api/prototype/live?dataset=nyhavna-lokal`, { headers: { cookie } }))).status).toBe(404);
+    const stop = await DELETE(new NextRequest(`${SHARED}/api/prototype/live`, { method: 'DELETE', headers: { cookie, origin: SHARED, 'X-Placy-Session': 'session-token' } }));
+    expect(stop.status).toBe(200);
+    expect((await DELETE(new NextRequest(`${SHARED}/api/prototype/live`, { method: 'DELETE', headers: { 'X-Placy-Session': 'session-token' } }))).status).toBe(404);
   });
 });
