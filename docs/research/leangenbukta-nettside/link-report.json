@@ -1,0 +1,5153 @@
+[
+  {
+    "from": "2roms-og3roms",
+    "source": "https://leangenbukta.no/boligvelger/saltakshusi/401-2/",
+    "to": "https://leangenbukta.no/boligvelger/saltakshusi/401-2/",
+    "kind": "external"
+  },
+  {
+    "from": "2roms-og3roms",
+    "source": "https://leangenbukta.no/boligvelger/saltakshush/h103/",
+    "to": "https://leangenbukta.no/boligvelger/saltakshush/h103/",
+    "kind": "external"
+  },
+  {
+    "from": "2roms-og3roms",
+    "source": "https://leangenbukta.no/boligvelger/saltakshusi/405-2/",
+    "to": "https://leangenbukta.no/boligvelger/saltakshusi/405-2/",
+    "kind": "external"
+  },
+  {
+    "from": "2roms-og3roms",
+    "source": "https://leangenbukta.no/boligvelger/saltakshush/h103/",
+    "to": "https://leangenbukta.no/boligvelger/saltakshush/h103/",
+    "kind": "external"
+  },
+  {
+    "from": "2roms-og3roms",
+    "source": "https://leangenbukta.no/boligvelger/saltakshush/h103/",
+    "to": "https://leangenbukta.no/boligvelger/saltakshush/h103/",
+    "kind": "external"
+  },
+  {
+    "from": "2roms-og3roms",
+    "source": "https://leangenbukta.no/boligvelger/saltakshush/h106/",
+    "to": "https://leangenbukta.no/boligvelger/saltakshush/h106/",
+    "kind": "external"
+  },
+  {
+    "from": "2roms-og3roms",
+    "source": "https://leangenbukta.no/boligvelger/saltakshush/h106/",
+    "to": "https://leangenbukta.no/boligvelger/saltakshush/h106/",
+    "kind": "external"
+  },
+  {
+    "from": "2roms-og3roms",
+    "source": "https://leangenbukta.no/boligvelger/saltakshush/h106/",
+    "to": "https://leangenbukta.no/boligvelger/saltakshush/h106/",
+    "kind": "external"
+  },
+  {
+    "from": "2roms-og3roms",
+    "source": "https://leangenbukta.no/boligvelger/saltakshush/h201/",
+    "to": "https://leangenbukta.no/boligvelger/saltakshush/h201/",
+    "kind": "external"
+  },
+  {
+    "from": "2roms-og3roms",
+    "source": "https://leangenbukta.no/boligvelger/saltakshush/h304/",
+    "to": "https://leangenbukta.no/boligvelger/saltakshush/h304/",
+    "kind": "external"
+  },
+  {
+    "from": "2roms-og3roms",
+    "source": "https://leangenbukta.no/boligvelger/saltakshush/h201/",
+    "to": "https://leangenbukta.no/boligvelger/saltakshush/h201/",
+    "kind": "external"
+  },
+  {
+    "from": "2roms-og3roms",
+    "source": "https://leangenbukta.no/boligvelger/byvilla-1/111-2/",
+    "to": "https://leangenbukta.no/boligvelger/byvilla-1/111-2/",
+    "kind": "external"
+  },
+  {
+    "from": "2roms-og3roms",
+    "source": "https://leangenbukta.no/2roms-og3roms/",
+    "to": "/demo/leangenbukta-nettside/2roms-og3roms",
+    "kind": "local",
+    "target": "2roms-og3roms"
+  },
+  {
+    "from": "2roms-og3roms",
+    "source": "https://koteng.no/koteng-jenssen/",
+    "to": "https://koteng.no/koteng-jenssen/",
+    "kind": "external"
+  },
+  {
+    "from": "2roms-og3roms",
+    "source": "http://www.obos.no",
+    "to": "http://www.obos.no/",
+    "kind": "external"
+  },
+  {
+    "from": "2roms-og3roms",
+    "source": "mailto:mari.buaas@koteng.no",
+    "to": "mailto:mari.buaas@koteng.no",
+    "kind": "contact"
+  },
+  {
+    "from": "2roms-og3roms",
+    "source": "tel:948 11 965",
+    "to": "tel:948 11 965",
+    "kind": "contact"
+  },
+  {
+    "from": "2roms-og3roms",
+    "source": "mailto:jan.erik.fjeldseth@obos.no",
+    "to": "mailto:jan.erik.fjeldseth@obos.no",
+    "kind": "contact"
+  },
+  {
+    "from": "2roms-og3roms",
+    "source": "tel:93254144",
+    "to": "tel:93254144",
+    "kind": "contact"
+  },
+  {
+    "from": "aktuelt",
+    "source": "https://leangenbukta.no/fritidstilbud-for-hele-familien-2/",
+    "to": "/demo/leangenbukta-nettside/kort-vei-til-alt",
+    "kind": "local",
+    "target": "kort-vei-til-alt"
+  },
+  {
+    "from": "aktuelt",
+    "source": "https://leangenbukta.no/fritidstilbud-for-hele-familien-2/",
+    "to": "/demo/leangenbukta-nettside/kort-vei-til-alt",
+    "kind": "local",
+    "target": "kort-vei-til-alt"
+  },
+  {
+    "from": "aktuelt",
+    "source": "https://leangenbukta.no/category/aktuelt/",
+    "to": "/demo/leangenbukta-nettside/aktuelt",
+    "kind": "local",
+    "target": "aktuelt"
+  },
+  {
+    "from": "aktuelt",
+    "source": "https://leangenbukta.no/fritidstilbud-for-hele-familien-2/",
+    "to": "/demo/leangenbukta-nettside/kort-vei-til-alt",
+    "kind": "local",
+    "target": "kort-vei-til-alt"
+  },
+  {
+    "from": "aktuelt",
+    "source": "https://leangenbukta.no/author/lena/",
+    "to": "/demo/leangenbukta-nettside/aktuelt",
+    "kind": "local",
+    "target": "aktuelt"
+  },
+  {
+    "from": "aktuelt",
+    "source": "#",
+    "to": "#",
+    "kind": "anchor"
+  },
+  {
+    "from": "aktuelt",
+    "source": "https://leangenbukta.no/rekkehus19-27/",
+    "to": "/demo/leangenbukta-nettside/rekkehus19-27",
+    "kind": "local",
+    "target": "rekkehus19-27"
+  },
+  {
+    "from": "aktuelt",
+    "source": "https://leangenbukta.no/rekkehus19-27/",
+    "to": "/demo/leangenbukta-nettside/rekkehus19-27",
+    "kind": "local",
+    "target": "rekkehus19-27"
+  },
+  {
+    "from": "aktuelt",
+    "source": "https://leangenbukta.no/category/aktuelt/",
+    "to": "/demo/leangenbukta-nettside/aktuelt",
+    "kind": "local",
+    "target": "aktuelt"
+  },
+  {
+    "from": "aktuelt",
+    "source": "https://leangenbukta.no/rekkehus19-27/",
+    "to": "/demo/leangenbukta-nettside/rekkehus19-27",
+    "kind": "local",
+    "target": "rekkehus19-27"
+  },
+  {
+    "from": "aktuelt",
+    "source": "https://leangenbukta.no/author/ida/",
+    "to": "/demo/leangenbukta-nettside/aktuelt",
+    "kind": "local",
+    "target": "aktuelt"
+  },
+  {
+    "from": "aktuelt",
+    "source": "#",
+    "to": "#",
+    "kind": "anchor"
+  },
+  {
+    "from": "aktuelt",
+    "source": "https://leangenbukta.no/saltakshush/",
+    "to": "/demo/leangenbukta-nettside/saltakshush",
+    "kind": "local",
+    "target": "saltakshush"
+  },
+  {
+    "from": "aktuelt",
+    "source": "https://leangenbukta.no/saltakshush/",
+    "to": "/demo/leangenbukta-nettside/saltakshush",
+    "kind": "local",
+    "target": "saltakshush"
+  },
+  {
+    "from": "aktuelt",
+    "source": "https://leangenbukta.no/category/aktuelt/",
+    "to": "/demo/leangenbukta-nettside/aktuelt",
+    "kind": "local",
+    "target": "aktuelt"
+  },
+  {
+    "from": "aktuelt",
+    "source": "https://leangenbukta.no/saltakshush/",
+    "to": "/demo/leangenbukta-nettside/saltakshush",
+    "kind": "local",
+    "target": "saltakshush"
+  },
+  {
+    "from": "aktuelt",
+    "source": "https://leangenbukta.no/author/ida/",
+    "to": "/demo/leangenbukta-nettside/aktuelt",
+    "kind": "local",
+    "target": "aktuelt"
+  },
+  {
+    "from": "aktuelt",
+    "source": "#",
+    "to": "#",
+    "kind": "anchor"
+  },
+  {
+    "from": "aktuelt",
+    "source": "https://leangenbukta.no/fritidstilbud-for-hele-familien/",
+    "to": "/demo/leangenbukta-nettside/kort-vei-til-alt",
+    "kind": "local",
+    "target": "kort-vei-til-alt"
+  },
+  {
+    "from": "aktuelt",
+    "source": "https://leangenbukta.no/fritidstilbud-for-hele-familien/",
+    "to": "/demo/leangenbukta-nettside/kort-vei-til-alt",
+    "kind": "local",
+    "target": "kort-vei-til-alt"
+  },
+  {
+    "from": "aktuelt",
+    "source": "https://leangenbukta.no/category/aktuelt/",
+    "to": "/demo/leangenbukta-nettside/aktuelt",
+    "kind": "local",
+    "target": "aktuelt"
+  },
+  {
+    "from": "aktuelt",
+    "source": "https://leangenbukta.no/fritidstilbud-for-hele-familien/",
+    "to": "/demo/leangenbukta-nettside/kort-vei-til-alt",
+    "kind": "local",
+    "target": "kort-vei-til-alt"
+  },
+  {
+    "from": "aktuelt",
+    "source": "https://leangenbukta.no/author/ida/",
+    "to": "/demo/leangenbukta-nettside/aktuelt",
+    "kind": "local",
+    "target": "aktuelt"
+  },
+  {
+    "from": "aktuelt",
+    "source": "#",
+    "to": "#",
+    "kind": "anchor"
+  },
+  {
+    "from": "aktuelt",
+    "source": "https://leangenbukta.no/trygt-og-bilfritt/",
+    "to": "/demo/leangenbukta-nettside/trygt-og-bilfritt",
+    "kind": "local",
+    "target": "trygt-og-bilfritt"
+  },
+  {
+    "from": "aktuelt",
+    "source": "https://leangenbukta.no/trygt-og-bilfritt/",
+    "to": "/demo/leangenbukta-nettside/trygt-og-bilfritt",
+    "kind": "local",
+    "target": "trygt-og-bilfritt"
+  },
+  {
+    "from": "aktuelt",
+    "source": "https://leangenbukta.no/category/aktuelt/",
+    "to": "/demo/leangenbukta-nettside/aktuelt",
+    "kind": "local",
+    "target": "aktuelt"
+  },
+  {
+    "from": "aktuelt",
+    "source": "https://leangenbukta.no/trygt-og-bilfritt/",
+    "to": "/demo/leangenbukta-nettside/trygt-og-bilfritt",
+    "kind": "local",
+    "target": "trygt-og-bilfritt"
+  },
+  {
+    "from": "aktuelt",
+    "source": "https://leangenbukta.no/author/fredrik/",
+    "to": "/demo/leangenbukta-nettside/aktuelt",
+    "kind": "local",
+    "target": "aktuelt"
+  },
+  {
+    "from": "aktuelt",
+    "source": "#",
+    "to": "#",
+    "kind": "anchor"
+  },
+  {
+    "from": "aktuelt",
+    "source": "https://leangenbukta.no/vedlikeholdsfritt/",
+    "to": "/demo/leangenbukta-nettside/vedlikeholdsfritt",
+    "kind": "local",
+    "target": "vedlikeholdsfritt"
+  },
+  {
+    "from": "aktuelt",
+    "source": "https://leangenbukta.no/vedlikeholdsfritt/",
+    "to": "/demo/leangenbukta-nettside/vedlikeholdsfritt",
+    "kind": "local",
+    "target": "vedlikeholdsfritt"
+  },
+  {
+    "from": "aktuelt",
+    "source": "https://leangenbukta.no/category/aktuelt/",
+    "to": "/demo/leangenbukta-nettside/aktuelt",
+    "kind": "local",
+    "target": "aktuelt"
+  },
+  {
+    "from": "aktuelt",
+    "source": "https://leangenbukta.no/vedlikeholdsfritt/",
+    "to": "/demo/leangenbukta-nettside/vedlikeholdsfritt",
+    "kind": "local",
+    "target": "vedlikeholdsfritt"
+  },
+  {
+    "from": "aktuelt",
+    "source": "https://leangenbukta.no/author/fredrik/",
+    "to": "/demo/leangenbukta-nettside/aktuelt",
+    "kind": "local",
+    "target": "aktuelt"
+  },
+  {
+    "from": "aktuelt",
+    "source": "#",
+    "to": "#",
+    "kind": "anchor"
+  },
+  {
+    "from": "aktuelt",
+    "source": "https://leangenbukta.no/fasiliteter-som-gjor-hverdagen-enklere/",
+    "to": "/demo/leangenbukta-nettside/fasiliteter-som-gjor-hverdagen-enklere",
+    "kind": "local",
+    "target": "fasiliteter-som-gjor-hverdagen-enklere"
+  },
+  {
+    "from": "aktuelt",
+    "source": "https://leangenbukta.no/fasiliteter-som-gjor-hverdagen-enklere/",
+    "to": "/demo/leangenbukta-nettside/fasiliteter-som-gjor-hverdagen-enklere",
+    "kind": "local",
+    "target": "fasiliteter-som-gjor-hverdagen-enklere"
+  },
+  {
+    "from": "aktuelt",
+    "source": "https://leangenbukta.no/category/aktuelt/",
+    "to": "/demo/leangenbukta-nettside/aktuelt",
+    "kind": "local",
+    "target": "aktuelt"
+  },
+  {
+    "from": "aktuelt",
+    "source": "https://leangenbukta.no/fasiliteter-som-gjor-hverdagen-enklere/",
+    "to": "/demo/leangenbukta-nettside/fasiliteter-som-gjor-hverdagen-enklere",
+    "kind": "local",
+    "target": "fasiliteter-som-gjor-hverdagen-enklere"
+  },
+  {
+    "from": "aktuelt",
+    "source": "https://leangenbukta.no/author/ida/",
+    "to": "/demo/leangenbukta-nettside/aktuelt",
+    "kind": "local",
+    "target": "aktuelt"
+  },
+  {
+    "from": "aktuelt",
+    "source": "#",
+    "to": "#",
+    "kind": "anchor"
+  },
+  {
+    "from": "aktuelt",
+    "source": "https://leangenbukta.no/her-trenger-du-ikke-eie-bil/",
+    "to": "/demo/leangenbukta-nettside/her-trenger-du-ikke-eie-bil",
+    "kind": "local",
+    "target": "her-trenger-du-ikke-eie-bil"
+  },
+  {
+    "from": "aktuelt",
+    "source": "https://leangenbukta.no/her-trenger-du-ikke-eie-bil/",
+    "to": "/demo/leangenbukta-nettside/her-trenger-du-ikke-eie-bil",
+    "kind": "local",
+    "target": "her-trenger-du-ikke-eie-bil"
+  },
+  {
+    "from": "aktuelt",
+    "source": "https://leangenbukta.no/category/aktuelt/",
+    "to": "/demo/leangenbukta-nettside/aktuelt",
+    "kind": "local",
+    "target": "aktuelt"
+  },
+  {
+    "from": "aktuelt",
+    "source": "https://leangenbukta.no/her-trenger-du-ikke-eie-bil/",
+    "to": "/demo/leangenbukta-nettside/her-trenger-du-ikke-eie-bil",
+    "kind": "local",
+    "target": "her-trenger-du-ikke-eie-bil"
+  },
+  {
+    "from": "aktuelt",
+    "source": "https://leangenbukta.no/author/ida/",
+    "to": "/demo/leangenbukta-nettside/aktuelt",
+    "kind": "local",
+    "target": "aktuelt"
+  },
+  {
+    "from": "aktuelt",
+    "source": "#",
+    "to": "#",
+    "kind": "anchor"
+  },
+  {
+    "from": "aktuelt",
+    "source": "https://leangenbukta.no/kort-vei-til-alt/",
+    "to": "/demo/leangenbukta-nettside/kort-vei-til-alt",
+    "kind": "local",
+    "target": "kort-vei-til-alt"
+  },
+  {
+    "from": "aktuelt",
+    "source": "https://leangenbukta.no/kort-vei-til-alt/",
+    "to": "/demo/leangenbukta-nettside/kort-vei-til-alt",
+    "kind": "local",
+    "target": "kort-vei-til-alt"
+  },
+  {
+    "from": "aktuelt",
+    "source": "https://leangenbukta.no/category/aktuelt/",
+    "to": "/demo/leangenbukta-nettside/aktuelt",
+    "kind": "local",
+    "target": "aktuelt"
+  },
+  {
+    "from": "aktuelt",
+    "source": "https://leangenbukta.no/kort-vei-til-alt/",
+    "to": "/demo/leangenbukta-nettside/kort-vei-til-alt",
+    "kind": "local",
+    "target": "kort-vei-til-alt"
+  },
+  {
+    "from": "aktuelt",
+    "source": "https://leangenbukta.no/author/ida/",
+    "to": "/demo/leangenbukta-nettside/aktuelt",
+    "kind": "local",
+    "target": "aktuelt"
+  },
+  {
+    "from": "aktuelt",
+    "source": "#",
+    "to": "#",
+    "kind": "anchor"
+  },
+  {
+    "from": "aktuelt",
+    "source": "https://leangenbukta.no/byvilla-1-og-2/",
+    "to": "/demo/leangenbukta-nettside/byvilla-1-og-2",
+    "kind": "local",
+    "target": "byvilla-1-og-2"
+  },
+  {
+    "from": "aktuelt",
+    "source": "https://leangenbukta.no/byvilla-1-og-2/",
+    "to": "/demo/leangenbukta-nettside/byvilla-1-og-2",
+    "kind": "local",
+    "target": "byvilla-1-og-2"
+  },
+  {
+    "from": "aktuelt",
+    "source": "https://leangenbukta.no/category/aktuelt/",
+    "to": "/demo/leangenbukta-nettside/aktuelt",
+    "kind": "local",
+    "target": "aktuelt"
+  },
+  {
+    "from": "aktuelt",
+    "source": "https://leangenbukta.no/byvilla-1-og-2/",
+    "to": "/demo/leangenbukta-nettside/byvilla-1-og-2",
+    "kind": "local",
+    "target": "byvilla-1-og-2"
+  },
+  {
+    "from": "aktuelt",
+    "source": "https://leangenbukta.no/author/ida/",
+    "to": "/demo/leangenbukta-nettside/aktuelt",
+    "kind": "local",
+    "target": "aktuelt"
+  },
+  {
+    "from": "aktuelt",
+    "source": "#",
+    "to": "#",
+    "kind": "anchor"
+  },
+  {
+    "from": "aktuelt",
+    "source": "https://leangenbukta.no/aktuelt/page/2/",
+    "to": "/demo/leangenbukta-nettside/aktuelt",
+    "kind": "local",
+    "target": "aktuelt"
+  },
+  {
+    "from": "aktuelt",
+    "source": "https://leangenbukta.no/aktuelt/page/2/",
+    "to": "/demo/leangenbukta-nettside/aktuelt",
+    "kind": "local",
+    "target": "aktuelt"
+  },
+  {
+    "from": "apenhetsloven",
+    "source": "mailto:apenhetsloven@leangenbukta.no",
+    "to": "mailto:apenhetsloven@leangenbukta.no",
+    "kind": "contact"
+  },
+  {
+    "from": "apenhetsloven",
+    "source": "https://leangenbukta.no/wp-content/uploads/2025/09/Redegjorelse-for-aktsomhetsvurderinger-Leangenbukta-2024-signert.pdf",
+    "to": "https://leangenbukta.no/wp-content/uploads/2025/09/Redegjorelse-for-aktsomhetsvurderinger-Leangenbukta-2024-signert.pdf",
+    "kind": "document"
+  },
+  {
+    "from": "apenhetsloven",
+    "source": "https://leangenbukta.no/apenhetsloven/",
+    "to": "/demo/leangenbukta-nettside/apenhetsloven",
+    "kind": "local",
+    "target": "apenhetsloven"
+  },
+  {
+    "from": "apenhetsloven",
+    "source": "https://koteng.no/koteng-jenssen/",
+    "to": "https://koteng.no/koteng-jenssen/",
+    "kind": "external"
+  },
+  {
+    "from": "apenhetsloven",
+    "source": "http://www.obos.no",
+    "to": "http://www.obos.no/",
+    "kind": "external"
+  },
+  {
+    "from": "apenhetsloven",
+    "source": "mailto:mari.buaas@koteng.no",
+    "to": "mailto:mari.buaas@koteng.no",
+    "kind": "contact"
+  },
+  {
+    "from": "apenhetsloven",
+    "source": "tel:948 11 965",
+    "to": "tel:948 11 965",
+    "kind": "contact"
+  },
+  {
+    "from": "apenhetsloven",
+    "source": "mailto:jan.erik.fjeldseth@obos.no",
+    "to": "mailto:jan.erik.fjeldseth@obos.no",
+    "kind": "contact"
+  },
+  {
+    "from": "apenhetsloven",
+    "source": "tel:93254144",
+    "to": "tel:93254144",
+    "kind": "contact"
+  },
+  {
+    "from": "beliggenhet",
+    "source": "https://www.google.com/maps/place/Leangenbukta/@63.434778,10.4566385,14z/data=!4m6!3m5!1s0x466d315ab1e550a1:0xc336c3af8f9d131d!8m2!3d63.4390768!4d10.4656346!16s%2Fg%2F11j8zg9ctb?entry=ttu&g_ep=EgoyMDI2MDkwMi4wIKXMDSoASAFQAw%3D%3D",
+    "to": "https://www.google.com/maps/place/Leangenbukta/@63.434778,10.4566385,14z/data=!4m6!3m5!1s0x466d315ab1e550a1:0xc336c3af8f9d131d!8m2!3d63.4390768!4d10.4656346!16s%2Fg%2F11j8zg9ctb?entry=ttu&g_ep=EgoyMDI2MDkwMi4wIKXMDSoASAFQAw%3D%3D",
+    "kind": "external"
+  },
+  {
+    "from": "beliggenhet",
+    "source": "https://leangenbukta.plyo.cloud/?y=86",
+    "to": "https://leangenbukta.plyo.cloud/?y=86",
+    "kind": "external"
+  },
+  {
+    "from": "beliggenhet",
+    "source": "https://leangenbukta.plyo.cloud/?y=86",
+    "to": "https://leangenbukta.plyo.cloud/?y=86",
+    "kind": "external"
+  },
+  {
+    "from": "beliggenhet",
+    "source": "http://www.obos.no",
+    "to": "http://www.obos.no/",
+    "kind": "external"
+  },
+  {
+    "from": "beliggenhet",
+    "source": "http://www.obos.no",
+    "to": "http://www.obos.no/",
+    "kind": "external"
+  },
+  {
+    "from": "beliggenhet",
+    "source": "https://leangenbukta.no/beliggenhet/",
+    "to": "/demo/leangenbukta-nettside/beliggenhet",
+    "kind": "local",
+    "target": "beliggenhet"
+  },
+  {
+    "from": "beliggenhet",
+    "source": "https://koteng.no/koteng-jenssen/",
+    "to": "https://koteng.no/koteng-jenssen/",
+    "kind": "external"
+  },
+  {
+    "from": "beliggenhet",
+    "source": "http://www.obos.no",
+    "to": "http://www.obos.no/",
+    "kind": "external"
+  },
+  {
+    "from": "beliggenhet",
+    "source": "mailto:mari.buaas@koteng.no",
+    "to": "mailto:mari.buaas@koteng.no",
+    "kind": "contact"
+  },
+  {
+    "from": "beliggenhet",
+    "source": "tel:948 11 965",
+    "to": "tel:948 11 965",
+    "kind": "contact"
+  },
+  {
+    "from": "beliggenhet",
+    "source": "mailto:jan.erik.fjeldseth@obos.no",
+    "to": "mailto:jan.erik.fjeldseth@obos.no",
+    "kind": "contact"
+  },
+  {
+    "from": "beliggenhet",
+    "source": "tel:93254144",
+    "to": "tel:93254144",
+    "kind": "contact"
+  },
+  {
+    "from": "bli-obos-medlem",
+    "source": "https://www.obos.no/privatblimedlem",
+    "to": "https://www.obos.no/privatblimedlem",
+    "kind": "external"
+  },
+  {
+    "from": "bli-obos-medlem",
+    "source": "https://www.obos.no/privatblimedlem",
+    "to": "https://www.obos.no/privatblimedlem",
+    "kind": "external"
+  },
+  {
+    "from": "bli-obos-medlem",
+    "source": "https://leangenbukta.no/bli-obos-medlem/",
+    "to": "/demo/leangenbukta-nettside/bli-obos-medlem",
+    "kind": "local",
+    "target": "bli-obos-medlem"
+  },
+  {
+    "from": "bli-obos-medlem",
+    "source": "https://koteng.no/koteng-jenssen/",
+    "to": "https://koteng.no/koteng-jenssen/",
+    "kind": "external"
+  },
+  {
+    "from": "bli-obos-medlem",
+    "source": "http://www.obos.no",
+    "to": "http://www.obos.no/",
+    "kind": "external"
+  },
+  {
+    "from": "bli-obos-medlem",
+    "source": "mailto:mari.buaas@koteng.no",
+    "to": "mailto:mari.buaas@koteng.no",
+    "kind": "contact"
+  },
+  {
+    "from": "bli-obos-medlem",
+    "source": "tel:948 11 965",
+    "to": "tel:948 11 965",
+    "kind": "contact"
+  },
+  {
+    "from": "bli-obos-medlem",
+    "source": "mailto:jan.erik.fjeldseth@obos.no",
+    "to": "mailto:jan.erik.fjeldseth@obos.no",
+    "kind": "contact"
+  },
+  {
+    "from": "bli-obos-medlem",
+    "source": "tel:93254144",
+    "to": "tel:93254144",
+    "kind": "contact"
+  },
+  {
+    "from": "byvilla-1-og-2",
+    "source": "https://leangenbukta.no/category/aktuelt/",
+    "to": "/demo/leangenbukta-nettside/aktuelt",
+    "kind": "local",
+    "target": "aktuelt"
+  },
+  {
+    "from": "byvilla-1-og-2",
+    "source": "https://leangenbukta.no/author/ida/",
+    "to": "/demo/leangenbukta-nettside/aktuelt",
+    "kind": "local",
+    "target": "aktuelt"
+  },
+  {
+    "from": "byvilla-1-og-2",
+    "source": "https://leangenbukta.no/byvilla-1-og-2/#respond",
+    "to": "/demo/leangenbukta-nettside/byvilla-1-og-2#respond",
+    "kind": "local",
+    "target": "byvilla-1-og-2"
+  },
+  {
+    "from": "byvilla-1-og-2",
+    "source": "https://leangenbukta.no/boligvelger/",
+    "to": "https://leangenbukta.no/boligvelger/",
+    "kind": "external"
+  },
+  {
+    "from": "byvilla-1-og-2",
+    "source": "mailto:mari.buaas@koteng.no?cc=jan.erik.fjeldseth@OBOS.no&subject=Uforpliktende%20møte%20angående%20Leangenbukta",
+    "to": "mailto:mari.buaas@koteng.no?cc=jan.erik.fjeldseth@OBOS.no&subject=Uforpliktende%20møte%20angående%20Leangenbukta",
+    "kind": "contact"
+  },
+  {
+    "from": "byvilla-1-og-2",
+    "source": "https://leangenbukta.no/byvilla-1-og-2/#kontakt",
+    "to": "/demo/leangenbukta-nettside/byvilla-1-og-2#kontakt",
+    "kind": "local",
+    "target": "byvilla-1-og-2"
+  },
+  {
+    "from": "byvilla-1-og-2",
+    "source": "https://leangenbukta.no/byvilla-1-og-2/",
+    "to": "/demo/leangenbukta-nettside/byvilla-1-og-2",
+    "kind": "local",
+    "target": "byvilla-1-og-2"
+  },
+  {
+    "from": "byvilla-1-og-2",
+    "source": "mailto:mari.buaas@koteng.no",
+    "to": "mailto:mari.buaas@koteng.no",
+    "kind": "contact"
+  },
+  {
+    "from": "byvilla-1-og-2",
+    "source": "tel:948 11 965",
+    "to": "tel:948 11 965",
+    "kind": "contact"
+  },
+  {
+    "from": "byvilla-1-og-2",
+    "source": "jan.erik.fjeldseth@obos.no",
+    "to": "mailto:jan.erik.fjeldseth@obos.no",
+    "kind": "contact"
+  },
+  {
+    "from": "byvilla-1-og-2",
+    "source": "tel:93254144",
+    "to": "tel:93254144",
+    "kind": "contact"
+  },
+  {
+    "from": "byvilla-1-og-2",
+    "source": "mailto:mari.buaas@koteng.no",
+    "to": "mailto:mari.buaas@koteng.no",
+    "kind": "contact"
+  },
+  {
+    "from": "byvilla-1-og-2",
+    "source": "tel:948 11 965",
+    "to": "tel:948 11 965",
+    "kind": "contact"
+  },
+  {
+    "from": "byvilla-1-og-2",
+    "source": "mailto:jan.erik.fjeldseth@obos.no",
+    "to": "mailto:jan.erik.fjeldseth@obos.no",
+    "kind": "contact"
+  },
+  {
+    "from": "byvilla-1-og-2",
+    "source": "tel:932 54 144",
+    "to": "tel:932 54 144",
+    "kind": "contact"
+  },
+  {
+    "from": "byvilla-1-og-2",
+    "source": "http://www.koteng.no",
+    "to": "http://www.koteng.no/",
+    "kind": "external"
+  },
+  {
+    "from": "byvilla-1-og-2",
+    "source": "http://www.obos.no",
+    "to": "http://www.obos.no/",
+    "kind": "external"
+  },
+  {
+    "from": "byvilla-1-og-2",
+    "source": "https://leangenbukta.no/byvilla-1-og-2/",
+    "to": "/demo/leangenbukta-nettside/byvilla-1-og-2",
+    "kind": "local",
+    "target": "byvilla-1-og-2"
+  },
+  {
+    "from": "byvilla-1-og-2",
+    "source": "https://koteng.no/koteng-jenssen/",
+    "to": "https://koteng.no/koteng-jenssen/",
+    "kind": "external"
+  },
+  {
+    "from": "byvilla-1-og-2",
+    "source": "http://www.obos.no",
+    "to": "http://www.obos.no/",
+    "kind": "external"
+  },
+  {
+    "from": "byvilla-1-og-2",
+    "source": "mailto:mari.buaas@koteng.no",
+    "to": "mailto:mari.buaas@koteng.no",
+    "kind": "contact"
+  },
+  {
+    "from": "byvilla-1-og-2",
+    "source": "tel:948 11 965",
+    "to": "tel:948 11 965",
+    "kind": "contact"
+  },
+  {
+    "from": "byvilla-1-og-2",
+    "source": "mailto:jan.erik.fjeldseth@obos.no",
+    "to": "mailto:jan.erik.fjeldseth@obos.no",
+    "kind": "contact"
+  },
+  {
+    "from": "byvilla-1-og-2",
+    "source": "tel:93254144",
+    "to": "tel:93254144",
+    "kind": "contact"
+  },
+  {
+    "from": "byvilla-1-og-2",
+    "source": "https://leangenbukta.no/kort-vei-til-alt/",
+    "to": "/demo/leangenbukta-nettside/kort-vei-til-alt",
+    "kind": "local",
+    "target": "kort-vei-til-alt"
+  },
+  {
+    "from": "byvilla-1-og-2",
+    "source": "https://leangenbukta.no/toppleilighetl504/",
+    "to": "/demo/leangenbukta-nettside/toppleilighetl504",
+    "kind": "local",
+    "target": "toppleilighetl504"
+  },
+  {
+    "from": "elbil-elsykkeldeling",
+    "source": "https://leangenbukta.no/elbil-elsykkeldeling/",
+    "to": "/demo/leangenbukta-nettside/elbil-elsykkeldeling",
+    "kind": "local",
+    "target": "elbil-elsykkeldeling"
+  },
+  {
+    "from": "elbil-elsykkeldeling",
+    "source": "https://koteng.no/koteng-jenssen/",
+    "to": "https://koteng.no/koteng-jenssen/",
+    "kind": "external"
+  },
+  {
+    "from": "elbil-elsykkeldeling",
+    "source": "http://www.obos.no",
+    "to": "http://www.obos.no/",
+    "kind": "external"
+  },
+  {
+    "from": "elbil-elsykkeldeling",
+    "source": "mailto:mari.buaas@koteng.no",
+    "to": "mailto:mari.buaas@koteng.no",
+    "kind": "contact"
+  },
+  {
+    "from": "elbil-elsykkeldeling",
+    "source": "tel:948 11 965",
+    "to": "tel:948 11 965",
+    "kind": "contact"
+  },
+  {
+    "from": "elbil-elsykkeldeling",
+    "source": "mailto:jan.erik.fjeldseth@obos.no",
+    "to": "mailto:jan.erik.fjeldseth@obos.no",
+    "kind": "contact"
+  },
+  {
+    "from": "elbil-elsykkeldeling",
+    "source": "tel:93254144",
+    "to": "tel:93254144",
+    "kind": "contact"
+  },
+  {
+    "from": "fasiliteter-som-gjor-hverdagen-enklere",
+    "source": "https://leangenbukta.no/category/aktuelt/",
+    "to": "/demo/leangenbukta-nettside/aktuelt",
+    "kind": "local",
+    "target": "aktuelt"
+  },
+  {
+    "from": "fasiliteter-som-gjor-hverdagen-enklere",
+    "source": "https://leangenbukta.no/author/ida/",
+    "to": "/demo/leangenbukta-nettside/aktuelt",
+    "kind": "local",
+    "target": "aktuelt"
+  },
+  {
+    "from": "fasiliteter-som-gjor-hverdagen-enklere",
+    "source": "https://leangenbukta.no/fasiliteter-som-gjor-hverdagen-enklere/#respond",
+    "to": "/demo/leangenbukta-nettside/fasiliteter-som-gjor-hverdagen-enklere#respond",
+    "kind": "local",
+    "target": "fasiliteter-som-gjor-hverdagen-enklere"
+  },
+  {
+    "from": "fasiliteter-som-gjor-hverdagen-enklere",
+    "source": "https://leangenbukta.no/fasiliteter-som-gjor-hverdagen-enklere/",
+    "to": "/demo/leangenbukta-nettside/fasiliteter-som-gjor-hverdagen-enklere",
+    "kind": "local",
+    "target": "fasiliteter-som-gjor-hverdagen-enklere"
+  },
+  {
+    "from": "fasiliteter-som-gjor-hverdagen-enklere",
+    "source": "mailto:mari.buaas@koteng.no",
+    "to": "mailto:mari.buaas@koteng.no",
+    "kind": "contact"
+  },
+  {
+    "from": "fasiliteter-som-gjor-hverdagen-enklere",
+    "source": "tel:948 11 965",
+    "to": "tel:948 11 965",
+    "kind": "contact"
+  },
+  {
+    "from": "fasiliteter-som-gjor-hverdagen-enklere",
+    "source": "jan.erik.fjeldseth@obos.no",
+    "to": "mailto:jan.erik.fjeldseth@obos.no",
+    "kind": "contact"
+  },
+  {
+    "from": "fasiliteter-som-gjor-hverdagen-enklere",
+    "source": "tel:93254144",
+    "to": "tel:93254144",
+    "kind": "contact"
+  },
+  {
+    "from": "fasiliteter-som-gjor-hverdagen-enklere",
+    "source": "mailto:mari.buaas@koteng.no",
+    "to": "mailto:mari.buaas@koteng.no",
+    "kind": "contact"
+  },
+  {
+    "from": "fasiliteter-som-gjor-hverdagen-enklere",
+    "source": "tel:948 11 965",
+    "to": "tel:948 11 965",
+    "kind": "contact"
+  },
+  {
+    "from": "fasiliteter-som-gjor-hverdagen-enklere",
+    "source": "mailto:jan.erik.fjeldseth@obos.no",
+    "to": "mailto:jan.erik.fjeldseth@obos.no",
+    "kind": "contact"
+  },
+  {
+    "from": "fasiliteter-som-gjor-hverdagen-enklere",
+    "source": "tel:932 54 144",
+    "to": "tel:932 54 144",
+    "kind": "contact"
+  },
+  {
+    "from": "fasiliteter-som-gjor-hverdagen-enklere",
+    "source": "http://www.koteng.no",
+    "to": "http://www.koteng.no/",
+    "kind": "external"
+  },
+  {
+    "from": "fasiliteter-som-gjor-hverdagen-enklere",
+    "source": "http://www.obos.no",
+    "to": "http://www.obos.no/",
+    "kind": "external"
+  },
+  {
+    "from": "fasiliteter-som-gjor-hverdagen-enklere",
+    "source": "https://leangenbukta.no/fasiliteter-som-gjor-hverdagen-enklere/",
+    "to": "/demo/leangenbukta-nettside/fasiliteter-som-gjor-hverdagen-enklere",
+    "kind": "local",
+    "target": "fasiliteter-som-gjor-hverdagen-enklere"
+  },
+  {
+    "from": "fasiliteter-som-gjor-hverdagen-enklere",
+    "source": "https://koteng.no/koteng-jenssen/",
+    "to": "https://koteng.no/koteng-jenssen/",
+    "kind": "external"
+  },
+  {
+    "from": "fasiliteter-som-gjor-hverdagen-enklere",
+    "source": "http://www.obos.no",
+    "to": "http://www.obos.no/",
+    "kind": "external"
+  },
+  {
+    "from": "fasiliteter-som-gjor-hverdagen-enklere",
+    "source": "mailto:mari.buaas@koteng.no",
+    "to": "mailto:mari.buaas@koteng.no",
+    "kind": "contact"
+  },
+  {
+    "from": "fasiliteter-som-gjor-hverdagen-enklere",
+    "source": "tel:948 11 965",
+    "to": "tel:948 11 965",
+    "kind": "contact"
+  },
+  {
+    "from": "fasiliteter-som-gjor-hverdagen-enklere",
+    "source": "mailto:jan.erik.fjeldseth@obos.no",
+    "to": "mailto:jan.erik.fjeldseth@obos.no",
+    "kind": "contact"
+  },
+  {
+    "from": "fasiliteter-som-gjor-hverdagen-enklere",
+    "source": "tel:93254144",
+    "to": "tel:93254144",
+    "kind": "contact"
+  },
+  {
+    "from": "fasiliteter-som-gjor-hverdagen-enklere",
+    "source": "https://leangenbukta.no/vedlikeholdsfritt/",
+    "to": "/demo/leangenbukta-nettside/vedlikeholdsfritt",
+    "kind": "local",
+    "target": "vedlikeholdsfritt"
+  },
+  {
+    "from": "fasiliteter-som-gjor-hverdagen-enklere",
+    "source": "https://leangenbukta.no/her-trenger-du-ikke-eie-bil/",
+    "to": "/demo/leangenbukta-nettside/her-trenger-du-ikke-eie-bil",
+    "kind": "local",
+    "target": "her-trenger-du-ikke-eie-bil"
+  },
+  {
+    "from": "fasiliteter-som-gjor-hverdagen-enklere",
+    "source": "",
+    "to": null,
+    "kind": "empty-image"
+  },
+  {
+    "from": "fasiliteter-som-gjor-hverdagen-enklere",
+    "source": "",
+    "to": null,
+    "kind": "empty-image"
+  },
+  {
+    "from": "fordeler-a-bo-forste-etasje",
+    "source": "https://leangenbukta.no/fordeler-a-bo-forste-etasje/",
+    "to": "/demo/leangenbukta-nettside/fordeler-a-bo-forste-etasje",
+    "kind": "local",
+    "target": "fordeler-a-bo-forste-etasje"
+  },
+  {
+    "from": "fordeler-a-bo-forste-etasje",
+    "source": "https://koteng.no/koteng-jenssen/",
+    "to": "https://koteng.no/koteng-jenssen/",
+    "kind": "external"
+  },
+  {
+    "from": "fordeler-a-bo-forste-etasje",
+    "source": "http://www.obos.no",
+    "to": "http://www.obos.no/",
+    "kind": "external"
+  },
+  {
+    "from": "fordeler-a-bo-forste-etasje",
+    "source": "mailto:mari.buaas@koteng.no",
+    "to": "mailto:mari.buaas@koteng.no",
+    "kind": "contact"
+  },
+  {
+    "from": "fordeler-a-bo-forste-etasje",
+    "source": "tel:948 11 965",
+    "to": "tel:948 11 965",
+    "kind": "contact"
+  },
+  {
+    "from": "fordeler-a-bo-forste-etasje",
+    "source": "mailto:jan.erik.fjeldseth@obos.no",
+    "to": "mailto:jan.erik.fjeldseth@obos.no",
+    "kind": "contact"
+  },
+  {
+    "from": "fordeler-a-bo-forste-etasje",
+    "source": "tel:93254144",
+    "to": "tel:93254144",
+    "kind": "contact"
+  },
+  {
+    "from": "galleri",
+    "source": "https://leangenbukta.no/wp-content/uploads/2024/08/IMG_5339-e1724325277616.jpg",
+    "to": "https://leangenbukta.no/wp-content/uploads/2024/08/IMG_5339-e1724325277616.jpg",
+    "kind": "external"
+  },
+  {
+    "from": "galleri",
+    "source": "https://leangenbukta.no/wp-content/uploads/2023/11/Skjermbilde-2023-11-13-kl.-12.30.47.jpg",
+    "to": "https://leangenbukta.no/wp-content/uploads/2023/11/Skjermbilde-2023-11-13-kl.-12.30.47.jpg",
+    "kind": "external"
+  },
+  {
+    "from": "galleri",
+    "source": "https://leangenbukta.no/wp-content/uploads/2024/08/IMG_5345.jpg",
+    "to": "https://leangenbukta.no/wp-content/uploads/2024/08/IMG_5345.jpg",
+    "kind": "external"
+  },
+  {
+    "from": "galleri",
+    "source": "https://leangenbukta.no/wp-content/uploads/2023/11/2725-02-KNG-e-05_Bluehour_Building_K_R01-rev.jpg",
+    "to": "https://leangenbukta.no/wp-content/uploads/2023/11/2725-02-KNG-e-05_Bluehour_Building_K_R01-rev.jpg",
+    "kind": "external"
+  },
+  {
+    "from": "galleri",
+    "source": "https://leangenbukta.no/wp-content/uploads/2023/11/2725-02-KNG-e-02_West_Side_R01.jpg",
+    "to": "https://leangenbukta.no/wp-content/uploads/2023/11/2725-02-KNG-e-02_West_Side_R01.jpg",
+    "kind": "external"
+  },
+  {
+    "from": "galleri",
+    "source": "https://leangenbukta.no/wp-content/uploads/2023/11/IMG_1376.jpg",
+    "to": "https://leangenbukta.no/wp-content/uploads/2023/11/IMG_1376.jpg",
+    "kind": "external"
+  },
+  {
+    "from": "galleri",
+    "source": "https://leangenbukta.no/wp-content/uploads/2024/08/IMG_5490.jpg",
+    "to": "https://leangenbukta.no/wp-content/uploads/2024/08/IMG_5490.jpg",
+    "kind": "external"
+  },
+  {
+    "from": "galleri",
+    "source": "https://leangenbukta.no/wp-content/uploads/2023/05/08utsikt.jpg",
+    "to": "https://leangenbukta.no/wp-content/uploads/2023/05/08utsikt.jpg",
+    "kind": "external"
+  },
+  {
+    "from": "galleri",
+    "source": "https://leangenbukta.no/wp-content/uploads/2024/08/IMG_5502.jpg",
+    "to": "https://leangenbukta.no/wp-content/uploads/2024/08/IMG_5502.jpg",
+    "kind": "external"
+  },
+  {
+    "from": "galleri",
+    "source": "https://leangenbukta.no/wp-content/uploads/2023/11/IMG_2131.jpg",
+    "to": "https://leangenbukta.no/wp-content/uploads/2023/11/IMG_2131.jpg",
+    "kind": "external"
+  },
+  {
+    "from": "galleri",
+    "source": "https://leangenbukta.no/wp-content/uploads/2024/06/IMG_4569-1.jpg",
+    "to": "https://leangenbukta.no/wp-content/uploads/2024/06/IMG_4569-1.jpg",
+    "kind": "external"
+  },
+  {
+    "from": "galleri",
+    "source": "https://leangenbukta.no/wp-content/uploads/2024/06/IMG_4561.jpg",
+    "to": "https://leangenbukta.no/wp-content/uploads/2024/06/IMG_4561.jpg",
+    "kind": "external"
+  },
+  {
+    "from": "galleri",
+    "source": "https://leangenbukta.no/wp-content/uploads/2024/06/IMG_4781.jpg",
+    "to": "https://leangenbukta.no/wp-content/uploads/2024/06/IMG_4781.jpg",
+    "kind": "external"
+  },
+  {
+    "from": "galleri",
+    "source": "https://leangenbukta.no/wp-content/uploads/2024/06/IMG_4809.jpg",
+    "to": "https://leangenbukta.no/wp-content/uploads/2024/06/IMG_4809.jpg",
+    "kind": "external"
+  },
+  {
+    "from": "galleri",
+    "source": "https://leangenbukta.no/wp-content/uploads/2024/03/Leangenbukta_Interior_H401_4roms_Vinkel-04_Hus-H_Stue_3destate.no_.jpg",
+    "to": "https://leangenbukta.no/wp-content/uploads/2024/03/Leangenbukta_Interior_H401_4roms_Vinkel-04_Hus-H_Stue_3destate.no_.jpg",
+    "kind": "external"
+  },
+  {
+    "from": "galleri",
+    "source": "https://leangenbukta.no/wp-content/uploads/2023/09/Leangenbukta_Eksterior_Boligvelger-05_Rekkehus_Sor_v2_3destate.no_-scaled.webp",
+    "to": "https://leangenbukta.no/wp-content/uploads/2023/09/Leangenbukta_Eksterior_Boligvelger-05_Rekkehus_Sor_v2_3destate.no_-scaled.webp",
+    "kind": "external"
+  },
+  {
+    "from": "galleri",
+    "source": "https://leangenbukta.no/wp-content/uploads/2020/03/2725-01-KNG-e-05-South_Overview_R02.jpg",
+    "to": "https://leangenbukta.no/wp-content/uploads/2020/03/2725-01-KNG-e-05-South_Overview_R02.jpg",
+    "kind": "external"
+  },
+  {
+    "from": "galleri",
+    "source": "https://leangenbukta.no/wp-content/uploads/2023/09/Leangenbukta_Eksterior_Drone-0002_v2_3destate.no_-scaled.webp",
+    "to": "https://leangenbukta.no/wp-content/uploads/2023/09/Leangenbukta_Eksterior_Drone-0002_v2_3destate.no_-scaled.webp",
+    "kind": "external"
+  },
+  {
+    "from": "galleri",
+    "source": "https://leangenbukta.no/wp-content/uploads/2024/08/Leangenbukta-Rekkehus_Eksterior_Vinkel-01_Miljo_v2_Plyo.jpg",
+    "to": "https://leangenbukta.no/wp-content/uploads/2024/08/Leangenbukta-Rekkehus_Eksterior_Vinkel-01_Miljo_v2_Plyo.jpg",
+    "kind": "external"
+  },
+  {
+    "from": "galleri",
+    "source": "https://leangenbukta.no/wp-content/uploads/2024/08/Leangenbukta-Rekkehus_Interior_Vinkel-05_Loftstue_v2_Plyo-1.jpg",
+    "to": "https://leangenbukta.no/wp-content/uploads/2024/08/Leangenbukta-Rekkehus_Interior_Vinkel-05_Loftstue_v2_Plyo-1.jpg",
+    "kind": "external"
+  },
+  {
+    "from": "galleri",
+    "source": "https://leangenbukta.no/wp-content/uploads/2024/08/Leangenbukta-Rekkehus_Interior_Vinkel-03_Stuekjokken_v3_Plyo.jpg",
+    "to": "https://leangenbukta.no/wp-content/uploads/2024/08/Leangenbukta-Rekkehus_Interior_Vinkel-03_Stuekjokken_v3_Plyo.jpg",
+    "kind": "external"
+  },
+  {
+    "from": "galleri",
+    "source": "https://leangenbukta.no/wp-content/uploads/2024/08/Leangenbukta-Rekkehus_Interior_Vinkel-01_Stue_v4_Plyo.jpg",
+    "to": "https://leangenbukta.no/wp-content/uploads/2024/08/Leangenbukta-Rekkehus_Interior_Vinkel-01_Stue_v4_Plyo.jpg",
+    "kind": "external"
+  },
+  {
+    "from": "galleri",
+    "source": "https://leangenbukta.no/wp-content/uploads/2020/02/RUA1874.jpg",
+    "to": "https://leangenbukta.no/wp-content/uploads/2020/02/RUA1874.jpg",
+    "kind": "external"
+  },
+  {
+    "from": "galleri",
+    "source": "https://leangenbukta.no/wp-content/uploads/2020/06/RUA1764.jpg",
+    "to": "https://leangenbukta.no/wp-content/uploads/2020/06/RUA1764.jpg",
+    "kind": "external"
+  },
+  {
+    "from": "galleri",
+    "source": "https://leangenbukta.no/wp-content/uploads/2020/02/RUA1600.jpg",
+    "to": "https://leangenbukta.no/wp-content/uploads/2020/02/RUA1600.jpg",
+    "kind": "external"
+  },
+  {
+    "from": "galleri",
+    "source": "https://leangenbukta.no/wp-content/uploads/2023/09/Leangenbukta_Eksterior_Vinkel-04_Rekkehus_og_Bygg_H_v2_3destate.no_-scaled-e1716975710547.webp",
+    "to": "https://leangenbukta.no/wp-content/uploads/2023/09/Leangenbukta_Eksterior_Vinkel-04_Rekkehus_og_Bygg_H_v2_3destate.no_-scaled-e1716975710547.webp",
+    "kind": "external"
+  },
+  {
+    "from": "galleri",
+    "source": "https://leangenbukta.no/wp-content/uploads/2024/06/Leangenbukta_Eksterior_Boligvelger-04_Bygg_H_Sor_v3_3destate.no_.jpg",
+    "to": "https://leangenbukta.no/wp-content/uploads/2024/06/Leangenbukta_Eksterior_Boligvelger-04_Bygg_H_Sor_v3_3destate.no_.jpg",
+    "kind": "external"
+  },
+  {
+    "from": "galleri",
+    "source": "https://leangenbukta.no/wp-content/uploads/2023/09/Leangenbukta_Eksterior_Drone-004_v2_3destate.no_-scaled.webp",
+    "to": "https://leangenbukta.no/wp-content/uploads/2023/09/Leangenbukta_Eksterior_Drone-004_v2_3destate.no_-scaled.webp",
+    "kind": "external"
+  },
+  {
+    "from": "galleri",
+    "source": "https://leangenbukta.no/wp-content/uploads/2023/05/70soverom.jpg",
+    "to": "https://leangenbukta.no/wp-content/uploads/2023/05/70soverom.jpg",
+    "kind": "external"
+  },
+  {
+    "from": "galleri",
+    "source": "https://leangenbukta.no/wp-content/uploads/2023/05/62bad.jpg",
+    "to": "https://leangenbukta.no/wp-content/uploads/2023/05/62bad.jpg",
+    "kind": "external"
+  },
+  {
+    "from": "galleri",
+    "source": "https://leangenbukta.no/wp-content/uploads/2023/05/40kjokken.jpg",
+    "to": "https://leangenbukta.no/wp-content/uploads/2023/05/40kjokken.jpg",
+    "kind": "external"
+  },
+  {
+    "from": "galleri",
+    "source": "https://leangenbukta.no/wp-content/uploads/2023/05/41kjokken.jpg",
+    "to": "https://leangenbukta.no/wp-content/uploads/2023/05/41kjokken.jpg",
+    "kind": "external"
+  },
+  {
+    "from": "galleri",
+    "source": "https://leangenbukta.no/wp-content/uploads/2023/05/80gang.jpg",
+    "to": "https://leangenbukta.no/wp-content/uploads/2023/05/80gang.jpg",
+    "kind": "external"
+  },
+  {
+    "from": "galleri",
+    "source": "https://leangenbukta.no/wp-content/uploads/2023/05/31balkong.jpg",
+    "to": "https://leangenbukta.no/wp-content/uploads/2023/05/31balkong.jpg",
+    "kind": "external"
+  },
+  {
+    "from": "galleri",
+    "source": "https://leangenbukta.no/wp-content/uploads/2022/02/1642002752-2725-03-KNG-e-04-Commonterrace_R01.jpg",
+    "to": "https://leangenbukta.no/wp-content/uploads/2022/02/1642002752-2725-03-KNG-e-04-Commonterrace_R01.jpg",
+    "kind": "external"
+  },
+  {
+    "from": "galleri",
+    "source": "https://leangenbukta.no/wp-content/uploads/2023/11/1642002752-2725-03-KNG-e-05-Roofterrace_R01.jpg",
+    "to": "https://leangenbukta.no/wp-content/uploads/2023/11/1642002752-2725-03-KNG-e-05-Roofterrace_R01.jpg",
+    "kind": "external"
+  },
+  {
+    "from": "galleri",
+    "source": "https://leangenbukta.no/wp-content/uploads/2020/08/2725-01-KNG-e-09-Blokk_L_R02-1.jpg",
+    "to": "https://leangenbukta.no/wp-content/uploads/2020/08/2725-01-KNG-e-09-Blokk_L_R02-1.jpg",
+    "kind": "external"
+  },
+  {
+    "from": "galleri",
+    "source": "https://leangenbukta.no/wp-content/uploads/2022/02/1642769970-2725-03-KNG-e-01-Road_R02.jpg",
+    "to": "https://leangenbukta.no/wp-content/uploads/2022/02/1642769970-2725-03-KNG-e-01-Road_R02.jpg",
+    "kind": "external"
+  },
+  {
+    "from": "galleri",
+    "source": "https://leangenbukta.no/wp-content/uploads/2023/11/1642769989-2725-03-KNG-e-02-Courtyard_R02.jpg",
+    "to": "https://leangenbukta.no/wp-content/uploads/2023/11/1642769989-2725-03-KNG-e-02-Courtyard_R02.jpg",
+    "kind": "external"
+  },
+  {
+    "from": "galleri",
+    "source": "https://leangenbukta.no/wp-content/uploads/2024/08/IMG_5323.jpg",
+    "to": "https://leangenbukta.no/wp-content/uploads/2024/08/IMG_5323.jpg",
+    "kind": "external"
+  },
+  {
+    "from": "galleri",
+    "source": "https://leangenbukta.no/wp-content/uploads/2024/08/IMG_5322.jpg",
+    "to": "https://leangenbukta.no/wp-content/uploads/2024/08/IMG_5322.jpg",
+    "kind": "external"
+  },
+  {
+    "from": "galleri",
+    "source": "https://leangenbukta.no/wp-content/uploads/2024/06/IMG_4550.jpg",
+    "to": "https://leangenbukta.no/wp-content/uploads/2024/06/IMG_4550.jpg",
+    "kind": "external"
+  },
+  {
+    "from": "galleri",
+    "source": "https://leangenbukta.no/wp-content/uploads/2023/11/2725-01-KNG-e-04_Haus_V4_R01.jpg",
+    "to": "https://leangenbukta.no/wp-content/uploads/2023/11/2725-01-KNG-e-04_Haus_V4_R01.jpg",
+    "kind": "external"
+  },
+  {
+    "from": "galleri",
+    "source": "https://leangenbukta.no/wp-content/uploads/2023/11/2725-01-KNG-e-08_Bluehour_R02.jpg",
+    "to": "https://leangenbukta.no/wp-content/uploads/2023/11/2725-01-KNG-e-08_Bluehour_R02.jpg",
+    "kind": "external"
+  },
+  {
+    "from": "galleri",
+    "source": "https://leangenbukta.no/wp-content/uploads/2020/08/2725-01-KNG-e-06-Seaview_R02.jpg",
+    "to": "https://leangenbukta.no/wp-content/uploads/2020/08/2725-01-KNG-e-06-Seaview_R02.jpg",
+    "kind": "external"
+  },
+  {
+    "from": "galleri",
+    "source": "https://leangenbukta.no/wp-content/uploads/2023/11/IMG_1082.jpg",
+    "to": "https://leangenbukta.no/wp-content/uploads/2023/11/IMG_1082.jpg",
+    "kind": "external"
+  },
+  {
+    "from": "galleri",
+    "source": "https://leangenbukta.no/wp-content/uploads/2023/11/2725-02-KNG-e-04_BV3_R01.jpg",
+    "to": "https://leangenbukta.no/wp-content/uploads/2023/11/2725-02-KNG-e-04_BV3_R01.jpg",
+    "kind": "external"
+  },
+  {
+    "from": "galleri",
+    "source": "https://leangenbukta.no/wp-content/uploads/2023/11/Skjermbilde-2023-11-13-kl.-12.30.20.jpg",
+    "to": "https://leangenbukta.no/wp-content/uploads/2023/11/Skjermbilde-2023-11-13-kl.-12.30.20.jpg",
+    "kind": "external"
+  },
+  {
+    "from": "galleri",
+    "source": "https://leangenbukta.no/wp-content/uploads/2024/08/IMG_5341.jpg",
+    "to": "https://leangenbukta.no/wp-content/uploads/2024/08/IMG_5341.jpg",
+    "kind": "external"
+  },
+  {
+    "from": "galleri",
+    "source": "https://leangenbukta.no/wp-content/uploads/2024/08/IMG_5340.jpg",
+    "to": "https://leangenbukta.no/wp-content/uploads/2024/08/IMG_5340.jpg",
+    "kind": "external"
+  },
+  {
+    "from": "galleri",
+    "source": "https://leangenbukta.no/wp-content/uploads/2024/06/IMG_4575.jpg",
+    "to": "https://leangenbukta.no/wp-content/uploads/2024/06/IMG_4575.jpg",
+    "kind": "external"
+  },
+  {
+    "from": "galleri",
+    "source": "https://leangenbukta.no/wp-content/uploads/2023/11/2725-04-KNG-e-01-BV1_Park_Sunny_R01.jpg",
+    "to": "https://leangenbukta.no/wp-content/uploads/2023/11/2725-04-KNG-e-01-BV1_Park_Sunny_R01.jpg",
+    "kind": "external"
+  },
+  {
+    "from": "galleri",
+    "source": "https://leangenbukta.no/wp-content/uploads/2023/11/2725-04-KNG-e-08_BV1_Terrace_R01.jpg",
+    "to": "https://leangenbukta.no/wp-content/uploads/2023/11/2725-04-KNG-e-08_BV1_Terrace_R01.jpg",
+    "kind": "external"
+  },
+  {
+    "from": "galleri",
+    "source": "https://leangenbukta.no/wp-content/uploads/2023/11/2725-04-KNG-e-05-BV2_Side_R01.jpg",
+    "to": "https://leangenbukta.no/wp-content/uploads/2023/11/2725-04-KNG-e-05-BV2_Side_R01.jpg",
+    "kind": "external"
+  },
+  {
+    "from": "galleri",
+    "source": "https://leangenbukta.no/wp-content/uploads/2020/08/2725-01-KNG-e-01_aerial01_R03.jpg",
+    "to": "https://leangenbukta.no/wp-content/uploads/2020/08/2725-01-KNG-e-01_aerial01_R03.jpg",
+    "kind": "external"
+  },
+  {
+    "from": "galleri",
+    "source": "https://leangenbukta.no/wp-content/uploads/2021/01/422_bath.jpg",
+    "to": "https://leangenbukta.no/wp-content/uploads/2021/01/422_bath.jpg",
+    "kind": "external"
+  },
+  {
+    "from": "galleri",
+    "source": "https://leangenbukta.no/wp-content/uploads/2021/01/502_living.jpg",
+    "to": "https://leangenbukta.no/wp-content/uploads/2021/01/502_living.jpg",
+    "kind": "external"
+  },
+  {
+    "from": "galleri",
+    "source": "https://leangenbukta.no/wp-content/uploads/2021/01/531_Kjokken.jpg",
+    "to": "https://leangenbukta.no/wp-content/uploads/2021/01/531_Kjokken.jpg",
+    "kind": "external"
+  },
+  {
+    "from": "galleri",
+    "source": "https://leangenbukta.no/wp-content/uploads/2021/01/TH_Kjokken.jpg",
+    "to": "https://leangenbukta.no/wp-content/uploads/2021/01/TH_Kjokken.jpg",
+    "kind": "external"
+  },
+  {
+    "from": "galleri",
+    "source": "https://leangenbukta.no/wp-content/uploads/2021/01/TH_Stue.jpg",
+    "to": "https://leangenbukta.no/wp-content/uploads/2021/01/TH_Stue.jpg",
+    "kind": "external"
+  },
+  {
+    "from": "galleri",
+    "source": "https://leangenbukta.no/wp-content/uploads/2021/01/3R-81-2.jpg",
+    "to": "https://leangenbukta.no/wp-content/uploads/2021/01/3R-81-2.jpg",
+    "kind": "external"
+  },
+  {
+    "from": "galleri",
+    "source": "https://leangenbukta.no/wp-content/uploads/2021/01/3-R-97.0-cam3-1.jpg",
+    "to": "https://leangenbukta.no/wp-content/uploads/2021/01/3-R-97.0-cam3-1.jpg",
+    "kind": "external"
+  },
+  {
+    "from": "galleri",
+    "source": "https://leangenbukta.no/wp-content/uploads/2021/01/4-R-95-Stue-1.jpg",
+    "to": "https://leangenbukta.no/wp-content/uploads/2021/01/4-R-95-Stue-1.jpg",
+    "kind": "external"
+  },
+  {
+    "from": "galleri",
+    "source": "https://leangenbukta.no/wp-content/uploads/2021/01/3-R-636-kjokken-1.jpg",
+    "to": "https://leangenbukta.no/wp-content/uploads/2021/01/3-R-636-kjokken-1.jpg",
+    "kind": "external"
+  },
+  {
+    "from": "galleri",
+    "source": "https://leangenbukta.no/wp-content/uploads/2024/08/IMG_9982.jpg",
+    "to": "https://leangenbukta.no/wp-content/uploads/2024/08/IMG_9982.jpg",
+    "kind": "external"
+  },
+  {
+    "from": "galleri",
+    "source": "https://leangenbukta.no/wp-content/uploads/2020/06/RUA1968.jpg",
+    "to": "https://leangenbukta.no/wp-content/uploads/2020/06/RUA1968.jpg",
+    "kind": "external"
+  },
+  {
+    "from": "galleri",
+    "source": "https://leangenbukta.no/wp-content/uploads/2020/06/RUA1749-1.jpg",
+    "to": "https://leangenbukta.no/wp-content/uploads/2020/06/RUA1749-1.jpg",
+    "kind": "external"
+  },
+  {
+    "from": "galleri",
+    "source": "https://leangenbukta.no/wp-content/uploads/2020/06/RUA2130.jpg",
+    "to": "https://leangenbukta.no/wp-content/uploads/2020/06/RUA2130.jpg",
+    "kind": "external"
+  },
+  {
+    "from": "galleri",
+    "source": "https://leangenbukta.no/wp-content/uploads/2020/06/RUA1247_2.jpg",
+    "to": "https://leangenbukta.no/wp-content/uploads/2020/06/RUA1247_2.jpg",
+    "kind": "external"
+  },
+  {
+    "from": "galleri",
+    "source": "https://leangenbukta.no/wp-content/uploads/2020/06/RUA2098.jpg",
+    "to": "https://leangenbukta.no/wp-content/uploads/2020/06/RUA2098.jpg",
+    "kind": "external"
+  },
+  {
+    "from": "galleri",
+    "source": "https://leangenbukta.no/wp-content/uploads/2020/06/RUA1449.jpg",
+    "to": "https://leangenbukta.no/wp-content/uploads/2020/06/RUA1449.jpg",
+    "kind": "external"
+  },
+  {
+    "from": "galleri",
+    "source": "https://leangenbukta.no/wp-content/uploads/2020/06/RUA1184_2.jpg",
+    "to": "https://leangenbukta.no/wp-content/uploads/2020/06/RUA1184_2.jpg",
+    "kind": "external"
+  },
+  {
+    "from": "galleri",
+    "source": "https://leangenbukta.no/galleri/",
+    "to": "/demo/leangenbukta-nettside/galleri",
+    "kind": "local",
+    "target": "galleri"
+  },
+  {
+    "from": "galleri",
+    "source": "https://koteng.no/koteng-jenssen/",
+    "to": "https://koteng.no/koteng-jenssen/",
+    "kind": "external"
+  },
+  {
+    "from": "galleri",
+    "source": "http://www.obos.no",
+    "to": "http://www.obos.no/",
+    "kind": "external"
+  },
+  {
+    "from": "galleri",
+    "source": "mailto:mari.buaas@koteng.no",
+    "to": "mailto:mari.buaas@koteng.no",
+    "kind": "contact"
+  },
+  {
+    "from": "galleri",
+    "source": "tel:948 11 965",
+    "to": "tel:948 11 965",
+    "kind": "contact"
+  },
+  {
+    "from": "galleri",
+    "source": "mailto:jan.erik.fjeldseth@obos.no",
+    "to": "mailto:jan.erik.fjeldseth@obos.no",
+    "kind": "contact"
+  },
+  {
+    "from": "galleri",
+    "source": "tel:93254144",
+    "to": "tel:93254144",
+    "kind": "contact"
+  },
+  {
+    "from": "her-trenger-du-ikke-eie-bil",
+    "source": "https://leangenbukta.no/category/aktuelt/",
+    "to": "/demo/leangenbukta-nettside/aktuelt",
+    "kind": "local",
+    "target": "aktuelt"
+  },
+  {
+    "from": "her-trenger-du-ikke-eie-bil",
+    "source": "https://leangenbukta.no/author/ida/",
+    "to": "/demo/leangenbukta-nettside/aktuelt",
+    "kind": "local",
+    "target": "aktuelt"
+  },
+  {
+    "from": "her-trenger-du-ikke-eie-bil",
+    "source": "https://leangenbukta.no/her-trenger-du-ikke-eie-bil/#respond",
+    "to": "/demo/leangenbukta-nettside/her-trenger-du-ikke-eie-bil#respond",
+    "kind": "local",
+    "target": "her-trenger-du-ikke-eie-bil"
+  },
+  {
+    "from": "her-trenger-du-ikke-eie-bil",
+    "source": "https://leangenbukta.no/om-prosjektet/#beliggenhet",
+    "to": "/demo/leangenbukta-nettside/om-prosjektet#beliggenhet",
+    "kind": "local",
+    "target": "om-prosjektet"
+  },
+  {
+    "from": "her-trenger-du-ikke-eie-bil",
+    "source": "https://leangenbukta.no/her-trenger-du-ikke-eie-bil/",
+    "to": "/demo/leangenbukta-nettside/her-trenger-du-ikke-eie-bil",
+    "kind": "local",
+    "target": "her-trenger-du-ikke-eie-bil"
+  },
+  {
+    "from": "her-trenger-du-ikke-eie-bil",
+    "source": "mailto:mari@koteng.no",
+    "to": "mailto:mari@koteng.no",
+    "kind": "contact"
+  },
+  {
+    "from": "her-trenger-du-ikke-eie-bil",
+    "source": "tel:948 11 965",
+    "to": "tel:948 11 965",
+    "kind": "contact"
+  },
+  {
+    "from": "her-trenger-du-ikke-eie-bil",
+    "source": "jan.erik.fjeldseth@obos.no",
+    "to": "mailto:jan.erik.fjeldseth@obos.no",
+    "kind": "contact"
+  },
+  {
+    "from": "her-trenger-du-ikke-eie-bil",
+    "source": "tel:93254144",
+    "to": "tel:93254144",
+    "kind": "contact"
+  },
+  {
+    "from": "her-trenger-du-ikke-eie-bil",
+    "source": "mailto:mari@koteng.no",
+    "to": "mailto:mari@koteng.no",
+    "kind": "contact"
+  },
+  {
+    "from": "her-trenger-du-ikke-eie-bil",
+    "source": "tel:948 11 965",
+    "to": "tel:948 11 965",
+    "kind": "contact"
+  },
+  {
+    "from": "her-trenger-du-ikke-eie-bil",
+    "source": "mailto:jan.erik.fjeldseth@obos.no",
+    "to": "mailto:jan.erik.fjeldseth@obos.no",
+    "kind": "contact"
+  },
+  {
+    "from": "her-trenger-du-ikke-eie-bil",
+    "source": "tel:932 54 144",
+    "to": "tel:932 54 144",
+    "kind": "contact"
+  },
+  {
+    "from": "her-trenger-du-ikke-eie-bil",
+    "source": "http://www.koteng.no",
+    "to": "http://www.koteng.no/",
+    "kind": "external"
+  },
+  {
+    "from": "her-trenger-du-ikke-eie-bil",
+    "source": "http://www.obos.no",
+    "to": "http://www.obos.no/",
+    "kind": "external"
+  },
+  {
+    "from": "her-trenger-du-ikke-eie-bil",
+    "source": "https://leangenbukta.no/her-trenger-du-ikke-eie-bil/",
+    "to": "/demo/leangenbukta-nettside/her-trenger-du-ikke-eie-bil",
+    "kind": "local",
+    "target": "her-trenger-du-ikke-eie-bil"
+  },
+  {
+    "from": "her-trenger-du-ikke-eie-bil",
+    "source": "https://koteng.no/koteng-jenssen/",
+    "to": "https://koteng.no/koteng-jenssen/",
+    "kind": "external"
+  },
+  {
+    "from": "her-trenger-du-ikke-eie-bil",
+    "source": "http://www.obos.no",
+    "to": "http://www.obos.no/",
+    "kind": "external"
+  },
+  {
+    "from": "her-trenger-du-ikke-eie-bil",
+    "source": "mailto:mari.buaas@koteng.no",
+    "to": "mailto:mari.buaas@koteng.no",
+    "kind": "contact"
+  },
+  {
+    "from": "her-trenger-du-ikke-eie-bil",
+    "source": "tel:948 11 965",
+    "to": "tel:948 11 965",
+    "kind": "contact"
+  },
+  {
+    "from": "her-trenger-du-ikke-eie-bil",
+    "source": "mailto:jan.erik.fjeldseth@obos.no",
+    "to": "mailto:jan.erik.fjeldseth@obos.no",
+    "kind": "contact"
+  },
+  {
+    "from": "her-trenger-du-ikke-eie-bil",
+    "source": "tel:93254144",
+    "to": "tel:93254144",
+    "kind": "contact"
+  },
+  {
+    "from": "her-trenger-du-ikke-eie-bil",
+    "source": "https://leangenbukta.no/fasiliteter-som-gjor-hverdagen-enklere/",
+    "to": "/demo/leangenbukta-nettside/fasiliteter-som-gjor-hverdagen-enklere",
+    "kind": "local",
+    "target": "fasiliteter-som-gjor-hverdagen-enklere"
+  },
+  {
+    "from": "her-trenger-du-ikke-eie-bil",
+    "source": "https://leangenbukta.no/kort-vei-til-alt/",
+    "to": "/demo/leangenbukta-nettside/kort-vei-til-alt",
+    "kind": "local",
+    "target": "kort-vei-til-alt"
+  },
+  {
+    "from": "her-trenger-du-ikke-eie-bil",
+    "source": "",
+    "to": null,
+    "kind": "empty-image"
+  },
+  {
+    "from": "her-trenger-du-ikke-eie-bil",
+    "source": "",
+    "to": null,
+    "kind": "empty-image"
+  },
+  {
+    "from": "hvordankjopebolig-2",
+    "source": "https://leangenbukta.no/salgsmateriell/kjopebekreftelser/",
+    "to": "/demo/leangenbukta-nettside/salgsmateriell/kjopebekreftelser",
+    "kind": "local",
+    "target": "salgsmateriell__kjopebekreftelser"
+  },
+  {
+    "from": "hvordankjopebolig-2",
+    "source": "https://leangenbukta.no/hvordankjopebolig-2/",
+    "to": "/demo/leangenbukta-nettside/hvordankjopebolig-2",
+    "kind": "local",
+    "target": "hvordankjopebolig-2"
+  },
+  {
+    "from": "hvordankjopebolig-2",
+    "source": "https://koteng.no/koteng-jenssen/",
+    "to": "https://koteng.no/koteng-jenssen/",
+    "kind": "external"
+  },
+  {
+    "from": "hvordankjopebolig-2",
+    "source": "http://www.obos.no",
+    "to": "http://www.obos.no/",
+    "kind": "external"
+  },
+  {
+    "from": "hvordankjopebolig-2",
+    "source": "mailto:mari.buaas@koteng.no",
+    "to": "mailto:mari.buaas@koteng.no",
+    "kind": "contact"
+  },
+  {
+    "from": "hvordankjopebolig-2",
+    "source": "tel:948 11 965",
+    "to": "tel:948 11 965",
+    "kind": "contact"
+  },
+  {
+    "from": "hvordankjopebolig-2",
+    "source": "mailto:jan.erik.fjeldseth@obos.no",
+    "to": "mailto:jan.erik.fjeldseth@obos.no",
+    "kind": "contact"
+  },
+  {
+    "from": "hvordankjopebolig-2",
+    "source": "tel:93254144",
+    "to": "tel:93254144",
+    "kind": "contact"
+  },
+  {
+    "from": "hvordankjopebolig-3",
+    "source": "https://www.obos.no/medlem/bli-medlem",
+    "to": "https://www.obos.no/medlem/bli-medlem",
+    "kind": "external"
+  },
+  {
+    "from": "hvordankjopebolig-3",
+    "source": "mailto: mari.buaas@koteng.no",
+    "to": "mailto: mari.buaas@koteng.no",
+    "kind": "contact"
+  },
+  {
+    "from": "hvordankjopebolig-3",
+    "source": "https://leangenbukta.no/hvordankjopebolig-3/",
+    "to": "/demo/leangenbukta-nettside/hvordankjopebolig-3",
+    "kind": "local",
+    "target": "hvordankjopebolig-3"
+  },
+  {
+    "from": "hvordankjopebolig-3",
+    "source": "https://koteng.no/koteng-jenssen/",
+    "to": "https://koteng.no/koteng-jenssen/",
+    "kind": "external"
+  },
+  {
+    "from": "hvordankjopebolig-3",
+    "source": "http://www.obos.no",
+    "to": "http://www.obos.no/",
+    "kind": "external"
+  },
+  {
+    "from": "hvordankjopebolig-3",
+    "source": "mailto:mari.buaas@koteng.no",
+    "to": "mailto:mari.buaas@koteng.no",
+    "kind": "contact"
+  },
+  {
+    "from": "hvordankjopebolig-3",
+    "source": "tel:948 11 965",
+    "to": "tel:948 11 965",
+    "kind": "contact"
+  },
+  {
+    "from": "hvordankjopebolig-3",
+    "source": "mailto:jan.erik.fjeldseth@obos.no",
+    "to": "mailto:jan.erik.fjeldseth@obos.no",
+    "kind": "contact"
+  },
+  {
+    "from": "hvordankjopebolig-3",
+    "source": "tel:93254144",
+    "to": "tel:93254144",
+    "kind": "contact"
+  },
+  {
+    "from": "hvordankjopebolig-byggc",
+    "source": "https://leangenbukta.no/salgsmateriell/kjopebekreftelser/",
+    "to": "/demo/leangenbukta-nettside/salgsmateriell/kjopebekreftelser",
+    "kind": "local",
+    "target": "salgsmateriell__kjopebekreftelser"
+  },
+  {
+    "from": "hvordankjopebolig-byggc",
+    "source": "https://leangenbukta.no/hvordankjopebolig-byggc/",
+    "to": "/demo/leangenbukta-nettside/hvordankjopebolig-byggc",
+    "kind": "local",
+    "target": "hvordankjopebolig-byggc"
+  },
+  {
+    "from": "hvordankjopebolig-byggc",
+    "source": "https://koteng.no/koteng-jenssen/",
+    "to": "https://koteng.no/koteng-jenssen/",
+    "kind": "external"
+  },
+  {
+    "from": "hvordankjopebolig-byggc",
+    "source": "http://www.obos.no",
+    "to": "http://www.obos.no/",
+    "kind": "external"
+  },
+  {
+    "from": "hvordankjopebolig-byggc",
+    "source": "mailto:mari.buaas@koteng.no",
+    "to": "mailto:mari.buaas@koteng.no",
+    "kind": "contact"
+  },
+  {
+    "from": "hvordankjopebolig-byggc",
+    "source": "tel:948 11 965",
+    "to": "tel:948 11 965",
+    "kind": "contact"
+  },
+  {
+    "from": "hvordankjopebolig-byggc",
+    "source": "mailto:jan.erik.fjeldseth@obos.no",
+    "to": "mailto:jan.erik.fjeldseth@obos.no",
+    "kind": "contact"
+  },
+  {
+    "from": "hvordankjopebolig-byggc",
+    "source": "tel:93254144",
+    "to": "tel:93254144",
+    "kind": "contact"
+  },
+  {
+    "from": "hvordankjopebolig",
+    "source": "https://www.obos.no/medlem/bli-medlem",
+    "to": "https://www.obos.no/medlem/bli-medlem",
+    "kind": "external"
+  },
+  {
+    "from": "hvordankjopebolig",
+    "source": "mailto: mari.buaas@koteng.no",
+    "to": "mailto: mari.buaas@koteng.no",
+    "kind": "contact"
+  },
+  {
+    "from": "hvordankjopebolig",
+    "source": "https://leangenbukta.no/hvordankjopebolig/",
+    "to": "/demo/leangenbukta-nettside/hvordankjopebolig",
+    "kind": "local",
+    "target": "hvordankjopebolig"
+  },
+  {
+    "from": "hvordankjopebolig",
+    "source": "https://koteng.no/koteng-jenssen/",
+    "to": "https://koteng.no/koteng-jenssen/",
+    "kind": "external"
+  },
+  {
+    "from": "hvordankjopebolig",
+    "source": "http://www.obos.no",
+    "to": "http://www.obos.no/",
+    "kind": "external"
+  },
+  {
+    "from": "hvordankjopebolig",
+    "source": "mailto:mari.buaas@koteng.no",
+    "to": "mailto:mari.buaas@koteng.no",
+    "kind": "contact"
+  },
+  {
+    "from": "hvordankjopebolig",
+    "source": "tel:948 11 965",
+    "to": "tel:948 11 965",
+    "kind": "contact"
+  },
+  {
+    "from": "hvordankjopebolig",
+    "source": "mailto:jan.erik.fjeldseth@obos.no",
+    "to": "mailto:jan.erik.fjeldseth@obos.no",
+    "kind": "contact"
+  },
+  {
+    "from": "hvordankjopebolig",
+    "source": "tel:93254144",
+    "to": "tel:93254144",
+    "kind": "contact"
+  },
+  {
+    "from": "innflyttingsklare-leiligheter",
+    "source": "https://leangenbukta.plyo.cloud/?y=2&p=20&point=1697012607945&selected=ByggH",
+    "to": "https://leangenbukta.plyo.cloud/?y=2&p=20&point=1697012607945&selected=ByggH",
+    "kind": "external"
+  },
+  {
+    "from": "innflyttingsklare-leiligheter",
+    "source": "",
+    "to": "#",
+    "kind": "anchor"
+  },
+  {
+    "from": "innflyttingsklare-leiligheter",
+    "source": "",
+    "to": "#",
+    "kind": "anchor"
+  },
+  {
+    "from": "innflyttingsklare-leiligheter",
+    "source": "",
+    "to": "#",
+    "kind": "anchor"
+  },
+  {
+    "from": "innflyttingsklare-leiligheter",
+    "source": "",
+    "to": "#",
+    "kind": "anchor"
+  },
+  {
+    "from": "innflyttingsklare-leiligheter",
+    "source": "https://leangenbukta.plyo.cloud/standalone-aptcho/saltakshus-h/h501",
+    "to": "https://leangenbukta.plyo.cloud/standalone-aptcho/saltakshus-h/h501",
+    "kind": "external"
+  },
+  {
+    "from": "innflyttingsklare-leiligheter",
+    "source": "https://leangenbukta.plyo.cloud/standalone-aptcho/saltakshus-h/h504",
+    "to": "https://leangenbukta.plyo.cloud/standalone-aptcho/saltakshus-h/h504",
+    "kind": "external"
+  },
+  {
+    "from": "innflyttingsklare-leiligheter",
+    "source": "",
+    "to": "#",
+    "kind": "anchor"
+  },
+  {
+    "from": "innflyttingsklare-leiligheter",
+    "source": "",
+    "to": "#",
+    "kind": "anchor"
+  },
+  {
+    "from": "innflyttingsklare-leiligheter",
+    "source": "",
+    "to": "#",
+    "kind": "anchor"
+  },
+  {
+    "from": "innflyttingsklare-leiligheter",
+    "source": "",
+    "to": "#",
+    "kind": "anchor"
+  },
+  {
+    "from": "innflyttingsklare-leiligheter",
+    "source": "https://leangenbukta.plyo.cloud/?y=246&p=4&point=1394272306866&selected=ByggE",
+    "to": "https://leangenbukta.plyo.cloud/?y=246&p=4&point=1394272306866&selected=ByggE",
+    "kind": "external"
+  },
+  {
+    "from": "innflyttingsklare-leiligheter",
+    "source": "https://leangenbukta.plyo.cloud/standalone-aptcho/knutepunktet/e203",
+    "to": "https://leangenbukta.plyo.cloud/standalone-aptcho/knutepunktet/e203",
+    "kind": "external"
+  },
+  {
+    "from": "innflyttingsklare-leiligheter",
+    "source": "",
+    "to": "#",
+    "kind": "anchor"
+  },
+  {
+    "from": "innflyttingsklare-leiligheter",
+    "source": "",
+    "to": "#",
+    "kind": "anchor"
+  },
+  {
+    "from": "innflyttingsklare-leiligheter",
+    "source": "",
+    "to": "#",
+    "kind": "anchor"
+  },
+  {
+    "from": "innflyttingsklare-leiligheter",
+    "source": "",
+    "to": "#",
+    "kind": "anchor"
+  },
+  {
+    "from": "innflyttingsklare-leiligheter",
+    "source": "https://leangenbukta.plyo.cloud/standalone-aptcho/knutepunktet/e403",
+    "to": "https://leangenbukta.plyo.cloud/standalone-aptcho/knutepunktet/e403",
+    "kind": "external"
+  },
+  {
+    "from": "innflyttingsklare-leiligheter",
+    "source": "https://leangenbukta.no/innflyttingsklare-leiligheter/",
+    "to": "/demo/leangenbukta-nettside/innflyttingsklare-leiligheter",
+    "kind": "local",
+    "target": "innflyttingsklare-leiligheter"
+  },
+  {
+    "from": "innflyttingsklare-leiligheter",
+    "source": "https://koteng.no/koteng-jenssen/",
+    "to": "https://koteng.no/koteng-jenssen/",
+    "kind": "external"
+  },
+  {
+    "from": "innflyttingsklare-leiligheter",
+    "source": "http://www.obos.no",
+    "to": "http://www.obos.no/",
+    "kind": "external"
+  },
+  {
+    "from": "innflyttingsklare-leiligheter",
+    "source": "mailto:mari.buaas@koteng.no",
+    "to": "mailto:mari.buaas@koteng.no",
+    "kind": "contact"
+  },
+  {
+    "from": "innflyttingsklare-leiligheter",
+    "source": "tel:948 11 965",
+    "to": "tel:948 11 965",
+    "kind": "contact"
+  },
+  {
+    "from": "innflyttingsklare-leiligheter",
+    "source": "mailto:jan.erik.fjeldseth@obos.no",
+    "to": "mailto:jan.erik.fjeldseth@obos.no",
+    "kind": "contact"
+  },
+  {
+    "from": "innflyttingsklare-leiligheter",
+    "source": "tel:93254144",
+    "to": "tel:93254144",
+    "kind": "contact"
+  },
+  {
+    "from": "knutepunktet",
+    "source": "https://leangenbukta.no/boligvelger/knutepunktet/",
+    "to": "https://leangenbukta.no/boligvelger/knutepunktet/",
+    "kind": "external"
+  },
+  {
+    "from": "knutepunktet",
+    "source": "https://leangenbukta.no/wp-content/uploads/2025/02/11.02.25_digitaltprospekt_knutepunktet_ny.pdf",
+    "to": "https://leangenbukta.no/wp-content/uploads/2025/02/11.02.25_digitaltprospekt_knutepunktet_ny.pdf",
+    "kind": "document"
+  },
+  {
+    "from": "knutepunktet",
+    "source": "https://leangenbukta.no/salgsmateriell/prislister/",
+    "to": "/demo/leangenbukta-nettside/salgsmateriell/prislister",
+    "kind": "local",
+    "target": "salgsmateriell__prislister"
+  },
+  {
+    "from": "knutepunktet",
+    "source": "https://maps.app.goo.gl/Y87SA5BwZyEJ9D8N8",
+    "to": "https://maps.app.goo.gl/Y87SA5BwZyEJ9D8N8",
+    "kind": "external"
+  },
+  {
+    "from": "knutepunktet",
+    "source": "https://leangenbukta.no/hvordankjopebolig-2/",
+    "to": "/demo/leangenbukta-nettside/hvordankjopebolig-2",
+    "kind": "local",
+    "target": "hvordankjopebolig-2"
+  },
+  {
+    "from": "knutepunktet",
+    "source": "#",
+    "to": "#",
+    "kind": "anchor"
+  },
+  {
+    "from": "knutepunktet",
+    "source": "https://leangenbukta.no/wp-content/uploads/2025/01/innredningsplan-275kvm_Knutepunktet2.pdf",
+    "to": "https://leangenbukta.no/wp-content/uploads/2025/01/innredningsplan-275kvm_Knutepunktet2.pdf",
+    "kind": "document"
+  },
+  {
+    "from": "knutepunktet",
+    "source": "https://leangenbukta.no/knutepunktet/",
+    "to": "/demo/leangenbukta-nettside/knutepunktet",
+    "kind": "local",
+    "target": "knutepunktet"
+  },
+  {
+    "from": "knutepunktet",
+    "source": "https://koteng.no/koteng-jenssen/",
+    "to": "https://koteng.no/koteng-jenssen/",
+    "kind": "external"
+  },
+  {
+    "from": "knutepunktet",
+    "source": "http://www.obos.no",
+    "to": "http://www.obos.no/",
+    "kind": "external"
+  },
+  {
+    "from": "knutepunktet",
+    "source": "mailto:mari.buaas@koteng.no",
+    "to": "mailto:mari.buaas@koteng.no",
+    "kind": "contact"
+  },
+  {
+    "from": "knutepunktet",
+    "source": "tel:948 11 965",
+    "to": "tel:948 11 965",
+    "kind": "contact"
+  },
+  {
+    "from": "knutepunktet",
+    "source": "mailto:jan.erik.fjeldseth@obos.no",
+    "to": "mailto:jan.erik.fjeldseth@obos.no",
+    "kind": "contact"
+  },
+  {
+    "from": "knutepunktet",
+    "source": "tel:93254144",
+    "to": "tel:93254144",
+    "kind": "contact"
+  },
+  {
+    "from": "kort-vei-til-alt",
+    "source": "https://leangenbukta.no/category/aktuelt/",
+    "to": "/demo/leangenbukta-nettside/aktuelt",
+    "kind": "local",
+    "target": "aktuelt"
+  },
+  {
+    "from": "kort-vei-til-alt",
+    "source": "https://leangenbukta.no/author/ida/",
+    "to": "/demo/leangenbukta-nettside/aktuelt",
+    "kind": "local",
+    "target": "aktuelt"
+  },
+  {
+    "from": "kort-vei-til-alt",
+    "source": "https://leangenbukta.no/kort-vei-til-alt/#respond",
+    "to": "/demo/leangenbukta-nettside/kort-vei-til-alt#respond",
+    "kind": "local",
+    "target": "kort-vei-til-alt"
+  },
+  {
+    "from": "kort-vei-til-alt",
+    "source": "https://www.trondheim.no/ladestien",
+    "to": "https://www.trondheim.no/ladestien",
+    "kind": "external"
+  },
+  {
+    "from": "kort-vei-til-alt",
+    "source": "https://leangenbukta.no/kort-vei-til-alt/",
+    "to": "/demo/leangenbukta-nettside/kort-vei-til-alt",
+    "kind": "local",
+    "target": "kort-vei-til-alt"
+  },
+  {
+    "from": "kort-vei-til-alt",
+    "source": "mailto:mari.buaas@koteng.no",
+    "to": "mailto:mari.buaas@koteng.no",
+    "kind": "contact"
+  },
+  {
+    "from": "kort-vei-til-alt",
+    "source": "tel:948 11 965",
+    "to": "tel:948 11 965",
+    "kind": "contact"
+  },
+  {
+    "from": "kort-vei-til-alt",
+    "source": "jan.erik.fjeldseth@obos.no",
+    "to": "mailto:jan.erik.fjeldseth@obos.no",
+    "kind": "contact"
+  },
+  {
+    "from": "kort-vei-til-alt",
+    "source": "tel:93254144",
+    "to": "tel:93254144",
+    "kind": "contact"
+  },
+  {
+    "from": "kort-vei-til-alt",
+    "source": "mailto:mari@koteng.no",
+    "to": "mailto:mari@koteng.no",
+    "kind": "contact"
+  },
+  {
+    "from": "kort-vei-til-alt",
+    "source": "tel:948 11 965",
+    "to": "tel:948 11 965",
+    "kind": "contact"
+  },
+  {
+    "from": "kort-vei-til-alt",
+    "source": "mailto:jan.erik.fjeldseth@obos.no",
+    "to": "mailto:jan.erik.fjeldseth@obos.no",
+    "kind": "contact"
+  },
+  {
+    "from": "kort-vei-til-alt",
+    "source": "tel:932 54 144",
+    "to": "tel:932 54 144",
+    "kind": "contact"
+  },
+  {
+    "from": "kort-vei-til-alt",
+    "source": "http://www.koteng.no",
+    "to": "http://www.koteng.no/",
+    "kind": "external"
+  },
+  {
+    "from": "kort-vei-til-alt",
+    "source": "http://www.obos.no",
+    "to": "http://www.obos.no/",
+    "kind": "external"
+  },
+  {
+    "from": "kort-vei-til-alt",
+    "source": "https://leangenbukta.no/kort-vei-til-alt/",
+    "to": "/demo/leangenbukta-nettside/kort-vei-til-alt",
+    "kind": "local",
+    "target": "kort-vei-til-alt"
+  },
+  {
+    "from": "kort-vei-til-alt",
+    "source": "https://koteng.no/koteng-jenssen/",
+    "to": "https://koteng.no/koteng-jenssen/",
+    "kind": "external"
+  },
+  {
+    "from": "kort-vei-til-alt",
+    "source": "http://www.obos.no",
+    "to": "http://www.obos.no/",
+    "kind": "external"
+  },
+  {
+    "from": "kort-vei-til-alt",
+    "source": "mailto:mari.buaas@koteng.no",
+    "to": "mailto:mari.buaas@koteng.no",
+    "kind": "contact"
+  },
+  {
+    "from": "kort-vei-til-alt",
+    "source": "tel:948 11 965",
+    "to": "tel:948 11 965",
+    "kind": "contact"
+  },
+  {
+    "from": "kort-vei-til-alt",
+    "source": "mailto:jan.erik.fjeldseth@obos.no",
+    "to": "mailto:jan.erik.fjeldseth@obos.no",
+    "kind": "contact"
+  },
+  {
+    "from": "kort-vei-til-alt",
+    "source": "tel:93254144",
+    "to": "tel:93254144",
+    "kind": "contact"
+  },
+  {
+    "from": "kort-vei-til-alt",
+    "source": "https://leangenbukta.no/her-trenger-du-ikke-eie-bil/",
+    "to": "/demo/leangenbukta-nettside/her-trenger-du-ikke-eie-bil",
+    "kind": "local",
+    "target": "her-trenger-du-ikke-eie-bil"
+  },
+  {
+    "from": "kort-vei-til-alt",
+    "source": "https://leangenbukta.no/byvilla-1-og-2/",
+    "to": "/demo/leangenbukta-nettside/byvilla-1-og-2",
+    "kind": "local",
+    "target": "byvilla-1-og-2"
+  },
+  {
+    "from": "kort-vei-til-alt",
+    "source": "",
+    "to": null,
+    "kind": "empty-image"
+  },
+  {
+    "from": "kundeportal",
+    "source": "https://app.libitum.cloud/haakon-vii-gt-14-as/",
+    "to": "https://app.libitum.cloud/haakon-vii-gt-14-as/",
+    "kind": "external"
+  },
+  {
+    "from": "kundeportal",
+    "source": "https://haakonviigt14.libitum.cloud",
+    "to": "https://haakonviigt14.libitum.cloud/",
+    "kind": "external"
+  },
+  {
+    "from": "kundeportal",
+    "source": "https://client.journeyapp.tech/auth/sign-in",
+    "to": "https://client.journeyapp.tech/auth/sign-in",
+    "kind": "external"
+  },
+  {
+    "from": "kundeportal",
+    "source": "https://leangenbukta.no/kundeportal/",
+    "to": "/demo/leangenbukta-nettside/kundeportal",
+    "kind": "local",
+    "target": "kundeportal"
+  },
+  {
+    "from": "kundeportal",
+    "source": "https://koteng.no/koteng-jenssen/",
+    "to": "https://koteng.no/koteng-jenssen/",
+    "kind": "external"
+  },
+  {
+    "from": "kundeportal",
+    "source": "http://www.obos.no",
+    "to": "http://www.obos.no/",
+    "kind": "external"
+  },
+  {
+    "from": "kundeportal",
+    "source": "mailto:mari.buaas@koteng.no",
+    "to": "mailto:mari.buaas@koteng.no",
+    "kind": "contact"
+  },
+  {
+    "from": "kundeportal",
+    "source": "tel:948 11 965",
+    "to": "tel:948 11 965",
+    "kind": "contact"
+  },
+  {
+    "from": "kundeportal",
+    "source": "mailto:jan.erik.fjeldseth@obos.no",
+    "to": "mailto:jan.erik.fjeldseth@obos.no",
+    "kind": "contact"
+  },
+  {
+    "from": "kundeportal",
+    "source": "tel:93254144",
+    "to": "tel:93254144",
+    "kind": "contact"
+  },
+  {
+    "from": "nytt-salgstrinn-bygg-l",
+    "source": "https://leangenbukta.no/category/aktuelt/",
+    "to": "/demo/leangenbukta-nettside/aktuelt",
+    "kind": "local",
+    "target": "aktuelt"
+  },
+  {
+    "from": "nytt-salgstrinn-bygg-l",
+    "source": "https://leangenbukta.no/author/ida/",
+    "to": "/demo/leangenbukta-nettside/aktuelt",
+    "kind": "local",
+    "target": "aktuelt"
+  },
+  {
+    "from": "nytt-salgstrinn-bygg-l",
+    "source": "https://leangenbukta.no/nytt-salgstrinn-bygg-l/#respond",
+    "to": "/demo/leangenbukta-nettside/nytt-salgstrinn-bygg-l#respond",
+    "kind": "local",
+    "target": "nytt-salgstrinn-bygg-l"
+  },
+  {
+    "from": "nytt-salgstrinn-bygg-l",
+    "source": "https://leangenbukta.no/boligvelger/saltakshusl/",
+    "to": "https://leangenbukta.no/boligvelger/saltakshusl/",
+    "kind": "external"
+  },
+  {
+    "from": "nytt-salgstrinn-bygg-l",
+    "source": "https://leangenbukta.no/nytt-salgstrinn-bygg-l/",
+    "to": "/demo/leangenbukta-nettside/nytt-salgstrinn-bygg-l",
+    "kind": "local",
+    "target": "nytt-salgstrinn-bygg-l"
+  },
+  {
+    "from": "nytt-salgstrinn-bygg-l",
+    "source": "mailto:mari@koteng.no",
+    "to": "mailto:mari@koteng.no",
+    "kind": "contact"
+  },
+  {
+    "from": "nytt-salgstrinn-bygg-l",
+    "source": "tel:948 11 965",
+    "to": "tel:948 11 965",
+    "kind": "contact"
+  },
+  {
+    "from": "nytt-salgstrinn-bygg-l",
+    "source": "jan.erik.fjeldseth@obos.no",
+    "to": "mailto:jan.erik.fjeldseth@obos.no",
+    "kind": "contact"
+  },
+  {
+    "from": "nytt-salgstrinn-bygg-l",
+    "source": "tel:93254144",
+    "to": "tel:93254144",
+    "kind": "contact"
+  },
+  {
+    "from": "nytt-salgstrinn-bygg-l",
+    "source": "mailto:mari@koteng.no",
+    "to": "mailto:mari@koteng.no",
+    "kind": "contact"
+  },
+  {
+    "from": "nytt-salgstrinn-bygg-l",
+    "source": "tel:948 11 965",
+    "to": "tel:948 11 965",
+    "kind": "contact"
+  },
+  {
+    "from": "nytt-salgstrinn-bygg-l",
+    "source": "mailto:jan.erik.fjeldseth@obos.no",
+    "to": "mailto:jan.erik.fjeldseth@obos.no",
+    "kind": "contact"
+  },
+  {
+    "from": "nytt-salgstrinn-bygg-l",
+    "source": "tel:932 54 144",
+    "to": "tel:932 54 144",
+    "kind": "contact"
+  },
+  {
+    "from": "nytt-salgstrinn-bygg-l",
+    "source": "http://www.koteng.no",
+    "to": "http://www.koteng.no/",
+    "kind": "external"
+  },
+  {
+    "from": "nytt-salgstrinn-bygg-l",
+    "source": "http://www.obos.no",
+    "to": "http://www.obos.no/",
+    "kind": "external"
+  },
+  {
+    "from": "nytt-salgstrinn-bygg-l",
+    "source": "https://leangenbukta.no/nytt-salgstrinn-bygg-l/",
+    "to": "/demo/leangenbukta-nettside/nytt-salgstrinn-bygg-l",
+    "kind": "local",
+    "target": "nytt-salgstrinn-bygg-l"
+  },
+  {
+    "from": "nytt-salgstrinn-bygg-l",
+    "source": "https://koteng.no/koteng-jenssen/",
+    "to": "https://koteng.no/koteng-jenssen/",
+    "kind": "external"
+  },
+  {
+    "from": "nytt-salgstrinn-bygg-l",
+    "source": "http://www.obos.no",
+    "to": "http://www.obos.no/",
+    "kind": "external"
+  },
+  {
+    "from": "nytt-salgstrinn-bygg-l",
+    "source": "mailto:mari.buaas@koteng.no",
+    "to": "mailto:mari.buaas@koteng.no",
+    "kind": "contact"
+  },
+  {
+    "from": "nytt-salgstrinn-bygg-l",
+    "source": "tel:948 11 965",
+    "to": "tel:948 11 965",
+    "kind": "contact"
+  },
+  {
+    "from": "nytt-salgstrinn-bygg-l",
+    "source": "mailto:jan.erik.fjeldseth@obos.no",
+    "to": "mailto:jan.erik.fjeldseth@obos.no",
+    "kind": "contact"
+  },
+  {
+    "from": "nytt-salgstrinn-bygg-l",
+    "source": "tel:93254144",
+    "to": "tel:93254144",
+    "kind": "contact"
+  },
+  {
+    "from": "nytt-salgstrinn-bygg-l",
+    "source": "https://leangenbukta.no/saltakshusk/",
+    "to": "/demo/leangenbukta-nettside/saltakshusk",
+    "kind": "local",
+    "target": "saltakshusk"
+  },
+  {
+    "from": "nytt-salgstrinn-bygg-l",
+    "source": "https://leangenbukta.no/byggetrinn-1-rekkehus/",
+    "to": "/demo/leangenbukta-nettside/nytt-salgstrinn-bygg-l",
+    "kind": "local",
+    "target": "nytt-salgstrinn-bygg-l"
+  },
+  {
+    "from": "nytt-salgstrinn-bygg-l",
+    "source": "",
+    "to": null,
+    "kind": "empty-image"
+  },
+  {
+    "from": "nytt-salgstrinn-bygg-l",
+    "source": "",
+    "to": null,
+    "kind": "empty-image"
+  },
+  {
+    "from": "om-prosjektet",
+    "source": "#",
+    "to": "#",
+    "kind": "anchor"
+  },
+  {
+    "from": "om-prosjektet",
+    "source": "https://www.dropbox.com/sh/agkj9fb2vbl067x/AACq7WheyAs-NrYJ18k4ERL5a?dl=0",
+    "to": "https://www.dropbox.com/sh/agkj9fb2vbl067x/AACq7WheyAs-NrYJ18k4ERL5a?dl=0",
+    "kind": "external"
+  },
+  {
+    "from": "om-prosjektet",
+    "source": "http://www.obos.no",
+    "to": "http://www.obos.no/",
+    "kind": "external"
+  },
+  {
+    "from": "om-prosjektet",
+    "source": "http://www.obos.no",
+    "to": "http://www.obos.no/",
+    "kind": "external"
+  },
+  {
+    "from": "om-prosjektet",
+    "source": "https://www.koteng.no/",
+    "to": "https://www.koteng.no/",
+    "kind": "external"
+  },
+  {
+    "from": "om-prosjektet",
+    "source": "https://www.obos.no/",
+    "to": "https://www.obos.no/",
+    "kind": "external"
+  },
+  {
+    "from": "om-prosjektet",
+    "source": "https://www.koteng.no/content/663/Ansatte",
+    "to": "https://www.koteng.no/content/663/Ansatte",
+    "kind": "external"
+  },
+  {
+    "from": "om-prosjektet",
+    "source": "https://leangenbukta.no/om-prosjektet-2/",
+    "to": "/demo/leangenbukta-nettside/om-prosjektet",
+    "kind": "local",
+    "target": "om-prosjektet"
+  },
+  {
+    "from": "om-prosjektet",
+    "source": "https://koteng.no/koteng-jenssen/",
+    "to": "https://koteng.no/koteng-jenssen/",
+    "kind": "external"
+  },
+  {
+    "from": "om-prosjektet",
+    "source": "http://www.obos.no",
+    "to": "http://www.obos.no/",
+    "kind": "external"
+  },
+  {
+    "from": "om-prosjektet",
+    "source": "mailto:mari.buaas@koteng.no",
+    "to": "mailto:mari.buaas@koteng.no",
+    "kind": "contact"
+  },
+  {
+    "from": "om-prosjektet",
+    "source": "tel:948 11 965",
+    "to": "tel:948 11 965",
+    "kind": "contact"
+  },
+  {
+    "from": "om-prosjektet",
+    "source": "mailto:jan.erik.fjeldseth@obos.no",
+    "to": "mailto:jan.erik.fjeldseth@obos.no",
+    "kind": "contact"
+  },
+  {
+    "from": "om-prosjektet",
+    "source": "tel:93254144",
+    "to": "tel:93254144",
+    "kind": "contact"
+  },
+  {
+    "from": "parktunet1",
+    "source": "https://www.google.com/maps/place/Leangenbukta/@63.4390768,10.4632529,378m/data=!3m1!1e3!4m10!1m2!2m1!1sleangenbukta!3m6!1s0x466d315ab1e550a1:0xc336c3af8f9d131d!8m2!3d63.4390768!4d10.4656346!15sCgxsZWFuZ2VuYnVrdGGSARVyZWFsX2VzdGF0ZV9kZXZlbG9wZXLgAQA!16s%2Fg%2F11j8zg9ctb?entry=ttu&g_ep=EgoyMDI2MDMwMi4wIKXMDSoASAFQAw%3D%3D",
+    "to": "https://www.google.com/maps/place/Leangenbukta/@63.4390768,10.4632529,378m/data=!3m1!1e3!4m10!1m2!2m1!1sleangenbukta!3m6!1s0x466d315ab1e550a1:0xc336c3af8f9d131d!8m2!3d63.4390768!4d10.4656346!15sCgxsZWFuZ2VuYnVrdGGSARVyZWFsX2VzdGF0ZV9kZXZlbG9wZXLgAQA!16s%2Fg%2F11j8zg9ctb?entry=ttu&g_ep=EgoyMDI2MDMwMi4wIKXMDSoASAFQAw%3D%3D",
+    "kind": "external"
+  },
+  {
+    "from": "parktunet1",
+    "source": "https://leangenbukta.no/parktunet1/#kontakt",
+    "to": "/demo/leangenbukta-nettside/parktunet1#kontakt",
+    "kind": "local",
+    "target": "parktunet1"
+  },
+  {
+    "from": "parktunet1",
+    "source": "https://leangenbukta.no/salgsmateriell/",
+    "to": "/demo/leangenbukta-nettside/salgsmateriell",
+    "kind": "local",
+    "target": "salgsmateriell"
+  },
+  {
+    "from": "parktunet1",
+    "source": "https://leangenbukta.plyo.cloud/?y=33&p=0&point=1741545619853&selected=ByggD",
+    "to": "https://leangenbukta.plyo.cloud/?y=33&p=0&point=1741545619853&selected=ByggD",
+    "kind": "external"
+  },
+  {
+    "from": "parktunet1",
+    "source": "https://leangenbukta.no/knutepunktet/",
+    "to": "/demo/leangenbukta-nettside/knutepunktet",
+    "kind": "local",
+    "target": "knutepunktet"
+  },
+  {
+    "from": "parktunet1",
+    "source": "https://leangenbukta.no/#kontakt",
+    "to": "/demo/leangenbukta-nettside#kontakt",
+    "kind": "local",
+    "target": "forside"
+  },
+  {
+    "from": "parktunet1",
+    "source": "https://leangenbukta.no/hvordankjopebolig-3/",
+    "to": "/demo/leangenbukta-nettside/hvordankjopebolig-3",
+    "kind": "local",
+    "target": "hvordankjopebolig-3"
+  },
+  {
+    "from": "parktunet1",
+    "source": "https://leangenbukta.no/parktunet1-2/?utm_id=23850693525210778",
+    "to": "/demo/leangenbukta-nettside/parktunet1",
+    "kind": "local",
+    "target": "parktunet1"
+  },
+  {
+    "from": "parktunet1",
+    "source": "https://koteng.no/koteng-jenssen/",
+    "to": "https://koteng.no/koteng-jenssen/",
+    "kind": "external"
+  },
+  {
+    "from": "parktunet1",
+    "source": "http://www.obos.no",
+    "to": "http://www.obos.no/",
+    "kind": "external"
+  },
+  {
+    "from": "parktunet1",
+    "source": "mailto:mari.buaas@koteng.no",
+    "to": "mailto:mari.buaas@koteng.no",
+    "kind": "contact"
+  },
+  {
+    "from": "parktunet1",
+    "source": "tel:948 11 965",
+    "to": "tel:948 11 965",
+    "kind": "contact"
+  },
+  {
+    "from": "parktunet1",
+    "source": "mailto:jan.erik.fjeldseth@obos.no",
+    "to": "mailto:jan.erik.fjeldseth@obos.no",
+    "kind": "contact"
+  },
+  {
+    "from": "parktunet1",
+    "source": "tel:93254144",
+    "to": "tel:93254144",
+    "kind": "contact"
+  },
+  {
+    "from": "personvern",
+    "source": "https://leangenbukta.no/retningslinjer-for-informasjonskapsler/",
+    "to": "/demo/leangenbukta-nettside/retningslinjer-for-informasjonskapsler",
+    "kind": "local",
+    "target": "retningslinjer-for-informasjonskapsler"
+  },
+  {
+    "from": "personvern",
+    "source": "https://leangenbukta.no/personvern/",
+    "to": "/demo/leangenbukta-nettside/personvern",
+    "kind": "local",
+    "target": "personvern"
+  },
+  {
+    "from": "personvern",
+    "source": "https://koteng.no/koteng-jenssen/",
+    "to": "https://koteng.no/koteng-jenssen/",
+    "kind": "external"
+  },
+  {
+    "from": "personvern",
+    "source": "http://www.obos.no",
+    "to": "http://www.obos.no/",
+    "kind": "external"
+  },
+  {
+    "from": "personvern",
+    "source": "mailto:mari.buaas@koteng.no",
+    "to": "mailto:mari.buaas@koteng.no",
+    "kind": "contact"
+  },
+  {
+    "from": "personvern",
+    "source": "tel:948 11 965",
+    "to": "tel:948 11 965",
+    "kind": "contact"
+  },
+  {
+    "from": "personvern",
+    "source": "mailto:jan.erik.fjeldseth@obos.no",
+    "to": "mailto:jan.erik.fjeldseth@obos.no",
+    "kind": "contact"
+  },
+  {
+    "from": "personvern",
+    "source": "tel:93254144",
+    "to": "tel:93254144",
+    "kind": "contact"
+  },
+  {
+    "from": "portfolio__sjoparken",
+    "source": "https://leangenbukta.no/portfolio/sjoparken-2/",
+    "to": "/demo/leangenbukta-nettside/portfolio/sjoparken",
+    "kind": "local",
+    "target": "portfolio__sjoparken"
+  },
+  {
+    "from": "project-type__premium-kvaliteter",
+    "source": "https://leangenbukta.no/",
+    "to": "/demo/leangenbukta-nettside",
+    "kind": "local",
+    "target": "forside"
+  },
+  {
+    "from": "project-type__premium-kvaliteter",
+    "source": "https://leangenbukta.no/portfolio/sjoparken-2/",
+    "to": "/demo/leangenbukta-nettside/portfolio/sjoparken",
+    "kind": "local",
+    "target": "portfolio__sjoparken"
+  },
+  {
+    "from": "project-type__premium-kvaliteter",
+    "source": "https://leangenbukta.no/portfolio/sjoparken/",
+    "to": "/demo/leangenbukta-nettside/portfolio/sjoparken",
+    "kind": "local",
+    "target": "portfolio__sjoparken"
+  },
+  {
+    "from": "rekkehus-for-barnefamilier-i-trondheim",
+    "source": "https://leangenbukta.no/rekkehus-for-barnefamilier-i-trondheim/",
+    "to": "/demo/leangenbukta-nettside/rekkehus-for-barnefamilier-i-trondheim",
+    "kind": "local",
+    "target": "rekkehus-for-barnefamilier-i-trondheim"
+  },
+  {
+    "from": "rekkehus-for-barnefamilier-i-trondheim",
+    "source": "https://leangenbukta.no/rekkehus-for-barnefamilier-i-trondheim/",
+    "to": "/demo/leangenbukta-nettside/rekkehus-for-barnefamilier-i-trondheim",
+    "kind": "local",
+    "target": "rekkehus-for-barnefamilier-i-trondheim"
+  },
+  {
+    "from": "rekkehus-for-barnefamilier-i-trondheim",
+    "source": "https://koteng.no/koteng-jenssen/",
+    "to": "https://koteng.no/koteng-jenssen/",
+    "kind": "external"
+  },
+  {
+    "from": "rekkehus-for-barnefamilier-i-trondheim",
+    "source": "http://www.obos.no",
+    "to": "http://www.obos.no/",
+    "kind": "external"
+  },
+  {
+    "from": "rekkehus-for-barnefamilier-i-trondheim",
+    "source": "mailto:mari.buaas@koteng.no",
+    "to": "mailto:mari.buaas@koteng.no",
+    "kind": "contact"
+  },
+  {
+    "from": "rekkehus-for-barnefamilier-i-trondheim",
+    "source": "tel:948 11 965",
+    "to": "tel:948 11 965",
+    "kind": "contact"
+  },
+  {
+    "from": "rekkehus-for-barnefamilier-i-trondheim",
+    "source": "mailto:jan.erik.fjeldseth@obos.no",
+    "to": "mailto:jan.erik.fjeldseth@obos.no",
+    "kind": "contact"
+  },
+  {
+    "from": "rekkehus-for-barnefamilier-i-trondheim",
+    "source": "tel:93254144",
+    "to": "tel:93254144",
+    "kind": "contact"
+  },
+  {
+    "from": "rekkehus19-27",
+    "source": "https://leangenbukta.no/category/aktuelt/",
+    "to": "/demo/leangenbukta-nettside/aktuelt",
+    "kind": "local",
+    "target": "aktuelt"
+  },
+  {
+    "from": "rekkehus19-27",
+    "source": "https://leangenbukta.no/author/ida/",
+    "to": "/demo/leangenbukta-nettside/aktuelt",
+    "kind": "local",
+    "target": "aktuelt"
+  },
+  {
+    "from": "rekkehus19-27",
+    "source": "https://leangenbukta.no/rekkehus19-27/#respond",
+    "to": "/demo/leangenbukta-nettside/rekkehus19-27#respond",
+    "kind": "local",
+    "target": "rekkehus19-27"
+  },
+  {
+    "from": "rekkehus19-27",
+    "source": "https://leangenbukta.no/rekkehus-for-barnefamilier-i-trondheim?utm_source=nettside&utm_medium=klikklink&utm_campaign=frarekkehus",
+    "to": "/demo/leangenbukta-nettside/rekkehus-for-barnefamilier-i-trondheim",
+    "kind": "local",
+    "target": "rekkehus-for-barnefamilier-i-trondheim"
+  },
+  {
+    "from": "rekkehus19-27",
+    "source": "https://leangenbukta.plyo.cloud/?y=86&p=26",
+    "to": "https://leangenbukta.plyo.cloud/?y=86&p=26",
+    "kind": "external"
+  },
+  {
+    "from": "rekkehus19-27",
+    "source": "https://leangenbukta.no/wp-content/uploads/2024/04/09.04.24_Rekkehus_19-27_digitaltprospekt-1.pdf",
+    "to": "https://leangenbukta.no/wp-content/uploads/2024/04/09.04.24_Rekkehus_19-27_digitaltprospekt-1.pdf",
+    "kind": "document"
+  },
+  {
+    "from": "rekkehus19-27",
+    "source": "https://leangenbukta.no/byvilla-1-og-2/#kontakt",
+    "to": "/demo/leangenbukta-nettside/byvilla-1-og-2#kontakt",
+    "kind": "local",
+    "target": "byvilla-1-og-2"
+  },
+  {
+    "from": "rekkehus19-27",
+    "source": "https://leangenbukta.no/rekkehus19-27/",
+    "to": "/demo/leangenbukta-nettside/rekkehus19-27",
+    "kind": "local",
+    "target": "rekkehus19-27"
+  },
+  {
+    "from": "rekkehus19-27",
+    "source": "mailto:mari.buaas@koteng.no",
+    "to": "mailto:mari.buaas@koteng.no",
+    "kind": "contact"
+  },
+  {
+    "from": "rekkehus19-27",
+    "source": "tel:948 11 965",
+    "to": "tel:948 11 965",
+    "kind": "contact"
+  },
+  {
+    "from": "rekkehus19-27",
+    "source": "jan.erik.fjeldseth@obos.no",
+    "to": "mailto:jan.erik.fjeldseth@obos.no",
+    "kind": "contact"
+  },
+  {
+    "from": "rekkehus19-27",
+    "source": "tel:93254144",
+    "to": "tel:93254144",
+    "kind": "contact"
+  },
+  {
+    "from": "rekkehus19-27",
+    "source": "mailto:mari.buaas@koteng.no",
+    "to": "mailto:mari.buaas@koteng.no",
+    "kind": "contact"
+  },
+  {
+    "from": "rekkehus19-27",
+    "source": "tel:948 11 965",
+    "to": "tel:948 11 965",
+    "kind": "contact"
+  },
+  {
+    "from": "rekkehus19-27",
+    "source": "mailto:jan.erik.fjeldseth@obos.no",
+    "to": "mailto:jan.erik.fjeldseth@obos.no",
+    "kind": "contact"
+  },
+  {
+    "from": "rekkehus19-27",
+    "source": "tel:932 54 144",
+    "to": "tel:932 54 144",
+    "kind": "contact"
+  },
+  {
+    "from": "rekkehus19-27",
+    "source": "http://www.koteng.no",
+    "to": "http://www.koteng.no/",
+    "kind": "external"
+  },
+  {
+    "from": "rekkehus19-27",
+    "source": "http://www.obos.no",
+    "to": "http://www.obos.no/",
+    "kind": "external"
+  },
+  {
+    "from": "rekkehus19-27",
+    "source": "https://leangenbukta.no/rekkehus19-27/",
+    "to": "/demo/leangenbukta-nettside/rekkehus19-27",
+    "kind": "local",
+    "target": "rekkehus19-27"
+  },
+  {
+    "from": "rekkehus19-27",
+    "source": "https://koteng.no/koteng-jenssen/",
+    "to": "https://koteng.no/koteng-jenssen/",
+    "kind": "external"
+  },
+  {
+    "from": "rekkehus19-27",
+    "source": "http://www.obos.no",
+    "to": "http://www.obos.no/",
+    "kind": "external"
+  },
+  {
+    "from": "rekkehus19-27",
+    "source": "mailto:mari.buaas@koteng.no",
+    "to": "mailto:mari.buaas@koteng.no",
+    "kind": "contact"
+  },
+  {
+    "from": "rekkehus19-27",
+    "source": "tel:948 11 965",
+    "to": "tel:948 11 965",
+    "kind": "contact"
+  },
+  {
+    "from": "rekkehus19-27",
+    "source": "mailto:jan.erik.fjeldseth@obos.no",
+    "to": "mailto:jan.erik.fjeldseth@obos.no",
+    "kind": "contact"
+  },
+  {
+    "from": "rekkehus19-27",
+    "source": "tel:93254144",
+    "to": "tel:93254144",
+    "kind": "contact"
+  },
+  {
+    "from": "rekkehus19-27",
+    "source": "https://leangenbukta.no/fritidstilbud-for-hele-familien-2/",
+    "to": "/demo/leangenbukta-nettside/kort-vei-til-alt",
+    "kind": "local",
+    "target": "kort-vei-til-alt"
+  },
+  {
+    "from": "rekkehus19-27",
+    "source": "https://leangenbukta.no/saltakshush/",
+    "to": "/demo/leangenbukta-nettside/saltakshush",
+    "kind": "local",
+    "target": "saltakshush"
+  },
+  {
+    "from": "retningslinjer-for-informasjonskapsler",
+    "source": "https://leangenbukta.no/retningslinjer-for-informasjonskapsler/",
+    "to": "/demo/leangenbukta-nettside/retningslinjer-for-informasjonskapsler",
+    "kind": "local",
+    "target": "retningslinjer-for-informasjonskapsler"
+  },
+  {
+    "from": "retningslinjer-for-informasjonskapsler",
+    "source": "https://koteng.no/koteng-jenssen/",
+    "to": "https://koteng.no/koteng-jenssen/",
+    "kind": "external"
+  },
+  {
+    "from": "retningslinjer-for-informasjonskapsler",
+    "source": "http://www.obos.no",
+    "to": "http://www.obos.no/",
+    "kind": "external"
+  },
+  {
+    "from": "retningslinjer-for-informasjonskapsler",
+    "source": "mailto:mari.buaas@koteng.no",
+    "to": "mailto:mari.buaas@koteng.no",
+    "kind": "contact"
+  },
+  {
+    "from": "retningslinjer-for-informasjonskapsler",
+    "source": "tel:948 11 965",
+    "to": "tel:948 11 965",
+    "kind": "contact"
+  },
+  {
+    "from": "retningslinjer-for-informasjonskapsler",
+    "source": "mailto:jan.erik.fjeldseth@obos.no",
+    "to": "mailto:jan.erik.fjeldseth@obos.no",
+    "kind": "contact"
+  },
+  {
+    "from": "retningslinjer-for-informasjonskapsler",
+    "source": "tel:93254144",
+    "to": "tel:93254144",
+    "kind": "contact"
+  },
+  {
+    "from": "salgsmateriell",
+    "source": "https://leangenbukta.no/salgsmateriell/prospekter",
+    "to": "/demo/leangenbukta-nettside/salgsmateriell/prospekter",
+    "kind": "local",
+    "target": "salgsmateriell__prospekter"
+  },
+  {
+    "from": "salgsmateriell",
+    "source": "https://leangenbukta.no/salgsmateriell/prislister",
+    "to": "/demo/leangenbukta-nettside/salgsmateriell/prislister",
+    "kind": "local",
+    "target": "salgsmateriell__prislister"
+  },
+  {
+    "from": "salgsmateriell",
+    "source": "https://leangenbukta.no/salgsmateriell/kjopebekreftelser",
+    "to": "/demo/leangenbukta-nettside/salgsmateriell/kjopebekreftelser",
+    "kind": "local",
+    "target": "salgsmateriell__kjopebekreftelser"
+  },
+  {
+    "from": "salgsmateriell",
+    "source": "https://leangenbukta.no/salgsmateriell/",
+    "to": "/demo/leangenbukta-nettside/salgsmateriell",
+    "kind": "local",
+    "target": "salgsmateriell"
+  },
+  {
+    "from": "salgsmateriell",
+    "source": "https://koteng.no/koteng-jenssen/",
+    "to": "https://koteng.no/koteng-jenssen/",
+    "kind": "external"
+  },
+  {
+    "from": "salgsmateriell",
+    "source": "http://www.obos.no",
+    "to": "http://www.obos.no/",
+    "kind": "external"
+  },
+  {
+    "from": "salgsmateriell",
+    "source": "mailto:mari.buaas@koteng.no",
+    "to": "mailto:mari.buaas@koteng.no",
+    "kind": "contact"
+  },
+  {
+    "from": "salgsmateriell",
+    "source": "tel:948 11 965",
+    "to": "tel:948 11 965",
+    "kind": "contact"
+  },
+  {
+    "from": "salgsmateriell",
+    "source": "mailto:jan.erik.fjeldseth@obos.no",
+    "to": "mailto:jan.erik.fjeldseth@obos.no",
+    "kind": "contact"
+  },
+  {
+    "from": "salgsmateriell",
+    "source": "tel:93254144",
+    "to": "tel:93254144",
+    "kind": "contact"
+  },
+  {
+    "from": "salgsmateriell__kjopebekreftelser",
+    "source": "https://leangenbukta.no/wp-content/uploads/2026/04/Bindende-kjopebekreftelse-Leangenbukta-Parktunet-1.pdf",
+    "to": "https://leangenbukta.no/wp-content/uploads/2026/04/Bindende-kjopebekreftelse-Leangenbukta-Parktunet-1.pdf",
+    "kind": "document"
+  },
+  {
+    "from": "salgsmateriell__kjopebekreftelser",
+    "source": "https://leangenbukta.no/wp-content/uploads/2025/10/Bindende-kjopebekreftelse-Leangenbukta-Saltakshus-C.pdf",
+    "to": "https://leangenbukta.no/wp-content/uploads/2025/10/Bindende-kjopebekreftelse-Leangenbukta-Saltakshus-C.pdf",
+    "kind": "document"
+  },
+  {
+    "from": "salgsmateriell__kjopebekreftelser",
+    "source": "https://leangenbukta.no/wp-content/uploads/2025/02/Bindende-kjopebekreftelse-Leangenbukta-Knutepunktet-2.pdf",
+    "to": "https://leangenbukta.no/wp-content/uploads/2025/02/Bindende-kjopebekreftelse-Leangenbukta-Knutepunktet-2.pdf",
+    "kind": "document"
+  },
+  {
+    "from": "salgsmateriell__kjopebekreftelser",
+    "source": "https://leangenbukta.no/wp-content/uploads/2024/04/Bindende-kjopebekreftelse-Leangenbukta-Saltakshus-H.pdf",
+    "to": "https://leangenbukta.no/wp-content/uploads/2024/04/Bindende-kjopebekreftelse-Leangenbukta-Saltakshus-H.pdf",
+    "kind": "document"
+  },
+  {
+    "from": "salgsmateriell__kjopebekreftelser",
+    "source": "https://leangenbukta.no/salgsmateriell/kjopebekreftelser/",
+    "to": "/demo/leangenbukta-nettside/salgsmateriell/kjopebekreftelser",
+    "kind": "local",
+    "target": "salgsmateriell__kjopebekreftelser"
+  },
+  {
+    "from": "salgsmateriell__kjopebekreftelser",
+    "source": "https://koteng.no/koteng-jenssen/",
+    "to": "https://koteng.no/koteng-jenssen/",
+    "kind": "external"
+  },
+  {
+    "from": "salgsmateriell__kjopebekreftelser",
+    "source": "http://www.obos.no",
+    "to": "http://www.obos.no/",
+    "kind": "external"
+  },
+  {
+    "from": "salgsmateriell__kjopebekreftelser",
+    "source": "mailto:mari.buaas@koteng.no",
+    "to": "mailto:mari.buaas@koteng.no",
+    "kind": "contact"
+  },
+  {
+    "from": "salgsmateriell__kjopebekreftelser",
+    "source": "tel:948 11 965",
+    "to": "tel:948 11 965",
+    "kind": "contact"
+  },
+  {
+    "from": "salgsmateriell__kjopebekreftelser",
+    "source": "mailto:jan.erik.fjeldseth@obos.no",
+    "to": "mailto:jan.erik.fjeldseth@obos.no",
+    "kind": "contact"
+  },
+  {
+    "from": "salgsmateriell__kjopebekreftelser",
+    "source": "tel:93254144",
+    "to": "tel:93254144",
+    "kind": "contact"
+  },
+  {
+    "from": "salgsmateriell__prislister",
+    "source": "https://leangenbukta.no/wp-content/uploads/2026/06/Prisliste-Leangenbukta-bygg-D-19062026.pdf",
+    "to": "https://leangenbukta.no/wp-content/uploads/2026/06/Prisliste-Leangenbukta-bygg-D-19062026.pdf",
+    "kind": "document"
+  },
+  {
+    "from": "salgsmateriell__prislister",
+    "source": "https://leangenbukta.no/wp-content/uploads/2026/09/Prisliste-Leangenbukta-bygg-C-08072026-med-badekabiner.pdf",
+    "to": "https://leangenbukta.no/wp-content/uploads/2026/09/Prisliste-Leangenbukta-bygg-C-08072026-med-badekabiner.pdf",
+    "kind": "document"
+  },
+  {
+    "from": "salgsmateriell__prislister",
+    "source": "https://leangenbukta.no/wp-content/uploads/2026/08/Prisliste-Leangenbukta-bygg-E-270826.pdf",
+    "to": "https://leangenbukta.no/wp-content/uploads/2026/08/Prisliste-Leangenbukta-bygg-E-270826.pdf",
+    "kind": "document"
+  },
+  {
+    "from": "salgsmateriell__prislister",
+    "source": "https://leangenbukta.no/wp-content/uploads/2026/08/Prisliste-Leangenbukta-bygg-H-27082026.pdf",
+    "to": "https://leangenbukta.no/wp-content/uploads/2026/08/Prisliste-Leangenbukta-bygg-H-27082026.pdf",
+    "kind": "document"
+  },
+  {
+    "from": "salgsmateriell__prislister",
+    "source": "https://leangenbukta.no/salgsmateriell/prislister/",
+    "to": "/demo/leangenbukta-nettside/salgsmateriell/prislister",
+    "kind": "local",
+    "target": "salgsmateriell__prislister"
+  },
+  {
+    "from": "salgsmateriell__prislister",
+    "source": "https://koteng.no/koteng-jenssen/",
+    "to": "https://koteng.no/koteng-jenssen/",
+    "kind": "external"
+  },
+  {
+    "from": "salgsmateriell__prislister",
+    "source": "http://www.obos.no",
+    "to": "http://www.obos.no/",
+    "kind": "external"
+  },
+  {
+    "from": "salgsmateriell__prislister",
+    "source": "mailto:mari.buaas@koteng.no",
+    "to": "mailto:mari.buaas@koteng.no",
+    "kind": "contact"
+  },
+  {
+    "from": "salgsmateriell__prislister",
+    "source": "tel:948 11 965",
+    "to": "tel:948 11 965",
+    "kind": "contact"
+  },
+  {
+    "from": "salgsmateriell__prislister",
+    "source": "mailto:jan.erik.fjeldseth@obos.no",
+    "to": "mailto:jan.erik.fjeldseth@obos.no",
+    "kind": "contact"
+  },
+  {
+    "from": "salgsmateriell__prislister",
+    "source": "tel:93254144",
+    "to": "tel:93254144",
+    "kind": "contact"
+  },
+  {
+    "from": "salgsmateriell__prospekter",
+    "source": "https://leangenbukta.no/wp-content/uploads/2026/04/08.04.26_Prospekt_Parktunet1-1.pdf",
+    "to": "https://leangenbukta.no/wp-content/uploads/2026/04/08.04.26_Prospekt_Parktunet1-1.pdf",
+    "kind": "document"
+  },
+  {
+    "from": "salgsmateriell__prospekter",
+    "source": "https://leangenbukta.no/wp-content/uploads/2026/04/24.03.26_ByggC_Prospekt-.pdf",
+    "to": "https://leangenbukta.no/wp-content/uploads/2026/04/24.03.26_ByggC_Prospekt-.pdf",
+    "kind": "document"
+  },
+  {
+    "from": "salgsmateriell__prospekter",
+    "source": "https://leangenbukta.no/wp-content/uploads/2026/08/28.08.26_digitaltprospekt_knutepunktet_ny.pdf",
+    "to": "https://leangenbukta.no/wp-content/uploads/2026/08/28.08.26_digitaltprospekt_knutepunktet_ny.pdf",
+    "kind": "document"
+  },
+  {
+    "from": "salgsmateriell__prospekter",
+    "source": "https://leangenbukta.no/wp-content/uploads/2026/08/28.08.2026_ByggH_DigitaltProspekt-.pdf",
+    "to": "https://leangenbukta.no/wp-content/uploads/2026/08/28.08.2026_ByggH_DigitaltProspekt-.pdf",
+    "kind": "document"
+  },
+  {
+    "from": "salgsmateriell__prospekter",
+    "source": "https://leangenbukta.no/#kontakt",
+    "to": "/demo/leangenbukta-nettside#kontakt",
+    "kind": "local",
+    "target": "forside"
+  },
+  {
+    "from": "salgsmateriell__prospekter",
+    "source": "https://leangenbukta.no/bli-obos-medlem/",
+    "to": "/demo/leangenbukta-nettside/bli-obos-medlem",
+    "kind": "local",
+    "target": "bli-obos-medlem"
+  },
+  {
+    "from": "salgsmateriell__prospekter",
+    "source": "https://leangenbukta.no/salgsmateriell/prospekter/",
+    "to": "/demo/leangenbukta-nettside/salgsmateriell/prospekter",
+    "kind": "local",
+    "target": "salgsmateriell__prospekter"
+  },
+  {
+    "from": "salgsmateriell__prospekter",
+    "source": "https://koteng.no/koteng-jenssen/",
+    "to": "https://koteng.no/koteng-jenssen/",
+    "kind": "external"
+  },
+  {
+    "from": "salgsmateriell__prospekter",
+    "source": "http://www.obos.no",
+    "to": "http://www.obos.no/",
+    "kind": "external"
+  },
+  {
+    "from": "salgsmateriell__prospekter",
+    "source": "mailto:mari.buaas@koteng.no",
+    "to": "mailto:mari.buaas@koteng.no",
+    "kind": "contact"
+  },
+  {
+    "from": "salgsmateriell__prospekter",
+    "source": "tel:948 11 965",
+    "to": "tel:948 11 965",
+    "kind": "contact"
+  },
+  {
+    "from": "salgsmateriell__prospekter",
+    "source": "mailto:jan.erik.fjeldseth@obos.no",
+    "to": "mailto:jan.erik.fjeldseth@obos.no",
+    "kind": "contact"
+  },
+  {
+    "from": "salgsmateriell__prospekter",
+    "source": "tel:93254144",
+    "to": "tel:93254144",
+    "kind": "contact"
+  },
+  {
+    "from": "saltakshus-i",
+    "source": "https://leangenbukta.no/category/aktuelt/",
+    "to": "/demo/leangenbukta-nettside/aktuelt",
+    "kind": "local",
+    "target": "aktuelt"
+  },
+  {
+    "from": "saltakshus-i",
+    "source": "https://leangenbukta.no/author/ida/",
+    "to": "/demo/leangenbukta-nettside/aktuelt",
+    "kind": "local",
+    "target": "aktuelt"
+  },
+  {
+    "from": "saltakshus-i",
+    "source": "https://leangenbukta.no/saltakshus-i/#respond",
+    "to": "/demo/leangenbukta-nettside/saltakshus-i#respond",
+    "kind": "local",
+    "target": "saltakshus-i"
+  },
+  {
+    "from": "saltakshus-i",
+    "source": "https://leangenbukta.no/boligvelger/saltakshusi",
+    "to": "https://leangenbukta.no/boligvelger/saltakshusi",
+    "kind": "external"
+  },
+  {
+    "from": "saltakshus-i",
+    "source": "https://leangenbukta.no/wp-content/uploads/2022/09/0709-Saltakshus-I.pdf",
+    "to": "https://leangenbukta.no/wp-content/uploads/2022/09/0709-Saltakshus-I.pdf",
+    "kind": "document"
+  },
+  {
+    "from": "saltakshus-i",
+    "source": "https://leangenbukta.no/wp-content/uploads/2022/09/Prisliste-Leangenbukta-bygg-I-060922.pdf",
+    "to": "https://leangenbukta.no/wp-content/uploads/2022/09/Prisliste-Leangenbukta-bygg-I-060922.pdf",
+    "kind": "document"
+  },
+  {
+    "from": "saltakshus-i",
+    "source": "https://leangenbukta.no/bli-obos-medlem/",
+    "to": "/demo/leangenbukta-nettside/bli-obos-medlem",
+    "kind": "local",
+    "target": "bli-obos-medlem"
+  },
+  {
+    "from": "saltakshus-i",
+    "source": "mailto:mari.buaas@koteng.no?cc=jan.erik.fjeldseth@OBOS.no&subject=Uforpliktende%20møte%20angående%20Leangenbukta",
+    "to": "mailto:mari.buaas@koteng.no?cc=jan.erik.fjeldseth@OBOS.no&subject=Uforpliktende%20møte%20angående%20Leangenbukta",
+    "kind": "contact"
+  },
+  {
+    "from": "saltakshus-i",
+    "source": "https://leangenbukta.no/saltakshus-i/#kontakt",
+    "to": "/demo/leangenbukta-nettside/saltakshus-i#kontakt",
+    "kind": "local",
+    "target": "saltakshus-i"
+  },
+  {
+    "from": "saltakshus-i",
+    "source": "https://leangenbukta.no/saltakshus-i/",
+    "to": "/demo/leangenbukta-nettside/saltakshus-i",
+    "kind": "local",
+    "target": "saltakshus-i"
+  },
+  {
+    "from": "saltakshus-i",
+    "source": "mailto:mari.buaas@koteng.no",
+    "to": "mailto:mari.buaas@koteng.no",
+    "kind": "contact"
+  },
+  {
+    "from": "saltakshus-i",
+    "source": "tel:948 11 965",
+    "to": "tel:948 11 965",
+    "kind": "contact"
+  },
+  {
+    "from": "saltakshus-i",
+    "source": "jan.erik.fjeldseth@obos.no",
+    "to": "mailto:jan.erik.fjeldseth@obos.no",
+    "kind": "contact"
+  },
+  {
+    "from": "saltakshus-i",
+    "source": "tel:93254144",
+    "to": "tel:93254144",
+    "kind": "contact"
+  },
+  {
+    "from": "saltakshus-i",
+    "source": "mailto:mari.buaas@koteng.no",
+    "to": "mailto:mari.buaas@koteng.no",
+    "kind": "contact"
+  },
+  {
+    "from": "saltakshus-i",
+    "source": "tel:948 11 965",
+    "to": "tel:948 11 965",
+    "kind": "contact"
+  },
+  {
+    "from": "saltakshus-i",
+    "source": "mailto:jan.erik.fjeldseth@obos.no",
+    "to": "mailto:jan.erik.fjeldseth@obos.no",
+    "kind": "contact"
+  },
+  {
+    "from": "saltakshus-i",
+    "source": "tel:932 54 144",
+    "to": "tel:932 54 144",
+    "kind": "contact"
+  },
+  {
+    "from": "saltakshus-i",
+    "source": "http://www.koteng.no",
+    "to": "http://www.koteng.no/",
+    "kind": "external"
+  },
+  {
+    "from": "saltakshus-i",
+    "source": "http://www.obos.no",
+    "to": "http://www.obos.no/",
+    "kind": "external"
+  },
+  {
+    "from": "saltakshus-i",
+    "source": "https://leangenbukta.no/saltakshus-i/",
+    "to": "/demo/leangenbukta-nettside/saltakshus-i",
+    "kind": "local",
+    "target": "saltakshus-i"
+  },
+  {
+    "from": "saltakshus-i",
+    "source": "https://koteng.no/koteng-jenssen/",
+    "to": "https://koteng.no/koteng-jenssen/",
+    "kind": "external"
+  },
+  {
+    "from": "saltakshus-i",
+    "source": "http://www.obos.no",
+    "to": "http://www.obos.no/",
+    "kind": "external"
+  },
+  {
+    "from": "saltakshus-i",
+    "source": "mailto:mari.buaas@koteng.no",
+    "to": "mailto:mari.buaas@koteng.no",
+    "kind": "contact"
+  },
+  {
+    "from": "saltakshus-i",
+    "source": "tel:948 11 965",
+    "to": "tel:948 11 965",
+    "kind": "contact"
+  },
+  {
+    "from": "saltakshus-i",
+    "source": "mailto:jan.erik.fjeldseth@obos.no",
+    "to": "mailto:jan.erik.fjeldseth@obos.no",
+    "kind": "contact"
+  },
+  {
+    "from": "saltakshus-i",
+    "source": "tel:93254144",
+    "to": "tel:93254144",
+    "kind": "contact"
+  },
+  {
+    "from": "saltakshus-i",
+    "source": "https://leangenbukta.no/toppleilighetl504/",
+    "to": "/demo/leangenbukta-nettside/toppleilighetl504",
+    "kind": "local",
+    "target": "toppleilighetl504"
+  },
+  {
+    "from": "saltakshus-i",
+    "source": "https://leangenbukta.no/saltakshus-j/",
+    "to": "/demo/leangenbukta-nettside/saltakshus-j",
+    "kind": "local",
+    "target": "saltakshus-j"
+  },
+  {
+    "from": "saltakshus-j",
+    "source": "https://leangenbukta.no/category/aktuelt/",
+    "to": "/demo/leangenbukta-nettside/aktuelt",
+    "kind": "local",
+    "target": "aktuelt"
+  },
+  {
+    "from": "saltakshus-j",
+    "source": "https://leangenbukta.no/author/ida/",
+    "to": "/demo/leangenbukta-nettside/aktuelt",
+    "kind": "local",
+    "target": "aktuelt"
+  },
+  {
+    "from": "saltakshus-j",
+    "source": "https://leangenbukta.no/saltakshus-j/#respond",
+    "to": "/demo/leangenbukta-nettside/saltakshus-j#respond",
+    "kind": "local",
+    "target": "saltakshus-j"
+  },
+  {
+    "from": "saltakshus-j",
+    "source": "https://leangenbukta.no/boligvelger/",
+    "to": "https://leangenbukta.no/boligvelger/",
+    "kind": "external"
+  },
+  {
+    "from": "saltakshus-j",
+    "source": "https://nye.obos.no/ny-bolig/boligprosjekter/trondelag/trondheim/leangenbukta/leangenbukta-saltakshus-j/artikler/digital-kjopsbekreftelse/",
+    "to": "https://nye.obos.no/ny-bolig/boligprosjekter/trondelag/trondheim/leangenbukta/leangenbukta-saltakshus-j/artikler/digital-kjopsbekreftelse/",
+    "kind": "external"
+  },
+  {
+    "from": "saltakshus-j",
+    "source": "https://leangenbukta.no/bli-obos-medlem/",
+    "to": "/demo/leangenbukta-nettside/bli-obos-medlem",
+    "kind": "local",
+    "target": "bli-obos-medlem"
+  },
+  {
+    "from": "saltakshus-j",
+    "source": "mailto:mari.buaas@koteng.no?cc=jan.erik.fjeldseth@OBOS.no&subject=Uforpliktende%20møte%20angående%20Leangenbukta",
+    "to": "mailto:mari.buaas@koteng.no?cc=jan.erik.fjeldseth@OBOS.no&subject=Uforpliktende%20møte%20angående%20Leangenbukta",
+    "kind": "contact"
+  },
+  {
+    "from": "saltakshus-j",
+    "source": "https://leangenbukta.no/saltakshus-j/",
+    "to": "/demo/leangenbukta-nettside/saltakshus-j",
+    "kind": "local",
+    "target": "saltakshus-j"
+  },
+  {
+    "from": "saltakshus-j",
+    "source": "mailto:mari.buaas@koteng.no",
+    "to": "mailto:mari.buaas@koteng.no",
+    "kind": "contact"
+  },
+  {
+    "from": "saltakshus-j",
+    "source": "tel:948 11 965",
+    "to": "tel:948 11 965",
+    "kind": "contact"
+  },
+  {
+    "from": "saltakshus-j",
+    "source": "jan.erik.fjeldseth@obos.no",
+    "to": "mailto:jan.erik.fjeldseth@obos.no",
+    "kind": "contact"
+  },
+  {
+    "from": "saltakshus-j",
+    "source": "tel:93254144",
+    "to": "tel:93254144",
+    "kind": "contact"
+  },
+  {
+    "from": "saltakshus-j",
+    "source": "mailto:mari.buaas@koteng.no",
+    "to": "mailto:mari.buaas@koteng.no",
+    "kind": "contact"
+  },
+  {
+    "from": "saltakshus-j",
+    "source": "tel:948 11 965",
+    "to": "tel:948 11 965",
+    "kind": "contact"
+  },
+  {
+    "from": "saltakshus-j",
+    "source": "mailto:jan.erik.fjeldseth@obos.no",
+    "to": "mailto:jan.erik.fjeldseth@obos.no",
+    "kind": "contact"
+  },
+  {
+    "from": "saltakshus-j",
+    "source": "tel:932 54 144",
+    "to": "tel:932 54 144",
+    "kind": "contact"
+  },
+  {
+    "from": "saltakshus-j",
+    "source": "http://www.koteng.no",
+    "to": "http://www.koteng.no/",
+    "kind": "external"
+  },
+  {
+    "from": "saltakshus-j",
+    "source": "http://www.obos.no",
+    "to": "http://www.obos.no/",
+    "kind": "external"
+  },
+  {
+    "from": "saltakshus-j",
+    "source": "https://leangenbukta.no/saltakshus-j/",
+    "to": "/demo/leangenbukta-nettside/saltakshus-j",
+    "kind": "local",
+    "target": "saltakshus-j"
+  },
+  {
+    "from": "saltakshus-j",
+    "source": "https://koteng.no/koteng-jenssen/",
+    "to": "https://koteng.no/koteng-jenssen/",
+    "kind": "external"
+  },
+  {
+    "from": "saltakshus-j",
+    "source": "http://www.obos.no",
+    "to": "http://www.obos.no/",
+    "kind": "external"
+  },
+  {
+    "from": "saltakshus-j",
+    "source": "mailto:mari.buaas@koteng.no",
+    "to": "mailto:mari.buaas@koteng.no",
+    "kind": "contact"
+  },
+  {
+    "from": "saltakshus-j",
+    "source": "tel:948 11 965",
+    "to": "tel:948 11 965",
+    "kind": "contact"
+  },
+  {
+    "from": "saltakshus-j",
+    "source": "mailto:jan.erik.fjeldseth@obos.no",
+    "to": "mailto:jan.erik.fjeldseth@obos.no",
+    "kind": "contact"
+  },
+  {
+    "from": "saltakshus-j",
+    "source": "tel:93254144",
+    "to": "tel:93254144",
+    "kind": "contact"
+  },
+  {
+    "from": "saltakshus-j",
+    "source": "https://leangenbukta.no/saltakshus-i/",
+    "to": "/demo/leangenbukta-nettside/saltakshus-i",
+    "kind": "local",
+    "target": "saltakshus-i"
+  },
+  {
+    "from": "saltakshus-j",
+    "source": "https://leangenbukta.no/saltakshusk-2/",
+    "to": "/demo/leangenbukta-nettside/saltakshusk",
+    "kind": "local",
+    "target": "saltakshusk"
+  },
+  {
+    "from": "saltakshusc",
+    "source": "https://maps.app.goo.gl/Y87SA5BwZyEJ9D8N8",
+    "to": "https://maps.app.goo.gl/Y87SA5BwZyEJ9D8N8",
+    "kind": "external"
+  },
+  {
+    "from": "saltakshusc",
+    "source": "https://leangenbukta.no/#kontakt",
+    "to": "/demo/leangenbukta-nettside#kontakt",
+    "kind": "local",
+    "target": "forside"
+  },
+  {
+    "from": "saltakshusc",
+    "source": "https://leangenbukta.plyo.cloud/?y=123&p=0&point=1440249548096&selected=ByggC",
+    "to": "https://leangenbukta.plyo.cloud/?y=123&p=0&point=1440249548096&selected=ByggC",
+    "kind": "external"
+  },
+  {
+    "from": "saltakshusc",
+    "source": "https://leangenbukta.no/hvordankjopebolig-byggc/",
+    "to": "/demo/leangenbukta-nettside/hvordankjopebolig-byggc",
+    "kind": "local",
+    "target": "hvordankjopebolig-byggc"
+  },
+  {
+    "from": "saltakshusc",
+    "source": "https://leangenbukta.no/saltakshusc/",
+    "to": "/demo/leangenbukta-nettside/saltakshusc",
+    "kind": "local",
+    "target": "saltakshusc"
+  },
+  {
+    "from": "saltakshusc",
+    "source": "https://koteng.no/koteng-jenssen/",
+    "to": "https://koteng.no/koteng-jenssen/",
+    "kind": "external"
+  },
+  {
+    "from": "saltakshusc",
+    "source": "http://www.obos.no",
+    "to": "http://www.obos.no/",
+    "kind": "external"
+  },
+  {
+    "from": "saltakshusc",
+    "source": "mailto:mari.buaas@koteng.no",
+    "to": "mailto:mari.buaas@koteng.no",
+    "kind": "contact"
+  },
+  {
+    "from": "saltakshusc",
+    "source": "tel:948 11 965",
+    "to": "tel:948 11 965",
+    "kind": "contact"
+  },
+  {
+    "from": "saltakshusc",
+    "source": "mailto:jan.erik.fjeldseth@obos.no",
+    "to": "mailto:jan.erik.fjeldseth@obos.no",
+    "kind": "contact"
+  },
+  {
+    "from": "saltakshusc",
+    "source": "tel:93254144",
+    "to": "tel:93254144",
+    "kind": "contact"
+  },
+  {
+    "from": "saltakshush",
+    "source": "https://leangenbukta.no/category/aktuelt/",
+    "to": "/demo/leangenbukta-nettside/aktuelt",
+    "kind": "local",
+    "target": "aktuelt"
+  },
+  {
+    "from": "saltakshush",
+    "source": "https://leangenbukta.no/author/ida/",
+    "to": "/demo/leangenbukta-nettside/aktuelt",
+    "kind": "local",
+    "target": "aktuelt"
+  },
+  {
+    "from": "saltakshush",
+    "source": "https://leangenbukta.no/saltakshush/#respond",
+    "to": "/demo/leangenbukta-nettside/saltakshush#respond",
+    "kind": "local",
+    "target": "saltakshush"
+  },
+  {
+    "from": "saltakshush",
+    "source": "https://leangenbukta.no/saltakshush/#kontakt",
+    "to": "/demo/leangenbukta-nettside/saltakshush#kontakt",
+    "kind": "local",
+    "target": "saltakshush"
+  },
+  {
+    "from": "saltakshush",
+    "source": "https://leangenbukta.no/boligvelger/saltakshush/",
+    "to": "https://leangenbukta.no/boligvelger/saltakshush/",
+    "kind": "external"
+  },
+  {
+    "from": "saltakshush",
+    "source": "https://www.youtube.com/embed/d3HXrWXACuk?si=QIXceBwod_7g7r3j",
+    "to": "https://www.youtube.com/embed/d3HXrWXACuk?si=QIXceBwod_7g7r3j",
+    "kind": "external"
+  },
+  {
+    "from": "saltakshush",
+    "source": "https://leangenbukta.no/saltakshush/",
+    "to": "/demo/leangenbukta-nettside/saltakshush",
+    "kind": "local",
+    "target": "saltakshush"
+  },
+  {
+    "from": "saltakshush",
+    "source": "mailto:mari.buaas@koteng.no",
+    "to": "mailto:mari.buaas@koteng.no",
+    "kind": "contact"
+  },
+  {
+    "from": "saltakshush",
+    "source": "tel:948 11 965",
+    "to": "tel:948 11 965",
+    "kind": "contact"
+  },
+  {
+    "from": "saltakshush",
+    "source": "jan.erik.fjeldseth@obos.no",
+    "to": "mailto:jan.erik.fjeldseth@obos.no",
+    "kind": "contact"
+  },
+  {
+    "from": "saltakshush",
+    "source": "tel:93254144",
+    "to": "tel:93254144",
+    "kind": "contact"
+  },
+  {
+    "from": "saltakshush",
+    "source": "mailto:mari.buaas@koteng.no",
+    "to": "mailto:mari.buaas@koteng.no",
+    "kind": "contact"
+  },
+  {
+    "from": "saltakshush",
+    "source": "tel:948 11 965",
+    "to": "tel:948 11 965",
+    "kind": "contact"
+  },
+  {
+    "from": "saltakshush",
+    "source": "mailto:jan.erik.fjeldseth@obos.no",
+    "to": "mailto:jan.erik.fjeldseth@obos.no",
+    "kind": "contact"
+  },
+  {
+    "from": "saltakshush",
+    "source": "tel:932 54 144",
+    "to": "tel:932 54 144",
+    "kind": "contact"
+  },
+  {
+    "from": "saltakshush",
+    "source": "http://www.koteng.no",
+    "to": "http://www.koteng.no/",
+    "kind": "external"
+  },
+  {
+    "from": "saltakshush",
+    "source": "http://www.obos.no",
+    "to": "http://www.obos.no/",
+    "kind": "external"
+  },
+  {
+    "from": "saltakshush",
+    "source": "https://leangenbukta.no/saltakshush/",
+    "to": "/demo/leangenbukta-nettside/saltakshush",
+    "kind": "local",
+    "target": "saltakshush"
+  },
+  {
+    "from": "saltakshush",
+    "source": "https://koteng.no/koteng-jenssen/",
+    "to": "https://koteng.no/koteng-jenssen/",
+    "kind": "external"
+  },
+  {
+    "from": "saltakshush",
+    "source": "http://www.obos.no",
+    "to": "http://www.obos.no/",
+    "kind": "external"
+  },
+  {
+    "from": "saltakshush",
+    "source": "mailto:mari.buaas@koteng.no",
+    "to": "mailto:mari.buaas@koteng.no",
+    "kind": "contact"
+  },
+  {
+    "from": "saltakshush",
+    "source": "tel:948 11 965",
+    "to": "tel:948 11 965",
+    "kind": "contact"
+  },
+  {
+    "from": "saltakshush",
+    "source": "mailto:jan.erik.fjeldseth@obos.no",
+    "to": "mailto:jan.erik.fjeldseth@obos.no",
+    "kind": "contact"
+  },
+  {
+    "from": "saltakshush",
+    "source": "tel:93254144",
+    "to": "tel:93254144",
+    "kind": "contact"
+  },
+  {
+    "from": "saltakshush",
+    "source": "https://leangenbukta.no/rekkehus19-27/",
+    "to": "/demo/leangenbukta-nettside/rekkehus19-27",
+    "kind": "local",
+    "target": "rekkehus19-27"
+  },
+  {
+    "from": "saltakshush",
+    "source": "https://leangenbukta.no/fritidstilbud-for-hele-familien/",
+    "to": "/demo/leangenbukta-nettside/kort-vei-til-alt",
+    "kind": "local",
+    "target": "kort-vei-til-alt"
+  },
+  {
+    "from": "saltakshusk",
+    "source": "https://leangenbukta.no/category/aktuelt/",
+    "to": "/demo/leangenbukta-nettside/aktuelt",
+    "kind": "local",
+    "target": "aktuelt"
+  },
+  {
+    "from": "saltakshusk",
+    "source": "https://leangenbukta.no/author/ida/",
+    "to": "/demo/leangenbukta-nettside/aktuelt",
+    "kind": "local",
+    "target": "aktuelt"
+  },
+  {
+    "from": "saltakshusk",
+    "source": "https://leangenbukta.no/saltakshusk-2/#respond",
+    "to": "/demo/leangenbukta-nettside/saltakshusk#respond",
+    "kind": "local",
+    "target": "saltakshusk"
+  },
+  {
+    "from": "saltakshusk",
+    "source": "https://youtu.be/M6G-jHAXUUc%20",
+    "to": "https://youtu.be/M6G-jHAXUUc%20",
+    "kind": "external"
+  },
+  {
+    "from": "saltakshusk",
+    "source": "https://leangenbukta.no/saltakshusk-2/",
+    "to": "/demo/leangenbukta-nettside/saltakshusk",
+    "kind": "local",
+    "target": "saltakshusk"
+  },
+  {
+    "from": "saltakshusk",
+    "source": "mailto:mari@koteng.no",
+    "to": "mailto:mari@koteng.no",
+    "kind": "contact"
+  },
+  {
+    "from": "saltakshusk",
+    "source": "tel:948 11 965",
+    "to": "tel:948 11 965",
+    "kind": "contact"
+  },
+  {
+    "from": "saltakshusk",
+    "source": "jan.erik.fjeldseth@obos.no",
+    "to": "mailto:jan.erik.fjeldseth@obos.no",
+    "kind": "contact"
+  },
+  {
+    "from": "saltakshusk",
+    "source": "tel:93254144",
+    "to": "tel:93254144",
+    "kind": "contact"
+  },
+  {
+    "from": "saltakshusk",
+    "source": "mailto:mari@koteng.no",
+    "to": "mailto:mari@koteng.no",
+    "kind": "contact"
+  },
+  {
+    "from": "saltakshusk",
+    "source": "tel:948 11 965",
+    "to": "tel:948 11 965",
+    "kind": "contact"
+  },
+  {
+    "from": "saltakshusk",
+    "source": "mailto:jan.erik.fjeldseth@obos.no",
+    "to": "mailto:jan.erik.fjeldseth@obos.no",
+    "kind": "contact"
+  },
+  {
+    "from": "saltakshusk",
+    "source": "tel:932 54 144",
+    "to": "tel:932 54 144",
+    "kind": "contact"
+  },
+  {
+    "from": "saltakshusk",
+    "source": "http://www.koteng.no",
+    "to": "http://www.koteng.no/",
+    "kind": "external"
+  },
+  {
+    "from": "saltakshusk",
+    "source": "http://www.obos.no",
+    "to": "http://www.obos.no/",
+    "kind": "external"
+  },
+  {
+    "from": "saltakshusk",
+    "source": "https://leangenbukta.no/saltakshusk-2/",
+    "to": "/demo/leangenbukta-nettside/saltakshusk",
+    "kind": "local",
+    "target": "saltakshusk"
+  },
+  {
+    "from": "saltakshusk",
+    "source": "https://koteng.no/koteng-jenssen/",
+    "to": "https://koteng.no/koteng-jenssen/",
+    "kind": "external"
+  },
+  {
+    "from": "saltakshusk",
+    "source": "http://www.obos.no",
+    "to": "http://www.obos.no/",
+    "kind": "external"
+  },
+  {
+    "from": "saltakshusk",
+    "source": "mailto:mari.buaas@koteng.no",
+    "to": "mailto:mari.buaas@koteng.no",
+    "kind": "contact"
+  },
+  {
+    "from": "saltakshusk",
+    "source": "tel:948 11 965",
+    "to": "tel:948 11 965",
+    "kind": "contact"
+  },
+  {
+    "from": "saltakshusk",
+    "source": "mailto:jan.erik.fjeldseth@obos.no",
+    "to": "mailto:jan.erik.fjeldseth@obos.no",
+    "kind": "contact"
+  },
+  {
+    "from": "saltakshusk",
+    "source": "tel:93254144",
+    "to": "tel:93254144",
+    "kind": "contact"
+  },
+  {
+    "from": "saltakshusk",
+    "source": "https://leangenbukta.no/saltakshus-j/",
+    "to": "/demo/leangenbukta-nettside/saltakshus-j",
+    "kind": "local",
+    "target": "saltakshus-j"
+  },
+  {
+    "from": "saltakshusk",
+    "source": "https://leangenbukta.no/saltakshusk/",
+    "to": "/demo/leangenbukta-nettside/saltakshusk",
+    "kind": "local",
+    "target": "saltakshusk"
+  },
+  {
+    "from": "saltakshusk",
+    "source": "",
+    "to": null,
+    "kind": "empty-image"
+  },
+  {
+    "from": "saltakshusk",
+    "source": "",
+    "to": null,
+    "kind": "empty-image"
+  },
+  {
+    "from": "stort-til-mindre-2",
+    "source": "https://leangenbukta.no/knutepunktet/",
+    "to": "/demo/leangenbukta-nettside/knutepunktet",
+    "kind": "local",
+    "target": "knutepunktet"
+  },
+  {
+    "from": "stort-til-mindre-2",
+    "source": "https://leangenbukta.no/stort-til-mindre-2/",
+    "to": "/demo/leangenbukta-nettside/stort-til-mindre-2",
+    "kind": "local",
+    "target": "stort-til-mindre-2"
+  },
+  {
+    "from": "stort-til-mindre-2",
+    "source": "https://koteng.no/koteng-jenssen/",
+    "to": "https://koteng.no/koteng-jenssen/",
+    "kind": "external"
+  },
+  {
+    "from": "stort-til-mindre-2",
+    "source": "http://www.obos.no",
+    "to": "http://www.obos.no/",
+    "kind": "external"
+  },
+  {
+    "from": "stort-til-mindre-2",
+    "source": "mailto:mari.buaas@koteng.no",
+    "to": "mailto:mari.buaas@koteng.no",
+    "kind": "contact"
+  },
+  {
+    "from": "stort-til-mindre-2",
+    "source": "tel:948 11 965",
+    "to": "tel:948 11 965",
+    "kind": "contact"
+  },
+  {
+    "from": "stort-til-mindre-2",
+    "source": "mailto:jan.erik.fjeldseth@obos.no",
+    "to": "mailto:jan.erik.fjeldseth@obos.no",
+    "kind": "contact"
+  },
+  {
+    "from": "stort-til-mindre-2",
+    "source": "tel:93254144",
+    "to": "tel:93254144",
+    "kind": "contact"
+  },
+  {
+    "from": "stort-til-mindre_byggc",
+    "source": "https://leangenbukta.no/knutepunktet/",
+    "to": "/demo/leangenbukta-nettside/knutepunktet",
+    "kind": "local",
+    "target": "knutepunktet"
+  },
+  {
+    "from": "stort-til-mindre_byggc",
+    "source": "https://leangenbukta.no/stort-til-mindre_byggc/",
+    "to": "/demo/leangenbukta-nettside/stort-til-mindre_byggc",
+    "kind": "local",
+    "target": "stort-til-mindre_byggc"
+  },
+  {
+    "from": "stort-til-mindre_byggc",
+    "source": "https://koteng.no/koteng-jenssen/",
+    "to": "https://koteng.no/koteng-jenssen/",
+    "kind": "external"
+  },
+  {
+    "from": "stort-til-mindre_byggc",
+    "source": "http://www.obos.no",
+    "to": "http://www.obos.no/",
+    "kind": "external"
+  },
+  {
+    "from": "stort-til-mindre_byggc",
+    "source": "mailto:mari.buaas@koteng.no",
+    "to": "mailto:mari.buaas@koteng.no",
+    "kind": "contact"
+  },
+  {
+    "from": "stort-til-mindre_byggc",
+    "source": "tel:948 11 965",
+    "to": "tel:948 11 965",
+    "kind": "contact"
+  },
+  {
+    "from": "stort-til-mindre_byggc",
+    "source": "mailto:jan.erik.fjeldseth@obos.no",
+    "to": "mailto:jan.erik.fjeldseth@obos.no",
+    "kind": "contact"
+  },
+  {
+    "from": "stort-til-mindre_byggc",
+    "source": "tel:93254144",
+    "to": "tel:93254144",
+    "kind": "contact"
+  },
+  {
+    "from": "stort-til-mindre_parktunet",
+    "source": "https://leangenbukta.no/parktunet1/",
+    "to": "/demo/leangenbukta-nettside/parktunet1",
+    "kind": "local",
+    "target": "parktunet1"
+  },
+  {
+    "from": "stort-til-mindre_parktunet",
+    "source": "https://leangenbukta.no/knutepunktet/",
+    "to": "/demo/leangenbukta-nettside/knutepunktet",
+    "kind": "local",
+    "target": "knutepunktet"
+  },
+  {
+    "from": "stort-til-mindre_parktunet",
+    "source": "https://leangenbukta.no/stort-til-mindre_parktunet/",
+    "to": "/demo/leangenbukta-nettside/stort-til-mindre_parktunet",
+    "kind": "local",
+    "target": "stort-til-mindre_parktunet"
+  },
+  {
+    "from": "stort-til-mindre_parktunet",
+    "source": "https://koteng.no/koteng-jenssen/",
+    "to": "https://koteng.no/koteng-jenssen/",
+    "kind": "external"
+  },
+  {
+    "from": "stort-til-mindre_parktunet",
+    "source": "http://www.obos.no",
+    "to": "http://www.obos.no/",
+    "kind": "external"
+  },
+  {
+    "from": "stort-til-mindre_parktunet",
+    "source": "mailto:mari.buaas@koteng.no",
+    "to": "mailto:mari.buaas@koteng.no",
+    "kind": "contact"
+  },
+  {
+    "from": "stort-til-mindre_parktunet",
+    "source": "tel:948 11 965",
+    "to": "tel:948 11 965",
+    "kind": "contact"
+  },
+  {
+    "from": "stort-til-mindre_parktunet",
+    "source": "mailto:jan.erik.fjeldseth@obos.no",
+    "to": "mailto:jan.erik.fjeldseth@obos.no",
+    "kind": "contact"
+  },
+  {
+    "from": "stort-til-mindre_parktunet",
+    "source": "tel:93254144",
+    "to": "tel:93254144",
+    "kind": "contact"
+  },
+  {
+    "from": "test-framside",
+    "source": "https://leangenbukta.no/om-prosjektet/",
+    "to": "/demo/leangenbukta-nettside/om-prosjektet",
+    "kind": "local",
+    "target": "om-prosjektet"
+  },
+  {
+    "from": "test-framside",
+    "source": "#kontakt",
+    "to": "#kontakt",
+    "kind": "anchor"
+  },
+  {
+    "from": "test-framside",
+    "source": "https://leangenbukta.no/innflyttingsklare-leiligheter/",
+    "to": "/demo/leangenbukta-nettside/innflyttingsklare-leiligheter",
+    "kind": "local",
+    "target": "innflyttingsklare-leiligheter"
+  },
+  {
+    "from": "test-framside",
+    "source": "https://www.leangenbukta.no/parktunet1",
+    "to": "/demo/leangenbukta-nettside/parktunet1",
+    "kind": "local",
+    "target": "parktunet1"
+  },
+  {
+    "from": "test-framside",
+    "source": "https://leangenbukta.plyo.cloud/?y=33&p=0&point=1741545619853&selected=ByggD",
+    "to": "https://leangenbukta.plyo.cloud/?y=33&p=0&point=1741545619853&selected=ByggD",
+    "kind": "external"
+  },
+  {
+    "from": "test-framside",
+    "source": "https://leangenbukta.no/saltakshusc/",
+    "to": "/demo/leangenbukta-nettside/saltakshusc",
+    "kind": "local",
+    "target": "saltakshusc"
+  },
+  {
+    "from": "test-framside",
+    "source": "https://leangenbukta.plyo.cloud/?y=123&p=0&point=1440249548096&selected=ByggC",
+    "to": "https://leangenbukta.plyo.cloud/?y=123&p=0&point=1440249548096&selected=ByggC",
+    "kind": "external"
+  },
+  {
+    "from": "test-framside",
+    "source": "https://leangenbukta.no/om-prosjektet/#beliggenhet",
+    "to": "/demo/leangenbukta-nettside/om-prosjektet#beliggenhet",
+    "kind": "local",
+    "target": "om-prosjektet"
+  },
+  {
+    "from": "test-framside",
+    "source": "https://leangenbukta.no/om-prosjektet/#beliggenhet",
+    "to": "/demo/leangenbukta-nettside/om-prosjektet#beliggenhet",
+    "kind": "local",
+    "target": "om-prosjektet"
+  },
+  {
+    "from": "test-framside",
+    "source": "https://leangenbukta.no/om-prosjektet/#gronn-strategi",
+    "to": "/demo/leangenbukta-nettside/om-prosjektet#gronn-strategi",
+    "kind": "local",
+    "target": "om-prosjektet"
+  },
+  {
+    "from": "test-framside",
+    "source": "https://leangenbukta.no/om-prosjektet/#beliggenhet",
+    "to": "/demo/leangenbukta-nettside/om-prosjektet#beliggenhet",
+    "kind": "local",
+    "target": "om-prosjektet"
+  },
+  {
+    "from": "test-framside",
+    "source": "#kontakt",
+    "to": "#kontakt",
+    "kind": "anchor"
+  },
+  {
+    "from": "test-framside",
+    "source": "https://leangenbukta.no/om-prosjektet/#beliggenhet",
+    "to": "/demo/leangenbukta-nettside/om-prosjektet#beliggenhet",
+    "kind": "local",
+    "target": "om-prosjektet"
+  },
+  {
+    "from": "test-framside",
+    "source": "https://leangenbukta.no/om-prosjektet/#ekstra-fasiliteter",
+    "to": "/demo/leangenbukta-nettside/om-prosjektet#ekstra-fasiliteter",
+    "kind": "local",
+    "target": "om-prosjektet"
+  },
+  {
+    "from": "test-framside",
+    "source": "https://leangenbukta.no/om-prosjektet/#ambisjoner",
+    "to": "/demo/leangenbukta-nettside/om-prosjektet#ambisjoner",
+    "kind": "local",
+    "target": "om-prosjektet"
+  },
+  {
+    "from": "test-framside",
+    "source": "https://leangenbukta.no/om-prosjektet/#kvalitet-arkitektur",
+    "to": "/demo/leangenbukta-nettside/om-prosjektet#kvalitet-arkitektur",
+    "kind": "local",
+    "target": "om-prosjektet"
+  },
+  {
+    "from": "test-framside",
+    "source": "https://leangenbukta.no/om-prosjektet/",
+    "to": "/demo/leangenbukta-nettside/om-prosjektet",
+    "kind": "local",
+    "target": "om-prosjektet"
+  },
+  {
+    "from": "test-framside",
+    "source": "https://leangenbukta.no/knutepunktet/",
+    "to": "/demo/leangenbukta-nettside/knutepunktet",
+    "kind": "local",
+    "target": "knutepunktet"
+  },
+  {
+    "from": "test-framside",
+    "source": "https://leangenbukta.plyo.cloud/?y=245&p=5&point=1440249576384&selected=ByggE",
+    "to": "https://leangenbukta.plyo.cloud/?y=245&p=5&point=1440249576384&selected=ByggE",
+    "kind": "external"
+  },
+  {
+    "from": "test-framside",
+    "source": "https://leangenbukta.no/saltakshush/",
+    "to": "/demo/leangenbukta-nettside/saltakshush",
+    "kind": "local",
+    "target": "saltakshush"
+  },
+  {
+    "from": "test-framside",
+    "source": "https://leangenbukta.plyo.cloud/?y=180&p=27&point=1440249576640&selected=ByggH",
+    "to": "https://leangenbukta.plyo.cloud/?y=180&p=27&point=1440249576640&selected=ByggH",
+    "kind": "external"
+  },
+  {
+    "from": "test-framside",
+    "source": "https://leangenbukta.no/test-framside/",
+    "to": "/demo/leangenbukta-nettside/test-framside",
+    "kind": "local",
+    "target": "test-framside"
+  },
+  {
+    "from": "test-framside",
+    "source": "https://koteng.no/koteng-jenssen/",
+    "to": "https://koteng.no/koteng-jenssen/",
+    "kind": "external"
+  },
+  {
+    "from": "test-framside",
+    "source": "http://www.obos.no",
+    "to": "http://www.obos.no/",
+    "kind": "external"
+  },
+  {
+    "from": "test-framside",
+    "source": "mailto:mari.buaas@koteng.no",
+    "to": "mailto:mari.buaas@koteng.no",
+    "kind": "contact"
+  },
+  {
+    "from": "test-framside",
+    "source": "tel:948 11 965",
+    "to": "tel:948 11 965",
+    "kind": "contact"
+  },
+  {
+    "from": "test-framside",
+    "source": "mailto:jan.erik.fjeldseth@obos.no",
+    "to": "mailto:jan.erik.fjeldseth@obos.no",
+    "kind": "contact"
+  },
+  {
+    "from": "test-framside",
+    "source": "tel:93254144",
+    "to": "tel:93254144",
+    "kind": "contact"
+  },
+  {
+    "from": "tilvalgbyggc",
+    "source": "https://maps.app.goo.gl/Y87SA5BwZyEJ9D8N8",
+    "to": "https://maps.app.goo.gl/Y87SA5BwZyEJ9D8N8",
+    "kind": "external"
+  },
+  {
+    "from": "tilvalgbyggc",
+    "source": "https://leangenbukta.no/saltakshusc/",
+    "to": "/demo/leangenbukta-nettside/saltakshusc",
+    "kind": "local",
+    "target": "saltakshusc"
+  },
+  {
+    "from": "tilvalgbyggc",
+    "source": "https://leangenbukta.no/hvordankjopebolig-byggc/",
+    "to": "/demo/leangenbukta-nettside/hvordankjopebolig-byggc",
+    "kind": "local",
+    "target": "hvordankjopebolig-byggc"
+  },
+  {
+    "from": "tilvalgbyggc",
+    "source": "https://leangenbukta.no/tilvalgbyggc/",
+    "to": "/demo/leangenbukta-nettside/tilvalgbyggc",
+    "kind": "local",
+    "target": "tilvalgbyggc"
+  },
+  {
+    "from": "tilvalgbyggc",
+    "source": "https://koteng.no/koteng-jenssen/",
+    "to": "https://koteng.no/koteng-jenssen/",
+    "kind": "external"
+  },
+  {
+    "from": "tilvalgbyggc",
+    "source": "http://www.obos.no",
+    "to": "http://www.obos.no/",
+    "kind": "external"
+  },
+  {
+    "from": "tilvalgbyggc",
+    "source": "mailto:mari.buaas@koteng.no",
+    "to": "mailto:mari.buaas@koteng.no",
+    "kind": "contact"
+  },
+  {
+    "from": "tilvalgbyggc",
+    "source": "tel:948 11 965",
+    "to": "tel:948 11 965",
+    "kind": "contact"
+  },
+  {
+    "from": "tilvalgbyggc",
+    "source": "mailto:jan.erik.fjeldseth@obos.no",
+    "to": "mailto:jan.erik.fjeldseth@obos.no",
+    "kind": "contact"
+  },
+  {
+    "from": "tilvalgbyggc",
+    "source": "tel:93254144",
+    "to": "tel:93254144",
+    "kind": "contact"
+  },
+  {
+    "from": "toppleilighetl504",
+    "source": "https://leangenbukta.no/category/aktuelt/",
+    "to": "/demo/leangenbukta-nettside/aktuelt",
+    "kind": "local",
+    "target": "aktuelt"
+  },
+  {
+    "from": "toppleilighetl504",
+    "source": "https://leangenbukta.no/author/ida/",
+    "to": "/demo/leangenbukta-nettside/aktuelt",
+    "kind": "local",
+    "target": "aktuelt"
+  },
+  {
+    "from": "toppleilighetl504",
+    "source": "https://leangenbukta.no/toppleilighetl504/#respond",
+    "to": "/demo/leangenbukta-nettside/toppleilighetl504#respond",
+    "kind": "local",
+    "target": "toppleilighetl504"
+  },
+  {
+    "from": "toppleilighetl504",
+    "source": "https://leangenbukta.no/boligvelger/saltakshusl/504-2/",
+    "to": "https://leangenbukta.no/boligvelger/saltakshusl/504-2/",
+    "kind": "external"
+  },
+  {
+    "from": "toppleilighetl504",
+    "source": "https://leangenbukta.no/wp-content/uploads/2022/10/0510_ByggL_toppleiligheter_prospekt.pdf",
+    "to": "https://leangenbukta.no/wp-content/uploads/2022/10/0510_ByggL_toppleiligheter_prospekt.pdf",
+    "kind": "document"
+  },
+  {
+    "from": "toppleilighetl504",
+    "source": "mailto:mari.buaas@koteng.no?cc=jan.erik.fjeldseth@OBOS.no&subject=Uforpliktende%20møte%20angående%20Leangenbukta",
+    "to": "mailto:mari.buaas@koteng.no?cc=jan.erik.fjeldseth@OBOS.no&subject=Uforpliktende%20møte%20angående%20Leangenbukta",
+    "kind": "contact"
+  },
+  {
+    "from": "toppleilighetl504",
+    "source": "https://leangenbukta.no/saltakshus-i/#kontakt",
+    "to": "/demo/leangenbukta-nettside/saltakshus-i#kontakt",
+    "kind": "local",
+    "target": "saltakshus-i"
+  },
+  {
+    "from": "toppleilighetl504",
+    "source": "https://leangenbukta.no/toppleilighetl504/",
+    "to": "/demo/leangenbukta-nettside/toppleilighetl504",
+    "kind": "local",
+    "target": "toppleilighetl504"
+  },
+  {
+    "from": "toppleilighetl504",
+    "source": "mailto:mari.buaas@koteng.no",
+    "to": "mailto:mari.buaas@koteng.no",
+    "kind": "contact"
+  },
+  {
+    "from": "toppleilighetl504",
+    "source": "tel:948 11 965",
+    "to": "tel:948 11 965",
+    "kind": "contact"
+  },
+  {
+    "from": "toppleilighetl504",
+    "source": "jan.erik.fjeldseth@obos.no",
+    "to": "mailto:jan.erik.fjeldseth@obos.no",
+    "kind": "contact"
+  },
+  {
+    "from": "toppleilighetl504",
+    "source": "tel:93254144",
+    "to": "tel:93254144",
+    "kind": "contact"
+  },
+  {
+    "from": "toppleilighetl504",
+    "source": "mailto:mari.buaas@koteng.no",
+    "to": "mailto:mari.buaas@koteng.no",
+    "kind": "contact"
+  },
+  {
+    "from": "toppleilighetl504",
+    "source": "tel:948 11 965",
+    "to": "tel:948 11 965",
+    "kind": "contact"
+  },
+  {
+    "from": "toppleilighetl504",
+    "source": "mailto:jan.erik.fjeldseth@obos.no",
+    "to": "mailto:jan.erik.fjeldseth@obos.no",
+    "kind": "contact"
+  },
+  {
+    "from": "toppleilighetl504",
+    "source": "tel:932 54 144",
+    "to": "tel:932 54 144",
+    "kind": "contact"
+  },
+  {
+    "from": "toppleilighetl504",
+    "source": "http://www.koteng.no",
+    "to": "http://www.koteng.no/",
+    "kind": "external"
+  },
+  {
+    "from": "toppleilighetl504",
+    "source": "http://www.obos.no",
+    "to": "http://www.obos.no/",
+    "kind": "external"
+  },
+  {
+    "from": "toppleilighetl504",
+    "source": "https://leangenbukta.no/toppleilighetl504/",
+    "to": "/demo/leangenbukta-nettside/toppleilighetl504",
+    "kind": "local",
+    "target": "toppleilighetl504"
+  },
+  {
+    "from": "toppleilighetl504",
+    "source": "https://koteng.no/koteng-jenssen/",
+    "to": "https://koteng.no/koteng-jenssen/",
+    "kind": "external"
+  },
+  {
+    "from": "toppleilighetl504",
+    "source": "http://www.obos.no",
+    "to": "http://www.obos.no/",
+    "kind": "external"
+  },
+  {
+    "from": "toppleilighetl504",
+    "source": "mailto:mari.buaas@koteng.no",
+    "to": "mailto:mari.buaas@koteng.no",
+    "kind": "contact"
+  },
+  {
+    "from": "toppleilighetl504",
+    "source": "tel:948 11 965",
+    "to": "tel:948 11 965",
+    "kind": "contact"
+  },
+  {
+    "from": "toppleilighetl504",
+    "source": "mailto:jan.erik.fjeldseth@obos.no",
+    "to": "mailto:jan.erik.fjeldseth@obos.no",
+    "kind": "contact"
+  },
+  {
+    "from": "toppleilighetl504",
+    "source": "tel:93254144",
+    "to": "tel:93254144",
+    "kind": "contact"
+  },
+  {
+    "from": "toppleilighetl504",
+    "source": "https://leangenbukta.no/byvilla-1-og-2/",
+    "to": "/demo/leangenbukta-nettside/byvilla-1-og-2",
+    "kind": "local",
+    "target": "byvilla-1-og-2"
+  },
+  {
+    "from": "toppleilighetl504",
+    "source": "https://leangenbukta.no/saltakshus-i/",
+    "to": "/demo/leangenbukta-nettside/saltakshus-i",
+    "kind": "local",
+    "target": "saltakshus-i"
+  },
+  {
+    "from": "trygt-og-bilfritt",
+    "source": "https://leangenbukta.no/category/aktuelt/",
+    "to": "/demo/leangenbukta-nettside/aktuelt",
+    "kind": "local",
+    "target": "aktuelt"
+  },
+  {
+    "from": "trygt-og-bilfritt",
+    "source": "https://leangenbukta.no/author/fredrik/",
+    "to": "/demo/leangenbukta-nettside/aktuelt",
+    "kind": "local",
+    "target": "aktuelt"
+  },
+  {
+    "from": "trygt-og-bilfritt",
+    "source": "https://leangenbukta.no/trygt-og-bilfritt/#respond",
+    "to": "/demo/leangenbukta-nettside/trygt-og-bilfritt#respond",
+    "kind": "local",
+    "target": "trygt-og-bilfritt"
+  },
+  {
+    "from": "trygt-og-bilfritt",
+    "source": "https://leangenbukta.no/om-prosjektet/#beliggenhet",
+    "to": "/demo/leangenbukta-nettside/om-prosjektet#beliggenhet",
+    "kind": "local",
+    "target": "om-prosjektet"
+  },
+  {
+    "from": "trygt-og-bilfritt",
+    "source": "https://leangenbukta.no/om-prosjektet/#beliggenhet",
+    "to": "/demo/leangenbukta-nettside/om-prosjektet#beliggenhet",
+    "kind": "local",
+    "target": "om-prosjektet"
+  },
+  {
+    "from": "trygt-og-bilfritt",
+    "source": "https://leangenbukta.no/trygt-og-bilfritt/",
+    "to": "/demo/leangenbukta-nettside/trygt-og-bilfritt",
+    "kind": "local",
+    "target": "trygt-og-bilfritt"
+  },
+  {
+    "from": "trygt-og-bilfritt",
+    "source": "mailto:mari@koteng.no",
+    "to": "mailto:mari@koteng.no",
+    "kind": "contact"
+  },
+  {
+    "from": "trygt-og-bilfritt",
+    "source": "tel:948 11 965",
+    "to": "tel:948 11 965",
+    "kind": "contact"
+  },
+  {
+    "from": "trygt-og-bilfritt",
+    "source": "jan.erik.fjeldseth@obos.no",
+    "to": "mailto:jan.erik.fjeldseth@obos.no",
+    "kind": "contact"
+  },
+  {
+    "from": "trygt-og-bilfritt",
+    "source": "tel:93254144",
+    "to": "tel:93254144",
+    "kind": "contact"
+  },
+  {
+    "from": "trygt-og-bilfritt",
+    "source": "mailto:mari@koteng.no",
+    "to": "mailto:mari@koteng.no",
+    "kind": "contact"
+  },
+  {
+    "from": "trygt-og-bilfritt",
+    "source": "tel:948 11 965",
+    "to": "tel:948 11 965",
+    "kind": "contact"
+  },
+  {
+    "from": "trygt-og-bilfritt",
+    "source": "mailto:jan.erik.fjeldseth@obos.no",
+    "to": "mailto:jan.erik.fjeldseth@obos.no",
+    "kind": "contact"
+  },
+  {
+    "from": "trygt-og-bilfritt",
+    "source": "tel:932 54 144",
+    "to": "tel:932 54 144",
+    "kind": "contact"
+  },
+  {
+    "from": "trygt-og-bilfritt",
+    "source": "http://www.koteng.no",
+    "to": "http://www.koteng.no/",
+    "kind": "external"
+  },
+  {
+    "from": "trygt-og-bilfritt",
+    "source": "http://www.obos.no",
+    "to": "http://www.obos.no/",
+    "kind": "external"
+  },
+  {
+    "from": "trygt-og-bilfritt",
+    "source": "https://leangenbukta.no/trygt-og-bilfritt/",
+    "to": "/demo/leangenbukta-nettside/trygt-og-bilfritt",
+    "kind": "local",
+    "target": "trygt-og-bilfritt"
+  },
+  {
+    "from": "trygt-og-bilfritt",
+    "source": "https://koteng.no/koteng-jenssen/",
+    "to": "https://koteng.no/koteng-jenssen/",
+    "kind": "external"
+  },
+  {
+    "from": "trygt-og-bilfritt",
+    "source": "http://www.obos.no",
+    "to": "http://www.obos.no/",
+    "kind": "external"
+  },
+  {
+    "from": "trygt-og-bilfritt",
+    "source": "mailto:mari.buaas@koteng.no",
+    "to": "mailto:mari.buaas@koteng.no",
+    "kind": "contact"
+  },
+  {
+    "from": "trygt-og-bilfritt",
+    "source": "tel:948 11 965",
+    "to": "tel:948 11 965",
+    "kind": "contact"
+  },
+  {
+    "from": "trygt-og-bilfritt",
+    "source": "mailto:jan.erik.fjeldseth@obos.no",
+    "to": "mailto:jan.erik.fjeldseth@obos.no",
+    "kind": "contact"
+  },
+  {
+    "from": "trygt-og-bilfritt",
+    "source": "tel:93254144",
+    "to": "tel:93254144",
+    "kind": "contact"
+  },
+  {
+    "from": "trygt-og-bilfritt",
+    "source": "https://leangenbukta.no/fritidstilbud-for-hele-familien/",
+    "to": "/demo/leangenbukta-nettside/kort-vei-til-alt",
+    "kind": "local",
+    "target": "kort-vei-til-alt"
+  },
+  {
+    "from": "trygt-og-bilfritt",
+    "source": "https://leangenbukta.no/vedlikeholdsfritt/",
+    "to": "/demo/leangenbukta-nettside/vedlikeholdsfritt",
+    "kind": "local",
+    "target": "vedlikeholdsfritt"
+  },
+  {
+    "from": "trygt-og-bilfritt",
+    "source": "",
+    "to": null,
+    "kind": "empty-image"
+  },
+  {
+    "from": "trygt-og-bilfritt",
+    "source": "",
+    "to": null,
+    "kind": "empty-image"
+  },
+  {
+    "from": "vedlikeholdsfritt",
+    "source": "https://leangenbukta.no/category/aktuelt/",
+    "to": "/demo/leangenbukta-nettside/aktuelt",
+    "kind": "local",
+    "target": "aktuelt"
+  },
+  {
+    "from": "vedlikeholdsfritt",
+    "source": "https://leangenbukta.no/author/fredrik/",
+    "to": "/demo/leangenbukta-nettside/aktuelt",
+    "kind": "local",
+    "target": "aktuelt"
+  },
+  {
+    "from": "vedlikeholdsfritt",
+    "source": "https://leangenbukta.no/vedlikeholdsfritt/#respond",
+    "to": "/demo/leangenbukta-nettside/vedlikeholdsfritt#respond",
+    "kind": "local",
+    "target": "vedlikeholdsfritt"
+  },
+  {
+    "from": "vedlikeholdsfritt",
+    "source": "https://leangenbukta.no/om-prosjektet/",
+    "to": "/demo/leangenbukta-nettside/om-prosjektet",
+    "kind": "local",
+    "target": "om-prosjektet"
+  },
+  {
+    "from": "vedlikeholdsfritt",
+    "source": "https://leangenbukta.no/om-prosjektet/",
+    "to": "/demo/leangenbukta-nettside/om-prosjektet",
+    "kind": "local",
+    "target": "om-prosjektet"
+  },
+  {
+    "from": "vedlikeholdsfritt",
+    "source": "https://leangenbukta.no/vedlikeholdsfritt/",
+    "to": "/demo/leangenbukta-nettside/vedlikeholdsfritt",
+    "kind": "local",
+    "target": "vedlikeholdsfritt"
+  },
+  {
+    "from": "vedlikeholdsfritt",
+    "source": "mailto:mari@koteng.no",
+    "to": "mailto:mari@koteng.no",
+    "kind": "contact"
+  },
+  {
+    "from": "vedlikeholdsfritt",
+    "source": "tel:948 11 965",
+    "to": "tel:948 11 965",
+    "kind": "contact"
+  },
+  {
+    "from": "vedlikeholdsfritt",
+    "source": "jan.erik.fjeldseth@obos.no",
+    "to": "mailto:jan.erik.fjeldseth@obos.no",
+    "kind": "contact"
+  },
+  {
+    "from": "vedlikeholdsfritt",
+    "source": "tel:93254144",
+    "to": "tel:93254144",
+    "kind": "contact"
+  },
+  {
+    "from": "vedlikeholdsfritt",
+    "source": "mailto:mari@koteng.no",
+    "to": "mailto:mari@koteng.no",
+    "kind": "contact"
+  },
+  {
+    "from": "vedlikeholdsfritt",
+    "source": "tel:948 11 965",
+    "to": "tel:948 11 965",
+    "kind": "contact"
+  },
+  {
+    "from": "vedlikeholdsfritt",
+    "source": "mailto:jan.erik.fjeldseth@obos.no",
+    "to": "mailto:jan.erik.fjeldseth@obos.no",
+    "kind": "contact"
+  },
+  {
+    "from": "vedlikeholdsfritt",
+    "source": "tel:932 54 144",
+    "to": "tel:932 54 144",
+    "kind": "contact"
+  },
+  {
+    "from": "vedlikeholdsfritt",
+    "source": "http://www.koteng.no",
+    "to": "http://www.koteng.no/",
+    "kind": "external"
+  },
+  {
+    "from": "vedlikeholdsfritt",
+    "source": "http://www.obos.no",
+    "to": "http://www.obos.no/",
+    "kind": "external"
+  },
+  {
+    "from": "vedlikeholdsfritt",
+    "source": "https://leangenbukta.no/vedlikeholdsfritt/",
+    "to": "/demo/leangenbukta-nettside/vedlikeholdsfritt",
+    "kind": "local",
+    "target": "vedlikeholdsfritt"
+  },
+  {
+    "from": "vedlikeholdsfritt",
+    "source": "https://koteng.no/koteng-jenssen/",
+    "to": "https://koteng.no/koteng-jenssen/",
+    "kind": "external"
+  },
+  {
+    "from": "vedlikeholdsfritt",
+    "source": "http://www.obos.no",
+    "to": "http://www.obos.no/",
+    "kind": "external"
+  },
+  {
+    "from": "vedlikeholdsfritt",
+    "source": "mailto:mari.buaas@koteng.no",
+    "to": "mailto:mari.buaas@koteng.no",
+    "kind": "contact"
+  },
+  {
+    "from": "vedlikeholdsfritt",
+    "source": "tel:948 11 965",
+    "to": "tel:948 11 965",
+    "kind": "contact"
+  },
+  {
+    "from": "vedlikeholdsfritt",
+    "source": "mailto:jan.erik.fjeldseth@obos.no",
+    "to": "mailto:jan.erik.fjeldseth@obos.no",
+    "kind": "contact"
+  },
+  {
+    "from": "vedlikeholdsfritt",
+    "source": "tel:93254144",
+    "to": "tel:93254144",
+    "kind": "contact"
+  },
+  {
+    "from": "vedlikeholdsfritt",
+    "source": "https://leangenbukta.no/trygt-og-bilfritt/",
+    "to": "/demo/leangenbukta-nettside/trygt-og-bilfritt",
+    "kind": "local",
+    "target": "trygt-og-bilfritt"
+  },
+  {
+    "from": "vedlikeholdsfritt",
+    "source": "https://leangenbukta.no/fasiliteter-som-gjor-hverdagen-enklere/",
+    "to": "/demo/leangenbukta-nettside/fasiliteter-som-gjor-hverdagen-enklere",
+    "kind": "local",
+    "target": "fasiliteter-som-gjor-hverdagen-enklere"
+  },
+  {
+    "from": "vedlikeholdsfritt",
+    "source": "",
+    "to": null,
+    "kind": "empty-image"
+  },
+  {
+    "from": "vedlikeholdsfritt",
+    "source": "",
+    "to": null,
+    "kind": "empty-image"
+  },
+  {
+    "from": "velge-nybolig",
+    "source": "https://leangenbukta.no/velge-nybolig/",
+    "to": "/demo/leangenbukta-nettside/velge-nybolig",
+    "kind": "local",
+    "target": "velge-nybolig"
+  },
+  {
+    "from": "velge-nybolig",
+    "source": "https://koteng.no/koteng-jenssen/",
+    "to": "https://koteng.no/koteng-jenssen/",
+    "kind": "external"
+  },
+  {
+    "from": "velge-nybolig",
+    "source": "http://www.obos.no",
+    "to": "http://www.obos.no/",
+    "kind": "external"
+  },
+  {
+    "from": "velge-nybolig",
+    "source": "mailto:mari.buaas@koteng.no",
+    "to": "mailto:mari.buaas@koteng.no",
+    "kind": "contact"
+  },
+  {
+    "from": "velge-nybolig",
+    "source": "tel:948 11 965",
+    "to": "tel:948 11 965",
+    "kind": "contact"
+  },
+  {
+    "from": "velge-nybolig",
+    "source": "mailto:jan.erik.fjeldseth@obos.no",
+    "to": "mailto:jan.erik.fjeldseth@obos.no",
+    "kind": "contact"
+  },
+  {
+    "from": "velge-nybolig",
+    "source": "tel:93254144",
+    "to": "tel:93254144",
+    "kind": "contact"
+  },
+  {
+    "from": "visning-pa-tomta",
+    "source": "https://leangenbukta.no/visning-pa-tomta/",
+    "to": "/demo/leangenbukta-nettside/visning-pa-tomta",
+    "kind": "local",
+    "target": "visning-pa-tomta"
+  },
+  {
+    "from": "visning-pa-tomta",
+    "source": "https://leangenbukta.no/visning-pa-tomta/",
+    "to": "/demo/leangenbukta-nettside/visning-pa-tomta",
+    "kind": "local",
+    "target": "visning-pa-tomta"
+  },
+  {
+    "from": "visning-pa-tomta",
+    "source": "https://koteng.no/koteng-jenssen/",
+    "to": "https://koteng.no/koteng-jenssen/",
+    "kind": "external"
+  },
+  {
+    "from": "visning-pa-tomta",
+    "source": "http://www.obos.no",
+    "to": "http://www.obos.no/",
+    "kind": "external"
+  },
+  {
+    "from": "visning-pa-tomta",
+    "source": "mailto:mari.buaas@koteng.no",
+    "to": "mailto:mari.buaas@koteng.no",
+    "kind": "contact"
+  },
+  {
+    "from": "visning-pa-tomta",
+    "source": "tel:948 11 965",
+    "to": "tel:948 11 965",
+    "kind": "contact"
+  },
+  {
+    "from": "visning-pa-tomta",
+    "source": "mailto:jan.erik.fjeldseth@obos.no",
+    "to": "mailto:jan.erik.fjeldseth@obos.no",
+    "kind": "contact"
+  },
+  {
+    "from": "visning-pa-tomta",
+    "source": "tel:93254144",
+    "to": "tel:93254144",
+    "kind": "contact"
+  }
+]

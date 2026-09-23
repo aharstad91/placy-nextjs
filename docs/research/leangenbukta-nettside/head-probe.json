@@ -1,0 +1,554 @@
+{
+  "https://leangenbukta.no/wp-content/uploads/2020/02/RUA1600.jpg": {
+    "status": 200,
+    "contentType": "image/jpeg",
+    "contentLength": "740820",
+    "finalUrl": "https://leangenbukta.no/wp-content/uploads/2020/02/RUA1600.jpg"
+  },
+  "https://leangenbukta.no/wp-content/uploads/2020/02/RUA1874.jpg": {
+    "status": 200,
+    "contentType": "image/jpeg",
+    "contentLength": "687581",
+    "finalUrl": "https://leangenbukta.no/wp-content/uploads/2020/02/RUA1874.jpg"
+  },
+  "https://leangenbukta.no/wp-content/uploads/2020/03/2725-01-KNG-e-05-South_Overview_R02.jpg": {
+    "status": 200,
+    "contentType": "image/jpeg",
+    "contentLength": "873227",
+    "finalUrl": "https://leangenbukta.no/wp-content/uploads/2020/03/2725-01-KNG-e-05-South_Overview_R02.jpg"
+  },
+  "https://leangenbukta.no/wp-content/uploads/2020/06/RUA1184_2.jpg": {
+    "status": 200,
+    "contentType": "image/jpeg",
+    "contentLength": "1076627",
+    "finalUrl": "https://leangenbukta.no/wp-content/uploads/2020/06/RUA1184_2.jpg"
+  },
+  "https://leangenbukta.no/wp-content/uploads/2020/06/RUA1247_2.jpg": {
+    "status": 200,
+    "contentType": "image/jpeg",
+    "contentLength": "1370943",
+    "finalUrl": "https://leangenbukta.no/wp-content/uploads/2020/06/RUA1247_2.jpg"
+  },
+  "https://leangenbukta.no/wp-content/uploads/2020/06/RUA1449.jpg": {
+    "status": 200,
+    "contentType": "image/jpeg",
+    "contentLength": "697731",
+    "finalUrl": "https://leangenbukta.no/wp-content/uploads/2020/06/RUA1449.jpg"
+  },
+  "https://leangenbukta.no/wp-content/uploads/2020/06/RUA1749-1.jpg": {
+    "status": 200,
+    "contentType": "image/jpeg",
+    "contentLength": "597703",
+    "finalUrl": "https://leangenbukta.no/wp-content/uploads/2020/06/RUA1749-1.jpg"
+  },
+  "https://leangenbukta.no/wp-content/uploads/2020/06/RUA1764.jpg": {
+    "status": 200,
+    "contentType": "image/jpeg",
+    "contentLength": "1188202",
+    "finalUrl": "https://leangenbukta.no/wp-content/uploads/2020/06/RUA1764.jpg"
+  },
+  "https://leangenbukta.no/wp-content/uploads/2020/06/RUA1968.jpg": {
+    "status": 200,
+    "contentType": "image/jpeg",
+    "contentLength": "863064",
+    "finalUrl": "https://leangenbukta.no/wp-content/uploads/2020/06/RUA1968.jpg"
+  },
+  "https://leangenbukta.no/wp-content/uploads/2020/06/RUA2098.jpg": {
+    "status": 200,
+    "contentType": "image/jpeg",
+    "contentLength": "641723",
+    "finalUrl": "https://leangenbukta.no/wp-content/uploads/2020/06/RUA2098.jpg"
+  },
+  "https://leangenbukta.no/wp-content/uploads/2020/06/RUA2130.jpg": {
+    "status": 200,
+    "contentType": "image/jpeg",
+    "contentLength": "730408",
+    "finalUrl": "https://leangenbukta.no/wp-content/uploads/2020/06/RUA2130.jpg"
+  },
+  "https://leangenbukta.no/wp-content/uploads/2020/08/2725-01-KNG-e-01_aerial01_R03.jpg": {
+    "status": 200,
+    "contentType": "image/jpeg",
+    "contentLength": "2875672",
+    "finalUrl": "https://leangenbukta.no/wp-content/uploads/2020/08/2725-01-KNG-e-01_aerial01_R03.jpg"
+  },
+  "https://leangenbukta.no/wp-content/uploads/2020/08/2725-01-KNG-e-06-Seaview_R02.jpg": {
+    "status": 200,
+    "contentType": "image/jpeg",
+    "contentLength": "863387",
+    "finalUrl": "https://leangenbukta.no/wp-content/uploads/2020/08/2725-01-KNG-e-06-Seaview_R02.jpg"
+  },
+  "https://leangenbukta.no/wp-content/uploads/2020/08/2725-01-KNG-e-09-Blokk_L_R02-1.jpg": {
+    "status": 200,
+    "contentType": "image/jpeg",
+    "contentLength": "1094150",
+    "finalUrl": "https://leangenbukta.no/wp-content/uploads/2020/08/2725-01-KNG-e-09-Blokk_L_R02-1.jpg"
+  },
+  "https://leangenbukta.no/wp-content/uploads/2021/01/3-R-636-kjokken-1.jpg": {
+    "status": 200,
+    "contentType": "image/jpeg",
+    "contentLength": "596477",
+    "finalUrl": "https://leangenbukta.no/wp-content/uploads/2021/01/3-R-636-kjokken-1.jpg"
+  },
+  "https://leangenbukta.no/wp-content/uploads/2021/01/3-R-97.0-cam3-1.jpg": {
+    "status": 200,
+    "contentType": "image/jpeg",
+    "contentLength": "393660",
+    "finalUrl": "https://leangenbukta.no/wp-content/uploads/2021/01/3-R-97.0-cam3-1.jpg"
+  },
+  "https://leangenbukta.no/wp-content/uploads/2021/01/3R-81-2.jpg": {
+    "status": 200,
+    "contentType": "image/jpeg",
+    "contentLength": "338472",
+    "finalUrl": "https://leangenbukta.no/wp-content/uploads/2021/01/3R-81-2.jpg"
+  },
+  "https://leangenbukta.no/wp-content/uploads/2021/01/4-R-95-Stue-1.jpg": {
+    "status": 200,
+    "contentType": "image/jpeg",
+    "contentLength": "525209",
+    "finalUrl": "https://leangenbukta.no/wp-content/uploads/2021/01/4-R-95-Stue-1.jpg"
+  },
+  "https://leangenbukta.no/wp-content/uploads/2021/01/422_bath.jpg": {
+    "status": 200,
+    "contentType": "image/jpeg",
+    "contentLength": "440694",
+    "finalUrl": "https://leangenbukta.no/wp-content/uploads/2021/01/422_bath.jpg"
+  },
+  "https://leangenbukta.no/wp-content/uploads/2021/01/502_living.jpg": {
+    "status": 200,
+    "contentType": "image/jpeg",
+    "contentLength": "589645",
+    "finalUrl": "https://leangenbukta.no/wp-content/uploads/2021/01/502_living.jpg"
+  },
+  "https://leangenbukta.no/wp-content/uploads/2021/01/531_Kjokken.jpg": {
+    "status": 200,
+    "contentType": "image/jpeg",
+    "contentLength": "529812",
+    "finalUrl": "https://leangenbukta.no/wp-content/uploads/2021/01/531_Kjokken.jpg"
+  },
+  "https://leangenbukta.no/wp-content/uploads/2021/01/TH_Kjokken.jpg": {
+    "status": 200,
+    "contentType": "image/jpeg",
+    "contentLength": "417207",
+    "finalUrl": "https://leangenbukta.no/wp-content/uploads/2021/01/TH_Kjokken.jpg"
+  },
+  "https://leangenbukta.no/wp-content/uploads/2021/01/TH_Stue.jpg": {
+    "status": 200,
+    "contentType": "image/jpeg",
+    "contentLength": "632735",
+    "finalUrl": "https://leangenbukta.no/wp-content/uploads/2021/01/TH_Stue.jpg"
+  },
+  "https://leangenbukta.no/wp-content/uploads/2022/02/1642002752-2725-03-KNG-e-04-Commonterrace_R01.jpg": {
+    "status": 200,
+    "contentType": "image/jpeg",
+    "contentLength": "642759",
+    "finalUrl": "https://leangenbukta.no/wp-content/uploads/2022/02/1642002752-2725-03-KNG-e-04-Commonterrace_R01.jpg"
+  },
+  "https://leangenbukta.no/wp-content/uploads/2022/02/1642769970-2725-03-KNG-e-01-Road_R02.jpg": {
+    "status": 200,
+    "contentType": "image/jpeg",
+    "contentLength": "895759",
+    "finalUrl": "https://leangenbukta.no/wp-content/uploads/2022/02/1642769970-2725-03-KNG-e-01-Road_R02.jpg"
+  },
+  "https://leangenbukta.no/wp-content/uploads/2022/09/0709-Saltakshus-I.pdf": {
+    "status": 200,
+    "contentType": "application/pdf",
+    "contentLength": "18822244",
+    "finalUrl": "https://leangenbukta.no/wp-content/uploads/2022/09/0709-Saltakshus-I.pdf"
+  },
+  "https://leangenbukta.no/wp-content/uploads/2022/09/Prisliste-Leangenbukta-bygg-I-060922.pdf": {
+    "status": 200,
+    "contentType": "application/pdf",
+    "contentLength": "67889",
+    "finalUrl": "https://leangenbukta.no/wp-content/uploads/2022/09/Prisliste-Leangenbukta-bygg-I-060922.pdf"
+  },
+  "https://leangenbukta.no/wp-content/uploads/2022/10/0510_ByggL_toppleiligheter_prospekt.pdf": {
+    "status": 200,
+    "contentType": "application/pdf",
+    "contentLength": "7987905",
+    "finalUrl": "https://leangenbukta.no/wp-content/uploads/2022/10/0510_ByggL_toppleiligheter_prospekt.pdf"
+  },
+  "https://leangenbukta.no/wp-content/uploads/2023/05/08utsikt.jpg": {
+    "status": 200,
+    "contentType": "image/jpeg",
+    "contentLength": "771104",
+    "finalUrl": "https://leangenbukta.no/wp-content/uploads/2023/05/08utsikt.jpg"
+  },
+  "https://leangenbukta.no/wp-content/uploads/2023/05/31balkong.jpg": {
+    "status": 200,
+    "contentType": "image/jpeg",
+    "contentLength": "729210",
+    "finalUrl": "https://leangenbukta.no/wp-content/uploads/2023/05/31balkong.jpg"
+  },
+  "https://leangenbukta.no/wp-content/uploads/2023/05/40kjokken.jpg": {
+    "status": 200,
+    "contentType": "image/jpeg",
+    "contentLength": "281565",
+    "finalUrl": "https://leangenbukta.no/wp-content/uploads/2023/05/40kjokken.jpg"
+  },
+  "https://leangenbukta.no/wp-content/uploads/2023/05/41kjokken.jpg": {
+    "status": 200,
+    "contentType": "image/jpeg",
+    "contentLength": "310204",
+    "finalUrl": "https://leangenbukta.no/wp-content/uploads/2023/05/41kjokken.jpg"
+  },
+  "https://leangenbukta.no/wp-content/uploads/2023/05/62bad.jpg": {
+    "status": 200,
+    "contentType": "image/jpeg",
+    "contentLength": "375826",
+    "finalUrl": "https://leangenbukta.no/wp-content/uploads/2023/05/62bad.jpg"
+  },
+  "https://leangenbukta.no/wp-content/uploads/2023/05/70soverom.jpg": {
+    "status": 200,
+    "contentType": "image/jpeg",
+    "contentLength": "339524",
+    "finalUrl": "https://leangenbukta.no/wp-content/uploads/2023/05/70soverom.jpg"
+  },
+  "https://leangenbukta.no/wp-content/uploads/2023/05/80gang.jpg": {
+    "status": 200,
+    "contentType": "image/jpeg",
+    "contentLength": "277343",
+    "finalUrl": "https://leangenbukta.no/wp-content/uploads/2023/05/80gang.jpg"
+  },
+  "https://leangenbukta.no/wp-content/uploads/2023/09/Leangenbukta_Eksterior_Boligvelger-05_Rekkehus_Sor_v2_3destate.no_-scaled.webp": {
+    "status": 200,
+    "contentType": "image/webp",
+    "contentLength": "835794",
+    "finalUrl": "https://leangenbukta.no/wp-content/uploads/2023/09/Leangenbukta_Eksterior_Boligvelger-05_Rekkehus_Sor_v2_3destate.no_-scaled.webp"
+  },
+  "https://leangenbukta.no/wp-content/uploads/2023/09/Leangenbukta_Eksterior_Drone-0002_v2_3destate.no_-scaled.webp": {
+    "status": 200,
+    "contentType": "image/webp",
+    "contentLength": "850106",
+    "finalUrl": "https://leangenbukta.no/wp-content/uploads/2023/09/Leangenbukta_Eksterior_Drone-0002_v2_3destate.no_-scaled.webp"
+  },
+  "https://leangenbukta.no/wp-content/uploads/2023/09/Leangenbukta_Eksterior_Drone-004_v2_3destate.no_-scaled.webp": {
+    "status": 200,
+    "contentType": "image/webp",
+    "contentLength": "1014624",
+    "finalUrl": "https://leangenbukta.no/wp-content/uploads/2023/09/Leangenbukta_Eksterior_Drone-004_v2_3destate.no_-scaled.webp"
+  },
+  "https://leangenbukta.no/wp-content/uploads/2023/09/Leangenbukta_Eksterior_Vinkel-04_Rekkehus_og_Bygg_H_v2_3destate.no_-scaled-e1716975710547.webp": {
+    "status": 200,
+    "contentType": "image/webp",
+    "contentLength": "979972",
+    "finalUrl": "https://leangenbukta.no/wp-content/uploads/2023/09/Leangenbukta_Eksterior_Vinkel-04_Rekkehus_og_Bygg_H_v2_3destate.no_-scaled-e1716975710547.webp"
+  },
+  "https://leangenbukta.no/wp-content/uploads/2023/11/1642002752-2725-03-KNG-e-05-Roofterrace_R01.jpg": {
+    "status": 200,
+    "contentType": "image/jpeg",
+    "contentLength": "719846",
+    "finalUrl": "https://leangenbukta.no/wp-content/uploads/2023/11/1642002752-2725-03-KNG-e-05-Roofterrace_R01.jpg"
+  },
+  "https://leangenbukta.no/wp-content/uploads/2023/11/1642769989-2725-03-KNG-e-02-Courtyard_R02.jpg": {
+    "status": 200,
+    "contentType": "image/jpeg",
+    "contentLength": "1047132",
+    "finalUrl": "https://leangenbukta.no/wp-content/uploads/2023/11/1642769989-2725-03-KNG-e-02-Courtyard_R02.jpg"
+  },
+  "https://leangenbukta.no/wp-content/uploads/2023/11/2725-01-KNG-e-04_Haus_V4_R01.jpg": {
+    "status": 200,
+    "contentType": "image/jpeg",
+    "contentLength": "782404",
+    "finalUrl": "https://leangenbukta.no/wp-content/uploads/2023/11/2725-01-KNG-e-04_Haus_V4_R01.jpg"
+  },
+  "https://leangenbukta.no/wp-content/uploads/2023/11/2725-01-KNG-e-08_Bluehour_R02.jpg": {
+    "status": 200,
+    "contentType": "image/jpeg",
+    "contentLength": "757525",
+    "finalUrl": "https://leangenbukta.no/wp-content/uploads/2023/11/2725-01-KNG-e-08_Bluehour_R02.jpg"
+  },
+  "https://leangenbukta.no/wp-content/uploads/2023/11/2725-02-KNG-e-02_West_Side_R01.jpg": {
+    "status": 200,
+    "contentType": "image/jpeg",
+    "contentLength": "975000",
+    "finalUrl": "https://leangenbukta.no/wp-content/uploads/2023/11/2725-02-KNG-e-02_West_Side_R01.jpg"
+  },
+  "https://leangenbukta.no/wp-content/uploads/2023/11/2725-02-KNG-e-04_BV3_R01.jpg": {
+    "status": 200,
+    "contentType": "image/jpeg",
+    "contentLength": "898275",
+    "finalUrl": "https://leangenbukta.no/wp-content/uploads/2023/11/2725-02-KNG-e-04_BV3_R01.jpg"
+  },
+  "https://leangenbukta.no/wp-content/uploads/2023/11/2725-02-KNG-e-05_Bluehour_Building_K_R01-rev.jpg": {
+    "status": 200,
+    "contentType": "image/jpeg",
+    "contentLength": "867260",
+    "finalUrl": "https://leangenbukta.no/wp-content/uploads/2023/11/2725-02-KNG-e-05_Bluehour_Building_K_R01-rev.jpg"
+  },
+  "https://leangenbukta.no/wp-content/uploads/2023/11/2725-04-KNG-e-01-BV1_Park_Sunny_R01.jpg": {
+    "status": 200,
+    "contentType": "image/jpeg",
+    "contentLength": "1338820",
+    "finalUrl": "https://leangenbukta.no/wp-content/uploads/2023/11/2725-04-KNG-e-01-BV1_Park_Sunny_R01.jpg"
+  },
+  "https://leangenbukta.no/wp-content/uploads/2023/11/2725-04-KNG-e-05-BV2_Side_R01.jpg": {
+    "status": 200,
+    "contentType": "image/jpeg",
+    "contentLength": "618398",
+    "finalUrl": "https://leangenbukta.no/wp-content/uploads/2023/11/2725-04-KNG-e-05-BV2_Side_R01.jpg"
+  },
+  "https://leangenbukta.no/wp-content/uploads/2023/11/2725-04-KNG-e-08_BV1_Terrace_R01.jpg": {
+    "status": 200,
+    "contentType": "image/jpeg",
+    "contentLength": "586782",
+    "finalUrl": "https://leangenbukta.no/wp-content/uploads/2023/11/2725-04-KNG-e-08_BV1_Terrace_R01.jpg"
+  },
+  "https://leangenbukta.no/wp-content/uploads/2023/11/IMG_1082.jpg": {
+    "status": 200,
+    "contentType": "image/jpeg",
+    "contentLength": "983008",
+    "finalUrl": "https://leangenbukta.no/wp-content/uploads/2023/11/IMG_1082.jpg"
+  },
+  "https://leangenbukta.no/wp-content/uploads/2023/11/IMG_1376.jpg": {
+    "status": 200,
+    "contentType": "image/jpeg",
+    "contentLength": "1627205",
+    "finalUrl": "https://leangenbukta.no/wp-content/uploads/2023/11/IMG_1376.jpg"
+  },
+  "https://leangenbukta.no/wp-content/uploads/2023/11/IMG_2131.jpg": {
+    "status": 200,
+    "contentType": "image/jpeg",
+    "contentLength": "1046834",
+    "finalUrl": "https://leangenbukta.no/wp-content/uploads/2023/11/IMG_2131.jpg"
+  },
+  "https://leangenbukta.no/wp-content/uploads/2023/11/Skjermbilde-2023-11-13-kl.-12.30.20.jpg": {
+    "status": 200,
+    "contentType": "image/jpeg",
+    "contentLength": "624990",
+    "finalUrl": "https://leangenbukta.no/wp-content/uploads/2023/11/Skjermbilde-2023-11-13-kl.-12.30.20.jpg"
+  },
+  "https://leangenbukta.no/wp-content/uploads/2023/11/Skjermbilde-2023-11-13-kl.-12.30.47.jpg": {
+    "status": 200,
+    "contentType": "image/jpeg",
+    "contentLength": "504173",
+    "finalUrl": "https://leangenbukta.no/wp-content/uploads/2023/11/Skjermbilde-2023-11-13-kl.-12.30.47.jpg"
+  },
+  "https://leangenbukta.no/wp-content/uploads/2024/03/Leangenbukta_Interior_H401_4roms_Vinkel-04_Hus-H_Stue_3destate.no_.jpg": {
+    "status": 200,
+    "contentType": "image/jpeg",
+    "contentLength": "466761",
+    "finalUrl": "https://leangenbukta.no/wp-content/uploads/2024/03/Leangenbukta_Interior_H401_4roms_Vinkel-04_Hus-H_Stue_3destate.no_.jpg"
+  },
+  "https://leangenbukta.no/wp-content/uploads/2024/04/09.04.24_Rekkehus_19-27_digitaltprospekt-1.pdf": {
+    "status": 200,
+    "contentType": "application/pdf",
+    "contentLength": "20276240",
+    "finalUrl": "https://leangenbukta.no/wp-content/uploads/2024/04/09.04.24_Rekkehus_19-27_digitaltprospekt-1.pdf"
+  },
+  "https://leangenbukta.no/wp-content/uploads/2024/04/Bindende-kjopebekreftelse-Leangenbukta-Saltakshus-H.pdf": {
+    "status": 200,
+    "contentType": "application/pdf",
+    "contentLength": "157621",
+    "finalUrl": "https://leangenbukta.no/wp-content/uploads/2024/04/Bindende-kjopebekreftelse-Leangenbukta-Saltakshus-H.pdf"
+  },
+  "https://leangenbukta.no/wp-content/uploads/2024/06/IMG_4550.jpg": {
+    "status": 200,
+    "contentType": "image/jpeg",
+    "contentLength": "1428355",
+    "finalUrl": "https://leangenbukta.no/wp-content/uploads/2024/06/IMG_4550.jpg"
+  },
+  "https://leangenbukta.no/wp-content/uploads/2024/06/IMG_4561.jpg": {
+    "status": 200,
+    "contentType": "image/jpeg",
+    "contentLength": "1243173",
+    "finalUrl": "https://leangenbukta.no/wp-content/uploads/2024/06/IMG_4561.jpg"
+  },
+  "https://leangenbukta.no/wp-content/uploads/2024/06/IMG_4569-1.jpg": {
+    "status": 200,
+    "contentType": "image/jpeg",
+    "contentLength": "1433767",
+    "finalUrl": "https://leangenbukta.no/wp-content/uploads/2024/06/IMG_4569-1.jpg"
+  },
+  "https://leangenbukta.no/wp-content/uploads/2024/06/IMG_4575.jpg": {
+    "status": 200,
+    "contentType": "image/jpeg",
+    "contentLength": "1081151",
+    "finalUrl": "https://leangenbukta.no/wp-content/uploads/2024/06/IMG_4575.jpg"
+  },
+  "https://leangenbukta.no/wp-content/uploads/2024/06/IMG_4781.jpg": {
+    "status": 200,
+    "contentType": "image/jpeg",
+    "contentLength": "626664",
+    "finalUrl": "https://leangenbukta.no/wp-content/uploads/2024/06/IMG_4781.jpg"
+  },
+  "https://leangenbukta.no/wp-content/uploads/2024/06/IMG_4809.jpg": {
+    "status": 200,
+    "contentType": "image/jpeg",
+    "contentLength": "645705",
+    "finalUrl": "https://leangenbukta.no/wp-content/uploads/2024/06/IMG_4809.jpg"
+  },
+  "https://leangenbukta.no/wp-content/uploads/2024/06/Leangenbukta_Eksterior_Boligvelger-04_Bygg_H_Sor_v3_3destate.no_.jpg": {
+    "status": 200,
+    "contentType": "image/jpeg",
+    "contentLength": "1064183",
+    "finalUrl": "https://leangenbukta.no/wp-content/uploads/2024/06/Leangenbukta_Eksterior_Boligvelger-04_Bygg_H_Sor_v3_3destate.no_.jpg"
+  },
+  "https://leangenbukta.no/wp-content/uploads/2024/08/IMG_5322.jpg": {
+    "status": 200,
+    "contentType": "image/jpeg",
+    "contentLength": "1260788",
+    "finalUrl": "https://leangenbukta.no/wp-content/uploads/2024/08/IMG_5322.jpg"
+  },
+  "https://leangenbukta.no/wp-content/uploads/2024/08/IMG_5323.jpg": {
+    "status": 200,
+    "contentType": "image/jpeg",
+    "contentLength": "975822",
+    "finalUrl": "https://leangenbukta.no/wp-content/uploads/2024/08/IMG_5323.jpg"
+  },
+  "https://leangenbukta.no/wp-content/uploads/2024/08/IMG_5339-e1724325277616.jpg": {
+    "status": 200,
+    "contentType": "image/jpeg",
+    "contentLength": "711382",
+    "finalUrl": "https://leangenbukta.no/wp-content/uploads/2024/08/IMG_5339-e1724325277616.jpg"
+  },
+  "https://leangenbukta.no/wp-content/uploads/2024/08/IMG_5340.jpg": {
+    "status": 200,
+    "contentType": "image/jpeg",
+    "contentLength": "1221477",
+    "finalUrl": "https://leangenbukta.no/wp-content/uploads/2024/08/IMG_5340.jpg"
+  },
+  "https://leangenbukta.no/wp-content/uploads/2024/08/IMG_5341.jpg": {
+    "status": 200,
+    "contentType": "image/jpeg",
+    "contentLength": "1251799",
+    "finalUrl": "https://leangenbukta.no/wp-content/uploads/2024/08/IMG_5341.jpg"
+  },
+  "https://leangenbukta.no/wp-content/uploads/2024/08/IMG_5345.jpg": {
+    "status": 200,
+    "contentType": "image/jpeg",
+    "contentLength": "1113976",
+    "finalUrl": "https://leangenbukta.no/wp-content/uploads/2024/08/IMG_5345.jpg"
+  },
+  "https://leangenbukta.no/wp-content/uploads/2024/08/IMG_5490.jpg": {
+    "status": 200,
+    "contentType": "image/jpeg",
+    "contentLength": "1093250",
+    "finalUrl": "https://leangenbukta.no/wp-content/uploads/2024/08/IMG_5490.jpg"
+  },
+  "https://leangenbukta.no/wp-content/uploads/2024/08/IMG_5502.jpg": {
+    "status": 200,
+    "contentType": "image/jpeg",
+    "contentLength": "1076697",
+    "finalUrl": "https://leangenbukta.no/wp-content/uploads/2024/08/IMG_5502.jpg"
+  },
+  "https://leangenbukta.no/wp-content/uploads/2024/08/IMG_9982.jpg": {
+    "status": 200,
+    "contentType": "image/jpeg",
+    "contentLength": "878052",
+    "finalUrl": "https://leangenbukta.no/wp-content/uploads/2024/08/IMG_9982.jpg"
+  },
+  "https://leangenbukta.no/wp-content/uploads/2024/08/Kart-over-leangenbukta-1.png": {
+    "status": 200,
+    "contentType": "image/png",
+    "contentLength": "223132",
+    "finalUrl": "https://leangenbukta.no/wp-content/uploads/2024/08/Kart-over-leangenbukta-1.png"
+  },
+  "https://leangenbukta.no/wp-content/uploads/2024/08/Leangenbukta-Rekkehus_Eksterior_Vinkel-01_Miljo_v2_Plyo.jpg": {
+    "status": 200,
+    "contentType": "image/jpeg",
+    "contentLength": "1051051",
+    "finalUrl": "https://leangenbukta.no/wp-content/uploads/2024/08/Leangenbukta-Rekkehus_Eksterior_Vinkel-01_Miljo_v2_Plyo.jpg"
+  },
+  "https://leangenbukta.no/wp-content/uploads/2024/08/Leangenbukta-Rekkehus_Interior_Vinkel-01_Stue_v4_Plyo.jpg": {
+    "status": 200,
+    "contentType": "image/jpeg",
+    "contentLength": "765500",
+    "finalUrl": "https://leangenbukta.no/wp-content/uploads/2024/08/Leangenbukta-Rekkehus_Interior_Vinkel-01_Stue_v4_Plyo.jpg"
+  },
+  "https://leangenbukta.no/wp-content/uploads/2024/08/Leangenbukta-Rekkehus_Interior_Vinkel-03_Stuekjokken_v3_Plyo.jpg": {
+    "status": 200,
+    "contentType": "image/jpeg",
+    "contentLength": "510412",
+    "finalUrl": "https://leangenbukta.no/wp-content/uploads/2024/08/Leangenbukta-Rekkehus_Interior_Vinkel-03_Stuekjokken_v3_Plyo.jpg"
+  },
+  "https://leangenbukta.no/wp-content/uploads/2024/08/Leangenbukta-Rekkehus_Interior_Vinkel-05_Loftstue_v2_Plyo-1.jpg": {
+    "status": 200,
+    "contentType": "image/jpeg",
+    "contentLength": "795518",
+    "finalUrl": "https://leangenbukta.no/wp-content/uploads/2024/08/Leangenbukta-Rekkehus_Interior_Vinkel-05_Loftstue_v2_Plyo-1.jpg"
+  },
+  "https://leangenbukta.no/wp-content/uploads/2025/01/innredningsplan-275kvm_Knutepunktet2.pdf": {
+    "status": 200,
+    "contentType": "application/pdf",
+    "contentLength": "835875",
+    "finalUrl": "https://leangenbukta.no/wp-content/uploads/2025/01/innredningsplan-275kvm_Knutepunktet2.pdf"
+  },
+  "https://leangenbukta.no/wp-content/uploads/2025/02/11.02.25_digitaltprospekt_knutepunktet_ny.pdf": {
+    "status": 200,
+    "contentType": "application/pdf",
+    "contentLength": "28786574",
+    "finalUrl": "https://leangenbukta.no/wp-content/uploads/2025/02/11.02.25_digitaltprospekt_knutepunktet_ny.pdf"
+  },
+  "https://leangenbukta.no/wp-content/uploads/2025/02/Bindende-kjopebekreftelse-Leangenbukta-Knutepunktet-2.pdf": {
+    "status": 200,
+    "contentType": "application/pdf",
+    "contentLength": "160304",
+    "finalUrl": "https://leangenbukta.no/wp-content/uploads/2025/02/Bindende-kjopebekreftelse-Leangenbukta-Knutepunktet-2.pdf"
+  },
+  "https://leangenbukta.no/wp-content/uploads/2025/09/Redegjorelse-for-aktsomhetsvurderinger-Leangenbukta-2024-signert.pdf": {
+    "status": 200,
+    "contentType": "application/pdf",
+    "contentLength": "2470130",
+    "finalUrl": "https://leangenbukta.no/wp-content/uploads/2025/09/Redegjorelse-for-aktsomhetsvurderinger-Leangenbukta-2024-signert.pdf"
+  },
+  "https://leangenbukta.no/wp-content/uploads/2025/10/Bindende-kjopebekreftelse-Leangenbukta-Saltakshus-C.pdf": {
+    "status": 200,
+    "contentType": "application/pdf",
+    "contentLength": "155435",
+    "finalUrl": "https://leangenbukta.no/wp-content/uploads/2025/10/Bindende-kjopebekreftelse-Leangenbukta-Saltakshus-C.pdf"
+  },
+  "https://leangenbukta.no/wp-content/uploads/2026/04/08.04.26_Prospekt_Parktunet1-1.pdf": {
+    "status": 200,
+    "contentType": "application/pdf",
+    "contentLength": "47016486",
+    "finalUrl": "https://leangenbukta.no/wp-content/uploads/2026/04/08.04.26_Prospekt_Parktunet1-1.pdf"
+  },
+  "https://leangenbukta.no/wp-content/uploads/2026/04/24.03.26_ByggC_Prospekt-.pdf": {
+    "status": 200,
+    "contentType": "application/pdf",
+    "contentLength": "34304901",
+    "finalUrl": "https://leangenbukta.no/wp-content/uploads/2026/04/24.03.26_ByggC_Prospekt-.pdf"
+  },
+  "https://leangenbukta.no/wp-content/uploads/2026/04/Bindende-kjopebekreftelse-Leangenbukta-Parktunet-1.pdf": {
+    "status": 200,
+    "contentType": "application/pdf",
+    "contentLength": "156544",
+    "finalUrl": "https://leangenbukta.no/wp-content/uploads/2026/04/Bindende-kjopebekreftelse-Leangenbukta-Parktunet-1.pdf"
+  },
+  "https://leangenbukta.no/wp-content/uploads/2026/06/Prisliste-Leangenbukta-bygg-D-19062026.pdf": {
+    "status": 200,
+    "contentType": "application/pdf",
+    "contentLength": "178471",
+    "finalUrl": "https://leangenbukta.no/wp-content/uploads/2026/06/Prisliste-Leangenbukta-bygg-D-19062026.pdf"
+  },
+  "https://leangenbukta.no/wp-content/uploads/2026/08/28.08.2026_ByggH_DigitaltProspekt-.pdf": {
+    "status": 200,
+    "contentType": "application/pdf",
+    "contentLength": "27238401",
+    "finalUrl": "https://leangenbukta.no/wp-content/uploads/2026/08/28.08.2026_ByggH_DigitaltProspekt-.pdf"
+  },
+  "https://leangenbukta.no/wp-content/uploads/2026/08/28.08.26_digitaltprospekt_knutepunktet_ny.pdf": {
+    "status": 200,
+    "contentType": "application/pdf",
+    "contentLength": "30287817",
+    "finalUrl": "https://leangenbukta.no/wp-content/uploads/2026/08/28.08.26_digitaltprospekt_knutepunktet_ny.pdf"
+  },
+  "https://leangenbukta.no/wp-content/uploads/2026/08/Prisliste-Leangenbukta-bygg-E-270826.pdf": {
+    "status": 200,
+    "contentType": "application/pdf",
+    "contentLength": "151724",
+    "finalUrl": "https://leangenbukta.no/wp-content/uploads/2026/08/Prisliste-Leangenbukta-bygg-E-270826.pdf"
+  },
+  "https://leangenbukta.no/wp-content/uploads/2026/08/Prisliste-Leangenbukta-bygg-H-27082026.pdf": {
+    "status": 200,
+    "contentType": "application/pdf",
+    "contentLength": "154906",
+    "finalUrl": "https://leangenbukta.no/wp-content/uploads/2026/08/Prisliste-Leangenbukta-bygg-H-27082026.pdf"
+  },
+  "https://leangenbukta.no/wp-content/uploads/2026/09/Prisliste-Leangenbukta-bygg-C-08072026-med-badekabiner.pdf": {
+    "status": 200,
+    "contentType": "application/pdf",
+    "contentLength": "274050",
+    "finalUrl": "https://leangenbukta.no/wp-content/uploads/2026/09/Prisliste-Leangenbukta-bygg-C-08072026-med-badekabiner.pdf"
+  }
+}
