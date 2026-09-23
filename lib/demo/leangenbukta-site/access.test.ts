@@ -69,11 +69,22 @@ describe("tilgang per forespørsel", () => {
 describe("neste-sti etter innlogging", () => {
   it.each([
     ["/demo/leangenbukta-nettside/knutepunktet", "/demo/leangenbukta-nettside/knutepunktet"],
+    ["/demo/leangenbukta-nettside?tab=info", "/demo/leangenbukta-nettside?tab=info"],
     ["/demo/leangenbukta-lokal", "/demo/leangenbukta-lokal"],
     ["https://evil.example", "/demo/leangenbukta-nettside"],
     ["//evil.example/demo/leangenbukta-x", "/demo/leangenbukta-nettside"],
     ["/demo/leangenbukta-tilgang?neste=x", "/demo/leangenbukta-nettside"],
     ["/admin", "/demo/leangenbukta-nettside"],
+    // Bokstavelige dot-segmenter: normaliseres av URL-parseren til en sti
+    // utenfor demoen, og skal derfor falle tilbake.
+    ["/demo/leangenbukta-lokal/../../admin", "/demo/leangenbukta-nettside"],
+    ["/demo/leangenbukta-nettside/../../../etc/passwd", "/demo/leangenbukta-nettside"],
+    // Prosentkodede dot-segmenter: URL-parseren normaliserer IKKE disse, så
+    // de må fanges separat på den dekodede stien.
+    ["/demo/leangenbukta-lokal/%2e%2e/%2e%2e/admin", "/demo/leangenbukta-nettside"],
+    ["/demo/leangenbukta-lokal/%2E%2E/%2E%2E/admin", "/demo/leangenbukta-nettside"],
+    // Prefiks-forveksling: "nettsideevil" skal ikke lure startsWith-sjekken.
+    ["/demo/leangenbukta-nettsideevil", "/demo/leangenbukta-nettside"],
     [null, "/demo/leangenbukta-nettside"],
   ])("%s → %s", (input, expected) => {
     expect(safeNextPath(input)).toBe(expected);

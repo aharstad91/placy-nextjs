@@ -136,6 +136,11 @@ Disse reglene håndheves av ESLint og pre-commit hooks der mulig, men gjelder AL
   leverandørnøkler eller sesjonskapabiliteter til JavaScript/URL/logg. Andre
   LLM-integrasjoner er fortsatt build-time only (skill/script eller lagret
   output).
+- Nytt snevert unntak (2026-09-23): Leangenbukta-kundedemoens tekstchat
+  (`app/api/demo/leangenbukta-chat`, `lib/demo/leangenbukta-chat/`) — bestilt
+  av Andreas 2026-09-23; bare bak demotilgang og døgnkvote, samme godkjente
+  datasett og verktøy som Anja, `store: false`, ingen meldingsinnhold i
+  logger; plan KTD4.
 - ALLTID API-nøkkel i `x-goog-api-key`/`Authorization`-header, aldri URL-querystring (leker i logs)
 - Gemini-grounding: `scripts/gemini-grounding.ts` + `lib/gemini/`. Lagret per tema i `products.config.reportConfig.themes[].grounding`.
 - Cache bustes via `groundingVersion`-bump (Zod `z.literal(1)`) eller `revalidateTag("product:${customer}_${slug}")` — ikke auto-TTL

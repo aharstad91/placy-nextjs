@@ -132,13 +132,6 @@ export async function POST(request: NextRequest) {
   const page = getSitePage(parsed.data.pageId);
   if (!page) return NextResponse.json({ error: "Chatten kjenner ikke denne siden. Bruk Boardet eller kontakt salgsteamet.", links: fallbackLinks() }, { status: 400, headers });
 
-  const quota = await consumeDemoQuota(visitor.visitorId, "chat_message");
-  if (!quota.allowed) {
-    // En brukt kvote er 429; et utilgjengelig kvotelager er en tjenestefeil (503).
-    const status = quota.reason === "visitor" || quota.reason === "global" ? 429 : 503;
-    return NextResponse.json({ error: QUOTA_MESSAGES[quota.reason ?? "store"], links: fallbackLinks() }, { status, headers });
-  }
-
   if (!process.env.OPENAI_API_KEY) {
     return NextResponse.json({ error: "Chatten er ikke koblet til akkurat nå. Bruk Boardet eller kontakt salgsteamet.", links: fallbackLinks() }, { status: 503, headers });
   }
@@ -156,6 +149,16 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Innholdet er oppdatert – last siden på nytt." }, { status: 409, headers });
   }
   const previousTurns = verified?.turns ?? [];
+
+  // Kvoten belastes først etter alle deterministiske sjekker (tilgang, side,
+  // API-nøkkel, datagrunnlag, transcript/snapshot) — en forespørsel som uansett
+  // ville feilet uten modellkall skal ikke koste den besøkende en av dagens meldinger.
+  const quota = await consumeDemoQuota(visitor.visitorId, "chat_message");
+  if (!quota.allowed) {
+    // En brukt kvote er 429; et utilgjengelig kvotelager er en tjenestefeil (503).
+    const status = quota.reason === "visitor" || quota.reason === "global" ? 429 : 503;
+    return NextResponse.json({ error: QUOTA_MESSAGES[quota.reason ?? "store"], links: fallbackLinks() }, { status, headers });
+  }
 
   const conversation = demo.createConversation();
   const instructions = `${demo.backendInstructions}\n\n${textModeAddendum(page)}`;

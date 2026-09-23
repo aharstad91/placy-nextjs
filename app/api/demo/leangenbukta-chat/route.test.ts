@@ -168,6 +168,30 @@ describe("POST /api/demo/leangenbukta-chat", () => {
     expect(global.fetch).not.toHaveBeenCalled();
   });
 
+  it("belaster ikke kvoten når forespørselen uansett feiler deterministisk (stale transcript, 409)", async () => {
+    // AE6: kvoten skal trekkes FØR modellkallet, men ETTER alle sjekker som
+    // uansett ville feilet uten modellkall (her: transcriptets snapshotId er
+    // foreldet). Med en dagskvote på 1 skal derfor det andre, gyldige forsøket
+    // fortsatt gå gjennom — den mislykkede 409-forespørselen skal ikke ha
+    // brukt opp den besøkendes eneste melding.
+    process.env.PLACY_LB_DEMO_CHAT_VISITOR_DAILY = "1";
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValueOnce(responsesPayload(finalMessage("Hei igjen.", "smalltalk"))));
+    const { POST } = await import("./route");
+    const cookie = visitorCookie();
+    const visitorId = visitorIdFromCookie(cookie);
+    const staleToken = issueTranscript({ visitorId, snapshotId: "en-gammel-versjon-som-ikke-finnes", previousTurns: [], userText: "a", assistantText: "b" });
+
+    const staleRes = await POST(post({ message: "Hei", pageId: "forside", transcript: staleToken }, { cookie }));
+    expect(staleRes.status).toBe(409);
+    expect(global.fetch).not.toHaveBeenCalled();
+
+    const validRes = await POST(post({ message: "Hei", pageId: "forside" }, { cookie }));
+    expect(validRes.status).toBe(200);
+    expect(global.fetch).toHaveBeenCalledTimes(1);
+
+    delete process.env.PLACY_LB_DEMO_CHAT_VISITOR_DAILY;
+  });
+
   it("dropper forsøk på vilkårlige lenke-ID-er (URL/javascript:) fra modellen", async () => {
     vi.stubGlobal(
       "fetch",

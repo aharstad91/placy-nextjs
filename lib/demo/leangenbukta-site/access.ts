@@ -31,7 +31,7 @@ export const LB_DEMO_COOKIE = "placy_lb_demo";
 export const LB_DEMO_MAX_AGE_SECONDS = 14 * 24 * 60 * 60;
 export const LB_DEMO_ACCESS_PATH = "/demo/leangenbukta-tilgang";
 
-const MIN_CODE_LENGTH = 12;
+const MIN_CODE_LENGTH = 16;
 const MIN_SECRET_LENGTH = 32;
 const LOOPBACK = new Set(["localhost", "127.0.0.1", "[::1]", "::1"]);
 
@@ -75,17 +75,24 @@ export function lbDemoAccessConfigured(): boolean {
   return config() !== null;
 }
 
+const VISITOR_ID_RE = /^[0-9a-f-]{36}$/;
+
 /**
  * Bytter en innskrevet kode mot en cookieverdi, eller null ved feil kode.
  * Kallstedet setter cookien; denne funksjonen vet ingenting om HTTP.
+ *
+ * `existingVisitorId` lar et gyldig, allerede utstedt besøks-ID gjenbrukes:
+ * uten den ville hvert nytt kode-innlogg (delt kode → mange innlogginger)
+ * mint en fersk `randomUUID()` og dermed nullstille den per-besøkende kvoten.
  */
-export function issueLbDemoCookie(code: string, now = Date.now()): string | null {
+export function issueLbDemoCookie(code: string, now = Date.now(), existingVisitorId?: string): string | null {
   const cfg = config();
   if (!cfg || typeof code !== "string" || code.length === 0 || code.length > 256) return null;
   if (!constantTimeEqual(code.trim(), cfg.code)) return null;
+  const visitorId = existingVisitorId && VISITOR_ID_RE.test(existingVisitorId) ? existingVisitorId : randomUUID();
   const payload: CookiePayload = {
     v: 1,
-    visitorId: randomUUID(),
+    visitorId,
     exp: now + LB_DEMO_MAX_AGE_SECONDS * 1000,
     code: codeVersion(cfg.code),
   };
@@ -158,11 +165,48 @@ export function lbDemoFeedbackEmail(): string {
   return /^[^\s@<>"]+@[^\s@<>"]+\.[a-z]{2,}$/i.test(value) ? value : "hei@placy.no";
 }
 
-/** Bare stier inne i demoen kan være mål etter innlogging — aldri en ekstern URL. */
+const LB_DEMO_FALLBACK_PATH = "/demo/leangenbukta-nettside";
+/** Eneste stier `safeNextPath` kan sende noen til — tilgangssiden selv er bevisst utelatt. */
+const LB_DEMO_SAFE_PREFIXES = ["/demo/leangenbukta-nettside", "/demo/leangenbukta-lokal"];
+
+/**
+ * Bare stier inne i demoen kan være mål etter innlogging — aldri en ekstern
+ * URL og aldri en sti som via `..`-segmenter løser seg ut av demoen i
+ * nettleseren.
+ *
+ * `new URL(value, "http://x")` normaliserer literale dot-segmenter og
+ * avslører protokoll-relative forsøk (`//evil.example/...`) som et
+ * host-bytte bort fra base-hosten. Prosentkodede dot-segmenter
+ * (`%2e%2e`) normaliseres IKKE av URL-parseren, så de sjekkes separat på
+ * den dekodede stien.
+ */
 export function safeNextPath(value: string | null | undefined): string {
-  if (!value || !value.startsWith("/demo/leangenbukta-") || value.startsWith("//") || value.includes("\\")) {
-    return "/demo/leangenbukta-nettside";
+  if (!value) return LB_DEMO_FALLBACK_PATH;
+
+  let url: URL;
+  try {
+    url = new URL(value, "http://x");
+  } catch {
+    return LB_DEMO_FALLBACK_PATH;
   }
-  if (value.startsWith(LB_DEMO_ACCESS_PATH)) return "/demo/leangenbukta-nettside";
-  return value;
+  // Et host-bytte betyr at input var absolutt eller protokoll-relativ
+  // (f.eks. "//evil.example/..."), altså ikke en sti på denne siden.
+  if (url.host !== "x") return LB_DEMO_FALLBACK_PATH;
+
+  let decodedPath: string;
+  try {
+    decodedPath = decodeURIComponent(url.pathname);
+  } catch {
+    return LB_DEMO_FALLBACK_PATH;
+  }
+  if (decodedPath.split("/").some((segment) => segment === "." || segment === "..")) {
+    return LB_DEMO_FALLBACK_PATH;
+  }
+
+  const isAllowed = LB_DEMO_SAFE_PREFIXES.some(
+    (prefix) => url.pathname === prefix || url.pathname.startsWith(`${prefix}/`),
+  );
+  if (!isAllowed) return LB_DEMO_FALLBACK_PATH;
+
+  return `${url.pathname}${url.search}`;
 }

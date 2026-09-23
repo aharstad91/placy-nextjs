@@ -237,6 +237,93 @@ describe("placy-chat widget — ingen HTML-injeksjon og board-lenke", () => {
   });
 });
 
+describe("placy-chat widget — feil og nettverksbrudd", () => {
+  it("viser feilmelding og fallback-lenker ved et ikke-ok svar (429), og lar brukeren sende på nytt", async () => {
+    loadWidget();
+    vi.stubGlobal(
+      "fetch",
+      vi.fn((url: string) => {
+        if (String(url).includes("?pageId=")) return jsonResponse({ starters: [] });
+        return jsonResponse(
+          {
+            error: "For mange forespørsler. Vent litt og prøv igjen.",
+            links: [
+              { id: "board", label: "Åpne Board", href: "/et-annet/board" },
+              { id: "contact", label: "Kontakt oss", href: "/kontakt" },
+            ],
+          },
+          false,
+        );
+      }),
+    );
+    window.PlacyChat!.open({ question: "Hei" });
+    await tick(30);
+
+    const errorMsg = shadow().querySelector(".msg.error") as HTMLElement;
+    expect(errorMsg.childNodes[0].textContent).toBe("For mange forespørsler. Vent litt og prøv igjen.");
+
+    const links = Array.from(errorMsg.querySelectorAll("a")) as HTMLAnchorElement[];
+    expect(links).toHaveLength(2);
+    // Board-lenken bruker skriptets egen `data-board-href`, ikke serverens.
+    expect(links[0].getAttribute("href")).toBe("/demo/leangenbukta-lokal");
+    expect(links[1].getAttribute("href")).toBe("/kontakt");
+
+    const sendBtn = shadow().querySelector(".send") as HTMLButtonElement;
+    expect(sendBtn.disabled).toBe(false);
+
+    // Widgeten skal fortsatt kunne brukes til en ny melding.
+    vi.stubGlobal(
+      "fetch",
+      vi.fn((url: string) => {
+        if (String(url).includes("?pageId=")) return jsonResponse({ starters: [] });
+        return jsonResponse({ reply: "Prøv nummer to.", answerType: "fact", links: [], transcript: "tok2" });
+      }),
+    );
+    const textarea = shadow().querySelector("textarea") as HTMLTextAreaElement;
+    textarea.value = "Ny melding";
+    sendBtn.click();
+    await tick(30);
+    const messages = shadow().querySelectorAll(".msg.user");
+    expect(messages[messages.length - 1].textContent).toBe("Ny melding");
+    expect(shadow().querySelector(".msg.assistant")?.textContent).toBe("Prøv nummer to.");
+  });
+
+  it("viser nettverksfeilmelding når forespørselen avvises, og lar brukeren sende på nytt", async () => {
+    loadWidget();
+    vi.stubGlobal(
+      "fetch",
+      vi.fn((url: string) => {
+        if (String(url).includes("?pageId=")) return jsonResponse({ starters: [] });
+        return Promise.reject(new Error("network"));
+      }),
+    );
+    window.PlacyChat!.open({ question: "Hei" });
+    await tick(30);
+
+    const errorMsg = shadow().querySelector(".msg.error") as HTMLElement;
+    expect(errorMsg.textContent).toBe("Chatten fikk ikke kontakt. Sjekk nettforbindelsen og prøv igjen.");
+
+    const sendBtn = shadow().querySelector(".send") as HTMLButtonElement;
+    expect(sendBtn.disabled).toBe(false);
+
+    // Widgeten skal fortsatt kunne brukes til en ny melding etter nettverksfeilen.
+    vi.stubGlobal(
+      "fetch",
+      vi.fn((url: string) => {
+        if (String(url).includes("?pageId=")) return jsonResponse({ starters: [] });
+        return jsonResponse({ reply: "Nå virker det.", answerType: "fact", links: [], transcript: "tok3" });
+      }),
+    );
+    const textarea = shadow().querySelector("textarea") as HTMLTextAreaElement;
+    textarea.value = "Andre forsøk";
+    sendBtn.click();
+    await tick(30);
+    const messages = shadow().querySelectorAll(".msg.user");
+    expect(messages[messages.length - 1].textContent).toBe("Andre forsøk");
+    expect(shadow().querySelector(".msg.assistant")?.textContent).toBe("Nå virker det.");
+  });
+});
+
 describe("placy-chat widget — CSS", () => {
   it("har en mobil-brekkpunktregel for panelet (bottom sheet under 700px)", () => {
     loadWidget();

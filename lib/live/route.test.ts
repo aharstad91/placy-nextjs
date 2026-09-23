@@ -18,6 +18,8 @@ import { issueDemoAccess } from '@/lib/live/hosted-access';
 import { issueLbDemoCookie, LB_DEMO_COOKIE } from '@/lib/demo/leangenbukta-site/access';
 import { VoiceProjectError } from '@/lib/live/projects';
 import { GET, POST, DELETE } from '@/app/api/prototype/live/route';
+import { GET as mapGET, POST as mapPOST } from '@/app/api/prototype/live/map/route';
+import { POST as contextPOST } from '@/app/api/prototype/live/context/route';
 
 const key = 'test-secret-must-remain-server-side';
 const created = (overrides: Record<string, unknown> = {}) => Response.json({ session: { id: 'live_test', model: 'gpt-live-1', ...overrides }, transport: { type: 'webrtc', sdp: 'v=0\r\nanswer' } }, { status: 201 });
@@ -250,13 +252,27 @@ describe('Leangenbukta-kundedemoens stemme på et delt miljø', () => {
     expect(fetch).not.toHaveBeenCalled();
   });
 
-  it('stopper ved brukt kvote før samtalen reserveres eller betales', async () => {
+  it('trekker kvoten først ETTER en vellykket reservasjon, og gir slotten tilbake ved avslag', async () => {
+    // AE1/#1: kvoten skal ikke koste noe når selve reservasjonen feiler senere.
+    // Rekkefølgen reserve→kvote sikrer at en opptatt plass aldri trekker kvote
+    // (neste test), og at en avvist kvote frigir plassen den nettopp tok.
     mocks.quota.mockResolvedValueOnce({ allowed: false, reason: 'visitor' });
     const demo = await loadLiveDemo('leangenbukta-lokal');
     const response = await POST(await shared({ dataset: 'leangenbukta-lokal', snapshotId: demo.snapshotId }));
     expect(response.status).toBe(429);
     expect((await response.json()).error).toMatch(/tekstchatten|kartet/);
-    expect(mocks.reserve).not.toHaveBeenCalled();
+    expect(mocks.reserve).toHaveBeenCalledOnce();
+    expect(mocks.end).toHaveBeenCalledWith('session-token');
+    expect(fetch).not.toHaveBeenCalled();
+  });
+
+  it('trekker ikke kvote når slotten er opptatt (#1: en opptatt plass skal ikke koste kvote)', async () => {
+    mocks.reserve.mockRejectedValueOnce(new Error('opptatt'));
+    const demo = await loadLiveDemo('leangenbukta-lokal');
+    const response = await POST(await shared({ dataset: 'leangenbukta-lokal', snapshotId: demo.snapshotId }));
+    expect(response.status).toBe(429);
+    expect(mocks.quota).not.toHaveBeenCalled();
+    expect(mocks.end).not.toHaveBeenCalled();
     expect(fetch).not.toHaveBeenCalled();
   });
 
@@ -269,5 +285,65 @@ describe('Leangenbukta-kundedemoens stemme på et delt miljø', () => {
     const stop = await DELETE(new NextRequest(`${SHARED}/api/prototype/live`, { method: 'DELETE', headers: { cookie, origin: SHARED, 'X-Placy-Session': 'session-token' } }));
     expect(stop.status).toBe(200);
     expect((await DELETE(new NextRequest(`${SHARED}/api/prototype/live`, { method: 'DELETE', headers: { 'X-Placy-Session': 'session-token' } }))).status).toBe(404);
+  });
+
+  describe('#4: kart- og kontekstkanalen på delt vert', () => {
+    const cookie = () => `${LB_DEMO_COOKIE}=${issueLbDemoCookie(CODE)}`;
+    beforeEach(() => { mocks.isActive.mockReturnValue(true); });
+
+    it('slipper kartkanalens SSE-strøm inn med gyldig LB-cookie', async () => {
+      const response = await mapGET(new NextRequest(`${SHARED}/api/prototype/live/map?session=session-token`, { headers: { cookie: cookie(), origin: SHARED } }));
+      expect(response.status).not.toBe(404);
+    });
+
+    it('avviser kartkanalens SSE-strøm uten cookie', async () => {
+      const response = await mapGET(new NextRequest(`${SHARED}/api/prototype/live/map?session=session-token`, { headers: { origin: SHARED } }));
+      expect(response.status).toBe(404);
+    });
+
+    it('slipper kartkanalens POST (kartsvar) inn med gyldig LB-cookie', async () => {
+      const response = await mapPOST(new NextRequest(`${SHARED}/api/prototype/live/map`, {
+        method: 'POST',
+        body: JSON.stringify({ id: 'map_1', output: {} }),
+        headers: { 'Content-Type': 'application/json', 'x-placy-session': 'session-token', cookie: cookie(), origin: SHARED },
+      }));
+      expect(response.status).not.toBe(404);
+    });
+
+    it('avviser kartkanalens POST uten cookie', async () => {
+      const response = await mapPOST(new NextRequest(`${SHARED}/api/prototype/live/map`, {
+        method: 'POST',
+        body: JSON.stringify({ id: 'map_1', output: {} }),
+        headers: { 'Content-Type': 'application/json', 'x-placy-session': 'session-token', origin: SHARED },
+      }));
+      expect(response.status).toBe(404);
+    });
+
+    it('slipper kontekstkanalen inn med gyldig LB-cookie', async () => {
+      const response = await contextPOST(new NextRequest(`${SHARED}/api/prototype/live/context`, {
+        method: 'POST',
+        body: JSON.stringify({ kind: 'text', text: 'hei' }),
+        headers: { 'Content-Type': 'application/json', 'x-placy-session': 'session-token', cookie: cookie(), origin: SHARED },
+      }));
+      expect(response.status).not.toBe(404);
+    });
+
+    it('avviser kontekstkanalen uten cookie', async () => {
+      const response = await contextPOST(new NextRequest(`${SHARED}/api/prototype/live/context`, {
+        method: 'POST',
+        body: JSON.stringify({ kind: 'text', text: 'hei' }),
+        headers: { 'Content-Type': 'application/json', 'x-placy-session': 'session-token', origin: SHARED },
+      }));
+      expect(response.status).toBe(404);
+    });
+
+    it('avviser begge kanalene fra fremmed origin selv med gyldig cookie', async () => {
+      expect((await mapGET(new NextRequest(`${SHARED}/api/prototype/live/map?session=session-token`, { headers: { cookie: cookie(), origin: 'https://evil.example' } }))).status).toBe(404);
+      expect((await contextPOST(new NextRequest(`${SHARED}/api/prototype/live/context`, {
+        method: 'POST',
+        body: JSON.stringify({ kind: 'text', text: 'hei' }),
+        headers: { 'Content-Type': 'application/json', 'x-placy-session': 'session-token', cookie: cookie(), origin: 'https://evil.example' },
+      }))).status).toBe(404);
+    });
   });
 });

@@ -11,8 +11,9 @@ import { NYHAVNA_VOICE_INSTRUCTIONS } from '@/lib/live/voice-instructions';
 import { localRequest } from '@/lib/live/local-request';
 import { DEFAULT_LIVE_DATASET, isLiveDataset, loadLiveDemo, type LiveDemo } from '@/lib/live/demos';
 import { resolveVoiceProject, VoiceProjectError } from '@/lib/live/projects';
-import { lbDemoAccess, type LbDemoVisitor } from '@/lib/demo/leangenbukta-site/access';
+import { lbDemoAccess } from '@/lib/demo/leangenbukta-site/access';
 import { consumeDemoQuota } from '@/lib/demo/leangenbukta-site/usage';
+import { LB_VOICE_DATASET, leangenbuktaVoiceVisitor } from '@/lib/live/leangenbukta-voice-access';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -27,23 +28,6 @@ const bodySchema = z.object({
   snapshotId: z.string().max(150),
   dataset: z.string().max(60).optional(),
 });
-
-/**
- * Leangenbukta-kundedemoen kan dele stemmen utenfor localhost (2026-09-23).
- *
- * Samme tilgang som nettsidekopien og boardet (lib/demo/leangenbukta-site/
- * access.ts), men BARE for datasettet `leangenbukta-lokal` og bare fra samme
- * origin. Nyhavna og snapshotet beholder loopback-gaten uendret: en
- * Leangenbukta-cookie gir ingen annen demo.
- */
-const LB_VOICE_DATASET = 'leangenbukta-lokal';
-
-function leangenbuktaVoiceVisitor(request: NextRequest, dataset: string | null | undefined): LbDemoVisitor | null {
-  if (dataset !== LB_VOICE_DATASET) return null;
-  const origin = request.headers.get('origin');
-  if (origin && origin !== request.nextUrl.origin) return null;
-  return lbDemoAccess(request);
-}
 
 /** Datasettet forespørselen gjelder, eller null hvis den ba om et ukjent. */
 function requestedDataset(value: string | null | undefined) {
@@ -133,15 +117,19 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Demoens datagrunnlag kunne ikke lastes.' }, { status: 503 });
   }
   if (demo.snapshotId !== parsed.data.snapshotId) return NextResponse.json({ error: 'Datagrunnlaget er oppdatert. Last boardet på nytt.' }, { status: 409 });
-  // Kundedemoens døgnkvote trekkes før samtalen reserveres: en brukt kvote
-  // skal ikke koste en Live-sesjon.
-  if (lbVisitor) {
-    const quota = await consumeDemoQuota(lbVisitor.visitorId, 'voice_session');
-    if (!quota.allowed) return NextResponse.json({ error: quota.reason === 'store' ? 'Samtalen er midlertidig utilgjengelig. Bruk kartet eller tekstchatten.' : 'Dagens samtaler i demoen er brukt opp. Bruk kartet eller tekstchatten, eller prøv igjen i morgen.' }, { status: quota.reason === 'store' ? 503 : 429 });
-  }
   const supervisor = getLiveSupervisor();
   let token: string;
   try { token = await supervisor.reserve(); } catch { return NextResponse.json({ error: 'En samtale er aktiv, eller serveren venter på opprydding. Avslutt samtalen og prøv igjen.' }, { status: 429 }); }
+  // Kundedemoens døgnkvote trekkes først ETTER en vellykket reservasjon: en
+  // opptatt plass skal ikke koste kvote. Avvises kvoten, gis reservasjonen
+  // tilbake med samme opprydding som resten av ruta.
+  if (lbVisitor) {
+    const quota = await consumeDemoQuota(lbVisitor.visitorId, 'voice_session');
+    if (!quota.allowed) {
+      await supervisor.end(token).catch(() => {});
+      return NextResponse.json({ error: quota.reason === 'store' ? 'Samtalen er midlertidig utilgjengelig. Bruk kartet eller tekstchatten.' : 'Dagens samtaler i demoen er brukt opp. Bruk kartet eller tekstchatten, eller prøv igjen i morgen.' }, { status: quota.reason === 'store' ? 503 : 429 });
+    }
+  }
   const backendInstructions = demo.backendInstructions;
   let identityKnown = false;
   try {

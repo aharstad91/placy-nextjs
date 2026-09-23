@@ -77,7 +77,7 @@ Runtime-LLM-kallet er et navngitt unntak fra `CLAUDE.md`s regel, bestilt av Andr
 
 Miljøvariabler for en delt preview:
 
-- `PLACY_LB_DEMO_ACCESS_CODE` (≥ 12 tegn) og `PLACY_LB_DEMO_COOKIE_SECRET` (≥ 32 tegn). Ny kode ugyldiggjør alle utstedte cookies.
+- `PLACY_LB_DEMO_ACCESS_CODE` (≥ 16 tegn) og `PLACY_LB_DEMO_COOKIE_SECRET` (≥ 32 tegn). Ny kode ugyldiggjør alle utstedte cookies.
 - `PLACY_LB_DEMO_USAGE_STORE=supabase` og migrasjon `supabase/migrations/098_demo_usage.sql` (ikke kjørt). Uten sentralt kvotelager nekter et produksjonsbygg chat (503) og stemme — med vilje.
 - `OPENAI_API_KEY` i et eget OpenAI-prosjekt med hardt månedlig spendtak (KTD6). Valgfritt: `PLACY_LB_CHAT_MODEL`, døgnkvoter `PLACY_LB_DEMO_{CHAT,VOICE}_{VISITOR,GLOBAL}_DAILY` (standard 60/600 meldinger og 8/60 stemmesesjoner), `PLACY_LB_DEMO_FEEDBACK_EMAIL` (standard hei@placy.no).
 - `PLACY_LB_CHAT_ALLOWED_ORIGINS` bare hvis widgeten skal bygges inn på et annet domene. Innbygging på kundens WordPress med kvoter på tvers av domener er ikke løst i denne demoen.
