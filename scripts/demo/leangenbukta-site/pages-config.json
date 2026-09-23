@@ -1,0 +1,89 @@
+{
+  "$comment": "Placy-plasseringer, chatforslag og kanoniske slugger for Leangenbukta-kopien. Leses av build-pages.mjs. 'building' = høyt felt etter byggidentiteten; 'location' = høyt felt på Beliggenhet; 'article' = nøktern videre-lenke nederst. Sider uten placement får ikke Placy-felt (juridiske sider, kjøpsprosess, salgsmateriell, kundeportal, arkiv, galleri).",
+  "handwritten": ["forside"],
+  "extraPages": [],
+  "dispositionOverrides": {
+    "om-prosjektet": { "disposition": "local", "$why": "Menyen lenker til /om-prosjektet/; innholdet er identisk med /om-prosjektet-2/ (kontrollert 23.09.2026)." },
+    "om-prosjektet-2": { "disposition": "duplicate", "duplicateOf": "om-prosjektet" },
+    "parktunet1": { "disposition": "local", "$why": "Forsiden lenker til /parktunet1/; identisk med /parktunet1-2/." },
+    "parktunet1-2": { "disposition": "duplicate", "duplicateOf": "parktunet1" },
+    "saltakshusk": { "disposition": "local", "$why": "Byggets egen slug; identisk med /saltakshusk-2/ og /byggetrinn-1-byvilla-4-og-5/." },
+    "saltakshusk-2": { "disposition": "duplicate", "duplicateOf": "saltakshusk" },
+    "byggetrinn-1-byvilla-4-og-5": { "disposition": "duplicate", "duplicateOf": "saltakshusk" },
+    "fritidstilbud-for-hele-familien": { "disposition": "duplicate", "duplicateOf": "kort-vei-til-alt", "$why": "Serveres som /kort-vei-til-alt/ med identisk innhold." }
+  },
+  "defaultStarters": {
+    "home": ["Hva er Leangenbukta?", "Hvilke bygg er i salg nå?", "Hva finnes i nærområdet?"],
+    "location": ["Hvor lang tid tar det til sentrum?", "Hvilken skolekrets hører Leangenbukta til?", "Hva kan man gjøre ute i nærområdet?"],
+    "project": ["Hva er Leangenbukta?", "Hvilke fellesarealer får beboerne?", "Hva finnes i nærområdet?"],
+    "article": ["Hva finnes i nærområdet?", "Hvordan kommer jeg meg til sentrum uten bil?", "Hvilke skoler og barnehager er i nærheten?"],
+    "info": ["Hva er Leangenbukta?", "Hva finnes i nærområdet?"],
+    "archive": ["Hva er nytt i Leangenbukta?", "Hvilke bygg er i salg nå?"],
+    "contact": ["Hvem kan jeg kontakte om Leangenbukta?"],
+    "building": ["Hva finnes i nærområdet?"]
+  },
+  "pages": {
+    "beliggenhet": { "kind": "location", "placement": "location", "title": "Beliggenhet" },
+    "om-prosjektet": { "kind": "project", "placement": "article", "title": "Om prosjektet" },
+    "test-framside": { "kind": "info" },
+    "knutepunktet": {
+      "placement": "building", "shortName": "Knutepunktet", "boardTopicId": "project-leangenbukta-knutepunktet-e",
+      "chatStarters": ["Hva finnes rundt Knutepunktet?", "Kan beboerne bruke treningsrommet nå?", "Når kan man flytte inn i Knutepunktet?"]
+    },
+    "parktunet1": {
+      "placement": "building", "shortName": "Parktunet 1", "boardTopicId": "project-leangenbukta-parktunet-1-d",
+      "chatStarters": ["Når er Parktunet 1 ferdig?", "Hva finnes rundt Parktunet 1?", "Hvilke skoler og barnehager er i nærheten?"]
+    },
+    "saltakshusc": {
+      "placement": "building", "shortName": "Bygg C", "boardTopicId": "project-leangenbukta-saltakshus-c",
+      "chatStarters": ["Hvor langt har Bygg C kommet?", "Hva finnes rundt Bygg C?", "Hvilke fellesarealer får beboerne?"]
+    },
+    "tilvalgbyggc": {
+      "placement": "building", "shortName": "Bygg C", "boardTopicId": "project-leangenbukta-saltakshus-c",
+      "chatStarters": ["Hvor langt har Bygg C kommet?", "Hva finnes rundt Bygg C?"]
+    },
+    "saltakshush": {
+      "placement": "building", "shortName": "Saltakshus H", "boardTopicId": "project-leangenbukta-saltakshus-h",
+      "chatStarters": ["Er Saltakshus H ferdig?", "Hva finnes rundt Saltakshus H?", "Hvor lang tid tar det til sentrum?"]
+    },
+    "saltakshus-i": {
+      "placement": "building", "shortName": "Saltakshus I",
+      "chatStarters": ["Hva finnes rundt Saltakshus I?", "Hvor lang tid tar det til sentrum?"]
+    },
+    "saltakshus-j": {
+      "placement": "building", "shortName": "Saltakshus J",
+      "chatStarters": ["Hva finnes rundt Saltakshus J?", "Hvor lang tid tar det til sentrum?"]
+    },
+    "saltakshusk": {
+      "placement": "building", "shortName": "Saltakshus K",
+      "chatStarters": ["Hva finnes rundt Saltakshus K?", "Hvilke skoler og barnehager er i nærheten?"]
+    },
+    "nytt-salgstrinn-bygg-l": {
+      "placement": "building", "shortName": "Saltakshus L",
+      "chatStarters": ["Hva finnes rundt Saltakshus L?", "Hvor lang tid tar det til sentrum?"]
+    },
+    "toppleilighetl504": {
+      "placement": "building", "shortName": "Saltakshus L",
+      "chatStarters": ["Hva finnes rundt Saltakshus L?", "Hva kan man gjøre ute i nærområdet?"]
+    },
+    "byvilla-1-og-2": {
+      "placement": "building", "shortName": "Byvilla 1 og 2", "boardTopicId": "project-leangenbukta-byvilla-1-2",
+      "chatStarters": ["Hva finnes rundt Byvilla 1 og 2?", "Hvilke skoler og barnehager er i nærheten?"]
+    },
+    "rekkehus19-27": {
+      "placement": "building", "shortName": "Rekkehus 19–27", "boardTopicId": "project-leangenbukta-rekkehus",
+      "chatStarters": ["Hva finnes rundt rekkehusene?", "Hvilke skoler og barnehager er i nærheten?", "Er området trygt for barn?"]
+    },
+    "kort-vei-til-alt": { "placement": "article" },
+    "her-trenger-du-ikke-eie-bil": { "placement": "article", "chatStarters": ["Hvordan kommer jeg meg til sentrum uten bil?", "Hvor er nærmeste togstasjon?"] },
+    "trygt-og-bilfritt": { "placement": "article", "chatStarters": ["Er området trygt for barn?", "Hvilke skoler og barnehager er i nærheten?"] },
+    "fasiliteter-som-gjor-hverdagen-enklere": { "placement": "article", "chatStarters": ["Hvilke fellesarealer får beboerne?", "Hvor er nærmeste dagligvarebutikk?"] },
+    "elbil-elsykkeldeling": { "placement": "article", "chatStarters": ["Hvordan kommer jeg meg rundt uten egen bil?", "Hvor er nærmeste bussholdeplass?"] },
+    "rekkehus-for-barnefamilier-i-trondheim": { "placement": "article", "chatStarters": ["Hvilke skoler og barnehager er i nærheten?", "Hva kan barna gjøre på fritiden?"] },
+    "2roms-og3roms": { "placement": "article" },
+    "stort-til-mindre-2": { "placement": "article" },
+    "stort-til-mindre_byggc": { "placement": "article" },
+    "stort-til-mindre_parktunet": { "placement": "article" },
+    "innflyttingsklare-leiligheter": { "placement": "article" }
+  }
+}

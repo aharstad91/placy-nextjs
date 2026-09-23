@@ -36,9 +36,9 @@ export const SITE_PAGE_KINDS = [
 const pageSchema = z
   .object({
     /** Stabil ID: kildens slug, `forside` for forsiden. */
-    id: z.string().regex(/^[a-z0-9][a-z0-9-]{0,80}$/),
-    /** Lokal sti under `SITE_BASE`, uten skråstrek til slutt. Tom streng = forsiden. */
-    path: z.string().regex(/^(\/[a-z0-9-]+)*$/),
+    id: z.string().regex(/^[a-z0-9][a-z0-9_-]{0,80}$/),
+    /** Lokal sti under `SITE_BASE`, lik kildens sti, uten skråstrek til slutt. Tom streng = forsiden. */
+    path: z.string().regex(/^(\/[a-z0-9_-]+)*$/),
     title: z.string().min(1).max(200),
     kind: z.enum(SITE_PAGE_KINDS),
     /** Kanonisk kilde-URL på leangenbukta.no, eller null for sider Placy har lagt til. */
@@ -48,6 +48,8 @@ const pageSchema = z
      * (`data/demo/leangenbukta-lokal/topics.json`). Bare byggsider har det.
      */
     boardTopicId: z.string().optional(),
+    /** Kort navn til Placy-feltet når tittelen er lang, f.eks. «Byvilla 4 og 5». */
+    shortName: z.string().min(1).max(60).optional(),
     /** Forslag til spørsmål chatten viser når den åpnes fra denne siden. */
     chatStarters: z.array(z.string().min(1).max(120)).max(4).default([]),
   })

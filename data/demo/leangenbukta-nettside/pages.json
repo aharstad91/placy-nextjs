@@ -14,15 +14,538 @@
       ]
     },
     {
+      "id": "2roms-og3roms",
+      "path": "/2roms-og3roms",
+      "title": "2- og 3-roms leiligheter i Leangenbukta",
+      "kind": "info",
+      "sourceUrl": "https://leangenbukta.no/2roms-og3roms/",
+      "chatStarters": [
+        "Hva er Leangenbukta?",
+        "Hva finnes i nærområdet?"
+      ]
+    },
+    {
+      "id": "aktuelt",
+      "path": "/aktuelt",
+      "title": "Aktuelt",
+      "kind": "archive",
+      "sourceUrl": "https://leangenbukta.no/aktuelt/",
+      "chatStarters": [
+        "Hva er nytt i Leangenbukta?",
+        "Hvilke bygg er i salg nå?"
+      ]
+    },
+    {
+      "id": "apenhetsloven",
+      "path": "/apenhetsloven",
+      "title": "Åpenhetsloven",
+      "kind": "info",
+      "sourceUrl": "https://leangenbukta.no/apenhetsloven/",
+      "chatStarters": [
+        "Hva er Leangenbukta?",
+        "Hva finnes i nærområdet?"
+      ]
+    },
+    {
       "id": "beliggenhet",
       "path": "/beliggenhet",
       "title": "Beliggenhet",
       "kind": "location",
-      "sourceUrl": null,
+      "sourceUrl": "https://leangenbukta.no/beliggenhet/",
       "chatStarters": [
         "Hvor lang tid tar det til sentrum?",
         "Hvilken skolekrets hører Leangenbukta til?",
         "Hva kan man gjøre ute i nærområdet?"
+      ]
+    },
+    {
+      "id": "bli-obos-medlem",
+      "path": "/bli-obos-medlem",
+      "title": "Bli OBOS-medlem",
+      "kind": "info",
+      "sourceUrl": "https://leangenbukta.no/bli-obos-medlem/",
+      "chatStarters": [
+        "Hva er Leangenbukta?",
+        "Hva finnes i nærområdet?"
+      ]
+    },
+    {
+      "id": "byvilla-1-og-2",
+      "path": "/byvilla-1-og-2",
+      "title": "24 nye leiligheter for salg i Byvilla 1 og 2",
+      "kind": "building",
+      "sourceUrl": "https://leangenbukta.no/byvilla-1-og-2/",
+      "boardTopicId": "project-leangenbukta-byvilla-1-2",
+      "chatStarters": [
+        "Hva finnes rundt Byvilla 1 og 2?",
+        "Hvilke skoler og barnehager er i nærheten?"
+      ]
+    },
+    {
+      "id": "elbil-elsykkeldeling",
+      "path": "/elbil-elsykkeldeling",
+      "title": "Forminsk utgifter med El-bildeling",
+      "kind": "project",
+      "sourceUrl": "https://leangenbukta.no/elbil-elsykkeldeling/",
+      "chatStarters": [
+        "Hvordan kommer jeg meg rundt uten egen bil?",
+        "Hvor er nærmeste bussholdeplass?"
+      ]
+    },
+    {
+      "id": "fasiliteter-som-gjor-hverdagen-enklere",
+      "path": "/fasiliteter-som-gjor-hverdagen-enklere",
+      "title": "Fasiliteter som gjør hverdagen enklere!",
+      "kind": "article",
+      "sourceUrl": "https://leangenbukta.no/fasiliteter-som-gjor-hverdagen-enklere/",
+      "chatStarters": [
+        "Hvilke fellesarealer får beboerne?",
+        "Hvor er nærmeste dagligvarebutikk?"
+      ]
+    },
+    {
+      "id": "fordeler-a-bo-forste-etasje",
+      "path": "/fordeler-a-bo-forste-etasje",
+      "title": "Derfor bør du vurdere første etasje",
+      "kind": "info",
+      "sourceUrl": "https://leangenbukta.no/fordeler-a-bo-forste-etasje/",
+      "chatStarters": [
+        "Hva er Leangenbukta?",
+        "Hva finnes i nærområdet?"
+      ]
+    },
+    {
+      "id": "galleri",
+      "path": "/galleri",
+      "title": "Galleri",
+      "kind": "project",
+      "sourceUrl": "https://leangenbukta.no/galleri/",
+      "chatStarters": [
+        "Hva er Leangenbukta?",
+        "Hvilke fellesarealer får beboerne?",
+        "Hva finnes i nærområdet?"
+      ]
+    },
+    {
+      "id": "her-trenger-du-ikke-eie-bil",
+      "path": "/her-trenger-du-ikke-eie-bil",
+      "title": "Her trenger du ikke eie bil!",
+      "kind": "article",
+      "sourceUrl": "https://leangenbukta.no/her-trenger-du-ikke-eie-bil/",
+      "chatStarters": [
+        "Hvordan kommer jeg meg til sentrum uten bil?",
+        "Hvor er nærmeste togstasjon?"
+      ]
+    },
+    {
+      "id": "hvordankjopebolig-2",
+      "path": "/hvordankjopebolig-2",
+      "title": "Hvordan kjøpe bolig i Leangenbukta",
+      "kind": "info",
+      "sourceUrl": "https://leangenbukta.no/hvordankjopebolig-2/",
+      "chatStarters": [
+        "Hva er Leangenbukta?",
+        "Hva finnes i nærområdet?"
+      ]
+    },
+    {
+      "id": "hvordankjopebolig-3",
+      "path": "/hvordankjopebolig-3",
+      "title": "Hvordan kjøpe bolig forkjøpsrett bygg D",
+      "kind": "info",
+      "sourceUrl": "https://leangenbukta.no/hvordankjopebolig-3/",
+      "chatStarters": [
+        "Hva er Leangenbukta?",
+        "Hva finnes i nærområdet?"
+      ]
+    },
+    {
+      "id": "hvordankjopebolig-byggc",
+      "path": "/hvordankjopebolig-byggc",
+      "title": "Hvordan kjøpe bolig bygg C-åpent salg",
+      "kind": "info",
+      "sourceUrl": "https://leangenbukta.no/hvordankjopebolig-byggc/",
+      "chatStarters": [
+        "Hva er Leangenbukta?",
+        "Hva finnes i nærområdet?"
+      ]
+    },
+    {
+      "id": "hvordankjopebolig",
+      "path": "/hvordankjopebolig",
+      "title": "Hvordan kjøpe bolig forkjøpsrett bygg c",
+      "kind": "info",
+      "sourceUrl": "https://leangenbukta.no/hvordankjopebolig/",
+      "chatStarters": [
+        "Hva er Leangenbukta?",
+        "Hva finnes i nærområdet?"
+      ]
+    },
+    {
+      "id": "innflyttingsklare-leiligheter",
+      "path": "/innflyttingsklare-leiligheter",
+      "title": "Leiligheter klare for innflytting nå, og i løpet av året",
+      "kind": "project",
+      "sourceUrl": "https://leangenbukta.no/innflyttingsklare-leiligheter/",
+      "chatStarters": [
+        "Hva er Leangenbukta?",
+        "Hvilke fellesarealer får beboerne?",
+        "Hva finnes i nærområdet?"
+      ]
+    },
+    {
+      "id": "knutepunktet",
+      "path": "/knutepunktet",
+      "title": "Knutepunktet",
+      "kind": "building",
+      "sourceUrl": "https://leangenbukta.no/knutepunktet/",
+      "boardTopicId": "project-leangenbukta-knutepunktet-e",
+      "chatStarters": [
+        "Hva finnes rundt Knutepunktet?",
+        "Kan beboerne bruke treningsrommet nå?",
+        "Når kan man flytte inn i Knutepunktet?"
+      ]
+    },
+    {
+      "id": "kort-vei-til-alt",
+      "path": "/kort-vei-til-alt",
+      "title": "Kort vei til alt i Leangenbukta",
+      "kind": "article",
+      "sourceUrl": "https://leangenbukta.no/kort-vei-til-alt/",
+      "chatStarters": [
+        "Hva finnes i nærområdet?",
+        "Hvordan kommer jeg meg til sentrum uten bil?",
+        "Hvilke skoler og barnehager er i nærheten?"
+      ]
+    },
+    {
+      "id": "kundeportal",
+      "path": "/kundeportal",
+      "title": "Kundeportal",
+      "kind": "info",
+      "sourceUrl": "https://leangenbukta.no/kundeportal/",
+      "chatStarters": [
+        "Hva er Leangenbukta?",
+        "Hva finnes i nærområdet?"
+      ]
+    },
+    {
+      "id": "nytt-salgstrinn-bygg-l",
+      "path": "/nytt-salgstrinn-bygg-l",
+      "title": "Saltakshus L- sentralt i Leangenbukta",
+      "kind": "building",
+      "sourceUrl": "https://leangenbukta.no/nytt-salgstrinn-bygg-l/",
+      "chatStarters": [
+        "Hva finnes rundt Saltakshus L?",
+        "Hvor lang tid tar det til sentrum?"
+      ]
+    },
+    {
+      "id": "om-prosjektet",
+      "path": "/om-prosjektet",
+      "title": "Om prosjektet",
+      "kind": "project",
+      "sourceUrl": "https://leangenbukta.no/om-prosjektet/",
+      "chatStarters": [
+        "Hva er Leangenbukta?",
+        "Hvilke fellesarealer får beboerne?",
+        "Hva finnes i nærområdet?"
+      ]
+    },
+    {
+      "id": "parktunet1",
+      "path": "/parktunet1",
+      "title": "Parktunet 1- bygg D",
+      "kind": "building",
+      "sourceUrl": "https://leangenbukta.no/parktunet1/",
+      "boardTopicId": "project-leangenbukta-parktunet-1-d",
+      "chatStarters": [
+        "Når er Parktunet 1 ferdig?",
+        "Hva finnes rundt Parktunet 1?",
+        "Hvilke skoler og barnehager er i nærheten?"
+      ]
+    },
+    {
+      "id": "personvern",
+      "path": "/personvern",
+      "title": "Personvern policy",
+      "kind": "info",
+      "sourceUrl": "https://leangenbukta.no/personvern/",
+      "chatStarters": [
+        "Hva er Leangenbukta?",
+        "Hva finnes i nærområdet?"
+      ]
+    },
+    {
+      "id": "portfolio__sjoparken",
+      "path": "/portfolio/sjoparken",
+      "title": "Sjøparken",
+      "kind": "info",
+      "sourceUrl": "https://leangenbukta.no/portfolio/sjoparken/",
+      "chatStarters": [
+        "Hva er Leangenbukta?",
+        "Hva finnes i nærområdet?"
+      ]
+    },
+    {
+      "id": "project-type__premium-kvaliteter",
+      "path": "/project-type/premium-kvaliteter",
+      "title": "Premium Kvaliteter",
+      "kind": "archive",
+      "sourceUrl": "https://leangenbukta.no/project-type/premium-kvaliteter/",
+      "chatStarters": [
+        "Hva er nytt i Leangenbukta?",
+        "Hvilke bygg er i salg nå?"
+      ]
+    },
+    {
+      "id": "rekkehus-for-barnefamilier-i-trondheim",
+      "path": "/rekkehus-for-barnefamilier-i-trondheim",
+      "title": "Leangenbukta – et perfekt hjem for barnefamilier i Trondheim",
+      "kind": "info",
+      "sourceUrl": "https://leangenbukta.no/rekkehus-for-barnefamilier-i-trondheim/",
+      "chatStarters": [
+        "Hvilke skoler og barnehager er i nærheten?",
+        "Hva kan barna gjøre på fritiden?"
+      ]
+    },
+    {
+      "id": "rekkehus19-27",
+      "path": "/rekkehus19-27",
+      "title": "De siste rekkehusene er ute for salg",
+      "kind": "building",
+      "sourceUrl": "https://leangenbukta.no/rekkehus19-27/",
+      "boardTopicId": "project-leangenbukta-rekkehus",
+      "chatStarters": [
+        "Hva finnes rundt rekkehusene?",
+        "Hvilke skoler og barnehager er i nærheten?",
+        "Er området trygt for barn?"
+      ]
+    },
+    {
+      "id": "retningslinjer-for-informasjonskapsler",
+      "path": "/retningslinjer-for-informasjonskapsler",
+      "title": "Retningslinjer for informasjonskapsler",
+      "kind": "info",
+      "sourceUrl": "https://leangenbukta.no/retningslinjer-for-informasjonskapsler/",
+      "chatStarters": [
+        "Hva er Leangenbukta?",
+        "Hva finnes i nærområdet?"
+      ]
+    },
+    {
+      "id": "salgsmateriell",
+      "path": "/salgsmateriell",
+      "title": "Salgsmateriell",
+      "kind": "info",
+      "sourceUrl": "https://leangenbukta.no/salgsmateriell/",
+      "chatStarters": [
+        "Hva er Leangenbukta?",
+        "Hva finnes i nærområdet?"
+      ]
+    },
+    {
+      "id": "salgsmateriell__kjopebekreftelser",
+      "path": "/salgsmateriell/kjopebekreftelser",
+      "title": "Kjøpebekreftelser",
+      "kind": "info",
+      "sourceUrl": "https://leangenbukta.no/salgsmateriell/kjopebekreftelser/",
+      "chatStarters": [
+        "Hva er Leangenbukta?",
+        "Hva finnes i nærområdet?"
+      ]
+    },
+    {
+      "id": "salgsmateriell__prislister",
+      "path": "/salgsmateriell/prislister",
+      "title": "Prislister",
+      "kind": "info",
+      "sourceUrl": "https://leangenbukta.no/salgsmateriell/prislister/",
+      "chatStarters": [
+        "Hva er Leangenbukta?",
+        "Hva finnes i nærområdet?"
+      ]
+    },
+    {
+      "id": "salgsmateriell__prospekter",
+      "path": "/salgsmateriell/prospekter",
+      "title": "Prospekter",
+      "kind": "info",
+      "sourceUrl": "https://leangenbukta.no/salgsmateriell/prospekter/",
+      "chatStarters": [
+        "Hva er Leangenbukta?",
+        "Hva finnes i nærområdet?"
+      ]
+    },
+    {
+      "id": "saltakshus-i",
+      "path": "/saltakshus-i",
+      "title": "36 nye leiligheter for salg i Saltakshus I",
+      "kind": "building",
+      "sourceUrl": "https://leangenbukta.no/saltakshus-i/",
+      "chatStarters": [
+        "Hva finnes rundt Saltakshus I?",
+        "Hvor lang tid tar det til sentrum?"
+      ]
+    },
+    {
+      "id": "saltakshus-j",
+      "path": "/saltakshus-j",
+      "title": "39 nye leiligheter for salg i Saltakshus J",
+      "kind": "building",
+      "sourceUrl": "https://leangenbukta.no/saltakshus-j/",
+      "chatStarters": [
+        "Hva finnes rundt Saltakshus J?",
+        "Hvor lang tid tar det til sentrum?"
+      ]
+    },
+    {
+      "id": "saltakshusc",
+      "path": "/saltakshusc",
+      "title": "Bygg C",
+      "kind": "building",
+      "sourceUrl": "https://leangenbukta.no/saltakshusc/",
+      "boardTopicId": "project-leangenbukta-saltakshus-c",
+      "chatStarters": [
+        "Hvor langt har Bygg C kommet?",
+        "Hva finnes rundt Bygg C?",
+        "Hvilke fellesarealer får beboerne?"
+      ]
+    },
+    {
+      "id": "saltakshush",
+      "path": "/saltakshush",
+      "title": "Saltakshus H",
+      "kind": "building",
+      "sourceUrl": "https://leangenbukta.no/saltakshush/",
+      "boardTopicId": "project-leangenbukta-saltakshus-h",
+      "chatStarters": [
+        "Er Saltakshus H ferdig?",
+        "Hva finnes rundt Saltakshus H?",
+        "Hvor lang tid tar det til sentrum?"
+      ]
+    },
+    {
+      "id": "saltakshusk",
+      "path": "/saltakshusk",
+      "title": "Første støp på tomta!",
+      "kind": "building",
+      "sourceUrl": "https://leangenbukta.no/saltakshusk/",
+      "chatStarters": [
+        "Hva finnes rundt Saltakshus K?",
+        "Hvilke skoler og barnehager er i nærheten?"
+      ]
+    },
+    {
+      "id": "stort-til-mindre-2",
+      "path": "/stort-til-mindre-2",
+      "title": "Flytte fra stort til mindre? Leangenbukta har løsningene for deg",
+      "kind": "info",
+      "sourceUrl": "https://leangenbukta.no/stort-til-mindre-2/",
+      "chatStarters": [
+        "Hva er Leangenbukta?",
+        "Hva finnes i nærområdet?"
+      ]
+    },
+    {
+      "id": "stort-til-mindre_byggc",
+      "path": "/stort-til-mindre_byggc",
+      "title": "Flytte fra stort til mindre? Bygg C",
+      "kind": "info",
+      "sourceUrl": "https://leangenbukta.no/stort-til-mindre_byggc/",
+      "chatStarters": [
+        "Hva er Leangenbukta?",
+        "Hva finnes i nærområdet?"
+      ]
+    },
+    {
+      "id": "stort-til-mindre_parktunet",
+      "path": "/stort-til-mindre_parktunet",
+      "title": "Flytte fra stort til mindre? Parktunet",
+      "kind": "info",
+      "sourceUrl": "https://leangenbukta.no/stort-til-mindre_parktunet/",
+      "chatStarters": [
+        "Hva er Leangenbukta?",
+        "Hva finnes i nærområdet?"
+      ]
+    },
+    {
+      "id": "test-framside",
+      "path": "/test-framside",
+      "title": "Leangbukta ny framside",
+      "kind": "info",
+      "sourceUrl": "https://leangenbukta.no/test-framside/",
+      "chatStarters": [
+        "Hva er Leangenbukta?",
+        "Hva finnes i nærområdet?"
+      ]
+    },
+    {
+      "id": "tilvalgbyggc",
+      "path": "/tilvalgbyggc",
+      "title": "Tilvalg- bygg C",
+      "kind": "building",
+      "sourceUrl": "https://leangenbukta.no/tilvalgbyggc/",
+      "boardTopicId": "project-leangenbukta-saltakshus-c",
+      "chatStarters": [
+        "Hvor langt har Bygg C kommet?",
+        "Hva finnes rundt Bygg C?"
+      ]
+    },
+    {
+      "id": "toppleilighetl504",
+      "path": "/toppleilighetl504",
+      "title": "Bo på toppen av Saltakshus L",
+      "kind": "building",
+      "sourceUrl": "https://leangenbukta.no/toppleilighetl504/",
+      "chatStarters": [
+        "Hva finnes rundt Saltakshus L?",
+        "Hva kan man gjøre ute i nærområdet?"
+      ]
+    },
+    {
+      "id": "trygt-og-bilfritt",
+      "path": "/trygt-og-bilfritt",
+      "title": "Ikke bekymre deg, i Leangenbukta kan barn leke fritt!",
+      "kind": "article",
+      "sourceUrl": "https://leangenbukta.no/trygt-og-bilfritt/",
+      "chatStarters": [
+        "Er området trygt for barn?",
+        "Hvilke skoler og barnehager er i nærheten?"
+      ]
+    },
+    {
+      "id": "vedlikeholdsfritt",
+      "path": "/vedlikeholdsfritt",
+      "title": "Her kan du bo vedlikeholdsfritt i mange år!",
+      "kind": "article",
+      "sourceUrl": "https://leangenbukta.no/vedlikeholdsfritt/",
+      "chatStarters": [
+        "Hva finnes i nærområdet?",
+        "Hvordan kommer jeg meg til sentrum uten bil?",
+        "Hvilke skoler og barnehager er i nærheten?"
+      ]
+    },
+    {
+      "id": "velge-nybolig",
+      "path": "/velge-nybolig",
+      "title": "Gode grunner til å velge nybolig",
+      "kind": "info",
+      "sourceUrl": "https://leangenbukta.no/velge-nybolig/",
+      "chatStarters": [
+        "Hva er Leangenbukta?",
+        "Hva finnes i nærområdet?"
+      ]
+    },
+    {
+      "id": "visning-pa-tomta",
+      "path": "/visning-pa-tomta",
+      "title": "Besøk vårt salgslokale",
+      "kind": "info",
+      "sourceUrl": "https://leangenbukta.no/visning-pa-tomta/",
+      "chatStarters": [
+        "Hva er Leangenbukta?",
+        "Hva finnes i nærområdet?"
       ]
     }
   ]
