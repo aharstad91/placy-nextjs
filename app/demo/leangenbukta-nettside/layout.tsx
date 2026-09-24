@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import Script from "next/script";
 import { PLACY_BOARD } from "@/app/demo/leangenbukta-nettside/placy-row";
 import { SiteChrome } from "@/app/demo/leangenbukta-nettside/site-chrome";
 import "@/app/demo/leangenbukta-nettside/original.css";
@@ -26,9 +25,9 @@ export default function Layout({ children }: { children: React.ReactNode }) {
       {/* Tekstchatten lastes med den samme innbyggingskoden en WordPress-side
           ville brukt: ett skript og data-attributter. Siden brukeren står på
           leses fra `data-placy-page-id` på hver side. */}
-      <Script
+      <script
         src="/embed/placy-chat.js"
-        strategy="afterInteractive"
+        defer
         data-endpoint="/api/demo/leangenbukta-chat"
         data-page-id="forside"
         data-label="Spør om Leangenbukta"
