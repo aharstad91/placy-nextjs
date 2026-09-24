@@ -14,6 +14,7 @@ import { runLeangenbuktaChat, ChatBackendError } from "@/lib/demo/leangenbukta-c
 import { issueTranscript, MAX_TRANSCRIPT_TOKEN_LENGTH, verifyTranscript } from "@/lib/demo/leangenbukta-chat/transcript";
 import { fallbackLinks, resolveLinkIds } from "@/lib/demo/leangenbukta-chat/links";
 import { sanitizeReply } from "@/lib/demo/leangenbukta-chat/sanitize";
+import { chatCategories } from "@/lib/demo/leangenbukta-chat/categories";
 
 /**
  * Leangenbukta-kundedemoens tekstchat-endepunkt (2026-09-23, U5/KTD4/KTD6).
@@ -120,6 +121,8 @@ export async function GET(request: NextRequest) {
         pageTitle: page.title,
         opening: pageOpening(page),
         starters: page.chatStarters,
+        // Temaraden: bare id, navn, ikon, farge og tre forslag per tema.
+        categories: chatCategories(demo.board.categories, page.chatStarters),
         snapshotDate: SITE_SNAPSHOT_DATE,
         contentCheckedAt: leangenbuktaSourceRegistry().latestCheckedAt,
         datasetVersion: demo.snapshotId,

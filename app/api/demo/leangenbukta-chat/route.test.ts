@@ -454,6 +454,33 @@ describe("GET /api/demo/leangenbukta-chat", () => {
     }
   });
 
+  it("gir Boardets temaer i Boardets rekkefølge, med bare id, navn, ikon, farge og tre forslag", async () => {
+    const demo = await loadLiveDemo("leangenbukta-lokal");
+    const data = await getPage("beliggenhet");
+    expect(data.categories.map((c: { id: string }) => c.id)).toEqual(demo.board.categories.map((c) => c.id));
+    expect(data.categories).toHaveLength(8);
+    for (const category of data.categories) {
+      expect(Object.keys(category).sort()).toEqual(["color", "icon", "id", "label", "questions"]);
+      expect(category.color).toMatch(/^#[0-9a-f]{6}$/i);
+      expect(category.questions).toHaveLength(3);
+      expect(new Set(category.questions).size).toBe(3);
+    }
+    const [project, hverdag] = data.categories;
+    expect(project).toMatchObject({ id: "leangenbukta-prosjektet", label: "Leangenbukta", icon: "Building2", color: "#91563e" });
+    expect(hverdag).toMatchObject({ id: "hverdag", label: "Hverdag", icon: "ShoppingCart", color: "#36d16f" });
+    // Sidens egne forslag står først i standardtemaet.
+    expect(project.questions).toEqual(data.starters.slice(0, 3));
+  });
+
+  it("fyller standardtemaet opp til tre forslag når siden bare har to, uten duplikater", async () => {
+    const data = await getPage("saltakshusk");
+    expect(data.starters).toHaveLength(2);
+    const [project] = data.categories;
+    expect(project.questions).toHaveLength(3);
+    expect(project.questions.slice(0, 2)).toEqual(data.starters);
+    expect(new Set(project.questions).size).toBe(3);
+  });
+
   it("svarer 401 uten tilgang", async () => {
     const { GET } = await import("./route");
     const req = new NextRequest("http://localhost/api/demo/leangenbukta-chat?pageId=forside");

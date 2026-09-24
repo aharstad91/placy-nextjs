@@ -14,15 +14,23 @@
  * aldri kan bli kjørbar eller klikkbar her, uansett hva serveren skulle sende.
  *
  * Tale (2026-09-24): finnes det en talebro på siden (Leangenbukta-kopien
- * monterer `voice-bridge.tsx`), får panelet «Skriv» / «Snakk med Anja». Broen
- * eier WebRTC; widgeten viser bare status og transkript som bobler i samme
- * logg. Protokollen: lib/demo/leangenbukta-chat/voice-channel.ts. Uten bro
- * kommer det aldri en tilstand, og widgeten er ren tekstchat.
+ * monterer `voice-bridge.tsx`), får panelet «Skriv» / «Snakk». Loggen står
+ * fast; bare feltet under skifter: tekstfelt og Send i Skriv, talestyring
+ * (Start tale, synlig status, Avslutt tale) i Snakk. Under talen finnes ikke
+ * noe tekstfelt; skriving er å bytte tilbake til Skriv. Broen eier WebRTC;
+ * widgeten viser bare status og transkript som bobler i samme logg.
+ * Protokollen: lib/demo/leangenbukta-chat/voice-channel.ts. Uten bro kommer
+ * det aldri en tilstand, og widgeten er ren tekstchat.
  *
  * Én samtale: skriving og tale deler historikk gjennom det signerte tokenet.
  * Talen starter med tekstchattens token; når talen er slutt, får widgeten et
  * nytt token fra serveren (`handoff`) med det som faktisk ble sagt. Boblene
  * her er bare visning — de blir aldri sendt som historikk.
+ *
+ * Temarad (2026-09-24): under toppen står Boardets kategorier som faner
+ * (samme form som boardets StoryRail). Valgt tema bestemmer de tre
+ * spørsmålsforslagene i loggen — ikke hva Anja vet. Temaene kommer fra GET
+ * (`categories`); uten dem er raden skjult og sidens egne forslag vises.
  */
 (function () {
   "use strict";
@@ -82,15 +90,11 @@
   var VOICE_LABELS = {
     connecting: "Kobler til …",
     listening: "Lytter – snakk når du vil",
-    thinking: "Anja finner fram svaret …",
+    thinking: "Anja finner svaret …",
     speaking: "Anja snakker",
   };
-  var VOICE_PLACEHOLDERS = {
-    connecting: "Kobler til Anja …",
-    listening: "Anja lytter – snakk, eller skriv til henne …",
-    thinking: "Anja finner fram svaret – du kan skrive imens …",
-    speaking: "Anja snakker – du kan også skrive …",
-  };
+  // Skjermleseren får vite at feltet under loggen har byttet innhold.
+  var VOICE_READY = "Snakk er valgt. Trykk Start tale for å snakke med Anja, eller bytt til Skriv for å skrive.";
   var HANDOFF_SAFETY_MS = 20000;
   var voice = {
     available: false,
@@ -100,7 +104,7 @@
     status: "idle",
     notice: null,
     // Mikrofoninformasjonen er vist, og brukeren har startet tale én gang på
-    // denne siden. Deretter starter «Snakk med Anja» talen direkte.
+    // denne siden. Deretter starter «Snakk» talen direkte.
     infoShown: false,
     consented: false,
     // Denne talesesjonen er meldt klar, og noe er sagt eller skrevet i den.
@@ -151,9 +155,8 @@
     // ligger et lukket panel igjen i tilgjengelighetstreet og tabulatorrekken.
     ".panel[hidden]{display:none}",
     "@media (max-width:700px){.panel{left:0;right:0;bottom:0;width:100%;max-width:100%;height:85vh;height:85dvh;",
-    "border-width:1px 0 0;border-radius:16px 16px 0 0;opacity:1;transform:translateY(100%)}.panel.open{transform:translateY(0)}",
-    ".inputrow{padding-bottom:max(12px,env(safe-area-inset-bottom))}}",
-    "@media (prefers-reduced-motion:reduce){.panel,.btn{transition:none}.btn:hover{transform:none}.dot{animation:none!important}}",
+    "border-width:1px 0 0;border-radius:16px 16px 0 0;opacity:1;transform:translateY(100%)}.panel.open{transform:translateY(0)}}",
+    "@media (prefers-reduced-motion:reduce){.panel,.btn{transition:none}.btn:hover{transform:none}.dot,.inputrow,.voice-start,.voice-live{animation:none!important}}",
     ".head{padding:14px 12px 14px 16px;background:" + CREAM + ";display:flex;align-items:center;gap:10px}",
     ".mark{width:36px;height:36px;border-radius:50%;background:" + ACCENT + ";color:#fff;display:flex;align-items:center;justify-content:center;flex:none}",
     ".mark svg{width:20px;height:20px}",
@@ -167,6 +170,30 @@
     ".close:hover{background:#efe7df}",
     ".honesty{margin:0;font-size:12px;line-height:1.45;color:" + MUTED + ";background:" + CREAM + ";",
     "padding:0 16px 12px;border-bottom:1px solid " + BORDER + "}",
+    // Temaraden: samme form som boardets StoryRail — én myk, avrundet flate,
+    // ikon i temaets farge over navnet, valgt tema som hvit, hevet pille. Den
+    // står fast over loggen; bare loggen ruller.
+    ".rail{flex:none;padding:10px 12px 8px;background:#fff;border-bottom:1px solid #efe7df}",
+    ".rail[hidden]{display:none}",
+    ".rail-shell{border-radius:22px;padding:4px;background:rgba(28,25,23,.05)}",
+    ".rail-track{position:relative;display:flex;gap:2px;overflow-x:auto;overflow-y:hidden;scrollbar-width:none;",
+    "overscroll-behavior-x:contain;scroll-behavior:smooth;-webkit-overflow-scrolling:touch}",
+    ".rail-track::-webkit-scrollbar{display:none}",
+    // Kanten toner ut der det finnes flere temaer å rulle til.
+    ".rail-track.fade-end{-webkit-mask-image:linear-gradient(to right,#000 calc(100% - 28px),transparent);mask-image:linear-gradient(to right,#000 calc(100% - 28px),transparent)}",
+    ".rail-track.fade-start{-webkit-mask-image:linear-gradient(to right,transparent,#000 28px);mask-image:linear-gradient(to right,transparent,#000 28px)}",
+    ".rail-track.fade-start.fade-end{-webkit-mask-image:linear-gradient(to right,transparent,#000 28px,#000 calc(100% - 28px),transparent);",
+    "mask-image:linear-gradient(to right,transparent,#000 28px,#000 calc(100% - 28px),transparent)}",
+    ".tab{flex:none;display:flex;flex-direction:column;align-items:center;gap:3px;border:none;border-radius:18px;padding:6px 12px 7px;",
+    "background:transparent;white-space:nowrap;font-size:12px;font-weight:600;letter-spacing:-.01em;line-height:1.2;color:#6f655d;",
+    "cursor:pointer;transition:background-color .2s ease,color .2s ease,box-shadow .2s ease}",
+    ".tab:hover{color:#1c1917}",
+    // Valgt tema vises med form (hvit pille med kant og skygge), ikke bare farge.
+    ".tab[aria-selected='true']{background:#fff;color:#1c1917;box-shadow:inset 0 0 0 1px rgba(28,25,23,.07),0 1px 3px rgba(28,25,23,.1)}",
+    ".tab:focus-visible{outline:2px solid " + ACCENT + ";outline-offset:-2px}",
+    ".tab-icon{display:flex;align-items:center;justify-content:center;width:22px;height:22px;border-radius:50%;color:#fff}",
+    ".tab-icon svg{width:13px;height:13px}",
+    "@media (prefers-reduced-motion:reduce){.rail-track{scroll-behavior:auto}.tab{transition:none}}",
     ".log{flex:1;overflow-y:auto;overscroll-behavior:contain;padding:16px;display:flex;flex-direction:column;gap:12px}",
     ".msg{max-width:88%;padding:10px 14px;border-radius:14px;font-size:14px;line-height:1.5;white-space:pre-wrap;overflow-wrap:anywhere}",
     ".msg.user{align-self:flex-end;background:" + ACCENT + ";color:#fff;border-bottom-right-radius:4px}",
@@ -187,9 +214,15 @@
     "line-height:1.35;text-align:left;max-width:100%;cursor:pointer;color:" + ACCENT_DARK + "}",
     ".starter:hover{background:" + CREAM + ";border-color:" + ACCENT + "}",
     ".status{margin:0;font-size:12px;color:" + MUTED + ";padding:0 16px 8px}",
-    ".inputrow{display:flex;align-items:flex-end;gap:8px;padding:12px;border-top:1px solid " + BORDER + ";background:#fff}",
+    // Feltet under loggen. Skriv og Snakk har samme høyde (46px), så loggen
+    // verken hopper eller mister rulleposisjonen når modusen byttes.
+    ".composer{border-top:1px solid " + BORDER + ";background:#fff;padding:10px 12px 12px;display:flex;flex-direction:column;gap:8px}",
+    // Etter grunnregelen, ellers overstyrer `padding` over safe-area-luften i bunnarket.
+    "@media (max-width:700px){.composer{padding-bottom:max(12px,env(safe-area-inset-bottom))}}",
+    ".inputrow{display:flex;align-items:flex-end;gap:8px;min-height:46px}",
+    ".inputrow[hidden]{display:none}",
     "textarea{flex:1;min-width:0;resize:none;border:1px solid #cbb9a8;border-radius:12px;background:#fff;",
-    "padding:11px 12px;font-size:16px;line-height:1.35;min-height:44px;max-height:120px;color:inherit}",
+    "padding:11px 12px;font-size:16px;line-height:1.35;min-height:46px;max-height:120px;color:inherit}",
     "textarea:focus{border-color:" + ACCENT + "}",
     "textarea::placeholder{color:#8a7b6f}",
     ".send{display:inline-flex;align-items:center;gap:6px;height:44px;background:" + ACCENT + ";color:#fff;border:none;",
@@ -200,44 +233,55 @@
     // Systemmeldinger (bytte mellom skriving og tale, varsler) står i loggen.
     ".divider{align-self:center;max-width:90%;margin:0;padding:4px 12px;border-radius:999px;background:" + CREAM + ";",
     "font-size:12px;line-height:1.45;color:" + MUTED + ";text-align:center}",
+    // Mikrofoninformasjonen står som en stille boble fra chatten, ikke som systemmelding.
+    ".msg.mic-info{align-self:flex-start;background:#fff;border:1px dashed " + BORDER + ";border-bottom-left-radius:4px;",
+    "color:#4a3b30;font-size:13px;white-space:normal}",
+    ".mic-info-head{display:flex;align-items:center;gap:6px;margin:0 0 4px;font-size:12px;font-weight:600;color:" + ACCENT_DARK + "}",
+    ".mic-info-head svg{width:14px;height:14px}",
+    ".mic-info p{margin:0}",
     ".sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}",
-    // Én rad med fast høyde: panelet hopper ikke når talen slås av og på.
-    ".footer{border-top:1px solid " + BORDER + ";padding:8px 12px 0;display:flex;align-items:center;gap:8px;min-height:48px;background:#fff}",
-    ".footer[hidden]{display:none}",
-    ".footer:not([hidden])+.inputrow{border-top:none}",
-    ".modes{display:inline-flex;flex:none;gap:2px;padding:3px;border-radius:999px;background:#f3ebe3}",
-    ".mode{display:inline-flex;align-items:center;gap:6px;border:none;background:none;border-radius:999px;padding:6px 12px;",
-    "font-size:13px;font-weight:600;line-height:1.2;color:" + MUTED + ";cursor:pointer}",
+    ".modes{display:inline-flex;align-self:flex-start;flex:none;gap:2px;padding:3px;border-radius:999px;background:#f3ebe3}",
+    ".modes[hidden]{display:none}",
+    ".mode{display:inline-flex;align-items:center;gap:6px;border:none;background:none;border-radius:999px;padding:6px 14px;",
+    "font-size:13px;font-weight:600;line-height:1.2;color:" + MUTED + ";cursor:pointer;transition:background-color .15s ease,color .15s ease}",
     ".mode svg{width:16px;height:16px}",
     ".mode[aria-pressed='true']{background:#fff;color:" + ACCENT_DARK + ";box-shadow:0 1px 3px rgba(42,44,46,.16)}",
-    ".voice{display:flex;align-items:center;gap:8px;margin-left:auto;min-width:0}",
+    // Det feltet som kommer til syne, toner inn; det som går, forsvinner med én gang.
+    ".inputrow,.voice-start,.voice-live{animation:placy-in .18s ease-out}",
+    "@keyframes placy-in{from{opacity:0;transform:translateY(3px)}to{opacity:1;transform:none}}",
+    ".voice{display:flex;align-items:stretch;min-height:46px}",
     ".voice[hidden],.voice [hidden]{display:none}",
+    ".voicebtn{display:inline-flex;align-items:center;justify-content:center;gap:8px;flex:none;border-radius:12px;padding:0 16px;",
+    "font-size:14px;font-weight:600;cursor:pointer;border:1px solid " + ACCENT + ";background:" + ACCENT + ";color:#fff;white-space:nowrap}",
+    ".voicebtn:hover{background:" + ACCENT_DARK + "}",
+    ".voicebtn svg{width:18px;height:18px}",
+    ".voicebtn:disabled{opacity:.5;cursor:default}",
+    ".voice-start{flex:1;min-height:46px}",
+    ".voice-live{flex:1;display:flex;align-items:center;gap:10px;min-width:0;padding:0 5px 0 14px;border-radius:12px;",
+    "background:" + CREAM + ";border:1px solid #ebe0d5}",
+    // Statusen står alltid som tekst; prikken er bare et tillegg.
+    ".voice-status{flex:1;min-width:0;margin:0;font-size:14px;font-weight:600;color:#4a3b30;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}",
     ".dot{width:10px;height:10px;border-radius:50%;background:#b9a797;flex:none}",
     ".voice[data-status='listening'] .dot{background:#3f7d4e}",
-    ".voice[data-status='thinking'] .dot{background:#c08a2e}",
+    ".voice[data-status='thinking'] .dot{background:#c08a2e;animation:placy-pulse 1.6s ease-in-out infinite}",
     ".voice[data-status='speaking'] .dot{background:" + ACCENT + ";animation:placy-pulse 1.2s ease-in-out infinite}",
     ".voice[data-status='connecting'] .dot{animation:placy-pulse 1.2s ease-in-out infinite}",
     "@keyframes placy-pulse{0%,100%{opacity:1}50%{opacity:.35}}",
-    ".voicebtn{display:inline-flex;align-items:center;gap:6px;height:36px;flex:none;border-radius:999px;padding:0 14px;",
-    "font-size:13px;font-weight:600;cursor:pointer;border:1px solid " + ACCENT + ";background:" + ACCENT + ";color:#fff;white-space:nowrap}",
-    ".voicebtn:hover{background:" + ACCENT_DARK + "}",
-    ".voicebtn svg{width:16px;height:16px}",
-    ".voicebtn.stop{background:#fff;color:" + ACCENT_DARK + "}",
+    ".voicebtn.stop{height:36px;align-self:center;padding:0 12px;font-size:13px;background:#fff;color:" + ACCENT_DARK + "}",
     ".voicebtn.stop:hover{background:#efe7df}",
-    ".voicebtn:disabled{opacity:.5;cursor:default}",
-    // Smale mobiler: modusikonene går, så raden fortsatt får plass på én linje.
-    "@media (max-width:420px){.mode svg{display:none}.mode{padding:6px 10px}.footer{gap:6px}}",
+    // Smale mobiler: modusikonene går, og statusen får mest mulig plass.
+    "@media (max-width:420px){.mode svg{display:none}.voice-live{gap:8px;padding-left:12px}.voice-status{font-size:13px}}",
   ].join("");
   shadow.appendChild(style);
 
   // Små ikoner som inline SVG: ingen eksterne ressurser, ingen innerHTML.
   var SVG_NS = "http://www.w3.org/2000/svg";
-  function icon(paths) {
+  function icon(paths, strokeWidth) {
     var svg = document.createElementNS(SVG_NS, "svg");
     svg.setAttribute("viewBox", "0 0 24 24");
     svg.setAttribute("fill", "none");
     svg.setAttribute("stroke", "currentColor");
-    svg.setAttribute("stroke-width", "1.8");
+    svg.setAttribute("stroke-width", strokeWidth || "1.8");
     svg.setAttribute("stroke-linecap", "round");
     svg.setAttribute("stroke-linejoin", "round");
     svg.setAttribute("aria-hidden", "true");
@@ -254,6 +298,20 @@
   var ICON_SEND = ["M4 12h15", "M13 6l6 6-6 6"];
   var ICON_MIC = ["M12 3a3 3 0 0 0-3 3v6a3 3 0 0 0 6 0V6a3 3 0 0 0-3-3z", "M5.5 11a6.5 6.5 0 0 0 13 0", "M12 17.5V21"];
   var ICON_TYPE = ["M4 7h16", "M4 12h16", "M4 17h10"];
+
+  // Boardets temaikoner (Lucide, sirkler og rektangler skrevet om til stier).
+  // Serveren sender bare ikonets navn; et navn som ikke står her, gir en
+  // farget sirkel uten ikon — aldri en sti eller URL fra serveren.
+  var CATEGORY_ICONS = {
+    Building2: ["M10 12h4", "M10 8h4", "M14 21v-3a2 2 0 0 0-4 0v3", "M6 10H4a2 2 0 0 0-2 2v7a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-2", "M6 21V5a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v16"],
+    ShoppingCart: ["M7 21a1 1 0 1 0 2 0a1 1 0 1 0-2 0", "M18 21a1 1 0 1 0 2 0a1 1 0 1 0-2 0", "M2.05 2.05h2l2.66 12.42a2 2 0 0 0 2 1.58h9.78a2 2 0 0 0 1.95-1.57l1.65-7.43H5.12"],
+    GraduationCap: ["M21.42 10.922a1 1 0 0 0-.019-1.838L12.83 5.18a2 2 0 0 0-1.66 0L2.6 9.08a1 1 0 0 0 0 1.832l8.57 3.908a2 2 0 0 0 1.66 0z", "M22 10v6", "M6 12.5V16a6 3 0 0 0 12 0v-3.5"],
+    UtensilsCrossed: ["m16 2-2.3 2.3a3 3 0 0 0 0 4.2l1.8 1.8a3 3 0 0 0 4.2 0L22 8", "M15 15 3.3 3.3a4.2 4.2 0 0 0 0 6l7.3 7.3c.7.7 2 .7 2.8 0L15 15Zm0 0 7 7", "m2.1 21.8 6.4-6.3", "m19 5-7 7"],
+    Trees: ["M10 10v.2A3 3 0 0 1 8.9 16H5a3 3 0 0 1-1-5.8V10a3 3 0 0 1 6 0Z", "M7 16v6", "M13 19v3", "M12 19h8.3a1 1 0 0 0 .7-1.7L18 14h.3a1 1 0 0 0 .7-1.7L16 9h.2a1 1 0 0 0 .8-1.7L13 3l-1.4 1.5"],
+    Bus: ["M8 6v6", "M15 6v6", "M2 12h19.6", "M18 18h3s.5-1.7.8-2.8c.1-.4.2-.8.2-1.2 0-.4-.1-.8-.2-1.2l-1.4-5C20.1 6.8 19.1 6 18 6H4a2 2 0 0 0-2 2v10h3", "M5 18a2 2 0 1 0 4 0a2 2 0 1 0-4 0", "M9 18h5", "M14 18a2 2 0 1 0 4 0a2 2 0 1 0-4 0"],
+    Dumbbell: ["M17.596 12.768a2 2 0 1 0 2.829-2.829l-1.768-1.767a2 2 0 0 0 2.828-2.829l-2.828-2.828a2 2 0 0 0-2.829 2.828l-1.767-1.768a2 2 0 1 0-2.829 2.829z", "m2.5 21.5 1.4-1.4", "m20.1 3.9 1.4-1.4", "M5.343 21.485a2 2 0 1 0 2.829-2.828l1.767 1.768a2 2 0 1 0 2.829-2.829l-6.364-6.364a2 2 0 1 0-2.829 2.829l1.768 1.767a2 2 0 0 0-2.828 2.829z", "m9.6 14.4 4.8-4.8"],
+    Film: ["M5 3h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z", "M7 3v18", "M3 7.5h4", "M3 12h18", "M3 16.5h4", "M17 3v18", "M17 7.5h4", "M17 16.5h4"],
+  };
 
   var button = document.createElement("button");
   button.type = "button";
@@ -309,6 +367,21 @@
   var HONESTY_BASE = "Ikke godkjent av utbygger eller megler. Svarene bygger på offentlige kilder og kan inneholde feil.";
   honesty.textContent = HONESTY_BASE;
 
+  // Temaraden under toppen: Boardets kategorier som faner. Valget bytter bare
+  // forslagene i loggen — Anja har samme kunnskap uansett tema. Uten temaer
+  // fra serveren (eldre endepunkt, feil) er raden skjult.
+  var rail = document.createElement("div");
+  rail.className = "rail";
+  rail.hidden = true;
+  var railShell = document.createElement("div");
+  railShell.className = "rail-shell";
+  var railTrack = document.createElement("div");
+  railTrack.className = "rail-track";
+  railTrack.setAttribute("role", "tablist");
+  railTrack.setAttribute("aria-label", "Tema for spørsmålsforslag");
+  railShell.appendChild(railTrack);
+  rail.appendChild(railShell);
+
   var log = document.createElement("div");
   log.className = "log";
   log.setAttribute("aria-live", "polite");
@@ -317,6 +390,7 @@
   // ovenfra: hvem, hva slags svar, hilsen, så hva man kan spørre om.
   var starters = document.createElement("div");
   starters.className = "starters";
+  starters.id = "placy-chat-suggestions";
   starters.hidden = true;
   var startersLabel = document.createElement("p");
   startersLabel.className = "starters-label";
@@ -331,64 +405,75 @@
   status.className = "status";
   status.hidden = true;
 
-  // Moduser og talestyring. Skjult til en talebro har meldt seg.
-  var footer = document.createElement("div");
-  footer.className = "footer";
-  footer.hidden = true;
+  // Feltet under loggen: modusvelger (bare med talebro), så enten tekstfeltet
+  // (Skriv) eller talestyringen (Snakk). Det skjulte feltet har `hidden` og
+  // er dermed ute av både layout, tabulatorrekke og tilgjengelighetstre.
+  var composer = document.createElement("div");
+  composer.className = "composer";
   var modes = document.createElement("div");
   modes.className = "modes";
   modes.setAttribute("role", "group");
   modes.setAttribute("aria-label", "Samtaleform");
-  function modeButton(label, paths) {
+  modes.hidden = true;
+  function modeButton(label, ariaLabel, paths) {
     var b = document.createElement("button");
     b.type = "button";
     b.className = "mode";
+    // Tilgjengelig navn begynner med den synlige etiketten (WCAG 2.5.3).
+    b.setAttribute("aria-label", ariaLabel);
     b.appendChild(icon(paths));
     var span = document.createElement("span");
     span.textContent = label;
     b.appendChild(span);
     return b;
   }
-  var textModeBtn = modeButton("Skriv", ICON_TYPE);
-  var voiceModeBtn = modeButton("Snakk med Anja", ICON_MIC);
+  var textModeBtn = modeButton("Skriv", "Skriv til Anja", ICON_TYPE);
+  var voiceModeBtn = modeButton("Snakk", "Snakk med Anja", ICON_MIC);
   modes.appendChild(textModeBtn);
   modes.appendChild(voiceModeBtn);
 
-  // Taledelen ligger i samme rad som modusvelgeren. Statusen vises som en
-  // prikk og i tekstfeltets plassholder; skjermlesere får den som tekst.
+  // Talestyringen: én startknapp når talen er av; synlig status (tekst og
+  // prikk) og Avslutt tale når den er i gang.
   var voiceBox = document.createElement("div");
   voiceBox.className = "voice";
   voiceBox.hidden = true;
-  var MIC_INFO = "Talesamtalen bruker mikrofonen din. Nettleseren spør om tillatelse første gang, og lyden sendes til OpenAI for å lage svarene. Anja fortsetter fra de siste meldingene her. Avslutt tale eller lukk chatten, så stopper mikrofonen.";
+  var MIC_INFO = "Nettleseren spør om lov til å bruke mikrofonen første gang. Lyden sendes til OpenAI for å lage svarene. Anja fortsetter fra samtalen her. Mikrofonen stopper når du trykker Avslutt tale, bytter til Skriv eller lukker chatten.";
   var voiceInfo = document.createElement("p");
   voiceInfo.className = "voice-info sr-only";
   voiceInfo.id = "placy-chat-voice-info";
   voiceInfo.textContent = MIC_INFO;
-  var dot = document.createElement("span");
-  dot.className = "dot";
-  dot.setAttribute("aria-hidden", "true");
-  var voiceStatus = document.createElement("p");
-  voiceStatus.className = "voice-status sr-only";
-  voiceStatus.setAttribute("role", "status");
   var voiceStart = document.createElement("button");
   voiceStart.type = "button";
-  voiceStart.className = "voicebtn";
+  voiceStart.className = "voicebtn voice-start";
   voiceStart.setAttribute("aria-describedby", "placy-chat-voice-info");
   voiceStart.appendChild(icon(ICON_MIC));
   var voiceStartLabel = document.createElement("span");
   voiceStartLabel.textContent = "Start tale";
   voiceStart.appendChild(voiceStartLabel);
+  var voiceLive = document.createElement("div");
+  voiceLive.className = "voice-live";
+  voiceLive.hidden = true;
+  var dot = document.createElement("span");
+  dot.className = "dot";
+  dot.setAttribute("aria-hidden", "true");
+  var voiceStatus = document.createElement("p");
+  voiceStatus.className = "voice-status";
   var voiceStop = document.createElement("button");
   voiceStop.type = "button";
   voiceStop.className = "voicebtn stop";
   voiceStop.textContent = "Avslutt tale";
-  voiceBox.appendChild(dot);
-  voiceBox.appendChild(voiceStatus);
+  voiceLive.appendChild(dot);
+  voiceLive.appendChild(voiceStatus);
+  voiceLive.appendChild(voiceStop);
   voiceBox.appendChild(voiceStart);
-  voiceBox.appendChild(voiceStop);
-  footer.appendChild(modes);
-  footer.appendChild(voiceBox);
-  footer.appendChild(voiceInfo);
+  voiceBox.appendChild(voiceLive);
+  voiceBox.appendChild(voiceInfo);
+
+  // Alltid i treet (aldri inne i et skjult felt), så skjermlesere hører både
+  // modusbytte og talestatus.
+  var announcer = document.createElement("p");
+  announcer.className = "sr-only";
+  announcer.setAttribute("role", "status");
 
   var inputRow = document.createElement("div");
   inputRow.className = "inputrow";
@@ -407,13 +492,17 @@
   sendBtn.appendChild(icon(ICON_SEND));
   inputRow.appendChild(textarea);
   inputRow.appendChild(sendBtn);
+  composer.appendChild(modes);
+  composer.appendChild(inputRow);
+  composer.appendChild(voiceBox);
+  composer.appendChild(announcer);
 
   panel.appendChild(head);
   panel.appendChild(honesty);
+  panel.appendChild(rail);
   panel.appendChild(log);
   panel.appendChild(status);
-  panel.appendChild(footer);
-  panel.appendChild(inputRow);
+  panel.appendChild(composer);
   shadow.appendChild(panel);
 
   function ready() {
@@ -514,31 +603,196 @@
     status.textContent = text || "";
   }
 
+  function conversationStarted() {
+    return !!log.querySelector(".msg:not(.opening)");
+  }
+
+  function renderStarters(list) {
+    chips.textContent = "";
+    list.forEach(function (text) {
+      if (typeof text !== "string" || !text) return;
+      var b = document.createElement("button");
+      b.type = "button";
+      b.className = "starter";
+      b.textContent = text;
+      // Nøyaktig den viste teksten, i Skriv og i en pågående tale.
+      b.addEventListener("click", function () { sendMessage(text); });
+      chips.appendChild(b);
+    });
+    starters.hidden = !chips.childNodes.length;
+  }
+
+  // ---------------------------------------------------------------------
+  // Temaraden
+  // ---------------------------------------------------------------------
+  var CATEGORY_ID = /^[a-z0-9-]{1,60}$/;
+  var HEX_COLOR = /^#[0-9a-f]{6}$/i;
+  var categories = [];
+  var activeCategoryId = null;
+  var railKey = "";
+
+  /** Bare det raden trenger, og bare verdier som er trygge å sette i DOM-en. */
+  function readCategories(value) {
+    if (!Array.isArray(value)) return [];
+    var list = [];
+    var seen = {};
+    value.slice(0, 12).forEach(function (item) {
+      if (!item || typeof item.id !== "string" || !CATEGORY_ID.test(item.id) || seen[item.id]) return;
+      if (typeof item.label !== "string" || !item.label.trim()) return;
+      var questions = Array.isArray(item.questions)
+        ? item.questions.filter(function (q) { return typeof q === "string" && q.trim() && q.length <= 200; }).slice(0, 3)
+        : [];
+      if (!questions.length) return;
+      seen[item.id] = true;
+      list.push({
+        id: item.id,
+        label: item.label.trim().slice(0, 40),
+        icon: typeof item.icon === "string" && Object.prototype.hasOwnProperty.call(CATEGORY_ICONS, item.icon) ? item.icon : null,
+        color: typeof item.color === "string" && HEX_COLOR.test(item.color) ? item.color : "#91563e",
+        questions: questions,
+      });
+    });
+    return list;
+  }
+
+  function railTabs() {
+    return Array.prototype.slice.call(railTrack.children);
+  }
+
+  function activeCategory() {
+    for (var i = 0; i < categories.length; i++) if (categories[i].id === activeCategoryId) return categories[i];
+    return categories[0] || null;
+  }
+
+  /** Tonet kant bare der det finnes flere temaer å rulle til. */
+  function updateRailEdges() {
+    var rest = railTrack.scrollWidth - railTrack.clientWidth - railTrack.scrollLeft;
+    railTrack.classList.toggle("fade-start", railTrack.scrollLeft > 2);
+    railTrack.classList.toggle("fade-end", rest > 2);
+  }
+
+  function revealTab(tab) {
+    if (!tab || !railTrack.clientWidth) return;
+    var left = tab.offsetLeft - 20;
+    var right = tab.offsetLeft + tab.offsetWidth + 20;
+    if (left < railTrack.scrollLeft) railTrack.scrollLeft = Math.max(0, left);
+    else if (right > railTrack.scrollLeft + railTrack.clientWidth) railTrack.scrollLeft = right - railTrack.clientWidth;
+  }
+
+  /** Faner bygges bare når temaene endrer seg, så fokus i raden overlever et sideskifte. */
+  function renderRail() {
+    rail.hidden = !categories.length;
+    var key = categories.map(function (c) { return [c.id, c.label, c.icon, c.color].join(":"); }).join("|");
+    if (key !== railKey) {
+      railKey = key;
+      railTrack.textContent = "";
+      categories.forEach(function (category, index) {
+        var tab = document.createElement("button");
+        tab.type = "button";
+        tab.className = "tab";
+        tab.id = "placy-chat-tab-" + index;
+        tab.setAttribute("role", "tab");
+        tab.setAttribute("aria-controls", starters.id);
+        tab.setAttribute("data-category-id", category.id);
+        var swatch = document.createElement("span");
+        swatch.className = "tab-icon";
+        swatch.setAttribute("aria-hidden", "true");
+        swatch.style.backgroundColor = category.color;
+        if (category.icon) swatch.appendChild(icon(CATEGORY_ICONS[category.icon], "2"));
+        var label = document.createElement("span");
+        label.textContent = category.label;
+        tab.appendChild(swatch);
+        tab.appendChild(label);
+        tab.addEventListener("click", function () { selectCategory(category.id, false); });
+        railTrack.appendChild(tab);
+      });
+    }
+    if (categories.length) starters.setAttribute("role", "tabpanel");
+    else {
+      starters.removeAttribute("role");
+      starters.removeAttribute("aria-labelledby");
+    }
+  }
+
+  /** Viser det valgte temaets forslag; faller tilbake på første tema (prosjektet). */
+  function showCategory() {
+    var category = activeCategory();
+    if (!category) return null;
+    activeCategoryId = category.id;
+    var selectedTab = null;
+    railTabs().forEach(function (tab) {
+      var selected = tab.getAttribute("data-category-id") === category.id;
+      tab.setAttribute("aria-selected", String(selected));
+      tab.tabIndex = selected ? 0 : -1;
+      if (selected) selectedTab = tab;
+    });
+    if (selectedTab) starters.setAttribute("aria-labelledby", selectedTab.id);
+    startersLabel.textContent = "Forslag til spørsmål – " + category.label;
+    renderStarters(category.questions);
+    return selectedTab;
+  }
+
+  function selectCategory(id, moveFocus) {
+    activeCategoryId = id;
+    var tab = showCategory();
+    revealTab(tab);
+    updateRailEdges();
+    if (moveFocus && tab) tab.focus();
+    // I en påbegynt samtale flyttes forslagene ned til den nyeste meldingen,
+    // der de synes. Samtalen og historikktokenet røres ikke.
+    if (conversationStarted()) {
+      log.appendChild(starters);
+      log.scrollTop = log.scrollHeight;
+    }
+  }
+
+  var RAIL_KEYS = { ArrowLeft: -1, ArrowRight: 1, Home: "first", End: "last" };
+  railTrack.addEventListener("keydown", function (event) {
+    if (!Object.prototype.hasOwnProperty.call(RAIL_KEYS, event.key) || !categories.length) return;
+    event.preventDefault();
+    var step = RAIL_KEYS[event.key];
+    var index = categories.indexOf(activeCategory());
+    var next = step === "first" ? 0 : step === "last" ? categories.length - 1 : (index + step + categories.length) % categories.length;
+    selectCategory(categories[next].id, true);
+  });
+  railTrack.addEventListener("scroll", updateRailEdges, { passive: true });
+  // Mus uten sideveis rulling: vertikalt hjul ruller raden sidelengs.
+  railTrack.addEventListener("wheel", function (event) {
+    if (Math.abs(event.deltaY) <= Math.abs(event.deltaX) || railTrack.scrollWidth <= railTrack.clientWidth) return;
+    event.preventDefault();
+    railTrack.scrollLeft += event.deltaY;
+  }, { passive: false });
+  window.addEventListener("resize", updateRailEdges);
+
   function loadStarters() {
     var pageId = currentPageId();
     if (startersLoadedForPage === pageId) return;
     var requestId = ++startersRequestId;
     startersLoadedForPage = pageId;
-    chips.textContent = "";
-    starters.hidden = true;
+    // Uten temarad forsvinner forrige sides forslag med én gang. Med rad står
+    // temaene og forslagene til den nye sidens svar kommer, og byttes på plass.
+    if (!categories.length) {
+      chips.textContent = "";
+      starters.hidden = true;
+    }
     // Er samtalen i gang, hører forslagene for den nye siden hjemme nederst.
-    if (log.querySelector(".msg:not(.opening)")) log.appendChild(starters);
+    if (conversationStarted()) log.appendChild(starters);
     fetch(cfg.endpoint + "?pageId=" + encodeURIComponent(pageId), { credentials: "include" })
       .then(function (res) { return res.ok ? res.json() : null; })
       .then(function (data) {
         if (!data || requestId !== startersRequestId || pageId !== currentPageId()) return;
         setHonesty(data);
         setOpening(data.opening);
-        (Array.isArray(data.starters) ? data.starters : []).forEach(function (text) {
-          if (typeof text !== "string") return;
-          var b = document.createElement("button");
-          b.type = "button";
-          b.className = "starter";
-          b.textContent = text;
-          b.addEventListener("click", function () { sendMessage(text); });
-          chips.appendChild(b);
-        });
-        starters.hidden = !chips.childNodes.length;
+        // Valgt tema beholdes på tvers av sider når det finnes i det nye svaret.
+        categories = readCategories(data.categories);
+        renderRail();
+        if (categories.length) {
+          revealTab(showCategory());
+          updateRailEdges();
+        } else {
+          startersLabel.textContent = "Forslag til spørsmål";
+          renderStarters(Array.isArray(data.starters) ? data.starters : []);
+        }
         // Hilsen og forslag kan komme etter at samtalen er i gang; den nyeste
         // meldingen skal fortsatt være synlig.
         if (log.querySelector(".msg.user")) log.scrollTop = log.scrollHeight;
@@ -549,11 +803,11 @@
   function sendMessage(text) {
     var message = (text || textarea.value).trim();
     if (!message) return;
-    // Under talen går skrevet tekst til SAMME talesesjon, ikke til tekstchatten.
-    // Broen legger meldingen i transkriptet; boblen kommer derfra.
+    // Under talen finnes ikke tekstfeltet; bare et forslag i loggen kan komme
+    // hit. Det går til SAMME talesesjon, så Anja svarer med stemmen. Broen
+    // legger meldingen i transkriptet; boblen kommer derfra.
     if (voice.session === "on") {
-      textarea.value = "";
-      sendVoiceCommand({ type: "text", text: message.slice(0, 600) });
+      if (text) sendVoiceCommand({ type: "text", text: message.slice(0, 600) });
       return;
     }
     // Mens talens historikk overføres, venter meldingen i tekstfeltet: ellers
@@ -607,6 +861,25 @@
     window.dispatchEvent(new CustomEvent(VOICE_COMMAND, { detail: command }));
   }
 
+  /** Første gang Snakk velges: en stille boble fra chatten om hva talen innebærer. */
+  function addMicInfo() {
+    var el = document.createElement("div");
+    el.className = "msg mic-info";
+    el.setAttribute("role", "note");
+    var headEl = document.createElement("p");
+    headEl.className = "mic-info-head";
+    headEl.appendChild(icon(ICON_MIC));
+    var label = document.createElement("span");
+    label.textContent = "Om talesamtalen";
+    headEl.appendChild(label);
+    var body = document.createElement("p");
+    body.textContent = MIC_INFO;
+    el.appendChild(headEl);
+    el.appendChild(body);
+    log.appendChild(el);
+    log.scrollTop = log.scrollHeight;
+  }
+
   function addNote(text) {
     var el = document.createElement("p");
     el.className = "divider";
@@ -640,24 +913,43 @@
     return voice.session === "starting" && !VOICE_ACTIVE[voice.status] ? "connecting" : voice.status;
   }
 
+  function voiceShown() {
+    return voice.available && voice.mode === "voice";
+  }
+
+  /** Kontrollen som skal ha fokus i feltet under loggen for gjeldende modus. */
+  function composerControl() {
+    if (!voiceShown()) return textarea;
+    return voice.session === "off" ? voiceStart : voiceStop;
+  }
+
   function renderVoice() {
-    footer.hidden = !voice.available;
+    var talking = voiceShown();
+    modes.hidden = !voice.available;
     textModeBtn.setAttribute("aria-pressed", String(voice.mode === "text"));
     voiceModeBtn.setAttribute("aria-pressed", String(voice.mode === "voice"));
-    voiceBox.hidden = !voice.available || voice.mode !== "voice";
+    inputRow.hidden = talking;
+    voiceBox.hidden = !talking;
     var off = voice.session === "off";
     var pending = voice.handoff === "pending";
     voiceStart.hidden = !off;
     voiceStart.disabled = sending || pending;
-    voiceStop.hidden = off;
+    voiceLive.hidden = off;
     voiceStop.textContent = voice.session === "starting" ? "Avbryt" : "Avslutt tale";
     var shown = shownStatus();
     voiceBox.setAttribute("data-status", shown);
-    voiceStatus.textContent = off ? "Klar når du er" : VOICE_LABELS[shown] || "Kobler til …";
+    voiceStatus.textContent = off ? "" : VOICE_LABELS[shown] || VOICE_LABELS.connecting;
     sendBtn.disabled = sending || voice.session === "starting" || pending;
-    textarea.placeholder = !off
-      ? VOICE_PLACEHOLDERS[shown] || VOICE_PLACEHOLDERS.connecting
-      : voice.mode === "voice" && voice.available ? "Trykk «Start tale», eller skriv et spørsmål …" : "Skriv et spørsmål …";
+    // Hva skjermleseren hører: talestatus, eller at feltet har byttet. Settes
+    // bare ved endring, så samme status ikke leses opp på nytt.
+    var spoken = !voice.available ? ""
+      : talking ? (off ? VOICE_READY : voiceStatus.textContent)
+      : announcer.textContent ? "Skriv er valgt." : "";
+    if (announcer.textContent !== spoken) announcer.textContent = spoken;
+    // Fokus på en kontroll som nettopp ble skjult, flyttes til feltets
+    // synlige kontroll i stedet for å falle ut av panelet.
+    var active = open && shadow.activeElement;
+    if (active && active.closest("[hidden]")) composerControl().focus();
   }
 
   function setMode(mode) {
@@ -674,13 +966,11 @@
       }
       if (!voice.infoShown) {
         voice.infoShown = true;
-        addNote(MIC_INFO);
+        addMicInfo();
       }
     }
     renderVoice();
-    if (!open) return;
-    if (mode === "voice" && voice.session === "off") voiceStart.focus();
-    else textarea.focus();
+    if (open) composerControl().focus();
   }
 
   function startVoice() {
@@ -693,7 +983,6 @@
     // Klikket er brukerens handling; broen ber om mikrofon først nå. Tokenet
     // er tekstchattens signerte historikk; serveren avgjør om det kan brukes.
     sendVoiceCommand(transcript ? { type: "start", transcript: transcript } : { type: "start" });
-    if (open) textarea.focus();
   }
 
   /** Talen er klar: si i loggen hva Anja faktisk fikk med seg, slik serveren meldte det. */
@@ -720,9 +1009,8 @@
     voice.notice = null;
     voice.announced = false;
     if (reason) addMessage("error", reason);
+    // Fokus i den nå skjulte taledelen flyttes til tekstfeltet (renderVoice).
     renderVoice();
-    // Fokus i den nå skjulte taledelen flyttes til tekstfeltet, ikke ut av panelet.
-    if (open && shadow.activeElement && voiceBox.contains(shadow.activeElement)) textarea.focus();
   }
 
   function stopVoice() {
@@ -819,7 +1107,8 @@
   // både for panelet og for taledelens skjulte knapper.
   function focusable() {
     return Array.prototype.slice.call(panel.querySelectorAll("button:not([disabled]), a[href], textarea, [tabindex]:not([tabindex='-1'])"))
-      .filter(function (el) { return !el.closest("[hidden]"); });
+      // Temaraden er én tabulatorstopp (valgt fane); piltastene flytter innad.
+      .filter(function (el) { return el.getAttribute("tabindex") !== "-1" && !el.closest("[hidden]"); });
   }
 
   function trap(event) {
@@ -854,11 +1143,16 @@
     open = true;
     panel.hidden = false;
     // rAF gir nettleseren tid til å legge merke til `hidden=false` før transformen animeres.
-    window.requestAnimationFrame(function () { panel.classList.add("open"); });
+    window.requestAnimationFrame(function () {
+      panel.classList.add("open");
+      // Raden har først bredde når panelet er synlig.
+      revealTab(railTabs().filter(function (tab) { return tab.tabIndex === 0; })[0]);
+      updateRailEdges();
+    });
     loadStarters();
     panel.addEventListener("keydown", onKeydown);
     document.addEventListener("keydown", onKeydown);
-    window.setTimeout(function () { textarea.focus(); }, 0);
+    window.setTimeout(function () { composerControl().focus(); }, 0);
     if (options.question) sendMessage(options.question);
   }
 
@@ -894,7 +1188,7 @@
   textModeBtn.addEventListener("click", function () { setMode("text"); });
   voiceModeBtn.addEventListener("click", function () { setMode("voice"); });
   voiceStart.addEventListener("click", startVoice);
-  voiceStop.addEventListener("click", function () { stopVoice(); textarea.focus(); });
+  voiceStop.addEventListener("click", function () { stopVoice(); composerControl().focus(); });
   window.addEventListener(VOICE_STATE, onVoiceState);
   renderVoice();
   // Broen kan være montert før eller etter skriptet; begge veier møtes her.

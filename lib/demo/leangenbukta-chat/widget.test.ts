@@ -106,7 +106,9 @@ describe("placy-chat widget — åpne/lukke", () => {
     loadWidget();
     window.PlacyChat!.open();
     await tick();
-    const items = Array.from(shadow().querySelectorAll("button:not([disabled]), a[href], textarea")) as HTMLElement[];
+    // Talestyringen ligger skjult i treet; `hidden` holder den ute av Tab-rekken.
+    const items = (Array.from(panel().querySelectorAll("button:not([disabled]), a[href], textarea")) as HTMLElement[])
+      .filter((el) => !el.closest("[hidden]"));
     const last = items[items.length - 1];
     last.focus();
     const event = new KeyboardEvent("keydown", { key: "Tab", bubbles: true, cancelable: true });
@@ -567,11 +569,16 @@ describe("placy-chat widget — tale via broen", () => {
     ($(".voicebtn:not(.stop)") as HTMLButtonElement).click();
   }
 
+  // Samme regel som widgetens fokusfelle: `hidden` er synlighetsgaten.
+  const tabbable = () => (Array.from(panel().querySelectorAll("button:not([disabled]), a[href], textarea")) as HTMLElement[])
+    .filter((el) => !el.closest("[hidden]"));
+
   it("uten bro er det bare tekstchat: ingen moduser i panelet", async () => {
     loadWidget();
     window.PlacyChat!.open();
     await tick();
-    expect($(".footer").hidden).toBe(true);
+    expect($(".modes").hidden).toBe(true);
+    expect($(".inputrow").hidden).toBe(false);
   });
 
   it("finner en bro som var montert før skriptet, via hello", async () => {
@@ -579,11 +586,71 @@ describe("placy-chat widget — tale via broen", () => {
     window.addEventListener("placy-chat:voice-hello", answer);
     loadWidget();
     window.removeEventListener("placy-chat:voice-hello", answer);
-    expect($(".footer").hidden).toBe(false);
-    expect(modeButtons().map((b) => b.textContent)).toEqual(["Skriv", "Snakk med Anja"]);
+    expect($(".modes").hidden).toBe(false);
+    expect(modeButtons().map((b) => b.textContent)).toEqual(["Skriv", "Snakk"]);
+    // Tilgjengelig navn begynner med den synlige etiketten.
+    expect(modeButtons().map((b) => b.getAttribute("aria-label"))).toEqual(["Skriv til Anja", "Snakk med Anja"]);
   });
 
-  it("viser mikrofoninformasjon før første start i loggen, starter først ved klikk, og sier aldri «ny samtale»", async () => {
+  it("Snakk bytter tekstfeltet mot talestyring i samme felt: ingen tekstfelt eller Send i layout eller tabulatorrekke", async () => {
+    loadWidget();
+    bridge({});
+    window.PlacyChat!.open();
+    await tick();
+    const composer = $(".composer");
+    modeButtons()[1].click();
+    expect($(".inputrow").hidden).toBe(true);
+    expect($(".voice").hidden).toBe(false);
+    expect($(".voice").parentElement).toBe(composer);
+    expect(tabbable()).not.toContain(textarea());
+    expect(tabbable()).not.toContain($(".send"));
+    // Én tydelig startknapp, og den har fokus.
+    expect($(".voice-start").hidden).toBe(false);
+    expect($(".voice-live").hidden).toBe(true);
+    expect(shadow().activeElement).toBe($(".voice-start"));
+
+    ($(".voice-start") as HTMLButtonElement).click();
+    expect($(".voice-start").hidden).toBe(true);
+    expect($(".voice-live").hidden).toBe(false);
+    expect($(".voice-status").textContent).toBe("Kobler til …");
+    // Fokus fra den skjulte startknappen havner på Avbryt, ikke i et skjult tekstfelt.
+    expect(shadow().activeElement).toBe($(".voicebtn.stop"));
+    expect($(".voicebtn.stop").textContent).toBe("Avbryt");
+    bridge({ status: "listening", continuity: { status: "none" } });
+    expect($(".voicebtn.stop").textContent).toBe("Avslutt tale");
+    expect(tabbable()).not.toContain(textarea());
+
+    // Tilbake til Skriv: tekstfeltet kommer tilbake i samme felt, med fokus.
+    modeButtons()[0].click();
+    expect(commands).toContainEqual({ type: "stop" });
+    expect($(".inputrow").hidden).toBe(false);
+    expect($(".voice").hidden).toBe(true);
+    expect(shadow().activeElement).toBe(textarea());
+    expect($(".composer")).toBe(composer);
+  });
+
+  it("feltene har samme høyde og toner inn uten bevegelse ved prefers-reduced-motion", () => {
+    loadWidget();
+    const styleText = shadow().querySelector("style")!.textContent!;
+    expect(styleText).toContain(".inputrow{display:flex;align-items:flex-end;gap:8px;min-height:46px}");
+    expect(styleText).toContain(".voice{display:flex;align-items:stretch;min-height:46px}");
+    expect(styleText).toContain("min-height:46px;max-height:120px");
+    expect(styleText).toMatch(/prefers-reduced-motion:reduce\)\{[^@]*\.inputrow,\.voice-start,\.voice-live\{animation:none!important\}/);
+  });
+
+  it("gjenåpnet chat i Snakk gir fokus til Start tale, ikke til det skjulte tekstfeltet", async () => {
+    loadWidget();
+    bridge({});
+    window.PlacyChat!.open();
+    await tick();
+    modeButtons()[1].click();
+    window.PlacyChat!.close();
+    window.PlacyChat!.open();
+    await tick();
+    expect(shadow().activeElement).toBe($(".voice-start"));
+  });
+
+  it("viser mikrofoninformasjon som en stille boble i loggen før første start, starter først ved klikk, og sier aldri «ny samtale»", async () => {
     loadWidget();
     bridge({});
     window.PlacyChat!.open();
@@ -591,16 +658,38 @@ describe("placy-chat widget — tale via broen", () => {
     modeButtons()[1].click();
     expect(modeButtons()[1].getAttribute("aria-pressed")).toBe("true");
     expect($(".voice").hidden).toBe(false);
-    expect(dividers().at(-1)).toMatch(/mikrofonen din/);
+    const info = $(".msg.mic-info");
+    expect(info.parentElement).toBe($(".log"));
+    expect(info.classList.contains("divider")).toBe(false);
+    expect(info.querySelector("svg")).not.toBeNull();
+    expect(info.textContent).toMatch(/^Om talesamtalen/);
+    expect(info.textContent).toMatch(/mikrofonen/);
+    expect(info.textContent).toMatch(/OpenAI/);
+    expect(info.textContent).toMatch(/fortsetter fra samtalen/);
+    expect(info.textContent).toMatch(/Avslutt tale, bytter til Skriv eller lukker chatten/);
     expect(commands).toEqual([]);
-    ($(".voicebtn:not(.stop)") as HTMLButtonElement).click();
+    ($(".voice-start") as HTMLButtonElement).click();
     expect(commands).toEqual([{ type: "start" }]);
     bridge({ status: "listening", continuity: { status: "none" } });
     expect(dividers().at(-1)).toBe("Anja er klar til å snakke.");
     expect(dividers().join(" ")).not.toMatch(/ny samtale/i);
-    // Taledelen ligger i footer-raden (ingen egen boks som skyver panelet), og mikrofoninfoen er skjermleser-tekst der.
-    expect($(".voice").parentElement).toBe($(".footer"));
-    expect(shadow().querySelector(".voice-info")?.classList.contains("sr-only")).toBe(true);
+    // Bare én gang per side.
+    modeButtons()[0].click();
+    bridge({ status: "idle", handoff: { id: 1, status: "ready", transcript: "t", voiceTurns: 0 } });
+    modeButtons()[1].click();
+    expect(shadow().querySelectorAll(".msg.mic-info")).toHaveLength(1);
+  });
+
+  it("viser status som tekst (prikken er tillegg) og kunngjør den for skjermlesere", async () => {
+    await startVoice();
+    const announcer = shadow().querySelector(".composer [role='status']") as HTMLElement;
+    expect($(".dot").getAttribute("aria-hidden")).toBe("true");
+    bridge({ status: "listening" });
+    expect($(".voice-status").textContent).toMatch(/Lytter/);
+    expect(announcer.textContent).toMatch(/Lytter/);
+    expect($(".voice").getAttribute("data-status")).toBe("listening");
+    ($(".voicebtn.stop") as HTMLButtonElement).click();
+    expect(announcer.textContent).toBe("Skriv er valgt.");
   });
 
   it("viser status og transkript løpende i samme logg, uten duplikater", async () => {
@@ -610,7 +699,7 @@ describe("placy-chat widget — tale via broen", () => {
     bridge({ status: "listening", messages: [{ id: "voice-u1", role: "user", text: "Hvordan er" }] });
     expect($(".voice-status").textContent).toMatch(/Lytter/);
     bridge({ status: "thinking", messages: [{ id: "voice-u1", role: "user", text: "Hvordan er det å bo her?" }] });
-    expect($(".voice-status").textContent).toMatch(/finner fram/);
+    expect($(".voice-status").textContent).toBe("Anja finner svaret …");
     const both = [
       { id: "voice-u1", role: "user", text: "Hvordan er det å bo her?" },
       { id: "voice-a1", role: "assistant", text: "Rolig, med turområder rett ved." },
@@ -624,16 +713,37 @@ describe("placy-chat widget — tale via broen", () => {
     expect(voiceBubbles()).toHaveLength(2);
   });
 
-  it("sender skrevet tekst til talesesjonen under talen, ikke til tekstchatten", async () => {
-    await startVoice();
+  it("under talen er det ingen skriveflyt; et forslag i loggen går til talesesjonen, og et utkast venter i Skriv", async () => {
+    vi.mocked(fetch).mockImplementation(() => jsonResponse({ starters: ["Er det barnehage i nærheten?"] }));
+    loadWidget();
+    bridge({});
+    window.PlacyChat!.open();
+    await tick();
+    textarea().value = "Halvskrevet utkast";
+    modeButtons()[1].click();
+    ($(".voice-start") as HTMLButtonElement).click();
     bridge({ status: "listening" });
+    expect($(".inputrow").hidden).toBe(true);
     vi.mocked(fetch).mockClear();
-    textarea().value = "Er det barnehage i nærheten?";
-    ($(".send") as HTMLButtonElement).click();
+    ($(".starter") as HTMLButtonElement).click();
     expect(commands).toContainEqual({ type: "text", text: "Er det barnehage i nærheten?" });
+    expect(commands.filter((c) => c.type === "text")).toHaveLength(1);
     expect(vi.mocked(fetch).mock.calls.filter(([, init]) => init?.method === "POST")).toHaveLength(0);
-    expect(textarea().value).toBe("");
-    expect(textarea().placeholder).toMatch(/skriv til henne/);
+    modeButtons()[0].click();
+    expect(textarea().value).toBe("Halvskrevet utkast");
+  });
+
+  it("bytte beholder boblene og loggens rulleposisjon", async () => {
+    await startVoice();
+    bridge({ status: "speaking", messages: [{ id: "voice-a1", role: "assistant", text: "Hei." }] });
+    const log = $(".log");
+    log.scrollTop = 7;
+    const before = Array.from(log.children);
+    modeButtons()[0].click();
+    expect(Array.from(log.children).slice(0, before.length)).toEqual(before);
+    expect(voiceBubbles()).toEqual(["Hei."]);
+    // Overgangsnotatet kommer først når overføringen er ferdig.
+    expect(log.scrollTop).toBe(7);
   });
 
   describe("én samtale på tvers av skriving og tale", () => {
@@ -749,7 +859,219 @@ describe("placy-chat widget — tale via broen", () => {
     await startVoice();
     bridge({ status: "listening" });
     window.dispatchEvent(new CustomEvent(STATE, { detail: { available: false } }));
-    expect($(".footer").hidden).toBe(true);
+    expect($(".modes").hidden).toBe(true);
+    expect($(".inputrow").hidden).toBe(false);
     expect(dividers().at(-1)).toBe("Tilbake til skriving.");
+  });
+});
+
+describe("placy-chat widget — temarad", () => {
+  const CATEGORIES = [
+    { id: "leangenbukta-prosjektet", label: "Leangenbukta", icon: "Building2", color: "#91563e", questions: ["Hva er Leangenbukta?", "Hvilke bygg er i salg nå?", "Hva finnes i nærområdet?"] },
+    { id: "hverdag", label: "Hverdag", icon: "ShoppingCart", color: "#36d16f", questions: ["Hvor er nærmeste dagligvarebutikk?", "Hvor er nærmeste apotek?", "Hvilke kjøpesentre ligger i nærheten?"] },
+    { id: "oppvekst", label: "Oppvekst", icon: "GraduationCap", color: "#f8ae17", questions: ["Hvilken skolekrets hører Leangenbukta til?", "Hvilke barnehager ligger i nærheten?", "Hvor kan barna leke ute?"] },
+  ];
+  const $ = (selector: string) => shadow().querySelector(selector) as HTMLElement;
+  const tabs = () => Array.from(shadow().querySelectorAll("[role='tab']")) as HTMLButtonElement[];
+  const questions = () => Array.from(shadow().querySelectorAll(".starter")).map((el) => el.textContent);
+  const selected = () => tabs().filter((tab) => tab.getAttribute("aria-selected") === "true").map((tab) => tab.textContent);
+
+  function withCategories(extra: Record<string, unknown> = {}) {
+    const fetchMock = vi.fn((url: string, init?: RequestInit) => {
+      if (init?.method === "POST") return jsonResponse({ reply: "Svar.", answerType: "fact", links: [], transcript: "tok-1" });
+      void url;
+      return jsonResponse({ opening: "Hei!", starters: ["Sidens forslag"], categories: CATEGORIES, ...extra });
+    });
+    vi.stubGlobal("fetch", fetchMock);
+    return fetchMock;
+  }
+
+  async function openWithRail(extra?: Record<string, unknown>) {
+    const fetchMock = withCategories(extra);
+    loadWidget();
+    window.PlacyChat!.open();
+    await tick();
+    return fetchMock;
+  }
+
+  it("står fast mellom toppen og loggen, som faner med første tema valgt og dets tre forslag", async () => {
+    await openWithRail();
+    const rail = $(".rail");
+    expect(rail.hidden).toBe(false);
+    expect(rail.previousElementSibling).toBe($(".honesty"));
+    expect(rail.nextElementSibling).toBe($(".log"));
+    expect($("[role='tablist']").getAttribute("aria-label")).toBe("Tema for spørsmålsforslag");
+    expect(tabs().map((tab) => tab.textContent)).toEqual(["Leangenbukta", "Hverdag", "Oppvekst"]);
+    expect(selected()).toEqual(["Leangenbukta"]);
+    // Ett forslagssett: temaets, ikke sidens `starters` ved siden av.
+    expect(questions()).toEqual(CATEGORIES[0].questions);
+    const panelEl = $(".starters");
+    expect(panelEl.getAttribute("role")).toBe("tabpanel");
+    expect(panelEl.getAttribute("aria-labelledby")).toBe(tabs()[0].id);
+    expect(tabs()[0].getAttribute("aria-controls")).toBe(panelEl.id);
+    expect($(".starters-label").textContent).toBe("Forslag til spørsmål – Leangenbukta");
+    // Ikon i temaets farge; CSS har myk flate, hevet valgt pille og sideveis rulling.
+    expect((tabs()[1].querySelector(".tab-icon") as HTMLElement).style.backgroundColor).toBe("rgb(54, 209, 111)");
+    expect(tabs()[1].querySelector(".tab-icon svg")).not.toBeNull();
+    const css = shadow().querySelector("style")!.textContent!;
+    expect(css).toMatch(/\.rail\{flex:none/);
+    expect(css).toMatch(/\.rail-track\{[^}]*overflow-x:auto/);
+    expect(css).toMatch(/\.tab\[aria-selected='true'\]\{background:#fff[^}]*box-shadow/);
+    expect(css).toMatch(/\.tab:focus-visible\{outline/);
+  });
+
+  it("et nytt tema bytter til dets tre forslag, og et forslag sendes som nøyaktig den viste teksten", async () => {
+    const fetchMock = await openWithRail();
+    tabs()[1].click();
+    expect(selected()).toEqual(["Hverdag"]);
+    expect(questions()).toEqual(CATEGORIES[1].questions);
+    expect($(".starters").getAttribute("aria-labelledby")).toBe(tabs()[1].id);
+    (shadow().querySelectorAll(".starter")[1] as HTMLButtonElement).click();
+    await tick();
+    const post = fetchMock.mock.calls.find(([, init]) => init?.method === "POST")!;
+    expect(JSON.parse(post[1]!.body as string).message).toBe("Hvor er nærmeste apotek?");
+  });
+
+  it("piltaster, Home og End flytter valg og fokus; bare valgt fane er i tabulatorrekken", async () => {
+    await openWithRail();
+    tabs()[0].focus();
+    const key = (k: string) => $("[role='tablist']").dispatchEvent(new KeyboardEvent("keydown", { key: k, bubbles: true, cancelable: true }));
+    key("ArrowRight");
+    expect(selected()).toEqual(["Hverdag"]);
+    expect(shadow().activeElement).toBe(tabs()[1]);
+    key("End");
+    expect(selected()).toEqual(["Oppvekst"]);
+    key("ArrowRight");
+    expect(selected()).toEqual(["Leangenbukta"]);
+    key("ArrowLeft");
+    expect(selected()).toEqual(["Oppvekst"]);
+    key("Home");
+    expect(shadow().activeElement).toBe(tabs()[0]);
+    expect(tabs().map((tab) => tab.tabIndex)).toEqual([0, -1, -1]);
+    expect(questions()).toEqual(CATEGORIES[0].questions);
+  });
+
+  it("fokusfellen hopper over de ikke-valgte fanene og holder Tab i panelet", async () => {
+    await openWithRail();
+    const close = $(".close") as HTMLButtonElement;
+    close.focus();
+    const back = new KeyboardEvent("keydown", { key: "Tab", shiftKey: true, bubbles: true, cancelable: true });
+    panel().dispatchEvent(back);
+    expect(back.defaultPrevented).toBe(true);
+    expect(shadow().activeElement).not.toBe(tabs()[1]);
+  });
+
+  it("toner kanten ut der det finnes flere temaer å rulle til", async () => {
+    await openWithRail();
+    const track = $(".rail-track");
+    Object.defineProperty(track, "scrollWidth", { configurable: true, value: 600 });
+    Object.defineProperty(track, "clientWidth", { configurable: true, value: 360 });
+    track.dispatchEvent(new Event("scroll"));
+    expect(track.classList.contains("fade-end")).toBe(true);
+    expect(track.classList.contains("fade-start")).toBe(false);
+    track.scrollLeft = 240;
+    track.dispatchEvent(new Event("scroll"));
+    expect(track.classList.contains("fade-start")).toBe(true);
+    expect(track.classList.contains("fade-end")).toBe(false);
+  });
+
+  it("i en påbegynt samtale flyttes de nye forslagene nederst, uten å viske ut samtalen eller tokenet", async () => {
+    const fetchMock = await openWithRail();
+    (shadow().querySelector(".starter") as HTMLButtonElement).click();
+    await tick();
+    const log = $(".log");
+    expect(log.lastElementChild?.classList.contains("msg")).toBe(true);
+    tabs()[2].click();
+    expect(log.lastElementChild).toBe($(".starters"));
+    expect(shadow().querySelectorAll(".msg.user")).toHaveLength(1);
+    expect(shadow().querySelectorAll(".msg.assistant:not(.opening)")).toHaveLength(1);
+    (shadow().querySelector(".starter") as HTMLButtonElement).click();
+    await tick();
+    const posts = fetchMock.mock.calls.filter(([, init]) => init?.method === "POST");
+    expect(JSON.parse(posts[1][1]!.body as string)).toMatchObject({ message: CATEGORIES[2].questions[0], transcript: "tok-1" });
+  });
+
+  it("uten temaer i svaret (eldre endepunkt) er raden skjult og sidens forslag vises som før", async () => {
+    vi.stubGlobal("fetch", vi.fn(() => jsonResponse({ opening: "Hei!", starters: ["Sidens forslag", "Et til"] })));
+    loadWidget();
+    window.PlacyChat!.open();
+    await tick();
+    expect($(".rail").hidden).toBe(true);
+    expect(tabs()).toHaveLength(0);
+    expect(questions()).toEqual(["Sidens forslag", "Et til"]);
+    expect($(".starters").hasAttribute("role")).toBe(false);
+  });
+
+  it("stoler ikke på ukjente ikoner, farger eller HTML fra serveren", async () => {
+    await openWithRail({
+      categories: [
+        { id: "x", label: "<img src=x onerror=alert(1)>", icon: "javascript:alert(1)", color: "red;background:url(//evil)", questions: ["<b>Spørsmål</b>"] },
+        { id: "Bad ID!", label: "Bort", icon: "Bus", color: "#000000", questions: ["Q"] },
+        { id: "tom", label: "Tom", icon: "Bus", color: "#000000", questions: [] },
+      ],
+    });
+    expect(tabs()).toHaveLength(1);
+    const tab = tabs()[0];
+    expect(tab.textContent).toBe("<img src=x onerror=alert(1)>");
+    expect(tab.querySelector("img")).toBeNull();
+    expect(tab.querySelector("svg")).toBeNull();
+    expect((tab.querySelector(".tab-icon") as HTMLElement).style.backgroundColor).toBe("rgb(145, 86, 62)");
+    expect(questions()).toEqual(["<b>Spørsmål</b>"]);
+    expect(shadow().querySelector(".starter b")).toBeNull();
+  });
+
+  it("beholder valgt tema ved sideskifte og ignorerer et sent svar fra forrige side", async () => {
+    loadWidget();
+    const marker = document.createElement("div");
+    marker.setAttribute("data-placy-page-id", "forside");
+    document.body.appendChild(marker);
+    const pending: Record<string, (body: unknown) => void> = {};
+    vi.stubGlobal("fetch", vi.fn((url: string) => new Promise<Response>((resolve) => {
+      const pageId = new URL(String(url), "http://localhost").searchParams.get("pageId")!;
+      pending[pageId] = (body) => resolve({ ok: true, json: async () => body } as Response);
+    })));
+    const forPage = (first: string[]) => ({ opening: "Hei!", categories: [{ ...CATEGORIES[0], questions: first }, ...CATEGORIES.slice(1)] });
+
+    window.PlacyChat!.open();
+    pending.forside(forPage(["Forsidespørsmål 1", "Forsidespørsmål 2", "Forsidespørsmål 3"]));
+    await tick();
+    tabs()[1].click();
+    marker.setAttribute("data-placy-page-id", "knutepunktet");
+    await tick();
+    // Raden står mens den nye siden lastes; valgt tema og forslag byttes ikke ut.
+    expect($(".rail").hidden).toBe(false);
+    expect(questions()).toEqual(CATEGORIES[1].questions);
+    marker.setAttribute("data-placy-page-id", "beliggenhet");
+    await tick();
+
+    pending.beliggenhet(forPage(["Beliggenhet 1", "Beliggenhet 2", "Beliggenhet 3"]));
+    await tick();
+    pending.knutepunktet(forPage(["Knutepunktet 1", "Knutepunktet 2", "Knutepunktet 3"]));
+    await tick();
+    expect(selected()).toEqual(["Hverdag"]);
+    tabs()[0].click();
+    expect(questions()).toEqual(["Beliggenhet 1", "Beliggenhet 2", "Beliggenhet 3"]);
+  });
+
+  it("i en pågående tale går et temaforslag til talesesjonen, ikke som skrevet melding", async () => {
+    const commands: Array<Record<string, unknown>> = [];
+    const onCommand = (event: Event) => commands.push((event as CustomEvent).detail);
+    window.addEventListener("placy-chat:voice-command", onCommand);
+    const bridge = (detail: Record<string, unknown>) =>
+      window.dispatchEvent(new CustomEvent("placy-chat:voice-state", { detail: { available: true, status: "idle", error: null, notice: null, messages: [], ...detail } }));
+    const fetchMock = withCategories();
+    loadWidget();
+    bridge({});
+    window.PlacyChat!.open();
+    await tick();
+    (shadow().querySelectorAll(".mode")[1] as HTMLButtonElement).click();
+    ($(".voice-start") as HTMLButtonElement).click();
+    bridge({ status: "listening" });
+    tabs()[2].click();
+    expect($(".inputrow").hidden).toBe(true);
+    (shadow().querySelectorAll(".starter")[2] as HTMLButtonElement).click();
+    expect(commands).toContainEqual({ type: "text", text: "Hvor kan barna leke ute?" });
+    expect(fetchMock.mock.calls.filter(([, init]) => init?.method === "POST")).toHaveLength(0);
+    window.removeEventListener("placy-chat:voice-command", onCommand);
   });
 });
