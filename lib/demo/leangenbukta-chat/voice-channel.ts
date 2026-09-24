@@ -2,11 +2,11 @@ import type { LiveMessage, LiveStatus } from "@/lib/live/types";
 import type { LiveContinuity } from "@/lib/live/use-live";
 
 /**
- * Kanalen mellom Leangenbuktas chatwidget og talebroen (2026-09-24).
+ * Kanalen mellom nettsidekopienes chatwidget og talebroen (2026-09-24).
  *
  * `public/embed/placy-chat.js` er den ENESTE synlige flaten (Shadow DOM, ingen
  * byggesteg). Talen trenger WebRTC og `useLive`, som bare finnes i React-appen.
- * Broen (`app/demo/leangenbukta-nettside/voice-bridge.tsx`) er derfor usynlig og
+ * Broen (`components/demo/site-chat-voice-bridge.tsx`) er derfor usynlig og
  * snakker med widgeten gjennom tre CustomEvents på `window`:
  *
  * - `hello`   widget → bro: «finnes du?» Broen svarer med en `state`.

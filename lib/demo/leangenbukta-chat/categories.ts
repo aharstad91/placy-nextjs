@@ -82,17 +82,21 @@ const CATEGORY_ID = /^[a-z0-9-]{1,60}$/;
  * temaets kuraterte til tre — så åpningen fortsatt gir sidetilpassede forslag,
  * uten et eget, dobbelt sett ved siden av raden.
  */
-export function chatCategories(categories: readonly BoardCategoryMeta[], pageStarters: readonly string[]): ChatCategory[] {
+export function chatCategories(
+  categories: readonly BoardCategoryMeta[],
+  pageStarters: readonly string[],
+  questionsById: Readonly<Record<string, readonly string[]>> = CATEGORY_QUESTIONS,
+): ChatCategory[] {
   const usable = categories.filter(
     (category) =>
-      CATEGORY_QUESTIONS[category.id] &&
+      questionsById[category.id] &&
       CATEGORY_ID.test(category.id) &&
       HEX_COLOR.test(category.color) &&
       ICON_NAME.test(category.icon) &&
       category.label.trim().length > 0,
   );
   return usable.map((category, index) => {
-    const curated = CATEGORY_QUESTIONS[category.id];
+    const curated = questionsById[category.id];
     return {
       id: category.id,
       label: category.label.trim().slice(0, 40),

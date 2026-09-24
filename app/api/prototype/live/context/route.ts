@@ -3,7 +3,7 @@ import { z } from 'zod';
 import { getLiveSideband } from '@/lib/live/sideband';
 import { getLiveSupervisor } from '@/lib/live/supervisor';
 import { localRequest } from '@/lib/live/local-request';
-import { leangenbuktaVoiceVisitor } from '@/lib/live/leangenbukta-voice-access';
+import { demoVoiceVisitor } from '@/lib/live/demo-voice-access';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -30,7 +30,7 @@ const contextSchema = z.union([
 ]);
 
 export async function POST(request: NextRequest) {
-  if (!localRequest(request) && !leangenbuktaVoiceVisitor(request)) return new NextResponse(null, { status: 404 });
+  if (!localRequest(request) && !demoVoiceVisitor(request)) return new NextResponse(null, { status: 404 });
   const token = request.headers.get('x-placy-session');
   if (!token || token.length > 100 || !getLiveSupervisor().isActive(token)) return new NextResponse(null, { status: 404 });
   if (Number(request.headers.get('content-length')) > 20000) return new NextResponse(null, { status: 413 });

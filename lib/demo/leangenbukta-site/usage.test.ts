@@ -43,4 +43,22 @@ describe("døgnkvoter", () => {
     vi.stubEnv("PLACY_LB_DEMO_CHAT_VISITOR_DAILY", "mange");
     expect(demoMeterLimits("chat_message").visitor).toBe(60);
   });
+
+  it("holder Nyhavnas målere, grenser og lagervalg adskilt fra Leangenbuktas", async () => {
+    vi.stubEnv("NODE_ENV", "production");
+    vi.stubEnv("PLACY_LB_DEMO_USAGE_STORE", "supabase");
+    // Leangenbuktas lager slår ikke på Nyhavnas; Nyhavna feiler lukket til eget valg er gjort.
+    expect(resolveUsageStore("chat_message")).not.toBeNull();
+    expect(resolveUsageStore("nh_chat_message")).toBeNull();
+    expect(resolveUsageStore("nh_voice_session")).toBeNull();
+    vi.stubEnv("PLACY_NH_CHAT_USAGE_STORE", "supabase");
+    expect(resolveUsageStore("nh_chat_message")).not.toBeNull();
+    vi.stubEnv("PLACY_NH_CHAT_MESSAGE_GLOBAL_DAILY", "12");
+    expect(demoMeterLimits("nh_chat_message")).toEqual({ visitor: 40, global: 12 });
+    expect(demoMeterLimits("nh_voice_session")).toEqual({ visitor: 5, global: 30 });
+    const store = createMemoryUsageStore();
+    const limits = { visitor: 1, global: 10 };
+    expect(await store.consume({ meter: "chat_message", visitorId: "v", day: "2026-09-24", limits })).toEqual({ allowed: true });
+    expect(await store.consume({ meter: "nh_chat_message", visitorId: "v", day: "2026-09-24", limits })).toEqual({ allowed: true });
+  });
 });

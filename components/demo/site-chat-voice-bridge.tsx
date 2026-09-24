@@ -3,9 +3,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useLive } from "@/lib/live/use-live";
 import {
-  CHAT_VOICE_CONTINUED_GREETING,
-  CHAT_VOICE_DATASET,
-  CHAT_VOICE_GREETING,
   parseVoiceCommand,
   VOICE_EVENTS,
   voiceWidgetState,
@@ -44,13 +41,23 @@ async function fetchHandoff(sessionToken: string): Promise<{ transcript: string;
   }
 }
 
+export interface SiteChatVoiceBridgeProps {
+  /** Datasettet stemmen snakker ut fra; samme som tekstchattens profil. */
+  dataset: string;
+  /** Hilsenen er en instruksjon til stemmen, ikke en ferdig replikk (se `useLive`). */
+  greeting: string;
+  /** Hilsenen når tekstchattens historikk ligger i sesjonen. */
+  continuedGreeting: string;
+}
+
 /**
  * Usynlig bro mellom chatwidgeten (`public/embed/placy-chat.js`) og
  * `useLive`. All UI ligger i widgeten; her finnes bare taleforbindelsen og
- * overføringen av historikk begge veier.
+ * overføringen av historikk begge veier. Brukes av nettsidekopiene
+ * (Leangenbukta, Nyhavna) med hver sin datasett-ID og hilsen.
  * Protokollen står i `lib/demo/leangenbukta-chat/voice-channel.ts`.
  */
-export function LeangenbuktaVoiceBridge() {
+export function SiteChatVoiceBridge({ dataset, greeting, continuedGreeting }: SiteChatVoiceBridgeProps) {
   // Tekstchattens token for NESTE start; settes av start-kommandoen.
   const transcriptRef = useRef<string | null>(null);
   const handoffRef = useRef<VoiceHandoff | null>(null);
@@ -87,10 +94,10 @@ export function LeangenbuktaVoiceBridge() {
   }, [setHandoff]);
 
   const live = useLive({
-    dataset: CHAT_VOICE_DATASET,
+    dataset,
     surface: "chat",
-    greeting: CHAT_VOICE_GREETING,
-    continuedGreeting: CHAT_VOICE_CONTINUED_GREETING,
+    greeting,
+    continuedGreeting,
     getTranscript: () => transcriptRef.current,
     onSessionEnded,
     executeTool: NO_MAP,

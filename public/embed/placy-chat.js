@@ -1,10 +1,15 @@
 /*!
- * Placy-chat — frittstående innbyggingswidget for Leangenbukta-kundedemoen (2026-09-23).
+ * Placy-chat — frittstående innbyggingswidget for nettsidekopiene
+ * (Leangenbukta 2026-09-23, Nyhavna 2026-09-24).
  *
  * Lastes akkurat slik en WordPress-side ville lastet den:
  *   <script src="/embed/placy-chat.js" data-endpoint="/api/demo/leangenbukta-chat"
  *           data-page-id="forside" data-label="Spør om Leangenbukta"
  *           data-board-href="/demo/leangenbukta-lokal" defer></script>
+ *
+ * En annen kopi setter sitt eget endepunkt, merke, board og farger
+ * (`data-accent`, `data-surface` osv., se `readTheme`); uten dem gjelder
+ * Leangenbuktas standard.
  *
  * Ingen avhengigheter, ingen build-steg, ingen global lekkasje utover
  * `window.PlacyChat`. All UI ligger i et Shadow DOM med egen CSS, slik at
@@ -13,8 +18,8 @@
  * grunnen til at en `<script>` eller `javascript:`-lenke i et modellsvar
  * aldri kan bli kjørbar eller klikkbar her, uansett hva serveren skulle sende.
  *
- * Tale (2026-09-24): finnes det en talebro på siden (Leangenbukta-kopien
- * monterer `voice-bridge.tsx`), får panelet «Skriv» / «Snakk». Loggen står
+ * Tale (2026-09-24): finnes det en talebro på siden (kopiene monterer
+ * `components/demo/site-chat-voice-bridge.tsx`), får panelet «Skriv» / «Snakk». Loggen står
  * fast; bare feltet under skifter: tekstfelt og Send i Skriv, talestyring
  * (Start tale, synlig status, Avslutt tale) i Snakk. Under talen finnes ikke
  * noe tekstfelt; skriving er å bytte tilbake til Skriv. Broen eier WebRTC;
@@ -47,8 +52,32 @@
       pageId: data.pageId || "forside",
       label: data.label || "Spør om Leangenbukta",
       boardHref: data.boardHref || "/demo/leangenbukta-lokal",
-      offsetBottom: data.offsetBottom || "76px",
+      offsetBottom: /^\d{1,3}px$/.test(data.offsetBottom || "") ? data.offsetBottom : "76px",
+      theme: readTheme(data),
     };
+  }
+
+  /**
+   * Fargene til verten (2026-09-24): `data-accent`, `data-accent-dark`,
+   * `data-border`, `data-surface` (toppen og flater), `data-soft` og
+   * `data-soft-border` (assistentens bobler) og `data-muted` (hjelpetekst).
+   * Bare `#rrggbb` godtas; alt annet gir Leangenbuktas standardfarge.
+   */
+  var THEME_KEYS = {
+    accent: "--placy-chat-accent",
+    accentDark: "--placy-chat-accent-dark",
+    border: "--placy-chat-border",
+    surface: "--placy-chat-surface",
+    soft: "--placy-chat-soft",
+    softBorder: "--placy-chat-soft-border",
+    muted: "--placy-chat-muted",
+  };
+  function readTheme(data) {
+    var theme = {};
+    Object.keys(THEME_KEYS).forEach(function (key) {
+      if (typeof data[key] === "string" && /^#[0-9a-f]{6}$/i.test(data[key])) theme[THEME_KEYS[key]] = data[key];
+    });
+    return theme;
   }
 
   var cfg = config();
@@ -123,15 +152,19 @@
   // ---------------------------------------------------------------------
   var host = document.createElement("div");
   host.setAttribute("data-placy-chat-host", "");
+  Object.keys(cfg.theme).forEach(function (name) { host.style.setProperty(name, cfg.theme[name]); });
   var shadow = host.attachShadow({ mode: "open" });
 
-  // Leangenbuktas egen palett: brunt fra logoen/knappene og sanden fra
-  // forsidens kartseksjon. Verten kan overstyre med CSS-variablene.
+  // Standard er Leangenbuktas palett: brunt fra logoen/knappene og sanden fra
+  // forsidens kartseksjon. Verten kan overstyre med data-attributtene over
+  // eller CSS-variablene.
   var ACCENT = "var(--placy-chat-accent,#91563e)";
   var ACCENT_DARK = "var(--placy-chat-accent-dark,#6f3f2b)";
   var BORDER = "var(--placy-chat-border,#d6c6b7)";
-  var CREAM = "#faf6f2";
-  var MUTED = "#5d5148";
+  var CREAM = "var(--placy-chat-surface,#faf6f2)";
+  var MUTED = "var(--placy-chat-muted,#5d5148)";
+  var SOFT = "var(--placy-chat-soft,#f6f0ea)";
+  var SOFT_BORDER = "var(--placy-chat-soft-border,#ebe0d5)";
 
   var style = document.createElement("style");
   style.textContent = [
@@ -167,11 +200,11 @@
     "border:1px solid " + BORDER + ";border-radius:999px;padding:1px 8px;line-height:1.5;white-space:nowrap}",
     ".close{width:36px;height:36px;border-radius:50%;background:none;border:none;font-size:22px;line-height:1;",
     "cursor:pointer;color:inherit;flex:none}",
-    ".close:hover{background:#efe7df}",
+    ".close:hover{background:var(--placy-chat-soft-border,#efe7df)}",
     // Temaraden: samme form som boardets StoryRail — én myk, avrundet flate,
     // ikon i temaets farge over navnet, valgt tema som hvit, hevet pille. Den
     // står fast over loggen; bare loggen ruller.
-    ".rail{flex:none;padding:10px 12px 8px;background:#fff;border-bottom:1px solid #efe7df}",
+    ".rail{flex:none;padding:10px 12px 8px;background:#fff;border-bottom:1px solid var(--placy-chat-soft-border,#efe7df)}",
     ".rail[hidden]{display:none}",
     ".rail-shell{border-radius:22px;padding:4px;background:rgba(28,25,23,.05)}",
     ".rail-track{position:relative;display:flex;gap:2px;overflow-x:auto;overflow-y:hidden;scrollbar-width:none;",
@@ -195,11 +228,11 @@
     ".log{flex:1;overflow-y:auto;overscroll-behavior:contain;padding:16px;display:flex;flex-direction:column;gap:12px}",
     ".msg{max-width:88%;padding:10px 14px;border-radius:14px;font-size:14px;line-height:1.5;white-space:pre-wrap;overflow-wrap:anywhere}",
     ".msg.user{align-self:flex-end;background:" + ACCENT + ";color:#fff;border-bottom-right-radius:4px}",
-    ".msg.assistant{align-self:flex-start;background:#f6f0ea;border:1px solid #ebe0d5;border-bottom-left-radius:4px}",
+    ".msg.assistant{align-self:flex-start;background:" + SOFT + ";border:1px solid " + SOFT_BORDER + ";border-bottom-left-radius:4px}",
     ".msg.error{align-self:flex-start;background:#fbeaea;color:#7a1f1f;border-bottom-left-radius:4px}",
     ".msg .notice{margin:10px 0 0;padding:6px 10px;background:#fff;border-left:3px solid " + ACCENT + ";",
     "border-radius:0 6px 6px 0;font-size:13px;line-height:1.45;color:#4a3b30;white-space:normal}",
-    ".msg .sources{margin:10px 0 0;padding-top:8px;border-top:1px solid #e3d6c9;font-size:12px;line-height:1.45;color:" + MUTED + ";white-space:normal}",
+    ".msg .sources{margin:10px 0 0;padding-top:8px;border-top:1px solid var(--placy-chat-soft-border,#e3d6c9);font-size:12px;line-height:1.45;color:" + MUTED + ";white-space:normal}",
     ".links{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px;white-space:normal}",
     ".linkbtn{font-size:13px;line-height:1.3;padding:6px 12px;border-radius:999px;border:1px solid " + ACCENT + ";",
     "background:#fff;color:" + ACCENT_DARK + ";text-decoration:none;cursor:pointer}",
@@ -238,7 +271,7 @@
     ".mic-info-head svg{width:14px;height:14px}",
     ".mic-info p{margin:0}",
     ".sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}",
-    ".modes{display:inline-flex;align-self:flex-start;flex:none;gap:2px;padding:3px;border-radius:999px;background:#f3ebe3}",
+    ".modes{display:inline-flex;align-self:flex-start;flex:none;gap:2px;padding:3px;border-radius:999px;background:var(--placy-chat-soft,#f3ebe3)}",
     ".modes[hidden]{display:none}",
     ".mode{display:inline-flex;align-items:center;gap:6px;border:none;background:none;border-radius:999px;padding:6px 14px;",
     "font-size:13px;font-weight:600;line-height:1.2;color:" + MUTED + ";cursor:pointer;transition:background-color .15s ease,color .15s ease}",
@@ -256,7 +289,7 @@
     ".voicebtn:disabled{opacity:.5;cursor:default}",
     ".voice-start{flex:1;min-height:46px}",
     ".voice-live{flex:1;display:flex;align-items:center;gap:10px;min-width:0;padding:0 5px 0 14px;border-radius:12px;",
-    "background:" + CREAM + ";border:1px solid #ebe0d5}",
+    "background:" + CREAM + ";border:1px solid " + SOFT_BORDER + "}",
     // Statusen står alltid som tekst; prikken er bare et tillegg.
     ".voice-status{flex:1;min-width:0;margin:0;font-size:14px;font-weight:600;color:#4a3b30;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}",
     ".dot{width:10px;height:10px;border-radius:50%;background:#b9a797;flex:none}",
@@ -266,7 +299,7 @@
     ".voice[data-status='connecting'] .dot{animation:placy-pulse 1.2s ease-in-out infinite}",
     "@keyframes placy-pulse{0%,100%{opacity:1}50%{opacity:.35}}",
     ".voicebtn.stop{height:36px;align-self:center;padding:0 12px;font-size:13px;background:#fff;color:" + ACCENT_DARK + "}",
-    ".voicebtn.stop:hover{background:#efe7df}",
+    ".voicebtn.stop:hover{background:var(--placy-chat-soft-border,#efe7df)}",
     // Smale mobiler: modusikonene går, og statusen får mest mulig plass.
     "@media (max-width:420px){.mode svg{display:none}.voice-live{gap:8px;padding-left:12px}.voice-status{font-size:13px}}",
   ].join("");

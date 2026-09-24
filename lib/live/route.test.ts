@@ -403,7 +403,8 @@ describe('Leangenbuktas chatflate (surface=chat)', () => {
   });
   it('avviser chatflaten for andre datasett og ukjente flater før en betalt sesjon', async () => {
     const nyhavna = await loadLiveDemo('nyhavna-lokal');
-    expect((await POST(request(undefined, undefined, { dataset: 'nyhavna-lokal', snapshotId: nyhavna.snapshotId, surface: 'chat' }))).status).toBe(400);
+    // Det frosne snapshotet har ingen nettsidekopi og dermed ingen chatboks.
+    expect((await POST(request(undefined, undefined, { snapshotId: 'snapshot-test', surface: 'chat' }))).status).toBe(400);
     expect((await POST(request(undefined, undefined, { dataset: 'nyhavna-lokal', snapshotId: nyhavna.snapshotId, surface: 'board' }))).status).toBe(400);
     expect(mocks.reserve).not.toHaveBeenCalled();
     expect(fetch).not.toHaveBeenCalled();
@@ -412,9 +413,99 @@ describe('Leangenbuktas chatflate (surface=chat)', () => {
     const ok = await GET(new NextRequest('http://localhost:3101/api/prototype/live?dataset=leangenbukta-lokal&surface=chat'));
     expect(ok.status).toBe(200);
     expect(await ok.json()).toMatchObject({ protocol: 'live', dataset: 'leangenbukta-lokal' });
-    expect((await GET(new NextRequest('http://localhost:3101/api/prototype/live?dataset=nyhavna-lokal&surface=chat'))).status).toBe(404);
+    expect((await GET(new NextRequest('http://localhost:3101/api/prototype/live?dataset=nyhavna-leve&surface=chat'))).status).toBe(404);
     expect((await GET(new NextRequest('http://localhost:3101/api/prototype/live?dataset=leangenbukta-lokal&surface=kart'))).status).toBe(404);
     vi.stubEnv('PLACY_HOSTED_VOICE', 'true');
     expect((await GET(new NextRequest('https://platform.example/api/prototype/live?dataset=leangenbukta-lokal&surface=chat'))).status).toBe(404);
+  });
+});
+
+describe('Nyhavnas chatflate (nettsidekopien, 2026-09-24)', () => {
+  const turns = [{ role: 'user' as const, text: 'Hva planlegges på Nyhavna?' }, { role: 'assistant' as const, text: 'Nyhavna Utvikling planlegger en bydel.' }];
+
+  it('starter lokalt med Nyhavnas egen chatinstruks, fortsetter tekstsamtalen og trekker Nyhavnas stemmekvote', async () => {
+    const demo = await loadLiveDemo('nyhavna-lokal');
+    const own = issueTranscript({ visitorId: 'local', snapshotId: demo.snapshotId, previousTurns: [], newTurns: turns });
+    const response = await POST(request(undefined, undefined, { dataset: 'nyhavna-lokal', snapshotId: demo.snapshotId, surface: 'chat', transcript: own }));
+    expect(response.status).toBe(200);
+    expect((await response.json()).continuity).toEqual({ status: 'carried', turns: 2, trimmed: false });
+    const body = JSON.parse(String((vi.mocked(fetch).mock.calls[0][1] as RequestInit).body));
+    expect(body.session.instructions).toBe(chatSurfaceVoiceInstructions(demo, { continued: true }));
+    expect(body.session.instructions).toContain('Nyhavna Utvikling');
+    expect(body.session.delegation.responses.instructions).toContain('henvis til Nyhavna Utvikling');
+    expect(body.session.input).toHaveLength(2);
+    const names = body.session.delegation.responses.tools.map((tool: { name: string }) => tool.name);
+    for (const name of MAP_TOOLS) expect(names).not.toContain(name);
+    expect(mocks.connect.mock.calls[0][3].browserTools).toEqual(new Set());
+    expect(mocks.quota).toHaveBeenCalledWith('local', 'nh_voice_session');
+  });
+
+  it('tar aldri med en Leangenbukta-samtale inn i Nyhavnas tale', async () => {
+    const leangenbukta = await loadLiveDemo('leangenbukta-lokal');
+    const nyhavna = await loadLiveDemo('nyhavna-lokal');
+    const foreign = issueTranscript({ visitorId: 'local', snapshotId: leangenbukta.snapshotId, previousTurns: [], newTurns: turns });
+    const response = await POST(request(undefined, undefined, { dataset: 'nyhavna-lokal', snapshotId: nyhavna.snapshotId, surface: 'chat', transcript: foreign }));
+    expect((await response.json()).continuity).toEqual({ status: 'rejected' });
+    const body = JSON.parse(String((vi.mocked(fetch).mock.calls[0][1] as RequestInit).body));
+    expect(body.session.input).toBeUndefined();
+  });
+
+  it('helsesjekken godtar Nyhavnas chatflate lokalt, men ikke på den delte stemmetjenesten', async () => {
+    expect((await GET(new NextRequest('http://localhost:3101/api/prototype/live?dataset=nyhavna-lokal&surface=chat'))).status).toBe(200);
+    vi.stubEnv('PLACY_HOSTED_VOICE', 'true');
+    expect((await GET(new NextRequest('https://platform.example/api/prototype/live?dataset=nyhavna-lokal&surface=chat'))).status).toBe(404);
+  });
+
+  describe('på et delt produksjonsbygg', () => {
+    const SHARED = 'https://demo.placy.example';
+    beforeEach(() => {
+      vi.stubEnv('NODE_ENV', 'production');
+      vi.stubEnv('PLACY_NH_CHAT_ENABLED', 'true');
+      vi.stubEnv('PLACY_NH_CHAT_COOKIE_SECRET', 'n'.repeat(40));
+    });
+    const nhCookie = async () => {
+      const { issueNhChatCookie, NH_CHAT_COOKIE } = await import('@/lib/demo/nyhavna-chat/access');
+      return `${NH_CHAT_COOKIE}=${issueNhChatCookie()!.value}`;
+    };
+    const shared = async (extra: Record<string, unknown>, cookie: string | null, origin = SHARED) => new NextRequest(`${SHARED}/api/prototype/live`, {
+      method: 'POST',
+      body: JSON.stringify({ sdp: 'v=0\r\n', ...extra }),
+      headers: { 'Content-Type': 'application/json', origin, ...(cookie ? { cookie } : {}) },
+    });
+
+    it('er stengt uten PLACY_NH_CHAT_VOICE, også med gyldig chatcookie', async () => {
+      const demo = await loadLiveDemo('nyhavna-lokal');
+      expect((await POST(await shared({ dataset: 'nyhavna-lokal', snapshotId: demo.snapshotId, surface: 'chat' }, await nhCookie()))).status).toBe(404);
+      expect(mocks.reserve).not.toHaveBeenCalled();
+      expect(fetch).not.toHaveBeenCalled();
+    });
+
+    it('slipper bare chatflaten for nyhavna-lokal inn når stemmen er slått på, med Nyhavnas egen kvote', async () => {
+      vi.stubEnv('PLACY_NH_CHAT_VOICE', 'true');
+      const demo = await loadLiveDemo('nyhavna-lokal');
+      const leangenbukta = await loadLiveDemo('leangenbukta-lokal');
+      const cookie = await nhCookie();
+      expect((await POST(await shared({ dataset: 'nyhavna-lokal', snapshotId: demo.snapshotId, surface: 'chat' }, cookie))).status).toBe(200);
+      expect(mocks.quota).toHaveBeenCalledWith(expect.stringMatching(/^[0-9a-f-]{36}$/), 'nh_voice_session');
+      mocks.quota.mockClear();
+      vi.mocked(fetch).mockClear();
+      // Boardets kartstemme, Leangenbukta og snapshotet er ikke en del av Nyhavna-chatten.
+      expect((await POST(await shared({ dataset: 'nyhavna-lokal', snapshotId: demo.snapshotId }, cookie))).status).toBe(404);
+      expect((await POST(await shared({ dataset: 'leangenbukta-lokal', snapshotId: leangenbukta.snapshotId, surface: 'chat' }, cookie))).status).toBe(404);
+      expect((await POST(await shared({ snapshotId: 'snapshot-test' }, cookie))).status).toBe(404);
+      expect((await POST(await shared({ dataset: 'nyhavna-lokal', snapshotId: demo.snapshotId, surface: 'chat' }, null))).status).toBe(404);
+      expect((await POST(await shared({ dataset: 'nyhavna-lokal', snapshotId: demo.snapshotId, surface: 'chat' }, cookie, 'https://evil.example'))).status).toBe(404);
+      expect(mocks.quota).not.toHaveBeenCalled();
+      expect(fetch).not.toHaveBeenCalled();
+    });
+
+    it('gir ikke en Leangenbukta-cookie Nyhavnas chatflate', async () => {
+      vi.stubEnv('PLACY_NH_CHAT_VOICE', 'true');
+      vi.stubEnv('PLACY_LB_DEMO_ACCESS_CODE', 'leangenbukta-demo-code');
+      vi.stubEnv('PLACY_LB_DEMO_COOKIE_SECRET', 'k'.repeat(40));
+      const demo = await loadLiveDemo('nyhavna-lokal');
+      const lbCookie = `${LB_DEMO_COOKIE}=${issueLbDemoCookie('leangenbukta-demo-code')}`;
+      expect((await POST(await shared({ dataset: 'nyhavna-lokal', snapshotId: demo.snapshotId, surface: 'chat' }, lbCookie))).status).toBe(404);
+    });
   });
 });

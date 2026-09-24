@@ -24,7 +24,13 @@ import { createServerClient } from "@/lib/supabase/client";
  * faktisk stopper en løpsk økt før taket nås.
  */
 
-export type DemoMeter = "chat_message" | "voice_session";
+/**
+ * Målerne. Hver nettsidekopi har sine egne, så én demos besøkende aldri kan
+ * bruke opp en annen demos døgnkvote: Leangenbukta `chat_message`/
+ * `voice_session`, Nyhavna-kopien `nh_chat_message`/`nh_voice_session`
+ * (2026-09-24, migrasjon `099_demo_usage_nyhavna.sql`).
+ */
+export type DemoMeter = "chat_message" | "voice_session" | "nh_chat_message" | "nh_voice_session";
 
 export interface DemoQuotaDecision {
   allowed: boolean;
@@ -37,14 +43,28 @@ interface MeterLimits {
   global: number;
 }
 
+// Nyhavna-kopien er en åpen side uten innlogging: den per-besøkende grensen
+// kan omgås ved å slette cookien, så den samlede døgnkvoten er lavere.
 const DEFAULT_LIMITS: Record<DemoMeter, MeterLimits> = {
   chat_message: { visitor: 60, global: 600 },
   voice_session: { visitor: 8, global: 60 },
+  nh_chat_message: { visitor: 40, global: 300 },
+  nh_voice_session: { visitor: 5, global: 30 },
 };
 
 const ENV_PREFIX: Record<DemoMeter, string> = {
   chat_message: "PLACY_LB_DEMO_CHAT",
   voice_session: "PLACY_LB_DEMO_VOICE",
+  nh_chat_message: "PLACY_NH_CHAT_MESSAGE",
+  nh_voice_session: "PLACY_NH_CHAT_VOICE_SESSION",
+};
+
+/** Miljøvariabelen som slår på det sentrale lageret for en måler. */
+const STORE_ENV: Record<DemoMeter, string> = {
+  chat_message: "PLACY_LB_DEMO_USAGE_STORE",
+  voice_session: "PLACY_LB_DEMO_USAGE_STORE",
+  nh_chat_message: "PLACY_NH_CHAT_USAGE_STORE",
+  nh_voice_session: "PLACY_NH_CHAT_USAGE_STORE",
 };
 
 function positiveInt(value: string | undefined, fallback: number): number {
@@ -109,9 +129,9 @@ export function createSupabaseUsageStore(): DemoUsageStore {
 
 let memoryStore: DemoUsageStore | null = null;
 
-/** Lageret dette miljøet skal bruke, eller null når ingen trygg teller finnes. */
-export function resolveUsageStore(): DemoUsageStore | null {
-  if (process.env.PLACY_LB_DEMO_USAGE_STORE === "supabase") return createSupabaseUsageStore();
+/** Lageret dette miljøet skal bruke for måleren, eller null når ingen trygg teller finnes. */
+export function resolveUsageStore(meter: DemoMeter = "chat_message"): DemoUsageStore | null {
+  if (process.env[STORE_ENV[meter]] === "supabase") return createSupabaseUsageStore();
   if (process.env.NODE_ENV === "production") return null;
   memoryStore ??= createMemoryUsageStore();
   return memoryStore;
@@ -130,7 +150,7 @@ export async function consumeDemoQuota(
   meter: DemoMeter,
   options: { now?: number; store?: DemoUsageStore | null } = {},
 ): Promise<DemoQuotaDecision> {
-  const store = options.store === undefined ? resolveUsageStore() : options.store;
+  const store = options.store === undefined ? resolveUsageStore(meter) : options.store;
   if (!store) return { allowed: false, reason: "store" };
   try {
     return await store.consume({

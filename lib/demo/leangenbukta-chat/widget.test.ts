@@ -1067,3 +1067,37 @@ describe("placy-chat widget — temarad", () => {
     window.removeEventListener("placy-chat:voice-command", onCommand);
   });
 });
+
+describe("placy-chat widget — en annen nettsidekopi (Nyhavna, 2026-09-24)", () => {
+  it("bruker kopiens endepunkt, side og merke, og tar bare gyldige #rrggbb-farger", async () => {
+    const page = document.createElement("main");
+    page.setAttribute("data-placy-page-id", "beliggenhet");
+    document.body.appendChild(page);
+    loadWidget({
+      "data-endpoint": "/api/demo/nyhavna-chat",
+      "data-label": "Spør om Nyhavna",
+      "data-board-href": "/demo/nyhavna-lokal",
+      "data-offset-bottom": "20px",
+      "data-accent": "#005ef5",
+      "data-surface": "#f7f5eb",
+      "data-border": "red; background:url(x)",
+      "data-soft": "#12345",
+    });
+    expect(host().style.getPropertyValue("--placy-chat-accent")).toBe("#005ef5");
+    expect(host().style.getPropertyValue("--placy-chat-surface")).toBe("#f7f5eb");
+    expect(host().style.getPropertyValue("--placy-chat-border")).toBe("");
+    expect(host().style.getPropertyValue("--placy-chat-soft")).toBe("");
+    expect(button().textContent).toBe("Spør om Nyhavna");
+    window.PlacyChat!.open();
+    await tick();
+    expect(fetch).toHaveBeenCalledWith("/api/demo/nyhavna-chat?pageId=beliggenhet", expect.anything());
+  });
+
+  it("uten farger beholder widgeten Leangenbuktas standardpalett", () => {
+    loadWidget();
+    expect(host().getAttribute("style")).toBeNull();
+    const css = shadow().querySelector("style")!.textContent!;
+    expect(css).toContain("var(--placy-chat-accent,#91563e)");
+    expect(css).toContain("var(--placy-chat-surface,#faf6f2)");
+  });
+});

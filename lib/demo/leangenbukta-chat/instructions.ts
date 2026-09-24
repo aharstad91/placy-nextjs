@@ -1,6 +1,6 @@
 import "server-only";
 
-import type { SitePage } from "@/lib/demo/leangenbukta-site/pages";
+import type { SiteChatPage } from "@/lib/demo/site-chat/profile";
 
 /**
  * Tekstchattens egen, selvstendige instruks (2026-09-24, KTD4/R9).
@@ -60,7 +60,7 @@ SVARFORM
  * Sidekonteksten kommer fra REGISTERET (`getSitePage`), aldri fra
  * nettleseren: ruta slår opp `pageId` selv, og bare feltene her når modellen.
  */
-export function textChatInstructions(page: SitePage, themes: readonly { id: string; label: string }[]): string {
+export function textChatInstructions(page: SiteChatPage, themes: readonly { id: string; label: string }[]): string {
   const themeList = themes.map((theme) => `${theme.id} (${theme.label})`).join(", ");
   const building = page.boardTopicId
     ? `\nDenne siden gjelder byggetemaet «${page.boardTopicId}» i Boardet. Bruk open_theme eller find_project_info med dette temaet først ved spørsmål om DETTE bygget, men bytt fritt til andre verktøy eller temaer når spørsmålet handler om noe annet. Byggkonteksten kan prioritere svaret, men skal ALDRI dikte en byggspesifikk reisetid, avstand eller fasilitetstilgang uten verktøybevis.`
@@ -77,7 +77,7 @@ SIDEKONTEKST: Brukeren står på siden «${page.title}» (type: ${page.kind}).${
  * sideregisteret, ikke modelltekst: den koster ingen kvote og kan ikke påstå
  * noe om prosjektet. Byggsider nevner bygget, resten nevner siden de står på.
  */
-export function pageOpening(page: SitePage): string {
+export function pageOpening(page: SiteChatPage): string {
   const name = page.shortName ?? page.title;
   switch (page.kind) {
     case "home":
@@ -98,7 +98,16 @@ export interface ReplyNotice {
   text: string;
 }
 
-const NOTICE_TEXT: Record<ReplyNoticeKind, string> = {
+/**
+ * Forbeholdstekstene for én nettsidekopi. `alreadyQualified` legger til
+ * formuleringer som betyr at svaret allerede har forbeholdet (f.eks. en
+ * henvisning til Nyhavna Utvikling i stedet for et salgsteam).
+ */
+export interface ReplyNoticeTexts extends Record<ReplyNoticeKind, string> {
+  alreadyQualified?: Partial<Record<ReplyNoticeKind, RegExp>>;
+}
+
+export const LB_NOTICE_TEXTS: ReplyNoticeTexts = {
   sales: "Pris og ledighet endrer seg. Sjekk gjeldende prisliste og ledige boliger med salgsteamet.",
   timing: "Framdrift og innflytting kan endre seg. Salgsteamet har den oppdaterte tidsplanen.",
   provisional: "Noe av dette er planlagt eller uavklart i kildene, ikke ferdig bekreftet.",
@@ -118,7 +127,10 @@ const ALREADY_QUALIFIED: Record<ReplyNoticeKind, RegExp> = {
  * verktøyene selv merket grunnlaget som planlagt/uavklart — aldri som et
  * generelt forbehold på hver melding. Småprat og avslag får aldri et.
  */
-export function replyNotice(input: { userText: string; reply: string; answerType: string; provisional: boolean }): ReplyNotice | null {
+export function replyNotice(
+  input: { userText: string; reply: string; answerType: string; provisional: boolean },
+  texts: ReplyNoticeTexts = LB_NOTICE_TEXTS,
+): ReplyNotice | null {
   if (input.answerType !== "fact" && input.answerType !== "gap") return null;
   const text = `${input.userText}\n${input.reply}`;
   let kind: ReplyNoticeKind | null = null;
@@ -128,8 +140,8 @@ export function replyNotice(input: { userText: string; reply: string; answerType
   // En egen stripe hjelper bare når selve svaret mangler forbeholdet.
   // Modellen kan allerede ha sagt «forventet» eller henvist til salgsteamet;
   // å gjenta det rett under svaret gjør chatten tyngre uten å gjøre den tryggere.
-  if (!kind || ALREADY_QUALIFIED[kind].test(input.reply)) return null;
-  return { kind, text: NOTICE_TEXT[kind] };
+  if (!kind || ALREADY_QUALIFIED[kind].test(input.reply) || texts.alreadyQualified?.[kind]?.test(input.reply)) return null;
+  return { kind, text: texts[kind] };
 }
 
 /**

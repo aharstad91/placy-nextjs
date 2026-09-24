@@ -77,8 +77,13 @@ export interface VerifiedTranscript {
 let devSecret: string | null = null;
 
 function secret(): string {
-  const configured = process.env.PLACY_LB_DEMO_COOKIE_SECRET ?? "";
-  if (configured.length >= MIN_SECRET_LENGTH) return configured;
+  // Nyhavna-kopien (2026-09-24) bruker samme token med sin egen nøkkel når
+  // Leangenbuktas ikke er satt. Tokenet binder uansett besøkende OG
+  // innholdsversjon, så en nøkkel delt mellom kopiene lar ingen historikk
+  // krysse fra den ene demoen til den andre.
+  for (const configured of [process.env.PLACY_LB_DEMO_COOKIE_SECRET ?? "", process.env.PLACY_NH_CHAT_COOKIE_SECRET ?? ""]) {
+    if (configured.length >= MIN_SECRET_LENGTH) return configured;
+  }
   devSecret ??= randomBytes(32).toString("hex");
   return devSecret;
 }

@@ -11,11 +11,10 @@ import { NYHAVNA_VOICE_INSTRUCTIONS } from '@/lib/live/voice-instructions';
 import { localRequest } from '@/lib/live/local-request';
 import { DEFAULT_LIVE_DATASET, isLiveDataset, loadLiveDemo, type LiveDemo } from '@/lib/live/demos';
 import { resolveVoiceProject, VoiceProjectError } from '@/lib/live/projects';
-import { lbDemoAccess } from '@/lib/demo/leangenbukta-site/access';
 import { consumeDemoQuota } from '@/lib/demo/leangenbukta-site/usage';
-import { LB_VOICE_DATASET, leangenbuktaVoiceVisitor } from '@/lib/live/leangenbukta-voice-access';
+import { chatSurfaceVisitor, demoVoiceVisitor } from '@/lib/live/demo-voice-access';
 import {
-  CHAT_SURFACE, CHAT_SURFACE_BACKEND_ADDENDUM, CHAT_SURFACE_CONTINUED_BACKEND_ADDENDUM, chatSurfaceAllowed, chatSurfaceConversation,
+  CHAT_SURFACE, chatSurfaceBackendAddendum, CHAT_SURFACE_CONTINUED_BACKEND_ADDENDUM, chatSurfaceAllowed, chatSurfaceConversation,
   chatSurfaceHistoryInput, chatSurfaceTools, chatSurfaceVoiceInstructions,
 } from '@/lib/live/chat-surface';
 import { MAX_TRANSCRIPT_TOKEN_LENGTH, verifyTranscript, type VerifiedTranscript } from '@/lib/demo/leangenbukta-chat/transcript';
@@ -66,11 +65,12 @@ function requestedDataset(value: string | null | undefined) {
 export async function GET(request: NextRequest) {
   const hosted = hostedVoiceEnabled();
   const access = hosted ? requestDemoAccess(request) : null;
-  const lbVisitor = hosted ? null : leangenbuktaVoiceVisitor(request, request.nextUrl.searchParams.get('dataset'));
-  if (hosted ? !access : !localRequest(request) && !lbVisitor) return new NextResponse(null, { status: 404 });
   const surface = request.nextUrl.searchParams.get('surface');
-  // Den delte stemmetjenesten har bare boardflaten ennå; chatflaten er lokal
-  // og Leangenbukta-only. Avvisning gir klienten en synlig feil, ikke et kart.
+  const demoVisitor = hosted ? null : demoVoiceVisitor(request, { dataset: request.nextUrl.searchParams.get('dataset'), surface });
+  if (hosted ? !access : !localRequest(request) && !demoVisitor) return new NextResponse(null, { status: 404 });
+  // Den delte stemmetjenesten har bare boardflaten ennå; chatflaten finnes bare
+  // i denne lokale Live-ruta, for nettsidekopiene Leangenbukta og Nyhavna.
+  // Avvisning gir klienten en synlig feil, ikke et kart.
   if (surface !== null && (surface !== CHAT_SURFACE || hosted || !chatSurfaceAllowed(request.nextUrl.searchParams.get('dataset')))) {
     return new NextResponse(null, { status: 404, headers: { 'Cache-Control': 'no-store' } });
   }
@@ -113,7 +113,7 @@ export async function GET(request: NextRequest) {
 }
 
 export async function DELETE(request: NextRequest) {
-  if (!localRequest(request) && !leangenbuktaVoiceVisitor(request, LB_VOICE_DATASET)) return new NextResponse(null, { status: 404 });
+  if (!localRequest(request) && !demoVoiceVisitor(request)) return new NextResponse(null, { status: 404 });
   const token = request.headers.get('x-placy-session');
   if (!token || token.length > 100) return new NextResponse(null, { status: 400 });
   try { return NextResponse.json({ ended: await getLiveSupervisor().end(token, 'manual') }); }
@@ -129,9 +129,10 @@ function upstreamMessage(error: LiveSessionError) {
 
 export async function POST(request: NextRequest) {
   const local = localRequest(request);
-  // Utenfor loopback kan bare Leangenbukta-kundedemoen slippe inn, og det
-  // avgjøres først når datasettet er lest. Uten demotilgang er ruta 404.
-  if (!local && !lbDemoAccess(request)) return new NextResponse(null, { status: 404 });
+  // Utenfor loopback kan bare nettsidekopienes besøkende slippe inn
+  // (Leangenbukta-demotilgangen, eller Nyhavna-chatten når stemmen er slått på),
+  // og det avgjøres endelig først når datasettet er lest. Ellers er ruta 404.
+  if (!local && !demoVoiceVisitor(request)) return new NextResponse(null, { status: 404 });
   if (!process.env.OPENAI_API_KEY) return NextResponse.json({ error: 'Tale er ikke koblet til. Kontroller den lokale API-konfigurasjonen.' }, { status: 503 });
   // SDP (≤32 000) + historikktoken (≤24 576) + omslag.
   if (Number(request.headers.get('content-length')) > 64000) return new NextResponse(null, { status: 413 });
@@ -142,8 +143,8 @@ export async function POST(request: NextRequest) {
   const parsed = bodySchema.safeParse(body);
   if (!parsed.success) return NextResponse.json({ error: 'Last boardet på nytt før du starter samtalen.' }, { status: 400 });
   const datasetId = requestedDataset(parsed.data.dataset);
-  const lbVisitor = leangenbuktaVoiceVisitor(request, datasetId);
-  if (!local && !lbVisitor) return new NextResponse(null, { status: 404 });
+  const demoVisitor = demoVoiceVisitor(request, { dataset: datasetId, surface: parsed.data.surface ?? null });
+  if (!local && !demoVisitor) return new NextResponse(null, { status: 404 });
   if (!datasetId) return NextResponse.json({ error: 'Ukjent datasett. Last boardet på nytt.' }, { status: 400 });
   const chat = parsed.data.surface === CHAT_SURFACE;
   if (chat && !chatSurfaceAllowed(datasetId)) return NextResponse.json({ error: 'Talesamtale i chatten finnes ikke for dette datasettet.' }, { status: 400 });
@@ -153,9 +154,10 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Demoens datagrunnlag kunne ikke lastes.' }, { status: 503 });
   }
   if (demo.snapshotId !== parsed.data.snapshotId) return NextResponse.json({ error: 'Datagrunnlaget er oppdatert. Last boardet på nytt.' }, { status: 409 });
-  // Historikken bindes til samme besøkende som tekstchatten (demo-cookien, eller
-  // `local` på en ukonfigurert utviklingsserver), aldri til noe klienten påstår.
-  const chatVisitor = chat ? lbDemoAccess(request) : null;
+  // Historikken bindes til samme besøkende som tekstchatten (kopiens egen
+  // cookie, eller `local` på en ukonfigurert utviklingsserver), aldri til noe
+  // klienten påstår.
+  const chatVisitor = chat ? chatSurfaceVisitor(request, datasetId) : null;
   let { continuity, verified } = chat
     ? chatContinuity(parsed.data.transcript, chatVisitor?.visitorId ?? null, demo.snapshotId)
     : { continuity: null, verified: null };
@@ -166,8 +168,8 @@ export async function POST(request: NextRequest) {
   // Kundedemoens døgnkvote trekkes først ETTER en vellykket reservasjon: en
   // opptatt plass skal ikke koste kvote. Avvises kvoten, gis reservasjonen
   // tilbake med samme opprydding som resten av ruta.
-  if (lbVisitor) {
-    const quota = await consumeDemoQuota(lbVisitor.visitorId, 'voice_session');
+  if (demoVisitor) {
+    const quota = await consumeDemoQuota(demoVisitor.visitorId, demoVisitor.meter);
     if (!quota.allowed) {
       await supervisor.end(token).catch(() => {});
       return NextResponse.json({ error: quota.reason === 'store' ? 'Samtalen er midlertidig utilgjengelig. Bruk kartet eller tekstchatten.' : 'Dagens samtaler i demoen er brukt opp. Bruk kartet eller tekstchatten, eller prøv igjen i morgen.' }, { status: quota.reason === 'store' ? 503 : 429 });
@@ -175,7 +177,7 @@ export async function POST(request: NextRequest) {
   }
   // Instruksene avhenger av om historikken faktisk ble med; se reserveforsøket under.
   const backendFor = (withHistory: boolean) => chat
-    ? `${demo.backendInstructions}\n\n${CHAT_SURFACE_BACKEND_ADDENDUM}${withHistory ? `\n${CHAT_SURFACE_CONTINUED_BACKEND_ADDENDUM}` : ''}`
+    ? `${demo.backendInstructions}\n\n${chatSurfaceBackendAddendum(demo)}${withHistory ? `\n${CHAT_SURFACE_CONTINUED_BACKEND_ADDENDUM}` : ''}`
     : demo.backendInstructions;
   const sessionFor = (withHistory: boolean) => {
     const session = chat
