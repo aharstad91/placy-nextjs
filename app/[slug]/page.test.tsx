@@ -24,8 +24,11 @@ import { PublicProjectError } from "@/lib/public-projects";
 import ProjectPage, { generateMetadata } from "@/app/[slug]/page";
 
 const project = {
-  id: "kunde_prosjekt",
+  id: "063a0b6a-edb3-4fb2-885d-c594ddd46063",
   name: "Prosjekt",
+  customer: "kunde",
+  urlSlug: "prosjekt",
+  productType: "report",
   centerCoordinates: { lat: 63.4, lng: 10.4 },
   pois: [],
   reportConfig: { themes: [], assets: { logoUrl: "/illustrations/prosjekt-logo.svg" } },
@@ -33,7 +36,7 @@ const project = {
 
 beforeEach(() => {
   vi.clearAllMocks();
-  mocks.resolve.mockResolvedValue({ slug: "prosjekt", customer: "kunde", projectSlug: "prosjekt", projectId: project.id });
+  mocks.resolve.mockResolvedValue({ slug: "prosjekt", customer: "kunde", projectSlug: "prosjekt", projectId: "kunde_prosjekt" });
   mocks.report.mockResolvedValue(project);
   mocks.translations.mockResolvedValue(null);
 });
@@ -58,6 +61,11 @@ describe("public standard board", () => {
   it("returns not found for unknown projects", async () => {
     mocks.resolve.mockRejectedValueOnce(new PublicProjectError());
     await expect(ProjectPage({ params: Promise.resolve({ slug: "missing" }) })).rejects.toThrow("NEXT_NOT_FOUND");
+  });
+
+  it("rejects a report product from another project", async () => {
+    mocks.report.mockResolvedValueOnce({ ...project, urlSlug: "annet" });
+    await expect(ProjectPage({ params: Promise.resolve({ slug: "prosjekt" }) })).rejects.toThrow("NEXT_NOT_FOUND");
   });
 
   it("keeps dependency outages retryable", async () => {

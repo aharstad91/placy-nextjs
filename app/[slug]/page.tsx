@@ -18,7 +18,9 @@ const getPublicBoard = cache(async (slug: string) => {
   try {
     const route = await resolvePublicProjectRoute(slug);
     const project = await getCachedReportProduct(route.customer, route.projectSlug);
-    if (!project || project.id !== route.projectId) notFound();
+    // The voice registry stores the project ID (`customer_slug`), while the
+    // loaded report product has its own UUID. Compare the project identity.
+    if (!project || project.customer !== route.customer || project.urlSlug !== route.projectSlug || project.productType !== "report") notFound();
     return { route, project };
   } catch (error) {
     if (error instanceof PublicProjectError && error.kind === "not_found") notFound();
