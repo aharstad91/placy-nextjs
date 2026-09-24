@@ -166,7 +166,7 @@ describe("POST /api/demo/leangenbukta-chat", () => {
   it("ignorerer en forfalsket eller en annen besøkendes transcript og starter uten historikk", async () => {
     vi.stubGlobal("fetch", vi.fn().mockResolvedValueOnce(responsesPayload(finalMessage("Hei igjen.", "smalltalk"))));
     const { POST } = await import("./route");
-    const otherToken = issueTranscript({ visitorId: "en-annen-besøkende", snapshotId: "uansett", previousTurns: [], userText: "a", assistantText: "b" });
+    const otherToken = issueTranscript({ visitorId: "en-annen-besøkende", snapshotId: "uansett", previousTurns: [], newTurns: [{ role: "user", text: "a" }, { role: "assistant", text: "b" }] });
     const cookie = visitorCookie();
     const res = await POST(post({ message: "Hei", pageId: "forside", transcript: otherToken }, { cookie }));
     expect(res.status).toBe(200);
@@ -181,7 +181,7 @@ describe("POST /api/demo/leangenbukta-chat", () => {
     const { POST } = await import("./route");
     const cookie = visitorCookie();
     const visitorId = visitorIdFromCookie(cookie);
-    const staleToken = issueTranscript({ visitorId, snapshotId: "en-gammel-versjon-som-ikke-finnes", previousTurns: [], userText: "a", assistantText: "b" });
+    const staleToken = issueTranscript({ visitorId, snapshotId: "en-gammel-versjon-som-ikke-finnes", previousTurns: [], newTurns: [{ role: "user", text: "a" }, { role: "assistant", text: "b" }] });
     const res = await POST(post({ message: "Hei", pageId: "forside", transcript: staleToken }, { cookie }));
     expect(res.status).toBe(409);
     expect(global.fetch).not.toHaveBeenCalled();
@@ -198,7 +198,7 @@ describe("POST /api/demo/leangenbukta-chat", () => {
     const { POST } = await import("./route");
     const cookie = visitorCookie();
     const visitorId = visitorIdFromCookie(cookie);
-    const staleToken = issueTranscript({ visitorId, snapshotId: "en-gammel-versjon-som-ikke-finnes", previousTurns: [], userText: "a", assistantText: "b" });
+    const staleToken = issueTranscript({ visitorId, snapshotId: "en-gammel-versjon-som-ikke-finnes", previousTurns: [], newTurns: [{ role: "user", text: "a" }, { role: "assistant", text: "b" }] });
 
     const staleRes = await POST(post({ message: "Hei", pageId: "forside", transcript: staleToken }, { cookie }));
     expect(staleRes.status).toBe(409);
@@ -272,6 +272,13 @@ describe("POST /api/demo/leangenbukta-chat", () => {
     const [, init] = (global.fetch as ReturnType<typeof vi.fn>).mock.calls[0] as [string, RequestInit];
     const sentBody = JSON.parse(init.body as string);
     expect(sentBody.instructions).toContain("Beliggenhet");
+    // Tekstchatten får sine egne kompakte regler, ikke Anjas manus og data:
+    // fakta skal komme fra et ferskt verktøykall.
+    expect(sentBody.instructions.length).toBeLessThan(8000);
+    expect(sentBody.instructions).toContain("kall ALLTID et kunnskapsverktøy");
+    for (const embedded of ["STEDER OG REISETIDER (data)", "SPØRSMÅL OG SVAR (data", "KILDER (data)", "PRESENTASJON:", "highlight_places", "show_category"]) {
+      expect(sentBody.instructions).not.toContain(embedded);
+    }
   });
 });
 

@@ -1,4 +1,5 @@
 import type { LiveMessage, LiveStatus } from "@/lib/live/types";
+import type { LiveContinuity } from "@/lib/live/use-live";
 
 /**
  * Kanalen mellom Leangenbuktas chatwidget og talebroen (2026-09-24).
@@ -11,8 +12,20 @@ import type { LiveMessage, LiveStatus } from "@/lib/live/types";
  * - `hello`   widget → bro: «finnes du?» Broen svarer med en `state`.
  * - `state`   bro → widget: status, feil, varsel og hele transkriptet med
  *             stabile ID-er. Widgeten oppdaterer boblene sine etter ID-en, så
- *             samme melding aldri vises to ganger.
- * - `command` widget → bro: start, stopp eller skrevet tekst under talen.
+ *             samme melding aldri vises to ganger. I tillegg `continuity`
+ *             (hva talen fikk med seg fra tekstchatten) og `handoff` (nytt
+ *             signert historikktoken for tekstchatten når talen er slutt).
+ * - `command` widget → bro: start (med tekstchattens signerte token), stopp
+ *             eller skrevet tekst under talen.
+ *
+ * ## Én samtale på tvers av skriving og tale
+ *
+ * Tekst → tale: `start.transcript` er tekstchattens signerte token. Broen gir
+ * det til `useLive`, serveren verifiserer det mot den besøkende og legger
+ * turene i Live-sesjonen. Tale → tekst: når en serversesjon er slutt, bytter
+ * broen sesjonstokenet mot et nytt signert token (`/api/prototype/live/handoff`)
+ * og sender det til widgeten som `handoff`. Widgeten bruker det som sitt nye
+ * tekst-token; klientens egne bobler blir aldri historikk.
  *
  * Uten bro (widgeten innbygget på en ekstern side) kommer det aldri en
  * `state`, og widgeten viser bare tekstchatten slik den alltid har gjort.
@@ -32,12 +45,28 @@ export const CHAT_VOICE_DATASET = "leangenbukta-lokal";
 
 /** Hilsenen er en instruksjon til stemmen, ikke en ferdig replikk (se `useLive`). */
 export const CHAT_VOICE_GREETING =
-  "Si en kort hilsen på norsk: at du er Anja fra Placy, at dette er en ny talesamtale, og spør hva de lurer på om å bo i Leangenbukta. Høyst to setninger.";
+  "Si en kort hilsen på norsk: at du er Anja fra Placy, og spør hva de lurer på om å bo i Leangenbukta. Høyst to setninger.";
+
+/** Hilsenen når tekstchattens historikk ligger i sesjonen: fortsett, ikke begynn på nytt. */
+export const CHAT_VOICE_CONTINUED_GREETING =
+  "Samtalen fortsetter muntlig fra chatboksen. Si kort på norsk at du er Anja og gjerne fortsetter muntlig, knytt an til det dere nettopp snakket om med noen få ord, og spør hva mer de lurer på. Ikke si at dette er en ny samtale, og ikke gjenta svar du alt har gitt. Høyst to setninger.";
+
+/** Samme tak som serverens `MAX_TRANSCRIPT_TOKEN_LENGTH` (transcript.ts er server-only). */
+export const VOICE_TRANSCRIPT_MAX = 24576;
 
 /** Samme grense som tekstfeltet og tekstchattens server (600 tegn). */
 export const VOICE_TEXT_MAX = 600;
 
-export type VoiceCommand = { type: "start" } | { type: "stop" } | { type: "text"; text: string };
+export type VoiceCommand = { type: "start"; transcript?: string } | { type: "stop" } | { type: "text"; text: string };
+
+/**
+ * Overføringen til tekstchatten etter en talesesjon. `id` øker per sesjon, så
+ * widgeten behandler hver overføring én gang.
+ */
+export type VoiceHandoff =
+  | { id: number; status: "pending" }
+  | { id: number; status: "ready"; transcript: string; voiceTurns: number; trimmed: boolean }
+  | { id: number; status: "failed" };
 
 export interface VoiceWidgetMessage {
   id: string;
@@ -51,13 +80,20 @@ export interface VoiceWidgetState {
   error: string | null;
   notice: string | null;
   messages: VoiceWidgetMessage[];
+  continuity: LiveContinuity | null;
+  handoff: VoiceHandoff | null;
 }
 
 /** Kommandoen fra widgeten, eller null. Alt som ikke er en kjent form avvises. */
 export function parseVoiceCommand(detail: unknown): VoiceCommand | null {
   if (!detail || typeof detail !== "object") return null;
   const value = detail as { type?: unknown; text?: unknown };
-  if (value.type === "start" || value.type === "stop") return { type: value.type };
+  if (value.type === "stop") return { type: "stop" };
+  if (value.type === "start") {
+    const transcript = (detail as { transcript?: unknown }).transcript;
+    // Tokenet er ugjennomsiktig for broen; serveren verifiserer det.
+    return typeof transcript === "string" && transcript && transcript.length <= VOICE_TRANSCRIPT_MAX ? { type: "start", transcript } : { type: "start" };
+  }
   if (value.type === "text" && typeof value.text === "string") {
     const text = value.text.trim().slice(0, VOICE_TEXT_MAX);
     return text ? { type: "text", text } : null;
@@ -75,6 +111,8 @@ export function voiceWidgetState(input: {
   error: string | null;
   notice: string | null;
   messages: readonly LiveMessage[];
+  continuity?: LiveContinuity | null;
+  handoff?: VoiceHandoff | null;
 }): VoiceWidgetState {
   return {
     available: true,
@@ -84,5 +122,7 @@ export function voiceWidgetState(input: {
     messages: input.messages
       .filter((message) => message.text.trim())
       .map((message) => ({ id: `voice-${message.id}`, role: message.role, text: message.text.trim() })),
+    continuity: input.continuity ?? null,
+    handoff: input.handoff ?? null,
   };
 }

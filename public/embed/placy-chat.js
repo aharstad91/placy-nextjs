@@ -18,6 +18,11 @@
  * eier WebRTC; widgeten viser bare status og transkript som bobler i samme
  * logg. Protokollen: lib/demo/leangenbukta-chat/voice-channel.ts. Uten bro
  * kommer det aldri en tilstand, og widgeten er ren tekstchat.
+ *
+ * Én samtale: skriving og tale deler historikk gjennom det signerte tokenet.
+ * Talen starter med tekstchattens token; når talen er slutt, får widgeten et
+ * nytt token fra serveren (`handoff`) med det som faktisk ble sagt. Boblene
+ * her er bare visning — de blir aldri sendt som historikk.
  */
 (function () {
   "use strict";
@@ -80,6 +85,13 @@
     thinking: "Anja finner fram svaret …",
     speaking: "Anja snakker",
   };
+  var VOICE_PLACEHOLDERS = {
+    connecting: "Kobler til Anja …",
+    listening: "Anja lytter – snakk, eller skriv til henne …",
+    thinking: "Anja finner fram svaret – du kan skrive imens …",
+    speaking: "Anja snakker – du kan også skrive …",
+  };
+  var HANDOFF_SAFETY_MS = 20000;
   var voice = {
     available: false,
     mode: "text", // "text" | "voice"
@@ -87,6 +99,17 @@
     session: "off",
     status: "idle",
     notice: null,
+    // Mikrofoninformasjonen er vist, og brukeren har startet tale én gang på
+    // denne siden. Deretter starter «Snakk med Anja» talen direkte.
+    infoShown: false,
+    consented: false,
+    // Denne talesesjonen er meldt klar, og noe er sagt eller skrevet i den.
+    announced: false,
+    spoke: false,
+    // "pending" mens broen henter nytt historikktoken etter talen.
+    handoff: null,
+    handoffKey: null,
+    handoffTimer: null,
   };
   // Talebobler etter broens stabile ID: samme melding oppdateres, aldri dobles.
   var voiceBubbles = new Map();
@@ -174,34 +197,36 @@
     ".send:hover{background:" + ACCENT_DARK + "}",
     ".send svg{width:16px;height:16px}",
     ".send:disabled{opacity:.5;cursor:default}",
-    ".divider{align-self:center;max-width:90%;margin:0;font-size:12px;line-height:1.4;color:" + MUTED + ";text-align:center}",
-    ".footer{border-top:1px solid " + BORDER + ";padding:10px 12px 0;display:flex;flex-direction:column;gap:8px;background:#fff}",
+    // Systemmeldinger (bytte mellom skriving og tale, varsler) står i loggen.
+    ".divider{align-self:center;max-width:90%;margin:0;padding:4px 12px;border-radius:999px;background:" + CREAM + ";",
+    "font-size:12px;line-height:1.45;color:" + MUTED + ";text-align:center}",
+    ".sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}",
+    // Én rad med fast høyde: panelet hopper ikke når talen slås av og på.
+    ".footer{border-top:1px solid " + BORDER + ";padding:8px 12px 0;display:flex;align-items:center;gap:8px;min-height:48px;background:#fff}",
     ".footer[hidden]{display:none}",
     ".footer:not([hidden])+.inputrow{border-top:none}",
-    ".modes{display:inline-flex;align-self:flex-start;gap:2px;padding:3px;border-radius:999px;background:#f3ebe3}",
+    ".modes{display:inline-flex;flex:none;gap:2px;padding:3px;border-radius:999px;background:#f3ebe3}",
     ".mode{display:inline-flex;align-items:center;gap:6px;border:none;background:none;border-radius:999px;padding:6px 12px;",
     "font-size:13px;font-weight:600;line-height:1.2;color:" + MUTED + ";cursor:pointer}",
     ".mode svg{width:16px;height:16px}",
     ".mode[aria-pressed='true']{background:#fff;color:" + ACCENT_DARK + ";box-shadow:0 1px 3px rgba(42,44,46,.16)}",
-    ".voice{display:flex;flex-direction:column;gap:8px;padding:10px 12px;background:" + CREAM + ";border:1px solid #ebe0d5;border-radius:12px}",
+    ".voice{display:flex;align-items:center;gap:8px;margin-left:auto;min-width:0}",
     ".voice[hidden],.voice [hidden]{display:none}",
-    ".voice-info{margin:0;font-size:12px;line-height:1.45;color:#4a3b30}",
-    ".voice-row{display:flex;align-items:center;gap:10px}",
-    ".voice-status{flex:1;min-width:0;margin:0;display:flex;align-items:center;gap:8px;font-size:13px;font-weight:600;color:" + ACCENT_DARK + "}",
     ".dot{width:10px;height:10px;border-radius:50%;background:#b9a797;flex:none}",
     ".voice[data-status='listening'] .dot{background:#3f7d4e}",
     ".voice[data-status='thinking'] .dot{background:#c08a2e}",
     ".voice[data-status='speaking'] .dot{background:" + ACCENT + ";animation:placy-pulse 1.2s ease-in-out infinite}",
     ".voice[data-status='connecting'] .dot{animation:placy-pulse 1.2s ease-in-out infinite}",
     "@keyframes placy-pulse{0%,100%{opacity:1}50%{opacity:.35}}",
-    ".voice-notice{margin:0;font-size:12px;line-height:1.4;color:#4a3b30}",
     ".voicebtn{display:inline-flex;align-items:center;gap:6px;height:36px;flex:none;border-radius:999px;padding:0 14px;",
-    "font-size:13px;font-weight:600;cursor:pointer;border:1px solid " + ACCENT + ";background:" + ACCENT + ";color:#fff}",
+    "font-size:13px;font-weight:600;cursor:pointer;border:1px solid " + ACCENT + ";background:" + ACCENT + ";color:#fff;white-space:nowrap}",
     ".voicebtn:hover{background:" + ACCENT_DARK + "}",
     ".voicebtn svg{width:16px;height:16px}",
     ".voicebtn.stop{background:#fff;color:" + ACCENT_DARK + "}",
     ".voicebtn.stop:hover{background:#efe7df}",
     ".voicebtn:disabled{opacity:.5;cursor:default}",
+    // Smale mobiler: modusikonene går, så raden fortsatt får plass på én linje.
+    "@media (max-width:420px){.mode svg{display:none}.mode{padding:6px 10px}.footer{gap:6px}}",
   ].join("");
   shadow.appendChild(style);
 
@@ -329,47 +354,41 @@
   modes.appendChild(textModeBtn);
   modes.appendChild(voiceModeBtn);
 
+  // Taledelen ligger i samme rad som modusvelgeren. Statusen vises som en
+  // prikk og i tekstfeltets plassholder; skjermlesere får den som tekst.
   var voiceBox = document.createElement("div");
   voiceBox.className = "voice";
   voiceBox.hidden = true;
+  var MIC_INFO = "Talesamtalen bruker mikrofonen din. Nettleseren spør om tillatelse første gang, og lyden sendes til OpenAI for å lage svarene. Anja fortsetter fra de siste meldingene her. Avslutt tale eller lukk chatten, så stopper mikrofonen.";
   var voiceInfo = document.createElement("p");
-  voiceInfo.className = "voice-info";
+  voiceInfo.className = "voice-info sr-only";
   voiceInfo.id = "placy-chat-voice-info";
-  voiceInfo.textContent = "Talesamtalen bruker mikrofonen din. Nettleseren spør om tillatelse først, og lyden sendes til OpenAI for å lage svarene. Talen starter som en ny samtale, så Anja ser ikke det som er skrevet over. Lukker du chatten, avsluttes talen.";
-  var voiceRow = document.createElement("div");
-  voiceRow.className = "voice-row";
-  var voiceStatus = document.createElement("p");
-  voiceStatus.className = "voice-status";
-  voiceStatus.setAttribute("role", "status");
+  voiceInfo.textContent = MIC_INFO;
   var dot = document.createElement("span");
   dot.className = "dot";
   dot.setAttribute("aria-hidden", "true");
-  var voiceStatusText = document.createElement("span");
-  voiceStatus.appendChild(dot);
-  voiceStatus.appendChild(voiceStatusText);
+  var voiceStatus = document.createElement("p");
+  voiceStatus.className = "voice-status sr-only";
+  voiceStatus.setAttribute("role", "status");
   var voiceStart = document.createElement("button");
   voiceStart.type = "button";
   voiceStart.className = "voicebtn";
   voiceStart.setAttribute("aria-describedby", "placy-chat-voice-info");
   voiceStart.appendChild(icon(ICON_MIC));
   var voiceStartLabel = document.createElement("span");
-  voiceStartLabel.textContent = "Start talesamtale";
+  voiceStartLabel.textContent = "Start tale";
   voiceStart.appendChild(voiceStartLabel);
   var voiceStop = document.createElement("button");
   voiceStop.type = "button";
   voiceStop.className = "voicebtn stop";
   voiceStop.textContent = "Avslutt tale";
-  voiceRow.appendChild(voiceStatus);
-  voiceRow.appendChild(voiceStart);
-  voiceRow.appendChild(voiceStop);
-  var voiceNotice = document.createElement("p");
-  voiceNotice.className = "voice-notice";
-  voiceNotice.hidden = true;
-  voiceBox.appendChild(voiceInfo);
-  voiceBox.appendChild(voiceRow);
-  voiceBox.appendChild(voiceNotice);
+  voiceBox.appendChild(dot);
+  voiceBox.appendChild(voiceStatus);
+  voiceBox.appendChild(voiceStart);
+  voiceBox.appendChild(voiceStop);
   footer.appendChild(modes);
   footer.appendChild(voiceBox);
+  footer.appendChild(voiceInfo);
 
   var inputRow = document.createElement("div");
   inputRow.className = "inputrow";
@@ -537,7 +556,9 @@
       sendVoiceCommand({ type: "text", text: message.slice(0, 600) });
       return;
     }
-    if (voice.session === "starting" || sending) return;
+    // Mens talens historikk overføres, venter meldingen i tekstfeltet: ellers
+    // ville tekstchatten svart uten det som nettopp ble sagt.
+    if (voice.session === "starting" || sending || voice.handoff === "pending") return;
     if (voice.mode === "voice") setMode("text");
     sending = true;
     textarea.value = "";
@@ -586,7 +607,7 @@
     window.dispatchEvent(new CustomEvent(VOICE_COMMAND, { detail: command }));
   }
 
-  function addDivider(text) {
+  function addNote(text) {
     var el = document.createElement("p");
     el.className = "divider";
     el.setAttribute("role", "note");
@@ -605,6 +626,7 @@
       el = addMessage(message.role, text); // textContent, aldri innerHTML
       el.classList.add("voice-message");
       voiceBubbles.set(message.id, el);
+      voice.spoke = true;
       return;
     }
     if (el.textContent === text) return;
@@ -613,29 +635,48 @@
     if (atBottom) log.scrollTop = log.scrollHeight;
   }
 
+  function shownStatus() {
+    if (voice.session === "off") return "idle";
+    return voice.session === "starting" && !VOICE_ACTIVE[voice.status] ? "connecting" : voice.status;
+  }
+
   function renderVoice() {
     footer.hidden = !voice.available;
     textModeBtn.setAttribute("aria-pressed", String(voice.mode === "text"));
     voiceModeBtn.setAttribute("aria-pressed", String(voice.mode === "voice"));
     voiceBox.hidden = !voice.available || voice.mode !== "voice";
     var off = voice.session === "off";
-    voiceInfo.hidden = !off;
+    var pending = voice.handoff === "pending";
     voiceStart.hidden = !off;
-    voiceStart.disabled = sending;
+    voiceStart.disabled = sending || pending;
     voiceStop.hidden = off;
-    var shown = off ? "idle" : voice.session === "starting" && !VOICE_ACTIVE[voice.status] ? "connecting" : voice.status;
+    voiceStop.textContent = voice.session === "starting" ? "Avbryt" : "Avslutt tale";
+    var shown = shownStatus();
     voiceBox.setAttribute("data-status", shown);
-    voiceStatusText.textContent = off ? "Klar når du er" : VOICE_LABELS[shown] || "Kobler til …";
-    voiceNotice.hidden = off || !voice.notice;
-    voiceNotice.textContent = voice.notice || "";
-    sendBtn.disabled = sending || voice.session === "starting";
-    textarea.placeholder = voice.session === "on" ? "Skriv til Anja i talesamtalen …" : "Skriv et spørsmål …";
+    voiceStatus.textContent = off ? "Klar når du er" : VOICE_LABELS[shown] || "Kobler til …";
+    sendBtn.disabled = sending || voice.session === "starting" || pending;
+    textarea.placeholder = !off
+      ? VOICE_PLACEHOLDERS[shown] || VOICE_PLACEHOLDERS.connecting
+      : voice.mode === "voice" && voice.available ? "Trykk «Start tale», eller skriv et spørsmål …" : "Skriv et spørsmål …";
   }
 
   function setMode(mode) {
     if (mode === voice.mode) return;
     if (mode === "text" && voice.session !== "off") stopVoice();
     voice.mode = mode;
+    if (mode === "voice" && voice.session === "off") {
+      // Første gang: mikrofoninformasjon og en tydelig startknapp. Etter at
+      // brukeren har startet tale én gang, starter byttet talen direkte.
+      if (voice.consented && voice.handoff !== "pending") {
+        renderVoice();
+        startVoice();
+        return;
+      }
+      if (!voice.infoShown) {
+        voice.infoShown = true;
+        addNote(MIC_INFO);
+      }
+    }
     renderVoice();
     if (!open) return;
     if (mode === "voice" && voice.session === "off") voiceStart.focus();
@@ -643,27 +684,41 @@
   }
 
   function startVoice() {
-    if (!voice.available || voice.session !== "off" || sending) return;
+    if (!voice.available || voice.session !== "off" || sending || voice.handoff === "pending") return;
     voice.session = "starting";
     voice.notice = null;
-    addDivider("Talesamtalen starter som en ny samtale");
+    voice.announced = false;
+    voice.spoke = false;
     renderVoice();
-    // Klikket er brukerens handling; broen ber om mikrofon først nå.
-    sendVoiceCommand({ type: "start" });
+    // Klikket er brukerens handling; broen ber om mikrofon først nå. Tokenet
+    // er tekstchattens signerte historikk; serveren avgjør om det kan brukes.
+    sendVoiceCommand(transcript ? { type: "start", transcript: transcript } : { type: "start" });
+    if (open) textarea.focus();
+  }
+
+  /** Talen er klar: si i loggen hva Anja faktisk fikk med seg, slik serveren meldte det. */
+  function announceVoice(continuity) {
+    voice.announced = true;
+    var status = continuity && continuity.status;
+    if (status === "carried") addNote("Anja er klar til å snakke og fortsetter fra samtalen over" + (continuity.trimmed ? " (de siste delene av den)." : "."));
+    else if (status === "rejected") addNote("Anja er klar til å snakke, men fikk ikke med seg samtalen over. Hun starter uten den.");
+    else addNote("Anja er klar til å snakke.");
   }
 
   /**
    * Talen er slutt (stoppet, lukket, feil eller broen forsvant). Synlige
-   * bobler blir stående; tekstchattens modellhistorikk starter på nytt, så
-   * neste skrevne melding ikke later som den fortsetter samtalen over.
+   * bobler blir stående. Meldingen om overgangen venter på overføringen av
+   * historikk når den pågår (`finishHandoff`).
    */
   function endVoice(reason) {
     if (voice.session === "off") return;
+    // Stans kan bruke noen sekunder på å tømme siste talefragment. Blokker
+    // neste tekstmelding med én gang, før broen får sesjonens nye token.
+    if (voice.session === "on") beginHandoff();
     voice.session = "off";
     voice.mode = "text";
     voice.notice = null;
-    transcript = null;
-    addDivider("Talesamtalen er avsluttet. Skriver du nå, starter tekstchatten en ny samtale.");
+    voice.announced = false;
     if (reason) addMessage("error", reason);
     renderVoice();
     // Fokus i den nå skjulte taledelen flyttes til tekstfeltet, ikke ut av panelet.
@@ -676,11 +731,58 @@
     endVoice(null);
   }
 
+  function beginHandoff() {
+    if (voice.handoff === "pending") return;
+    voice.handoff = "pending";
+    setStatus("Overfører talesamtalen til skrivechatten …");
+    window.clearTimeout(voice.handoffTimer);
+    voice.handoffTimer = window.setTimeout(function () { finishHandoff(null); }, HANDOFF_SAFETY_MS);
+  }
+
+  /** Overføringen er ferdig, feilet eller ble aldri fullført. Tokenet byttes bare ved et gyldig svar. */
+  function finishHandoff(handoff) {
+    if (voice.handoff !== "pending") return;
+    window.clearTimeout(voice.handoffTimer);
+    voice.handoff = null;
+    setStatus(sending ? "Svarer …" : "");
+    if (handoff && handoff.status === "ready" && typeof handoff.transcript === "string" && handoff.transcript) {
+      transcript = handoff.transcript;
+      addNote(handoff.voiceTurns > 0
+        ? "Tilbake til skriving. Chatten fortsetter fra talesamtalen" + (handoff.trimmed ? ", med de siste delene av samtalen." : ".")
+        : "Tilbake til skriving.");
+    } else {
+      addNote("Tilbake til skriving. Talesamtalen kunne ikke overføres, så skrivechatten ser ikke det som ble sagt i talen – bare det som ble skrevet før.");
+    }
+    renderVoice();
+  }
+
+  function onHandoff(handoff) {
+    if (!handoff || typeof handoff !== "object" || typeof handoff.id !== "number") return;
+    var key = handoff.id + ":" + handoff.status;
+    if (key === voice.handoffKey) return;
+    voice.handoffKey = key;
+    if (handoff.status === "pending") {
+      beginHandoff();
+      window.clearTimeout(voice.handoffTimer);
+      voice.handoffTimer = window.setTimeout(function () { finishHandoff(null); }, HANDOFF_SAFETY_MS);
+      return;
+    }
+    finishHandoff(handoff);
+  }
+
   function onVoiceState(event) {
     var detail = event && event.detail;
     if (!detail || typeof detail !== "object") return;
     if (detail.available === false) {
+      var wasVoice = voice.session !== "off";
+      var hadSpeech = voice.spoke;
       endVoice(null);
+      if (voice.handoff === "pending" && hadSpeech) finishHandoff(null);
+      else if (voice.handoff === "pending") {
+        window.clearTimeout(voice.handoffTimer);
+        voice.handoff = null;
+        addNote("Tilbake til skriving.");
+      } else if (wasVoice) addNote("Tilbake til skriving.");
       voice.available = false;
       voice.mode = "text";
       renderVoice();
@@ -688,7 +790,11 @@
     }
     voice.available = true;
     voice.status = VOICE_STATUSES[detail.status] ? detail.status : "idle";
-    voice.notice = typeof detail.notice === "string" && detail.notice ? detail.notice : null;
+    // Overføringen først: den kan meldes i samme øyeblikk som talen slutter.
+    onHandoff(detail.handoff);
+    var notice = typeof detail.notice === "string" && detail.notice ? detail.notice : null;
+    if (notice && notice !== voice.notice && voice.session !== "off") addNote(notice);
+    voice.notice = notice;
     if (Array.isArray(detail.messages)) detail.messages.slice(-100).forEach(upsertVoiceBubble);
     var active = VOICE_ACTIVE[voice.status] === 1;
     if (voice.session === "starting") {
@@ -698,6 +804,10 @@
       else if (voice.status === "error") endVoice(typeof detail.error === "string" && detail.error ? detail.error : "Talesamtalen kunne ikke starte.");
     } else if (voice.session === "on" && !active) {
       endVoice(voice.status === "error" ? (typeof detail.error === "string" && detail.error ? detail.error : "Talesamtalen ble avbrutt.") : null);
+    }
+    if (voice.session === "on" && !voice.announced && voice.status !== "connecting") {
+      voice.consented = true;
+      announceVoice(detail.continuity);
     }
     renderVoice();
   }

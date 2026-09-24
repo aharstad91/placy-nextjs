@@ -7,11 +7,11 @@ import { loadLiveDemo } from "@/lib/live/demos";
 import { backendModel, backendEffort } from "@/lib/live/session-config";
 import { textChatTools } from "@/lib/demo/leangenbukta-chat/text-tools";
 import {
-  textModeAddendum, pageOpening, replyNotice, unsupportedYearReply, KNOWLEDGE_GAP_REPLY, BACKEND_ERROR_REPLY,
+  textChatInstructions, pageOpening, replyNotice, unsupportedYearReply, KNOWLEDGE_GAP_REPLY, BACKEND_ERROR_REPLY,
 } from "@/lib/demo/leangenbukta-chat/instructions";
 import { leangenbuktaSourceRegistry } from "@/lib/demo/leangenbukta-chat/sources";
 import { runLeangenbuktaChat, ChatBackendError } from "@/lib/demo/leangenbukta-chat/backend";
-import { issueTranscript, verifyTranscript } from "@/lib/demo/leangenbukta-chat/transcript";
+import { issueTranscript, MAX_TRANSCRIPT_TOKEN_LENGTH, verifyTranscript } from "@/lib/demo/leangenbukta-chat/transcript";
 import { fallbackLinks, resolveLinkIds } from "@/lib/demo/leangenbukta-chat/links";
 import { sanitizeReply } from "@/lib/demo/leangenbukta-chat/sanitize";
 
@@ -19,10 +19,11 @@ import { sanitizeReply } from "@/lib/demo/leangenbukta-chat/sanitize";
  * Leangenbukta-kundedemoens tekstchat-endepunkt (2026-09-23, U5/KTD4/KTD6).
  *
  * Ingen sesjon lagres på serveren: historikken bæres av et signert token
- * klienten sender inn og får tilbake (`transcript.ts`). Alt av fakta og
- * statusregler kommer fra `loadLiveDemo("leangenbukta-lokal")` — SAMME
- * kunnskap og verktøyimplementasjon som Anjas taleflate, minus kartstyrende
- * verktøy (`text-tools.ts`).
+ * klienten sender inn og får tilbake (`transcript.ts`). Alt av fakta kommer
+ * fra `loadLiveDemo("leangenbukta-lokal")` — SAMME kunnskap og
+ * verktøyimplementasjon som Anjas taleflate, minus kartstyrende verktøy
+ * (`text-tools.ts`). Instruksen er tekstchattens egen kompakte versjon
+ * (`textChatInstructions`), ikke Anjas lange manus.
  *
  * `CLAUDE.md`s regel om ingen runtime-LLM-kall har et navngitt, dokumentert
  * unntak for akkurat denne demoen (plandokumentets KTD4), etter Andreas'
@@ -32,14 +33,14 @@ import { sanitizeReply } from "@/lib/demo/leangenbukta-chat/sanitize";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-const MAX_BODY_BYTES = 16 * 1024;
+const MAX_BODY_BYTES = 32 * 1024;
 const CHAT_MODEL_ENV = "PLACY_LB_CHAT_MODEL";
 
 const bodySchema = z
   .object({
     message: z.string().min(1).max(600),
     pageId: z.string().min(1).max(80),
-    transcript: z.string().max(8192).optional(),
+    transcript: z.string().max(MAX_TRANSCRIPT_TOKEN_LENGTH).optional(),
   })
   .strict();
 
@@ -99,6 +100,9 @@ const QUOTA_MESSAGES: Record<string, string> = {
   global: "Demoen har mange samtaler akkurat nå. Prøv igjen om litt, eller bruk Boardet i mellomtiden.",
   store: "Chatten er midlertidig utilgjengelig. Prøv igjen om litt, eller bruk Boardet i mellomtiden.",
 };
+
+const VOICE_HISTORY_NOTE =
+  "Noen av de tidligere turene er fra en talesamtale med Anja i samme chatboks, automatisk transkribert og derfor med mulige hørefeil. Bruk dem som kontekst for hva brukeren viser til; fakta hentes fortsatt med verktøyene.";
 
 export async function GET(request: NextRequest) {
   if (!isAllowedOrigin(request)) return new NextResponse(null, { status: 403 });
@@ -180,7 +184,8 @@ export async function POST(request: NextRequest) {
   }
 
   const conversation = demo.createConversation();
-  const instructions = `${demo.backendInstructions}\n\n${textModeAddendum(page)}`;
+  const voiceNote = previousTurns.some((turn) => turn.via === "voice") ? `\n\n${VOICE_HISTORY_NOTE}` : "";
+  const instructions = `${textChatInstructions(page, demo.board.categories)}${voiceNote}`;
   const tools = textChatTools(demo.tools);
   const model = process.env[CHAT_MODEL_ENV] || backendModel();
 
@@ -225,12 +230,14 @@ export async function POST(request: NextRequest) {
     visitorId: visitor.visitorId,
     snapshotId: demo.snapshotId,
     previousTurns,
-    userText: parsed.data.message,
-    assistantText: reply,
+    previousTrimmed: verified?.trimmed,
+    newTurns: [{ role: "user", text: parsed.data.message }, { role: "assistant", text: reply }],
   });
 
   console.warn("lb_chat_turn", {
     ms: Date.now() - startedAt,
+    model,
+    roundMs: result.roundMs,
     answerType,
     evidenceTools: result.evidence.map((e) => e.tool),
     sourceIds: sources.map((source) => source.id),

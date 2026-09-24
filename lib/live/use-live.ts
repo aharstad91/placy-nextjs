@@ -86,7 +86,23 @@ export interface LiveOptions {
   surface?: "chat";
   /** Hilsenen, formulert som en instruksjon til stemmen (`session.instructions.append`). */
   greeting: string;
+  /**
+   * Chatflaten: tekstchattens signerte historikktoken, lest ved hver start.
+   * Serveren verifiserer det og legger turene i sesjonen (`continuity`).
+   */
+  getTranscript?: () => string | null | undefined;
+  /** Hilsenen når serveren bekrefter at historikken ble med; ellers `greeting`. */
+  continuedGreeting?: string;
+  /**
+   * En serversesjon er avsluttet (stoppet, lagt på av serveren eller brutt).
+   * `settled` løses når serverens opprydding er bekreftet eller har feilet.
+   * Kalles synkront fra oppryddingen.
+   */
+  onSessionEnded?: (ended: { sessionToken: string; settled: Promise<boolean> }) => void;
 }
+
+/** Hva talen fikk med seg fra tekstchatten, slik serveren rapporterte det (bare chatflaten). */
+export type LiveContinuity = { status: "carried"; turns: number; trimmed: boolean } | { status: "none" | "rejected" };
 
 interface Connection {
   generation: number;
@@ -114,6 +130,8 @@ interface Connection {
   ended: boolean;
   greetingEventId: string;
   greetingKicked: boolean;
+  /** Serveren bekreftet at tekstchattens historikk ligger i sesjonen. */
+  continued?: boolean;
   speaking: boolean;
   loudAt: number;
   lastAssistantAt: number;
@@ -145,6 +163,7 @@ export function useLive(options: LiveOptions) {
   const [messages, setMessages] = useState<LiveMessage[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
+  const [continuity, setContinuity] = useState<LiveContinuity | null>(null);
   const [interruptionVersion, setInterruptionVersion] = useState(0);
   // Brukeren snakker akkurat nå (etter mikrofonens eget nivå). Nivået ligger i
   // en ref, ikke i state: det oppdateres ti ganger i sekundet og skal bare
@@ -193,6 +212,12 @@ export function useLive(options: LiveOptions) {
         headers: current.sessionToken ? { "X-Placy-Session": current.sessionToken } : undefined,
         keepalive: true,
       }).then(response => response.ok).catch(() => false);
+    }
+    if (current.serverSession && current.sessionToken) {
+      latestOptions.current.onSessionEnded?.({
+        sessionToken: current.sessionToken,
+        settled: current.ended ? Promise.resolve(true) : cleanupPending.current,
+      });
     }
   }, []);
 
@@ -288,6 +313,7 @@ export function useLive(options: LiveOptions) {
     setError(null);
     setNotice(null);
     setMessages([]);
+    setContinuity(null);
     setUsage({ voiceSeconds: 0, estimatedUsd: 0 });
     try {
       let cleaned = await cleanupPending.current;
@@ -306,6 +332,7 @@ export function useLive(options: LiveOptions) {
       const endpoint = latestOptions.current.endpoint ?? "/api/prototype/live";
       const selectedVoice = latestOptions.current.voice;
       const surface = latestOptions.current.surface;
+      const transcript = surface ? latestOptions.current.getTranscript?.() : null;
       const selection = new URLSearchParams();
       if (project) {
         selection.set("customer", project.customer);
@@ -625,6 +652,7 @@ export function useLive(options: LiveOptions) {
         ...(hostedProjectSlug ? { project: hostedProjectSlug } : {}),
         ...(dataset ? { dataset } : {}),
         ...(surface ? { surface } : {}),
+        ...(transcript ? { transcript } : {}),
         ...(selectedVoice ? { voice: selectedVoice } : {}),
       };
       let sdp: string | undefined;
@@ -677,9 +705,13 @@ export function useLive(options: LiveOptions) {
           throw new Error(payload.error || "Samtalen kunne ikke starte. Prøv igjen.");
         }
         current.sessionToken = response.headers?.get?.("X-Placy-Session") ?? undefined;
-        const payload = await response.json() as { sdp?: string };
+        const payload = await response.json() as { sdp?: string; continuity?: LiveContinuity };
         sdp = payload.sdp;
         current.serverSession = true;
+        if (payload.continuity && typeof payload.continuity.status === "string") {
+          current.continued = payload.continuity.status === "carried";
+          setContinuity(payload.continuity);
+        }
       }
       if (!active()) return;
       if (!sdp) throw new Error("Serveren svarte uten lydforbindelse. Prøv igjen.");
@@ -703,7 +735,8 @@ export function useLive(options: LiveOptions) {
       sendContext({ kind: "state", ...latestOptions.current.getContext() });
       // Hilsenen er en instruksjon til stemmen, ikke et svar: Live har ingen
       // «lag et svar nå»-kommando, og ingen «hilsen ferdig»-event.
-      send({ type: "session.instructions.append", event_id: current.greetingEventId, delegation_id: null, content: latestOptions.current.greeting });
+      const greeting = current.continued && latestOptions.current.continuedGreeting ? latestOptions.current.continuedGreeting : latestOptions.current.greeting;
+      send({ type: "session.instructions.append", event_id: current.greetingEventId, delegation_id: null, content: greeting });
     } catch (caught) {
       if (run !== generation.current) return;
       dispose();
@@ -715,5 +748,5 @@ export function useLive(options: LiveOptions) {
   // Siste assistentinnslag, ikke siste fragment: kontrollen viser det som en
   // lesbar setning mens lyden går.
   const latest = messages.filter(message => message.role === "assistant").at(-1)?.text ?? null;
-  return { status, hearing, micLevel, messages, latest, error, notice, interruptionVersion, usage, start, stop, sendContext, sendText, replaceMicrophoneTrack };
+  return { status, hearing, micLevel, messages, latest, error, notice, continuity, interruptionVersion, usage, start, stop, sendContext, sendText, replaceMicrophoneTrack };
 }

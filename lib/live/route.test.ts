@@ -22,6 +22,7 @@ import { GET as mapGET, POST as mapPOST } from '@/app/api/prototype/live/map/rou
 import { POST as contextPOST } from '@/app/api/prototype/live/context/route';
 import { CHAT_SURFACE_BACKEND_ADDENDUM, chatSurfaceVoiceInstructions } from '@/lib/live/chat-surface';
 import { MAP_TOOLS } from '@/lib/realtime/types';
+import { issueTranscript } from '@/lib/demo/leangenbukta-chat/transcript';
 
 const key = 'test-secret-must-remain-server-side';
 const created = (overrides: Record<string, unknown> = {}) => Response.json({ session: { id: 'live_test', model: 'gpt-live-1', ...overrides }, transport: { type: 'webrtc', sdp: 'v=0\r\nanswer' } }, { status: 201 });
@@ -362,6 +363,43 @@ describe('Leangenbuktas chatflate (surface=chat)', () => {
     for (const name of [...MAP_TOOLS, 'present_neighbourhood', 'find_similar_places', 'reveal_more_places']) expect(names).not.toContain(name);
     const options = mocks.connect.mock.calls[0][3];
     expect(options.browserTools).toEqual(new Set());
+  });
+  it('legger en verifisert tekstsamtale inn som session.input før hilsenen, og aldri en annen besøkendes', async () => {
+    vi.stubEnv('PLACY_LB_DEMO_COOKIE_SECRET', 'k'.repeat(40));
+    const demo = await loadLiveDemo('leangenbukta-lokal');
+    const turns = [{ role: 'user' as const, text: 'Hvor er nærmeste skole?' }, { role: 'assistant' as const, text: 'Lilleby skole, 8 minutter å gå.' }];
+    // Ukonfigurert utviklingsserver på loopback: den besøkende er `local`, som i tekstchatten.
+    const own = issueTranscript({ visitorId: 'local', snapshotId: demo.snapshotId, previousTurns: [], newTurns: turns });
+    const response = await POST(request(undefined, undefined, { dataset: 'leangenbukta-lokal', snapshotId: demo.snapshotId, surface: 'chat', transcript: own }));
+    expect(response.status).toBe(200);
+    expect((await response.json()).continuity).toEqual({ status: 'carried', turns: 2, trimmed: false });
+    const body = JSON.parse(String((vi.mocked(fetch).mock.calls[0][1] as RequestInit).body));
+    expect(body.session.input).toEqual([
+      { type: 'message', role: 'user', content: [{ type: 'input_text', text: 'Hvor er nærmeste skole?' }] },
+      { type: 'message', role: 'assistant', content: [{ type: 'output_text', text: 'Lilleby skole, 8 minutter å gå.' }] },
+    ]);
+    expect(body.session.instructions).toBe(chatSurfaceVoiceInstructions(demo, { continued: true }));
+    expect(body.session.instructions).not.toContain('Dette er en ny samtale');
+    expect(mocks.connect.mock.calls[0][3].transcript).toBeDefined();
+
+    vi.mocked(fetch).mockClear();
+    const foreign = issueTranscript({ visitorId: 'en-annen', snapshotId: demo.snapshotId, previousTurns: [], newTurns: turns });
+    const rejected = await POST(request(undefined, undefined, { dataset: 'leangenbukta-lokal', snapshotId: demo.snapshotId, surface: 'chat', transcript: foreign }));
+    expect((await rejected.json()).continuity).toEqual({ status: 'rejected' });
+    const rejectedBody = JSON.parse(String((vi.mocked(fetch).mock.calls[0][1] as RequestInit).body));
+    expect(rejectedBody.session.input).toBeUndefined();
+    expect(rejectedBody.session.instructions).toContain('Dette er en ny samtale');
+  });
+  it('starter uten historikk og sier det, hvis Live avviser session.input', async () => {
+    const demo = await loadLiveDemo('leangenbukta-lokal');
+    const own = issueTranscript({ visitorId: 'local', snapshotId: demo.snapshotId, previousTurns: [], newTurns: [{ role: 'user', text: 'Hei' }, { role: 'assistant', text: 'Hei!' }] });
+    vi.mocked(fetch).mockResolvedValueOnce(Response.json({ error: { code: 'invalid_request_error' } }, { status: 400 }));
+    const response = await POST(request(undefined, undefined, { dataset: 'leangenbukta-lokal', snapshotId: demo.snapshotId, surface: 'chat', transcript: own }));
+    expect(response.status).toBe(200);
+    expect((await response.json()).continuity).toEqual({ status: 'rejected' });
+    const retry = JSON.parse(String((vi.mocked(fetch).mock.calls[1][1] as RequestInit).body));
+    expect(retry.session.input).toBeUndefined();
+    expect(retry.session.instructions).toContain('Dette er en ny samtale');
   });
   it('avviser chatflaten for andre datasett og ukjente flater før en betalt sesjon', async () => {
     const nyhavna = await loadLiveDemo('nyhavna-lokal');

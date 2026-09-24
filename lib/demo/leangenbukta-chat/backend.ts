@@ -58,6 +58,8 @@ export interface ChatBackendResult {
   /** Minst ett verktøysvar merket noe som planlagt, forventet eller uavklart. */
   provisional: boolean;
   usage: BackendTokenUsage | null;
+  /** Varigheten av hvert Responses-kall, i rekkefølge — til logg, ikke til klienten. */
+  roundMs: number[];
 }
 
 export class ChatBackendError extends Error {
@@ -86,7 +88,16 @@ interface RunInput {
   fetchImpl?: typeof fetch;
 }
 
-const REASONING_MODEL = /^(gpt-5|o[1-9])/;
+/**
+ * Resonnerende modeller: GPT-5 og nyere (også gpt-6-sol/-luna, som
+ * `PLACY_LB_CHAT_MODEL` kan peke på) og o-serien. De får `reasoning.effort`,
+ * og med `store: false` må de be om kryptert resonnement for å kunne sende
+ * det tilbake i neste verktøyrunde. Eldre modeller avviser feltet.
+ */
+function isReasoningModel(model: string): boolean {
+  const gpt = /^gpt-(\d+)/.exec(model);
+  return gpt ? Number(gpt[1]) >= 5 : /^o[1-9]/.test(model);
+}
 
 const jsonSchemaFormat = {
   type: "json_schema" as const,
@@ -250,7 +261,7 @@ export async function runLeangenbuktaChat(input: RunInput): Promise<ChatBackendR
   const fetchImpl = input.fetchImpl ?? fetch;
   const timeoutMs = input.timeoutMs ?? DEFAULT_TIMEOUT_MS;
   const maxRounds = input.maxRounds ?? DEFAULT_MAX_ROUNDS;
-  const reasoning = REASONING_MODEL.test(input.model);
+  const reasoning = isReasoningModel(input.model);
 
   const conversationInput: InputItem[] = [
     ...input.previousTurns.map((turn) => (turn.role === "user" ? userMessage(turn.text) : assistantMessage(turn.text))),
@@ -263,6 +274,8 @@ export async function runLeangenbuktaChat(input: RunInput): Promise<ChatBackendR
   let provisional = false;
   const allowedTools = new Set(input.tools.map((tool) => tool.name));
   let usageTotal: BackendTokenUsage | null = null;
+  const roundMs: number[] = [];
+  const toolCallsByRound: string[][] = [];
   const addUsage = (raw: unknown) => {
     const normalized = normalizeBackendUsage(raw);
     if (!normalized) return;
@@ -276,23 +289,30 @@ export async function runLeangenbuktaChat(input: RunInput): Promise<ChatBackendR
   };
 
   for (let round = 0; round < maxRounds; round += 1) {
+    // Enkle spørsmål skal ikke bli en lang verktøyjakt. Etter to runder med
+    // faktisk kunnskap må modellen svare fra materialet den har, eller si at
+    // grunnlaget ikke strekker til. Siste runde er alltid et sluttsvar.
+    const finalRound = (round >= 2 && evidence.length > 0) || round === maxRounds - 1;
     const requestBody: Record<string, unknown> = {
       model: input.model,
       instructions: input.instructions,
       input: conversationInput,
       tools: input.tools,
-      tool_choice: "auto",
+      tool_choice: finalRound ? "none" : "auto",
       parallel_tool_calls: input.parallelToolCalls,
       max_output_tokens: MAX_OUTPUT_TOKENS,
       store: false,
       text: { format: jsonSchemaFormat },
       ...(reasoning ? { reasoning: { effort: input.effort }, include: ["reasoning.encrypted_content"] } : {}),
     };
+    const roundStartedAt = Date.now();
     const response = await callResponses(fetchImpl, timeoutMs, requestBody, input.apiKey);
+    roundMs.push(Date.now() - roundStartedAt);
     addUsage(response.usage);
     if (response.status !== "completed") throw new ChatBackendError(`Modellen fullførte ikke svaret (status ${response.status}).`, "upstream");
 
     const calls = extractFunctionCalls(response.output);
+    toolCallsByRound.push(calls.map((call) => call.name));
     if (calls.length === 0) {
       const text = extractOutputText(response.output);
       const parsed = text ? parseStructuredReply(text) : null;
@@ -307,6 +327,7 @@ export async function runLeangenbuktaChat(input: RunInput): Promise<ChatBackendR
         unsupportedYears: yearsMissingFrom(parsed.reply, evidenceText.join("\n")),
         provisional,
         usage: usageTotal,
+        roundMs,
       };
     }
 
@@ -349,5 +370,5 @@ export async function runLeangenbuktaChat(input: RunInput): Promise<ChatBackendR
       conversationInput.push({ type: "function_call_output", call_id: call.callId, output: JSON.stringify(output ?? null) });
     }
   }
-  throw new ChatBackendError("Modellen brukte for mange runder uten et sluttsvar.", "invalid_output");
+  throw new ChatBackendError(`Modellen brukte for mange runder uten et sluttsvar. Verktøy per runde: ${JSON.stringify(toolCallsByRound)}.`, "invalid_output");
 }

@@ -583,7 +583,7 @@ describe("placy-chat widget — tale via broen", () => {
     expect(modeButtons().map((b) => b.textContent)).toEqual(["Skriv", "Snakk med Anja"]);
   });
 
-  it("viser mikrofoninformasjon før start og starter først ved klikk", async () => {
+  it("viser mikrofoninformasjon før første start i loggen, starter først ved klikk, og sier aldri «ny samtale»", async () => {
     loadWidget();
     bridge({});
     window.PlacyChat!.open();
@@ -591,12 +591,16 @@ describe("placy-chat widget — tale via broen", () => {
     modeButtons()[1].click();
     expect(modeButtons()[1].getAttribute("aria-pressed")).toBe("true");
     expect($(".voice").hidden).toBe(false);
-    expect($(".voice-info").textContent).toMatch(/mikrofonen din/);
-    expect($(".voice-info").textContent).toMatch(/ny samtale/);
+    expect(dividers().at(-1)).toMatch(/mikrofonen din/);
     expect(commands).toEqual([]);
     ($(".voicebtn:not(.stop)") as HTMLButtonElement).click();
     expect(commands).toEqual([{ type: "start" }]);
-    expect(dividers()).toContain("Talesamtalen starter som en ny samtale");
+    bridge({ status: "listening", continuity: { status: "none" } });
+    expect(dividers().at(-1)).toBe("Anja er klar til å snakke.");
+    expect(dividers().join(" ")).not.toMatch(/ny samtale/i);
+    // Taledelen ligger i footer-raden (ingen egen boks som skyver panelet), og mikrofoninfoen er skjermleser-tekst der.
+    expect($(".voice").parentElement).toBe($(".footer"));
+    expect(shadow().querySelector(".voice-info")?.classList.contains("sr-only")).toBe(true);
   });
 
   it("viser status og transkript løpende i samme logg, uten duplikater", async () => {
@@ -629,39 +633,98 @@ describe("placy-chat widget — tale via broen", () => {
     expect(commands).toContainEqual({ type: "text", text: "Er det barnehage i nærheten?" });
     expect(vi.mocked(fetch).mock.calls.filter(([, init]) => init?.method === "POST")).toHaveLength(0);
     expect(textarea().value).toBe("");
-    expect(textarea().placeholder).toMatch(/talesamtalen/);
+    expect(textarea().placeholder).toMatch(/skriv til henne/);
   });
 
-  it("stopper talen når panelet lukkes, og tekstchatten starter ny modellhistorikk", async () => {
-    vi.mocked(fetch).mockImplementation((_url, init) =>
-      init?.method === "POST" ? jsonResponse({ reply: "Svar.", transcript: "signert-historikk" }) : jsonResponse({ starters: [] }));
-    loadWidget();
-    bridge({});
-    window.PlacyChat!.open();
-    await tick();
-    textarea().value = "Første tekstspørsmål";
-    ($(".send") as HTMLButtonElement).click();
-    await tick();
-    modeButtons()[1].click();
-    ($(".voicebtn:not(.stop)") as HTMLButtonElement).click();
-    bridge({ status: "listening" });
+  describe("én samtale på tvers av skriving og tale", () => {
+    // Broen melder «overføring pågår» synkront når stopp-kommandoen kommer, slik voice-bridge.tsx gjør.
+    let handoffId = 0;
+    const bridgeStops = (event: Event) => {
+      if ((event as CustomEvent).detail?.type === "stop") bridge({ status: "listening", handoff: { id: ++handoffId, status: "pending" } });
+    };
+    beforeEach(() => window.addEventListener(COMMAND, bridgeStops));
+    afterEach(() => window.removeEventListener(COMMAND, bridgeStops));
 
-    window.PlacyChat!.close();
-    expect(commands).toContainEqual({ type: "stop" });
-    expect(dividers().at(-1)).toMatch(/avsluttet/);
-    bridge({ status: "idle" });
+    async function textThenVoice() {
+      vi.mocked(fetch).mockImplementation((_url, init) =>
+        init?.method === "POST" ? jsonResponse({ reply: "Svar.", transcript: "tekst-historikk" }) : jsonResponse({ starters: [] }));
+      loadWidget();
+      bridge({});
+      window.PlacyChat!.open();
+      await tick();
+      textarea().value = "Første tekstspørsmål";
+      ($(".send") as HTMLButtonElement).click();
+      await tick();
+      modeButtons()[1].click();
+      ($(".voicebtn:not(.stop)") as HTMLButtonElement).click();
+      bridge({ status: "listening", continuity: { status: "carried", turns: 2, trimmed: false } });
+      bridge({ status: "speaking", messages: [{ id: "voice-a1", role: "assistant", text: "Som jeg skrev …" }] });
+    }
+    const posts = () => vi.mocked(fetch).mock.calls.filter(([, init]) => init?.method === "POST").map(([, init]) => JSON.parse(String(init!.body)));
 
-    window.PlacyChat!.open();
-    await tick();
-    expect(modeButtons()[0].getAttribute("aria-pressed")).toBe("true");
-    textarea().value = "Etter talen";
-    ($(".send") as HTMLButtonElement).click();
-    await tick();
-    const posts = vi.mocked(fetch).mock.calls.filter(([, init]) => init?.method === "POST");
-    expect(JSON.parse(String(posts[0][1]!.body)).transcript).toBeUndefined();
-    expect(posts).toHaveLength(2);
-    expect(JSON.parse(String(posts[1][1]!.body)).transcript).toBeUndefined();
-    expect(JSON.parse(String(posts[1][1]!.body)).message).toBe("Etter talen");
+    it("tekst → tale → tekst → tale: tokenet går inn i talen, og tekstchatten fortsetter med serverens nye token", async () => {
+      await textThenVoice();
+      expect(commands).toContainEqual({ type: "start", transcript: "tekst-historikk" });
+      expect(dividers()).toContain("Anja er klar til å snakke og fortsetter fra samtalen over.");
+
+      ($(".voicebtn.stop") as HTMLButtonElement).click();
+      bridge({ status: "idle", handoff: { id: handoffId, status: "pending" } });
+      expect(modeButtons()[0].getAttribute("aria-pressed")).toBe("true");
+      expect(($(".send") as HTMLButtonElement).disabled).toBe(true);
+      // Mens overføringen pågår, venter meldingen i feltet i stedet for å gå uten talens kontekst.
+      textarea().value = "Hva sa du om skolen?";
+      ($(".send") as HTMLButtonElement).click();
+      expect(posts()).toHaveLength(1);
+
+      bridge({ status: "idle", handoff: { id: handoffId, status: "ready", transcript: "tale-historikk", voiceTurns: 2, trimmed: false } });
+      expect(dividers().at(-1)).toBe("Tilbake til skriving. Chatten fortsetter fra talesamtalen.");
+      expect(voiceBubbles()).toEqual(["Som jeg skrev …"]);
+      ($(".send") as HTMLButtonElement).click();
+      await tick();
+      expect(posts()[1]).toMatchObject({ message: "Hva sa du om skolen?", transcript: "tale-historikk" });
+
+      // Andre bytte til tale: samtykket er gitt, så talen starter direkte med
+      // nyeste token — det tekstchatten nettopp utstedte etter talens token.
+      commands = [];
+      modeButtons()[1].click();
+      expect(commands).toEqual([{ type: "start", transcript: "tekst-historikk" }]);
+    });
+
+    it("bruker talens token i neste skrevne melding", async () => {
+      await textThenVoice();
+      ($(".voicebtn.stop") as HTMLButtonElement).click();
+      bridge({ status: "idle", handoff: { id: handoffId, status: "ready", transcript: "tale-historikk", voiceTurns: 2, trimmed: true } });
+      expect(dividers().at(-1)).toMatch(/de siste delene av samtalen/);
+      textarea().value = "Og barnehagen?";
+      ($(".send") as HTMLButtonElement).click();
+      await tick();
+      expect(posts()[1]).toMatchObject({ message: "Og barnehagen?", transcript: "tale-historikk" });
+    });
+
+    it("sier ærlig fra når overføringen feiler, og beholder tekstturene fra før talen", async () => {
+      await textThenVoice();
+      window.PlacyChat!.close();
+      bridge({ status: "idle", handoff: { id: handoffId, status: "failed" } });
+      expect(dividers().at(-1)).toMatch(/kunne ikke overføres.*ser ikke det som ble sagt/);
+      expect(voiceBubbles()).toEqual(["Som jeg skrev …"]);
+      window.PlacyChat!.open();
+      await tick();
+      textarea().value = "Etter talen";
+      ($(".send") as HTMLButtonElement).click();
+      await tick();
+      expect(posts()[1]).toMatchObject({ message: "Etter talen", transcript: "tekst-historikk" });
+    });
+
+    it("sier fra når talen ikke fikk med seg tekstsamtalen", async () => {
+      loadWidget();
+      bridge({});
+      window.PlacyChat!.open();
+      await tick();
+      modeButtons()[1].click();
+      ($(".voicebtn:not(.stop)") as HTMLButtonElement).click();
+      bridge({ status: "listening", continuity: { status: "rejected" } });
+      expect(dividers().at(-1)).toMatch(/fikk ikke med seg samtalen over/);
+    });
   });
 
   it("Avslutt tale stopper sesjonen og beholder boblene", async () => {
@@ -687,6 +750,6 @@ describe("placy-chat widget — tale via broen", () => {
     bridge({ status: "listening" });
     window.dispatchEvent(new CustomEvent(STATE, { detail: { available: false } }));
     expect($(".footer").hidden).toBe(true);
-    expect(dividers().at(-1)).toMatch(/avsluttet/);
+    expect(dividers().at(-1)).toBe("Tilbake til skriving.");
   });
 });

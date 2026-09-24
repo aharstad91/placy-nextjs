@@ -5,6 +5,7 @@ import { LB_VOICE_DATASET } from "@/lib/live/leangenbukta-voice-access";
 import { LOCAL_VOICE_PACING } from "@/lib/demo/local-board/voice-instructions";
 import type { LiveDemo } from "@/lib/live/demos";
 import type { LiveConversation, LiveFunctionTool } from "@/lib/live/types";
+import type { TranscriptTurn } from "@/lib/demo/leangenbukta-chat/transcript";
 
 /**
  * Stemmen i Leangenbuktas chatboks (2026-09-24): samme Live-rute og samme
@@ -26,8 +27,13 @@ import type { LiveConversation, LiveFunctionTool } from "@/lib/live/types";
  * - en egen, kort stemmeinstruks og et tillegg til backend-instruksen som
  *   sier at kartreglene over ikke gjelder.
  *
- * Talen er en NY samtale: den arver ingenting fra tekstchattens historikk, og
- * instruksen sier at Anja ikke skal late som hun husker det brukeren skrev.
+ * ## Én samtale med tekstchatten
+ *
+ * Starter talen med et gyldig, signert historikktoken fra tekstchatten
+ * (`lib/demo/leangenbukta-chat/transcript.ts`), legges de verifiserte turene
+ * inn som Live-sesjonens `session.input` (`chatSurfaceHistoryInput`), og
+ * instruksen sier at samtalen fortsetter. Uten gyldig token er talen en ny
+ * samtale, og instruksen sier at Anja ikke skal late som hun husker noe.
  */
 
 export const CHAT_SURFACE = "chat";
@@ -70,6 +76,24 @@ export function chatSurfaceConversation(conversation: LiveConversation): LiveCon
   };
 }
 
+/** Live-grensen for `session.input` er 128 meldinger; tokenets vindu (40 turer) ligger langt under. */
+const LIVE_INPUT_MAX_MESSAGES = 128;
+
+/**
+ * Verifiserte turer som Live-meldinger (`session.input`). Bare turer fra et
+ * signert token kommer hit — aldri klientens bobler.
+ */
+export function chatSurfaceHistoryInput(turns: readonly TranscriptTurn[]) {
+  return turns.slice(-LIVE_INPUT_MAX_MESSAGES).map((turn) => ({
+    type: "message" as const,
+    role: turn.role,
+    content: [{ type: turn.role === "user" ? ("input_text" as const) : ("output_text" as const), text: turn.text }],
+  }));
+}
+
+export const CHAT_SURFACE_CONTINUED_BACKEND_ADDENDUM =
+  "- Samtalen fortsetter fra chatboksen: de tidligere meldingene (skrevne og eventuelt talte) er med i samtalen. Bruk dem til å forstå hva brukeren viser til, men hent fakta med verktøyene.";
+
 export const CHAT_SURFACE_BACKEND_ADDENDUM = `
 FLATE: CHATBOKS UTEN KART. Denne talesamtalen foregår i en chatboks på nettsiden, ikke i boardet. Reglene under går foran alt over som handler om kart.
 - Det finnes ikke noe kart, sidepanel eller markører. Verktøyene show_category, show_place, highlight_places, clear_highlights, reset_board, set_travel_mode og present_neighbourhood finnes ikke her. Ikke be om dem, og ikke si at noe vises, fremheves, åpnes eller kan trykkes på.
@@ -79,11 +103,14 @@ FLATE: CHATBOKS UTEN KART. Denne talesamtalen foregår i en chatboks på nettsid
 `.trim();
 
 /** Kort stemmeinstruks for chatflaten. Boardets instruks er skrevet for en kartomvisning. */
-export function chatSurfaceVoiceInstructions(demo: Pick<LiveDemo, "board">): string {
+export function chatSurfaceVoiceInstructions(demo: Pick<LiveDemo, "board">, options: { continued?: boolean } = {}): string {
   const name = demo.board.home.name || "Leangenbukta";
+  const history = options.continued
+    ? "Samtalen fortsetter fra chatboksen: meldingene før talen (skrevne og eventuelt talte) ligger i samtalehistorikken. Bygg videre på dem uten å gjenta deg selv, og ikke si at dette er en ny samtale. Du har bare de siste delene av samtalen; viser brukeren til noe du ikke finner der, si det kort og be dem si det igjen. Brukeren kan også skrive meldinger under talesamtalen; de er en del av samme samtale."
+    : "Dette er en ny samtale. Du ser ikke det brukeren eventuelt har skrevet i tekstchatten før talen startet. Viser brukeren til noe tidligere, si kort at du ikke ser den tekstsamtalen, og be dem si det igjen. Brukeren kan også skrive meldinger under talesamtalen; de er en del av denne samtalen.";
   return `Du heter Anja og er en digital AI-guide fra Placy som svarer på spørsmål om ${name} og nabolaget rundt. Samtalen skjer i en chatboks på nettsiden, uten kart. Vær varm, rolig og konkret. Du er ikke ansatt hos utbygger eller megler, og har ingen egne opplevelser av stedene. Snakk norsk bokmål. ${LOCAL_VOICE_PACING}
 
-Dette er en ny samtale. Du ser ikke det brukeren eventuelt har skrevet i tekstchatten før talen startet. Viser brukeren til noe tidligere, si kort at du ikke ser den tekstsamtalen, og be dem si det igjen. Brukeren kan også skrive meldinger under talesamtalen; de er en del av denne samtalen.
+${history}
 
 Hovedspørsmålet er «Hvordan er det å bo her?». Svar på det brukeren spør om. Ved et bredt spørsmål, gi to knagger: «Vil du begynne med det praktiske, som transport og dagligvarer, eller med turområder og ting å gjøre?» og vent på valget. Hold svarene korte: to til fire setninger, så stopp og la brukeren spørre videre.
 

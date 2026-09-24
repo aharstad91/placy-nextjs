@@ -6,6 +6,18 @@
 
 ---
 
+## 2026-09-24 — Leangenbukta: sammenhengende tekst og tale, kortere tekstprompt
+
+Gren `feat/leangenbukta-kundedemo` i eget worktree `../placy-lb-kundedemo`. Claude Opus 5.5 high bygde to isolerte spor; Codex integrerte, rettet overgangsløp og valgte aktiv modell. Ikke pushet eller publisert.
+
+**Samtaleflyt.** Chatwidgeten viser «Skriv» og «Snakk med Anja» i en fast rad og lar tidligere bobler stå. Bytte av modus vises som små systemmeldinger. Teksthistorikk sendes som signert, besøksbundet token til Live; serveren verifiserer token og legger turene i `session.input` før Anjas hilsen. Serverens sideband samler talte turer og utsteder et nytt signert token når talen slutter. Neste skrevne melding venter på overføringen. Ved avvist eller mistet historikk sier UI-et det eksplisitt. Taleopptaket er prosesslokalt i minnet, med ti minutters levetid etter stopp; flyten er derfor foreløpig egnet for lokal demo og én serverinstans.
+
+**Prompt og modell.** Tekstchatten brukte tidligere ca. 53 kB instruks per Responses-runde, der mye var Anjas kartmanus og statisk datakatalog. En egen tekstinstruks er ca. 5,5 kB; fakta kommer fortsatt fra dagens verktøy. Datainnhenting, prospektpakke og formatet på det nye datagrunnlaget som utvikles parallelt er ikke endret. GPT‑6 Sol er API-tilgjengelig og støttes nå av tekstbackendens reasoning-oppsett, men lokal prøve av et bredt faktaspørsmål ga verktøyløkke og deretter et svakt kunnskapshull-svar. GPT‑5.6 Terra ga et konkret faktasvar på ca. 5,1 sekunder med samme korte prompt og er fortsatt aktiv standard. Serveren stopper videre verktøyjakt etter to runder med bevis og logger varigheten per modellrunde.
+
+**Verifisering og åpent.** TypeScript, berørte rute-, backend-, widget- og historikktester passerer; lokal side svarer 200, og et ekte tekstbasert faktasvar er prøvd. Brukerprøve av tekst → tale → tekst, hørbar lyd, GPT-Live sin faktiske bruk av `session.input` og UI-flyten på mobil gjenstår. Ingen full test-/lint-/buildrunde ble kjørt, etter Andreas' ønske om rask egen prøving. Datasettets nye innlesings- og formateringsløp håndteres i en parallell sesjon.
+
+---
+
 ## 2026-09-23 — Leangenbukta: komplett kundedemo med Placy på hver byggside og tekstchat
 
 Plan `docs/plans/2026-09-23-2201-feat-leangenbukta-komplett-kundedemo-plan.md`, gren `feat/leangenbukta-kundedemo` i worktree `../placy-lb-kundedemo`, bygd på `feat/leangenbukta-board` (46c29011). Ikke pushet, ikke publisert.

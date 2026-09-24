@@ -14,7 +14,12 @@ import { resolveVoiceProject, VoiceProjectError } from '@/lib/live/projects';
 import { lbDemoAccess } from '@/lib/demo/leangenbukta-site/access';
 import { consumeDemoQuota } from '@/lib/demo/leangenbukta-site/usage';
 import { LB_VOICE_DATASET, leangenbuktaVoiceVisitor } from '@/lib/live/leangenbukta-voice-access';
-import { CHAT_SURFACE, CHAT_SURFACE_BACKEND_ADDENDUM, chatSurfaceAllowed, chatSurfaceConversation, chatSurfaceTools, chatSurfaceVoiceInstructions } from '@/lib/live/chat-surface';
+import {
+  CHAT_SURFACE, CHAT_SURFACE_BACKEND_ADDENDUM, CHAT_SURFACE_CONTINUED_BACKEND_ADDENDUM, chatSurfaceAllowed, chatSurfaceConversation,
+  chatSurfaceHistoryInput, chatSurfaceTools, chatSurfaceVoiceInstructions,
+} from '@/lib/live/chat-surface';
+import { MAX_TRANSCRIPT_TOKEN_LENGTH, verifyTranscript, type VerifiedTranscript } from '@/lib/demo/leangenbukta-chat/transcript';
+import { startVoiceHandoff } from '@/lib/demo/leangenbukta-chat/voice-handoff';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -31,7 +36,25 @@ const bodySchema = z.object({
   // Flaten stemmen snakker fra. Utelatt = boardet med kart; `chat` = chatboksen
   // uten kart (lib/live/chat-surface.ts).
   surface: z.literal(CHAT_SURFACE).optional(),
+  // Tekstchattens signerte historikktoken (bare chatflaten). Verifiseres mot
+  // den besøkende og datasettet; klientens egne bobler brukes aldri.
+  transcript: z.string().max(MAX_TRANSCRIPT_TOKEN_LENGTH).optional(),
 });
+
+/**
+ * Hva talen fikk med seg fra tekstchatten. `rejected` = et token ble sendt,
+ * men kunne ikke brukes (annen besøkende, ugyldig signatur, eldre innhold,
+ * ingen demotilgang); UI-et sier det, og talen starter uten historikk.
+ */
+type ChatContinuity = { status: 'carried'; turns: number; trimmed: boolean } | { status: 'none' | 'rejected' };
+
+function chatContinuity(token: string | undefined, visitorId: string | null, snapshotId: string): { continuity: ChatContinuity; verified: VerifiedTranscript | null } {
+  if (!token) return { continuity: { status: 'none' }, verified: null };
+  const verified = visitorId ? verifyTranscript(token, visitorId) : null;
+  if (!verified || verified.snapshotId !== snapshotId) return { continuity: { status: 'rejected' }, verified: null };
+  if (!verified.turns.length) return { continuity: { status: 'none' }, verified };
+  return { continuity: { status: 'carried', turns: verified.turns.length, trimmed: verified.trimmed }, verified };
+}
 
 /** Datasettet forespørselen gjelder, eller null hvis den ba om et ukjent. */
 function requestedDataset(value: string | null | undefined) {
@@ -110,9 +133,10 @@ export async function POST(request: NextRequest) {
   // avgjøres først når datasettet er lest. Uten demotilgang er ruta 404.
   if (!local && !lbDemoAccess(request)) return new NextResponse(null, { status: 404 });
   if (!process.env.OPENAI_API_KEY) return NextResponse.json({ error: 'Tale er ikke koblet til. Kontroller den lokale API-konfigurasjonen.' }, { status: 503 });
-  if (Number(request.headers.get('content-length')) > 50000) return new NextResponse(null, { status: 413 });
+  // SDP (≤32 000) + historikktoken (≤24 576) + omslag.
+  if (Number(request.headers.get('content-length')) > 64000) return new NextResponse(null, { status: 413 });
   const raw = await request.text();
-  if (raw.length > 50000) return new NextResponse(null, { status: 413 });
+  if (raw.length > 64000) return new NextResponse(null, { status: 413 });
   let body: unknown;
   try { body = JSON.parse(raw); } catch { return NextResponse.json({ error: 'Ugyldig forespørsel.' }, { status: 400 }); }
   const parsed = bodySchema.safeParse(body);
@@ -129,6 +153,13 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Demoens datagrunnlag kunne ikke lastes.' }, { status: 503 });
   }
   if (demo.snapshotId !== parsed.data.snapshotId) return NextResponse.json({ error: 'Datagrunnlaget er oppdatert. Last boardet på nytt.' }, { status: 409 });
+  // Historikken bindes til samme besøkende som tekstchatten (demo-cookien, eller
+  // `local` på en ukonfigurert utviklingsserver), aldri til noe klienten påstår.
+  const chatVisitor = chat ? lbDemoAccess(request) : null;
+  let { continuity, verified } = chat
+    ? chatContinuity(parsed.data.transcript, chatVisitor?.visitorId ?? null, demo.snapshotId)
+    : { continuity: null, verified: null };
+  let continued = continuity?.status === 'carried';
   const supervisor = getLiveSupervisor();
   let token: string;
   try { token = await supervisor.reserve(); } catch { return NextResponse.json({ error: 'En samtale er aktiv, eller serveren venter på opprydding. Avslutt samtalen og prøv igjen.' }, { status: 429 }); }
@@ -142,14 +173,35 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: quota.reason === 'store' ? 'Samtalen er midlertidig utilgjengelig. Bruk kartet eller tekstchatten.' : 'Dagens samtaler i demoen er brukt opp. Bruk kartet eller tekstchatten, eller prøv igjen i morgen.' }, { status: quota.reason === 'store' ? 503 : 429 });
     }
   }
-  const backendInstructions = chat ? `${demo.backendInstructions}\n\n${CHAT_SURFACE_BACKEND_ADDENDUM}` : demo.backendInstructions;
+  // Instruksene avhenger av om historikken faktisk ble med; se reserveforsøket under.
+  const backendFor = (withHistory: boolean) => chat
+    ? `${demo.backendInstructions}\n\n${CHAT_SURFACE_BACKEND_ADDENDUM}${withHistory ? `\n${CHAT_SURFACE_CONTINUED_BACKEND_ADDENDUM}` : ''}`
+    : demo.backendInstructions;
+  const sessionFor = (withHistory: boolean) => {
+    const session = chat
+      ? liveSessionConfig(chatSurfaceVoiceInstructions(demo, { continued: withHistory }), backendFor(withHistory), chatSurfaceTools(demo.tools), parsed.data.voice)
+      : liveSessionConfig(demo.voiceInstructions ?? NYHAVNA_VOICE_INSTRUCTIONS, backendFor(false), demo.tools, parsed.data.voice);
+    session.delegation.responses.parallel_tool_calls = demo.parallelTools ?? true;
+    // Tidligere turer ligger i sesjonen FØR stemmen hilser: Live snakker ikke
+    // av seg selv på historikk, hilsenen kommer etterpå som instruks.
+    return withHistory && verified ? { ...session, input: chatSurfaceHistoryInput(verified.turns) } : session;
+  };
   let identityKnown = false;
   try {
-    const session = chat
-      ? liveSessionConfig(chatSurfaceVoiceInstructions(demo), backendInstructions, chatSurfaceTools(demo.tools), parsed.data.voice)
-      : liveSessionConfig(demo.voiceInstructions ?? NYHAVNA_VOICE_INSTRUCTIONS, backendInstructions, demo.tools, parsed.data.voice);
-    session.delegation.responses.parallel_tool_calls = demo.parallelTools ?? true;
-    const created = await createLiveSession(session, parsed.data.sdp);
+    let created;
+    try {
+      created = await createLiveSession(sessionFor(continued), parsed.data.sdp);
+    } catch (error) {
+      // Avviser Live historikken (400, ingen sesjon opprettet), startes talen
+      // uten den heller enn ikke i det hele tatt — med ærlig status og ny-samtale-instruks.
+      if (!continued || !(error instanceof LiveSessionError) || error.status !== 400 || error.created) throw error;
+      console.warn('lb_chat_voice_history_rejected', { code: error.code, turns: verified?.turns.length ?? 0 });
+      continuity = { status: 'rejected' };
+      continued = false;
+      verified = null;
+      created = await createLiveSession(sessionFor(false), parsed.data.sdp);
+    }
+    const backendInstructions = backendFor(continued);
     identityKnown = true;
     // Gaten mot en modell som ikke er Live: fortsetter vi her, snakker resten av
     // koden en protokoll sesjonen ikke bruker.
@@ -164,9 +216,22 @@ export async function POST(request: NextRequest) {
     // fremhevede steder og returpunkt ligger her, ikke i modellens historikk.
     const conversation = chat ? chatSurfaceConversation(demo.createConversation()) : demo.createConversation();
     // Chatflaten har ingen nettleserbro: ingen verktøy skal kunne sendes dit.
-    await connectLiveSideband(created.sessionId, token, conversation, { backendInstructions, ...(chat ? { browserTools: new Set<string>() } : {}) });
+    // Opptaket av talens turer (tale → tekst) bindes til sesjonstokenet og den
+    // besøkende. Uten besøkende kan ingen handoff utstedes; klienten får da en
+    // ærlig feil når den ber om den.
+    const recorder = chat && chatVisitor
+      ? startVoiceHandoff(token, { visitorId: chatVisitor.visitorId, snapshotId: demo.snapshotId, baseTurns: verified?.turns ?? [], baseTrimmed: verified?.trimmed ?? false })
+      : undefined;
+    await connectLiveSideband(created.sessionId, token, conversation, {
+      backendInstructions,
+      ...(chat ? { browserTools: new Set<string>() } : {}),
+      ...(recorder ? { transcript: recorder } : {}),
+    });
     if (request.signal.aborted) { await supervisor.end(token); return new NextResponse(null, { status: 499 }); }
-    return NextResponse.json({ sdp: created.sdp, sessionId: created.sessionId }, { headers: { 'Cache-Control': 'no-store', 'X-Placy-Session': token } });
+    return NextResponse.json(
+      { sdp: created.sdp, sessionId: created.sessionId, ...(continuity ? { continuity } : {}) },
+      { headers: { 'Cache-Control': 'no-store', 'X-Placy-Session': token } },
+    );
   } catch (error) {
     if (error instanceof LiveSessionError) {
       if (error.created) await supervisor.blockUnknown(token).catch(() => {});

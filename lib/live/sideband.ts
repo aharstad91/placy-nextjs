@@ -87,6 +87,20 @@ export interface LiveSidebandOptions {
   sessionOwner?: LiveSessionOwner;
   /** Produksjon lagrer ikke transkriptfragmenter eller verktøyargumenter i driftslogg. */
   logging?: "demo" | "silent";
+  /**
+   * Mottar det sesjonen faktisk sa og hørte, slik serveren selv ser det. Brukes
+   * av Leangenbuktas chatflate til å gi tekstchatten talens turer
+   * (`lib/demo/leangenbukta-chat/voice-handoff.ts`). `close` kalles FØR resten
+   * av oppryddingen, så ingenting som ble sagt går tapt ved stopp.
+   */
+  transcript?: LiveTranscriptSink;
+}
+
+export interface LiveTranscriptSink {
+  delta: (role: 'user' | 'assistant', delta: string, timing: { startMs: number | null; endMs: number | null }) => void;
+  /** Tekst brukeren skrev inn i talesesjonen (ingen lyd, derfor ingen transkripsjon). */
+  typed: (text: string) => void;
+  close: () => void;
 }
 
 export interface LiveSessionOwner {
@@ -104,6 +118,11 @@ const globals = globalThis as typeof globalThis & { placyLiveSidebands?: Map<str
 export function getLiveSideband(token: string) {
   return globals.placyLiveSidebands?.get(token);
 }
+
+const transcriptTiming = (event: Record<string, unknown>) => ({
+  startMs: typeof event.start_ms === 'number' ? event.start_ms : null,
+  endMs: typeof event.end_ms === 'number' ? event.end_ms : null,
+});
 
 const clip = (text: string) => text.length > APPEND_MAX_CHARS ? `${text.slice(0, APPEND_MAX_CHARS)}…` : text;
 
@@ -409,11 +428,13 @@ export async function connectLiveSideband(
     if (type === 'session.input_transcript.delta') {
       lastActivity = Date.now();
       if (typeof event.end_ms === 'number') lastUserEndMs = event.end_ms;
+      if (typeof event.delta === 'string' && event.delta) options.transcript?.delta('user', event.delta, transcriptTiming(event));
       return;
     }
     if (type === 'session.output_transcript.delta') {
       lastActivity = Date.now();
       const delta = typeof event.delta === 'string' ? event.delta : '';
+      if (delta) options.transcript?.delta('assistant', delta, transcriptTiming(event));
       const timing = active?.timing;
       if (!active || !delta || !timing) return;
       // Før backenden er ferdig er ordene en kvittering («jeg sjekker …»);
@@ -455,6 +476,7 @@ export async function connectLiveSideband(
   function cleanup(reason: string) {
     if (ended) return;
     ended = true;
+    options.transcript?.close();
     closedWaiter?.();
     clearInterval(idleTimer);
     for (const delegation of [...delegations.values()]) settle(delegation, 'ended');
@@ -512,6 +534,7 @@ export async function connectLiveSideband(
     if (message.kind === 'text') {
       // Kun dev-hook: simulerer en brukertur uten at noen faktisk sa noe.
       log(`nyhavna_live_simulated_text ${JSON.stringify({ chars: message.text.length })}\n`);
+      options.transcript?.typed(message.text.slice(0, 2000));
       send({ type: 'response.item.create', item: { type: 'message', role: 'user', content: [{ type: 'input_text', text: message.text.slice(0, 2000) }] } });
       send({ type: 'response.create' });
       return;

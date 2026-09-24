@@ -88,6 +88,34 @@ describe("leangenbukta-chat/backend — mot det ekte leangenbukta-lokal-datasett
     expect(JSON.parse(output.output)).toEqual({ error: expect.stringContaining("show_category") });
   });
 
+  it("sender reasoning-effort og ber om kryptert resonnement for gpt-6-modeller, og sender resonnementet tilbake", async () => {
+    // `PLACY_LB_CHAT_MODEL=gpt-6-sol` skal ikke miste resonnementet mellom
+    // verktøyrundene: med `store: false` finnes det bare i forespørselen.
+    const demo = await loadLiveDemo("leangenbukta-lokal");
+    const reasoningItem = { type: "reasoning", id: "rs_1", encrypted_content: "kryptert", summary: [] };
+    const fetchImpl = vi
+      .fn()
+      .mockResolvedValueOnce(responsesPayload([reasoningItem, functionCall("call_1", "get_board_facts", {})]))
+      .mockResolvedValueOnce(responsesPayload([finalMessage("Leangenbukta er et boligprosjekt.", "fact")]));
+    const result = await runLeangenbuktaChat({
+      apiKey: "test-key",
+      sourceRegistry,
+      model: "gpt-6-sol",
+      effort: "none",
+      instructions: "instruks",
+      tools: textChatTools(demo.tools),
+      parallelToolCalls: false,
+      conversation: demo.createConversation(),
+      previousTurns: [],
+      userText: "Hva er Leangenbukta?",
+      fetchImpl: fetchImpl as unknown as typeof fetch,
+    });
+    const [first, second] = fetchImpl.mock.calls.map((call) => JSON.parse(call[1].body as string));
+    expect(first).toMatchObject({ model: "gpt-6-sol", store: false, reasoning: { effort: "none" }, include: ["reasoning.encrypted_content"] });
+    expect(second.input).toContainEqual(reasoningItem);
+    expect(result.roundMs).toHaveLength(2);
+  });
+
   it("teller ikke et verktøykall uten treff som bevis", async () => {
     // AE5/R9: «ingen kildebelagt omtale» fra verktøyet er fravær av bevis, ikke bevis.
     const demo = await loadLiveDemo("leangenbukta-lokal");
