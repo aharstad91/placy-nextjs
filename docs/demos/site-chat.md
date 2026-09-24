@@ -1,6 +1,6 @@
 # Placy-chatboksen — gjenbrukbar for flere kunder
 
-Chatboksen (tekst og tale i samme panel, temarad, sidetilpassede forslag, kilder, forbehold og én samtale på tvers av skriving og tale) er et produkt som kan aktiveres per kunde. Leangenbukta var første kunde ([leangenbukta-nettside.md](leangenbukta-nettside.md)), Nyhavna den andre ([nyhavna-nettside.md](nyhavna-nettside.md)). Status 2026-09-24: to kunder, begge bare kontrollert lokalt. Ingenting er publisert.
+Chatboksen (tekst og tale i samme panel, temarad, sidetilpassede forslag, kilder, forbehold og én samtale på tvers av skriving og tale) er et produkt som kan aktiveres per kunde. Leangenbukta var første kunde ([leangenbukta-nettside.md](leangenbukta-nettside.md)), Nyhavna den andre ([nyhavna-nettside.md](nyhavna-nettside.md)). Status 2026-09-24: Nyhavna er publisert på `placy.no/demo/nyhavna-nettside` med tekst og tale; Leangenbukta er fortsatt en lokal/kodegated demo.
 
 ## Hva som er felles, og hva som er kundens
 
@@ -66,7 +66,7 @@ Chatflaten har samme vei som boardet på `placy.no/nyhavna`: helsesjekk på `/ap
 ## Hva som IKKE er løst
 
 - **Innbygging på kundens eget domene.** Widgeten og endepunktet forutsetter samme origin som Placy-appen. `*_ALLOWED_ORIGINS` åpner bare for CORS. Tilgangscookien er `SameSite=Lax`, kvotene er ikke løst på tvers av domener, og stemmens ruter krever samme origin. Kryss-domene krever en egen tokenflyt og er separat integrasjonsarbeid.
-- **Den delte stemmen er kode, ikke deploy.** Den lokale grenen lar Nyhavna-kopien og `/api/live/control` ligge på `placy.no`, men den er ikke publisert. Publiseringsstegene står i [nyhavna-nettside.md](nyhavna-nettside.md#hva-som-gjenstår-før-dette-kan-virke-på-placyno). Det finnes ingen betalt ende-til-ende-prøve av den delte chatstemmen.
+- **Kundetest gjenstår.** Nyhavna-demoen og den delte chatstemmen er publisert og prøvd i produksjon. Lene/Nyhavna Utvikling har ennå ikke vurdert svarene eller innholdet. Se [Nyhavna-demoen](nyhavna-nettside.md#publisert-på-placyno-2026-09-24).
 - **Board-assistenten** (`services/anja/service.ts`, `/api/board-assistant`) er en annen rute og er ikke endret.
 - **Adresse.** Nye prosjekter skal ligge på `placy.no/<slug>` (`CLAUDE.md`). Kopiene ligger i dag under `/demo/…`.
 - **Faktagodkjenning.** Ingen svar er godkjent av kundene. Serverens vakter beviser at kilden var i grunnlaget, ikke at hver setning er kontrollert.

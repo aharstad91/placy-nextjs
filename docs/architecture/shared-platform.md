@@ -71,6 +71,8 @@ Detaljert driftsoppskrift og dokumenterte prøver: [stemmeoperasjon](../research
 
 ## Publiseringsbevis og gjenstående avgrensninger
 
+**Oppdatering 24.09.2026:** `placy.no` kjører nå `dpl_9kwaneHgZxaCbNbZ7gJ1qWD8DNjS` fra Nyhavnas chatrelease. Den samme publiseringen serverer `placy.no/nyhavna` og `placy.no/demo/nyhavna-nettside` med tekst og tale på én origin. Det tidligere publiseringsbeviset nedenfor er historisk.
+
 Nyhavna kjører på `dpl_3o3VM6GjRr2u2rxwCH67Eyvps8Ar`, fra kodetreet lagret i `c0a0b19`. Felles lenke: https://placy.no/nyhavna. Siden svarer direkte på dette domenet; `/p/<slug>` er kun en kompatibilitetsadresse. Alle nye prosjekter følger samme rot-slug-standard. Se [domene- og URL-verifisering](../research/voice-infrastructure/project-url-validation.md). Ingen kode eller innlogging kreves; noindex beholdes. De to gamle demo-tilgangene er deaktivert for nye samtaler, mens historikk og recovery beholdes.
 
 Den første fellesplattform-prøven før domeneflyttingen ga 73 stemmesekunder, normalt stopp, kartoppdateringer og komplett regnskap på Nyhavna: 0,060833 USD stemme + 0,119898 USD svarmodell = 0,180731 USD beregnet leverandørkostnad. Dette er en dokumentert syntetisk test, ikke et kundegjennomsnitt eller en faktura. Alle 60 historiske rader beholdes. Se [sluttverifisering](../research/voice-infrastructure/shared-platform-validation.md).

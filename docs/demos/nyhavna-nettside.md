@@ -1,6 +1,6 @@
 # Nyhavna-nettside for Lene-demo
 
-Lokal inngang: <http://localhost:3107/demo/nyhavna-nettside>. Planlagt Vercel-inngang: `https://placy.no/demo/nyhavna-nettside` (ikke deployet).
+Live demo for Lene: <https://placy.no/demo/nyhavna-nettside>. Lokal inngang: <http://localhost:3107/demo/nyhavna-nettside>.
 
 Flyt: forsiden → **Beliggenhet** → **Utforsk Nyhavna med Placy** → eksisterende `/demo/nyhavna-lokal` i ny fane. Fra 24.09 har begge sidene også chatboksen «Spør om Nyhavna» (tekst og tale), se [Chat med tekst og tale](#chat-med-tekst-og-tale-2026-09-24). Kun forsiden og Beliggenhet er bygd. Andre menypunkter peker til originalsidene på nyhavna.no. Nyhetsbrev/backend og øvrige undersider er ikke gjenskapt.
 
@@ -8,7 +8,7 @@ Flyt: forsiden → **Beliggenhet** → **Utforsk Nyhavna med Placy** → eksiste
 
 - `app/demo/nyhavna-nettside/`: egne React-sider, header og medieavspilling. `original.css` er originalens CSS med selektorer avgrenset til `.nyhavna-site`; `demo.css` inneholder demoens tillegg. Ingen global Placy-CSS er redigert.
 - `public/demo/nyhavna-nettside/`: lokale bilder, logo, animasjon, film og fonter.
-- Arbeidskopi/branch: `../placy-lb-kundedemo`, `feat/leangenbukta-kundedemo`. Nettsidekopien og den gjenbrukbare chatten ligger nå i samme gren.
+- Publisert fra `../placy-nyhavna-chat-live`, gren `feat/nyhavna-chat-live`, som inkluderer den gjenbrukbare chatten og siste `main`.
 - Lenken til Placy bruker samme origin, slik at port/domenebytte ikke krever endring i lenken. På den delte plattformen sender `/demo/nyhavna-lokal` videre til `/nyhavna`.
 - Slett de to nye mappene for å fjerne demoinngangen. Ikke gjenopprett andre filer eller fjern eksisterende `/demo/nyhavna-lokal`.
 
@@ -48,15 +48,14 @@ Kopien har samme chatboks som [Leangenbukta-kopien](leangenbukta-nettside.md#cha
 | `PLACY_NH_CHAT_ENABLED=true` + `PLACY_NH_CHAT_COOKIE_SECRET` (≥ 32 tegn) | Cookie utstedes ved første kall; tekstchat. Tale i et produksjonsbygg bare gjennom den delte stemmen: `PLACY_HOSTED_VOICE=true` og `PLACY_NH_CHAT_VOICE=true` (se under). Den lokale stemmeruta er aldri åpen for Nyhavna-besøkende i produksjon |
 | Produksjonsbygg uten dette | Ingen widget i HTML-en, endepunktet 404, stemmeruta 404 for Nyhavna-chat (feiler lukket) |
 
-Egne døgnmålere `nh_chat_message` (standard 40 per besøkende / 300 samlet) og `nh_voice_session` (5 / 30), styrt av `PLACY_NH_CHAT_MESSAGE_{VISITOR,GLOBAL}_DAILY` og `PLACY_NH_CHAT_VOICE_SESSION_{VISITOR,GLOBAL}_DAILY`. Et produksjonsbygg krever sentralt lager: `PLACY_NH_CHAT_USAGE_STORE=supabase` og migrasjonene `098_demo_usage.sql` + `099_demo_usage_meters.sql` (ingen av dem er kjørt). Uten lager svarer chatten 503. Fordi siden er åpen, kan den per-besøkende grensen omgås ved å slette cookien; den samlede døgnkvoten og et hardt spendtak i OpenAI-prosjektet er de reelle grensene. Valgfritt: `PLACY_NH_CHAT_MODEL`, `PLACY_NH_CHAT_ALLOWED_ORIGINS`.
+Egne døgnmålere `nh_chat_message` (standard 40 per besøkende / 300 samlet) og `nh_voice_session` (5 / 30), styrt av `PLACY_NH_CHAT_MESSAGE_{VISITOR,GLOBAL}_DAILY` og `PLACY_NH_CHAT_VOICE_SESSION_{VISITOR,GLOBAL}_DAILY`. Produksjonsmiljøet bruker `PLACY_NH_CHAT_USAGE_STORE=supabase`; migrasjonene `098_demo_usage.sql` + `099_demo_usage_meters.sql` er kjørt. Uten lager svarer chatten 503. Fordi siden er åpen, kan den per-besøkende grensen omgås ved å slette cookien; den samlede døgnkvoten og plattformens stemmebudsjett er aktive grenser. Et hardt spendtak hos OpenAI bør verifiseres separat. Valgfritt: `PLACY_NH_CHAT_MODEL`, `PLACY_NH_CHAT_ALLOWED_ORIGINS`.
 
 **Kontrollert lokalt 24.09** (Chrome, utviklingsserver på 3107, ekte modellkall): Beliggenhet viste temaraden, sidens tre forslag og «Skriv»/«Snakk»; «Spør om nabolaget» ga et kildebelagt svar (MENY, KIWI, barnehager, Dora 1, Ladestien med gangtider) med tre kilder og lenken til Placy-kartet. «Kan jeg flytte inn på Transittkaia i 2027?» ga årstallsvaktens faste svar. Etter instruksrettingen ga «Når er byggestart og innflytting på Transittkaia?» byggestart 2027 og mulig innflytting 2029 som utbyggers anslag avhengig av plangodkjenning, med kilde. Tale: oppkobling, «Anja er klar … fortsetter fra samtalen over», hilsen som knyttet an til tekstsamtalen, et forslag sendt under talen ble besvart muntlig (MENY, KIWI, Bunnpris Buran), og etter «Avslutt tale» svarte tekstchatten riktig på «Har Bunnpris-butikken du nevnte post i butikk?». Mobil 390 × 844 viste bottom sheet i Nyhavnas farger. Hørbar lyd og ekte mikrofoninput ble ikke kontrollert (forslaget ble sendt som tekst i talesesjonen). Produksjonsbygget uten flagg har ingen widget i HTML-en.
 
-### Hva som gjenstår før dette kan virke på placy.no
+### Publisert på placy.no (2026-09-24)
 
-Andreas valgte 24.09 å legge kopien på den delte plattformen sammen med stemmen. Denne grenen lar nå `placy.no/demo/nyhavna-nettside` og `/beliggenhet` passere proxyen på `placy.no` med `noindex`; andre nettsideruter går fortsatt til www. Den allerede publiserte kopien på `www.placy.no/demo/nyhavna-nettside` er uendret. Endringen er foreløpig bare lokal.
+Andreas valgte å legge kopien på den delte plattformen sammen med stemmen. Produksjonsdeployment `dpl_9kwaneHgZxaCbNbZ7gJ1qWD8DNjS` serverer nå både forsiden og `/beliggenhet` på `placy.no` med `noindex`; andre nettsideruter går fortsatt til www. Den eldre kopien på `www.placy.no/demo/nyhavna-nettside` er uendret.
 
-1. **Databasen og kostnadsgrensen:** Kjør `098_demo_usage.sql` og `099_demo_usage_meters.sql` mot produksjonsdatabasen etter Andreas' godkjenning. Bruk et OpenAI-prosjekt med hardt spendtak. Ingen migrasjoner er kjørt i denne leveransen.
-2. **Konfigurer `placy-nyhavna`:** `OPENAI_API_KEY`, `PLACY_NH_CHAT_ENABLED=true`, `PLACY_NH_CHAT_COOKIE_SECRET` (minst 32 tegn), `PLACY_NH_CHAT_USAGE_STORE=supabase` og `PLACY_NH_CHAT_VOICE=true`, i tillegg til eksisterende `PLACY_HOSTED_VOICE=true`, boardmodellene og Supabase-tilgangen. Bygg på nytt etter at flaggene er satt: nettsidelayouten er statisk og velger om widgeten vises ved bygging. Kontroller produksjonsoppsettet uten å eksponere hemmeligheter.
-3. **Publiser og prøv:** Deploy denne grenen til Vercel-prosjektet `placy-nyhavna` når Andreas ber om det. Sjekk at siden, undersiden, tekstendepunktet og `/api/live/control` er på `placy.no`, at tekstsvaret viser kilder og at tale kan overta og levere historikk tilbake. Den betalte ende-til-ende-prøven av den delte chatstemmen er ikke kjørt; den skriver i produksjonsregnskapet.
-4. **Kundegodkjenning:** Innhold og svar er ennå ikke godkjent av Nyhavna Utvikling.
+Migrasjonene `098_demo_usage.sql` og `099_demo_usage_meters.sql` er kjørt i én transaksjon og verifisert i produksjonsdatabasen. `placy-nyhavna` har Nyhavnas fire chatvariabler, i tillegg til eksisterende OpenAI-, Supabase- og delt stemme-konfigurasjon. En produksjonskandidat avdekket at den offentlige boardruten sammenlignet produktets UUID med prosjektets ID; rettet før promotering. Etter promotering svarte begge demosidene, `/api/demo/nyhavna-chat` og `/nyhavna` med 200. Ekte tekstspørsmål ga et kildebelagt svar og et signert samtaletoken. I Chrome startet tale til «Lytter», og etter «Avslutt tale» meldte chatten at den fortsatte fra talesamtalen. Regnskapet viser én manuelt avsluttet, komplett sesjon med 15 stemmesekunder og 0,012500 USD kjent kostnad.
+
+**Åpent for videre drift:** Nyhavna Utvikling har ikke godkjent innholdet og svarene; dette er en prototype for tilbakemelding. Et hardt spendtak i OpenAI-prosjektet er ikke verifisert i denne publiseringen. Appens egne døgnkvoter og plattformens stemmebudsjett er aktive.
