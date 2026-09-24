@@ -14,6 +14,7 @@ import { resolveVoiceProject, VoiceProjectError } from '@/lib/live/projects';
 import { lbDemoAccess } from '@/lib/demo/leangenbukta-site/access';
 import { consumeDemoQuota } from '@/lib/demo/leangenbukta-site/usage';
 import { LB_VOICE_DATASET, leangenbuktaVoiceVisitor } from '@/lib/live/leangenbukta-voice-access';
+import { CHAT_SURFACE, CHAT_SURFACE_BACKEND_ADDENDUM, chatSurfaceAllowed, chatSurfaceConversation, chatSurfaceTools, chatSurfaceVoiceInstructions } from '@/lib/live/chat-surface';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -27,6 +28,9 @@ const bodySchema = z.object({
   sdp: z.string().startsWith('v=0').max(32000),
   snapshotId: z.string().max(150),
   dataset: z.string().max(60).optional(),
+  // Flaten stemmen snakker fra. Utelatt = boardet med kart; `chat` = chatboksen
+  // uten kart (lib/live/chat-surface.ts).
+  surface: z.literal(CHAT_SURFACE).optional(),
 });
 
 /** Datasettet forespørselen gjelder, eller null hvis den ba om et ukjent. */
@@ -41,6 +45,12 @@ export async function GET(request: NextRequest) {
   const access = hosted ? requestDemoAccess(request) : null;
   const lbVisitor = hosted ? null : leangenbuktaVoiceVisitor(request, request.nextUrl.searchParams.get('dataset'));
   if (hosted ? !access : !localRequest(request) && !lbVisitor) return new NextResponse(null, { status: 404 });
+  const surface = request.nextUrl.searchParams.get('surface');
+  // Den delte stemmetjenesten har bare boardflaten ennå; chatflaten er lokal
+  // og Leangenbukta-only. Avvisning gir klienten en synlig feil, ikke et kart.
+  if (surface !== null && (surface !== CHAT_SURFACE || hosted || !chatSurfaceAllowed(request.nextUrl.searchParams.get('dataset')))) {
+    return new NextResponse(null, { status: 404, headers: { 'Cache-Control': 'no-store' } });
+  }
   if (hosted) {
     try {
       const project = request.nextUrl.searchParams.get('project') ?? undefined;
@@ -111,6 +121,8 @@ export async function POST(request: NextRequest) {
   const lbVisitor = leangenbuktaVoiceVisitor(request, datasetId);
   if (!local && !lbVisitor) return new NextResponse(null, { status: 404 });
   if (!datasetId) return NextResponse.json({ error: 'Ukjent datasett. Last boardet på nytt.' }, { status: 400 });
+  const chat = parsed.data.surface === CHAT_SURFACE;
+  if (chat && !chatSurfaceAllowed(datasetId)) return NextResponse.json({ error: 'Talesamtale i chatten finnes ikke for dette datasettet.' }, { status: 400 });
   let demo: LiveDemo;
   try { demo = await loadLiveDemo(datasetId); } catch (error) {
     console.error('live_dataset_load_failed', error);
@@ -130,10 +142,12 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: quota.reason === 'store' ? 'Samtalen er midlertidig utilgjengelig. Bruk kartet eller tekstchatten.' : 'Dagens samtaler i demoen er brukt opp. Bruk kartet eller tekstchatten, eller prøv igjen i morgen.' }, { status: quota.reason === 'store' ? 503 : 429 });
     }
   }
-  const backendInstructions = demo.backendInstructions;
+  const backendInstructions = chat ? `${demo.backendInstructions}\n\n${CHAT_SURFACE_BACKEND_ADDENDUM}` : demo.backendInstructions;
   let identityKnown = false;
   try {
-    const session = liveSessionConfig(demo.voiceInstructions ?? NYHAVNA_VOICE_INSTRUCTIONS, backendInstructions, demo.tools, parsed.data.voice);
+    const session = chat
+      ? liveSessionConfig(chatSurfaceVoiceInstructions(demo), backendInstructions, chatSurfaceTools(demo.tools), parsed.data.voice)
+      : liveSessionConfig(demo.voiceInstructions ?? NYHAVNA_VOICE_INSTRUCTIONS, backendInstructions, demo.tools, parsed.data.voice);
     session.delegation.responses.parallel_tool_calls = demo.parallelTools ?? true;
     const created = await createLiveSession(session, parsed.data.sdp);
     identityKnown = true;
@@ -148,8 +162,9 @@ export async function POST(request: NextRequest) {
     if (request.signal.aborted) { await supervisor.end(token); return new NextResponse(null, { status: 499 }); }
     // Samtaletilstanden lever like lenge som sesjonen: interesser, tema,
     // fremhevede steder og returpunkt ligger her, ikke i modellens historikk.
-    const conversation = demo.createConversation();
-    await connectLiveSideband(created.sessionId, token, conversation, { backendInstructions });
+    const conversation = chat ? chatSurfaceConversation(demo.createConversation()) : demo.createConversation();
+    // Chatflaten har ingen nettleserbro: ingen verktøy skal kunne sendes dit.
+    await connectLiveSideband(created.sessionId, token, conversation, { backendInstructions, ...(chat ? { browserTools: new Set<string>() } : {}) });
     if (request.signal.aborted) { await supervisor.end(token); return new NextResponse(null, { status: 499 }); }
     return NextResponse.json({ sdp: created.sdp, sessionId: created.sessionId }, { headers: { 'Cache-Control': 'no-store', 'X-Placy-Session': token } });
   } catch (error) {

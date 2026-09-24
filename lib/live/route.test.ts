@@ -20,6 +20,8 @@ import { VoiceProjectError } from '@/lib/live/projects';
 import { GET, POST, DELETE } from '@/app/api/prototype/live/route';
 import { GET as mapGET, POST as mapPOST } from '@/app/api/prototype/live/map/route';
 import { POST as contextPOST } from '@/app/api/prototype/live/context/route';
+import { CHAT_SURFACE_BACKEND_ADDENDUM, chatSurfaceVoiceInstructions } from '@/lib/live/chat-surface';
+import { MAP_TOOLS } from '@/lib/realtime/types';
 
 const key = 'test-secret-must-remain-server-side';
 const created = (overrides: Record<string, unknown> = {}) => Response.json({ session: { id: 'live_test', model: 'gpt-live-1', ...overrides }, transport: { type: 'webrtc', sdp: 'v=0\r\nanswer' } }, { status: 201 });
@@ -345,5 +347,36 @@ describe('Leangenbukta-kundedemoens stemme på et delt miljø', () => {
         headers: { 'Content-Type': 'application/json', 'x-placy-session': 'session-token', cookie: cookie(), origin: 'https://evil.example' },
       }))).status).toBe(404);
     });
+  });
+});
+
+describe('Leangenbuktas chatflate (surface=chat)', () => {
+  it('gir chatflaten egen instruks, ingen kartverktøy og ingen nettleserbro', async () => {
+    const demo = await loadLiveDemo('leangenbukta-lokal');
+    const response = await POST(request(undefined, undefined, { dataset: 'leangenbukta-lokal', snapshotId: demo.snapshotId, surface: 'chat' }));
+    expect(response.status).toBe(200);
+    const body = JSON.parse(String((vi.mocked(fetch).mock.calls[0][1] as RequestInit).body));
+    expect(body.session.instructions).toBe(chatSurfaceVoiceInstructions(demo));
+    expect(body.session.delegation.responses.instructions).toContain(CHAT_SURFACE_BACKEND_ADDENDUM);
+    const names = body.session.delegation.responses.tools.map((tool: { name: string }) => tool.name);
+    for (const name of [...MAP_TOOLS, 'present_neighbourhood', 'find_similar_places', 'reveal_more_places']) expect(names).not.toContain(name);
+    const options = mocks.connect.mock.calls[0][3];
+    expect(options.browserTools).toEqual(new Set());
+  });
+  it('avviser chatflaten for andre datasett og ukjente flater før en betalt sesjon', async () => {
+    const nyhavna = await loadLiveDemo('nyhavna-lokal');
+    expect((await POST(request(undefined, undefined, { dataset: 'nyhavna-lokal', snapshotId: nyhavna.snapshotId, surface: 'chat' }))).status).toBe(400);
+    expect((await POST(request(undefined, undefined, { dataset: 'nyhavna-lokal', snapshotId: nyhavna.snapshotId, surface: 'board' }))).status).toBe(400);
+    expect(mocks.reserve).not.toHaveBeenCalled();
+    expect(fetch).not.toHaveBeenCalled();
+  });
+  it('helsesjekken godtar chatflaten lokalt for Leangenbukta, men ikke på den delte stemmetjenesten', async () => {
+    const ok = await GET(new NextRequest('http://localhost:3101/api/prototype/live?dataset=leangenbukta-lokal&surface=chat'));
+    expect(ok.status).toBe(200);
+    expect(await ok.json()).toMatchObject({ protocol: 'live', dataset: 'leangenbukta-lokal' });
+    expect((await GET(new NextRequest('http://localhost:3101/api/prototype/live?dataset=nyhavna-lokal&surface=chat'))).status).toBe(404);
+    expect((await GET(new NextRequest('http://localhost:3101/api/prototype/live?dataset=leangenbukta-lokal&surface=kart'))).status).toBe(404);
+    vi.stubEnv('PLACY_HOSTED_VOICE', 'true');
+    expect((await GET(new NextRequest('https://platform.example/api/prototype/live?dataset=leangenbukta-lokal&surface=chat'))).status).toBe(404);
   });
 });

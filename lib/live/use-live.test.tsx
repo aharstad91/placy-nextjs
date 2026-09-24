@@ -628,3 +628,17 @@ describe("Hosted control ownership", () => {
     expect(FakeControl.instances).toHaveLength(1);
   });
 });
+
+describe("chatflaten", () => {
+  it("sender surface=chat i både helsesjekk og oppstart, og sendText går til samme sesjon", async () => {
+    const { result } = await connect({ ...options(), dataset: "leangenbukta-lokal", surface: "chat" });
+    const calls = vi.mocked(fetch).mock.calls;
+    expect(calls.some(([url, init]) => String(url) === "/api/prototype/live?dataset=leangenbukta-lokal&surface=chat" && !init?.method)).toBe(true);
+    const start = posts("/api/prototype/live")[0];
+    expect(JSON.parse(String(start[1]?.body))).toMatchObject({ surface: "chat", dataset: "leangenbukta-lokal" });
+    act(() => { result.current.sendText("Hvordan er det å bo her?"); });
+    const context = posts("/api/prototype/live/context").map(([, init]) => JSON.parse(String(init?.body)));
+    expect(context).toContainEqual({ kind: "text", text: "Hvordan er det å bo her?" });
+    expect(result.current.messages).toContainEqual(expect.objectContaining({ role: "user", text: "Hvordan er det å bo her?" }));
+  });
+});

@@ -78,6 +78,12 @@ export interface LiveOptions {
    * Utelatt = serverens standard, den frosne Nyhavna-demoen.
    */
   dataset?: string;
+  /**
+   * Flaten stemmen snakker fra. Utelatt = boardet med kart. `chat` =
+   * chatboksen uten kart: serveren gir da bare oppslagsverktøy og ingen
+   * kartdirektiver (`lib/live/chat-surface.ts`).
+   */
+  surface?: "chat";
   /** Hilsenen, formulert som en instruksjon til stemmen (`session.instructions.append`). */
   greeting: string;
 }
@@ -299,6 +305,7 @@ export function useLive(options: LiveOptions) {
       const hostedProjectSlug = latestOptions.current.hostedProjectSlug;
       const endpoint = latestOptions.current.endpoint ?? "/api/prototype/live";
       const selectedVoice = latestOptions.current.voice;
+      const surface = latestOptions.current.surface;
       const selection = new URLSearchParams();
       if (project) {
         selection.set("customer", project.customer);
@@ -306,6 +313,7 @@ export function useLive(options: LiveOptions) {
         selection.set("contentVersion", project.contentVersion);
       } else if (hostedProjectSlug) selection.set("project", hostedProjectSlug);
       if (dataset) selection.set("dataset", dataset);
+      if (surface) selection.set("surface", surface);
       const health = await fetch(`${endpoint}${selection.size ? `?${selection}` : ""}`, { cache: "no-store" });
       if (run !== generation.current) return;
       if (!health.ok) throw new Error("Samtalen er ikke tilgjengelig. Kontroller tilgangen og prøv igjen.");
@@ -616,6 +624,7 @@ export function useLive(options: LiveOptions) {
         ...(snapshotId ? { snapshotId } : {}),
         ...(hostedProjectSlug ? { project: hostedProjectSlug } : {}),
         ...(dataset ? { dataset } : {}),
+        ...(surface ? { surface } : {}),
         ...(selectedVoice ? { voice: selectedVoice } : {}),
       };
       let sdp: string | undefined;

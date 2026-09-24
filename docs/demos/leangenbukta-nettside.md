@@ -2,7 +2,7 @@
 
 Lokal inngang: `http://localhost:<port>/demo/leangenbukta-nettside` (porten er dev-serveren din). Plan: [`docs/plans/2026-09-23-2201-feat-leangenbukta-komplett-kundedemo-plan.md`](../plans/2026-09-23-2201-feat-leangenbukta-komplett-kundedemo-plan.md). Prøveguide for kunden: [`docs/reports/2026-09-23-leangenbukta-proveguide.md`](../reports/2026-09-23-leangenbukta-proveguide.md). Kontrollkvittering: [`docs/research/leangenbukta-nettside/qa/README.md`](../research/leangenbukta-nettside/qa/README.md).
 
-Demoen er en frosset kopi av hele den offentlige lesereisen på leangenbukta.no per 23.09.2026, med Placy lagt inn der en boligkjøper trenger det: høyt på hver byggside, øverst på Beliggenhet, tidlig på forsiden, i forsidens kartseksjon og nederst på relevante artikler. Hver Placy-inngang åpner enten Leangenbukta-boardet med Anja (`/demo/leangenbukta-lokal`, ny fane) eller tekstchatten med et forslag til spørsmål om akkurat den siden.
+Demoen er en frosset kopi av hele den offentlige lesereisen på leangenbukta.no per 23.09.2026, med Placy lagt inn der en boligkjøper trenger det: høyt på hver byggside, øverst på Beliggenhet, tidlig på forsiden, i forsidens kartseksjon og nederst på relevante artikler. Hver Placy-inngang åpner enten Leangenbukta-boardet med Anja (`/demo/leangenbukta-lokal`, ny fane) eller chatten med et forslag til spørsmål om akkurat den siden. Chatten tilbyr både tekst og tale i den lokale demoen.
 
 ## Dekning
 
@@ -59,7 +59,7 @@ Tre ting gjøres annerledes enn hos originalen fordi temaets JavaScript ikke kj�
 - 13 steder har tomme salgslederbilder (`src=""`); de vises ikke hos originalen heller.
 - `/test-framside/` er et offentlig tilgjengelig utkast av en ny forside. Det er kopiert fordi det er offentlig, men ingen side lenker til det.
 
-## Tekstchat
+## Chat med tekst og tale
 
 Knappen «Spør om Leangenbukta» nederst til høyre står over «til toppen» og åpner chatten på alle sider: sidepanel på desktop, bottom sheet på mobil, modal dialog etter WAI-ARIA (fokus inn, fokusfelle, Escape, fokus tilbake). Den lastes som en frittstående widget (`<script src="/embed/placy-chat.js" data-endpoint=… data-page-id=…>`), samme innbyggingskode som en WordPress-side ville brukt, og leser gjeldende side fra `data-placy-page-id`. Serveren (`app/api/demo/leangenbukta-chat/route.ts`, `lib/demo/leangenbukta-chat/`) bruker Anjas datasett, instruks og kunnskapsverktøy (`loadLiveDemo("leangenbukta-lokal")`) uten kartstyrende verktøy, kaller Responses med `store: false`, krever verktøybevis for faktasvar og slipper bare gjennom lenke-ID-er fra sideregisteret. Historikken bæres av et signert, besøksbundet token; serveren lagrer ingen samtaler og logger bare metadata. Hver feil gir lenker til Board og salgsteamet.
 
@@ -77,7 +77,17 @@ Chatten er en prototype. Toppen av panelet har merket «Prototype», og statusli
 
 **Hva dette ikke beviser.** Skjemaet kan ikke bevise påstand-for-påstand-dekning. At en kilde vises, betyr at den var i grunnlaget verktøyene returnerte og at modellen siterte den, ikke at hver setning er kontrollert mot den. Andre tall enn årstall (pris, antall, reisetid) sjekkes ikke mot verktøysvaret. En modell som merker en faktapåstand som `smalltalk`, slipper faktavakten, men ikke årstallsvakten. Et firesifret beløp som «2050 kr» kan forveksles med et årstall og gi det faste svaret. Dagens ledighet og gjeldende priser finnes ikke i datagrunnlaget; chatten henviser til salgsteamet.
 
-**Validert.** Enhets- og rutetester med mockede modellsvar mot det ekte `leangenbukta-lokal`-datasettet og widgeten i jsdom (`lib/demo/leangenbukta-chat/*.test.ts`, `app/api/demo/leangenbukta-chat/route.test.ts`). Ingen ekte modellkjøring i denne runden: arbeidsområdet hadde ingen `OPENAI_API_KEY`. Stemmen (Anja) bruker samme datasett og verktøy, men egen modellsti og egen instruks; ingenting her er validert eller endret for stemmen.
+**Validert tekstchat.** Enhets- og rutetester med mockede modellsvar mot det ekte `leangenbukta-lokal`-datasettet og widgeten i jsdom (`lib/demo/leangenbukta-chat/*.test.ts`, `app/api/demo/leangenbukta-chat/route.test.ts`). Tekstchatten ble også prøvd med et ekte svar lokalt 24.09.
+
+### Tale i samme chatvindu (2026-09-24)
+
+På den lokale nettsidekopien vises «Skriv» og «Snakk med Anja» i samme panel. Velg tale, les mikrofoninformasjonen og trykk «Start talesamtale». Nettleseren ber om mikrofontillatelse første gang. Brukerens og Anjas tale skrives fortløpende som bobler i den vanlige chatloggen. Det går også an å skrive til Anja mens talesesjonen er aktiv; teksten sendes til den pågående talesesjonen. «Avslutt tale», lukking av chatten eller et avslag på mikrofonen stopper talen. Ved feil går panelet tilbake til skriving med årsaken synlig.
+
+**Samtalegrense:** Tekstchat og tale bruker samme `leangenbukta-lokal`-datasett, men to ulike modellhistorikker. Overgangen er synlig i én logg; Anja husker ikke det som ble skrevet før talesesjonen. Etter avsluttet tale starter tekstchatten en ny modellhistorikk. Stemmeflaten har egne instruksjoner og oppslagsverktøy uten kartstyring. Den er avgrenset til spørsmål om nabolaget og hvordan det er å bo her. Prospekt- og leilighetsspesifikke fakta er en separat, parallell leveranse.
+
+Teknisk er `public/embed/placy-chat.js` fortsatt den eneste synlige UI-en. En usynlig `voice-bridge.tsx` i Leangenbukta-layouten bruker eksisterende `useLive`/WebRTC og sender status, feil og transkript til widgeten via `CustomEvent`-kanalen i `lib/demo/leangenbukta-chat/voice-channel.ts`. Andre sider som bygger inn skriptet uten broen får fortsatt bare tekstchat. Lokal prøving: `http://127.0.0.1:3107/demo/leangenbukta-nettside` mens utviklingsserveren kjører på port 3107. Tale på telefon krever HTTPS.
+
+En kort Chrome-prøve 24.09 bekreftet at Anja koblet opp, at hilsenen ble transkribert løpende i chatloggen, at panelet skiftet mellom «Anja snakker» og «Lytter», og at stoppknappen avsluttet mikrofonopptaket mens teksten ble stående. Hørbar lyd ble ikke kontrollert separat. Målrettede tester for widget, kanal, chatflate, Live-rute og hook besto (113 tester), og TypeScript-sjekken besto. Detaljert faktakvalitet og en lengre samtaletest gjenstår før kundedeling.
 
 ## Tilgang, kvoter og deling
 

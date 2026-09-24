@@ -536,3 +536,157 @@ describe("placy-chat widget — prototypestatus, åpning, kilder og forbehold", 
     expect(second.querySelector(".sources")).toBeNull();
   });
 });
+
+describe("placy-chat widget — tale via broen", () => {
+  const STATE = "placy-chat:voice-state";
+  const COMMAND = "placy-chat:voice-command";
+  let commands: Array<Record<string, unknown>>;
+  const onCommand = (event: Event) => commands.push((event as CustomEvent).detail);
+
+  beforeEach(() => {
+    commands = [];
+    window.addEventListener(COMMAND, onCommand);
+  });
+  afterEach(() => window.removeEventListener(COMMAND, onCommand));
+
+  function bridge(detail: Record<string, unknown>) {
+    window.dispatchEvent(new CustomEvent(STATE, { detail: { available: true, status: "idle", error: null, notice: null, messages: [], ...detail } }));
+  }
+  const $ = (selector: string) => shadow().querySelector(selector) as HTMLElement;
+  const modeButtons = () => Array.from(shadow().querySelectorAll(".mode")) as HTMLButtonElement[];
+  const voiceBubbles = () => Array.from(shadow().querySelectorAll(".msg.voice-message")).map((el) => el.textContent);
+  const dividers = () => Array.from(shadow().querySelectorAll(".divider")).map((el) => el.textContent);
+  const textarea = () => $("textarea") as HTMLTextAreaElement;
+
+  async function startVoice() {
+    loadWidget();
+    bridge({});
+    window.PlacyChat!.open();
+    await tick();
+    modeButtons()[1].click();
+    ($(".voicebtn:not(.stop)") as HTMLButtonElement).click();
+  }
+
+  it("uten bro er det bare tekstchat: ingen moduser i panelet", async () => {
+    loadWidget();
+    window.PlacyChat!.open();
+    await tick();
+    expect($(".footer").hidden).toBe(true);
+  });
+
+  it("finner en bro som var montert før skriptet, via hello", async () => {
+    const answer = () => bridge({});
+    window.addEventListener("placy-chat:voice-hello", answer);
+    loadWidget();
+    window.removeEventListener("placy-chat:voice-hello", answer);
+    expect($(".footer").hidden).toBe(false);
+    expect(modeButtons().map((b) => b.textContent)).toEqual(["Skriv", "Snakk med Anja"]);
+  });
+
+  it("viser mikrofoninformasjon før start og starter først ved klikk", async () => {
+    loadWidget();
+    bridge({});
+    window.PlacyChat!.open();
+    await tick();
+    modeButtons()[1].click();
+    expect(modeButtons()[1].getAttribute("aria-pressed")).toBe("true");
+    expect($(".voice").hidden).toBe(false);
+    expect($(".voice-info").textContent).toMatch(/mikrofonen din/);
+    expect($(".voice-info").textContent).toMatch(/ny samtale/);
+    expect(commands).toEqual([]);
+    ($(".voicebtn:not(.stop)") as HTMLButtonElement).click();
+    expect(commands).toEqual([{ type: "start" }]);
+    expect(dividers()).toContain("Talesamtalen starter som en ny samtale");
+  });
+
+  it("viser status og transkript løpende i samme logg, uten duplikater", async () => {
+    await startVoice();
+    bridge({ status: "connecting" });
+    expect($(".voice-status").textContent).toBe("Kobler til …");
+    bridge({ status: "listening", messages: [{ id: "voice-u1", role: "user", text: "Hvordan er" }] });
+    expect($(".voice-status").textContent).toMatch(/Lytter/);
+    bridge({ status: "thinking", messages: [{ id: "voice-u1", role: "user", text: "Hvordan er det å bo her?" }] });
+    expect($(".voice-status").textContent).toMatch(/finner fram/);
+    const both = [
+      { id: "voice-u1", role: "user", text: "Hvordan er det å bo her?" },
+      { id: "voice-a1", role: "assistant", text: "Rolig, med turområder rett ved." },
+    ];
+    bridge({ status: "speaking", messages: both });
+    bridge({ status: "speaking", messages: both });
+    expect($(".voice-status").textContent).toBe("Anja snakker");
+    expect(voiceBubbles()).toEqual(["Hvordan er det å bo her?", "Rolig, med turområder rett ved."]);
+    // En ny sesjon begynner med tom liste; gamle bobler blir stående.
+    bridge({ status: "listening", messages: [] });
+    expect(voiceBubbles()).toHaveLength(2);
+  });
+
+  it("sender skrevet tekst til talesesjonen under talen, ikke til tekstchatten", async () => {
+    await startVoice();
+    bridge({ status: "listening" });
+    vi.mocked(fetch).mockClear();
+    textarea().value = "Er det barnehage i nærheten?";
+    ($(".send") as HTMLButtonElement).click();
+    expect(commands).toContainEqual({ type: "text", text: "Er det barnehage i nærheten?" });
+    expect(vi.mocked(fetch).mock.calls.filter(([, init]) => init?.method === "POST")).toHaveLength(0);
+    expect(textarea().value).toBe("");
+    expect(textarea().placeholder).toMatch(/talesamtalen/);
+  });
+
+  it("stopper talen når panelet lukkes, og tekstchatten starter ny modellhistorikk", async () => {
+    vi.mocked(fetch).mockImplementation((_url, init) =>
+      init?.method === "POST" ? jsonResponse({ reply: "Svar.", transcript: "signert-historikk" }) : jsonResponse({ starters: [] }));
+    loadWidget();
+    bridge({});
+    window.PlacyChat!.open();
+    await tick();
+    textarea().value = "Første tekstspørsmål";
+    ($(".send") as HTMLButtonElement).click();
+    await tick();
+    modeButtons()[1].click();
+    ($(".voicebtn:not(.stop)") as HTMLButtonElement).click();
+    bridge({ status: "listening" });
+
+    window.PlacyChat!.close();
+    expect(commands).toContainEqual({ type: "stop" });
+    expect(dividers().at(-1)).toMatch(/avsluttet/);
+    bridge({ status: "idle" });
+
+    window.PlacyChat!.open();
+    await tick();
+    expect(modeButtons()[0].getAttribute("aria-pressed")).toBe("true");
+    textarea().value = "Etter talen";
+    ($(".send") as HTMLButtonElement).click();
+    await tick();
+    const posts = vi.mocked(fetch).mock.calls.filter(([, init]) => init?.method === "POST");
+    expect(JSON.parse(String(posts[0][1]!.body)).transcript).toBeUndefined();
+    expect(posts).toHaveLength(2);
+    expect(JSON.parse(String(posts[1][1]!.body)).transcript).toBeUndefined();
+    expect(JSON.parse(String(posts[1][1]!.body)).message).toBe("Etter talen");
+  });
+
+  it("Avslutt tale stopper sesjonen og beholder boblene", async () => {
+    await startVoice();
+    bridge({ status: "speaking", messages: [{ id: "voice-a1", role: "assistant", text: "Hei, jeg er Anja." }] });
+    ($(".voicebtn.stop") as HTMLButtonElement).click();
+    expect(commands).toContainEqual({ type: "stop" });
+    expect(voiceBubbles()).toEqual(["Hei, jeg er Anja."]);
+    expect(modeButtons()[0].getAttribute("aria-pressed")).toBe("true");
+  });
+
+  it("går tilbake til skriving med synlig årsak når mikrofon eller kvote stopper starten", async () => {
+    await startVoice();
+    bridge({ status: "connecting" });
+    bridge({ status: "error", error: "Mikrofonen er ikke tilgjengelig. Tillat mikrofon i nettleseren, og prøv igjen." });
+    expect(modeButtons()[0].getAttribute("aria-pressed")).toBe("true");
+    expect($(".voice").hidden).toBe(true);
+    expect(shadow().querySelector(".msg.error")?.textContent).toMatch(/Mikrofonen er ikke tilgjengelig/);
+  });
+
+  it("skjuler talen og avslutter når broen forsvinner", async () => {
+    await startVoice();
+    bridge({ status: "listening" });
+    window.dispatchEvent(new CustomEvent(STATE, { detail: { available: false } }));
+    expect($(".footer").hidden).toBe(true);
+    expect(dividers().at(-1)).toMatch(/avsluttet/);
+  });
+});
