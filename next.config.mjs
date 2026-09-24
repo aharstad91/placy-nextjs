@@ -59,7 +59,7 @@ const nextConfig = {
     // Leangenbukta-nettside-fragmenter leses med fs per slug (app/demo/leangenbukta-nettside).
     '/demo/leangenbukta-nettside/\\[...slug\\]': ['./data/demo/leangenbukta-nettside/**/*'],
   },
-  allowedDevOrigins: [...localDevOrigins(), "*.ngrok-free.app", "*.ngrok.app"],
+  allowedDevOrigins: ["localhost", "127.0.0.1", ...localDevOrigins(), "*.ngrok-free.app", "*.ngrok.app"],
   // Aktiver eksperimentelle funksjoner for bedre ytelse
   experimental: {
     // Optimaliser pakker for raskere lasting

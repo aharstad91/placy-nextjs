@@ -89,6 +89,17 @@ describe("POST /api/demo/leangenbukta-chat", () => {
     expect(res.status).toBe(403);
   });
 
+  it("godtar samme vert når Next dev normaliserer URL-en til localhost", async () => {
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValueOnce(responsesPayload(finalMessage("Hei der.", "smalltalk"))));
+    const { POST } = await import("./route");
+    const res = await POST(post({ message: "Hei", pageId: "forside" }, {
+      cookie: visitorCookie(), host: "127.0.0.1:3107", origin: "http://127.0.0.1:3107",
+    }));
+    expect(res.status).toBe(200);
+    expect((await res.json()).reply).toBe("Hei der.");
+    expect(res.headers.get("access-control-allow-origin")).toBeNull();
+  });
+
   it("godtar en origin i PLACY_LB_CHAT_ALLOWED_ORIGINS", async () => {
     process.env.PLACY_LB_CHAT_ALLOWED_ORIGINS = "https://leangenbukta.no";
     vi.stubGlobal("fetch", vi.fn().mockResolvedValueOnce(responsesPayload(finalMessage("Hei der.", "smalltalk"))));

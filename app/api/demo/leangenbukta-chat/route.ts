@@ -50,6 +50,14 @@ function allowedOrigins(): string[] {
     .filter(Boolean);
 }
 
+function isSameOrigin(request: NextRequest, origin: string): boolean {
+  if (origin === request.nextUrl.origin) return true;
+  // Next dev kan normalisere `nextUrl` til localhost selv når nettleseren
+  // faktisk åpnet 127.0.0.1. Host er den opprinnelige forespørselens vert.
+  const host = request.headers.get("host");
+  return !!host && origin === `${request.nextUrl.protocol}//${host}`;
+}
+
 /**
  * Om forespørselen kommer fra et sted som har lov til å bruke chatten.
  *
@@ -67,13 +75,13 @@ function allowedOrigins(): string[] {
 function isAllowedOrigin(request: NextRequest): boolean {
   const origin = request.headers.get("origin");
   if (!origin) return true;
-  if (origin === request.nextUrl.origin) return true;
+  if (isSameOrigin(request, origin)) return true;
   return allowedOrigins().includes(origin);
 }
 
 function corsHeaders(request: NextRequest): HeadersInit {
   const origin = request.headers.get("origin");
-  if (!origin || origin === request.nextUrl.origin) return {};
+  if (!origin || isSameOrigin(request, origin)) return {};
   if (!allowedOrigins().includes(origin)) return {};
   return { "Access-Control-Allow-Origin": origin, Vary: "Origin" };
 }
