@@ -30,6 +30,7 @@ const unbounded = localFont({
 
 export const metadata: Metadata = {
   icons: { icon: "/demo/nyhavna-nettside/symbol.svg" },
+  robots: { index: false, follow: false },
 };
 
 /**

@@ -66,7 +66,7 @@ Chatflaten har samme vei som boardet på `placy.no/nyhavna`: helsesjekk på `/ap
 ## Hva som IKKE er løst
 
 - **Innbygging på kundens eget domene.** Widgeten og endepunktet forutsetter samme origin som Placy-appen. `*_ALLOWED_ORIGINS` åpner bare for CORS. Tilgangscookien er `SameSite=Lax`, kvotene er ikke løst på tvers av domener, og stemmens ruter krever samme origin. Kryss-domene krever en egen tokenflyt og er separat integrasjonsarbeid.
-- **Den delte stemmen er kode, ikke deploy.** Chatflaten fungerer i den delte stemmen (se under), men ingen deploy har siden og `/api/live/control` på samme origin ennå. Deployvalgene for Nyhavna står i [nyhavna-nettside.md](nyhavna-nettside.md#hva-som-gjenstår-før-dette-kan-virke-på-wwwplacyno). Det finnes ingen betalt ende-til-ende-prøve av den delte chatstemmen.
+- **Den delte stemmen er kode, ikke deploy.** Den lokale grenen lar Nyhavna-kopien og `/api/live/control` ligge på `placy.no`, men den er ikke publisert. Publiseringsstegene står i [nyhavna-nettside.md](nyhavna-nettside.md#hva-som-gjenstår-før-dette-kan-virke-på-placyno). Det finnes ingen betalt ende-til-ende-prøve av den delte chatstemmen.
 - **Board-assistenten** (`services/anja/service.ts`, `/api/board-assistant`) er en annen rute og er ikke endret.
 - **Adresse.** Nye prosjekter skal ligge på `placy.no/<slug>` (`CLAUDE.md`). Kopiene ligger i dag under `/demo/…`.
 - **Faktagodkjenning.** Ingen svar er godkjent av kundene. Serverens vakter beviser at kilden var i grunnlaget, ikke at hver setning er kontrollert.

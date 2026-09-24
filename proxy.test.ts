@@ -142,7 +142,14 @@ describe("shared platform domain routing", () => {
     expect(proxy(req(path)).headers.get("location")).toBeNull();
   });
 
-  it.each(["/", "/midtbyen", "/eiendom/customer/project/rapport-board", "/event/customer/project", "/demo/nyhavna-nettside", "/kart/test", "/for/customer/project", "/scandic/hotel", "/pitch/wesselslokka", "/portefolje/test", "/generer", "/prototype"])("preserves the existing website at www for %s", path => {
+  it.each(["/demo/nyhavna-nettside", "/demo/nyhavna-nettside/beliggenhet"])("serves Nyhavna site demo %s on the platform origin and excludes it from indexing", path => {
+    const response = proxy(req(path + "?utm=one&utm=two"));
+    expect(response.status).toBe(200);
+    expect(response.headers.get("location")).toBeNull();
+    expect(response.headers.get("x-robots-tag")).toBe("noindex, nofollow");
+  });
+
+  it.each(["/", "/midtbyen", "/eiendom/customer/project/rapport-board", "/event/customer/project", "/demo/another-demo", "/kart/test", "/for/customer/project", "/scandic/hotel", "/pitch/wesselslokka", "/portefolje/test", "/generer", "/prototype"])("preserves the existing website at www for %s", path => {
     const response = proxy(req(path + "?utm=one&utm=two"));
     expect(response.status).toBe(307);
     expect(response.headers.get("location")).toBe("https://www.placy.no" + path + "?utm=one&utm=two");

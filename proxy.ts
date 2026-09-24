@@ -61,21 +61,29 @@ export function proxy(request: NextRequest) {
   const { pathname, search } = request.nextUrl;
   const segments = pathname.split("/").filter(Boolean);
 
-  // Apex belongs to the shared platform. Existing website pages still run on
-  // their unchanged www deployment; platform assets, APIs and actions stay here.
+  // Apex belongs to the shared platform. Nyhavnas site demo stays here too,
+  // so its chat cookie and hosted voice control connection share an origin.
+  // Other website pages still run on their unchanged www deployment.
   if (process.env.PLACY_HOSTED_VOICE === "true") {
     if (segments[0] === "p" && segments.length === 2 && isPublicProjectSlug(segments[1])) {
       return NextResponse.redirect(new URL(`/${segments[1]}${search}`, request.url));
     }
+    const nyhavnaSiteDemo = segments[0] === "demo" && segments[1] === "nyhavna-nettside";
     const websitePage = segments.length === 0
       || (WEBSITE_NAMESPACES as readonly string[]).includes(segments[0])
-      || (segments[0] === "demo" && segments[1] !== "nyhavna-lokal");
+      || (segments[0] === "demo" && segments[1] !== "nyhavna-lokal" && !nyhavnaSiteDemo);
     if (websitePage && request.nextUrl.hostname === "placy.no") return NextResponse.redirect(new URL(`${pathname}${search}`, "https://www.placy.no"));
   }
 
   if (segments.length === 0) return NextResponse.next();
 
   const firstSegment = segments[0];
+
+  if (firstSegment === "demo" && segments[1] === "nyhavna-nettside") {
+    const response = NextResponse.next();
+    response.headers.set("x-robots-tag", "noindex, nofollow");
+    return response;
+  }
 
   if (firstSegment === "demo" && LB_DEMO_SEGMENTS.has(segments[1])) {
     return leangenbuktaDemo(request, segments[1]);
