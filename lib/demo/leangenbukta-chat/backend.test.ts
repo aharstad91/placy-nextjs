@@ -2,6 +2,11 @@ import { describe, expect, it, vi } from "vitest";
 import { loadLiveDemo } from "@/lib/live/demos";
 import { textChatTools } from "@/lib/demo/leangenbukta-chat/text-tools";
 import { runLeangenbuktaChat, ChatBackendError } from "@/lib/demo/leangenbukta-chat/backend";
+import { leangenbuktaSourceRegistry } from "@/lib/demo/leangenbukta-chat/sources";
+import registryFile from "@/data/demo/leangenbukta-lokal/sources.json";
+
+const sourceRegistry = leangenbuktaSourceRegistry();
+const knownSourceIds = new Set(registryFile.map((source) => source.id));
 
 /**
  * Verifiserer at tekstchattens Responses-løkke faktisk kjører gjennom det
@@ -17,8 +22,8 @@ function functionCall(callId: string, name: string, args: Record<string, unknown
   return { type: "function_call", call_id: callId, name, arguments: JSON.stringify(args) };
 }
 
-function finalMessage(reply: string, answerType: string, linkIds: string[] = []) {
-  return { type: "message", content: [{ type: "output_text", text: JSON.stringify({ reply, answer_type: answerType, link_ids: linkIds }) }] };
+function finalMessage(reply: string, answerType: string, linkIds: string[] = [], sourceIds: string[] = []) {
+  return { type: "message", content: [{ type: "output_text", text: JSON.stringify({ reply, answer_type: answerType, link_ids: linkIds, source_ids: sourceIds }) }] };
 }
 
 describe("leangenbukta-chat/backend — mot det ekte leangenbukta-lokal-datasettet", () => {
@@ -36,6 +41,7 @@ describe("leangenbukta-chat/backend — mot det ekte leangenbukta-lokal-datasett
 
     const result = await runLeangenbuktaChat({
       apiKey: "test-key",
+      sourceRegistry,
       model: "gpt-5.6-terra",
       effort: "low",
       instructions: "instruks",
@@ -48,7 +54,7 @@ describe("leangenbukta-chat/backend — mot det ekte leangenbukta-lokal-datasett
     });
 
     expect(result.answerType).toBe("fact");
-    expect(result.evidence).toEqual([{ tool: "find_project_info" }]);
+    expect(result.evidence.map((e) => e.tool)).toEqual(["find_project_info"]);
     expect(result.linkIds).toEqual(["board"]);
     expect(fetchImpl).toHaveBeenCalledTimes(2);
   });
@@ -65,6 +71,7 @@ describe("leangenbukta-chat/backend — mot det ekte leangenbukta-lokal-datasett
       .mockResolvedValueOnce(responsesPayload([finalMessage("Her er hverdagstilbudet.", "smalltalk")]));
     await runLeangenbuktaChat({
       apiKey: "test-key",
+      sourceRegistry,
       model: "gpt-5.6-terra",
       effort: "low",
       instructions: "instruks",
@@ -90,6 +97,7 @@ describe("leangenbukta-chat/backend — mot det ekte leangenbukta-lokal-datasett
       .mockResolvedValueOnce(responsesPayload([finalMessage("Ja, det finnes en helikopterlandingsplass.", "fact")]));
     const result = await runLeangenbuktaChat({
       apiKey: "test-key",
+      sourceRegistry,
       model: "gpt-5.6-terra",
       effort: "low",
       instructions: "instruks",
@@ -110,7 +118,7 @@ describe("leangenbukta-chat/backend — mot det ekte leangenbukta-lokal-datasett
     const fetchImpl = vi.fn().mockResolvedValueOnce(responsesPayload([finalMessage("Ja, det er åpent for alle nå.", "fact")]));
 
     const result = await runLeangenbuktaChat({
-      apiKey: "test-key", model: "gpt-5.6-terra", effort: "low", instructions: "instruks", tools,
+      apiKey: "test-key", sourceRegistry, model: "gpt-5.6-terra", effort: "low", instructions: "instruks", tools,
       parallelToolCalls: false, conversation, previousTurns: [], userText: "Er treningsrommet åpent?",
       fetchImpl: fetchImpl as unknown as typeof fetch,
     });
@@ -129,7 +137,7 @@ describe("leangenbukta-chat/backend — mot det ekte leangenbukta-lokal-datasett
 
     await expect(
       runLeangenbuktaChat({
-        apiKey: "test-key", model: "gpt-5.6-terra", effort: "low", instructions: "instruks", tools,
+        apiKey: "test-key", sourceRegistry, model: "gpt-5.6-terra", effort: "low", instructions: "instruks", tools,
         parallelToolCalls: false, conversation, previousTurns: [], userText: "Hei", fetchImpl: fetchImpl as unknown as typeof fetch,
       }),
     ).rejects.toBeInstanceOf(ChatBackendError);
@@ -150,7 +158,7 @@ describe("leangenbukta-chat/backend — mot det ekte leangenbukta-lokal-datasett
     });
 
     const promise = runLeangenbuktaChat({
-      apiKey: "test-key", model: "gpt-5.6-terra", effort: "low", instructions: "instruks", tools,
+      apiKey: "test-key", sourceRegistry, model: "gpt-5.6-terra", effort: "low", instructions: "instruks", tools,
       parallelToolCalls: false, conversation, previousTurns: [], userText: "Hei",
       fetchImpl: fetchImpl as unknown as typeof fetch, timeoutMs: 5,
     });
@@ -165,7 +173,7 @@ describe("leangenbukta-chat/backend — mot det ekte leangenbukta-lokal-datasett
 
     await expect(
       runLeangenbuktaChat({
-        apiKey: "test-key", model: "gpt-5.6-terra", effort: "low", instructions: "instruks", tools,
+        apiKey: "test-key", sourceRegistry, model: "gpt-5.6-terra", effort: "low", instructions: "instruks", tools,
         parallelToolCalls: false, conversation, previousTurns: [], userText: "Hei", fetchImpl: fetchImpl as unknown as typeof fetch,
       }),
     ).rejects.toMatchObject({ kind: "invalid_output" });
@@ -179,12 +187,83 @@ describe("leangenbukta-chat/backend — mot det ekte leangenbukta-lokal-datasett
 
     await expect(
       runLeangenbuktaChat({
-        apiKey: "test-key", model: "gpt-5.6-terra", effort: "low", instructions: "instruks", tools,
+        apiKey: "test-key", sourceRegistry, model: "gpt-5.6-terra", effort: "low", instructions: "instruks", tools,
         parallelToolCalls: false, conversation, previousTurns: [], userText: "Hei", maxRounds: 2,
         fetchImpl: fetchImpl as unknown as typeof fetch,
       }),
     ).rejects.toMatchObject({ kind: "invalid_output" });
     expect(fetchImpl).toHaveBeenCalledTimes(2);
+  });
+});
+
+describe("leangenbukta-chat/backend — kildebevis fra verktøysvarene i denne meldingen", () => {
+  async function knutepunktetTurn(final: ReturnType<typeof finalMessage>) {
+    const demo = await loadLiveDemo("leangenbukta-lokal");
+    const fetchImpl = vi
+      .fn()
+      .mockResolvedValueOnce(responsesPayload([functionCall("call_1", "find_project_info", { query: "innflytting Knutepunktet", theme_id: "leangenbukta-prosjektet" })]))
+      .mockResolvedValueOnce(responsesPayload([final]));
+    const result = await runLeangenbuktaChat({
+      apiKey: "test-key", sourceRegistry, model: "gpt-5.6-terra", effort: "low", instructions: "instruks",
+      tools: textChatTools(demo.tools), parallelToolCalls: false, conversation: demo.createConversation(),
+      previousTurns: [], userText: "Når kan man flytte inn i Knutepunktet?", fetchImpl: fetchImpl as unknown as typeof fetch,
+    });
+    return { result, fetchImpl };
+  }
+
+  it("utleder kilde-ID-er fra verktøysvaret og bare ID-er som finnes i kilderegisteret", async () => {
+    const { result } = await knutepunktetTurn(finalMessage("Knutepunktet har forventet innflytting siste kvartal 2026.", "fact"));
+    const ids = result.evidence.flatMap((e) => e.ids);
+    expect(ids.length).toBeGreaterThan(0);
+    for (const id of ids) expect(knownSourceIds.has(id)).toBe(true);
+  });
+
+  it("gir modellen kilde-ID-en ved siden av kilde-URL-en i find_project_info, så den kan sitere den", async () => {
+    const { fetchImpl, result } = await knutepunktetTurn(finalMessage("Ok.", "fact"));
+    const second = JSON.parse(fetchImpl.mock.calls[1][1].body as string);
+    const output = JSON.parse(second.input.find((item: { type: string }) => item.type === "function_call_output").output);
+    const cited = output.results.map((r: { source: { source_id?: string } }) => r.source.source_id).filter(Boolean);
+    expect(cited.length).toBeGreaterThan(0);
+    expect(cited.every((id: string) => result.evidence.some((e) => e.ids.includes(id)))).toBe(true);
+  });
+
+  it("slipper bare siterte ID-er som faktisk kom fra verktøyene — oppdiktede og ikke-hentede registerkilder faller bort", async () => {
+    const demo = await loadLiveDemo("leangenbukta-lokal");
+    const probe = await demo.createConversation().execute("find_project_info", { query: "innflytting Knutepunktet", theme_id: "leangenbukta-prosjektet" });
+    const url = (probe.result as { results: Array<{ source: { url: string } }> }).results[0].source.url;
+    const returned = registryFile.find((source) => source.url === url)!.id;
+    const notReturned = "citylade-6434272b";
+    const { result } = await knutepunktetTurn(
+      finalMessage("Forventet siste kvartal 2026.", "fact", [], [returned, "kotengjenssen-godkjent-2026", notReturned]),
+    );
+    expect(result.sources.map((source) => source.id)).toEqual([returned]);
+    expect(result.sources[0].label).toBe(registryFile.find((source) => source.id === returned)!.label);
+  });
+
+  it("markerer et årstall i svaret som verken verktøyene eller kildene bekrefter (2008-premisset)", async () => {
+    const { result } = await knutepunktetTurn(finalMessage("Ja, innflyttingen var i 2008, og neste etappe kommer i 2026.", "fact"));
+    expect(result.unsupportedYears).toEqual(["2008"]);
+  });
+
+  it("teller ikke kildens kontrolldato som støtte for et årstall om stedet", async () => {
+    const demo = await loadLiveDemo("leangenbukta-lokal");
+    const fetchImpl = vi
+      .fn()
+      .mockResolvedValueOnce(responsesPayload([functionCall("call_1", "get_place_facts", { poi_id: "ladetorget" })]))
+      .mockResolvedValueOnce(responsesPayload([finalMessage("LadeTorget åpnet i 2026.", "fact", [], ["ladetorget-15d604f6"])]));
+    const result = await runLeangenbuktaChat({
+      apiKey: "test-key", sourceRegistry, model: "gpt-5.6-terra", effort: "low", instructions: "instruks",
+      tools: textChatTools(demo.tools), parallelToolCalls: false, conversation: demo.createConversation(),
+      previousTurns: [], userText: "Når åpnet LadeTorget?", fetchImpl: fetchImpl as unknown as typeof fetch,
+    });
+    // Kilden er likevel gyldig bevis for selve stedet (fra `sources`-lista i get_place_facts).
+    expect(result.sources.map((source) => source.id)).toEqual(["ladetorget-15d604f6"]);
+    expect(result.unsupportedYears).toEqual(["2026"]);
+  });
+
+  it("markerer usikkert prosjektgrunnlag når verktøyet selv sier uavklart/forventet", async () => {
+    const { result } = await knutepunktetTurn(finalMessage("Forventet siste kvartal 2026.", "fact"));
+    expect(result.provisional).toBe(true);
   });
 });
 

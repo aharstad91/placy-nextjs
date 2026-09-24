@@ -3,6 +3,8 @@ import { NextRequest } from "next/server";
 import { issueLbDemoCookie, LB_DEMO_COOKIE } from "@/lib/demo/leangenbukta-site/access";
 import { issueTranscript } from "@/lib/demo/leangenbukta-chat/transcript";
 import { loadLiveDemo } from "@/lib/live/demos";
+import { getSitePages } from "@/lib/demo/leangenbukta-site/pages";
+import registryFile from "@/data/demo/leangenbukta-lokal/sources.json";
 
 const ACCESS_CODE = "leangenbukta-demo-code";
 const COOKIE_SECRET = "s".repeat(40);
@@ -38,9 +40,15 @@ function responsesPayload(output: unknown) {
   return { ok: true, json: async () => ({ status: "completed", output, usage: { input_tokens: 10, output_tokens: 5, input_tokens_details: { cached_tokens: 0 } } }) };
 }
 
-function finalMessage(reply: string, answerType: string, linkIds: string[] = []) {
-  return [{ type: "message", content: [{ type: "output_text", text: JSON.stringify({ reply, answer_type: answerType, link_ids: linkIds }) }] }];
+function finalMessage(reply: string, answerType: string, linkIds: string[] = [], sourceIds: string[] = []) {
+  return [{ type: "message", content: [{ type: "output_text", text: JSON.stringify({ reply, answer_type: answerType, link_ids: linkIds, source_ids: sourceIds }) }] }];
 }
+
+function projectInfoCall(query: string) {
+  return responsesPayload([{ type: "function_call", call_id: "call_1", name: "find_project_info", arguments: JSON.stringify({ query, theme_id: "leangenbukta-prosjektet" }) }]);
+}
+
+const KNUTEPUNKTET_SOURCE = registryFile.find((source) => source.url === "https://leangenbukta.no/knutepunktet/")!;
 
 beforeEach(() => {
   setDemoEnv();
@@ -256,6 +264,119 @@ describe("POST /api/demo/leangenbukta-chat", () => {
   });
 });
 
+describe("POST /api/demo/leangenbukta-chat — kilder, forbehold og feil premisser", () => {
+  it("viser bare kilder som modellen siterte OG verktøyene returnerte i denne meldingen, med etikett fra registeret", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi
+        .fn()
+        .mockResolvedValueOnce(projectInfoCall("innflytting Knutepunktet"))
+        .mockResolvedValueOnce(responsesPayload(finalMessage(
+          "Knutepunktet har forventet innflytting siste kvartal 2026, men datoen er ikke bekreftet.",
+          "fact",
+          [],
+          [KNUTEPUNKTET_SOURCE.id, "koteng-godkjent-fasit", "citylade-6434272b"],
+        ))),
+    );
+    const { POST } = await import("./route");
+    const res = await POST(post({ message: "Når kan man flytte inn i Knutepunktet?", pageId: "knutepunktet" }, { cookie: visitorCookie() }));
+    const data = await res.json();
+    expect(data.answerType).toBe("fact");
+    expect(data.sources).toEqual([{ id: KNUTEPUNKTET_SOURCE.id, label: KNUTEPUNKTET_SOURCE.label, page: KNUTEPUNKTET_SOURCE.page, checkedAt: KNUTEPUNKTET_SOURCE.checkedAt }]);
+  });
+
+  it("viser ingen kilder når modellen siterer ID-er uten å ha kalt et verktøy", async () => {
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValueOnce(responsesPayload(finalMessage("Hei! Hva lurer du på?", "smalltalk", [], [KNUTEPUNKTET_SOURCE.id]))));
+    const { POST } = await import("./route");
+    const res = await POST(post({ message: "Hei", pageId: "forside" }, { cookie: visitorCookie() }));
+    const data = await res.json();
+    expect(data.sources).toEqual([]);
+    expect(data.notice).toBeNull();
+  });
+
+  it("faktasvar uten bevis: fast kunnskapshull, ingen kilder, og alltid Board og salgsteamet som vei videre", async () => {
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValueOnce(responsesPayload(finalMessage("Boligen koster 4 millioner.", "fact", [], [KNUTEPUNKTET_SOURCE.id]))));
+    const { POST } = await import("./route");
+    const res = await POST(post({ message: "Hva koster en leilighet i Knutepunktet?", pageId: "knutepunktet" }, { cookie: visitorCookie() }));
+    const data = await res.json();
+    expect(data.answerType).toBe("gap");
+    expect(data.reply).not.toContain("4 millioner");
+    expect(data.sources).toEqual([]);
+    expect(data.links.map((link: { id: string }) => link.id)).toEqual(["board", "contact"]);
+  });
+
+  it("2008-premisset: bekrefter aldri innflytting i 2008 når verktøyene ikke har årstallet", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi
+        .fn()
+        .mockResolvedValueOnce(projectInfoCall("innflytting Knutepunktet 2008"))
+        .mockResolvedValueOnce(responsesPayload(finalMessage("Ja, innflyttingen i Knutepunktet var i 2008.", "fact", ["board"], [KNUTEPUNKTET_SOURCE.id]))),
+    );
+    const { POST } = await import("./route");
+    const res = await POST(post({ message: "Innflyttingen i Knutepunktet var vel i 2008?", pageId: "knutepunktet" }, { cookie: visitorCookie() }));
+    const data = await res.json();
+    expect(data.answerType).toBe("gap");
+    expect(data.reply).not.toMatch(/^Ja\b/);
+    expect(data.reply).toContain("2008");
+    expect(data.sources).toEqual([]);
+    expect(data.links.map((link: { id: string }) => link.id)).toContain("contact");
+  });
+
+  it("2008-premisset: et årstall bare brukeren har nevnt blir ikke bevis, heller ikke i et «smalltalk»-svar", async () => {
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValueOnce(responsesPayload(finalMessage("Leangenbukta ble bygget i 2008.", "smalltalk"))));
+    const { POST } = await import("./route");
+    const res = await POST(post({ message: "Leangenbukta ble bygget i 2008, ikke sant?", pageId: "forside" }, { cookie: visitorCookie() }));
+    const data = await res.json();
+    expect(data.answerType).toBe("gap");
+    expect(data.reply).not.toContain("ble bygget i 2008");
+  });
+
+  it("et årstall verktøyet faktisk returnerte slipper gjennom, med tidsforbehold i stedet for blanket-forbehold", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi
+        .fn()
+        .mockResolvedValueOnce(projectInfoCall("innflytting Knutepunktet"))
+        .mockResolvedValueOnce(responsesPayload(finalMessage("Utbygger oppgir forventet innflytting siste kvartal 2026. Det er et anslag, ikke en bekreftet dato.", "fact", ["contact"], [KNUTEPUNKTET_SOURCE.id]))),
+    );
+    const { POST } = await import("./route");
+    const res = await POST(post({ message: "Når kan man flytte inn i Knutepunktet?", pageId: "knutepunktet" }, { cookie: visitorCookie() }));
+    const data = await res.json();
+    expect(data.answerType).toBe("fact");
+    expect(data.reply).toContain("2026");
+    expect(data.notice?.kind).toBe("timing");
+  });
+
+  it("pris- og ledighetsspørsmål får salgsforbehold", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi
+        .fn()
+        .mockResolvedValueOnce(projectInfoCall("pris Knutepunktet"))
+        .mockResolvedValueOnce(responsesPayload(finalMessage("Kilden oppgir leiligheter fra 2 450 000 kr.", "fact", ["contact"], [KNUTEPUNKTET_SOURCE.id]))),
+    );
+    const { POST } = await import("./route");
+    const res = await POST(post({ message: "Hva koster leilighetene, og er noen ledige?", pageId: "knutepunktet" }, { cookie: visitorCookie() }));
+    const data = await res.json();
+    expect(data.notice?.kind).toBe("sales");
+  });
+
+  it("usikkert prosjektgrunnlag uten pris- eller tidsord får et forbehold om planlagt/uavklart", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi
+        .fn()
+        .mockResolvedValueOnce(projectInfoCall("fellesfasiliteter Knutepunktet"))
+        .mockResolvedValueOnce(responsesPayload(finalMessage("Knutepunktet skal huse prosjektets felles fasiliteter, men hvem som får adgang er uavklart.", "fact", [], [KNUTEPUNKTET_SOURCE.id]))),
+    );
+    const { POST } = await import("./route");
+    const res = await POST(post({ message: "Hvilke fellesarealer får beboerne?", pageId: "knutepunktet" }, { cookie: visitorCookie() }));
+    const data = await res.json();
+    expect(data.notice?.kind).toBe("provisional");
+  });
+});
+
 describe("GET /api/demo/leangenbukta-chat", () => {
   it("gir sidetittel, forslag og datasettversjon uten modellkall og uten kvotebruk", async () => {
     vi.stubGlobal("fetch", vi.fn());
@@ -269,6 +390,37 @@ describe("GET /api/demo/leangenbukta-chat", () => {
     expect(data.starters.length).toBeGreaterThan(0);
     expect(data.datasetVersion).toBe(demo.snapshotId);
     expect(global.fetch).not.toHaveBeenCalled();
+  });
+
+  async function getPage(pageId: string) {
+    const { GET } = await import("./route");
+    const req = new NextRequest(`http://localhost/api/demo/leangenbukta-chat?pageId=${pageId}`, { headers: { cookie: visitorCookie() } });
+    return (await GET(req)).json();
+  }
+
+  it("merker chatten som prototype og oppgir når kildene sist ble kontrollert", async () => {
+    const data = await getPage("forside");
+    expect(data.prototype).toBe(true);
+    const latest = registryFile.map((source) => source.checkedAt).sort().at(-1);
+    expect(data.contentCheckedAt).toBe(latest);
+  });
+
+  it("gir en sidetilpasset åpning: forsiden om prosjektet, byggsiden om bygget", async () => {
+    const home = await getPage("forside");
+    const building = await getPage("knutepunktet");
+    expect(home.opening).toContain("Leangenbukta");
+    expect(building.opening).toContain("Knutepunktet");
+    expect(building.opening).not.toBe(home.opening);
+  });
+
+  it("forsiden og hver byggside har minst to forslag", async () => {
+    const pages = getSitePages().filter((page) => page.kind === "home" || page.kind === "building");
+    expect(pages.length).toBeGreaterThan(1);
+    for (const page of pages) {
+      const data = await getPage(page.id);
+      expect(data.starters.length, page.id).toBeGreaterThanOrEqual(2);
+      expect(typeof data.opening, page.id).toBe("string");
+    }
   });
 
   it("svarer 401 uten tilgang", async () => {

@@ -5,6 +5,10 @@ import type { NyhavnaConversation } from "@/lib/realtime/nyhavna-conversation";
 import { normalizeBackendUsage, type BackendTokenUsage } from "@/lib/live/usage";
 import { FACT_TOOL_NAMES } from "@/lib/demo/leangenbukta-chat/text-tools";
 import type { TranscriptTurn } from "@/lib/demo/leangenbukta-chat/transcript";
+import {
+  annotateSourceIds, resolveCitedSources, sourceIdsInOutput,
+  type ChatSource, type SourceRegistry,
+} from "@/lib/demo/leangenbukta-chat/sources";
 
 /**
  * Tekstchattens egen Responses-løkke (2026-09-23, KTD4).
@@ -32,7 +36,8 @@ export type ChatAnswerType = "fact" | "gap" | "smalltalk" | "refusal";
 
 export interface ChatEvidence {
   tool: string;
-  ids?: string[];
+  /** Registerkildene verktøysvaret bar (`sources.ts`), utledet av serveren. */
+  ids: string[];
 }
 
 export interface ChatBackendResult {
@@ -40,6 +45,15 @@ export interface ChatBackendResult {
   answerType: ChatAnswerType;
   linkIds: string[];
   evidence: ChatEvidence[];
+  /** Kildene modellen siterte OG verktøyene returnerte i denne meldingen. */
+  sources: ChatSource[];
+  /**
+   * Årstall i svaret som ingen av verktøysvarene i denne meldingen inneholder.
+   * Et årstall brukeren selv nevnte er ikke bevis (2008-premisset).
+   */
+  unsupportedYears: string[];
+  /** Minst ett verktøysvar merket noe som planlagt, forventet eller uavklart. */
+  provisional: boolean;
   usage: BackendTokenUsage | null;
 }
 
@@ -61,6 +75,7 @@ interface RunInput {
   tools: RealtimeTool[];
   parallelToolCalls: boolean;
   conversation: NyhavnaConversation;
+  sourceRegistry: SourceRegistry;
   previousTurns: readonly TranscriptTurn[];
   userText: string;
   maxRounds?: number;
@@ -81,8 +96,9 @@ const jsonSchemaFormat = {
       reply: { type: "string", maxLength: 1200 },
       answer_type: { type: "string", enum: ["fact", "gap", "smalltalk", "refusal"] },
       link_ids: { type: "array", items: { type: "string", maxLength: 80 }, maxItems: 4 },
+      source_ids: { type: "array", items: { type: "string", maxLength: 80 }, maxItems: 4 },
     },
-    required: ["reply", "answer_type", "link_ids"],
+    required: ["reply", "answer_type", "link_ids", "source_ids"],
   },
 };
 
@@ -131,14 +147,15 @@ function extractFunctionCalls(output: unknown): PendingCall[] {
   return calls;
 }
 
-function parseStructuredReply(text: string): { reply: string; answerType: ChatAnswerType; linkIds: string[] } | null {
+function parseStructuredReply(text: string): { reply: string; answerType: ChatAnswerType; linkIds: string[]; sourceIds: string[] } | null {
   try {
-    const value = JSON.parse(text) as { reply?: unknown; answer_type?: unknown; link_ids?: unknown };
+    const value = JSON.parse(text) as { reply?: unknown; answer_type?: unknown; link_ids?: unknown; source_ids?: unknown };
     if (typeof value.reply !== "string" || value.reply.length === 0) return null;
     const answerType = value.answer_type;
     if (answerType !== "fact" && answerType !== "gap" && answerType !== "smalltalk" && answerType !== "refusal") return null;
     const linkIds = Array.isArray(value.link_ids) ? value.link_ids.filter((id): id is string => typeof id === "string") : [];
-    return { reply: value.reply, answerType, linkIds };
+    const sourceIds = Array.isArray(value.source_ids) ? value.source_ids.filter((id): id is string => typeof id === "string") : [];
+    return { reply: value.reply, answerType, linkIds, sourceIds };
   } catch {
     return null;
   }
@@ -202,6 +219,30 @@ function isEvidence(output: unknown): boolean {
   return true;
 }
 
+const YEAR = /\b(?:19|20)\d{2}\b/g;
+
+/** Årstallene i svaret som ikke står i noe verktøysvar fra denne meldingen. */
+function yearsMissingFrom(reply: string, toolText: string): string[] {
+  const supported = new Set(toolText.match(YEAR) ?? []);
+  return [...new Set(reply.match(YEAR) ?? [])].filter((year) => !supported.has(year));
+}
+
+/**
+ * Om verktøysvaret merker noe som ikke er ferdig bekreftet. Leser bare
+ * strukturerte felt verktøyene selv setter (status, status_note,
+ * uncertainties), aldri modellens tekst.
+ */
+const PROVISIONAL_STATUS = /planlagt|planned|forventet|uavklart|unresolved|visjon|vedtatt plan/i;
+function isProvisional(output: unknown): boolean {
+  if (Array.isArray(output)) return output.some(isProvisional);
+  if (!output || typeof output !== "object") return false;
+  const value = output as Record<string, unknown>;
+  if (typeof value.status === "string" && PROVISIONAL_STATUS.test(value.status)) return true;
+  if (typeof value.status_note === "string" && value.status_note) return true;
+  if (Array.isArray(value.uncertainties) && value.uncertainties.length > 0) return true;
+  return Object.values(value).some((child) => child && typeof child === "object" && isProvisional(child));
+}
+
 export async function runLeangenbuktaChat(input: RunInput): Promise<ChatBackendResult> {
   const fetchImpl = input.fetchImpl ?? fetch;
   const timeoutMs = input.timeoutMs ?? DEFAULT_TIMEOUT_MS;
@@ -214,6 +255,9 @@ export async function runLeangenbuktaChat(input: RunInput): Promise<ChatBackendR
   ];
 
   const evidence: ChatEvidence[] = [];
+  // Teksten i verktøysvarene som telte som bevis — grunnlaget årstallsvakten sjekker mot.
+  const evidenceText: string[] = [];
+  let provisional = false;
   const allowedTools = new Set(input.tools.map((tool) => tool.name));
   let usageTotal: BackendTokenUsage | null = null;
   const addUsage = (raw: unknown) => {
@@ -250,7 +294,17 @@ export async function runLeangenbuktaChat(input: RunInput): Promise<ChatBackendR
       const text = extractOutputText(response.output);
       const parsed = text ? parseStructuredReply(text) : null;
       if (!parsed) throw new ChatBackendError("Modellsvaret hadde ikke forventet form.", "invalid_output");
-      return { reply: parsed.reply, answerType: parsed.answerType, linkIds: parsed.linkIds, evidence, usage: usageTotal };
+      const verified = new Set(evidence.flatMap((item) => item.ids));
+      return {
+        reply: parsed.reply,
+        answerType: parsed.answerType,
+        linkIds: parsed.linkIds,
+        evidence,
+        sources: resolveCitedSources(parsed.sourceIds, verified, input.sourceRegistry),
+        unsupportedYears: yearsMissingFrom(parsed.reply, evidenceText.join("\n")),
+        provisional,
+        usage: usageTotal,
+      };
     }
 
     // Hele forrige output (inkl. ev. resonnement-elementer) legges tilbake
@@ -274,10 +328,16 @@ export async function runLeangenbuktaChat(input: RunInput): Promise<ChatBackendR
       let output: unknown;
       try {
         const outcome = await input.conversation.execute(call.name, args);
-        output = outcome.result;
         // Kartdirektiver droppes med vilje her — se `text-tools.ts`: det finnes
         // ingen bro å sende dem til i en tekstsamtale.
-        if (FACT_TOOL_NAMES.has(call.name) && isEvidence(output)) evidence.push({ tool: call.name });
+        output = annotateSourceIds(outcome.result, input.sourceRegistry);
+        if (FACT_TOOL_NAMES.has(call.name) && isEvidence(output)) {
+          evidence.push({ tool: call.name, ids: sourceIdsInOutput(output, input.sourceRegistry) });
+          // Kontrolldatoen (`checked_at`) sier når kilden ble lest, ikke noe om
+          // prosjektet; ellers ville årets tall alltid sett kildebelagt ut.
+          evidenceText.push(JSON.stringify(output, (key, value) => (key === "checked_at" || key === "checkedAt" ? undefined : value)));
+          provisional ||= isProvisional(output);
+        }
       } catch {
         output = { error: "Verktøykallet kunne ikke fullføres." };
       }

@@ -65,6 +65,20 @@ Knappen «Spør om Leangenbukta» nederst til høyre står over «til toppen» o
 
 Runtime-LLM-kallet er et navngitt unntak fra `CLAUDE.md`s regel, bestilt av Andreas for denne demoen (planens KTD4).
 
+### Prototype- og datagrense (2026-09-24)
+
+Chatten er en prototype. Statuslinja i panelet sier «Prototype fra Placy, ikke godkjent av utbygger» og viser datoen kildene sist ble kontrollert (`contentCheckedAt`, siste `checkedAt` i `data/demo/leangenbukta-lokal/sources.json`, levert av `GET`). Ingen fakta er godkjent av Koteng Jenssen eller salgsteamet; publisering krever fortsatt egen godkjenning fra menneske og kunde.
+
+- **Åpning og forslag.** `GET` gir en fast, sidetilpasset åpningsmelding (`pageOpening` i `instructions.ts`: forsiden om prosjektet, byggsider om bygget, Beliggenhet om nærområdet) og sidens forslag fra `pages.json`. Åpningen er ikke modelltekst og koster ingen kvote. Forslagene er ikke endret i denne runden.
+- **Svarform.** Instruksjonstillegget ber om svaret først, ett forbehold når det finnes, og én neste handling; 2–4 setninger. Modellen skal si rett ut når spørsmålet bygger på et premiss kildene ikke støtter, og aldri påstå at utbygger står bak eller har godkjent et svar.
+- **Forbehold per svar, ikke per melding.** Serveren setter `notice` bare når spørsmålet eller svaret handler om pris/ledighet (`sales`) eller innflytting/framdrift/årstall (`timing`), eller når et verktøysvar selv merket grunnlaget planlagt, forventet eller uavklart (`provisional`). Småprat og avslag får aldri forbehold.
+- **Kilder.** Et faktasvar viser bare kilder som (1) modellen siterte i `source_ids`, (2) sto i et verktøysvar fra *denne* meldingen og (3) finnes i kilderegisteret (`lib/demo/leangenbukta-chat/sources.ts`). `find_project_info` oppgir bare kilde-URL; tekstchatten legger på `source_id` fra registeret før svaret går tilbake til modellen. En ID modellen finner på, eller en registerkilde verktøyene ikke returnerte, vises aldri. Widgeten viser kildene som ren tekst med etikett og side, aldri som lenke.
+- **Faste svar i stedet for modellens tekst.** Et faktasvar uten verktøybevis gir kunnskapshull-svaret. Et svar (uansett svartype unntatt avslag) som nevner et årstall ingen verktøysvar i meldingen har, gir et fast svar om at kildene ikke bekrefter årstallet; kildens kontrolldato teller ikke. Begge gir lenker til Board og salgsteamet og ingen kilder. Dette er vakten mot «2008»-feilen: et årstall brukeren selv nevner blir aldri bevis.
+
+**Hva dette ikke beviser.** Skjemaet kan ikke bevise påstand-for-påstand-dekning. At en kilde vises, betyr at den var i grunnlaget verktøyene returnerte og at modellen siterte den, ikke at hver setning er kontrollert mot den. Andre tall enn årstall (pris, antall, reisetid) sjekkes ikke mot verktøysvaret. En modell som merker en faktapåstand som `smalltalk`, slipper faktavakten, men ikke årstallsvakten. Et firesifret beløp som «2050 kr» kan forveksles med et årstall og gi det faste svaret. Dagens ledighet og gjeldende priser finnes ikke i datagrunnlaget; chatten henviser til salgsteamet.
+
+**Validert.** Enhets- og rutetester med mockede modellsvar mot det ekte `leangenbukta-lokal`-datasettet og widgeten i jsdom (`lib/demo/leangenbukta-chat/*.test.ts`, `app/api/demo/leangenbukta-chat/route.test.ts`). Ingen ekte modellkjøring i denne runden: arbeidsområdet hadde ingen `OPENAI_API_KEY`. Stemmen (Anja) bruker samme datasett og verktøy, men egen modellsti og egen instruks; ingenting her er validert eller endret for stemmen.
+
 ## Tilgang, kvoter og deling
 
 Én tilgangskode gir én signert, httpOnly-cookie (14 dager) som proxyen, boardet, chatten og Leangenbuktas stemmesamtale leser (`lib/demo/leangenbukta-site/access.ts`, `proxy.ts`). Alle svar er `noindex`.

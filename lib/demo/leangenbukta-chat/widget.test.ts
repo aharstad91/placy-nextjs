@@ -332,3 +332,75 @@ describe("placy-chat widget — CSS", () => {
     expect(styleText).toContain("prefers-reduced-motion");
   });
 });
+
+describe("placy-chat widget — prototypestatus, åpning, kilder og forbehold", () => {
+  function honesty() {
+    return shadow().querySelector(".honesty") as HTMLElement;
+  }
+
+  it("sier at chatten er en prototype før serveren har svart, og viser kildedato fra API-et etterpå", async () => {
+    loadWidget();
+    expect(honesty().textContent).toMatch(/prototype/i);
+    expect(honesty().textContent).toMatch(/ikke godkjent/i);
+    vi.stubGlobal("fetch", vi.fn(() => jsonResponse({ starters: [], opening: "Hei!", prototype: true, contentCheckedAt: "2026-09-21" })));
+    window.PlacyChat!.open();
+    await tick();
+    expect(honesty().textContent).toContain("21.09.2026");
+    expect(honesty().textContent).toMatch(/prototype/i);
+  });
+
+  it("viser sidens åpning som første melding og bytter den når siden byttes før samtalen har startet", async () => {
+    loadWidget();
+    const marker = document.createElement("div");
+    marker.setAttribute("data-placy-page-id", "forside");
+    document.body.appendChild(marker);
+    vi.stubGlobal("fetch", vi.fn((url: string) => jsonResponse({
+      starters: ["Hva er Leangenbukta?"],
+      opening: String(url).includes("knutepunktet") ? "Du ser på Knutepunktet." : "Velkommen til Leangenbukta.",
+    })));
+    window.PlacyChat!.open();
+    await tick();
+    expect(shadow().querySelector(".msg.opening")?.textContent).toBe("Velkommen til Leangenbukta.");
+    window.PlacyChat!.close();
+    marker.setAttribute("data-placy-page-id", "knutepunktet");
+    window.PlacyChat!.open();
+    await tick();
+    expect(shadow().querySelectorAll(".msg.opening")).toHaveLength(1);
+    expect(shadow().querySelector(".msg.opening")?.textContent).toBe("Du ser på Knutepunktet.");
+  });
+
+  it("viser kilder som ren tekst (aldri lenker) og et forbehold bare når serveren sender ett", async () => {
+    loadWidget();
+    const replies = [
+      {
+        reply: "Forventet siste kvartal 2026.",
+        answerType: "fact",
+        links: [],
+        sources: [{ id: "leangenbukta-6e190f5f", label: "Leangenbukta", page: "Knutepunktet – Leangenbukta", checkedAt: "2026-09-18" }, { label: "<img src=x onerror=alert(1)>" }],
+        notice: { kind: "timing", text: "Framdrift kan endre seg." },
+        transcript: "t1",
+      },
+      { reply: "Hei igjen!", answerType: "smalltalk", links: [], sources: [], notice: null, transcript: "t2" },
+    ];
+    vi.stubGlobal("fetch", vi.fn((url: string) => {
+      if (String(url).includes("?pageId=")) return jsonResponse({ starters: [] });
+      return jsonResponse(replies.shift());
+    }));
+    window.PlacyChat!.open({ question: "Når kan jeg flytte inn?" });
+    await tick(30);
+    const first = shadow().querySelector(".msg.assistant:not(.opening)") as HTMLElement;
+    const sources = first.querySelector(".sources") as HTMLElement;
+    expect(sources.textContent).toContain("Knutepunktet – Leangenbukta");
+    expect(sources.querySelector("a, img")).toBeNull();
+    expect(first.querySelector(".notice")?.textContent).toBe("Framdrift kan endre seg.");
+
+    const textarea = shadow().querySelector("textarea") as HTMLTextAreaElement;
+    textarea.value = "Takk";
+    (shadow().querySelector(".send") as HTMLButtonElement).click();
+    await tick(30);
+    const all = shadow().querySelectorAll(".msg.assistant:not(.opening)");
+    const second = all[all.length - 1] as HTMLElement;
+    expect(second.querySelector(".notice")).toBeNull();
+    expect(second.querySelector(".sources")).toBeNull();
+  });
+});

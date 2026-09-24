@@ -99,6 +99,8 @@
     ".msg.user{align-self:flex-end;background:var(--placy-chat-accent,#6b4f3a);color:#fff}",
     ".msg.assistant{align-self:flex-start;background:#f1ece5}",
     ".msg.error{align-self:flex-start;background:#fbeaea;color:#7a1f1f}",
+    ".msg .notice{margin:6px 0 0;font-size:12px;color:#5b4a3b;white-space:normal}",
+    ".msg .sources{margin:6px 0 0;font-size:11px;color:#666;white-space:normal}",
     ".links{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}",
     ".linkbtn{font-size:12px;padding:5px 9px;border-radius:8px;border:1px solid var(--placy-chat-accent,#6b4f3a);",
     "background:#fff;color:var(--placy-chat-accent,#6b4f3a);text-decoration:none;cursor:pointer}",
@@ -141,7 +143,8 @@
 
   var honesty = document.createElement("p");
   honesty.className = "honesty";
-  honesty.textContent = "Konsept. Svarene bygger på Placys kontrollerte kunnskap om Leangenbukta – sjekk alltid detaljer med megler.";
+  var HONESTY_BASE = "Prototype fra Placy, ikke godkjent av utbygger. Svarene bygger på offentlige kilder.";
+  honesty.textContent = HONESTY_BASE;
 
   var starters = document.createElement("div");
   starters.className = "starters";
@@ -219,6 +222,56 @@
     if (wrap.childNodes.length) container.appendChild(wrap);
   }
 
+  // Serveren har allerede snevret kildene inn til registerkilder verktøyene
+  // returnerte; her vises de bare som tekst — aldri som lenke eller HTML.
+  function addSources(container, sources) {
+    if (!Array.isArray(sources)) return;
+    var labels = [];
+    sources.forEach(function (source) {
+      if (!source || typeof source.label !== "string" || typeof source.id !== "string") return;
+      var page = typeof source.page === "string" && source.page && source.page !== source.label ? " – " + source.page : "";
+      labels.push(source.label + page);
+    });
+    if (!labels.length) return;
+    var el = document.createElement("p");
+    el.className = "sources";
+    el.textContent = "Kilder: " + labels.join("; ");
+    container.appendChild(el);
+  }
+
+  function addNotice(container, notice) {
+    if (!notice || typeof notice.text !== "string" || !notice.text) return;
+    var el = document.createElement("p");
+    el.className = "notice";
+    el.setAttribute("role", "note");
+    el.textContent = notice.text;
+    container.appendChild(el);
+  }
+
+  function formatDate(value) {
+    var match = typeof value === "string" && /^(\d{4})-(\d{2})-(\d{2})$/.exec(value);
+    return match ? match[3] + "." + match[2] + "." + match[1] : null;
+  }
+
+  function setHonesty(data) {
+    var date = formatDate(data && data.contentCheckedAt);
+    honesty.textContent = HONESTY_BASE + (date ? " Kildene er sist kontrollert " + date + "." : "");
+  }
+
+  // Sidens åpning står øverst i loggen til samtalen har startet, og byttes når
+  // brukeren går til en annen side før første melding.
+  var openingEl = null;
+  function setOpening(text) {
+    if (typeof text !== "string" || !text) return;
+    if (log.querySelector(".msg:not(.opening)")) return;
+    if (!openingEl) {
+      openingEl = document.createElement("div");
+      openingEl.className = "msg assistant opening";
+      log.insertBefore(openingEl, log.firstChild);
+    }
+    openingEl.textContent = text;
+  }
+
   function setStatus(text) {
     status.hidden = !text;
     status.textContent = text || "";
@@ -232,7 +285,10 @@
     fetch(cfg.endpoint + "?pageId=" + encodeURIComponent(pageId), { credentials: "include" })
       .then(function (res) { return res.ok ? res.json() : null; })
       .then(function (data) {
-        if (!data || !Array.isArray(data.starters)) return;
+        if (!data) return;
+        setHonesty(data);
+        setOpening(data.opening);
+        if (!Array.isArray(data.starters)) return;
         data.starters.forEach(function (text) {
           if (typeof text !== "string") return;
           var b = document.createElement("button");
@@ -272,6 +328,8 @@
         }
         if (typeof data.transcript === "string") transcript = data.transcript;
         var replyEl = addMessage("assistant", data.reply);
+        addNotice(replyEl, data.notice);
+        addSources(replyEl, data.sources);
         addLinks(replyEl, data.links);
       })
       .catch(function () {

@@ -6,7 +6,10 @@ import { consumeDemoQuota } from "@/lib/demo/leangenbukta-site/usage";
 import { loadLiveDemo } from "@/lib/live/demos";
 import { backendModel, backendEffort } from "@/lib/live/session-config";
 import { textChatTools } from "@/lib/demo/leangenbukta-chat/text-tools";
-import { textModeAddendum, KNOWLEDGE_GAP_REPLY, BACKEND_ERROR_REPLY } from "@/lib/demo/leangenbukta-chat/instructions";
+import {
+  textModeAddendum, pageOpening, replyNotice, unsupportedYearReply, KNOWLEDGE_GAP_REPLY, BACKEND_ERROR_REPLY,
+} from "@/lib/demo/leangenbukta-chat/instructions";
+import { leangenbuktaSourceRegistry } from "@/lib/demo/leangenbukta-chat/sources";
 import { runLeangenbuktaChat, ChatBackendError } from "@/lib/demo/leangenbukta-chat/backend";
 import { issueTranscript, verifyTranscript } from "@/lib/demo/leangenbukta-chat/transcript";
 import { fallbackLinks, resolveLinkIds } from "@/lib/demo/leangenbukta-chat/links";
@@ -99,8 +102,18 @@ export async function GET(request: NextRequest) {
   if (!page) return NextResponse.json({ error: "Chatten kjenner ikke denne siden. Bruk Boardet eller kontakt salgsteamet.", links: fallbackLinks() }, { status: 400, headers });
   try {
     const demo = await loadLiveDemo("leangenbukta-lokal");
+    // `prototype` og `contentCheckedAt` er det widgeten bygger statuslinja av:
+    // chatten er en prototype, og kildene er sist kontrollert på denne datoen.
     return NextResponse.json(
-      { pageTitle: page.title, starters: page.chatStarters, snapshotDate: SITE_SNAPSHOT_DATE, datasetVersion: demo.snapshotId },
+      {
+        pageTitle: page.title,
+        opening: pageOpening(page),
+        starters: page.chatStarters,
+        prototype: true,
+        snapshotDate: SITE_SNAPSHOT_DATE,
+        contentCheckedAt: leangenbuktaSourceRegistry().latestCheckedAt,
+        datasetVersion: demo.snapshotId,
+      },
       { headers },
     );
   } catch (error) {
@@ -175,6 +188,7 @@ export async function POST(request: NextRequest) {
       tools,
       parallelToolCalls: demo.parallelTools ?? true,
       conversation,
+      sourceRegistry: leangenbuktaSourceRegistry(),
       previousTurns,
       userText: parsed.data.message,
       // Overstyres bare i tester: produksjon bruker `runLeangenbuktaChat`s eget standardtak (25 s).
@@ -188,11 +202,18 @@ export async function POST(request: NextRequest) {
 
   // AE5/R9: et "fact"-svar uten verktøybevis erstattes av et fast
   // kunnskapshull-svar — modellen skal ikke kunne late som den har bevis den
-  // ikke har, uansett hva JSON-en sier.
+  // ikke har, uansett hva JSON-en sier. Det samme gjelder et svar som nevner
+  // et årstall ingen verktøysvar i denne meldingen har (2008-premisset), uansett
+  // svartype: da kan modellen ha bekreftet brukerens eget premiss.
   const noEvidence = result.answerType === "fact" && result.evidence.length === 0;
-  const reply = sanitizeReply(noEvidence ? KNOWLEDGE_GAP_REPLY : result.reply);
-  const answerType = noEvidence ? "gap" : result.answerType;
-  const links = resolveLinkIds(result.linkIds);
+  const unsupportedYears = result.answerType === "refusal" ? [] : result.unsupportedYears;
+  const fallbackReply = noEvidence ? KNOWLEDGE_GAP_REPLY : unsupportedYears.length ? unsupportedYearReply(unsupportedYears) : null;
+  const reply = sanitizeReply(fallbackReply ?? result.reply);
+  const answerType = fallbackReply ? "gap" : result.answerType;
+  const links = fallbackReply ? fallbackLinks() : resolveLinkIds(result.linkIds);
+  // Kilder vises bare ved et faktasvar som slapp gjennom — aldri ved et fast svar.
+  const sources = answerType === "fact" ? result.sources : [];
+  const notice = fallbackReply ? null : replyNotice({ userText: parsed.data.message, reply, answerType, provisional: result.provisional });
 
   const transcript = issueTranscript({
     visitorId: visitor.visitorId,
@@ -206,12 +227,14 @@ export async function POST(request: NextRequest) {
     ms: Date.now() - startedAt,
     answerType,
     evidenceTools: result.evidence.map((e) => e.tool),
+    sourceIds: sources.map((source) => source.id),
+    unsupportedYears: unsupportedYears.length,
     usage: result.usage,
     pageId: page.id,
   });
 
   return NextResponse.json(
-    { reply, answerType, links, transcript, datasetVersion: demo.snapshotId, evidence: result.evidence },
+    { reply, answerType, links, sources, notice, transcript, datasetVersion: demo.snapshotId, evidence: result.evidence },
     { headers },
   );
 }
