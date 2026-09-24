@@ -468,6 +468,23 @@ describe('Nyhavnas chatflate (nettsidekopien, 2026-09-24)', () => {
     expect((await GET(new NextRequest('https://platform.example/api/prototype/live?dataset=nyhavna-lokal&surface=chat'))).status).toBe(404);
   });
 
+  it('slipper Nyhavnas chatcookie inn på chatflaten fra en ekstern vert på en utviklingsserver, med Nyhavnas kvote', async () => {
+    vi.stubEnv('PLACY_NH_CHAT_ENABLED', 'true');
+    vi.stubEnv('PLACY_NH_CHAT_COOKIE_SECRET', 'n'.repeat(40));
+    const { issueNhChatCookie, NH_CHAT_COOKIE } = await import('@/lib/demo/nyhavna-chat/access');
+    const cookie = `${NH_CHAT_COOKIE}=${issueNhChatCookie()!.value}`;
+    const demo = await loadLiveDemo('nyhavna-lokal');
+    const origin = 'http://192.168.1.20:3107';
+    const remote = (extra: Record<string, unknown>, withCookie = true) => new NextRequest(`${origin}/api/prototype/live`, { method: 'POST', body: JSON.stringify({ sdp: 'v=0\r\n', ...extra }), headers: { 'Content-Type': 'application/json', origin, ...(withCookie ? { cookie } : {}) } });
+    expect((await POST(remote({ dataset: 'nyhavna-lokal', snapshotId: demo.snapshotId, surface: 'chat' }))).status).toBe(200);
+    expect(mocks.quota).toHaveBeenCalledWith(expect.stringMatching(/^[0-9a-f-]{36}$/), nyhavnaChatProfile.voice.meter);
+    mocks.quota.mockClear();
+    // Aldri boardets kartstemme, og aldri uten cookie.
+    expect((await POST(remote({ dataset: 'nyhavna-lokal', snapshotId: demo.snapshotId }))).status).toBe(404);
+    expect((await POST(remote({ dataset: 'nyhavna-lokal', snapshotId: demo.snapshotId, surface: 'chat' }, false))).status).toBe(404);
+    expect(mocks.quota).not.toHaveBeenCalled();
+  });
+
   describe('på et delt produksjonsbygg', () => {
     const SHARED = 'https://demo.placy.example';
     beforeEach(() => {
@@ -492,23 +509,25 @@ describe('Nyhavnas chatflate (nettsidekopien, 2026-09-24)', () => {
       expect(fetch).not.toHaveBeenCalled();
     });
 
-    it('slipper bare chatflaten for nyhavna-lokal inn når stemmen er slått på, med Nyhavnas egen kvote', async () => {
+    it('holder den lokale ruta stengt for Nyhavna-besøkende i produksjon, også med stemmeflagget (bare den delte stemmen har varig regnskap)', async () => {
       vi.stubEnv('PLACY_NH_CHAT_VOICE', 'true');
       const demo = await loadLiveDemo('nyhavna-lokal');
-      const leangenbukta = await loadLiveDemo('leangenbukta-lokal');
       const cookie = await nhCookie();
-      expect((await POST(await shared({ dataset: 'nyhavna-lokal', snapshotId: demo.snapshotId, surface: 'chat' }, cookie))).status).toBe(200);
-      expect(mocks.quota).toHaveBeenCalledWith(expect.stringMatching(/^[0-9a-f-]{36}$/), nyhavnaChatProfile.voice.meter);
-      mocks.quota.mockClear();
-      vi.mocked(fetch).mockClear();
-      // Boardets kartstemme, Leangenbukta og snapshotet er ikke en del av Nyhavna-chatten.
-      expect((await POST(await shared({ dataset: 'nyhavna-lokal', snapshotId: demo.snapshotId }, cookie))).status).toBe(404);
-      expect((await POST(await shared({ dataset: 'leangenbukta-lokal', snapshotId: leangenbukta.snapshotId, surface: 'chat' }, cookie))).status).toBe(404);
-      expect((await POST(await shared({ snapshotId: 'snapshot-test' }, cookie))).status).toBe(404);
-      expect((await POST(await shared({ dataset: 'nyhavna-lokal', snapshotId: demo.snapshotId, surface: 'chat' }, null))).status).toBe(404);
-      expect((await POST(await shared({ dataset: 'nyhavna-lokal', snapshotId: demo.snapshotId, surface: 'chat' }, cookie, 'https://evil.example'))).status).toBe(404);
+      expect((await POST(await shared({ dataset: 'nyhavna-lokal', snapshotId: demo.snapshotId, surface: 'chat' }, cookie))).status).toBe(404);
+      expect((await GET(new NextRequest(`${SHARED}/api/prototype/live?dataset=nyhavna-lokal&surface=chat`, { headers: { cookie } }))).status).toBe(404);
+      expect(mocks.reserve).not.toHaveBeenCalled();
       expect(mocks.quota).not.toHaveBeenCalled();
       expect(fetch).not.toHaveBeenCalled();
+    });
+
+    it('stenger den lokale ruta for alle eksterne besøkende når miljøet har delt stemme', async () => {
+      vi.stubEnv('PLACY_HOSTED_VOICE', 'true');
+      vi.stubEnv('PLACY_LB_DEMO_ACCESS_CODE', 'leangenbukta-demo-code');
+      vi.stubEnv('PLACY_LB_DEMO_COOKIE_SECRET', 'k'.repeat(40));
+      const leangenbukta = await loadLiveDemo('leangenbukta-lokal');
+      const lbCookie = `${LB_DEMO_COOKIE}=${issueLbDemoCookie('leangenbukta-demo-code')}`;
+      expect((await POST(await shared({ dataset: 'leangenbukta-lokal', snapshotId: leangenbukta.snapshotId, surface: 'chat' }, lbCookie))).status).toBe(404);
+      expect(mocks.reserve).not.toHaveBeenCalled();
     });
 
     it('gir ikke en Leangenbukta-cookie Nyhavnas chatflate', async () => {
@@ -519,5 +538,69 @@ describe('Nyhavnas chatflate (nettsidekopien, 2026-09-24)', () => {
       const lbCookie = `${LB_DEMO_COOKIE}=${issueLbDemoCookie('leangenbukta-demo-code')}`;
       expect((await POST(await shared({ dataset: 'nyhavna-lokal', snapshotId: demo.snapshotId, surface: 'chat' }, lbCookie))).status).toBe(404);
     });
+  });
+});
+
+describe('Chatflaten på den delte stemmen: helsesjekk og tilgang (2026-09-24)', () => {
+  const PLATFORM = 'https://platform.example';
+  beforeEach(() => {
+    vi.stubEnv('NODE_ENV', 'production');
+    vi.stubEnv('PLACY_HOSTED_VOICE', 'true');
+    vi.stubEnv('PLACY_NH_CHAT_ENABLED', 'true');
+    vi.stubEnv('PLACY_NH_CHAT_COOKIE_SECRET', 'n'.repeat(40));
+    vi.stubEnv('PLACY_NH_CHAT_VOICE', 'true');
+    mocks.resolveProject.mockResolvedValue({ slug: 'nyhavna', demo: { id: 'nyhavna-lokal', snapshotId: 'project-snapshot' } });
+  });
+  const nhCookie = async () => {
+    const { issueNhChatCookie, NH_CHAT_COOKIE } = await import('@/lib/demo/nyhavna-chat/access');
+    return `${NH_CHAT_COOKIE}=${issueNhChatCookie()!.value}`;
+  };
+  const health = (query: string, cookie?: string) => GET(new NextRequest(`${PLATFORM}/api/prototype/live?${query}`, { headers: cookie ? { cookie } : {} }));
+
+  it('svarer med websocket-transport og prosjektets innholdsversjon for kundens egen besøkende', async () => {
+    const response = await health('dataset=nyhavna-lokal&surface=chat', await nhCookie());
+    expect(response.status).toBe(200);
+    expect(await response.json()).toMatchObject({ protocol: 'live', transport: 'websocket', surface: 'chat', dataset: 'nyhavna-lokal', snapshotId: 'project-snapshot', project: 'nyhavna' });
+    expect(mocks.resolveProject).toHaveBeenCalledWith({ project: 'nyhavna', dataset: 'nyhavna-lokal' }, 'public');
+  });
+
+  it.each([
+    ['uten chatcookie', 'dataset=nyhavna-lokal&surface=chat', false],
+    ['for en kunde uten delt stemme', 'dataset=leangenbukta-lokal&surface=chat', true],
+    ['for et ukjent datasett', 'dataset=nyhavna-leve&surface=chat', true],
+    ['for en ukjent flate', 'dataset=nyhavna-lokal&surface=kart', true],
+  ])('er 404 %s', async (_label, query, withCookie) => {
+    const response = await health(query, withCookie ? await nhCookie() : undefined);
+    expect(response.status).toBe(404);
+    expect(mocks.resolveProject).not.toHaveBeenCalled();
+  });
+
+  it('er 404 uten kundens stemmeflagg, og når bindingen peker på et annet datasett', async () => {
+    const cookie = await nhCookie();
+    vi.stubEnv('PLACY_NH_CHAT_VOICE', 'false');
+    expect((await health('dataset=nyhavna-lokal&surface=chat', cookie)).status).toBe(404);
+    vi.stubEnv('PLACY_NH_CHAT_VOICE', 'true');
+    mocks.resolveProject.mockResolvedValueOnce({ slug: 'nyhavna', demo: { id: 'leangenbukta-lokal', snapshotId: 'x' } });
+    expect((await health('dataset=nyhavna-lokal&surface=chat', cookie)).status).toBe(404);
+  });
+
+  it('lar boardets delte helsesjekk være som før', async () => {
+    const response = await health('project=nyhavna');
+    expect(response.status).toBe(200);
+    expect(await response.json()).not.toHaveProperty('surface');
+    expect(mocks.resolveProject).toHaveBeenCalledWith({ project: 'nyhavna' }, 'public');
+  });
+
+  it('gir kontrollforbindelsen bare kundens besøkende for Nyhavna, og bare fra samme origin', async () => {
+    const { hostedChatVisitors } = await import('@/lib/live/hosted-chat');
+    const cookie = await nhCookie();
+    const upgrade = (headers: Record<string, string>) => new Request(`${PLATFORM}/api/live/control`, { headers });
+    const own = hostedChatVisitors(upgrade({ cookie, origin: PLATFORM }));
+    expect(own.visitorFor('nyhavna')).toMatch(/^[0-9a-f-]{36}$/);
+    expect(own.visitorFor('leangenbukta')).toBeNull();
+    expect(hostedChatVisitors(upgrade({ cookie, origin: 'https://evil.example' })).visitorFor('nyhavna')).toBeNull();
+    expect(hostedChatVisitors(upgrade({ origin: PLATFORM })).visitorFor('nyhavna')).toBeNull();
+    vi.stubEnv('PLACY_HOSTED_VOICE', 'false');
+    expect(hostedChatVisitors(upgrade({ cookie, origin: PLATFORM })).visitorFor('nyhavna')).toBeNull();
   });
 });

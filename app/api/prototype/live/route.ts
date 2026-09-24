@@ -13,6 +13,7 @@ import { DEFAULT_LIVE_DATASET, isLiveDataset, loadLiveDemo, type LiveDemo } from
 import { resolveVoiceProject, VoiceProjectError } from '@/lib/live/projects';
 import { consumeDemoQuota } from '@/lib/demo/site-chat/usage';
 import { demoVoiceVisitor } from '@/lib/live/demo-voice-access';
+import { hostedChatAdmission } from '@/lib/live/hosted-chat';
 import { siteChatCustomerForDataset } from '@/lib/demo/site-chat/customers';
 import { transcriptScope, type SiteChatProfile } from '@/lib/demo/site-chat/profile';
 import {
@@ -71,11 +72,29 @@ export async function GET(request: NextRequest) {
   const surface = request.nextUrl.searchParams.get('surface');
   const demoVisitor = hosted ? null : demoVoiceVisitor(request, { dataset: request.nextUrl.searchParams.get('dataset'), surface });
   if (hosted ? !access : !localRequest(request) && !demoVisitor) return new NextResponse(null, { status: 404 });
-  // Den delte stemmetjenesten har bare boardflaten ennå; chatflaten finnes bare
-  // i denne lokale Live-ruta, for kundene i chatboks-registeret.
-  // Avvisning gir klienten en synlig feil, ikke et kart.
-  if (surface !== null && (surface !== CHAT_SURFACE || hosted || !siteChatCustomerForDataset(request.nextUrl.searchParams.get('dataset')))) {
+  // Chatflaten finnes for kundene i chatboks-registeret. På den delte stemmen
+  // bare for en kunde med binding der og med kundens egen tilgang
+  // (`lib/live/hosted-chat.ts`). Avvisning gir en synlig feil, ikke et kart.
+  const hostedChat = hosted && surface === CHAT_SURFACE ? hostedChatAdmission(request, request.nextUrl.searchParams.get('dataset')) : null;
+  if (surface !== null && (surface !== CHAT_SURFACE || (hosted ? !hostedChat : !siteChatCustomerForDataset(request.nextUrl.searchParams.get('dataset'))))) {
     return new NextResponse(null, { status: 404, headers: { 'Cache-Control': 'no-store' } });
+  }
+  if (hostedChat) {
+    try {
+      const customer = hostedChat.customer;
+      const resolved = await resolveVoiceProject({ project: customer.voice.hosted!.project, dataset: customer.dataset }, access?.role === 'benchmark' ? 'benchmark' : 'public');
+      if (resolved.demo.id !== customer.dataset) return new NextResponse(null, { status: 404, headers: { 'Cache-Control': 'no-store' } });
+      return NextResponse.json({
+        configured: Boolean(process.env.OPENAI_API_KEY),
+        voiceModel: liveModel(), voice: liveVoice(), backendModel: backendModel(),
+        dataset: resolved.demo.id, snapshotId: resolved.demo.snapshotId,
+        protocol: 'live', project: resolved.slug, surface: CHAT_SURFACE, transport: 'websocket', warningMs: 26 * 60 * 1000,
+      }, { headers: { 'Cache-Control': 'no-store' } });
+    } catch (error) {
+      if (error instanceof VoiceProjectError && error.kind === 'not_found') return new NextResponse(null, { status: 404, headers: { 'Cache-Control': 'no-store' } });
+      console.error('hosted_chat_voice_project_load_failed', error instanceof VoiceProjectError ? error.kind : 'unknown');
+      return NextResponse.json({ error: 'Samtalen er midlertidig utilgjengelig. Prøv igjen om litt.' }, { status: 503, headers: { 'Cache-Control': 'no-store' } });
+    }
   }
   if (hosted) {
     try {

@@ -11,6 +11,16 @@ import { resolveVoiceProject } from '@/lib/live/projects';
 import { backendModel, liveModel, liveSessionConfig, liveVoice } from '@/lib/live/session-config';
 import type { DemoAccess } from '@/lib/live/hosted-access';
 import type { LiveEndReason, LiveServerMessage } from '@/lib/live/types';
+import { NO_HOSTED_CHAT, type HostedChatVisitors } from '@/lib/live/hosted-chat';
+import { siteChatCustomerForDataset } from '@/lib/demo/site-chat/customers';
+import { transcriptScope, type SiteChatProfile } from '@/lib/demo/site-chat/profile';
+import { consumeDemoQuota } from '@/lib/demo/site-chat/usage';
+import { MAX_TRANSCRIPT_TOKEN_LENGTH, verifyTranscript, type VerifiedTranscript } from '@/lib/demo/site-chat/transcript';
+import { createVoiceRecording, type VoiceRecording } from '@/lib/demo/site-chat/voice-handoff';
+import {
+  CHAT_SURFACE_CONTINUED_BACKEND_ADDENDUM, chatSurfaceBackendAddendum, chatSurfaceConversation, chatSurfaceHistoryInput,
+  chatSurfaceTools, chatSurfaceVoiceInstructions,
+} from '@/lib/live/chat-surface';
 
 const contextSchema = z.discriminatedUnion('kind', [
   z.object({ kind: z.literal('theme'), id: z.string().max(120), label: z.string().max(120).optional() }),
@@ -19,7 +29,11 @@ const contextSchema = z.discriminatedUnion('kind', [
   z.object({ kind: z.literal('text'), text: z.string().max(2000) }),
 ]);
 const label = z.string().regex(/^[a-zA-Z0-9_.:-]{1,100}$/);
-const startSchema = z.object({ type: z.literal('start'), sdp: z.string().startsWith('v=0').max(32000), snapshotId: z.string().max(150), project: z.string().regex(/^[a-z0-9][a-z0-9-]{0,79}$/).optional(), dataset: z.string().max(100).optional(), voice: z.literal('willow').optional(), testRunId: label.optional(), scenarioId: label.optional() }).strict();
+const startSchema = z.object({ type: z.literal('start'), sdp: z.string().startsWith('v=0').max(32000), snapshotId: z.string().max(150), project: z.string().regex(/^[a-z0-9][a-z0-9-]{0,79}$/).optional(), dataset: z.string().max(100).optional(), voice: z.literal('willow').optional(), testRunId: label.optional(), scenarioId: label.optional(),
+  // Chatboksen på en kundes nettside (`lib/live/hosted-chat.ts`). Utelatt = boardet.
+  surface: z.literal('chat').optional(), transcript: z.string().max(MAX_TRANSCRIPT_TOKEN_LENGTH).optional() }).strict();
+/** SDP (≤32 000) + tekstchattens token (≤24 576) + omslag, som den lokale ruta. */
+export const CONTROL_MAX_MESSAGE = 64000;
 const messageSchema = z.discriminatedUnion('type', [
   startSchema,
   z.object({ type: z.literal('context'), message: contextSchema }).strict(),
@@ -38,11 +52,27 @@ export interface HostedControlDependencies {
   hangup: typeof liveHangup;
   connect: typeof connectLiveSideband;
   resolveProject: typeof resolveVoiceProject;
+  /** Chatboks-registeret og kundens stemmekvote (bare chatflaten). */
+  chatCustomer: typeof siteChatCustomerForDataset;
+  consumeChatVoiceQuota: typeof consumeDemoQuota;
 }
 
-/** Each upgraded connection owns its tools and map bridge; only the ledger is shared. */
-export function runHostedControl(socket: WebSocket, access: DemoAccess, overrides: Partial<HostedControlDependencies> = {}): Promise<void> {
-  const deps: HostedControlDependencies = { ledger:createVoiceLedger(),createSession:createLiveSession,hangup:liveHangup,connect:connectLiveSideband,resolveProject:resolveVoiceProject,...overrides };
+/** Hva talen fikk med seg fra tekstchatten; samme statuser som den lokale ruta. */
+type ChatContinuity = { status: 'carried'; turns: number; trimmed: boolean } | { status: 'none' | 'rejected' };
+
+const QUOTA_ERRORS = {
+  limit: 'Dagens samtaler i chatten er brukt opp. Skriv i stedet, eller prøv igjen i morgen.',
+  store: 'Samtalen er midlertidig utilgjengelig. Skriv i stedet, eller prøv igjen om litt.',
+};
+
+/**
+ * Each upgraded connection owns its tools and map bridge; only the ledger is shared.
+ * `chatVisitors` is decided once from the upgrade request's cookies; without it
+ * the chat surface is never admitted.
+ */
+export function runHostedControl(socket: WebSocket, access: DemoAccess, overrides: Partial<HostedControlDependencies> = {}, chatVisitors: HostedChatVisitors = NO_HOSTED_CHAT): Promise<void> {
+  const deps: HostedControlDependencies = { ledger:createVoiceLedger(),createSession:createLiveSession,hangup:liveHangup,connect:connectLiveSideband,resolveProject:resolveVoiceProject,
+    chatCustomer:siteChatCustomerForDataset,consumeChatVoiceQuota:consumeDemoQuota,...overrides };
   const ownerToken = randomUUID();
   const bridge = createMapBridge();
   let session: VoiceSession | undefined;
@@ -65,6 +95,12 @@ export function runHostedControl(socket: WebSocket, access: DemoAccess, override
   let messageCount = 0;
   let deadline: ReturnType<typeof setTimeout> | undefined;
   let heartbeatBusy = false;
+  // Chatflaten: opptaket av talen og den besøkende det tilhører. Tokenet sendes
+  // tilbake på denne forbindelsen før den lukkes, aldri via et annet kall.
+  let recording: VoiceRecording | undefined;
+  let chatVisitorId: string | null = null;
+  let ready = false;
+  let startError = 'Samtalen kunne ikke starte. Last siden på nytt og prøv igjen om litt.';
   let resolveDone!: () => void;
   const done = new Promise<void>(resolve => { resolveDone = resolve; });
   const owned = () => ({sessionId:session!.id,ownerToken});
@@ -121,6 +157,10 @@ export function runHostedControl(socket: WebSocket, access: DemoAccess, override
         }
       }
       bridge.close();
+      if (recording && chatVisitorId && ready) {
+        const handoff = recording.issue(chatVisitorId);
+        send(handoff.ok ? {type:'handoff',status:'ready',transcript:handoff.transcript,voiceTurns:handoff.voiceTurns,trimmed:handoff.trimmed} : {type:'handoff',status:'failed'});
+      }
       send({type:'ended',reason,message:endMessages[reason]});
       socket.close(1000,'conversation ended');
       resolveDone();
@@ -144,24 +184,87 @@ export function runHostedControl(socket: WebSocket, access: DemoAccess, override
   async function start(input: z.infer<typeof startSchema>) {
     clearTimeout(admissionTimer);
     if (access.role !== 'benchmark' && (input.testRunId || input.scenarioId)) throw new Error('test_authorization');
-    const resolved = await deps.resolveProject({...(input.project === undefined ? {} : {project:input.project}),...(input.dataset === undefined ? {} : {dataset:input.dataset})},access.role === 'benchmark' ? 'benchmark' : 'public');
+    const chat = input.surface === 'chat';
+    let customer: SiteChatProfile | null = null;
+    if (chat) {
+      // Chatflaten: bare en registrert kunde med binding i den delte stemmen, og
+      // bare for kundens egen besøkende. Prosjektet velges av kundens profil,
+      // aldri av nettleseren; et annet prosjekt eller et testløp avvises.
+      customer = deps.chatCustomer(input.dataset);
+      if (!customer?.voice.hosted || input.testRunId || input.scenarioId
+        || (input.project !== undefined && input.project !== customer.voice.hosted.project)) throw new Error('chat_surface');
+      chatVisitorId = chatVisitors.visitorFor(customer.id);
+      if (!chatVisitorId) throw new Error('chat_access');
+    } else if (input.transcript !== undefined) throw new Error('transcript_without_chat');
+    const selection = customer
+      ? {project:customer.voice.hosted!.project,dataset:customer.dataset}
+      : {...(input.project === undefined ? {} : {project:input.project}),...(input.dataset === undefined ? {} : {dataset:input.dataset})};
+    const resolved = await deps.resolveProject(selection,access.role === 'benchmark' ? 'benchmark' : 'public');
     const demo = resolved.demo;
     if (closing) return;
     if (demo.snapshotId !== input.snapshotId) throw new Error('snapshot');
+    // Eksakt binding: bindingens innhold må være kundens eget datasett.
+    if (customer && demo.id !== customer.dataset) throw new Error('chat_binding');
     if (liveModel() !== 'gpt-live-1' || backendModel() !== 'gpt-5.6-terra' || liveVoice() !== 'willow') throw new Error('model_config');
-    const configuration = liveSessionConfig(demo.voiceInstructions ?? '', demo.backendInstructions, demo.tools);
-    configuration.delegation.responses.parallel_tool_calls = demo.parallelTools ?? true;
+
+    // Tekstchattens token er bundet til kunden, den besøkende og kildens egen
+    // innholdsversjon (det tekstendepunktet serverer), ikke prosjektets.
+    let continuity: ChatContinuity | null = null;
+    let verified: VerifiedTranscript | null = null;
+    if (customer) {
+      if (!input.transcript) continuity = {status:'none'};
+      else {
+        const candidate = verifyTranscript(input.transcript, chatVisitorId!, transcriptScope(customer));
+        if (!candidate || candidate.snapshotId !== resolved.contentSnapshotId) continuity = {status:'rejected'};
+        else if (!candidate.turns.length) { continuity = {status:'none'}; verified = candidate; }
+        else { continuity = {status:'carried',turns:candidate.turns.length,trimmed:candidate.trimmed}; verified = candidate; }
+      }
+    }
+    const backendFor = (withHistory: boolean) => customer
+      ? `${demo.backendInstructions}\n\n${chatSurfaceBackendAddendum(customer.voice)}${withHistory ? `\n${CHAT_SURFACE_CONTINUED_BACKEND_ADDENDUM}` : ''}`
+      : demo.backendInstructions;
+    const configFor = (withHistory: boolean) => {
+      const config = customer
+        ? liveSessionConfig(chatSurfaceVoiceInstructions(customer.voice,{continued:withHistory}),backendFor(withHistory),chatSurfaceTools(demo.tools))
+        : liveSessionConfig(demo.voiceInstructions ?? '', demo.backendInstructions, demo.tools);
+      config.delegation.responses.parallel_tool_calls = demo.parallelTools ?? true;
+      return config;
+    };
+    let continued = continuity?.status === 'carried';
+    // The config version names instructions and tools, never conversation content.
+    const configuration = configFor(continued);
     const configVersion = createHash('sha256').update(JSON.stringify(configuration)).digest('hex');
+    const withInput = (config: ReturnType<typeof configFor>, history: boolean) =>
+      history && verified ? {...config,input:chatSurfaceHistoryInput(verified.turns)} : config;
     const environment = process.env.VERCEL_ENV === 'production' ? 'production' : process.env.VERCEL_ENV === 'preview' ? 'preview' : 'development';
     session = await deps.ledger.reserve({tenantId:resolved.tenant.id,ownerToken,environment,configVersion,datasetVersion:demo.snapshotId,
       models:{voice:'gpt-live-1',backend:'gpt-5.6-terra',speaker:'willow'},testRunId:input.testRunId,scenarioId:input.scenarioId});
     if (closing) { await finish(); return; }
+    if (customer) {
+      // Kundens egen døgnkvote i tillegg til prosjektets budsjett i registeret.
+      // Trekkes etter en vellykket reservasjon, og feiler lukket.
+      const quota = await deps.consumeChatVoiceQuota(chatVisitorId!, customer.voice.meter);
+      if (!quota.allowed) {
+        startError = quota.reason === 'store' ? QUOTA_ERRORS.store : QUOTA_ERRORS.limit;
+        throw new Error('chat_quota');
+      }
+      if (closing) { await finish(); return; }
+    }
     await deps.ledger.markCreating(owned());
     if (closing) {
       await finish(); return;
     }
     providerAttempted = true;
-    const created = await deps.createSession(configuration,input.sdp);
+    let created;
+    try {
+      created = await deps.createSession(withInput(configuration,continued),input.sdp);
+    } catch (error) {
+      // Avviser Live historikken (400, ingen sesjon opprettet), startes talen
+      // uten den — med ærlig status og ny-samtale-instruks.
+      if (!continued || !(error instanceof LiveSessionError) || error.status !== 400 || error.created) throw error;
+      continuity = {status:'rejected'}; continued = false; verified = null;
+      created = await deps.createSession(configFor(false),input.sdp);
+    }
     if (LIVE_SESSION_ID.test(created.sessionId)) providerId = created.sessionId;
     if (!providerId || (created.model && created.model !== 'gpt-live-1' && !/^gpt-live-1-\d{4}-\d{2}-\d{2}$/.test(created.model))) throw new Error('provider_identity');
     await deps.ledger.bindProvider({...owned(),providerSessionId:providerId});
@@ -170,22 +273,27 @@ export function runHostedControl(socket: WebSocket, access: DemoAccess, override
     if (remaining <= 10000) throw new Error('deadline');
     deadline = setTimeout(() => { void requestEnd('limit'); },remaining);
     deadline.unref?.();
-    handle = await deps.connect(providerId,ownerToken,demo.createConversation(),{
-      hosted:true,bridge,backendInstructions:demo.backendInstructions,onMeteringEvent,
+    if (customer) recording = createVoiceRecording({scope:transcriptScope(customer),visitorId:chatVisitorId!,snapshotId:resolved.contentSnapshotId,
+      baseTurns:verified?.turns ?? [],baseTrimmed:verified?.trimmed ?? false});
+    handle = await deps.connect(providerId,ownerToken,customer ? chatSurfaceConversation(demo.createConversation()) : demo.createConversation(),{
+      hosted:true,bridge,backendInstructions:backendFor(continued),onMeteringEvent,
+      // Chatflaten har ingen nettleserbro: ingen kartverktøy sendes til nettleseren.
+      ...(customer ? {browserTools:new Set<string>(),transcript:recording!.sink} : {}),
       supervisor:{setCleanup:(_token,callback) => {cleanup=callback;},end:async (_token,endReason) => {
         if (!closing && endReason && endReason in endMessages) reason = endReason as LiveEndReason;
         await finish();return true;
       }},
     });
     if (closing) { await handle.end(reason); await finish(); return; }
-    send({type:'ready',sdp:created.sdp,sessionId:session.id,warningMs:Math.max(0,remaining-120000)});
+    ready = true;
+    send({type:'ready',sdp:created.sdp,sessionId:session.id,warningMs:Math.max(0,remaining-120000),...(continuity ? {continuity} : {})});
   }
 
   socket.on('pong', () => {lastPong=Date.now();});
   socket.on('message', raw => {
     if (closing) return;
     if (Date.now()-messageWindow > 1000) {messageWindow=Date.now();messageCount=0;}
-    if (++messageCount > 50 || raw.toString().length > 50000) {void requestEnd('error');return;}
+    if (++messageCount > 50 || raw.toString().length > CONTROL_MAX_MESSAGE) {void requestEnd('error');return;}
     let parsed: ReturnType<typeof messageSchema.safeParse>;
     try {parsed=messageSchema.safeParse(JSON.parse(raw.toString()));} catch {void requestEnd('error');return;}
     if(!parsed.success) {void requestEnd('error');return;}
@@ -194,7 +302,7 @@ export function runHostedControl(socket: WebSocket, access: DemoAccess, override
       if(startPromise) {void requestEnd('error');return;}
       startPromise=start(input).catch(async error => {
         if(error instanceof LiveSessionError && !error.created) creationRejected=true;
-        send({type:'error',message:'Samtalen kunne ikke starte. Last siden på nytt og prøv igjen om litt.'});
+        send({type:'error',message:startError});
         reason='error';await finish();
       });
     } else if (input.type === 'stop') void requestEnd('manual');

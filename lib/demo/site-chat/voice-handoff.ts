@@ -16,7 +16,12 @@ import type { LiveTranscriptSink } from "@/lib/live/sideband";
  * historikktoken (`/api/prototype/live/handoff`): tekstturene fra før talen
  * pluss taleturene, i samme vindu som tekstchatten ellers bruker.
  *
- * ## Livstid og avgrensning
+ * På den delte stemmen (`lib/live/hosted-control.ts`) finnes ingen slik
+ * utveksling: forespørslene kan havne på ulike funksjonsinstanser. Der eier
+ * kontrollforbindelsen sitt eget opptak (`createVoiceRecording`) og sender det
+ * signerte tokenet tilbake på den SAMME forbindelsen før den lukkes.
+ *
+ * ## Livstid og avgrensning (lokal rute)
  *
  * - Bare i minnet i denne Node-prosessen, aldri på disk eller i database.
  * - Nøkkelen er supervisorens tilfeldige sesjonstoken (UUID) OG den besøkendes
@@ -37,7 +42,8 @@ const MAX_ENTRIES = 50;
 const TURN_GAP_MS = 1500;
 const MAX_TURN_CHARS = 2000;
 
-interface HandoffEntry {
+/** Det én talesesjon har hørt og sagt, bundet til kunden og den besøkende. */
+interface VoiceRecordingState {
   scope: TranscriptScope;
   visitorId: string;
   snapshotId: string;
@@ -47,7 +53,98 @@ interface HandoffEntry {
   lastRole: "user" | "assistant" | null;
   lastEndMs: number | null;
   closed: boolean;
+}
+
+interface HandoffEntry {
+  recording: VoiceRecording;
   expiresAt: number;
+}
+
+export interface VoiceRecordingInput {
+  scope: TranscriptScope;
+  visitorId: string;
+  /** Innholdsversjonen tekstchatten verifiserer mot (kildens egen, ikke prosjektets). */
+  snapshotId: string;
+  baseTurns: readonly TranscriptTurn[];
+  baseTrimmed: boolean;
+}
+
+export type VoiceHandoffResult =
+  | { ok: true; transcript: string; voiceTurns: number; trimmed: boolean }
+  | { ok: false };
+
+export interface VoiceRecording {
+  readonly customerId: string;
+  /** Mottakeren sidebandet skriver til. */
+  sink: LiveTranscriptSink;
+  /** Nytt signert token for tekstchatten, bare for den samme besøkende. */
+  issue: (visitorId: string) => VoiceHandoffResult;
+  onClose?: () => void;
+}
+
+/**
+ * Opptaket for én talesesjon, uten lagring (2026-09-24). Den delte stemmen
+ * (`lib/live/hosted-control.ts`) eier ett opptak per kontrollforbindelse og
+ * sender tokenet tilbake på den samme forbindelsen når talen er slutt; den
+ * lokale ruta legger opptaket i minnelageret under (`startVoiceHandoff`).
+ */
+export function createVoiceRecording(input: VoiceRecordingInput): VoiceRecording {
+  const entry: VoiceRecordingState = {
+    scope: input.scope,
+    visitorId: input.visitorId,
+    snapshotId: input.snapshotId,
+    baseTurns: [...input.baseTurns],
+    baseTrimmed: input.baseTrimmed,
+    voiceTurns: [],
+    lastRole: null,
+    lastEndMs: null,
+    closed: false,
+  };
+  const push = (role: "user" | "assistant", text: string) => {
+    entry.voiceTurns.push({ role, text: text.slice(0, MAX_TURN_CHARS), via: "voice" });
+    if (entry.voiceTurns.length > MAX_TURNS * 2) entry.voiceTurns.splice(0, entry.voiceTurns.length - MAX_TURNS * 2);
+  };
+  const recording: VoiceRecording = {
+    customerId: input.scope.customerId,
+    sink: {
+      delta(role, delta, timing) {
+        if (entry.closed) return;
+        const last = entry.voiceTurns.at(-1);
+        const gap = timing.startMs !== null && entry.lastEndMs !== null && timing.startMs - entry.lastEndMs > TURN_GAP_MS;
+        if (!last || entry.lastRole !== role || gap) push(role, delta);
+        else last.text = (last.text + delta).slice(0, MAX_TURN_CHARS);
+        entry.lastRole = role;
+        entry.lastEndMs = timing.endMs ?? timing.startMs ?? entry.lastEndMs;
+      },
+      typed(text) {
+        if (entry.closed || !text.trim()) return;
+        push("user", text.trim());
+        // En skrevet melding avslutter ev. pågående talt tur.
+        entry.lastRole = null;
+      },
+      close() {
+        if (entry.closed) return;
+        entry.closed = true;
+        recording.onClose?.();
+      },
+    },
+    issue(visitorId) {
+      if (visitorId !== entry.visitorId) return { ok: false };
+      const voiceTurns = entry.voiceTurns.filter((turn) => turn.text.trim());
+      const window = windowTurns(entry.baseTurns, voiceTurns);
+      const trimmed = window.trimmed || entry.baseTrimmed;
+      const transcript = issueTranscript({
+        scope: entry.scope,
+        visitorId,
+        snapshotId: entry.snapshotId,
+        previousTurns: [],
+        newTurns: window.turns,
+        previousTrimmed: trimmed,
+      });
+      return { ok: true, transcript, voiceTurns: voiceTurns.length, trimmed };
+    },
+  };
+  return recording;
 }
 
 const globals = globalThis as typeof globalThis & { placySiteChatVoiceHandoffs?: Map<string, HandoffEntry> };
@@ -65,68 +162,25 @@ function prune(now: number) {
 }
 
 /**
- * Starter opptaket for én talesesjon. `baseTurns` er de VERIFISERTE turene
+ * Den lokale ruta: starter opptaket for én talesesjon og legger det i
+ * prosessens minne under sesjonstokenet. `baseTurns` er de VERIFISERTE turene
  * talen startet med (tomt når det ikke fantes noe gyldig token). Returnerer
  * mottakeren sidebandet skriver til.
  */
-export function startVoiceHandoff(
-  sessionToken: string,
-  input: { scope: TranscriptScope; visitorId: string; snapshotId: string; baseTurns: readonly TranscriptTurn[]; baseTrimmed: boolean },
-  now = Date.now(),
-): LiveTranscriptSink {
+export function startVoiceHandoff(sessionToken: string, input: VoiceRecordingInput, now = Date.now()): LiveTranscriptSink {
   prune(now);
-  const entry: HandoffEntry = {
-    scope: input.scope,
-    visitorId: input.visitorId,
-    snapshotId: input.snapshotId,
-    baseTurns: [...input.baseTurns],
-    baseTrimmed: input.baseTrimmed,
-    voiceTurns: [],
-    lastRole: null,
-    lastEndMs: null,
-    closed: false,
-    expiresAt: now + LIVE_SESSION_MAX_MS + HANDOFF_TTL_MS,
-  };
+  const recording = createVoiceRecording(input);
+  const entry: HandoffEntry = { recording, expiresAt: now + LIVE_SESSION_MAX_MS + HANDOFF_TTL_MS };
+  recording.onClose = () => { entry.expiresAt = Date.now() + HANDOFF_TTL_MS; };
   store().set(sessionToken, entry);
-
-  const push = (role: "user" | "assistant", text: string) => {
-    entry.voiceTurns.push({ role, text: text.slice(0, MAX_TURN_CHARS), via: "voice" });
-    if (entry.voiceTurns.length > MAX_TURNS * 2) entry.voiceTurns.splice(0, entry.voiceTurns.length - MAX_TURNS * 2);
-  };
-
-  return {
-    delta(role, delta, timing) {
-      if (entry.closed) return;
-      const last = entry.voiceTurns.at(-1);
-      const gap = timing.startMs !== null && entry.lastEndMs !== null && timing.startMs - entry.lastEndMs > TURN_GAP_MS;
-      if (!last || entry.lastRole !== role || gap) push(role, delta);
-      else last.text = (last.text + delta).slice(0, MAX_TURN_CHARS);
-      entry.lastRole = role;
-      entry.lastEndMs = timing.endMs ?? timing.startMs ?? entry.lastEndMs;
-    },
-    typed(text) {
-      if (entry.closed || !text.trim()) return;
-      push("user", text.trim());
-      // En skrevet melding avslutter ev. pågående talt tur.
-      entry.lastRole = null;
-    },
-    close() {
-      if (entry.closed) return;
-      entry.closed = true;
-      entry.expiresAt = Date.now() + HANDOFF_TTL_MS;
-    },
-  };
+  return recording.sink;
 }
 
 /** Kunden en pågående eller nylig avsluttet taleoverføring tilhører, eller null. */
 export function voiceHandoffCustomer(sessionToken: string, now = Date.now()): string | null {
   const entry = store().get(sessionToken);
-  return entry && entry.expiresAt > now ? entry.scope.customerId : null;
+  return entry && entry.expiresAt > now ? entry.recording.customerId : null;
 }
-
-export type VoiceHandoffResult =
-  | { ok: true; transcript: string; voiceTurns: number; trimmed: boolean }
-  | { ok: false };
 
 /**
  * Nytt signert historikktoken av turene før talen pluss det sesjonen faktisk
@@ -135,17 +189,6 @@ export type VoiceHandoffResult =
  */
 export function issueVoiceHandoff(sessionToken: string, visitorId: string, now = Date.now()): VoiceHandoffResult {
   const entry = store().get(sessionToken);
-  if (!entry || entry.expiresAt <= now || entry.visitorId !== visitorId) return { ok: false };
-  const voiceTurns = entry.voiceTurns.filter((turn) => turn.text.trim());
-  const window = windowTurns(entry.baseTurns, voiceTurns);
-  const trimmed = window.trimmed || entry.baseTrimmed;
-  const transcript = issueTranscript({
-    scope: entry.scope,
-    visitorId,
-    snapshotId: entry.snapshotId,
-    previousTurns: [],
-    newTurns: window.turns,
-    previousTrimmed: trimmed,
-  });
-  return { ok: true, transcript, voiceTurns: voiceTurns.length, trimmed };
+  if (!entry || entry.expiresAt <= now) return { ok: false };
+  return entry.recording.issue(visitorId);
 }

@@ -3,6 +3,7 @@ import type { NextRequest } from 'next/server';
 import type { DemoMeterConfig } from '@/lib/demo/site-chat/usage';
 import type { SiteChatProfile } from '@/lib/demo/site-chat/profile';
 import { siteChatCustomerForDataset, siteChatCustomers } from '@/lib/demo/site-chat/customers';
+import { hostedVoiceEnabled } from '@/lib/live/hosted-access';
 
 /**
  * Hvem som kan bruke den lokale Live-ruta utenfor loopback (2026-09-24).
@@ -31,6 +32,10 @@ export function demoVoiceVisitor(
   request: NextRequest,
   input: { dataset?: string | null; surface?: string | null } = {},
 ): DemoVoiceVisitor | null {
+  // Et miljø med delt stemme har varig opptak og regnskap på kontrollforbindelsen
+  // (`/api/live/control`). Den lokale ruta, uten det regnskapet, er da stengt for
+  // alle eksterne besøkende, uansett kunde.
+  if (hostedVoiceEnabled()) return null;
   if (input.dataset === undefined) {
     for (const customer of siteChatCustomers()) {
       const visitor = customer.voice.remoteVisitor(request, 'channel');

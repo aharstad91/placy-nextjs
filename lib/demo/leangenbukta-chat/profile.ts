@@ -53,6 +53,9 @@ export const leangenbuktaChatProfile: SiteChatProfile = {
       defaults: { visitor: 8, global: 60 },
     },
     // Demotilgangen gjelder både boardets kartstemme og chatboksen, fra samme origin.
+    // Leangenbukta har ingen binding i den delte stemmens register; stemmen
+    // finnes bare i den lokale ruta.
+    hosted: null,
     remoteVisitor: (request) => (sameOriginOrNone(request) ? lbDemoAccess(request) : null),
   },
   getPage: (id) => getSitePage(id),

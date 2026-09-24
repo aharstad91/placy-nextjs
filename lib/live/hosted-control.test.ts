@@ -33,7 +33,8 @@ function setup(role: DemoAccess['role'] = 'benchmark') {
       const slug=selection.project ?? 'nyhavna';
       return {slug,project:{id:slug},tenant:{id:`${slug}-${purpose}`},demo:{snapshotId:slug==='nyhavna'?'snapshot':`${slug}-snapshot`,id:'nyhavna-lokal',backendInstructions:`facts-${slug}`,voiceInstructions:'voice',createConversation:()=>({project:slug}),board:{}}};
     }) as unknown as HostedControlDependencies['resolveProject'],
-    connect:vi.fn(async(_id,_token,_conversation,input)=>{options=input;input?.supervisor?.setCleanup('token',()=>{});return handle;})};
+    connect:vi.fn(async(_id,_token,_conversation,input)=>{options=input;input?.supervisor?.setCleanup('token',()=>{});return handle;}),
+    chatCustomer:vi.fn(()=>null),consumeChatVoiceQuota:vi.fn(async()=>({allowed:true}))};
   const socket=new Socket();
   const done=runHostedControl(socket as unknown as WebSocket,{...access,role},deps);
   return {socket,done,deps,ledger,handle,row,getOptions:()=>options};
@@ -90,6 +91,23 @@ describe('hosted conversation owner',()=>{
     expect(s.deps.hangup).toHaveBeenCalledWith('live_late');
     expect(s.deps.connect).not.toHaveBeenCalled();
     expect(s.ledger.finalize).toHaveBeenCalledWith(expect.objectContaining({providerClosed:true,finalUsageConfirmed:false}));
+  });
+  it('keeps the board surface unchanged: no chat fields, no quota, no handoff, map tools reach the browser',async()=>{
+    const s=setup('demo');s.socket.message({type:'start',sdp:'v=0',snapshotId:'snapshot',project:'nyhavna'});await tick();
+    expect(s.deps.chatCustomer).not.toHaveBeenCalled();expect(s.deps.consumeChatVoiceQuota).not.toHaveBeenCalled();
+    const options=s.getOptions()!;
+    expect(options.browserTools).toBeUndefined();expect(options.transcript).toBeUndefined();
+    const ready=s.socket.sent.find(m=>m.type==='ready')!;expect(ready).not.toHaveProperty('continuity');
+    const config=vi.mocked(s.deps.createSession).mock.calls[0][0] as unknown as Record<string,unknown>;
+    expect(config).not.toHaveProperty('input');
+    s.socket.message({type:'stop'});await s.done;
+    expect(s.socket.sent.some(m=>m.type==='handoff')).toBe(false);
+  });
+  it('rejects a transcript or the chat surface on a board-only connection before admission',async()=>{
+    for (const extra of [{transcript:'a.b'},{surface:'chat'}]) {
+      const s=setup('demo');s.socket.message({type:'start',sdp:'v=0',snapshotId:'snapshot',dataset:'nyhavna-lokal',...extra});await s.done;
+      expect(s.deps.resolveProject).not.toHaveBeenCalled();expect(s.ledger.reserve).not.toHaveBeenCalled();
+    }
   });
   it('keeps accounting incomplete when a durable usage write fails',async()=>{
     const s=setup();s.socket.message(start);await tick();s.ledger.recordVoiceUsage.mockRejectedValueOnce(new Error('down'));

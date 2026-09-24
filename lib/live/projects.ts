@@ -23,6 +23,12 @@ export interface ResolvedVoiceProject {
   project: Project;
   demo: LiveDemo;
   tenant: VoiceTenant;
+  /**
+   * The trusted source's own content version, before project scoping. Only the
+   * site chat box needs it: its signed text transcript is bound to the source
+   * version the text endpoint serves (`lib/demo/site-chat/transcript.ts`).
+   */
+  contentSnapshotId: string;
 }
 /** Do not expose database errors, registry IDs, credentials or local file paths. */
 export class VoiceProjectError extends Error {
@@ -95,7 +101,7 @@ export async function resolveVoiceProject(selection: VoiceProjectSelection, purp
     const project={...loaded.project,id:product.id,customer:identity.customer_id,urlSlug:identity.url_slug,demoSnapshotId:snapshotId};
     // projectSlug is deliberately source-specific: existing images/3D assets use it.
     const demo={...loaded,project,snapshotId,board:{...loaded.board,demoSnapshotId:snapshotId}};
-    return {slug,project,demo,tenant};
+    return {slug,project,demo,tenant,contentSnapshotId:loaded.snapshotId};
   } catch (error) {
     if (error instanceof VoiceProjectError) throw error;
     // Dependency/loader failures are retryable; never attach raw errors or causes.

@@ -3,6 +3,7 @@ import localFont from "next/font/local";
 import { Header } from "@/app/demo/nyhavna-nettside/header";
 import { SiteChatVoiceBridge } from "@/components/demo/site-chat-voice-bridge";
 import { nhChatEnabled, nhChatVoiceEnabled } from "@/lib/demo/nyhavna-chat/access";
+import { hostedVoiceEnabled } from "@/lib/live/hosted-access";
 import { NH_BOARD_HREF } from "@/lib/demo/nyhavna-chat/links";
 import { nyhavnaChatProfile } from "@/lib/demo/nyhavna-chat/profile";
 import "@/app/demo/nyhavna-nettside/original.css";
@@ -41,7 +42,9 @@ export const metadata: Metadata = {
  */
 export default function Layout({ children }: { children: React.ReactNode }) {
   const chat = nhChatEnabled();
-  const voice = chat && (process.env.NODE_ENV !== "production" || nhChatVoiceEnabled());
+  // Utenfor en utviklingsserver går stemmen bare gjennom den delte stemmen
+  // (varig opptak og regnskap); uten den finnes ingen «Snakk» i produksjon.
+  const voice = chat && (process.env.NODE_ENV !== "production" || (hostedVoiceEnabled() && nhChatVoiceEnabled()));
   return (
     <div className={`nyhavna-site ${unbounded.variable}`}>
       <a className="demo-skip" href="#main-content">

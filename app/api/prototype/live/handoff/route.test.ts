@@ -22,7 +22,9 @@ function handoff(session: string, cookie: string | null) {
 }
 
 beforeEach(() => {
-  vi.stubEnv("NODE_ENV", "production");
+  // Den lokale ruta finnes for Nyhavna-besøkende bare på en utviklingsserver;
+  // på den delte stemmen kommer overføringen på kontrollforbindelsen.
+  vi.stubEnv("NODE_ENV", "development");
   vi.stubEnv("PLACY_NH_CHAT_ENABLED", "true");
   vi.stubEnv("PLACY_NH_CHAT_COOKIE_SECRET", "n".repeat(40));
   vi.stubEnv("PLACY_NH_CHAT_VOICE", "true");
@@ -55,8 +57,12 @@ describe("POST /api/prototype/live/handoff (tale → tekst)", () => {
     expect((await POST(handoff("nh-session-token", null))).status).toBe(404);
   });
 
-  it("er stengt for Nyhavna-besøkende når stemmen ikke er slått på", async () => {
-    vi.stubEnv("PLACY_NH_CHAT_VOICE", "false");
+  it("er stengt for Nyhavna-besøkende i produksjon og på et miljø med delt stemme", async () => {
+    vi.stubEnv("NODE_ENV", "production");
+    const nhProd = `${NH_CHAT_COOKIE}=${issueNhChatCookie()!.value}`;
+    expect((await POST(handoff("nh-session-token", nhProd))).status).toBe(404);
+    vi.stubEnv("NODE_ENV", "development");
+    vi.stubEnv("PLACY_HOSTED_VOICE", "true");
     const nhCookie = `${NH_CHAT_COOKIE}=${issueNhChatCookie()!.value}`;
     expect((await POST(handoff("nh-session-token", nhCookie))).status).toBe(404);
   });

@@ -98,8 +98,30 @@ export interface LiveOptions {
    * `settled` løses når serverens opprydding er bekreftet eller har feilet.
    * Kalles synkront fra oppryddingen.
    */
-  onSessionEnded?: (ended: { sessionToken: string; settled: Promise<boolean> }) => void;
+  onSessionEnded?: (ended: LiveSessionEnded) => void;
+  /**
+   * Den delte stemmen: brukeren har stoppet en chatflate-sesjon, og serveren
+   * rydder og sender overføringen før `onSessionEnded`. Kalles synkront fra
+   * `stop()`, så tekstchatten kan vente i stedet for å bruke gammel historikk.
+   */
+  onSessionEnding?: () => void;
 }
+
+/**
+ * Tale → tekst etter en chatflate-sesjon på den delte stemmen: serveren sender
+ * det signerte tokenet på kontrollforbindelsen før den lukkes. `null` når
+ * forbindelsen lukket seg uten det (brudd, tidsavbrudd).
+ */
+export type LiveHandoff = { status: "ready"; transcript: string; voiceTurns: number; trimmed: boolean } | { status: "failed" };
+
+/**
+ * En serversesjon er avsluttet. Den lokale ruta gir `sessionToken` (tokenet
+ * byttes mot historikk med et eget kall); den delte stemmen gir `handoff`
+ * direkte, fordi et nytt kall kan havne på en annen instans.
+ */
+export type LiveSessionEnded =
+  | { sessionToken: string; settled: Promise<boolean>; handoff?: undefined }
+  | { sessionToken?: undefined; settled: Promise<boolean>; handoff: LiveHandoff | null };
 
 /** Hva talen fikk med seg fra tekstchatten, slik serveren rapporterte det (bare chatflaten). */
 export type LiveContinuity = { status: "carried"; turns: number; trimmed: boolean } | { status: "none" | "rejected" };
@@ -132,6 +154,9 @@ interface Connection {
   greetingKicked: boolean;
   /** Serveren bekreftet at tekstchattens historikk ligger i sesjonen. */
   continued?: boolean;
+  /** Den delte stemmen har svart `ready`: sesjonen fantes, og en overføring kan komme. */
+  hostedReady?: boolean;
+  handoff?: LiveHandoff;
   speaking: boolean;
   loudAt: number;
   lastAssistantAt: number;
@@ -218,6 +243,10 @@ export function useLive(options: LiveOptions) {
         sessionToken: current.sessionToken,
         settled: current.ended ? Promise.resolve(true) : cleanupPending.current,
       });
+    } else if (current.control && current.hostedReady && latestOptions.current.surface) {
+      // Serveren sender overføringen før `ended` på den samme forbindelsen; er
+      // den ikke kommet nå, kommer den ikke.
+      latestOptions.current.onSessionEnded?.({ settled: Promise.resolve(current.ended), handoff: current.handoff ?? null });
     }
   }, []);
 
@@ -237,6 +266,7 @@ export function useLive(options: LiveOptions) {
         if (current.transceiver.sender.track) current.transceiver.sender.track.enabled = false;
         current.audio.pause();
         cleanupPending.current = new Promise(resolve => { current.finishDrain = () => resolve(true); });
+        if (current.hostedReady && latestOptions.current.surface) latestOptions.current.onSessionEnding?.();
         if (current.control.readyState === WebSocket.OPEN) {
           current.control.send(JSON.stringify({ type: "stop" }));
           current.drainTimer = setTimeout(dispose, 8000);
@@ -621,6 +651,13 @@ export function useLive(options: LiveOptions) {
           settle();
           return;
         }
+        if (payload.type === "handoff") {
+          // Også etter at brukeren trykket stopp: det er da overføringen kommer.
+          current.handoff = payload.status === "ready" && typeof payload.transcript === "string" && payload.transcript
+            ? { status: "ready", transcript: payload.transcript, voiceTurns: typeof payload.voiceTurns === "number" ? payload.voiceTurns : 0, trimmed: payload.trimmed === true }
+            : { status: "failed" };
+          return;
+        }
         if (payload.type === "ended") {
           const stopped = current.stopping;
           current.ended = true;
@@ -686,8 +723,17 @@ export function useLive(options: LiveOptions) {
               if (typeof payload.sdp !== "string" || !payload.sdp) { fail("Serveren svarte uten lydforbindelse. Prøv igjen."); return; }
               clearTimeout(timeout);
               if (typeof payload.warningMs === "number" && payload.warningMs > 0) current.warningMs = payload.warningMs;
+              current.hostedReady = true;
+              if (payload.continuity && typeof payload.continuity.status === "string") {
+                current.continued = payload.continuity.status === "carried";
+                setContinuity(payload.continuity as LiveContinuity);
+              }
               resolve(payload.sdp);
-            } else if (payload.type === "error") fail("Samtalen kunne ikke fortsette. Trykk start for å prøve igjen.");
+            } else if (payload.type === "error") {
+              // Chatflaten viser serverens egen beskjed (f.eks. brukt kvote); boardet som før.
+              const serverMessage = surface && typeof payload.message === "string" && payload.message ? payload.message.slice(0, 300) : null;
+              fail(serverMessage ?? "Samtalen kunne ikke fortsette. Trykk start for å prøve igjen.");
+            }
             else void handleServerMessage(payload);
           };
           control.onclose = () => fail("Forbindelsen ble brutt. Trykk start for å koble til igjen.");

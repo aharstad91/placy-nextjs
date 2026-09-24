@@ -67,10 +67,11 @@ export function nhChatEnabled(): boolean {
 }
 
 /**
- * Om stemmen i chatboksen kan brukes utenfor loopback. Krever i tillegg
- * `PLACY_NH_CHAT_VOICE=true`: stemmen går gjennom den lokale Live-ruta og
- * serverens egen sidebandforbindelse, ikke den delte Anja-tjenesten, og er
- * ikke kontrollert på Vercel (se docs/demos/nyhavna-nettside.md).
+ * Om stemmen i chatboksen kan brukes i et produksjonsbygg. Krever i tillegg
+ * `PLACY_NH_CHAT_VOICE=true`, og går bare gjennom den delte stemmen
+ * (`/api/live/control` med `PLACY_HOSTED_VOICE=true`): varig opptak, budsjett
+ * og regnskap for prosjektet `nyhavna` (`lib/live/hosted-chat.ts`). Den lokale
+ * ruta er aldri åpen for Nyhavna-besøkende utenfor en utviklingsserver.
  */
 export function nhChatVoiceEnabled(): boolean {
   return nhChatConfigured() && process.env.PLACY_NH_CHAT_VOICE === "true";

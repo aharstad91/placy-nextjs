@@ -10601,3 +10601,22 @@ Andreas presiserte at chatboksen skal kunne aktiveres for enhver kunde som er ta
 - **Sjekkliste for kunde nummer tre** og en ærlig liste over det som ikke er løst: innbygging på eget domene, delt Anja-stemme og `placy.no/<slug>`. Står i `docs/demos/site-chat.md`.
 
 Leangenbuktas oppførsel er uendret, bortsett fra overgangen til v2-token og navnet på svarskjemaet (`site_chat_reply`).
+
+### 2026-09-24 — Tredje runde: chatboksens stemme på den delte stemmetjenesten
+
+Andreas' mål er den samme chatboksen, med tekst og tale, på den eksisterende Nyhavna-demoen på Vercel, som et produkt for flere kunder. Stemmen fantes bare i den lokale Live-ruta. Nå har chatflaten sin egen gren i den delte stemmen som `placy.no/nyhavna` bruker: `/api/live/control`, `lib/live/hosted-control.ts`, `resolveVoiceProject` og det varige regnskapet. Board-assistenten (`services/anja`, `/api/board-assistant`) er ikke endret.
+
+- **Opptak** (`lib/live/hosted-chat.ts`). Kun når `PLACY_HOSTED_VOICE=true`, kunden står i registeret med `voice.hosted` og chatten er på, og kundens egen tilgang godtar oppgraderingsforespørselen: samme origin, kundens cookie og i produksjon `PLACY_NH_CHAT_VOICE=true`. Besøks-ID-en er kundens, ikke den tilfeldige delte ID-en. Prosjektet kommer fra profilen (`nyhavna`). Bindingens innhold må være nøyaktig kundens datasett. Det finnes ingen vei til en annen kunde eller til boardflaten, og testetiketter avvises.
+- **Regnskap.** Samme `voice_reserve`, budsjett og sluttregnskap som boardet. Kundens egen stemmekvote trekkes etter reservasjonen og feiler lukket; en avvist kvote lukker reservasjonen som «aldri opprettet». Configversjonen hasher instrukser og verktøy, ikke samtalen.
+- **Samtale.** Kartfrie verktøy, kundens instruks og kontaktperson, og ingen nettleserbro.
+- **Historikk inn.** Det kundebundne tekst-tokenet verifiseres mot kildens egen innholdsversjon (`ResolvedVoiceProject.contentSnapshotId`, nytt felt) og legges i `session.input`. `ready` bærer `continuity`, og Live-avvisning av historikken gir en ny start med `rejected`.
+- **Historikk ut.** Opptaket eies av forbindelsen (`createVoiceRecording`). Et nytt signert token sendes som `handoff` rett før `ended` på samme forbindelse, uten minnelager på tvers av instanser.
+- **Klient.**
+  - `useLive` tar `continuity` og `handoff` fra kontrollforbindelsen, melder `onSessionEnding` ved stopp og gir `onSessionEnded({handoff})`.
+  - Talebroen bruker den direkte.
+  - Chatflaten viser serverens feiltekst, boardet uendret.
+- **Stramming av den lokale ruta.** På et miljø med delt stemme er den lokale ruta og kanalene stengt for alle eksterne besøkende. Nyhavna-besøkende får den lokale ruta bare på en utviklingsserver, så produksjonsstemme har alltid varig regnskap. Meldingstaket på kontrollforbindelsen er 64 000, som den lokale ruta.
+
+Lesekontroll mot produksjonsregisteret (bare lesing): bindingen `nyhavna` peker på `nyhavna-lokal` med en aktiv offentlig tenant, og kildens innholdsversjon er den samme som tekstchatten bruker. Et tekst-token vil derfor bli godtatt av den delte stemmen.
+
+**Blokker som gjenstår: deploy, ikke kode.** Kontrollforbindelsen krever samme origin og kundens cookie. `www.placy.no` serverer kopien, men kjører en eldre commit uten delt stemme. `placy.no` har delt stemme, men videresender `/demo/nyhavna-nettside` til www. Valgene (deploy grenen til `placy` med delt stemme, eller flytt kopien til `placy.no/<slug>`) står i `docs/demos/nyhavna-nettside.md` og krever Andreas' beslutning. Ingen betalt ende-til-ende-prøve av den delte chatstemmen er kjørt, fordi den ville skrevet til produksjonsregnskapet.

@@ -72,10 +72,24 @@ export interface SiteChatVoiceProfile {
   continuedGreeting: string;
   meter: DemoMeterConfig;
   /**
-   * Besøkende som kan bruke stemmen utenfor loopback, eller null. Kunden
-   * bestemmer selv hvilke flater som er åpne (Nyhavna: bare chatboksen).
+   * Besøkende som kan bruke den LOKALE stemmeruta (`/api/prototype/live`, egen
+   * sidebandforbindelse i Node-prosessen, uten det varige regnskapet) utenfor
+   * loopback, eller null. Kunden bestemmer selv hvilke flater som er åpne.
+   * På et miljø med delt stemme er den lokale ruta stengt for alle eksterne
+   * besøkende uansett (`lib/live/demo-voice-access.ts`).
    */
   remoteVisitor: (request: NextRequest, surface: VoiceSurface) => SiteChatVisitor | null;
+  /**
+   * Chatboksens stemme på den delte stemmetjenesten (`/api/live/control`), eller
+   * null når kunden ikke har den. `project` er slugen i den delte stemmens
+   * register (`v2.voice_projects`); bindingen der må peke på nøyaktig kundens
+   * `dataset`, og sesjonen bruker prosjektets egen opptak, budsjett og
+   * regnskap. `visitor` er kundens egen tilgang for chatflaten.
+   */
+  hosted: {
+    project: string;
+    visitor: (request: NextRequest) => SiteChatVisitor | null;
+  } | null;
 }
 
 export interface SiteChatReplies {

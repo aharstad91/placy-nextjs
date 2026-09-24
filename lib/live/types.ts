@@ -45,6 +45,8 @@ export type LiveServerMessage =
   | { type: "map"; directive: MapDirective }
   | { type: "activity"; activity: "working" | "answering" | "idle" }
   | { type: "ended"; reason: LiveEndReason; message: string }
+  /** Den delte stemmens chatflate: signert historikk til tekstchatten (`lib/live/hosted-control.ts`). */
+  | { type: "handoff"; status: "ready" | "failed"; transcript?: string; voiceTurns?: number; trimmed?: boolean }
   | { type: "hello" };
 
 export type LiveEndReason = "manual" | "limit" | "idle" | "connection" | "error";

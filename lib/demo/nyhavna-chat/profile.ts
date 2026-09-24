@@ -50,10 +50,20 @@ export const nyhavnaChatProfile: SiteChatProfile = {
     // Nyhavna-besøkende får bare chatboksen (aldri boardets kartstemme), og i et
     // produksjonsbygg bare med `PLACY_NH_CHAT_VOICE=true`. Lokalt er besøkende
     // `local` på loopback.
+    // Nyhavna-besøkende får den lokale ruta bare på en utviklingsserver:
+    // utenfor den går stemmen gjennom den delte tjenesten med varig regnskap.
     remoteVisitor: (request, surface) => {
-      if (surface === "board") return null;
-      if (process.env.NODE_ENV === "production" && !nhChatVoiceEnabled()) return null;
+      if (surface === "board" || process.env.NODE_ENV === "production") return null;
       return sameOriginOrNone(request) ? nhChatVisitor(request) : null;
+    },
+    // Samme prosjekt, opptak og budsjett som boardet på placy.no/nyhavna. I et
+    // produksjonsbygg bare med `PLACY_NH_CHAT_VOICE=true` i tillegg til chatten.
+    hosted: {
+      project: "nyhavna",
+      visitor: (request) => {
+        if (process.env.NODE_ENV === "production" && !nhChatVoiceEnabled()) return null;
+        return sameOriginOrNone(request) ? nhChatVisitor(request) : null;
+      },
     },
   },
   getPage: getNhSitePage,

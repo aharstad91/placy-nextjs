@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { useLive } from "@/lib/live/use-live";
+import { useLive, type LiveSessionEnded } from "@/lib/live/use-live";
 import {
   parseVoiceCommand,
   VOICE_EVENTS,
@@ -53,7 +53,9 @@ export interface SiteChatVoiceBridgeProps {
 /**
  * Usynlig bro mellom chatwidgeten (`public/embed/placy-chat.js`) og
  * `useLive`. All UI ligger i widgeten; her finnes bare taleforbindelsen og
- * overføringen av historikk begge veier. Brukes av nettsidekopiene
+ * overføringen av historikk begge veier. Transporten velger serveren: den
+ * lokale ruta, eller den delte stemmen (`/api/live/control`) når helsesjekken
+ * svarer `transport: websocket`. Brukes av nettsidekopiene
  * (Leangenbukta, Nyhavna) med hver sin datasett-ID og hilsen.
  * Protokollen står i `lib/demo/site-chat/voice-channel.ts`.
  */
@@ -79,8 +81,32 @@ export function SiteChatVoiceBridge({ dataset, greeting, continuedGreeting }: Si
     setHandoffVersion((version) => version + 1);
   }, []);
 
-  const onSessionEnded = useCallback(({ sessionToken, settled }: { sessionToken: string; settled: Promise<boolean> }) => {
+  // Den delte stemmen: overføringen som venter på serverens token etter stopp.
+  const hostedPendingId = useRef<number | null>(null);
+  const onSessionEnding = useCallback(() => {
     const id = ++handoffId.current;
+    hostedPendingId.current = id;
+    setHandoff({ id, status: "pending" });
+  }, [setHandoff]);
+
+  const onSessionEnded = useCallback((ended: LiveSessionEnded) => {
+    // Den delte stemmen har alt sendt det signerte tokenet på kontrollforbindelsen.
+    if (ended.sessionToken === undefined) {
+      let id = hostedPendingId.current;
+      hostedPendingId.current = null;
+      if (id === null || id !== handoffId.current) {
+        // Serveren avsluttet selv (tidsgrense, stillhet): vent-signalet først.
+        id = ++handoffId.current;
+        setHandoff({ id, status: "pending" });
+      }
+      const result = ended.handoff;
+      setHandoff(result?.status === "ready"
+        ? { id, status: "ready", transcript: result.transcript, voiceTurns: result.voiceTurns, trimmed: result.trimmed }
+        : { id, status: "failed" });
+      return;
+    }
+    const id = ++handoffId.current;
+    const { sessionToken, settled } = ended;
     setHandoff({ id, status: "pending" });
     void (async () => {
       // Serverens opprydding lukker opptaket; først da er alle turene med.
@@ -100,6 +126,7 @@ export function SiteChatVoiceBridge({ dataset, greeting, continuedGreeting }: Si
     continuedGreeting,
     getTranscript: () => transcriptRef.current,
     onSessionEnded,
+    onSessionEnding,
     executeTool: NO_MAP,
     getContext: noBoard,
   });
