@@ -1,11 +1,11 @@
 import "server-only";
 
-import { issueTranscript, MAX_TURNS, windowTurns, type TranscriptTurn } from "@/lib/demo/leangenbukta-chat/transcript";
+import { issueTranscript, MAX_TURNS, windowTurns, type TranscriptScope, type TranscriptTurn } from "@/lib/demo/site-chat/transcript";
 import { LIVE_SESSION_MAX_MS } from "@/lib/live/session-limits";
 import type { LiveTranscriptSink } from "@/lib/live/sideband";
 
 /**
- * Tale → tekst i Leangenbuktas chat (2026-09-24).
+ * Tale → tekst i chatboksen (2026-09-24), for alle kunder.
  *
  * Når en talesamtale i chatboksen er over, skal tekstchatten kunne fortsette
  * fra det som ble sagt. Klienten har transkriptboblene, men dem kan den dikte
@@ -20,7 +20,9 @@ import type { LiveTranscriptSink } from "@/lib/live/sideband";
  *
  * - Bare i minnet i denne Node-prosessen, aldri på disk eller i database.
  * - Nøkkelen er supervisorens tilfeldige sesjonstoken (UUID) OG den besøkendes
- *   ID; et token fra en annen besøkende gir ingenting.
+ *   ID; et token fra en annen besøkende gir ingenting. Innslaget husker
+ *   kunden og datasettet (`TranscriptScope`) talen startet for, og det nye
+ *   tokenet signeres alltid for akkurat den kunden.
  * - Innslaget lever mens sesjonen varer og `HANDOFF_TTL_MS` etter at den er
  *   lukket; deretter er det borte. En omstart av serveren sletter alt, og da
  *   sier UI-et ærlig at overføringen feilet.
@@ -36,6 +38,7 @@ const TURN_GAP_MS = 1500;
 const MAX_TURN_CHARS = 2000;
 
 interface HandoffEntry {
+  scope: TranscriptScope;
   visitorId: string;
   snapshotId: string;
   baseTurns: TranscriptTurn[];
@@ -47,11 +50,11 @@ interface HandoffEntry {
   expiresAt: number;
 }
 
-const globals = globalThis as typeof globalThis & { placyLbVoiceHandoffs?: Map<string, HandoffEntry> };
+const globals = globalThis as typeof globalThis & { placySiteChatVoiceHandoffs?: Map<string, HandoffEntry> };
 
 function store(): Map<string, HandoffEntry> {
-  globals.placyLbVoiceHandoffs ??= new Map();
-  return globals.placyLbVoiceHandoffs;
+  globals.placySiteChatVoiceHandoffs ??= new Map();
+  return globals.placySiteChatVoiceHandoffs;
 }
 
 function prune(now: number) {
@@ -68,11 +71,12 @@ function prune(now: number) {
  */
 export function startVoiceHandoff(
   sessionToken: string,
-  input: { visitorId: string; snapshotId: string; baseTurns: readonly TranscriptTurn[]; baseTrimmed: boolean },
+  input: { scope: TranscriptScope; visitorId: string; snapshotId: string; baseTurns: readonly TranscriptTurn[]; baseTrimmed: boolean },
   now = Date.now(),
 ): LiveTranscriptSink {
   prune(now);
   const entry: HandoffEntry = {
+    scope: input.scope,
     visitorId: input.visitorId,
     snapshotId: input.snapshotId,
     baseTurns: [...input.baseTurns],
@@ -114,6 +118,12 @@ export function startVoiceHandoff(
   };
 }
 
+/** Kunden en pågående eller nylig avsluttet taleoverføring tilhører, eller null. */
+export function voiceHandoffCustomer(sessionToken: string, now = Date.now()): string | null {
+  const entry = store().get(sessionToken);
+  return entry && entry.expiresAt > now ? entry.scope.customerId : null;
+}
+
 export type VoiceHandoffResult =
   | { ok: true; transcript: string; voiceTurns: number; trimmed: boolean }
   | { ok: false };
@@ -130,6 +140,7 @@ export function issueVoiceHandoff(sessionToken: string, visitorId: string, now =
   const window = windowTurns(entry.baseTurns, voiceTurns);
   const trimmed = window.trimmed || entry.baseTrimmed;
   const transcript = issueTranscript({
+    scope: entry.scope,
     visitorId,
     snapshotId: entry.snapshotId,
     previousTurns: [],

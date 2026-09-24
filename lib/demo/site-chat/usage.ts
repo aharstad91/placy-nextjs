@@ -3,7 +3,8 @@ import "server-only";
 import { createServerClient } from "@/lib/supabase/client";
 
 /**
- * Forbruksgrensene for Leangenbukta-kundedemoen (2026-09-23).
+ * Forbruksgrensene for chatboksen på nettsidekopiene (Leangenbukta 2026-09-23,
+ * felles for alle kunder fra 2026-09-24; hver kunde har egne målere).
  *
  * ## Hva som telles
  *
@@ -16,8 +17,8 @@ import { createServerClient } from "@/lib/supabase/client";
  *
  * En delt demo kjører på flere serverinstanser samtidig. En teller i minnet ville
  * vært én teller per instans, og kvoten ville i praksis vært ubegrenset. Derfor
- * krever et produksjonsbygg det sentrale lageret (`PLACY_LB_DEMO_USAGE_STORE=
- * supabase`, migrasjon `098_demo_usage.sql`) og NEKTER hvis det mangler eller
+ * krever et produksjonsbygg det sentrale lageret (kundens `storeEnv=supabase`,
+ * migrasjonene `098_demo_usage.sql` og `099_demo_usage_meters.sql`) og NEKTER hvis det mangler eller
  * feiler. Minnelageret finnes bare for lokal utvikling og tester.
  *
  * OpenAI-prosjektets harde månedstak er bakstopperen; denne telleren er det som
@@ -25,12 +26,23 @@ import { createServerClient } from "@/lib/supabase/client";
  */
 
 /**
- * Målerne. Hver nettsidekopi har sine egne, så én demos besøkende aldri kan
- * bruke opp en annen demos døgnkvote: Leangenbukta `chat_message`/
- * `voice_session`, Nyhavna-kopien `nh_chat_message`/`nh_voice_session`
- * (2026-09-24, migrasjon `099_demo_usage_nyhavna.sql`).
+ * En måler er kundens egen (2026-09-24): navn, miljøprefiks for grensene,
+ * miljøvariabelen som slår på det sentrale lageret, og trygge standarder.
+ * Den står i kundens profil, ikke her, så en ny kunde ikke endrer denne fila.
+ * Hver kunde har egne målere, slik at én demos besøkende aldri kan bruke opp
+ * en annen demos døgnkvote. Navnet må passe `METER_NAME`, samme mønster som
+ * databasen håndhever (`099_demo_usage_meters.sql`).
  */
-export type DemoMeter = "chat_message" | "voice_session" | "nh_chat_message" | "nh_voice_session";
+export interface DemoMeterConfig {
+  meter: string;
+  /** `<prefix>_VISITOR_DAILY` og `<prefix>_GLOBAL_DAILY` overstyrer standardene. */
+  envPrefix: string;
+  /** `<storeEnv>=supabase` slår på det sentrale lageret. */
+  storeEnv: string;
+  defaults: MeterLimits;
+}
+
+export const METER_NAME = /^[a-z][a-z0-9_]{2,39}$/;
 
 export interface DemoQuotaDecision {
   allowed: boolean;
@@ -38,34 +50,10 @@ export interface DemoQuotaDecision {
   reason?: "visitor" | "global" | "store";
 }
 
-interface MeterLimits {
+export interface MeterLimits {
   visitor: number;
   global: number;
 }
-
-// Nyhavna-kopien er en åpen side uten innlogging: den per-besøkende grensen
-// kan omgås ved å slette cookien, så den samlede døgnkvoten er lavere.
-const DEFAULT_LIMITS: Record<DemoMeter, MeterLimits> = {
-  chat_message: { visitor: 60, global: 600 },
-  voice_session: { visitor: 8, global: 60 },
-  nh_chat_message: { visitor: 40, global: 300 },
-  nh_voice_session: { visitor: 5, global: 30 },
-};
-
-const ENV_PREFIX: Record<DemoMeter, string> = {
-  chat_message: "PLACY_LB_DEMO_CHAT",
-  voice_session: "PLACY_LB_DEMO_VOICE",
-  nh_chat_message: "PLACY_NH_CHAT_MESSAGE",
-  nh_voice_session: "PLACY_NH_CHAT_VOICE_SESSION",
-};
-
-/** Miljøvariabelen som slår på det sentrale lageret for en måler. */
-const STORE_ENV: Record<DemoMeter, string> = {
-  chat_message: "PLACY_LB_DEMO_USAGE_STORE",
-  voice_session: "PLACY_LB_DEMO_USAGE_STORE",
-  nh_chat_message: "PLACY_NH_CHAT_USAGE_STORE",
-  nh_voice_session: "PLACY_NH_CHAT_USAGE_STORE",
-};
 
 function positiveInt(value: string | undefined, fallback: number): number {
   if (value === undefined || value === "") return fallback;
@@ -74,17 +62,16 @@ function positiveInt(value: string | undefined, fallback: number): number {
   return Number.isSafeInteger(parsed) && parsed >= 0 ? parsed : fallback;
 }
 
-export function demoMeterLimits(meter: DemoMeter): MeterLimits {
-  const prefix = ENV_PREFIX[meter];
+export function demoMeterLimits(config: DemoMeterConfig): MeterLimits {
   return {
-    visitor: positiveInt(process.env[`${prefix}_VISITOR_DAILY`], DEFAULT_LIMITS[meter].visitor),
-    global: positiveInt(process.env[`${prefix}_GLOBAL_DAILY`], DEFAULT_LIMITS[meter].global),
+    visitor: positiveInt(process.env[`${config.envPrefix}_VISITOR_DAILY`], config.defaults.visitor),
+    global: positiveInt(process.env[`${config.envPrefix}_GLOBAL_DAILY`], config.defaults.global),
   };
 }
 
 export interface DemoUsageStore {
   /** Øker begge tellerne atomisk hvis begge er under grensen. */
-  consume(input: { meter: DemoMeter; visitorId: string; day: string; limits: MeterLimits }): Promise<DemoQuotaDecision>;
+  consume(input: { meter: string; visitorId: string; day: string; limits: MeterLimits }): Promise<DemoQuotaDecision>;
 }
 
 export function createMemoryUsageStore(): DemoUsageStore {
@@ -130,8 +117,8 @@ export function createSupabaseUsageStore(): DemoUsageStore {
 let memoryStore: DemoUsageStore | null = null;
 
 /** Lageret dette miljøet skal bruke for måleren, eller null når ingen trygg teller finnes. */
-export function resolveUsageStore(meter: DemoMeter = "chat_message"): DemoUsageStore | null {
-  if (process.env[STORE_ENV[meter]] === "supabase") return createSupabaseUsageStore();
+export function resolveUsageStore(config: Pick<DemoMeterConfig, "storeEnv">): DemoUsageStore | null {
+  if (process.env[config.storeEnv] === "supabase") return createSupabaseUsageStore();
   if (process.env.NODE_ENV === "production") return null;
   memoryStore ??= createMemoryUsageStore();
   return memoryStore;
@@ -147,20 +134,22 @@ export function utcDay(now: number): string {
  */
 export async function consumeDemoQuota(
   visitorId: string,
-  meter: DemoMeter,
+  config: DemoMeterConfig,
   options: { now?: number; store?: DemoUsageStore | null } = {},
 ): Promise<DemoQuotaDecision> {
-  const store = options.store === undefined ? resolveUsageStore(meter) : options.store;
+  // Et ugyldig målernavn er en programmeringsfeil; det skal feile lukket, ikke telle feil sted.
+  if (!METER_NAME.test(config.meter)) return { allowed: false, reason: "store" };
+  const store = options.store === undefined ? resolveUsageStore(config) : options.store;
   if (!store) return { allowed: false, reason: "store" };
   try {
     return await store.consume({
-      meter,
+      meter: config.meter,
       visitorId,
       day: utcDay(options.now ?? Date.now()),
-      limits: demoMeterLimits(meter),
+      limits: demoMeterLimits(config),
     });
   } catch (error) {
-    console.error("lb_demo_usage_store_failed", error instanceof Error ? error.message : "unknown");
+    console.error("demo_usage_store_failed", { meter: config.meter, message: error instanceof Error ? error.message : "unknown" });
     return { allowed: false, reason: "store" };
   }
 }

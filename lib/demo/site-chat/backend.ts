@@ -3,12 +3,12 @@ import "server-only";
 import type { RealtimeTool } from "@/lib/realtime/types";
 import type { NyhavnaConversation } from "@/lib/realtime/nyhavna-conversation";
 import { normalizeBackendUsage, type BackendTokenUsage } from "@/lib/live/usage";
-import { FACT_TOOL_NAMES } from "@/lib/demo/leangenbukta-chat/text-tools";
-import type { TranscriptTurn } from "@/lib/demo/leangenbukta-chat/transcript";
+import { FACT_TOOL_NAMES } from "@/lib/demo/site-chat/text-tools";
+import type { TranscriptTurn } from "@/lib/demo/site-chat/transcript";
 import {
   annotateSourceIds, resolveCitedSources, sourceIdsInOutput,
   type ChatSource, type SourceRegistry,
-} from "@/lib/demo/leangenbukta-chat/sources";
+} from "@/lib/demo/site-chat/sources";
 
 /**
  * Tekstchattens egen Responses-løkke (2026-09-23, KTD4).
@@ -90,7 +90,7 @@ interface RunInput {
 
 /**
  * Resonnerende modeller: GPT-5 og nyere (også gpt-6-sol/-luna, som
- * `PLACY_LB_CHAT_MODEL` kan peke på) og o-serien. De får `reasoning.effort`,
+ * kundens modellvariabel, f.eks. `PLACY_LB_CHAT_MODEL`, kan peke på) og o-serien. De får `reasoning.effort`,
  * og med `store: false` må de be om kryptert resonnement for å kunne sende
  * det tilbake i neste verktøyrunde. Eldre modeller avviser feltet.
  */
@@ -101,7 +101,7 @@ function isReasoningModel(model: string): boolean {
 
 const jsonSchemaFormat = {
   type: "json_schema" as const,
-  name: "leangenbukta_chat_reply",
+  name: "site_chat_reply",
   strict: true,
   schema: {
     type: "object",
@@ -257,7 +257,7 @@ function isProvisional(output: unknown): boolean {
   return Object.values(value).some((child) => child && typeof child === "object" && isProvisional(child));
 }
 
-export async function runLeangenbuktaChat(input: RunInput): Promise<ChatBackendResult> {
+export async function runSiteChat(input: RunInput): Promise<ChatBackendResult> {
   const fetchImpl = input.fetchImpl ?? fetch;
   const timeoutMs = input.timeoutMs ?? DEFAULT_TIMEOUT_MS;
   const maxRounds = input.maxRounds ?? DEFAULT_MAX_ROUNDS;

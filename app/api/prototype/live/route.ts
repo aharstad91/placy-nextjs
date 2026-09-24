@@ -11,14 +11,16 @@ import { NYHAVNA_VOICE_INSTRUCTIONS } from '@/lib/live/voice-instructions';
 import { localRequest } from '@/lib/live/local-request';
 import { DEFAULT_LIVE_DATASET, isLiveDataset, loadLiveDemo, type LiveDemo } from '@/lib/live/demos';
 import { resolveVoiceProject, VoiceProjectError } from '@/lib/live/projects';
-import { consumeDemoQuota } from '@/lib/demo/leangenbukta-site/usage';
-import { chatSurfaceVisitor, demoVoiceVisitor } from '@/lib/live/demo-voice-access';
+import { consumeDemoQuota } from '@/lib/demo/site-chat/usage';
+import { demoVoiceVisitor } from '@/lib/live/demo-voice-access';
+import { siteChatCustomerForDataset } from '@/lib/demo/site-chat/customers';
+import { transcriptScope, type SiteChatProfile } from '@/lib/demo/site-chat/profile';
 import {
-  CHAT_SURFACE, chatSurfaceBackendAddendum, CHAT_SURFACE_CONTINUED_BACKEND_ADDENDUM, chatSurfaceAllowed, chatSurfaceConversation,
+  CHAT_SURFACE, chatSurfaceBackendAddendum, CHAT_SURFACE_CONTINUED_BACKEND_ADDENDUM, chatSurfaceConversation,
   chatSurfaceHistoryInput, chatSurfaceTools, chatSurfaceVoiceInstructions,
 } from '@/lib/live/chat-surface';
-import { MAX_TRANSCRIPT_TOKEN_LENGTH, verifyTranscript, type VerifiedTranscript } from '@/lib/demo/leangenbukta-chat/transcript';
-import { startVoiceHandoff } from '@/lib/demo/leangenbukta-chat/voice-handoff';
+import { MAX_TRANSCRIPT_TOKEN_LENGTH, verifyTranscript, type VerifiedTranscript } from '@/lib/demo/site-chat/transcript';
+import { startVoiceHandoff } from '@/lib/demo/site-chat/voice-handoff';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -47,9 +49,10 @@ const bodySchema = z.object({
  */
 type ChatContinuity = { status: 'carried'; turns: number; trimmed: boolean } | { status: 'none' | 'rejected' };
 
-function chatContinuity(token: string | undefined, visitorId: string | null, snapshotId: string): { continuity: ChatContinuity; verified: VerifiedTranscript | null } {
+function chatContinuity(token: string | undefined, visitorId: string | null, snapshotId: string, customer: SiteChatProfile): { continuity: ChatContinuity; verified: VerifiedTranscript | null } {
   if (!token) return { continuity: { status: 'none' }, verified: null };
-  const verified = visitorId ? verifyTranscript(token, visitorId) : null;
+  // Tokenet må være signert for AKKURAT denne kunden og dette datasettet.
+  const verified = visitorId ? verifyTranscript(token, visitorId, transcriptScope(customer)) : null;
   if (!verified || verified.snapshotId !== snapshotId) return { continuity: { status: 'rejected' }, verified: null };
   if (!verified.turns.length) return { continuity: { status: 'none' }, verified };
   return { continuity: { status: 'carried', turns: verified.turns.length, trimmed: verified.trimmed }, verified };
@@ -69,9 +72,9 @@ export async function GET(request: NextRequest) {
   const demoVisitor = hosted ? null : demoVoiceVisitor(request, { dataset: request.nextUrl.searchParams.get('dataset'), surface });
   if (hosted ? !access : !localRequest(request) && !demoVisitor) return new NextResponse(null, { status: 404 });
   // Den delte stemmetjenesten har bare boardflaten ennå; chatflaten finnes bare
-  // i denne lokale Live-ruta, for nettsidekopiene Leangenbukta og Nyhavna.
+  // i denne lokale Live-ruta, for kundene i chatboks-registeret.
   // Avvisning gir klienten en synlig feil, ikke et kart.
-  if (surface !== null && (surface !== CHAT_SURFACE || hosted || !chatSurfaceAllowed(request.nextUrl.searchParams.get('dataset')))) {
+  if (surface !== null && (surface !== CHAT_SURFACE || hosted || !siteChatCustomerForDataset(request.nextUrl.searchParams.get('dataset')))) {
     return new NextResponse(null, { status: 404, headers: { 'Cache-Control': 'no-store' } });
   }
   if (hosted) {
@@ -129,9 +132,9 @@ function upstreamMessage(error: LiveSessionError) {
 
 export async function POST(request: NextRequest) {
   const local = localRequest(request);
-  // Utenfor loopback kan bare nettsidekopienes besøkende slippe inn
-  // (Leangenbukta-demotilgangen, eller Nyhavna-chatten når stemmen er slått på),
-  // og det avgjøres endelig først når datasettet er lest. Ellers er ruta 404.
+  // Utenfor loopback kan bare besøkende hos en kunde i chatboks-registeret
+  // slippe inn, etter kundens egen tilgang; det avgjøres endelig først når
+  // datasettet er lest. Ellers er ruta 404.
   if (!local && !demoVoiceVisitor(request)) return new NextResponse(null, { status: 404 });
   if (!process.env.OPENAI_API_KEY) return NextResponse.json({ error: 'Tale er ikke koblet til. Kontroller den lokale API-konfigurasjonen.' }, { status: 503 });
   // SDP (≤32 000) + historikktoken (≤24 576) + omslag.
@@ -147,7 +150,8 @@ export async function POST(request: NextRequest) {
   if (!local && !demoVisitor) return new NextResponse(null, { status: 404 });
   if (!datasetId) return NextResponse.json({ error: 'Ukjent datasett. Last boardet på nytt.' }, { status: 400 });
   const chat = parsed.data.surface === CHAT_SURFACE;
-  if (chat && !chatSurfaceAllowed(datasetId)) return NextResponse.json({ error: 'Talesamtale i chatten finnes ikke for dette datasettet.' }, { status: 400 });
+  const customer = chat ? siteChatCustomerForDataset(datasetId) : null;
+  if (chat && !customer) return NextResponse.json({ error: 'Talesamtale i chatten finnes ikke for dette datasettet.' }, { status: 400 });
   let demo: LiveDemo;
   try { demo = await loadLiveDemo(datasetId); } catch (error) {
     console.error('live_dataset_load_failed', error);
@@ -157,9 +161,9 @@ export async function POST(request: NextRequest) {
   // Historikken bindes til samme besøkende som tekstchatten (kopiens egen
   // cookie, eller `local` på en ukonfigurert utviklingsserver), aldri til noe
   // klienten påstår.
-  const chatVisitor = chat ? chatSurfaceVisitor(request, datasetId) : null;
-  let { continuity, verified } = chat
-    ? chatContinuity(parsed.data.transcript, chatVisitor?.visitorId ?? null, demo.snapshotId)
+  const chatVisitor = customer ? customer.visitor(request) : null;
+  let { continuity, verified } = customer
+    ? chatContinuity(parsed.data.transcript, chatVisitor?.visitorId ?? null, demo.snapshotId, customer)
     : { continuity: null, verified: null };
   let continued = continuity?.status === 'carried';
   const supervisor = getLiveSupervisor();
@@ -176,12 +180,12 @@ export async function POST(request: NextRequest) {
     }
   }
   // Instruksene avhenger av om historikken faktisk ble med; se reserveforsøket under.
-  const backendFor = (withHistory: boolean) => chat
-    ? `${demo.backendInstructions}\n\n${chatSurfaceBackendAddendum(demo)}${withHistory ? `\n${CHAT_SURFACE_CONTINUED_BACKEND_ADDENDUM}` : ''}`
+  const backendFor = (withHistory: boolean) => customer
+    ? `${demo.backendInstructions}\n\n${chatSurfaceBackendAddendum(customer.voice)}${withHistory ? `\n${CHAT_SURFACE_CONTINUED_BACKEND_ADDENDUM}` : ''}`
     : demo.backendInstructions;
   const sessionFor = (withHistory: boolean) => {
-    const session = chat
-      ? liveSessionConfig(chatSurfaceVoiceInstructions(demo, { continued: withHistory }), backendFor(withHistory), chatSurfaceTools(demo.tools), parsed.data.voice)
+    const session = customer
+      ? liveSessionConfig(chatSurfaceVoiceInstructions(customer.voice, { continued: withHistory }), backendFor(withHistory), chatSurfaceTools(demo.tools), parsed.data.voice)
       : liveSessionConfig(demo.voiceInstructions ?? NYHAVNA_VOICE_INSTRUCTIONS, backendFor(false), demo.tools, parsed.data.voice);
     session.delegation.responses.parallel_tool_calls = demo.parallelTools ?? true;
     // Tidligere turer ligger i sesjonen FØR stemmen hilser: Live snakker ikke
@@ -221,8 +225,8 @@ export async function POST(request: NextRequest) {
     // Opptaket av talens turer (tale → tekst) bindes til sesjonstokenet og den
     // besøkende. Uten besøkende kan ingen handoff utstedes; klienten får da en
     // ærlig feil når den ber om den.
-    const recorder = chat && chatVisitor
-      ? startVoiceHandoff(token, { visitorId: chatVisitor.visitorId, snapshotId: demo.snapshotId, baseTurns: verified?.turns ?? [], baseTrimmed: verified?.trimmed ?? false })
+    const recorder = customer && chatVisitor
+      ? startVoiceHandoff(token, { scope: transcriptScope(customer), visitorId: chatVisitor.visitorId, snapshotId: demo.snapshotId, baseTurns: verified?.turns ?? [], baseTrimmed: verified?.trimmed ?? false })
       : undefined;
     await connectLiveSideband(created.sessionId, token, conversation, {
       backendInstructions,

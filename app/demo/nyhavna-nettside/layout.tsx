@@ -4,9 +4,7 @@ import { Header } from "@/app/demo/nyhavna-nettside/header";
 import { SiteChatVoiceBridge } from "@/components/demo/site-chat-voice-bridge";
 import { nhChatEnabled, nhChatVoiceEnabled } from "@/lib/demo/nyhavna-chat/access";
 import { NH_BOARD_HREF } from "@/lib/demo/nyhavna-chat/links";
-import {
-  NH_CHAT_VOICE_CONTINUED_GREETING, NH_CHAT_VOICE_DATASET, NH_CHAT_VOICE_GREETING,
-} from "@/lib/demo/nyhavna-chat/voice";
+import { nyhavnaChatProfile } from "@/lib/demo/nyhavna-chat/profile";
 import "@/app/demo/nyhavna-nettside/original.css";
 import "@/app/demo/nyhavna-nettside/demo.css";
 
@@ -70,9 +68,9 @@ export default function Layout({ children }: { children: React.ReactNode }) {
       </footer>
       {voice ? (
         <SiteChatVoiceBridge
-          dataset={NH_CHAT_VOICE_DATASET}
-          greeting={NH_CHAT_VOICE_GREETING}
-          continuedGreeting={NH_CHAT_VOICE_CONTINUED_GREETING}
+          dataset={nyhavnaChatProfile.dataset}
+          greeting={nyhavnaChatProfile.voice.greeting}
+          continuedGreeting={nyhavnaChatProfile.voice.continuedGreeting}
         />
       ) : null}
       {chat ? (

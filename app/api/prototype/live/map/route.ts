@@ -14,9 +14,9 @@ const HEARTBEAT_MS = 15000;
 /**
  * Kartkanalen: serveren sender direktiver ned (SSE), nettleseren svarer med
  * kartstatus opp (POST). Bare tokenet til den aktive samtalen slipper inn —
- * enten fra loopback, eller fra Leangenbukta-kundedemoens delte tilgang
- * (lib/live/leangenbukta-voice-access.ts), samme gate som hovedruta bruker
- * for å reservere sesjonen.
+ * enten fra loopback, eller fra en kundes egen tilgang i chatboks-registeret
+ * (lib/live/demo-voice-access.ts), samme gate som hovedruta bruker for å
+ * reservere sesjonen.
  */
 export async function GET(request: NextRequest) {
   if (!localRequest(request) && !demoVoiceVisitor(request)) return new NextResponse(null, { status: 404 });

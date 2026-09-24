@@ -8,7 +8,7 @@ import {
   voiceWidgetState,
   type VoiceHandoff,
   type VoiceWidgetState,
-} from "@/lib/demo/leangenbukta-chat/voice-channel";
+} from "@/lib/demo/site-chat/voice-channel";
 import type { LiveBoardState } from "@/lib/live/types";
 
 /** Chatboksen har ikke noe kart; serveren sender heller ingen kartdirektiver hit. */
@@ -55,7 +55,7 @@ export interface SiteChatVoiceBridgeProps {
  * `useLive`. All UI ligger i widgeten; her finnes bare taleforbindelsen og
  * overføringen av historikk begge veier. Brukes av nettsidekopiene
  * (Leangenbukta, Nyhavna) med hver sin datasett-ID og hilsen.
- * Protokollen står i `lib/demo/leangenbukta-chat/voice-channel.ts`.
+ * Protokollen står i `lib/demo/site-chat/voice-channel.ts`.
  */
 export function SiteChatVoiceBridge({ dataset, greeting, continuedGreeting }: SiteChatVoiceBridgeProps) {
   // Tekstchattens token for NESTE start; settes av start-kommandoen.

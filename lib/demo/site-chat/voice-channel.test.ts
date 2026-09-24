@@ -1,15 +1,13 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
-import { CHAT_VOICE_DATASET, parseVoiceCommand, VOICE_EVENTS, VOICE_TRANSCRIPT_MAX, voiceWidgetState } from "@/lib/demo/leangenbukta-chat/voice-channel";
-import { MAX_TRANSCRIPT_TOKEN_LENGTH } from "@/lib/demo/leangenbukta-chat/transcript";
-import { LB_VOICE_DATASET } from "@/lib/live/leangenbukta-voice-access";
+import { parseVoiceCommand, VOICE_EVENTS, VOICE_TRANSCRIPT_MAX, voiceWidgetState } from "@/lib/demo/site-chat/voice-channel";
+import { MAX_TRANSCRIPT_TOKEN_LENGTH } from "@/lib/demo/site-chat/transcript";
 
 describe("talekanalen mellom widget og bro", () => {
-  it("widgeten bruker de samme hendelsesnavnene, og broen samme datasett som servergaten", () => {
+  it("widgeten bruker de samme hendelsesnavnene og samme tokentak som serveren", () => {
     const widget = readFileSync(join(process.cwd(), "public/embed/placy-chat.js"), "utf8");
     for (const name of Object.values(VOICE_EVENTS)) expect(widget).toContain(`"${name}"`);
-    expect(CHAT_VOICE_DATASET).toBe(LB_VOICE_DATASET);
     expect(VOICE_TRANSCRIPT_MAX).toBe(MAX_TRANSCRIPT_TOKEN_LENGTH);
   });
 

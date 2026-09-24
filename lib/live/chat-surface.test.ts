@@ -1,28 +1,32 @@
 import { describe, expect, it, vi } from "vitest";
 import { loadLiveDemo } from "@/lib/live/demos";
-import { CHAT_SURFACE_BACKEND_ADDENDUM, chatSurfaceAllowed, chatSurfaceBackendAddendum, chatSurfaceConversation, chatSurfaceTools, chatSurfaceVoiceInstructions } from "@/lib/live/chat-surface";
+import { chatSurfaceBackendAddendum, chatSurfaceConversation, chatSurfaceTools, chatSurfaceVoiceInstructions } from "@/lib/live/chat-surface";
+import { siteChatCustomerForDataset } from "@/lib/demo/site-chat/customers";
+import { leangenbuktaChatProfile } from "@/lib/demo/leangenbukta-chat/profile";
+import { nyhavnaChatProfile } from "@/lib/demo/nyhavna-chat/profile";
 import { MAP_TOOLS } from "@/lib/realtime/types";
 import type { LiveConversation } from "@/lib/live/types";
 
 describe("chatflatens stemme (uten kart)", () => {
-  it("gjelder bare nettsidekopienes datasett (Leangenbukta og Nyhavna)", () => {
-    expect(chatSurfaceAllowed("leangenbukta-lokal")).toBe(true);
-    expect(chatSurfaceAllowed("nyhavna-lokal")).toBe(true);
-    expect(chatSurfaceAllowed("nyhavna-leve")).toBe(false);
-    expect(chatSurfaceAllowed(undefined)).toBe(false);
+  it("finnes bare for datasettene i chatboks-registeret", () => {
+    expect(siteChatCustomerForDataset("leangenbukta-lokal")).toBe(leangenbuktaChatProfile);
+    expect(siteChatCustomerForDataset("nyhavna-lokal")).toBe(nyhavnaChatProfile);
+    expect(siteChatCustomerForDataset("nyhavna-leve")).toBeNull();
+    expect(siteChatCustomerForDataset(undefined)).toBeNull();
   });
 
-  it("henviser Nyhavnas stemme til Nyhavna Utvikling, ikke et salgsteam, og holder Leangenbukta uendret", async () => {
-    const nyhavna = await loadLiveDemo("nyhavna-lokal");
-    const leangenbukta = await loadLiveDemo("leangenbukta-lokal");
-    const nh = chatSurfaceVoiceInstructions(nyhavna);
+  it("tar stedsnavn og kontaktperson fra kundens profil", () => {
+    const nh = chatSurfaceVoiceInstructions(nyhavnaChatProfile.voice);
     expect(nh).toContain("om Nyhavna og nabolaget rundt");
     expect(nh).toContain("bekrefter Nyhavna Utvikling");
     expect(nh).not.toContain("salgsteamet");
     expect(nh).toContain("Skill mellom det som finnes i dag og det som er planlagt");
-    expect(chatSurfaceBackendAddendum(nyhavna)).toContain("henvis til Nyhavna Utvikling");
-    expect(chatSurfaceVoiceInstructions(leangenbukta)).toContain("bekrefter salgsteamet");
-    expect(chatSurfaceBackendAddendum(leangenbukta)).toBe(CHAT_SURFACE_BACKEND_ADDENDUM);
+    expect(chatSurfaceBackendAddendum(nyhavnaChatProfile.voice)).toContain("henvis til Nyhavna Utvikling.");
+    const lb = chatSurfaceVoiceInstructions(leangenbuktaChatProfile.voice);
+    expect(lb).toContain("om Leangenbukta og nabolaget rundt");
+    expect(lb).toContain("bekrefter salgsteamet");
+    expect(chatSurfaceBackendAddendum(leangenbuktaChatProfile.voice)).toContain("henvis til salgsteamet.");
+    expect(chatSurfaceBackendAddendum(leangenbuktaChatProfile.voice)).not.toContain("{{");
   });
 
   it("tilbyr bare oppslag: ingen kart- eller presentasjonsverktøy av Leangenbuktas verktøy", async () => {
@@ -62,9 +66,8 @@ describe("chatflatens stemme (uten kart)", () => {
     expect(outcome).toEqual({ result: { matches: 1, results: [{ text: "x" }] } });
   });
 
-  it("stemmeinstruksen sier ny samtale og ingen kart, uten boardets kartomvisning", async () => {
-    const demo = await loadLiveDemo("leangenbukta-lokal");
-    const text = chatSurfaceVoiceInstructions(demo);
+  it("stemmeinstruksen sier ny samtale og ingen kart, uten boardets kartomvisning", () => {
+    const text = chatSurfaceVoiceInstructions(leangenbuktaChatProfile.voice);
     expect(text).toContain("Dette er en ny samtale");
     expect(text).toContain("Det finnes ikke noe kart");
     expect(text).not.toContain("finne hvert sted i kartet");

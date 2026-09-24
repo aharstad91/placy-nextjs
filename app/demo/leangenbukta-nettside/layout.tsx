@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { PLACY_BOARD } from "@/app/demo/leangenbukta-nettside/placy-row";
 import { SiteChrome } from "@/app/demo/leangenbukta-nettside/site-chrome";
 import { SiteChatVoiceBridge } from "@/components/demo/site-chat-voice-bridge";
-import { CHAT_VOICE_CONTINUED_GREETING, CHAT_VOICE_DATASET, CHAT_VOICE_GREETING } from "@/lib/demo/leangenbukta-chat/voice-channel";
+import { leangenbuktaChatProfile } from "@/lib/demo/leangenbukta-chat/profile";
 import "@/app/demo/leangenbukta-nettside/original.css";
 import "@/app/demo/leangenbukta-nettside/pages.css";
 import "@/app/demo/leangenbukta-nettside/demo.css";
@@ -26,7 +26,11 @@ export default function Layout({ children }: { children: React.ReactNode }) {
       <SiteChrome>{children}</SiteChrome>
       {/* Stemmen i den samme chatboksen: en usynlig bro til `useLive`. Uten
           den (widgeten på en ekstern side) finnes bare tekstchatten. */}
-      <SiteChatVoiceBridge dataset={CHAT_VOICE_DATASET} greeting={CHAT_VOICE_GREETING} continuedGreeting={CHAT_VOICE_CONTINUED_GREETING} />
+      <SiteChatVoiceBridge
+        dataset={leangenbuktaChatProfile.dataset}
+        greeting={leangenbuktaChatProfile.voice.greeting}
+        continuedGreeting={leangenbuktaChatProfile.voice.continuedGreeting}
+      />
       {/* Tekstchatten lastes med den samme innbyggingskoden en WordPress-side
           ville brukt: ett skript og data-attributter. Siden brukeren står på
           leses fra `data-placy-page-id` på hver side. */}

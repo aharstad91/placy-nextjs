@@ -1,7 +1,11 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { NextRequest } from "next/server";
 import { issueLbDemoCookie, LB_DEMO_COOKIE } from "@/lib/demo/leangenbukta-site/access";
-import { issueTranscript } from "@/lib/demo/leangenbukta-chat/transcript";
+import { issueTranscript } from "@/lib/demo/site-chat/transcript";
+import { transcriptScope } from "@/lib/demo/site-chat/profile";
+import { leangenbuktaChatProfile } from "@/lib/demo/leangenbukta-chat/profile";
+
+const SCOPE = transcriptScope(leangenbuktaChatProfile);
 import { loadLiveDemo } from "@/lib/live/demos";
 import { getSitePages } from "@/lib/demo/leangenbukta-site/pages";
 import registryFile from "@/data/demo/leangenbukta-lokal/sources.json";
@@ -166,7 +170,7 @@ describe("POST /api/demo/leangenbukta-chat", () => {
   it("ignorerer en forfalsket eller en annen besøkendes transcript og starter uten historikk", async () => {
     vi.stubGlobal("fetch", vi.fn().mockResolvedValueOnce(responsesPayload(finalMessage("Hei igjen.", "smalltalk"))));
     const { POST } = await import("./route");
-    const otherToken = issueTranscript({ visitorId: "en-annen-besøkende", snapshotId: "uansett", previousTurns: [], newTurns: [{ role: "user", text: "a" }, { role: "assistant", text: "b" }] });
+    const otherToken = issueTranscript({ scope: SCOPE, visitorId: "en-annen-besøkende", snapshotId: "uansett", previousTurns: [], newTurns: [{ role: "user", text: "a" }, { role: "assistant", text: "b" }] });
     const cookie = visitorCookie();
     const res = await POST(post({ message: "Hei", pageId: "forside", transcript: otherToken }, { cookie }));
     expect(res.status).toBe(200);
@@ -181,7 +185,7 @@ describe("POST /api/demo/leangenbukta-chat", () => {
     const { POST } = await import("./route");
     const cookie = visitorCookie();
     const visitorId = visitorIdFromCookie(cookie);
-    const staleToken = issueTranscript({ visitorId, snapshotId: "en-gammel-versjon-som-ikke-finnes", previousTurns: [], newTurns: [{ role: "user", text: "a" }, { role: "assistant", text: "b" }] });
+    const staleToken = issueTranscript({ scope: SCOPE, visitorId, snapshotId: "en-gammel-versjon-som-ikke-finnes", previousTurns: [], newTurns: [{ role: "user", text: "a" }, { role: "assistant", text: "b" }] });
     const res = await POST(post({ message: "Hei", pageId: "forside", transcript: staleToken }, { cookie }));
     expect(res.status).toBe(409);
     expect(global.fetch).not.toHaveBeenCalled();
@@ -198,7 +202,7 @@ describe("POST /api/demo/leangenbukta-chat", () => {
     const { POST } = await import("./route");
     const cookie = visitorCookie();
     const visitorId = visitorIdFromCookie(cookie);
-    const staleToken = issueTranscript({ visitorId, snapshotId: "en-gammel-versjon-som-ikke-finnes", previousTurns: [], newTurns: [{ role: "user", text: "a" }, { role: "assistant", text: "b" }] });
+    const staleToken = issueTranscript({ scope: SCOPE, visitorId, snapshotId: "en-gammel-versjon-som-ikke-finnes", previousTurns: [], newTurns: [{ role: "user", text: "a" }, { role: "assistant", text: "b" }] });
 
     const staleRes = await POST(post({ message: "Hei", pageId: "forside", transcript: staleToken }, { cookie }));
     expect(staleRes.status).toBe(409);

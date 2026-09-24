@@ -1,8 +1,9 @@
 import { describe, expect, it } from "vitest";
 import board from "@/data/demo/nyhavna-lokal/board.json";
 import sources from "@/data/demo/nyhavna-lokal/sources.json";
-import { chatCategories, CATEGORY_QUESTIONS } from "@/lib/demo/leangenbukta-chat/categories";
-import { replyNotice } from "@/lib/demo/leangenbukta-chat/instructions";
+import { chatCategories } from "@/lib/demo/site-chat/categories";
+import { CATEGORY_QUESTIONS } from "@/lib/demo/leangenbukta-chat/categories";
+import { replyNotice } from "@/lib/demo/site-chat/notices";
 import { NH_CATEGORY_QUESTIONS } from "@/lib/demo/nyhavna-chat/categories";
 import { nhPageOpening, nhTextChatInstructions, NH_REPLIES } from "@/lib/demo/nyhavna-chat/instructions";
 import { getNhSitePage, getNhSitePages } from "@/lib/demo/nyhavna-chat/pages";

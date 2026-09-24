@@ -1,6 +1,6 @@
 import "server-only";
 
-import type { ResolvedLink } from "@/lib/demo/leangenbukta-chat/links";
+import type { ResolvedLink } from "@/lib/demo/site-chat/profile";
 import { getNhSitePage, NH_SITE_BASE, nhSitePageHref } from "@/lib/demo/nyhavna-chat/pages";
 
 /**

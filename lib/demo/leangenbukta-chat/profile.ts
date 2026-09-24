@@ -2,13 +2,15 @@ import "server-only";
 
 import { getSitePage, SITE_SNAPSHOT_DATE } from "@/lib/demo/leangenbukta-site/pages";
 import { lbDemoAccess } from "@/lib/demo/leangenbukta-site/access";
-import { consumeDemoQuota } from "@/lib/demo/leangenbukta-site/usage";
+import { CONTINUED_VOICE_GREETING } from "@/lib/demo/site-chat/voice-channel";
+import { sameOriginOrNone } from "@/lib/demo/site-chat/origin";
 import {
   textChatInstructions, pageOpening, unsupportedYearReply, KNOWLEDGE_GAP_REPLY, BACKEND_ERROR_REPLY, LB_NOTICE_TEXTS,
 } from "@/lib/demo/leangenbukta-chat/instructions";
 import { leangenbuktaSourceRegistry } from "@/lib/demo/leangenbukta-chat/sources";
 import { fallbackLinks, resolveLinkIds } from "@/lib/demo/leangenbukta-chat/links";
-import { chatCategories } from "@/lib/demo/leangenbukta-chat/categories";
+import { chatCategories } from "@/lib/demo/site-chat/categories";
+import { CATEGORY_QUESTIONS } from "@/lib/demo/leangenbukta-chat/categories";
 import type { SiteChatProfile } from "@/lib/demo/site-chat/profile";
 
 /**
@@ -19,6 +21,7 @@ import type { SiteChatProfile } from "@/lib/demo/site-chat/profile";
  * Leangenbuktas døgnkvote, sideregister, kilderegister og faste tekster.
  */
 export const leangenbuktaChatProfile: SiteChatProfile = {
+  id: "leangenbukta",
   logPrefix: "lb",
   dataset: "leangenbukta-lokal",
   env: { allowedOrigins: "PLACY_LB_CHAT_ALLOWED_ORIGINS", model: "PLACY_LB_CHAT_MODEL", timeoutMs: "PLACY_LB_CHAT_TIMEOUT_MS" },
@@ -28,12 +31,35 @@ export const leangenbuktaChatProfile: SiteChatProfile = {
     const visitor = lbDemoAccess(request);
     return visitor ? { visitor } : null;
   },
-  consumeChatQuota: (visitorId) => consumeDemoQuota(visitorId, "chat_message"),
+  visitor: lbDemoAccess,
+  // Samme nøkkel som demotilgangens cookie, som før; tokenet er i tillegg
+  // bundet til kunde og datasett (`lib/demo/site-chat/transcript.ts`).
+  transcriptSecretEnv: "PLACY_LB_DEMO_COOKIE_SECRET",
+  chatMeter: {
+    meter: "chat_message",
+    envPrefix: "PLACY_LB_DEMO_CHAT",
+    storeEnv: "PLACY_LB_DEMO_USAGE_STORE",
+    defaults: { visitor: 60, global: 600 },
+  },
+  voice: {
+    placeName: "Leangenbukta",
+    salesContact: "salgsteamet",
+    greeting: "Si en kort hilsen på norsk: at du er Anja fra Placy, og spør hva de lurer på om å bo i Leangenbukta. Høyst to setninger.",
+    continuedGreeting: CONTINUED_VOICE_GREETING,
+    meter: {
+      meter: "voice_session",
+      envPrefix: "PLACY_LB_DEMO_VOICE",
+      storeEnv: "PLACY_LB_DEMO_USAGE_STORE",
+      defaults: { visitor: 8, global: 60 },
+    },
+    // Demotilgangen gjelder både boardets kartstemme og chatboksen, fra samme origin.
+    remoteVisitor: (request) => (sameOriginOrNone(request) ? lbDemoAccess(request) : null),
+  },
   getPage: (id) => getSitePage(id),
   snapshotDate: SITE_SNAPSHOT_DATE,
   instructions: textChatInstructions,
   opening: pageOpening,
-  categories: (categories, starters) => chatCategories(categories, starters),
+  categories: (categories, starters) => chatCategories(categories, starters, CATEGORY_QUESTIONS),
   sourceRegistry: leangenbuktaSourceRegistry,
   resolveLinks: resolveLinkIds,
   fallbackLinks,

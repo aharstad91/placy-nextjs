@@ -1,6 +1,9 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { NextRequest } from "next/server";
-import { issueTranscript } from "@/lib/demo/leangenbukta-chat/transcript";
+import { issueTranscript } from "@/lib/demo/site-chat/transcript";
+import { transcriptScope } from "@/lib/demo/site-chat/profile";
+import { leangenbuktaChatProfile } from "@/lib/demo/leangenbukta-chat/profile";
+import { nyhavnaChatProfile } from "@/lib/demo/nyhavna-chat/profile";
 import { issueLbDemoCookie, LB_DEMO_COOKIE } from "@/lib/demo/leangenbukta-site/access";
 import { loadLiveDemo } from "@/lib/live/demos";
 import { NH_CHAT_COOKIE } from "@/lib/demo/nyhavna-chat/access";
@@ -141,22 +144,30 @@ describe("POST /api/demo/nyhavna-chat", () => {
     expect(data.reply).toBe(NH_REPLIES.unsupportedYear(["2031"]));
   });
 
-  it("fortsetter en Nyhavna-samtale, men tar aldri inn en samtale fra Leangenbukta", async () => {
+  it("fortsetter en Nyhavna-samtale, men tar aldri inn en samtale fra Leangenbukta (heller ikke med begge nøklene satt)", async () => {
     const nyhavna = await loadLiveDemo("nyhavna-lokal");
     const leangenbukta = await loadLiveDemo("leangenbukta-lokal");
     const turns = [{ role: "user" as const, text: "Hei" }, { role: "assistant" as const, text: "Hei! Hva lurer du på?" }];
+    // Begge kundenes nøkler satt samtidig: ingen av dem låner den andres.
+    vi.stubEnv("PLACY_LB_DEMO_COOKIE_SECRET", "s".repeat(40));
+    vi.stubEnv("PLACY_NH_CHAT_COOKIE_SECRET", "n".repeat(40));
     vi.stubGlobal("fetch", vi.fn().mockResolvedValue(responsesPayload(finalMessage("Gjerne.", "smalltalk"))));
     const { POST } = await import("./route");
 
-    const own = issueTranscript({ visitorId: "local", snapshotId: nyhavna.snapshotId, previousTurns: [], newTurns: turns });
+    const own = issueTranscript({ scope: transcriptScope(nyhavnaChatProfile), visitorId: "local", snapshotId: nyhavna.snapshotId, previousTurns: [], newTurns: turns });
     expect((await POST(post({ message: "Takk", pageId: "forside", transcript: own }))).status).toBe(200);
     const sent = JSON.parse(((global.fetch as ReturnType<typeof vi.fn>).mock.calls[0][1] as RequestInit).body as string);
     expect(sent.input).toHaveLength(3);
 
-    vi.mocked(global.fetch).mockClear();
-    const foreign = issueTranscript({ visitorId: "local", snapshotId: leangenbukta.snapshotId, previousTurns: [], newTurns: turns });
-    expect((await POST(post({ message: "Takk", pageId: "forside", transcript: foreign }))).status).toBe(409);
-    expect(global.fetch).not.toHaveBeenCalled();
+    // Et ekte Leangenbukta-token for samme besøkende — også med Nyhavnas
+    // innholdsversjon — blir aldri Nyhavna-historikk: signaturen er kundens egen.
+    for (const snapshotId of [leangenbukta.snapshotId, nyhavna.snapshotId]) {
+      vi.mocked(global.fetch).mockClear();
+      const foreign = issueTranscript({ scope: transcriptScope(leangenbuktaChatProfile), visitorId: "local", snapshotId, previousTurns: [], newTurns: turns });
+      expect((await POST(post({ message: "Takk", pageId: "forside", transcript: foreign }))).status).toBe(200);
+      const replayed = JSON.parse(((global.fetch as ReturnType<typeof vi.fn>).mock.calls[0][1] as RequestInit).body as string);
+      expect(replayed.input).toHaveLength(1);
+    }
   });
 
   it("trekker Nyhavnas egen kvote, ikke Leangenbuktas", async () => {

@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { chatCategories, type BoardCategoryMeta } from "@/lib/demo/leangenbukta-chat/categories";
+import { chatCategories, type BoardCategoryMeta } from "@/lib/demo/site-chat/categories";
+import { CATEGORY_QUESTIONS } from "@/lib/demo/leangenbukta-chat/categories";
 
 const base: BoardCategoryMeta[] = [
   { id: "leangenbukta-prosjektet", label: "Leangenbukta", icon: "Building2", color: "#91563e" },
@@ -16,12 +17,13 @@ describe("chatCategories", () => {
         { id: "transport", label: "Transport", icon: "<svg>", color: "#4d93f8" },
       ],
       [],
+      CATEGORY_QUESTIONS,
     );
     expect(result.map((c) => c.id)).toEqual(["leangenbukta-prosjektet", "hverdag"]);
   });
 
   it("setter sidens forslag først i første tema og fyller opp til tre uten duplikater", () => {
-    const [project, hverdag] = chatCategories(base, ["Hva er Leangenbukta?", "Hvor lang tid tar det til sentrum?"]);
+    const [project, hverdag] = chatCategories(base, ["Hva er Leangenbukta?", "Hvor lang tid tar det til sentrum?"], CATEGORY_QUESTIONS);
     expect(project.questions).toEqual(["Hva er Leangenbukta?", "Hvor lang tid tar det til sentrum?", "Hvilke bygg består Leangenbukta av?"]);
     expect(hverdag.questions).toHaveLength(3);
   });

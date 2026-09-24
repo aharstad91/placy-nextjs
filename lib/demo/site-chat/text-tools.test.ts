@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { textChatTools } from "@/lib/demo/leangenbukta-chat/text-tools";
+import { textChatTools } from "@/lib/demo/site-chat/text-tools";
 import { conversationTools } from "@/lib/realtime/nyhavna-conversation";
 import { presentationTool, similarPlacesTool, morePlacesTool } from "@/lib/demo/local-board/presentation";
 import { NYHAVNA_LABELS } from "@/lib/realtime/conversation-labels";

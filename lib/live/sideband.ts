@@ -90,7 +90,7 @@ export interface LiveSidebandOptions {
   /**
    * Mottar det sesjonen faktisk sa og hørte, slik serveren selv ser det. Brukes
    * av Leangenbuktas chatflate til å gi tekstchatten talens turer
-   * (`lib/demo/leangenbukta-chat/voice-handoff.ts`). `close` kalles FØR resten
+   * (`lib/demo/site-chat/voice-handoff.ts`). `close` kalles FØR resten
    * av oppryddingen, så ingenting som ble sagt går tapt ved stopp.
    */
   transcript?: LiveTranscriptSink;

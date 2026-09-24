@@ -1,5 +1,6 @@
 import "server-only";
 
+import type { ReplyNoticeTexts } from "@/lib/demo/site-chat/notices";
 import type { SiteChatPage } from "@/lib/demo/site-chat/profile";
 
 /**
@@ -91,59 +92,6 @@ export function pageOpening(page: SiteChatPage): string {
   }
 }
 
-export type ReplyNoticeKind = "sales" | "timing" | "provisional";
-
-export interface ReplyNotice {
-  kind: ReplyNoticeKind;
-  text: string;
-}
-
-/**
- * Forbeholdstekstene for én nettsidekopi. `alreadyQualified` legger til
- * formuleringer som betyr at svaret allerede har forbeholdet (f.eks. en
- * henvisning til Nyhavna Utvikling i stedet for et salgsteam).
- */
-export interface ReplyNoticeTexts extends Record<ReplyNoticeKind, string> {
-  alreadyQualified?: Partial<Record<ReplyNoticeKind, RegExp>>;
-}
-
-export const LB_NOTICE_TEXTS: ReplyNoticeTexts = {
-  sales: "Pris og ledighet endrer seg. Sjekk gjeldende prisliste og ledige boliger med salgsteamet.",
-  timing: "Framdrift og innflytting kan endre seg. Salgsteamet har den oppdaterte tidsplanen.",
-  provisional: "Noe av dette er planlagt eller uavklart i kildene, ikke ferdig bekreftet.",
-};
-
-const SALES_WORDS = /\b(pris\w*|kost\w*|kr|kroner|felleskost\w*|ledig\w*|solgt|til salgs|i salg)\b/i;
-const TIMING_WORDS = /innflytt\w*|flytte inn|ferdig\w*|byggestart|åpner|åpning|tidsplan|\b(?:19|20)\d{2}\b/i;
-const ALREADY_QUALIFIED: Record<ReplyNoticeKind, RegExp> = {
-  sales: /kan ikke bekrefte|må bekreftes|sjekk (?:gjeldende|oppdatert)|kontakt salgsteamet|avklar.{0,40}salgsteamet/i,
-  timing: /forventet|anslag|ikke bekreftet|kan endre seg|oppdatert (?:dato|tidsplan|tidspunkt)/i,
-  provisional: /planlagt|forventet|uavklart|ikke bekreftet/i,
-};
-
-/**
- * Forbeholdet ved ett svar (2026-09-24), eller null. Vises bare når spørsmålet
- * eller svaret handler om pris/ledighet eller tidspunkt, eller når
- * verktøyene selv merket grunnlaget som planlagt/uavklart — aldri som et
- * generelt forbehold på hver melding. Småprat og avslag får aldri et.
- */
-export function replyNotice(
-  input: { userText: string; reply: string; answerType: string; provisional: boolean },
-  texts: ReplyNoticeTexts = LB_NOTICE_TEXTS,
-): ReplyNotice | null {
-  if (input.answerType !== "fact" && input.answerType !== "gap") return null;
-  const text = `${input.userText}\n${input.reply}`;
-  let kind: ReplyNoticeKind | null = null;
-  if (SALES_WORDS.test(text)) kind = "sales";
-  else if (TIMING_WORDS.test(text)) kind = "timing";
-  else if (input.provisional && input.answerType === "fact") kind = "provisional";
-  // En egen stripe hjelper bare når selve svaret mangler forbeholdet.
-  // Modellen kan allerede ha sagt «forventet» eller henvist til salgsteamet;
-  // å gjenta det rett under svaret gjør chatten tyngre uten å gjøre den tryggere.
-  if (!kind || ALREADY_QUALIFIED[kind].test(input.reply) || texts.alreadyQualified?.[kind]?.test(input.reply)) return null;
-  return { kind, text: texts[kind] };
-}
-
 /**
  * Fast svar når svaret nevner et årstall ingen verktøysvar i denne meldingen
  * har (2008-premisset). Modellens tekst slippes ikke gjennom: den kan ha
@@ -153,6 +101,13 @@ export function unsupportedYearReply(years: readonly string[]): string {
   const list = years.length > 1 ? `${years.slice(0, -1).join(", ")} og ${years.at(-1)}` : years[0];
   return `Jeg finner ikke noe i kildene mine som bekrefter ${list}, så det vil jeg ikke gjette på. Salgsteamet kan gi deg oppdatert framdrift og innflytting, og i Boardet ser du hva som er ferdig og hva som er planlagt.`;
 }
+
+export const LB_NOTICE_TEXTS: ReplyNoticeTexts = {
+  sales: "Pris og ledighet endrer seg. Sjekk gjeldende prisliste og ledige boliger med salgsteamet.",
+  timing: "Framdrift og innflytting kan endre seg. Salgsteamet har den oppdaterte tidsplanen.",
+  provisional: "Noe av dette er planlagt eller uavklart i kildene, ikke ferdig bekreftet.",
+  alreadyQualified: { sales: /kontakt salgsteamet|avklar.{0,40}salgsteamet/i },
+};
 
 /** Fast svar når et faktasvar mangler verktøybevis (AE5/R9) — aldri modellens egen tekst. */
 export const KNOWLEDGE_GAP_REPLY =

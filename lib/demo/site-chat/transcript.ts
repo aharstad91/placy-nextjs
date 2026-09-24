@@ -8,7 +8,7 @@ import { constantTimeEqual } from "@/lib/live/hosted-access";
  *
  * ## Hvorfor et signert token og ikke en serversesjon
  *
- * Serveren lagrer ingen samtaler (se `lib/demo/leangenbukta-chat/backend.ts`).
+ * Serveren lagrer ingen samtaler (se `lib/demo/site-chat/backend.ts`).
  * Historikken må derfor bæres av klienten mellom kall, men den kan ikke være
  * ren tekst i klienten: en besøkende skal ikke kunne dikte opp at «assistenten»
  * har sagt noe den aldri har sagt, og to besøkende skal aldri kunne dele
@@ -33,14 +33,30 @@ import { constantTimeEqual } from "@/lib/live/hosted-access";
  * Bytegrensen holder også Unicode-tunge meldinger under Live sitt tak på
  * 8 192 tokens for `session.input`, og under grensen for et signert token.
  *
- * ## Hemmeligheten
+ * ## Kundens nøkkel og kundens token (2026-09-24)
  *
- * Samme mønster som `lib/demo/leangenbukta-site/access.ts`: en konfigurert
- * `PLACY_LB_DEMO_COOKIE_SECRET` brukes når den finnes (også i produksjon), og
- * en tilfeldig prosess-hemmelighet dekker lokal utvikling uten konfigurasjon.
- * Prosess-hemmeligheten er ny ved hver serverstart, så gamle tokens fra en
- * tidligere økt blir ugyldige helt av seg selv — det er riktig oppførsel, ikke
- * en feil, siden ingenting annet husker den økten heller.
+ * Chatboksen er et produkt for flere kunder. Hvert token tilhører ÉN kunde og
+ * ÉTT datasett (`TranscriptScope`), på to uavhengige måter:
+ *
+ * - Nøkkelen er kundens egen (`scope.secretEnv`, f.eks.
+ *   `PLACY_LB_DEMO_COOKIE_SECRET` eller `PLACY_NH_CHAT_COOKIE_SECRET`), og
+ *   signeringsnøkkelen avledes av den OG av kunde-ID og datasett. Selv om to
+ *   kunder skulle få samme hemmelighet, kan ingen av dem verifisere den andres
+ *   token. Ingen kunde låner en annen kundes hemmelighet.
+ * - Payloaden bærer kunde-ID og datasett, og verifiseringen krever at de er
+ *   kallstedets.
+ *
+ * Uten konfigurert nøkkel brukes en tilfeldig prosess-hemmelighet (lokal
+ * utvikling). Den er ny ved hver serverstart, så gamle tokens blir ugyldige av
+ * seg selv — riktig, siden ingenting annet husker den økten heller.
+ *
+ * ## Overgang fra v1
+ *
+ * Tokens fra før 2026-09-24 (`v: 1`, uten kunde, signert med den rå
+ * Leangenbukta-nøkkelen) godtas ikke lenger. Et slikt token gir samme utfall
+ * som et ugyldig token: samtalen fortsetter uten tidligere historikk. Det er et
+ * bevisst, engangs brudd for faner som sto åpne over en omstart; demoen var
+ * ikke delt, og tokenet lever bare i fanen.
  */
 
 const MIN_SECRET_LENGTH = 32;
@@ -58,8 +74,19 @@ export interface TranscriptTurn {
   via?: "voice";
 }
 
+/** Hvilken kunde og hvilket datasett et token tilhører, og hvor kundens nøkkel står. */
+export interface TranscriptScope {
+  customerId: string;
+  dataset: string;
+  /** Miljøvariabelen med kundens signeringsnøkkel (≥ 32 tegn). */
+  secretEnv: string;
+}
+
 interface TranscriptPayload {
-  v: 1;
+  v: 2;
+  /** Kunde-ID og datasett (`TranscriptScope`). */
+  c: string;
+  d: string;
   visitorId: string;
   snapshotId: string;
   turns: TranscriptTurn[];
@@ -76,20 +103,20 @@ export interface VerifiedTranscript {
 
 let devSecret: string | null = null;
 
-function secret(): string {
-  // Nyhavna-kopien (2026-09-24) bruker samme token med sin egen nøkkel når
-  // Leangenbuktas ikke er satt. Tokenet binder uansett besøkende OG
-  // innholdsversjon, så en nøkkel delt mellom kopiene lar ingen historikk
-  // krysse fra den ene demoen til den andre.
-  for (const configured of [process.env.PLACY_LB_DEMO_COOKIE_SECRET ?? "", process.env.PLACY_NH_CHAT_COOKIE_SECRET ?? ""]) {
-    if (configured.length >= MIN_SECRET_LENGTH) return configured;
-  }
+function baseSecret(scope: TranscriptScope): string {
+  const configured = process.env[scope.secretEnv] ?? "";
+  if (configured.length >= MIN_SECRET_LENGTH) return configured;
   devSecret ??= randomBytes(32).toString("hex");
   return devSecret;
 }
 
-function sign(body: string): string {
-  return createHmac("sha256", secret()).update(body).digest("base64url");
+/** Kundens signeringsnøkkel: avledet av kundens hemmelighet, kunde-ID og datasett. */
+function scopedKey(scope: TranscriptScope): Buffer {
+  return createHmac("sha256", baseSecret(scope)).update(`placy-site-chat-transcript:v2|${scope.customerId}|${scope.dataset}`).digest();
+}
+
+function sign(body: string, scope: TranscriptScope): string {
+  return createHmac("sha256", scopedKey(scope)).update(body).digest("base64url");
 }
 
 /**
@@ -120,6 +147,7 @@ export function windowTurns(
  * selv har påstått at assistenten sa.
  */
 export function issueTranscript(input: {
+  scope: TranscriptScope;
   visitorId: string;
   snapshotId: string;
   previousTurns: readonly TranscriptTurn[];
@@ -129,18 +157,21 @@ export function issueTranscript(input: {
 }): string {
   const window = windowTurns(input.previousTurns, input.newTurns);
   const payload: TranscriptPayload = {
-    v: 1,
+    v: 2,
+    c: input.scope.customerId,
+    d: input.scope.dataset,
     visitorId: input.visitorId,
     snapshotId: input.snapshotId,
     turns: window.turns,
     ...(window.trimmed || input.previousTrimmed ? { trimmed: true } : {}),
   };
   const body = Buffer.from(JSON.stringify(payload)).toString("base64url");
-  return `${body}.${sign(body)}`;
+  return `${body}.${sign(body, input.scope)}`;
 }
 
 /**
- * Dekoder og verifiserer et token for AKKURAT denne besøkende.
+ * Dekoder og verifiserer et token for AKKURAT denne besøkende hos AKKURAT denne
+ * kunden og dette datasettet.
  *
  * Returnerer `null` ved ugyldig signatur, feil form, eller en annen
  * besøkendes token — kallstedet starter da uten historikk, i tråd med R10
@@ -148,15 +179,16 @@ export function issueTranscript(input: {
  * `snapshotId` enn den kallstedet forventer returneres derimot slik det er:
  * det er kallstedets ansvar å oversette det til en 409, ikke denne funksjonens.
  */
-export function verifyTranscript(token: string | null | undefined, visitorId: string): VerifiedTranscript | null {
+export function verifyTranscript(token: string | null | undefined, visitorId: string, scope: TranscriptScope): VerifiedTranscript | null {
   if (!token || token.length > MAX_TRANSCRIPT_TOKEN_LENGTH) return null;
   const parts = token.split(".");
   if (parts.length !== 2) return null;
   const [body, signature] = parts;
-  if (!constantTimeEqual(signature, sign(body))) return null;
+  if (!constantTimeEqual(signature, sign(body, scope))) return null;
   try {
     const value = JSON.parse(Buffer.from(body, "base64url").toString()) as Partial<TranscriptPayload>;
-    if (value.v !== 1 || typeof value.visitorId !== "string" || typeof value.snapshotId !== "string" || !Array.isArray(value.turns)) return null;
+    if (value.v !== 2 || value.c !== scope.customerId || value.d !== scope.dataset) return null;
+    if (typeof value.visitorId !== "string" || typeof value.snapshotId !== "string" || !Array.isArray(value.turns)) return null;
     if (value.visitorId !== visitorId) return null;
     if (value.turns.length > MAX_TURNS) return null;
     const turns = value.turns.filter(

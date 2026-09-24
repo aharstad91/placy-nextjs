@@ -2,7 +2,7 @@ import type { LiveMessage, LiveStatus } from "@/lib/live/types";
 import type { LiveContinuity } from "@/lib/live/use-live";
 
 /**
- * Kanalen mellom nettsidekopienes chatwidget og talebroen (2026-09-24).
+ * Kanalen mellom chatwidgeten og talebroen (2026-09-24), felles for alle kunder.
  *
  * `public/embed/placy-chat.js` er den ENESTE synlige flaten (Shadow DOM, ingen
  * byggesteg). Talen trenger WebRTC og `useLive`, som bare finnes i React-appen.
@@ -40,16 +40,12 @@ export const VOICE_EVENTS = {
   command: "placy-chat:voice-command",
 } as const;
 
-/** Datasettet chatboksens stemme snakker ut fra; samme som `LB_VOICE_DATASET` på serveren. */
-export const CHAT_VOICE_DATASET = "leangenbukta-lokal";
-
-/** Hilsenen er en instruksjon til stemmen, ikke en ferdig replikk (se `useLive`). */
-export const CHAT_VOICE_GREETING =
-  "Si en kort hilsen på norsk: at du er Anja fra Placy, og spør hva de lurer på om å bo i Leangenbukta. Høyst to setninger.";
-
-/** Hilsenen når tekstchattens historikk ligger i sesjonen: fortsett, ikke begynn på nytt. */
-export const CHAT_VOICE_CONTINUED_GREETING =
-  "Samtalen fortsetter muntlig fra chatboksen. Si kort på norsk at du er Anja og gjerne fortsetter muntlig, knytt an til det dere nettopp snakket om med noen få ord, og spør hva mer de lurer på. Ikke si at dette er en ny samtale, og ikke gjenta svar du alt har gitt. Høyst to setninger.";
+/**
+ * Hilsenen når tekstchattens historikk ligger i sesjonen: fortsett, ikke begynn
+ * på nytt. Felles for alle kunder; kundens egen første hilsen står i profilen.
+ */
+export const CONTINUED_VOICE_GREETING =
+  "Samtalen fortsetter muntlig fra chatboksen. Si kort på norsk at du er Anja og gjerne fortsetter muntlig, knytt an til det dere nettopp snakket om med noen få ord, og spør hva mer de lurer på. Ikke si at dette er en ny samtale, og ikke gjenta svar du alt har gitt. Høyst to setninger."
 
 /** Samme tak som serverens `MAX_TRANSCRIPT_TOKEN_LENGTH` (transcript.ts er server-only). */
 export const VOICE_TRANSCRIPT_MAX = 24576;

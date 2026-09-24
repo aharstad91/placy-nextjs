@@ -28,7 +28,7 @@ import { MAP_TOOLS, type RealtimeTool } from "@/lib/realtime/types";
  * `open_theme` KAN returnere kartdirektiver (`highlight_places` via
  * `openMapFor`/presentasjonens `present()`) fordi det er samme
  * samtaletilstand som Live bruker — men backend-løkka i
- * `lib/demo/leangenbukta-chat/backend.ts` leser bare `.result` fra
+ * `lib/demo/site-chat/backend.ts` leser bare `.result` fra
  * `ToolOutcome` og dropper `.directives` uåpnet. Det finnes ingen bro å sende
  * dem til, så de forsvinner sporløst i stedet for å bli et løfte om et kart
  * som ikke er der. Instruksjonstillegget (`instructions.ts`) ber i tillegg

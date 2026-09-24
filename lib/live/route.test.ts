@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { NextRequest } from 'next/server';
 const mocks = vi.hoisted(() => ({ reserve: vi.fn(), attach: vi.fn(), end: vi.fn(), blockUnknown: vi.fn(), isActive: vi.fn(), connect: vi.fn(), resolveProject: vi.fn(), quota: vi.fn() }));
-vi.mock('@/lib/demo/leangenbukta-site/usage', () => ({ consumeDemoQuota: mocks.quota }));
+vi.mock('@/lib/demo/site-chat/usage', () => ({ consumeDemoQuota: mocks.quota }));
 vi.mock('@/lib/live/projects', async importOriginal => ({...await importOriginal<typeof import('@/lib/live/projects')>(),resolveVoiceProject: mocks.resolveProject}));
 vi.mock('@/lib/live/supervisor', () => ({ getLiveSupervisor: () => mocks }));
 vi.mock('@/lib/live/sideband', () => ({ connectLiveSideband: mocks.connect, getLiveSideband: () => undefined }));
@@ -20,9 +20,15 @@ import { VoiceProjectError } from '@/lib/live/projects';
 import { GET, POST, DELETE } from '@/app/api/prototype/live/route';
 import { GET as mapGET, POST as mapPOST } from '@/app/api/prototype/live/map/route';
 import { POST as contextPOST } from '@/app/api/prototype/live/context/route';
-import { CHAT_SURFACE_BACKEND_ADDENDUM, chatSurfaceVoiceInstructions } from '@/lib/live/chat-surface';
+import { chatSurfaceBackendAddendum, chatSurfaceVoiceInstructions } from '@/lib/live/chat-surface';
+import { leangenbuktaChatProfile } from '@/lib/demo/leangenbukta-chat/profile';
+import { nyhavnaChatProfile } from '@/lib/demo/nyhavna-chat/profile';
+import { transcriptScope } from '@/lib/demo/site-chat/profile';
 import { MAP_TOOLS } from '@/lib/realtime/types';
-import { issueTranscript } from '@/lib/demo/leangenbukta-chat/transcript';
+import { issueTranscript } from '@/lib/demo/site-chat/transcript';
+
+const LB_SCOPE = transcriptScope(leangenbuktaChatProfile);
+const NH_SCOPE = transcriptScope(nyhavnaChatProfile);
 
 const key = 'test-secret-must-remain-server-side';
 const created = (overrides: Record<string, unknown> = {}) => Response.json({ session: { id: 'live_test', model: 'gpt-live-1', ...overrides }, transport: { type: 'webrtc', sdp: 'v=0\r\nanswer' } }, { status: 201 });
@@ -237,7 +243,7 @@ describe('Leangenbukta-kundedemoens stemme på et delt miljø', () => {
     const demo = await loadLiveDemo('leangenbukta-lokal');
     const response = await POST(await shared({ dataset: 'leangenbukta-lokal', snapshotId: demo.snapshotId }));
     expect(response.status).toBe(200);
-    expect(mocks.quota).toHaveBeenCalledWith(expect.stringMatching(/^[0-9a-f-]{36}$/), 'voice_session');
+    expect(mocks.quota).toHaveBeenCalledWith(expect.stringMatching(/^[0-9a-f-]{36}$/), leangenbuktaChatProfile.voice.meter);
   });
 
   it('gir ikke demotilgangen til Nyhavna eller snapshotet', async () => {
@@ -357,8 +363,8 @@ describe('Leangenbuktas chatflate (surface=chat)', () => {
     const response = await POST(request(undefined, undefined, { dataset: 'leangenbukta-lokal', snapshotId: demo.snapshotId, surface: 'chat' }));
     expect(response.status).toBe(200);
     const body = JSON.parse(String((vi.mocked(fetch).mock.calls[0][1] as RequestInit).body));
-    expect(body.session.instructions).toBe(chatSurfaceVoiceInstructions(demo));
-    expect(body.session.delegation.responses.instructions).toContain(CHAT_SURFACE_BACKEND_ADDENDUM);
+    expect(body.session.instructions).toBe(chatSurfaceVoiceInstructions(leangenbuktaChatProfile.voice));
+    expect(body.session.delegation.responses.instructions).toContain(chatSurfaceBackendAddendum(leangenbuktaChatProfile.voice));
     const names = body.session.delegation.responses.tools.map((tool: { name: string }) => tool.name);
     for (const name of [...MAP_TOOLS, 'present_neighbourhood', 'find_similar_places', 'reveal_more_places']) expect(names).not.toContain(name);
     const options = mocks.connect.mock.calls[0][3];
@@ -369,7 +375,7 @@ describe('Leangenbuktas chatflate (surface=chat)', () => {
     const demo = await loadLiveDemo('leangenbukta-lokal');
     const turns = [{ role: 'user' as const, text: 'Hvor er nærmeste skole?' }, { role: 'assistant' as const, text: 'Lilleby skole, 8 minutter å gå.' }];
     // Ukonfigurert utviklingsserver på loopback: den besøkende er `local`, som i tekstchatten.
-    const own = issueTranscript({ visitorId: 'local', snapshotId: demo.snapshotId, previousTurns: [], newTurns: turns });
+    const own = issueTranscript({ scope: LB_SCOPE, visitorId: 'local', snapshotId: demo.snapshotId, previousTurns: [], newTurns: turns });
     const response = await POST(request(undefined, undefined, { dataset: 'leangenbukta-lokal', snapshotId: demo.snapshotId, surface: 'chat', transcript: own }));
     expect(response.status).toBe(200);
     expect((await response.json()).continuity).toEqual({ status: 'carried', turns: 2, trimmed: false });
@@ -378,12 +384,12 @@ describe('Leangenbuktas chatflate (surface=chat)', () => {
       { type: 'message', role: 'user', content: [{ type: 'input_text', text: 'Hvor er nærmeste skole?' }] },
       { type: 'message', role: 'assistant', content: [{ type: 'output_text', text: 'Lilleby skole, 8 minutter å gå.' }] },
     ]);
-    expect(body.session.instructions).toBe(chatSurfaceVoiceInstructions(demo, { continued: true }));
+    expect(body.session.instructions).toBe(chatSurfaceVoiceInstructions(leangenbuktaChatProfile.voice, { continued: true }));
     expect(body.session.instructions).not.toContain('Dette er en ny samtale');
     expect(mocks.connect.mock.calls[0][3].transcript).toBeDefined();
 
     vi.mocked(fetch).mockClear();
-    const foreign = issueTranscript({ visitorId: 'en-annen', snapshotId: demo.snapshotId, previousTurns: [], newTurns: turns });
+    const foreign = issueTranscript({ scope: LB_SCOPE, visitorId: 'en-annen', snapshotId: demo.snapshotId, previousTurns: [], newTurns: turns });
     const rejected = await POST(request(undefined, undefined, { dataset: 'leangenbukta-lokal', snapshotId: demo.snapshotId, surface: 'chat', transcript: foreign }));
     expect((await rejected.json()).continuity).toEqual({ status: 'rejected' });
     const rejectedBody = JSON.parse(String((vi.mocked(fetch).mock.calls[0][1] as RequestInit).body));
@@ -392,7 +398,7 @@ describe('Leangenbuktas chatflate (surface=chat)', () => {
   });
   it('starter uten historikk og sier det, hvis Live avviser session.input', async () => {
     const demo = await loadLiveDemo('leangenbukta-lokal');
-    const own = issueTranscript({ visitorId: 'local', snapshotId: demo.snapshotId, previousTurns: [], newTurns: [{ role: 'user', text: 'Hei' }, { role: 'assistant', text: 'Hei!' }] });
+    const own = issueTranscript({ scope: LB_SCOPE, visitorId: 'local', snapshotId: demo.snapshotId, previousTurns: [], newTurns: [{ role: 'user', text: 'Hei' }, { role: 'assistant', text: 'Hei!' }] });
     vi.mocked(fetch).mockResolvedValueOnce(Response.json({ error: { code: 'invalid_request_error' } }, { status: 400 }));
     const response = await POST(request(undefined, undefined, { dataset: 'leangenbukta-lokal', snapshotId: demo.snapshotId, surface: 'chat', transcript: own }));
     expect(response.status).toBe(200);
@@ -425,29 +431,35 @@ describe('Nyhavnas chatflate (nettsidekopien, 2026-09-24)', () => {
 
   it('starter lokalt med Nyhavnas egen chatinstruks, fortsetter tekstsamtalen og trekker Nyhavnas stemmekvote', async () => {
     const demo = await loadLiveDemo('nyhavna-lokal');
-    const own = issueTranscript({ visitorId: 'local', snapshotId: demo.snapshotId, previousTurns: [], newTurns: turns });
+    const own = issueTranscript({ scope: NH_SCOPE, visitorId: 'local', snapshotId: demo.snapshotId, previousTurns: [], newTurns: turns });
     const response = await POST(request(undefined, undefined, { dataset: 'nyhavna-lokal', snapshotId: demo.snapshotId, surface: 'chat', transcript: own }));
     expect(response.status).toBe(200);
     expect((await response.json()).continuity).toEqual({ status: 'carried', turns: 2, trimmed: false });
     const body = JSON.parse(String((vi.mocked(fetch).mock.calls[0][1] as RequestInit).body));
-    expect(body.session.instructions).toBe(chatSurfaceVoiceInstructions(demo, { continued: true }));
+    expect(body.session.instructions).toBe(chatSurfaceVoiceInstructions(nyhavnaChatProfile.voice, { continued: true }));
     expect(body.session.instructions).toContain('Nyhavna Utvikling');
     expect(body.session.delegation.responses.instructions).toContain('henvis til Nyhavna Utvikling');
     expect(body.session.input).toHaveLength(2);
     const names = body.session.delegation.responses.tools.map((tool: { name: string }) => tool.name);
     for (const name of MAP_TOOLS) expect(names).not.toContain(name);
     expect(mocks.connect.mock.calls[0][3].browserTools).toEqual(new Set());
-    expect(mocks.quota).toHaveBeenCalledWith('local', 'nh_voice_session');
+    expect(mocks.quota).toHaveBeenCalledWith('local', nyhavnaChatProfile.voice.meter);
   });
 
   it('tar aldri med en Leangenbukta-samtale inn i Nyhavnas tale', async () => {
+    // Et ekte Leangenbukta-token (riktig besøkende, Leangenbuktas kunde og nøkkel).
     const leangenbukta = await loadLiveDemo('leangenbukta-lokal');
     const nyhavna = await loadLiveDemo('nyhavna-lokal');
-    const foreign = issueTranscript({ visitorId: 'local', snapshotId: leangenbukta.snapshotId, previousTurns: [], newTurns: turns });
+    const foreign = issueTranscript({ scope: LB_SCOPE, visitorId: 'local', snapshotId: leangenbukta.snapshotId, previousTurns: [], newTurns: turns });
     const response = await POST(request(undefined, undefined, { dataset: 'nyhavna-lokal', snapshotId: nyhavna.snapshotId, surface: 'chat', transcript: foreign }));
     expect((await response.json()).continuity).toEqual({ status: 'rejected' });
     const body = JSON.parse(String((vi.mocked(fetch).mock.calls[0][1] as RequestInit).body));
     expect(body.session.input).toBeUndefined();
+    // Heller ikke et Leangenbukta-signert token med Nyhavnas innholdsversjon.
+    vi.mocked(fetch).mockClear();
+    const relabelled = issueTranscript({ scope: LB_SCOPE, visitorId: 'local', snapshotId: nyhavna.snapshotId, previousTurns: [], newTurns: turns });
+    const second = await POST(request(undefined, undefined, { dataset: 'nyhavna-lokal', snapshotId: nyhavna.snapshotId, surface: 'chat', transcript: relabelled }));
+    expect((await second.json()).continuity).toEqual({ status: 'rejected' });
   });
 
   it('helsesjekken godtar Nyhavnas chatflate lokalt, men ikke på den delte stemmetjenesten', async () => {
@@ -486,7 +498,7 @@ describe('Nyhavnas chatflate (nettsidekopien, 2026-09-24)', () => {
       const leangenbukta = await loadLiveDemo('leangenbukta-lokal');
       const cookie = await nhCookie();
       expect((await POST(await shared({ dataset: 'nyhavna-lokal', snapshotId: demo.snapshotId, surface: 'chat' }, cookie))).status).toBe(200);
-      expect(mocks.quota).toHaveBeenCalledWith(expect.stringMatching(/^[0-9a-f-]{36}$/), 'nh_voice_session');
+      expect(mocks.quota).toHaveBeenCalledWith(expect.stringMatching(/^[0-9a-f-]{36}$/), nyhavnaChatProfile.voice.meter);
       mocks.quota.mockClear();
       vi.mocked(fetch).mockClear();
       // Boardets kartstemme, Leangenbukta og snapshotet er ikke en del av Nyhavna-chatten.

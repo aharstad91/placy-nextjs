@@ -28,8 +28,13 @@ vi.mock("@/lib/live/supervisor", () => ({ getLiveSupervisor: () => ({
 
 import { connectLiveSideband } from "@/lib/live/sideband";
 import { disposeMapBridge } from "@/lib/live/map-bridge";
-import { issueVoiceHandoff, startVoiceHandoff } from "@/lib/demo/leangenbukta-chat/voice-handoff";
-import { verifyTranscript } from "@/lib/demo/leangenbukta-chat/transcript";
+import { issueVoiceHandoff, startVoiceHandoff, voiceHandoffCustomer } from "@/lib/demo/site-chat/voice-handoff";
+import { verifyTranscript } from "@/lib/demo/site-chat/transcript";
+import { transcriptScope } from "@/lib/demo/site-chat/profile";
+import { leangenbuktaChatProfile } from "@/lib/demo/leangenbukta-chat/profile";
+import { nyhavnaChatProfile } from "@/lib/demo/nyhavna-chat/profile";
+
+const SCOPE = transcriptScope(leangenbuktaChatProfile);
 import { POST as handoffPOST } from "@/app/api/prototype/live/handoff/route";
 
 const emit = (event: unknown) => (state.socket as EventEmitter).emit("message", Buffer.from(JSON.stringify(event)));
@@ -46,7 +51,7 @@ afterEach(() => {
 });
 
 async function voiceSession(token: string, visitorId = "visitor-1") {
-  const recorder = startVoiceHandoff(token, { visitorId, snapshotId: "snap-1", baseTurns: BASE, baseTrimmed: false });
+  const recorder = startVoiceHandoff(token, { scope: SCOPE, visitorId, snapshotId: "snap-1", baseTurns: BASE, baseTrimmed: false });
   const handle = await connectLiveSideband("live_test", token, conversation, { transcript: recorder, onUsage: () => {}, onTiming: () => {} });
   return { handle, stop: () => { state.cleanup?.("manual"); disposeMapBridge(token); } };
 }
@@ -66,7 +71,7 @@ describe("tale → tekst: sidebandets transkript blir signert historikk", () => 
 
     const result = issueVoiceHandoff("tok-1", "visitor-1");
     expect(result).toMatchObject({ ok: true, voiceTurns: 4, trimmed: false });
-    const verified = verifyTranscript(result.ok ? result.transcript : "", "visitor-1");
+    const verified = verifyTranscript(result.ok ? result.transcript : "", "visitor-1", SCOPE);
     expect(verified?.snapshotId).toBe("snap-1");
     expect(verified?.turns).toEqual([
       ...BASE,
@@ -83,6 +88,18 @@ describe("tale → tekst: sidebandets transkript blir signert historikk", () => 
     session.stop();
     expect(issueVoiceHandoff("tok-2", "visitor-2")).toEqual({ ok: false });
     expect(issueVoiceHandoff("ukjent", "visitor-1")).toEqual({ ok: false });
+  });
+
+  it("signerer overføringen for kunden talen startet for, aldri for en annen", () => {
+    const nhScope = transcriptScope(nyhavnaChatProfile);
+    const sink = startVoiceHandoff("tok-nh", { scope: nhScope, visitorId: "visitor-1", snapshotId: "nh-snap", baseTurns: [], baseTrimmed: false });
+    sink.delta("assistant", "Hei fra Nyhavna.", { startMs: 0, endMs: 500 });
+    sink.close();
+    expect(voiceHandoffCustomer("tok-nh")).toBe("nyhavna");
+    const result = issueVoiceHandoff("tok-nh", "visitor-1");
+    const token = result.ok ? result.transcript : "";
+    expect(verifyTranscript(token, "visitor-1", nhScope)?.turns).toHaveLength(1);
+    expect(verifyTranscript(token, "visitor-1", SCOPE)).toBeNull();
   });
 
   it("glemmer opptaket etter levetiden", async () => {
@@ -103,7 +120,7 @@ describe("tale → tekst: sidebandets transkript blir signert historikk", () => 
     expect(ok.status).toBe(200);
     const body = await ok.json();
     expect(body).toMatchObject({ voiceTurns: 1, trimmed: false });
-    expect(verifyTranscript(body.transcript, "local")?.turns.at(-1)).toEqual({ role: "assistant", text: "Hei.", via: "voice" });
+    expect(verifyTranscript(body.transcript, "local", SCOPE)?.turns.at(-1)).toEqual({ role: "assistant", text: "Hei.", via: "voice" });
     expect((await call("et-annet-token")).status).toBe(404);
     expect((await call("tok-4", "demo.example")).status).toBe(404);
     vi.unstubAllEnvs();

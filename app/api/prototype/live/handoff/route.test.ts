@@ -1,10 +1,14 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { NextRequest } from "next/server";
-import { startVoiceHandoff } from "@/lib/demo/leangenbukta-chat/voice-handoff";
-import { verifyTranscript } from "@/lib/demo/leangenbukta-chat/transcript";
+import { startVoiceHandoff } from "@/lib/demo/site-chat/voice-handoff";
+import { verifyTranscript } from "@/lib/demo/site-chat/transcript";
 import { issueNhChatCookie, NH_CHAT_COOKIE, verifyNhChatCookie } from "@/lib/demo/nyhavna-chat/access";
 import { issueLbDemoCookie, LB_DEMO_COOKIE } from "@/lib/demo/leangenbukta-site/access";
+import { transcriptScope } from "@/lib/demo/site-chat/profile";
+import { nyhavnaChatProfile } from "@/lib/demo/nyhavna-chat/profile";
 import { POST } from "./route";
+
+const NH_SCOPE = transcriptScope(nyhavnaChatProfile);
 
 const SHARED = "https://demo.placy.example";
 
@@ -33,7 +37,7 @@ describe("POST /api/prototype/live/handoff (tale → tekst)", () => {
     const issued = issueNhChatCookie()!;
     const nhCookie = `${NH_CHAT_COOKIE}=${issued.value}`;
     const visitorId = verifyNhChatCookie(issued.value)!.visitorId;
-    const sink = startVoiceHandoff("nh-session-token", { visitorId, snapshotId: "nyhavna-lokal-test", baseTurns: [], baseTrimmed: false });
+    const sink = startVoiceHandoff("nh-session-token", { scope: NH_SCOPE, visitorId, snapshotId: "nyhavna-lokal-test", baseTurns: [], baseTrimmed: false });
     sink.delta("user", "Hva finnes på Nyhavna i dag?", { startMs: 0, endMs: 900 });
     sink.delta("assistant", "Blant annet Dora Kaffebar.", { startMs: 1000, endMs: 2000 });
     sink.close();
@@ -42,7 +46,7 @@ describe("POST /api/prototype/live/handoff (tale → tekst)", () => {
     expect(own.status).toBe(200);
     const body = await own.json();
     expect(body.voiceTurns).toBe(2);
-    expect(verifyTranscript(body.transcript, visitorId)?.turns.map((turn) => turn.via)).toEqual(["voice", "voice"]);
+    expect(verifyTranscript(body.transcript, visitorId, NH_SCOPE)?.turns.map((turn) => turn.via)).toEqual(["voice", "voice"]);
 
     const lbCookie = `${LB_DEMO_COOKIE}=${issueLbDemoCookie("leangenbukta-demo-code")}`;
     expect((await POST(handoff("nh-session-token", lbCookie))).status).toBe(404);

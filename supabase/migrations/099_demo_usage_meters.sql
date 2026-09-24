@@ -1,17 +1,19 @@
--- 099: Egne døgnkvoter for Nyhavna-kopiens chat og stemme (2026-09-24).
+-- 099: Kundeegne målere for chatboksens døgnkvoter (2026-09-24).
 --
--- Nyhavna-nettsidekopien (/demo/nyhavna-nettside) har fått samme chatboks som
--- Leangenbukta. Den teller i sine egne målere, slik at én demo aldri kan bruke
--- opp en annens kvote (lib/demo/leangenbukta-site/usage.ts). Samme tabell og
--- funksjon som 098; bare listen over godkjente målere utvides.
+-- Chatboksen på nettsidekopiene er et gjenbrukbart produkt: hver kunde har egne
+-- målere (Leangenbukta chat_message/voice_session, Nyhavna nh_chat_message/
+-- nh_voice_session, lib/demo/site-chat/usage.ts), slik at én demo aldri kan
+-- bruke opp en annens kvote. Den faste lista i 098 byttes mot samme navnemønster
+-- som koden håndhever (METER_NAME), så en ny kunde ikke trenger en ny migrasjon.
+-- Samme tabell og funksjon som 098; ingen data flyttes.
 --
--- Forutsetter 098. Kjøres IKKE automatisk: delt Nyhavna-chat krever at Andreas
--- godkjenner 098 og 099 mot produksjonsdatabasen og setter
--- PLACY_NH_CHAT_USAGE_STORE=supabase.
+-- Forutsetter 098. Kjøres IKKE automatisk: delt chat krever at Andreas
+-- godkjenner 098 og 099 mot produksjonsdatabasen og setter kundens lagervalg
+-- (PLACY_LB_DEMO_USAGE_STORE / PLACY_NH_CHAT_USAGE_STORE=supabase).
 
 alter table v2.demo_usage_counters drop constraint if exists demo_usage_counters_meter_check;
 alter table v2.demo_usage_counters add constraint demo_usage_counters_meter_check
-  check (meter in ('chat_message', 'voice_session', 'nh_chat_message', 'nh_voice_session'));
+  check (meter ~ '^[a-z][a-z0-9_]{2,39}$');
 
 create or replace function v2.demo_usage_consume(
   p_meter text, p_visitor text, p_day date, p_visitor_limit integer, p_global_limit integer
@@ -22,7 +24,7 @@ declare
   visitor_count integer;
   global_count integer;
 begin
-  if p_meter not in ('chat_message', 'voice_session', 'nh_chat_message', 'nh_voice_session') then raise exception 'demo_usage_invalid_meter'; end if;
+  if p_meter !~ '^[a-z][a-z0-9_]{2,39}$' then raise exception 'demo_usage_invalid_meter'; end if;
   if p_visitor !~ '^([0-9a-f-]{36}|local)$' then raise exception 'demo_usage_invalid_visitor'; end if;
   if p_visitor_limit < 0 or p_global_limit < 0 then raise exception 'demo_usage_invalid_limit'; end if;
 

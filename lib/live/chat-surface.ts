@@ -1,17 +1,15 @@
 import "server-only";
 
-import { textChatTools } from "@/lib/demo/leangenbukta-chat/text-tools";
-import { LB_VOICE_DATASET } from "@/lib/live/leangenbukta-voice-access";
-import { NH_VOICE_DATASET } from "@/lib/live/demo-voice-access";
+import { textChatTools } from "@/lib/demo/site-chat/text-tools";
 import { LOCAL_VOICE_PACING } from "@/lib/demo/local-board/voice-instructions";
-import type { LiveDemo } from "@/lib/live/demos";
 import type { LiveConversation, LiveFunctionTool } from "@/lib/live/types";
-import type { TranscriptTurn } from "@/lib/demo/leangenbukta-chat/transcript";
+import type { TranscriptTurn } from "@/lib/demo/site-chat/transcript";
 
 /**
- * Stemmen i nettsidekopienes chatboks (Leangenbukta 2026-09-24, Nyhavna samme
- * dag): samme Live-rute og samme
- * datasett som boardet, men en flate UTEN kart.
+ * Stemmen i chatboksen (2026-09-24), felles for alle kunder: samme Live-rute og
+ * samme datasett som kundens board, men en flate UTEN kart. Hvilke datasett som
+ * har en chatboks, og kundens stedsnavn og kontaktperson, kommer fra
+ * kunderegisteret (`lib/demo/site-chat/customers.ts`) — ikke herfra.
  *
  * ## Den semantiske grensen
  *
@@ -32,7 +30,7 @@ import type { TranscriptTurn } from "@/lib/demo/leangenbukta-chat/transcript";
  * ## Én samtale med tekstchatten
  *
  * Starter talen med et gyldig, signert historikktoken fra tekstchatten
- * (`lib/demo/leangenbukta-chat/transcript.ts`), legges de verifiserte turene
+ * (`lib/demo/site-chat/transcript.ts`), legges de verifiserte turene
  * inn som Live-sesjonens `session.input` (`chatSurfaceHistoryInput`), og
  * instruksen sier at samtalen fortsetter. Uten gyldig token er talen en ny
  * samtale, og instruksen sier at Anja ikke skal late som hun husker noe.
@@ -40,21 +38,10 @@ import type { TranscriptTurn } from "@/lib/demo/leangenbukta-chat/transcript";
 
 export const CHAT_SURFACE = "chat";
 
-/**
- * Datasettene som har en chatboks på en nettsidekopi: Leangenbukta og (fra
- * 2026-09-24) Nyhavna. Andre datasett får boardflaten eller en avvisning.
- */
-export function chatSurfaceAllowed(dataset: string | null | undefined): boolean {
-  return dataset === LB_VOICE_DATASET || dataset === NH_VOICE_DATASET;
-}
-
-/**
- * Hvem stemmen henviser til for pris, ledighet og innflytting. Leangenbukta
- * har et salgsteam; Nyhavna er en bydel under utvikling der Nyhavna Utvikling
- * er avsenderen.
- */
-function salesContact(demo: Pick<LiveDemo, "id">): string {
-  return demo.id === NH_VOICE_DATASET ? "Nyhavna Utvikling" : "salgsteamet";
+/** Det stemmen trenger fra kundens profil (`SiteChatVoiceProfile`). */
+export interface ChatSurfaceVoice {
+  placeName: string;
+  salesContact: string;
 }
 
 export function chatSurfaceTools(tools: readonly LiveFunctionTool[]): LiveFunctionTool[] {
@@ -108,22 +95,22 @@ export function chatSurfaceHistoryInput(turns: readonly TranscriptTurn[]) {
 export const CHAT_SURFACE_CONTINUED_BACKEND_ADDENDUM =
   "- Samtalen fortsetter fra chatboksen: de tidligere meldingene (skrevne og eventuelt talte) er med i samtalen. Bruk dem til å forstå hva brukeren viser til, men hent fakta med verktøyene.";
 
-/** Tillegget til backend-instruksen for chatflaten. */
-export function chatSurfaceBackendAddendum(demo: Pick<LiveDemo, "id">): string {
-  return CHAT_SURFACE_BACKEND_ADDENDUM.replace("henvis til salgsteamet", `henvis til ${salesContact(demo)}`);
+/** Tillegget til backend-instruksen for chatflaten, med kundens kontaktperson. */
+export function chatSurfaceBackendAddendum(voice: Pick<ChatSurfaceVoice, "salesContact">): string {
+  return CHAT_SURFACE_BACKEND_ADDENDUM.replace("{{salesContact}}", voice.salesContact);
 }
 
-export const CHAT_SURFACE_BACKEND_ADDENDUM = `
+const CHAT_SURFACE_BACKEND_ADDENDUM = `
 FLATE: CHATBOKS UTEN KART. Denne talesamtalen foregår i en chatboks på nettsiden, ikke i boardet. Reglene under går foran alt over som handler om kart.
 - Det finnes ikke noe kart, sidepanel eller markører. Verktøyene show_category, show_place, highlight_places, clear_highlights, reset_board, set_travel_mode og present_neighbourhood finnes ikke her. Ikke be om dem, og ikke si at noe vises, fremheves, åpnes eller kan trykkes på.
 - Fokus er nabolaget og hvordan det er å bo her: hverdagen, reisetider, skoler og barnehager, dagligvarer, turområder og det som finnes i nærheten. Svar kort, med de viktigste stedene og reisetidene fra verktøysvarene.
-- Pris, ledighet, salgsstatus og innflytting kjenner du ikke; henvis til salgsteamet.
+- Pris, ledighet, salgsstatus og innflytting kjenner du ikke; henvis til {{salesContact}}.
 - Bruk bare fakta fra verktøysvarene. Skill mellom det som finnes i dag og det som er planlagt.
 `.trim();
 
 /** Kort stemmeinstruks for chatflaten. Boardets instruks er skrevet for en kartomvisning. */
-export function chatSurfaceVoiceInstructions(demo: Pick<LiveDemo, "board" | "id">, options: { continued?: boolean } = {}): string {
-  const name = demo.board.home.name || "Leangenbukta";
+export function chatSurfaceVoiceInstructions(voice: ChatSurfaceVoice, options: { continued?: boolean } = {}): string {
+  const name = voice.placeName;
   const history = options.continued
     ? "Samtalen fortsetter fra chatboksen: meldingene før talen (skrevne og eventuelt talte) ligger i samtalehistorikken. Bygg videre på dem uten å gjenta deg selv, og ikke si at dette er en ny samtale. Du har bare de siste delene av samtalen; viser brukeren til noe du ikke finner der, si det kort og be dem si det igjen. Brukeren kan også skrive meldinger under talesamtalen; de er en del av samme samtale."
     : "Dette er en ny samtale. Du ser ikke det brukeren eventuelt har skrevet i tekstchatten før talen startet. Viser brukeren til noe tidligere, si kort at du ikke ser den tekstsamtalen, og be dem si det igjen. Brukeren kan også skrive meldinger under talesamtalen; de er en del av denne samtalen.";
@@ -135,5 +122,5 @@ Hovedspørsmålet er «Hvordan er det å bo her?». Svar på det brukeren spør 
 
 Deleger til backenden når du trenger fakta om steder, reisetider, skoler, tilbud eller prosjektet. Ikke deleger når brukeren bare hilser, nøler eller ber deg vente. Bruk én kort ventefrase ved merkbar venting, som «La meg se» eller «Jeg finner fram det», og ikke samme frase to ganger på rad.
 
-Bruk bare fakta backenden har gitt. Si stedets navn sammen med reisetid og reisemåte. Skill mellom det som finnes i dag og det som er planlagt. Det finnes ikke noe kart: ikke si at noe vises, fremheves eller kan trykkes på, og ikke si at du ser i kartet. Pris, ledighet og innflytting bekrefter ${salesContact(demo)}. Ikke nevn demo, register eller kildegrunnlag.`;
+Bruk bare fakta backenden har gitt. Si stedets navn sammen med reisetid og reisemåte. Skill mellom det som finnes i dag og det som er planlagt. Det finnes ikke noe kart: ikke si at noe vises, fremheves eller kan trykkes på, og ikke si at du ser i kartet. Pris, ledighet og innflytting bekrefter ${voice.salesContact}. Ikke nevn demo, register eller kildegrunnlag.`;
 }

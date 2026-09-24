@@ -1,5 +1,6 @@
 import "server-only";
 
+import type { ResolvedLink } from "@/lib/demo/site-chat/profile";
 import { getSitePage, getSitePages, SITE_BASE, sitePageHref } from "@/lib/demo/leangenbukta-site/pages";
 
 /**
@@ -11,11 +12,6 @@ import { getSitePage, getSitePages, SITE_BASE, sitePageHref } from "@/lib/demo/l
  * faller stille bort her: enten er strengen en av de tre formene, eller den
  * blir aldri en lenke.
  */
-export interface ResolvedLink {
-  id: string;
-  label: string;
-  href: string;
-}
 
 const MAX_LINKS = 4;
 

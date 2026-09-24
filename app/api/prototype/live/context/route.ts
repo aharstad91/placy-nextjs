@@ -13,8 +13,8 @@ export const dynamic = 'force-dynamic';
  * dev-hook for simulert tekst. Serveren oversetter det til kontekst stemmen og
  * backenden kan bruke – nettleseren snakker aldri til modellen selv.
  *
- * Samme tilgangsgate som kartkanalen: loopback, eller Leangenbukta-
- * kundedemoens delte tilgang (lib/live/leangenbukta-voice-access.ts).
+ * Samme tilgangsgate som kartkanalen: loopback, eller en kundes egen tilgang
+ * i chatboks-registeret (lib/live/demo-voice-access.ts).
  */
 const contextSchema = z.union([
   z.object({ kind: z.literal('theme'), id: z.string().max(120), label: z.string().max(120).optional() }),

@@ -4,12 +4,13 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { loadLiveDemo } from "@/lib/live/demos";
 import { backendModel, backendEffort } from "@/lib/live/session-config";
-import { textChatTools } from "@/lib/demo/leangenbukta-chat/text-tools";
-import { replyNotice } from "@/lib/demo/leangenbukta-chat/instructions";
-import { runLeangenbuktaChat, ChatBackendError } from "@/lib/demo/leangenbukta-chat/backend";
-import { issueTranscript, MAX_TRANSCRIPT_TOKEN_LENGTH, verifyTranscript } from "@/lib/demo/leangenbukta-chat/transcript";
-import { sanitizeReply } from "@/lib/demo/leangenbukta-chat/sanitize";
-import type { SiteChatProfile } from "@/lib/demo/site-chat/profile";
+import { textChatTools } from "@/lib/demo/site-chat/text-tools";
+import { replyNotice } from "@/lib/demo/site-chat/notices";
+import { runSiteChat, ChatBackendError } from "@/lib/demo/site-chat/backend";
+import { consumeDemoQuota } from "@/lib/demo/site-chat/usage";
+import { issueTranscript, MAX_TRANSCRIPT_TOKEN_LENGTH, verifyTranscript } from "@/lib/demo/site-chat/transcript";
+import { sanitizeReply } from "@/lib/demo/site-chat/sanitize";
+import { transcriptScope, type SiteChatProfile } from "@/lib/demo/site-chat/profile";
 
 /**
  * Tekstchattens endepunkt for en nettsidekopi (2026-09-23, felles fra 2026-09-24).
@@ -44,6 +45,7 @@ const VOICE_HISTORY_NOTE =
 
 export function createSiteChatRoute(profile: SiteChatProfile) {
   const prefix = profile.logPrefix;
+  const scope = transcriptScope(profile);
 
   function allowedOrigins(): string[] {
     return (process.env[profile.env.allowedOrigins] ?? "")
@@ -176,7 +178,7 @@ export function createSiteChatRoute(profile: SiteChatProfile) {
       return respond({ error: "Chattens datagrunnlag kunne ikke lastes.", links: profile.fallbackLinks() }, { status: 503 });
     }
 
-    const verified = verifyTranscript(parsed.data.transcript, visitor.visitorId);
+    const verified = verifyTranscript(parsed.data.transcript, visitor.visitorId, scope);
     if (verified && verified.snapshotId !== demo.snapshotId) {
       return respond({ error: "Innholdet er oppdatert – last siden på nytt." }, { status: 409 });
     }
@@ -185,7 +187,7 @@ export function createSiteChatRoute(profile: SiteChatProfile) {
     // Kvoten belastes først etter alle deterministiske sjekker (tilgang, side,
     // API-nøkkel, datagrunnlag, transcript/snapshot) — en forespørsel som uansett
     // ville feilet uten modellkall skal ikke koste den besøkende en av dagens meldinger.
-    const quota = await profile.consumeChatQuota(visitor.visitorId);
+    const quota = await consumeDemoQuota(visitor.visitorId, profile.chatMeter);
     if (!quota.allowed) {
       // En brukt kvote er 429; et utilgjengelig kvotelager er en tjenestefeil (503).
       const status = quota.reason === "visitor" || quota.reason === "global" ? 429 : 503;
@@ -201,7 +203,7 @@ export function createSiteChatRoute(profile: SiteChatProfile) {
 
     let result;
     try {
-      result = await runLeangenbuktaChat({
+      result = await runSiteChat({
         apiKey: process.env.OPENAI_API_KEY,
         model,
         effort: backendEffort(),
@@ -239,6 +241,7 @@ export function createSiteChatRoute(profile: SiteChatProfile) {
       : replyNotice({ userText: parsed.data.message, reply, answerType, provisional: result.provisional }, replies.notices);
 
     const transcript = issueTranscript({
+      scope,
       visitorId: visitor.visitorId,
       snapshotId: demo.snapshotId,
       previousTurns,

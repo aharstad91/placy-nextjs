@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 import { loadLiveDemo } from "@/lib/live/demos";
-import { textChatTools } from "@/lib/demo/leangenbukta-chat/text-tools";
-import { runLeangenbuktaChat, ChatBackendError } from "@/lib/demo/leangenbukta-chat/backend";
+import { textChatTools } from "@/lib/demo/site-chat/text-tools";
+import { runSiteChat, ChatBackendError } from "@/lib/demo/site-chat/backend";
 import { leangenbuktaSourceRegistry } from "@/lib/demo/leangenbukta-chat/sources";
 import registryFile from "@/data/demo/leangenbukta-lokal/sources.json";
 
@@ -39,7 +39,7 @@ describe("leangenbukta-chat/backend — mot det ekte leangenbukta-lokal-datasett
       )
       .mockResolvedValueOnce(responsesPayload([finalMessage("Treningsrommet i Knutepunktet er planlagt, men ikke bekreftet ferdig.", "fact", ["board"])]));
 
-    const result = await runLeangenbuktaChat({
+    const result = await runSiteChat({
       apiKey: "test-key",
       sourceRegistry,
       model: "gpt-5.6-terra",
@@ -69,7 +69,7 @@ describe("leangenbukta-chat/backend — mot det ekte leangenbukta-lokal-datasett
       .fn()
       .mockResolvedValueOnce(responsesPayload([functionCall("call_1", "show_category", { category_id: "hverdag" })]))
       .mockResolvedValueOnce(responsesPayload([finalMessage("Her er hverdagstilbudet.", "smalltalk")]));
-    await runLeangenbuktaChat({
+    await runSiteChat({
       apiKey: "test-key",
       sourceRegistry,
       model: "gpt-5.6-terra",
@@ -97,7 +97,7 @@ describe("leangenbukta-chat/backend — mot det ekte leangenbukta-lokal-datasett
       .fn()
       .mockResolvedValueOnce(responsesPayload([reasoningItem, functionCall("call_1", "get_board_facts", {})]))
       .mockResolvedValueOnce(responsesPayload([finalMessage("Leangenbukta er et boligprosjekt.", "fact")]));
-    const result = await runLeangenbuktaChat({
+    const result = await runSiteChat({
       apiKey: "test-key",
       sourceRegistry,
       model: "gpt-6-sol",
@@ -123,7 +123,7 @@ describe("leangenbukta-chat/backend — mot det ekte leangenbukta-lokal-datasett
       .fn()
       .mockResolvedValueOnce(responsesPayload([functionCall("call_1", "find_project_info", { query: "helikopterlandingsplass på taket" })]))
       .mockResolvedValueOnce(responsesPayload([finalMessage("Ja, det finnes en helikopterlandingsplass.", "fact")]));
-    const result = await runLeangenbuktaChat({
+    const result = await runSiteChat({
       apiKey: "test-key",
       sourceRegistry,
       model: "gpt-5.6-terra",
@@ -145,13 +145,13 @@ describe("leangenbukta-chat/backend — mot det ekte leangenbukta-lokal-datasett
     const tools = textChatTools(demo.tools);
     const fetchImpl = vi.fn().mockResolvedValueOnce(responsesPayload([finalMessage("Ja, det er åpent for alle nå.", "fact")]));
 
-    const result = await runLeangenbuktaChat({
+    const result = await runSiteChat({
       apiKey: "test-key", sourceRegistry, model: "gpt-5.6-terra", effort: "low", instructions: "instruks", tools,
       parallelToolCalls: false, conversation, previousTurns: [], userText: "Er treningsrommet åpent?",
       fetchImpl: fetchImpl as unknown as typeof fetch,
     });
 
-    // `runLeangenbuktaChat` selv rapporterer bare bevisgrunnlaget; erstatningen
+    // `runSiteChat` selv rapporterer bare bevisgrunnlaget; erstatningen
     // med det faste kunnskapshull-svaret skjer i ruta (AE5), ikke her.
     expect(result.answerType).toBe("fact");
     expect(result.evidence).toEqual([]);
@@ -164,7 +164,7 @@ describe("leangenbukta-chat/backend — mot det ekte leangenbukta-lokal-datasett
     const fetchImpl = vi.fn().mockResolvedValueOnce({ ok: false, status: 500, json: async () => ({ error: { message: "boom" } }) });
 
     await expect(
-      runLeangenbuktaChat({
+      runSiteChat({
         apiKey: "test-key", sourceRegistry, model: "gpt-5.6-terra", effort: "low", instructions: "instruks", tools,
         parallelToolCalls: false, conversation, previousTurns: [], userText: "Hei", fetchImpl: fetchImpl as unknown as typeof fetch,
       }),
@@ -185,7 +185,7 @@ describe("leangenbukta-chat/backend — mot det ekte leangenbukta-lokal-datasett
       });
     });
 
-    const promise = runLeangenbuktaChat({
+    const promise = runSiteChat({
       apiKey: "test-key", sourceRegistry, model: "gpt-5.6-terra", effort: "low", instructions: "instruks", tools,
       parallelToolCalls: false, conversation, previousTurns: [], userText: "Hei",
       fetchImpl: fetchImpl as unknown as typeof fetch, timeoutMs: 5,
@@ -200,7 +200,7 @@ describe("leangenbukta-chat/backend — mot det ekte leangenbukta-lokal-datasett
     const fetchImpl = vi.fn().mockResolvedValueOnce(responsesPayload([{ type: "message", content: [{ type: "output_text", text: "ikke json" }] }]));
 
     await expect(
-      runLeangenbuktaChat({
+      runSiteChat({
         apiKey: "test-key", sourceRegistry, model: "gpt-5.6-terra", effort: "low", instructions: "instruks", tools,
         parallelToolCalls: false, conversation, previousTurns: [], userText: "Hei", fetchImpl: fetchImpl as unknown as typeof fetch,
       }),
@@ -214,7 +214,7 @@ describe("leangenbukta-chat/backend — mot det ekte leangenbukta-lokal-datasett
     const fetchImpl = vi.fn().mockResolvedValue(responsesPayload([functionCall("call_x", "get_board_facts", {})]));
 
     await expect(
-      runLeangenbuktaChat({
+      runSiteChat({
         apiKey: "test-key", sourceRegistry, model: "gpt-5.6-terra", effort: "low", instructions: "instruks", tools,
         parallelToolCalls: false, conversation, previousTurns: [], userText: "Hei", maxRounds: 2,
         fetchImpl: fetchImpl as unknown as typeof fetch,
@@ -231,7 +231,7 @@ describe("leangenbukta-chat/backend — kildebevis fra verktøysvarene i denne m
       .fn()
       .mockResolvedValueOnce(responsesPayload([functionCall("call_1", "find_project_info", { query: "innflytting Knutepunktet", theme_id: "leangenbukta-prosjektet" })]))
       .mockResolvedValueOnce(responsesPayload([final]));
-    const result = await runLeangenbuktaChat({
+    const result = await runSiteChat({
       apiKey: "test-key", sourceRegistry, model: "gpt-5.6-terra", effort: "low", instructions: "instruks",
       tools: textChatTools(demo.tools), parallelToolCalls: false, conversation: demo.createConversation(),
       previousTurns: [], userText: "Når kan man flytte inn i Knutepunktet?", fetchImpl: fetchImpl as unknown as typeof fetch,
@@ -279,7 +279,7 @@ describe("leangenbukta-chat/backend — kildebevis fra verktøysvarene i denne m
       .fn()
       .mockResolvedValueOnce(responsesPayload([functionCall("call_1", "set_interests", { interests: ["innflytting i 2008"] })]))
       .mockResolvedValueOnce(responsesPayload([finalMessage("Innflyttingen var i 2008.", "fact")]));
-    const result = await runLeangenbuktaChat({
+    const result = await runSiteChat({
       apiKey: "test-key", sourceRegistry, model: "gpt-5.6-terra", effort: "low", instructions: "instruks",
       tools: textChatTools(demo.tools), parallelToolCalls: false, conversation: demo.createConversation(),
       previousTurns: [], userText: "Var innflyttingen i 2008?", fetchImpl: fetchImpl as unknown as typeof fetch,
@@ -294,7 +294,7 @@ describe("leangenbukta-chat/backend — kildebevis fra verktøysvarene i denne m
       .fn()
       .mockResolvedValueOnce(responsesPayload([functionCall("call_1", "get_place_facts", { poi_id: "ladetorget" })]))
       .mockResolvedValueOnce(responsesPayload([finalMessage("LadeTorget åpnet i 2026.", "fact", [], ["ladetorget-15d604f6"])]));
-    const result = await runLeangenbuktaChat({
+    const result = await runSiteChat({
       apiKey: "test-key", sourceRegistry, model: "gpt-5.6-terra", effort: "low", instructions: "instruks",
       tools: textChatTools(demo.tools), parallelToolCalls: false, conversation: demo.createConversation(),
       previousTurns: [], userText: "Når åpnet LadeTorget?", fetchImpl: fetchImpl as unknown as typeof fetch,

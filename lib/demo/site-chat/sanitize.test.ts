@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { sanitizeReply } from "@/lib/demo/leangenbukta-chat/sanitize";
+import { sanitizeReply } from "@/lib/demo/site-chat/sanitize";
 
 describe("leangenbukta-chat/sanitize", () => {
   it("beholder vanlig norsk tekst uendret", () => {
