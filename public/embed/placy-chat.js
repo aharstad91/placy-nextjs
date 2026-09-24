@@ -168,8 +168,6 @@
     ".close{width:36px;height:36px;border-radius:50%;background:none;border:none;font-size:22px;line-height:1;",
     "cursor:pointer;color:inherit;flex:none}",
     ".close:hover{background:#efe7df}",
-    ".honesty{margin:0;font-size:12px;line-height:1.45;color:" + MUTED + ";background:" + CREAM + ";",
-    "padding:0 16px 12px;border-bottom:1px solid " + BORDER + "}",
     // Temaraden: samme form som boardets StoryRail — én myk, avrundet flate,
     // ikon i temaets farge over navnet, valgt tema som hvit, hevet pille. Den
     // står fast over loggen; bare loggen ruller.
@@ -328,7 +326,6 @@
   panel.setAttribute("role", "dialog");
   panel.setAttribute("aria-modal", "true");
   panel.setAttribute("aria-labelledby", "placy-chat-title");
-  panel.setAttribute("aria-describedby", "placy-chat-status");
   panel.hidden = true;
 
   var head = document.createElement("div");
@@ -361,12 +358,6 @@
   head.appendChild(titles);
   head.appendChild(closeBtn);
 
-  var honesty = document.createElement("p");
-  honesty.className = "honesty";
-  honesty.id = "placy-chat-status";
-  var HONESTY_BASE = "Ikke godkjent av utbygger eller megler. Svarene bygger på offentlige kilder og kan inneholde feil.";
-  honesty.textContent = HONESTY_BASE;
-
   // Temaraden under toppen: Boardets kategorier som faner. Valget bytter bare
   // forslagene i loggen — Anja har samme kunnskap uansett tema. Uten temaer
   // fra serveren (eldre endepunkt, feil) er raden skjult.
@@ -387,7 +378,7 @@
   log.setAttribute("aria-live", "polite");
 
   // Forslagene står i loggen, rett etter sidens hilsen, slik at panelet leses
-  // ovenfra: hvem, hva slags svar, hilsen, så hva man kan spørre om.
+  // ovenfra: hvem, hilsen, så hva man kan spørre om.
   var starters = document.createElement("div");
   starters.className = "starters";
   starters.id = "placy-chat-suggestions";
@@ -498,7 +489,6 @@
   composer.appendChild(announcer);
 
   panel.appendChild(head);
-  panel.appendChild(honesty);
   panel.appendChild(rail);
   panel.appendChild(log);
   panel.appendChild(status);
@@ -567,18 +557,6 @@
     el.setAttribute("role", "note");
     el.textContent = notice.text;
     container.appendChild(el);
-  }
-
-  function formatDate(value) {
-    var match = typeof value === "string" && /^(\d{4})-(\d{2})-(\d{2})$/.exec(value);
-    return match ? match[3] + "." + match[2] + "." + match[1] : null;
-  }
-
-  function setHonesty(data) {
-    var date = formatDate(data && data.contentCheckedAt);
-    // `contentCheckedAt` er nyeste `checkedAt` i kilderegisteret — ikke en
-    // dato alle kildene er kontrollert på.
-    honesty.textContent = HONESTY_BASE + (date ? " Nyeste registrerte kildekontroll: " + date + "." : "");
   }
 
   // Sidens åpning står øverst i loggen til samtalen har startet, og byttes når
@@ -781,7 +759,6 @@
       .then(function (res) { return res.ok ? res.json() : null; })
       .then(function (data) {
         if (!data || requestId !== startersRequestId || pageId !== currentPageId()) return;
-        setHonesty(data);
         setOpening(data.opening);
         // Valgt tema beholdes på tvers av sider når det finnes i det nye svaret.
         categories = readCategories(data.categories);

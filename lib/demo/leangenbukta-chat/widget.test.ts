@@ -394,25 +394,18 @@ describe("placy-chat widget — CSS", () => {
 });
 
 describe("placy-chat widget — prototypestatus, åpning, kilder og forbehold", () => {
-  function honesty() {
-    return shadow().querySelector(".honesty") as HTMLElement;
-  }
-
-  it("sier at chatten er en prototype før serveren har svart, og viser nyeste registrerte kildekontroll etterpå", async () => {
+  it("viser prototypemerket uten en egen statuslinje", async () => {
     loadWidget();
     expect(shadow().querySelector(".head .badge")?.textContent).toMatch(/prototype/i);
-    expect(honesty().textContent).toMatch(/ikke godkjent/i);
     vi.stubGlobal("fetch", vi.fn(() => jsonResponse({ starters: [], opening: "Hei!", prototype: true, contentCheckedAt: "2026-09-21" })));
     window.PlacyChat!.open();
     await tick();
-    // `contentCheckedAt` er nyeste `checkedAt` i kilderegisteret, ikke en
-    // dato alle kildene er kontrollert på — teksten må si akkurat det.
-    expect(honesty().textContent).toContain("Nyeste registrerte kildekontroll: 21.09.2026");
-    expect(honesty().textContent).not.toMatch(/sist kontrollert/i);
+    expect(shadow().querySelector(".honesty")).toBeNull();
+    expect(panel().hasAttribute("aria-describedby")).toBe(false);
     expect(shadow().querySelector(".head .badge")?.textContent).toMatch(/prototype/i);
   });
 
-  it("viser merkevare og prototypemerke i toppen, statuslinja under, og hilsenen før forslagene", async () => {
+  it("viser merkevare og prototypemerke i toppen, og hilsenen før forslagene", async () => {
     loadWidget();
     vi.stubGlobal("fetch", vi.fn(() => jsonResponse({
       starters: ["Når er Knutepunktet ferdig?", "Hva finnes i nærheten?"],
@@ -430,8 +423,7 @@ describe("placy-chat widget — prototypestatus, åpning, kilder og forbehold", 
     const starterButtons = Array.from(shadow().querySelectorAll(".starter")) as HTMLButtonElement[];
     expect(starterButtons.map((b) => b.textContent)).toEqual(["Når er Knutepunktet ferdig?", "Hva finnes i nærheten?"]);
     const follows = (a: Node, b: Node) => Boolean(a.compareDocumentPosition(b) & Node.DOCUMENT_POSITION_FOLLOWING);
-    expect(follows(head, honesty())).toBe(true);
-    expect(follows(honesty(), opening)).toBe(true);
+    expect(follows(head, opening)).toBe(true);
     expect(follows(opening, starterButtons[0])).toBe(true);
     expect(follows(starterButtons[0], shadow().querySelector("textarea") as Node)).toBe(true);
   });
@@ -898,7 +890,7 @@ describe("placy-chat widget — temarad", () => {
     await openWithRail();
     const rail = $(".rail");
     expect(rail.hidden).toBe(false);
-    expect(rail.previousElementSibling).toBe($(".honesty"));
+    expect(rail.previousElementSibling).toBe($(".head"));
     expect(rail.nextElementSibling).toBe($(".log"));
     expect($("[role='tablist']").getAttribute("aria-label")).toBe("Tema for spørsmålsforslag");
     expect(tabs().map((tab) => tab.textContent)).toEqual(["Leangenbukta", "Hverdag", "Oppvekst"]);
