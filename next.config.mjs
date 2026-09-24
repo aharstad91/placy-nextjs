@@ -55,6 +55,7 @@ const nextConfig = {
     '/api/prototype/live/map': leangenbuktaLokalFiles,
     '/api/prototype/live/context': leangenbuktaLokalFiles,
     '/api/demo/leangenbukta-chat': leangenbuktaLokalFiles,
+    '/api/demo/nyhavna-chat': voiceContentFiles,
     '/api/live/control': voiceContentFiles,
     // Leangenbukta-nettside-fragmenter leses med fs per slug (app/demo/leangenbukta-nettside).
     '/demo/leangenbukta-nettside/\\[...slug\\]': ['./data/demo/leangenbukta-nettside/**/*'],
