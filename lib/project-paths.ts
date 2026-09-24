@@ -7,7 +7,7 @@ export const WEBSITE_NAMESPACES = [
 /** Project slugs share the root URL namespace with application infrastructure. */
 export const RESERVED_PROJECT_SLUGS: readonly string[] = [
   ...WEBSITE_NAMESPACES, "api", "admin", "demo", "dev", "p", "_next", "_vercel", ".well-known",
-  "audio", "brand-fonts", "illustrations", "images", "models", "projects", "prototypes", "reels", "trips",
+  "audio", "brand-fonts", "embed", "illustrations", "images", "models", "projects", "prototypes", "reels", "trips",
 ];
 
 export function isPublicProjectSlug(slug: string): boolean {

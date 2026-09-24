@@ -8,7 +8,7 @@ export const metadata: Metadata = {
 };
 export default function Page() {
   return (
-    <main className="root__page" id="main-content">
+    <main className="root__page" id="main-content" data-placy-page-id="forside">
       <section className="page__hero">
         <div className="hero hero--mask site-width">
           <div className="hero__content-media site-width-extended use-mask">

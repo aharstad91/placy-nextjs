@@ -49,6 +49,10 @@ export interface AuditedPlacePackageOptions {
   timeSensitiveValidUntil?: string;
   /** Stable project-specific prefix; defaults to the historical Leangenbukta prefix. */
   claimIdPrefix?: string;
+  /** Category IDs intentionally owned by another research/package flow. */
+  excludedCategoryIds?: string[];
+  /** Individual place IDs intentionally owned by another research/package flow. */
+  excludedPlaceIds?: string[];
 }
 
 function selectedCandidates(categoryReviews: unknown[]) {
@@ -71,7 +75,12 @@ export function buildAuditedPlacePackage(
   input: AuditedPlacePackageInput,
   options: AuditedPlacePackageOptions,
 ): ResearchPackage {
-  const places = localPlacesSchema.parse(input.places);
+  const excludedCategoryIds = new Set(options.excludedCategoryIds ?? []);
+  const excludedPlaceIds = new Set(options.excludedPlaceIds ?? []);
+  const places = localPlacesSchema.parse(input.places).filter((place) =>
+    !excludedCategoryIds.has(place.categoryId) &&
+    !excludedPlaceIds.has(place.id),
+  );
   const sources = localSourcesSchema.parse(input.sources);
   const candidates = selectedCandidates(input.categoryReviews);
   const mappings = poiMappingsSchema.parse(input.poiMappings);

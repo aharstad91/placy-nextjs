@@ -273,6 +273,30 @@ html:has(.nyhavna-site) {
   font-size: 0.72rem;
   margin-top: 0.7rem;
 }
+/* Chatboksens inngang på Beliggenhet (2026-09-24): sekundær til Placy-knappen. */
+.nyhavna-site .demo-chat-button {
+  display: inline-flex;
+  align-items: center;
+  margin-top: 1.1rem;
+  padding: 0.8rem 1.1rem;
+  background: transparent;
+  color: #005ef5;
+  border: 1.5px solid #005ef5;
+  border-radius: 6px;
+  font: inherit;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s, color 0.2s;
+}
+.nyhavna-site .demo-chat-button:hover {
+  background: #005ef5;
+  color: #f7f5eb;
+}
+.nyhavna-site .demo-chat-button:focus-visible {
+  outline: 3px solid #005ef5;
+  outline-offset: 2px;
+}
 .nyhavna-site .demo-location-image {
   display: block;
   position: relative;

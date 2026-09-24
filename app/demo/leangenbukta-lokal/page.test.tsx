@@ -8,13 +8,18 @@ import type { Project } from "@/lib/types";
  *
  * Testen mounter ikke kartet: `ReportReelsPage` drar med seg Mapbox og WebGL.
  * Den byttes mot en lett stub, slik at det som faktisk måles her er rutas to
- * jobber — å stenge i produksjon, og å sende datasettets eget board videre.
+ * jobber — å stenge uten demotilgang, og å sende datasettets eget board videre.
  */
 
 const notFoundMock = vi.fn(() => {
   throw new Error("NEXT_NOT_FOUND");
 });
 vi.mock("next/navigation", () => ({ notFound: () => notFoundMock() }));
+
+let requestHost = "localhost:3000";
+vi.mock("next/headers", () => ({
+  headers: async () => new Headers({ host: requestHost }),
+}));
 
 vi.mock("@/components/variants/report/reels/ReportReelsPage", () => ({
   default: ({
@@ -48,15 +53,21 @@ import LeangenbuktaLokalPage from "@/app/demo/leangenbukta-lokal/page";
 
 beforeEach(() => {
   notFoundMock.mockClear();
+  requestHost = "localhost:3000";
   vi.stubEnv("NODE_ENV", "development");
 });
 afterEach(() => vi.unstubAllEnvs());
 
 describe("/demo/leangenbukta-lokal", () => {
-  it("finnes ikke i produksjon", async () => {
+  it("finnes ikke i et produksjonsbygg uten konfigurert demotilgang", async () => {
     vi.stubEnv("NODE_ENV", "production");
     await expect(LeangenbuktaLokalPage()).rejects.toThrow("NEXT_NOT_FOUND");
     expect(notFoundMock).toHaveBeenCalledOnce();
+  });
+
+  it("finnes ikke for en annen host enn localhost uten tilgangskode", async () => {
+    requestHost = "demo.example.com";
+    await expect(LeangenbuktaLokalPage()).rejects.toThrow("NEXT_NOT_FOUND");
   });
 
   it("rendrer Leangenbuktas eget board i bolig-skallet i utvikling", async () => {

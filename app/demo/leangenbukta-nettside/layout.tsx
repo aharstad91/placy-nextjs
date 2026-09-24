@@ -1,7 +1,10 @@
 import type { Metadata } from "next";
-import { notFound } from "next/navigation";
+import { PLACY_BOARD } from "@/app/demo/leangenbukta-nettside/placy-row";
 import { SiteChrome } from "@/app/demo/leangenbukta-nettside/site-chrome";
+import { SiteChatVoiceBridge } from "@/components/demo/site-chat-voice-bridge";
+import { leangenbuktaChatProfile } from "@/lib/demo/leangenbukta-chat/profile";
 import "@/app/demo/leangenbukta-nettside/original.css";
+import "@/app/demo/leangenbukta-nettside/pages.css";
 import "@/app/demo/leangenbukta-nettside/demo.css";
 
 export const metadata: Metadata = {
@@ -10,9 +13,35 @@ export const metadata: Metadata = {
   icons: { icon: "/demo/leangenbukta-nettside/Leangenbukta_brown_01-270fa8.svg" },
 };
 
+/**
+ * Kopien av kundens nettsted vises bare med demotilgang. Gaten er proxyen
+ * (`proxy.ts` → lib/demo/leangenbukta-site/access.ts), som kjører foran hver
+ * side- og RSC-forespørsel: uten gyldig cookie gir et konfigurert miljø
+ * innlogging og et ukonfigurert 404. Sidene selv er statiske — fragmentene
+ * leses ved bygging — og derfor kaller ikke layouten `headers()`.
+ */
 export default function Layout({ children }: { children: React.ReactNode }) {
-  // Demoen er en lokal kopi av kundens nettsted og skal aldri serves i prod.
-  if (process.env.NODE_ENV === "production") notFound();
-
-  return <SiteChrome>{children}</SiteChrome>;
+  return (
+    <>
+      <SiteChrome>{children}</SiteChrome>
+      {/* Stemmen i den samme chatboksen: en usynlig bro til `useLive`. Uten
+          den (widgeten på en ekstern side) finnes bare tekstchatten. */}
+      <SiteChatVoiceBridge
+        dataset={leangenbuktaChatProfile.dataset}
+        greeting={leangenbuktaChatProfile.voice.greeting}
+        continuedGreeting={leangenbuktaChatProfile.voice.continuedGreeting}
+      />
+      {/* Tekstchatten lastes med den samme innbyggingskoden en WordPress-side
+          ville brukt: ett skript og data-attributter. Siden brukeren står på
+          leses fra `data-placy-page-id` på hver side. */}
+      <script
+        src="/embed/placy-chat.js"
+        defer
+        data-endpoint="/api/demo/leangenbukta-chat"
+        data-page-id="forside"
+        data-label="Spør om Leangenbukta"
+        data-board-href={PLACY_BOARD}
+      />
+    </>
+  );
 }

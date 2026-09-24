@@ -1,6 +1,11 @@
 import type { Metadata } from "next";
 import localFont from "next/font/local";
 import { Header } from "@/app/demo/nyhavna-nettside/header";
+import { SiteChatVoiceBridge } from "@/components/demo/site-chat-voice-bridge";
+import { nhChatEnabled, nhChatVoiceEnabled } from "@/lib/demo/nyhavna-chat/access";
+import { hostedVoiceEnabled } from "@/lib/live/hosted-access";
+import { NH_BOARD_HREF } from "@/lib/demo/nyhavna-chat/links";
+import { nyhavnaChatProfile } from "@/lib/demo/nyhavna-chat/profile";
 import "@/app/demo/nyhavna-nettside/original.css";
 import "@/app/demo/nyhavna-nettside/demo.css";
 
@@ -25,9 +30,22 @@ const unbounded = localFont({
 
 export const metadata: Metadata = {
   icons: { icon: "/demo/nyhavna-nettside/symbol.svg" },
+  robots: { index: false, follow: false },
 };
 
+/**
+ * Chatboksen (2026-09-24) er den samme widgeten og den samme talebroen som
+ * Leangenbukta-kopien bruker, med Nyhavnas endepunkt, datasett og farger.
+ * Den vises bare der chatten finnes: på en utviklingsserver, eller i et bygg
+ * der `PLACY_NH_CHAT_ENABLED` og signeringsnøkkelen er satt
+ * (`lib/demo/nyhavna-chat/access.ts`). Talebroen monteres bare der stemmen kan
+ * startes; ellers får widgeten ingen «Snakk» og er ren tekstchat.
+ */
 export default function Layout({ children }: { children: React.ReactNode }) {
+  const chat = nhChatEnabled();
+  // Utenfor en utviklingsserver går stemmen bare gjennom den delte stemmen
+  // (varig opptak og regnskap); uten den finnes ingen «Snakk» i produksjon.
+  const voice = chat && (process.env.NODE_ENV !== "production" || (hostedVoiceEnabled() && nhChatVoiceEnabled()));
   return (
     <div className={`nyhavna-site ${unbounded.variable}`}>
       <a className="demo-skip" href="#main-content">
@@ -35,7 +53,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
       </a>
       <Header />
       {children}
-      <footer className="demo-footer site-width">
+      <footer className="demo-footer site-width" id="kontakt">
         <a className="demo-wordmark" href="/demo/nyhavna-nettside">
           Nyhavna
         </a>
@@ -52,6 +70,33 @@ export default function Layout({ children }: { children: React.ReactNode }) {
           <a href="https://nyhavna.no/personvern/">Personvern</a>
         </nav>
       </footer>
+      {voice ? (
+        <SiteChatVoiceBridge
+          dataset={nyhavnaChatProfile.dataset}
+          greeting={nyhavnaChatProfile.voice.greeting}
+          continuedGreeting={nyhavnaChatProfile.voice.continuedGreeting}
+        />
+      ) : null}
+      {chat ? (
+        // Samme innbyggingskode som på Leangenbukta; siden brukeren står på
+        // leses fra `data-placy-page-id` på hver side.
+        <script
+          src="/embed/placy-chat.js"
+          defer
+          data-endpoint="/api/demo/nyhavna-chat"
+          data-page-id="forside"
+          data-label="Spør om Nyhavna"
+          data-board-href={NH_BOARD_HREF}
+          data-offset-bottom="20px"
+          data-accent="#005ef5"
+          data-accent-dark="#0046ba"
+          data-border="#cfd3dc"
+          data-surface="#f7f5eb"
+          data-soft="#eef3fb"
+          data-soft-border="#dbe4f3"
+          data-muted="#4f5261"
+        />
+      ) : null}
     </div>
   );
 }

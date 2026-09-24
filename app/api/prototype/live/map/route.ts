@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { getMapBridge, peekMapBridge } from '@/lib/live/map-bridge';
 import { getLiveSupervisor } from '@/lib/live/supervisor';
 import { localRequest } from '@/lib/live/local-request';
+import { demoVoiceVisitor } from '@/lib/live/demo-voice-access';
 import type { LiveServerMessage } from '@/lib/live/types';
 
 export const runtime = 'nodejs';
@@ -12,10 +13,13 @@ const HEARTBEAT_MS = 15000;
 
 /**
  * Kartkanalen: serveren sender direktiver ned (SSE), nettleseren svarer med
- * kartstatus opp (POST). Bare tokenet til den aktive samtalen slipper inn.
+ * kartstatus opp (POST). Bare tokenet til den aktive samtalen slipper inn —
+ * enten fra loopback, eller fra en kundes egen tilgang i chatboks-registeret
+ * (lib/live/demo-voice-access.ts), samme gate som hovedruta bruker for å
+ * reservere sesjonen.
  */
 export async function GET(request: NextRequest) {
-  if (!localRequest(request)) return new NextResponse(null, { status: 404 });
+  if (!localRequest(request) && !demoVoiceVisitor(request)) return new NextResponse(null, { status: 404 });
   const token = request.nextUrl.searchParams.get('session');
   if (!token || token.length > 100 || !getLiveSupervisor().isActive(token)) return new NextResponse(null, { status: 404 });
   const bridge = getMapBridge(token);
@@ -49,7 +53,7 @@ export async function GET(request: NextRequest) {
 const resultSchema = z.object({ id: z.string().max(120), output: z.unknown() });
 
 export async function POST(request: NextRequest) {
-  if (!localRequest(request)) return new NextResponse(null, { status: 404 });
+  if (!localRequest(request) && !demoVoiceVisitor(request)) return new NextResponse(null, { status: 404 });
   const token = request.headers.get('x-placy-session') || request.nextUrl.searchParams.get('session');
   if (!token || token.length > 100 || !getLiveSupervisor().isActive(token)) return new NextResponse(null, { status: 404 });
   if (Number(request.headers.get('content-length')) > 20000) return new NextResponse(null, { status: 413 });

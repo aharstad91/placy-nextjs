@@ -153,3 +153,97 @@
   height: 26px;
   fill: currentColor;
 }
+
+/* Placy-feltene (placy-field.tsx): samme sandfarge som forsidens kartrad. */
+.leangenbukta-site .demo-placy-field .vc_column-inner {
+  background: #d6c6b7;
+}
+.leangenbukta-site .demo-placy-field--article .vc_column-inner {
+  background: #efe7df;
+}
+.leangenbukta-site .demo-placy-field .demo-placy-block {
+  text-align: center;
+}
+.leangenbukta-site .demo-placy-heading {
+  margin-bottom: 0.4em;
+  color: #2a2c2e;
+}
+.leangenbukta-site .demo-placy-body {
+  max-width: 620px;
+  margin: 0 auto 1.1em !important;
+}
+.leangenbukta-site .demo-placy-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 12px;
+}
+.leangenbukta-site .demo-placy-actions .nectar-button {
+  margin: 0 !important;
+}
+.leangenbukta-site .demo-placy-chat-button {
+  background: transparent !important;
+  border: 2px solid #2a2c2e !important;
+  color: #2a2c2e !important;
+  cursor: pointer;
+}
+.leangenbukta-site .demo-placy-chat-button:hover,
+.leangenbukta-site .demo-placy-chat-button:focus-visible {
+  background: #2a2c2e !important;
+  color: #fff !important;
+}
+.leangenbukta-site .demo-placy-note {
+  margin: 0.9em 0 0 !important;
+  font-size: 0.8em;
+  opacity: 0.7;
+}
+@media (max-width: 690px) {
+  .leangenbukta-site .demo-placy-actions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+}
+
+/* Lenker som forlater kopien er synlig merket (R3). */
+.leangenbukta-site a[data-demo-external="true"]:not(.nectar-button)::after {
+  content: " ↗";
+  font-size: 0.85em;
+}
+.leangenbukta-site a.nectar-button[data-demo-external="true"] > span::after {
+  content: " ↗";
+}
+
+/* Skjemaer sender aldri noe fra kopien; plassholderen viser veien videre. */
+.leangenbukta-site .demo-form-notice {
+  padding: 1.2em 1.4em;
+  border: 1px dashed #91563e;
+  background: #faf6f2;
+}
+.leangenbukta-site .demo-form-notice p {
+  margin-bottom: 0.7em !important;
+}
+
+/* Bakgrunner fra «Advanced WordPress Backgrounds» (jarallax i originalen),
+   flyttet inn i radens bakgrunnslag av byggeskriptet. */
+.leangenbukta-site .demo-awb {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  z-index: 0;
+}
+.leangenbukta-site .demo-awb img,
+.leangenbukta-site .demo-awb video {
+  width: 100%;
+  height: 100%;
+  max-width: none;
+  object-fit: cover;
+}
+
+/* Bildekolonner uten innhold (`data-bg-cover`): temaets JS gir dem bildets
+   høyde når kolonnene stables. Byggeskriptet har lagt sideforholdet på. */
+@media (max-width: 999px) {
+  .leangenbukta-site .wpb_column[data-bg-cover="true"][style*="--demo-cover-ratio"] {
+    aspect-ratio: var(--demo-cover-ratio);
+    min-height: 0;
+  }
+}

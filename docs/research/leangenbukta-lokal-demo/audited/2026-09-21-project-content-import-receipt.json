@@ -1,0 +1,32 @@
+{
+  "status": "updated",
+  "appliedAt": "2026-09-21T20:53:27.290Z",
+  "schemaVersion": 1,
+  "projectId": "placy-demo_leangenbukta",
+  "customer": "placy-demo",
+  "projectSlug": "leangenbukta",
+  "productId": "5df5eade-4fd5-4bd6-b41d-686b988d9d3b",
+  "themeIds": [
+    "leangenbukta-prosjektet",
+    "hverdagsliv",
+    "barn-oppvekst",
+    "mat-drikke",
+    "natur-friluftsliv",
+    "transport",
+    "trening-aktivitet",
+    "opplevelser"
+  ],
+  "themeFaqCounts": {
+    "leangenbukta-prosjektet": 8,
+    "hverdagsliv": 4,
+    "barn-oppvekst": 4,
+    "mat-drikke": 4,
+    "natur-friluftsliv": 4,
+    "transport": 4,
+    "trening-aktivitet": 4,
+    "opplevelser": 4
+  },
+  "globalFaqCount": 0,
+  "updatedAt": "2026-09-07T16:29:35.30202+00:00",
+  "revalidated": []
+}

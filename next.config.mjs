@@ -40,15 +40,27 @@ const voiceContentFiles = [
   './data/demo/nyhavna-review-ledger.json',
 ];
 
+// Leangenbukta-lokal-databasen leses med fs ved request-tid (lib/demo/local-board),
+// både fra egen demo-side og fra live-rutene som Nyhavna og Leangenbukta deler.
+// Uten disse i outputFileTracingIncludes mangler filene i standalone/prod-bundlen.
+const leangenbuktaLokalFiles = ['./data/demo/leangenbukta-lokal/*.json'];
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   outputFileTracingIncludes: {
     '/demo/nyhavna-lokal': ['./data/demo/nyhavna-lokal/*.json'],
+    '/demo/leangenbukta-lokal': leangenbuktaLokalFiles,
     '/\\[slug\\]': voiceContentFiles,
-    '/api/prototype/live': voiceContentFiles,
+    '/api/prototype/live': [...voiceContentFiles, ...leangenbuktaLokalFiles],
+    '/api/prototype/live/map': leangenbuktaLokalFiles,
+    '/api/prototype/live/context': leangenbuktaLokalFiles,
+    '/api/demo/leangenbukta-chat': leangenbuktaLokalFiles,
+    '/api/demo/nyhavna-chat': voiceContentFiles,
     '/api/live/control': voiceContentFiles,
+    // Leangenbukta-nettside-fragmenter leses med fs per slug (app/demo/leangenbukta-nettside).
+    '/demo/leangenbukta-nettside/\\[...slug\\]': ['./data/demo/leangenbukta-nettside/**/*'],
   },
-  allowedDevOrigins: [...localDevOrigins(), "*.ngrok-free.app", "*.ngrok.app"],
+  allowedDevOrigins: ["localhost", "127.0.0.1", ...localDevOrigins(), "*.ngrok-free.app", "*.ngrok.app"],
   // Aktiver eksperimentelle funksjoner for bedre ytelse
   experimental: {
     // Optimaliser pakker for raskere lasting

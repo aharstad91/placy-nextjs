@@ -179,6 +179,42 @@ describe("production board assistant source", () => {
     expect(chapter.intro).not.toContain("Langt unna");
   });
 
+  it("bruker redaksjonelle byggetrinn når prosjektstedene mangler reisetid", () => {
+    const input = board();
+    const category = input.categories[0]!;
+    const template = category.pois[0]!;
+    const phases = [
+      ["parktunet-1", "Parktunet 1"],
+      ["saltakshus-c", "Saltakshus C"],
+      ["knutepunktet", "Knutepunktet"],
+      ["saltakshus-h", "Saltakshus H"],
+    ] as const;
+    category.pois = phases.map(([id, name]) => ({
+      ...template,
+      id: id as never,
+      name,
+      raw: { ...template.raw, id, name, travelTime: undefined },
+    }));
+    category.editorial = {
+      intro: "Fire byggetrinn viser helheten i Leangenbukta.",
+      body: "Prosjektets aktive byggetrinn.",
+      highlights: phases.map(([id, name]) => ({ id, label: name })),
+    } as never;
+
+    const opened = buildProductionAssistantSource(input).createConversation()
+      .execute("open_theme", { theme_id: "servering" }) as {
+        result: { chapter: { places: Array<{ id: string }> } };
+        directives: Array<{ name: string; args: { poi_ids: string[] } }>;
+      };
+
+    expect(opened.result.chapter.places.map((place) => place.id))
+      .toEqual(phases.map(([id]) => id));
+    expect(opened.directives).toEqual([{
+      name: "highlight_places",
+      args: { poi_ids: phases.slice(0, 3).map(([id]) => id) },
+    }]);
+  });
+
   it("beholder temafortellingen samtidig som steder sorteres etter nærhet", () => {
     const input = board();
     const category = input.categories[0]!;
@@ -285,6 +321,27 @@ describe("production board assistant source", () => {
         text: "Stedet er kildekontrollert, men kartkoblingen er ikke bekreftet.",
       })],
     }));
+  });
+
+  it("lar dokumentert byggestatus vinne over markedsføringsfakta for samme sted", () => {
+    const input = board();
+    input.publishedKnowledge![0] = {
+      ...input.publishedKnowledge![0]!,
+      id: "claim-availability",
+      factText: "24 ledige boliger i boligvelgeren.",
+      temporalKind: "marketed",
+    };
+    input.publishedKnowledge!.push(
+      {
+        ...input.publishedKnowledge![0]!,
+        id: "claim-construction",
+        factText: "Byggingen er igangsatt.",
+        temporalKind: "under_construction",
+      },
+    );
+
+    expect(boardKnowledgeBase(input).entities.find((entity) => entity.id === "fyr")?.status)
+      .toBe("under-construction");
   });
 
   it("avviser boards uten eksplisitt assistent-opt-in", () => {

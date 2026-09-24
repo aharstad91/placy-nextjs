@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { WEBSITE_NAMESPACES, isPublicProjectSlug } from "@/lib/project-paths";
+import { LB_DEMO_ACCESS_PATH, lbDemoAccess, lbDemoAccessConfigured } from "@/lib/demo/leangenbukta-site/access";
 
 /**
  * Proxy (Next 16-navnet på middleware) for routing og legacy-redirects.
@@ -19,9 +20,33 @@ import { WEBSITE_NAMESPACES, isPublicProjectSlug } from "@/lib/project-paths";
  * - /generer → 301 → /eiendom/generer
  * - /admin/... → Admin passthrough
  * - /scandic/... → Legacy redirect to /eiendom/scandic/...
+ * - /demo/leangenbukta-{nettside,lokal,tilgang} → tilgangsgaten for kundedemoen
  */
 
 const PRODUCT_SUFFIXES = ["explore", "guide"] as const;
+
+/**
+ * Leangenbukta-kundedemoen: nettsidekopien, boardet og innloggingen.
+ *
+ * Gaten ligger her og ikke bare i layoutene fordi proxyen kjører på HVER
+ * forespørsel, også klientnavigasjonens RSC-kall — en layout gjør ikke det.
+ * Avgjørelsen er `lbDemoAccess` (se lib/demo/leangenbukta-site/access.ts):
+ * uten gyldig tilgang gir et konfigurert miljø innlogging, et ukonfigurert 404.
+ * Alle svar merkes `noindex`; kopien er ikke kundens offisielle nettsted.
+ */
+const LB_DEMO_SEGMENTS = new Set(["leangenbukta-nettside", "leangenbukta-lokal", "leangenbukta-tilgang"]);
+
+function leangenbuktaDemo(request: NextRequest, segment: string) {
+  const noindex = (response: NextResponse) => {
+    response.headers.set("x-robots-tag", "noindex, nofollow");
+    return response;
+  };
+  if (segment === "leangenbukta-tilgang" || lbDemoAccess(request)) return noindex(NextResponse.next());
+  if (!lbDemoAccessConfigured()) return noindex(new NextResponse(null, { status: 404 }));
+  const target = new URL(LB_DEMO_ACCESS_PATH, request.url);
+  target.searchParams.set("neste", `${request.nextUrl.pathname}${request.nextUrl.search}`);
+  return noindex(NextResponse.redirect(target));
+}
 
 // Known customer slugs for legacy redirect
 const KNOWN_CUSTOMERS = [
@@ -36,21 +61,33 @@ export function proxy(request: NextRequest) {
   const { pathname, search } = request.nextUrl;
   const segments = pathname.split("/").filter(Boolean);
 
-  // Apex belongs to the shared platform. Existing website pages still run on
-  // their unchanged www deployment; platform assets, APIs and actions stay here.
+  // Apex belongs to the shared platform. Nyhavnas site demo stays here too,
+  // so its chat cookie and hosted voice control connection share an origin.
+  // Other website pages still run on their unchanged www deployment.
   if (process.env.PLACY_HOSTED_VOICE === "true") {
     if (segments[0] === "p" && segments.length === 2 && isPublicProjectSlug(segments[1])) {
       return NextResponse.redirect(new URL(`/${segments[1]}${search}`, request.url));
     }
+    const nyhavnaSiteDemo = segments[0] === "demo" && segments[1] === "nyhavna-nettside";
     const websitePage = segments.length === 0
       || (WEBSITE_NAMESPACES as readonly string[]).includes(segments[0])
-      || (segments[0] === "demo" && segments[1] !== "nyhavna-lokal");
+      || (segments[0] === "demo" && segments[1] !== "nyhavna-lokal" && !nyhavnaSiteDemo);
     if (websitePage && request.nextUrl.hostname === "placy.no") return NextResponse.redirect(new URL(`${pathname}${search}`, "https://www.placy.no"));
   }
 
   if (segments.length === 0) return NextResponse.next();
 
   const firstSegment = segments[0];
+
+  if (firstSegment === "demo" && segments[1] === "nyhavna-nettside") {
+    const response = NextResponse.next();
+    response.headers.set("x-robots-tag", "noindex, nofollow");
+    return response;
+  }
+
+  if (firstSegment === "demo" && LB_DEMO_SEGMENTS.has(segments[1])) {
+    return leangenbuktaDemo(request, segments[1]);
+  }
 
   // /eiendom/... → Eiendom passthrough — men gammel scroll-rapport-URL
   // redirectes til boardet (ruten er slettet, cutover 2026-07-06)

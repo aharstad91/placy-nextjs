@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Image from "next/image";
 import Arrow from "@/app/demo/nyhavna-nettside/arrow";
+import { nhChatEnabled } from "@/lib/demo/nyhavna-chat/access";
 
 export const metadata: Metadata = {
   title: "Beliggenhet – Nyhavna",
@@ -11,7 +12,7 @@ export const metadata: Metadata = {
 
 export default function BeliggenhetPage() {
   return (
-    <main id="main-content" className="demo-location site-width">
+    <main id="main-content" className="demo-location site-width" data-placy-page-id="beliggenhet">
       <nav className="demo-breadcrumb" aria-label="Brødsmuler">
         <a href="/demo/nyhavna-nettside">Forside</a>
         <span aria-hidden="true">/</span>
@@ -43,6 +44,17 @@ export default function BeliggenhetPage() {
             Utforsk Nyhavna med Placy <Arrow />
           </a>
           <span className="demo-new-tab">Åpnes i en ny fane</span>
+          {nhChatEnabled() ? (
+            // Åpner chatboksen med et første spørsmål (widgetens delegerte åpning).
+            <button
+              type="button"
+              className="demo-chat-button"
+              data-placy-chat-open=""
+              data-placy-chat-question="Hva finnes i nærområdet i dag?"
+            >
+              Spør om nabolaget
+            </button>
+          ) : null}
         </div>
         <a
           className="demo-location-image"

@@ -43,6 +43,7 @@ async function main() {
     scopeKey: "audited-places",
     sourcePath: SOURCE_PATH,
     timeSensitiveValidUntil: "2026-09-25",
+    excludedCategoryIds: ["leangenbukta-prosjektet"],
   });
   const publicationStates = Object.groupBy(researchPackage.claims, (claim) =>
     claimPublicationState(claim, new Date("2026-09-19T12:00:00Z")),

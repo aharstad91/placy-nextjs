@@ -157,12 +157,16 @@ export function buildChapter(
   preferNearestPlaces = false,
 ): ChapterPack {
   const highlights = category.editorial?.highlights ?? [];
-  const pickPool: BoardPOI[] = !preferNearestPlaces && highlights.length
+  const measuredPlaces = category.pois.filter((p) => minutes(p, travelMode) !== null);
+  const usesEditorialOrder = highlights.length > 0
+    && (!preferNearestPlaces || measuredPlaces.length === 0);
+  const pickPool: BoardPOI[] = usesEditorialOrder
     ? highlights.map((h) => category.pois.find((p) => p.id.toLowerCase() === String(h.id).toLowerCase())).filter((p): p is BoardPOI => p !== undefined)
-    : category.pois.filter((p) => minutes(p, travelMode) !== null);
-  const places = pickPool
-    .slice()
-    .sort((a, b) => (minutes(a, travelMode) ?? Infinity) - (minutes(b, travelMode) ?? Infinity) || a.name.localeCompare(b.name, "nb"))
+    : measuredPlaces;
+  const orderedPool = usesEditorialOrder
+    ? pickPool
+    : pickPool.slice().sort((a, b) => (minutes(a, travelMode) ?? Infinity) - (minutes(b, travelMode) ?? Infinity) || a.name.localeCompare(b.name, "nb"));
+  const places = orderedPool
     .slice(0, 4)
     .map<ChapterPlace>((p) => ({
       id: String(p.id), name: p.name, type: p.raw.category.name,

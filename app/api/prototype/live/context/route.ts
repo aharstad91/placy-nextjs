@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { getLiveSideband } from '@/lib/live/sideband';
 import { getLiveSupervisor } from '@/lib/live/supervisor';
 import { localRequest } from '@/lib/live/local-request';
+import { demoVoiceVisitor } from '@/lib/live/demo-voice-access';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -11,6 +12,9 @@ export const dynamic = 'force-dynamic';
  * Hva brukeren gjør i flaten: tema- og stedstrykk, karttilstand, og en
  * dev-hook for simulert tekst. Serveren oversetter det til kontekst stemmen og
  * backenden kan bruke – nettleseren snakker aldri til modellen selv.
+ *
+ * Samme tilgangsgate som kartkanalen: loopback, eller en kundes egen tilgang
+ * i chatboks-registeret (lib/live/demo-voice-access.ts).
  */
 const contextSchema = z.union([
   z.object({ kind: z.literal('theme'), id: z.string().max(120), label: z.string().max(120).optional() }),
@@ -26,7 +30,7 @@ const contextSchema = z.union([
 ]);
 
 export async function POST(request: NextRequest) {
-  if (!localRequest(request)) return new NextResponse(null, { status: 404 });
+  if (!localRequest(request) && !demoVoiceVisitor(request)) return new NextResponse(null, { status: 404 });
   const token = request.headers.get('x-placy-session');
   if (!token || token.length > 100 || !getLiveSupervisor().isActive(token)) return new NextResponse(null, { status: 404 });
   if (Number(request.headers.get('content-length')) > 20000) return new NextResponse(null, { status: 413 });

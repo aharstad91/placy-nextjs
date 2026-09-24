@@ -15,10 +15,10 @@ const DEMO = "leangenbukta-lokal";
 describe("Leangenbukta-datasettet i repoet", () => {
   it("laster hele den reviderte innholdspakken", async () => {
     const dataset = await loadDataset(getLocalDemo(DEMO));
-    expect(dataset.sources).toHaveLength(58);
-    expect(dataset.places.filter((place) => place.knowledgeLevel === "audited")).toHaveLength(56);
+    expect(dataset.sources).toHaveLength(61);
+    expect(dataset.places.filter((place) => place.knowledgeLevel === "audited")).toHaveLength(60);
     expect(dataset.places.filter((place) => place.knowledgeLevel === "register")).toHaveLength(503);
-    expect(dataset.places).toHaveLength(559);
+    expect(dataset.places).toHaveLength(563);
     expect(dataset.topics).toHaveLength(36);
     expect(dataset.faqs).toHaveLength(34);
     expect(dataset.board.profile).toBe("housing-development");
@@ -53,8 +53,63 @@ describe("Leangenbukta-datasettet i repoet", () => {
     expect(board.home.name).toBe("Leangenbukta");
     expect(board.home.pinSubtitle).toBe("");
     expect(board.home.pinImage).toBe("/demo/leangenbukta-lokal/leangenbukta-logo.svg");
-    expect(board.poisById.size).toBe(360);
+    expect(board.poisById.size).toBe(364);
     expect(board.globalFaq ?? []).toEqual([]);
+  });
+
+  it("viser de fire aktive byggetrinnene som bildepunkt i prosjektfortellingen", async () => {
+    const descriptor = getLocalDemo(DEMO);
+    const dataset = await loadDataset(descriptor);
+    const board = buildLocalBoard(dataset, descriptor);
+    const category = board.categories.find((candidate) => candidate.id === "leangenbukta-prosjektet");
+    const expectedIds = ["parktunet-1", "saltakshus-c", "knutepunktet", "saltakshus-h"];
+
+    expect(category?.pois.map((poi) => String(poi.id))).toHaveLength(4);
+    expect(category?.pois.map((poi) => String(poi.id))).toEqual(expect.arrayContaining(expectedIds));
+    expect(category?.editorial?.highlights).toHaveLength(4);
+    expect(category?.editorial?.highlights.map((highlight) => String(highlight.id))).toEqual(expectedIds);
+    for (const poi of category?.pois ?? []) {
+      expect(poi.raw.markerImage, String(poi.id)).toBe(`/illustrations/leangenbukta-${poi.id}.webp`);
+      expect(poi.raw.featuredImage, String(poi.id)).toBe(poi.raw.markerImage);
+      expect(poi.raw.locationPrecision, String(poi.id)).toBe("approximate");
+    }
+  });
+
+  it("gir Anja byggetrinnene, ledighetstallene og riktige kart-ID-er", async () => {
+    const descriptor = getLocalDemo(DEMO);
+    const dataset = await loadDataset(descriptor);
+    const board = buildLocalBoard(dataset, descriptor);
+    const conversation = createNyhavnaConversation(board, buildVoiceDeps(dataset));
+    const opened = conversation.execute("open_theme", { theme_id: "leangenbukta-prosjektet" });
+
+    expect(opened).toMatchObject({
+      result: {
+        chapter: {
+          places: [
+            { id: "parktunet-1", name: "Parktunet 1" },
+            { id: "saltakshus-c", name: "Saltakshus C" },
+            { id: "knutepunktet", name: "Knutepunktet" },
+            { id: "saltakshus-h", name: "Saltakshus H" },
+          ],
+        },
+      },
+      directives: [{ name: "highlight_places", args: { poi_ids: ["parktunet-1", "saltakshus-c", "knutepunktet"] } }],
+    });
+
+    const expectedAvailability = new Map([
+      ["parktunet-1", "33 ledige boliger"],
+      ["saltakshus-c", "24 ledige boliger"],
+      ["knutepunktet", "2 ledige boliger"],
+      ["saltakshus-h", "2 ledige boliger"],
+    ]);
+    for (const [id, text] of expectedAvailability) {
+      const facts = conversation.execute("get_place_facts", { poi_id: id }).result as {
+        map_poi_id: string;
+        facts: Array<{ text: string }>;
+      };
+      expect(facts.map_poi_id, id).toBe(id);
+      expect(facts.facts.map((fact) => fact.text), id).toContain(`${text} i boligvelgeren per 21.09.2026.`);
+    }
   });
 
   it("skjuler meglerkortet og lar prosjektet peke på datasettets senter", async () => {
@@ -62,7 +117,7 @@ describe("Leangenbukta-datasettet i repoet", () => {
     const dataset = await loadDataset(descriptor);
     const project = buildLocalProject(dataset, descriptor);
     expect(project.reportConfig?.hideBrokerCard).toBe(true);
-    expect(project.pois.filter((poi) => dataset.places.find((place) => place.id === poi.id)?.knowledgeLevel === "audited")).toHaveLength(56);
+    expect(project.pois.filter((poi) => dataset.places.find((place) => place.id === poi.id)?.knowledgeLevel === "audited")).toHaveLength(60);
     expect(project.centerCoordinates).toEqual({
       lat: 63.43947521501401,
       lng: 10.466113792494502,

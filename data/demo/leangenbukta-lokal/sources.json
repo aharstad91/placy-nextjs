@@ -112,6 +112,30 @@
     "checkedAt": "2026-09-18"
   },
   {
+    "id": "leangenbukta-saltakshus-c-20260921",
+    "label": "Leangenbukta",
+    "page": "Saltakshus C",
+    "url": "https://leangenbukta.no/saltakshusc/",
+    "publisher": "Leangenbukta",
+    "checkedAt": "2026-09-21"
+  },
+  {
+    "id": "leangenbukta-saltakshus-h-20260921",
+    "label": "Leangenbukta",
+    "page": "Saltakshus H",
+    "url": "https://leangenbukta.no/saltakshush/",
+    "publisher": "Leangenbukta",
+    "checkedAt": "2026-09-21"
+  },
+  {
+    "id": "leangenbukta-plyo-20260921",
+    "label": "Leangenbukta boligvelger",
+    "page": "Boligvelger – tilgjengelighet",
+    "url": "https://leangenbukta.plyo.cloud/",
+    "publisher": "Leangenbukta / Plyo",
+    "checkedAt": "2026-09-21"
+  },
+  {
     "id": "leangenkulturbarnehage-c3d859f4",
     "label": "Leangen kulturbarnehage",
     "page": "sok barnehageplass",

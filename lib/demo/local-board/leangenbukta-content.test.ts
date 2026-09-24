@@ -70,7 +70,7 @@ describe("Leangenbukta: komplett revisjon og import", () => {
     expect(packages.reduce((sum, category) => sum + category.buyer_questions.length, 0)).toBe(35);
   });
 
-  it("importerer alle 55 valgte kandidater, pluss LadeTorget som dokumentert strukturanker", async () => {
+  it("importerer kandidatene, LadeTorget og de fire aktive byggetrinnene", async () => {
     const dataset = await loadDataset(DEMO);
     const candidates = (await categoryPackages()).flatMap(category => category.candidates);
     const selected = candidates.filter(candidate => candidate.decision === "start_set" || candidate.decision === "member");
@@ -82,8 +82,8 @@ describe("Leangenbukta: komplett revisjon og import", () => {
       expect(placeIds, `${candidate.candidate_id}: ${candidate.canonical_id}`).toContain(runtimeId(candidate.canonical_id));
     }
     expect(placeIds).toContain("ladetorget");
-    expect(auditedPlaces).toHaveLength(56);
-    expect(auditedPlaces.filter(place => !place.parentPlaceId)).toHaveLength(27);
+    expect(auditedPlaces).toHaveLength(60);
+    expect(auditedPlaces.filter(place => !place.parentPlaceId)).toHaveLength(31);
     expect(auditedPlaces.filter(place => place.parentPlaceId)).toHaveLength(29);
 
     const selectedCanonicals = new Set(selected.map(candidate => candidate.canonical_id));
@@ -146,16 +146,29 @@ describe("Leangenbukta: komplett revisjon og import", () => {
     expect(ladeMotor?.parentPlaceId).toBe("lade-fritidsklubb");
   });
 
-  it("bruker målte Mapbox-minutter fra prosjektpunktet for alle 27 synlige ankre", async () => {
+  it("bruker målte Mapbox-minutter fra prosjektpunktet for alle 27 reisetidsankre", async () => {
     const dataset = await loadDataset(DEMO);
     const receipt = await json<TravelReceipt>(`${RESEARCH}/travel-times.json`);
-    const topLevel = dataset.places.filter(place => place.knowledgeLevel === "audited" && !place.parentPlaceId);
     const receiptById = new Map(receipt.places.map(place => [place.place_id, place.minutes]));
+    const allTopLevel = dataset.places.filter(
+      place => place.knowledgeLevel === "audited" && !place.parentPlaceId,
+    );
+    const topLevel = allTopLevel.filter(place => receiptById.has(place.id));
+    const withoutTravelTime = allTopLevel
+      .filter(place => !receiptById.has(place.id))
+      .map(place => place.id)
+      .sort();
 
     expect(receipt.provider).toBe("Mapbox Matrix API");
     expect(receipt.origin.coordinates).toEqual(dataset.board.center);
     expect(receipt.places).toHaveLength(27);
     expect(topLevel).toHaveLength(27);
+    expect(withoutTravelTime).toEqual([
+      "knutepunktet",
+      "parktunet-1",
+      "saltakshus-c",
+      "saltakshus-h",
+    ]);
     for (const place of topLevel) {
       expect(place.travelTime, place.id).toEqual(receiptById.get(place.id));
       expect(place.travelTime?.walk, place.id).toBeGreaterThan(0);

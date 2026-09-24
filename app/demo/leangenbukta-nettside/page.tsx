@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
 import Image from "next/image";
+import Link from "next/link";
+import { PlacyField } from "@/app/demo/leangenbukta-nettside/placy-field";
 import { PlacyRow } from "@/app/demo/leangenbukta-nettside/placy-row";
 
 export const metadata: Metadata = {
@@ -17,12 +19,17 @@ export const metadata: Metadata = {
  * To ting er våre: helten spiller filmen med et ekte <video>-element (originalen
  * lar jarallax sette den inn), og raden der deres Leaflet-kart ligger i dag er
  * byttet ut med Placy-inngangen. Det er nettopp det innlimingen handler om.
+ *
+ * I tillegg står en kort, tidlig Placy-inngang rett etter visningsraden, slik
+ * at beliggenhet og kjøpsspørsmål møter besøkende før byggkortene (R4).
  */
 export default function Page() {
   const placyBlock = <PlacyRow />;
+  const introField = <PlacyField variant="intro" question="Hva er Leangenbukta, og hva finnes i nærområdet?" />;
 
   return (
     <>
+    <div data-placy-page-id="forside" hidden />
     <div className="container-wrap">
     <div className="container main-content" role="main">
     <div className="row">
@@ -49,6 +56,7 @@ export default function Page() {
     </div>
     </div>
     </div></div>
+    {introField}
     <div id="prosjektet" data-column-margin="default" data-midnight="dark" className="wpb_row vc_row-fluid vc_row full-width-content vc_row-o-equal-height vc_row-flex vc_row-o-content-top hash" style={{ paddingTop: "10px", paddingBottom: "0px" }}><div className="row-bg-wrap" data-bg-animation="none" data-bg-animation-delay="" data-bg-overlay="false"><div className="inner-wrap row-bg-layer"><div className="row-bg viewport-desktop"></div></div></div><div className="row_col_wrap_12 col span_12 dark left">
     <div style={{ color: "#ffffff" }} className="vc_col-sm-6 border-right wpb_column column_container vc_column_container col has-animation no-extra-padding inherit_tablet inherit_phone " data-cfc="true" data-using-bg="true" data-bg-cover="true" data-padding-pos="all" data-has-bg-color="false" data-bg-color="" data-bg-opacity="1" data-animation="fade-in-from-right" data-delay="0">
     <div className="vc_column-inner"><div className="column-image-bg-wrap column-bg-layer viewport-desktop" data-bg-pos="center center" data-bg-animation="none" data-bg-overlay="false"><div className="inner-wrap"><div className="column-image-bg" style={{ backgroundImage: "url('/demo/leangenbukta-nettside/30stue2-1773d2.jpg')" }}></div></div></div>
@@ -78,9 +86,9 @@ export default function Page() {
     </div>
     <div className="wpb_text_column wpb_content_element ">
     </div>
-    <a className="nectar-button medium regular extra-color-2 has-icon  regular-button" role="button" href="https://leangenbukta.no/innflyttingsklare-leiligheter/" data-color-override="false" data-hover-color-override="false" data-hover-text-color-override="#fff"><span>Se utvalget</span><i><span className="im-icon-wrap"><span><svg role="presentation" version="1.1" xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 32 32">
+    <Link className="nectar-button medium regular extra-color-2 has-icon  regular-button" role="button" href="/demo/leangenbukta-nettside/innflyttingsklare-leiligheter" data-color-override="false" data-hover-color-override="false" data-hover-text-color-override="#fff"><span>Se utvalget</span><i><span className="im-icon-wrap"><span><svg role="presentation" version="1.1" xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 32 32">
     <path d="M28.328 20c-0.145 0-0.295-0.048-0.417-0.145-0.288-0.229-0.333-0.648-0.103-0.937l2.331-2.917-2.331-2.916c-0.231-0.287-0.185-0.708 0.103-0.937 0.291-0.231 0.708-0.184 0.937 0.104l2.665 3.333c0.195 0.244 0.195 0.589 0 0.833l-2.665 3.333c-0.131 0.164-0.324 0.249-0.52 0.249zM30.341 16.667h-29.333c-0.367 0-0.667-0.299-0.667-0.667s0.3-0.667 0.667-0.667h29.333c0.367 0 0.667 0.299 0.667 0.667s-0.3 0.667-0.667 0.667z"></path>
-    </svg></span></span></i></a><div className="divider-wrap" data-alignment="default"><div style={{ height: "15px" }} className="divider"></div></div>
+    </svg></span></span></i></Link><div className="divider-wrap" data-alignment="default"><div style={{ height: "15px" }} className="divider"></div></div>
     <div className="wpb_text_column wpb_content_element ">
     </div>
     <div className="wpb_text_column wpb_content_element ">
@@ -115,19 +123,19 @@ export default function Page() {
     </div>
     <div className="wpb_text_column wpb_content_element ">
     <h5 style={{ textAlign: "left" }}><strong>Trygt og bilfritt bomiljø</strong></h5>
-    <p style={{ textAlign: "left" }}>Bebyggelsen skjermer for vei og trafikk og åpner seg mot kulturlandskapet. Parkering i parkeringskjeller med et bilfritt utomhusareal mellom boligene. <a href="https://leangenbukta.no/om-prosjektet/#beliggenhet">Les mer</a></p>
+    <p style={{ textAlign: "left" }}>Bebyggelsen skjermer for vei og trafikk og åpner seg mot kulturlandskapet. Parkering i parkeringskjeller med et bilfritt utomhusareal mellom boligene. <Link href="/demo/leangenbukta-nettside/om-prosjektet#beliggenhet">Les mer</Link></p>
     </div>
     <div className="wpb_text_column wpb_content_element ">
     <h5 style={{ textAlign: "left" }}><strong>Gangavstand til alt du trenger</strong></h5>
-    <p style={{ textAlign: "left" }}>Butikker, kjøpesentre, spesialforretninger, kafè- og spiseplasser og treningssentre i umiddelbar nærhet. <a href="https://leangenbukta.no/om-prosjektet/#beliggenhet">Les mer</a></p>
+    <p style={{ textAlign: "left" }}>Butikker, kjøpesentre, spesialforretninger, kafè- og spiseplasser og treningssentre i umiddelbar nærhet. <Link href="/demo/leangenbukta-nettside/om-prosjektet#beliggenhet">Les mer</Link></p>
     </div>
     <div className="wpb_text_column wpb_content_element ">
     <h5 style={{ textAlign: "left" }}><strong>Bærekraftige løsninger</strong></h5>
-    <p style={{ textAlign: "left" }}>Vi fører «Grønn Strategi» gjennom hele prosjektet! Ved bruk av varige materialer, stedsriktig beplanting og bevaring av trær. <a href="https://leangenbukta.no/om-prosjektet/#gronn-strategi">Les mer</a></p>
+    <p style={{ textAlign: "left" }}>Vi fører «Grønn Strategi» gjennom hele prosjektet! Ved bruk av varige materialer, stedsriktig beplanting og bevaring av trær. <Link href="/demo/leangenbukta-nettside/om-prosjektet#gronn-strategi">Les mer</Link></p>
     </div>
     <div className="wpb_text_column wpb_content_element ">
     <h5 style={{ textAlign: "left" }}><strong>Knutepunkt for kollektivtransport</strong></h5>
-    <p style={{ textAlign: "left" }}>I umiddelbar nærhet ligger buss/metrobuss-forbindelser, Leangen togstasjon, sykkelveier og kort avstand til E6. <a href="https://leangenbukta.no/om-prosjektet/#beliggenhet">Les mer</a></p>
+    <p style={{ textAlign: "left" }}>I umiddelbar nærhet ligger buss/metrobuss-forbindelser, Leangen togstasjon, sykkelveier og kort avstand til E6. <Link href="/demo/leangenbukta-nettside/om-prosjektet#beliggenhet">Les mer</Link></p>
     </div>
     <a className="nectar-button medium regular extra-color-2 has-icon  regular-button displaynone" role="button" href="#kontakt" data-color-override="false" data-hover-color-override="false" data-hover-text-color-override="#fff"><span>Meld din interesse</span><i><span className="im-icon-wrap"><span><svg role="presentation" version="1.1" xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 32 32">
     <path d="M28.328 20c-0.145 0-0.295-0.048-0.417-0.145-0.288-0.229-0.333-0.648-0.103-0.937l2.331-2.917-2.331-2.916c-0.231-0.287-0.185-0.708 0.103-0.937 0.291-0.231 0.708-0.184 0.937 0.104l2.665 3.333c0.195 0.244 0.195 0.589 0 0.833l-2.665 3.333c-0.131 0.164-0.324 0.249-0.52 0.249zM30.341 16.667h-29.333c-0.367 0-0.667-0.299-0.667-0.667s0.3-0.667 0.667-0.667h29.333c0.367 0 0.667 0.299 0.667 0.667s-0.3 0.667-0.667 0.667z"></path>
@@ -154,23 +162,23 @@ export default function Page() {
     <div className="wpb_wrapper">
     <div className="wpb_text_column wpb_content_element ">
     <h5 style={{ textAlign: "left" }}><strong>En del av Ladestien, fjæra og kulturlandskapet</strong></h5>
-    <p style={{ textAlign: "left" }}>Bo midt i et av de vakreste turområdene i Trondheim. Ladestien vil gå gjennom boligområdet, og her er det også kort vei til Leangen Gård og kjente badeplasser. <a href="https://leangenbukta.no/om-prosjektet/#beliggenhet">Les mer</a></p>
+    <p style={{ textAlign: "left" }}>Bo midt i et av de vakreste turområdene i Trondheim. Ladestien vil gå gjennom boligområdet, og her er det også kort vei til Leangen Gård og kjente badeplasser. <Link href="/demo/leangenbukta-nettside/om-prosjektet#beliggenhet">Les mer</Link></p>
     </div>
     <div className="wpb_text_column wpb_content_element ">
     <h5 style={{ textAlign: "left" }}><strong>El-bildeling</strong></h5>
-    <p style={{ textAlign: "left" }}>Vi tilrettelegger for et antall biler som kan benyttes av beboere ved behov. Med bildelingstjenesten betaler du bare når du bruker bilen. <a href="https://leangenbukta.no/om-prosjektet/#ekstra-fasiliteter">Les mer</a></p>
+    <p style={{ textAlign: "left" }}>Vi tilrettelegger for et antall biler som kan benyttes av beboere ved behov. Med bildelingstjenesten betaler du bare når du bruker bilen. <Link href="/demo/leangenbukta-nettside/om-prosjektet#ekstra-fasiliteter">Les mer</Link></p>
     </div>
     <div className="wpb_text_column wpb_content_element ">
     <h5 style={{ textAlign: "left" }}><strong>Et sosialt nabolag</strong></h5>
-    <p style={{ textAlign: "left" }}>Vi skal etablere en felles «lounge» som kan fungere som kafè, møtested, arbeidssted osv. Her kan man nå ytterligere fasiliteter som lekerom, treningsrom, utlånsleilighet og forsamlingslokale. <a href="https://leangenbukta.no/om-prosjektet/#ambisjoner">Les mer</a></p>
+    <p style={{ textAlign: "left" }}>Vi skal etablere en felles «lounge» som kan fungere som kafè, møtested, arbeidssted osv. Her kan man nå ytterligere fasiliteter som lekerom, treningsrom, utlånsleilighet og forsamlingslokale. <Link href="/demo/leangenbukta-nettside/om-prosjektet#ambisjoner">Les mer</Link></p>
     </div>
     <div className="wpb_text_column wpb_content_element ">
     <h5 style={{ textAlign: "left" }}><strong>Moderne og tidløs arkitektur</strong></h5>
-    <p style={{ textAlign: "left" }}>Vi vektlegger store vindusflater, gjennomlys, planløsning og fasadematerialer som krever lite vedlikehold. Bruk av tegl og tre i kombinasjon vil være en rød trå gjennom prosjektet, noe som gir et bestandig uttrykk. <a href="https://leangenbukta.no/om-prosjektet/#kvalitet-arkitektur">Les mer</a></p>
+    <p style={{ textAlign: "left" }}>Vi vektlegger store vindusflater, gjennomlys, planløsning og fasadematerialer som krever lite vedlikehold. Bruk av tegl og tre i kombinasjon vil være en rød trå gjennom prosjektet, noe som gir et bestandig uttrykk. <Link href="/demo/leangenbukta-nettside/om-prosjektet#kvalitet-arkitektur">Les mer</Link></p>
     </div>
-    <div className="divider-wrap" data-alignment="default"><div style={{ height: "15px" }} className="divider"></div></div><a className="nectar-button medium regular extra-color-2 has-icon  regular-button" role="button" href="https://leangenbukta.no/om-prosjektet/" data-color-override="false" data-hover-color-override="false" data-hover-text-color-override="#fff"><span>Les mer om prosjektet</span><i><span className="im-icon-wrap"><span><svg role="presentation" version="1.1" xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 32 32">
+    <div className="divider-wrap" data-alignment="default"><div style={{ height: "15px" }} className="divider"></div></div><Link className="nectar-button medium regular extra-color-2 has-icon  regular-button" role="button" href="/demo/leangenbukta-nettside/om-prosjektet" data-color-override="false" data-hover-color-override="false" data-hover-text-color-override="#fff"><span>Les mer om prosjektet</span><i><span className="im-icon-wrap"><span><svg role="presentation" version="1.1" xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 32 32">
     <path d="M28.328 20c-0.145 0-0.295-0.048-0.417-0.145-0.288-0.229-0.333-0.648-0.103-0.937l2.331-2.917-2.331-2.916c-0.231-0.287-0.185-0.708 0.103-0.937 0.291-0.231 0.708-0.184 0.937 0.104l2.665 3.333c0.195 0.244 0.195 0.589 0 0.833l-2.665 3.333c-0.131 0.164-0.324 0.249-0.52 0.249zM30.341 16.667h-29.333c-0.367 0-0.667-0.299-0.667-0.667s0.3-0.667 0.667-0.667h29.333c0.367 0 0.667 0.299 0.667 0.667s-0.3 0.667-0.667 0.667z"></path>
-    </svg></span></span></i></a>
+    </svg></span></span></i></Link>
     </div>
     </div>
     </div>
@@ -190,9 +198,9 @@ export default function Page() {
     <div className="wpb_text_column wpb_content_element ">
     <p>Parktunet får en flott beliggenhet mot Torget og Aktivitetsparken. Her bor du i grønne og luftige omgivelser, med kort vei til Ladestien og handel og kollektivtransport på Lade.</p>
     </div>
-    <div className="divider-wrap" data-alignment="default"><div style={{ height: "15px" }} className="divider"></div></div><a className="nectar-button medium regular extra-color-2 has-icon  regular-button" role="button" href="https://www.leangenbukta.no/parktunet1" data-color-override="false" data-hover-color-override="false" data-hover-text-color-override="#fff"><span>Les mer om Parktunet 1</span><i><span className="im-icon-wrap"><span><svg role="presentation" version="1.1" xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 32 32">
+    <div className="divider-wrap" data-alignment="default"><div style={{ height: "15px" }} className="divider"></div></div><Link className="nectar-button medium regular extra-color-2 has-icon  regular-button" role="button" href="/demo/leangenbukta-nettside/parktunet1" data-color-override="false" data-hover-color-override="false" data-hover-text-color-override="#fff"><span>Les mer om Parktunet 1</span><i><span className="im-icon-wrap"><span><svg role="presentation" version="1.1" xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 32 32">
     <path d="M28.328 20c-0.145 0-0.295-0.048-0.417-0.145-0.288-0.229-0.333-0.648-0.103-0.937l2.331-2.917-2.331-2.916c-0.231-0.287-0.185-0.708 0.103-0.937 0.291-0.231 0.708-0.184 0.937 0.104l2.665 3.333c0.195 0.244 0.195 0.589 0 0.833l-2.665 3.333c-0.131 0.164-0.324 0.249-0.52 0.249zM30.341 16.667h-29.333c-0.367 0-0.667-0.299-0.667-0.667s0.3-0.667 0.667-0.667h29.333c0.367 0 0.667 0.299 0.667 0.667s-0.3 0.667-0.667 0.667z"></path>
-    </svg></span></span></i></a><div className="divider-wrap" data-alignment="default"><div style={{ height: "15px" }} className="divider"></div></div><a className="nectar-button medium regular extra-color-2 has-icon  regular-button" role="button" href="https://leangenbukta.plyo.cloud/?y=33&p=0&point=1741545619853&selected=ByggD" data-color-override="false" data-hover-color-override="false" data-hover-text-color-override="#fff"><span>Se ledige leiligheter</span><i><span className="im-icon-wrap"><span><svg role="presentation" version="1.1" xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 32 32">
+    </svg></span></span></i></Link><div className="divider-wrap" data-alignment="default"><div style={{ height: "15px" }} className="divider"></div></div><a className="nectar-button medium regular extra-color-2 has-icon  regular-button" role="button" href="https://leangenbukta.plyo.cloud/?y=33&p=0&point=1741545619853&selected=ByggD" data-demo-external="true" target="_blank" rel="noopener noreferrer" data-color-override="false" data-hover-color-override="false" data-hover-text-color-override="#fff"><span>Se ledige leiligheter</span><i><span className="im-icon-wrap"><span><svg role="presentation" version="1.1" xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 32 32">
     <path d="M28.328 20c-0.145 0-0.295-0.048-0.417-0.145-0.288-0.229-0.333-0.648-0.103-0.937l2.331-2.917-2.331-2.916c-0.231-0.287-0.185-0.708 0.103-0.937 0.291-0.231 0.708-0.184 0.937 0.104l2.665 3.333c0.195 0.244 0.195 0.589 0 0.833l-2.665 3.333c-0.131 0.164-0.324 0.249-0.52 0.249zM30.341 16.667h-29.333c-0.367 0-0.667-0.299-0.667-0.667s0.3-0.667 0.667-0.667h29.333c0.367 0 0.667 0.299 0.667 0.667s-0.3 0.667-0.667 0.667z"></path>
     </svg></span></span></i></a><div className="divider-wrap" data-alignment="default"><div style={{ height: "15px" }} className="divider"></div></div>
     </div>
@@ -247,9 +255,9 @@ export default function Page() {
     <div className="wpb_text_column wpb_content_element ">
     <p>Saltakshus C består av 34 leiligheter. Bygget er plassert mellom det sjarmerende torget på den ene siden, og ut mot Lade allé på den andre.</p>
     </div>
-    <a className="nectar-button medium regular extra-color-2 has-icon  regular-button" role="button" href="https://leangenbukta.no/saltakshusc/" data-color-override="false" data-hover-color-override="false" data-hover-text-color-override="#fff"><span>Les mer om Saltakshus C</span><i><span className="im-icon-wrap"><span><svg role="presentation" version="1.1" xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 32 32">
+    <Link className="nectar-button medium regular extra-color-2 has-icon  regular-button" role="button" href="/demo/leangenbukta-nettside/saltakshusc" data-color-override="false" data-hover-color-override="false" data-hover-text-color-override="#fff"><span>Les mer om Saltakshus C</span><i><span className="im-icon-wrap"><span><svg role="presentation" version="1.1" xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 32 32">
     <path d="M28.328 20c-0.145 0-0.295-0.048-0.417-0.145-0.288-0.229-0.333-0.648-0.103-0.937l2.331-2.917-2.331-2.916c-0.231-0.287-0.185-0.708 0.103-0.937 0.291-0.231 0.708-0.184 0.937 0.104l2.665 3.333c0.195 0.244 0.195 0.589 0 0.833l-2.665 3.333c-0.131 0.164-0.324 0.249-0.52 0.249zM30.341 16.667h-29.333c-0.367 0-0.667-0.299-0.667-0.667s0.3-0.667 0.667-0.667h29.333c0.367 0 0.667 0.299 0.667 0.667s-0.3 0.667-0.667 0.667z"></path>
-    </svg></span></span></i></a><div className="divider-wrap" data-alignment="default"><div style={{ height: "15px" }} className="divider"></div></div><a className="nectar-button medium regular extra-color-2 has-icon  regular-button" role="button" href="https://leangenbukta.plyo.cloud/?y=123&p=0&point=1440249548096&selected=ByggC" data-color-override="false" data-hover-color-override="false" data-hover-text-color-override="#fff"><span>Se ledige leiligheter</span><i><span className="im-icon-wrap"><span><svg role="presentation" version="1.1" xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 32 32">
+    </svg></span></span></i></Link><div className="divider-wrap" data-alignment="default"><div style={{ height: "15px" }} className="divider"></div></div><a className="nectar-button medium regular extra-color-2 has-icon  regular-button" role="button" href="https://leangenbukta.plyo.cloud/?y=123&p=0&point=1440249548096&selected=ByggC" data-demo-external="true" target="_blank" rel="noopener noreferrer" data-color-override="false" data-hover-color-override="false" data-hover-text-color-override="#fff"><span>Se ledige leiligheter</span><i><span className="im-icon-wrap"><span><svg role="presentation" version="1.1" xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 32 32">
     <path d="M28.328 20c-0.145 0-0.295-0.048-0.417-0.145-0.288-0.229-0.333-0.648-0.103-0.937l2.331-2.917-2.331-2.916c-0.231-0.287-0.185-0.708 0.103-0.937 0.291-0.231 0.708-0.184 0.937 0.104l2.665 3.333c0.195 0.244 0.195 0.589 0 0.833l-2.665 3.333c-0.131 0.164-0.324 0.249-0.52 0.249zM30.341 16.667h-29.333c-0.367 0-0.667-0.299-0.667-0.667s0.3-0.667 0.667-0.667h29.333c0.367 0 0.667 0.299 0.667 0.667s-0.3 0.667-0.667 0.667z"></path>
     </svg></span></span></i></a>
     <div className="wpb_text_column wpb_content_element ">
@@ -292,9 +300,9 @@ export default function Page() {
     <div className="wpb_text_column wpb_content_element ">
     <p>Knutepunktet består av 28 leiligheter og huser alle Leangenbuktas felles fasiliteter som treningsrom, lounge, selskapsrom og gjesterom.</p>
     </div>
-    <div className="divider-wrap" data-alignment="default"><div style={{ height: "15px" }} className="divider"></div></div><a className="nectar-button medium regular extra-color-2 has-icon  regular-button" role="button" href="https://leangenbukta.no/knutepunktet/" data-color-override="false" data-hover-color-override="false" data-hover-text-color-override="#fff"><span>Les mer om Knutepunktet</span><i><span className="im-icon-wrap"><span><svg role="presentation" version="1.1" xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 32 32">
+    <div className="divider-wrap" data-alignment="default"><div style={{ height: "15px" }} className="divider"></div></div><Link className="nectar-button medium regular extra-color-2 has-icon  regular-button" role="button" href="/demo/leangenbukta-nettside/knutepunktet" data-color-override="false" data-hover-color-override="false" data-hover-text-color-override="#fff"><span>Les mer om Knutepunktet</span><i><span className="im-icon-wrap"><span><svg role="presentation" version="1.1" xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 32 32">
     <path d="M28.328 20c-0.145 0-0.295-0.048-0.417-0.145-0.288-0.229-0.333-0.648-0.103-0.937l2.331-2.917-2.331-2.916c-0.231-0.287-0.185-0.708 0.103-0.937 0.291-0.231 0.708-0.184 0.937 0.104l2.665 3.333c0.195 0.244 0.195 0.589 0 0.833l-2.665 3.333c-0.131 0.164-0.324 0.249-0.52 0.249zM30.341 16.667h-29.333c-0.367 0-0.667-0.299-0.667-0.667s0.3-0.667 0.667-0.667h29.333c0.367 0 0.667 0.299 0.667 0.667s-0.3 0.667-0.667 0.667z"></path>
-    </svg></span></span></i></a><div className="divider-wrap" data-alignment="default"><div style={{ height: "15px" }} className="divider"></div></div><a className="nectar-button medium regular extra-color-2 has-icon  regular-button" role="button" href="https://leangenbukta.plyo.cloud/?y=245&p=5&point=1440249576384&selected=ByggE" data-color-override="false" data-hover-color-override="false" data-hover-text-color-override="#fff"><span>Se ledige leiligheter</span><i><span className="im-icon-wrap"><span><svg role="presentation" version="1.1" xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 32 32">
+    </svg></span></span></i></Link><div className="divider-wrap" data-alignment="default"><div style={{ height: "15px" }} className="divider"></div></div><a className="nectar-button medium regular extra-color-2 has-icon  regular-button" role="button" href="https://leangenbukta.plyo.cloud/?y=245&p=5&point=1440249576384&selected=ByggE" data-demo-external="true" target="_blank" rel="noopener noreferrer" data-color-override="false" data-hover-color-override="false" data-hover-text-color-override="#fff"><span>Se ledige leiligheter</span><i><span className="im-icon-wrap"><span><svg role="presentation" version="1.1" xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 32 32">
     <path d="M28.328 20c-0.145 0-0.295-0.048-0.417-0.145-0.288-0.229-0.333-0.648-0.103-0.937l2.331-2.917-2.331-2.916c-0.231-0.287-0.185-0.708 0.103-0.937 0.291-0.231 0.708-0.184 0.937 0.104l2.665 3.333c0.195 0.244 0.195 0.589 0 0.833l-2.665 3.333c-0.131 0.164-0.324 0.249-0.52 0.249zM30.341 16.667h-29.333c-0.367 0-0.667-0.299-0.667-0.667s0.3-0.667 0.667-0.667h29.333c0.367 0 0.667 0.299 0.667 0.667s-0.3 0.667-0.667 0.667z"></path>
     </svg></span></span></i></a><div className="divider-wrap" data-alignment="default"><div style={{ height: "15px" }} className="divider"></div></div>
     </div>
@@ -351,9 +359,9 @@ export default function Page() {
     </div>
     <div className="wpb_text_column wpb_content_element ">
     </div>
-    <a className="nectar-button medium regular extra-color-2 has-icon  regular-button" role="button" href="https://leangenbukta.no/saltakshush/" data-color-override="false" data-hover-color-override="false" data-hover-text-color-override="#fff"><span>Les mer om Saltakshus H</span><i><span className="im-icon-wrap"><span><svg role="presentation" version="1.1" xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 32 32">
+    <Link className="nectar-button medium regular extra-color-2 has-icon  regular-button" role="button" href="/demo/leangenbukta-nettside/saltakshush" data-color-override="false" data-hover-color-override="false" data-hover-text-color-override="#fff"><span>Les mer om Saltakshus H</span><i><span className="im-icon-wrap"><span><svg role="presentation" version="1.1" xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 32 32">
     <path d="M28.328 20c-0.145 0-0.295-0.048-0.417-0.145-0.288-0.229-0.333-0.648-0.103-0.937l2.331-2.917-2.331-2.916c-0.231-0.287-0.185-0.708 0.103-0.937 0.291-0.231 0.708-0.184 0.937 0.104l2.665 3.333c0.195 0.244 0.195 0.589 0 0.833l-2.665 3.333c-0.131 0.164-0.324 0.249-0.52 0.249zM30.341 16.667h-29.333c-0.367 0-0.667-0.299-0.667-0.667s0.3-0.667 0.667-0.667h29.333c0.367 0 0.667 0.299 0.667 0.667s-0.3 0.667-0.667 0.667z"></path>
-    </svg></span></span></i></a><div className="divider-wrap" data-alignment="default"><div style={{ height: "15px" }} className="divider"></div></div><a className="nectar-button medium regular extra-color-2 has-icon  regular-button" role="button" href="https://leangenbukta.plyo.cloud/?y=180&p=27&point=1440249576640&selected=ByggH" data-color-override="false" data-hover-color-override="false" data-hover-text-color-override="#fff"><span>Se ledige leiligheter</span><i><span className="im-icon-wrap"><span><svg role="presentation" version="1.1" xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 32 32">
+    </svg></span></span></i></Link><div className="divider-wrap" data-alignment="default"><div style={{ height: "15px" }} className="divider"></div></div><a className="nectar-button medium regular extra-color-2 has-icon  regular-button" role="button" href="https://leangenbukta.plyo.cloud/?y=180&p=27&point=1440249576640&selected=ByggH" data-demo-external="true" target="_blank" rel="noopener noreferrer" data-color-override="false" data-hover-color-override="false" data-hover-text-color-override="#fff"><span>Se ledige leiligheter</span><i><span className="im-icon-wrap"><span><svg role="presentation" version="1.1" xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 32 32">
     <path d="M28.328 20c-0.145 0-0.295-0.048-0.417-0.145-0.288-0.229-0.333-0.648-0.103-0.937l2.331-2.917-2.331-2.916c-0.231-0.287-0.185-0.708 0.103-0.937 0.291-0.231 0.708-0.184 0.937 0.104l2.665 3.333c0.195 0.244 0.195 0.589 0 0.833l-2.665 3.333c-0.131 0.164-0.324 0.249-0.52 0.249zM30.341 16.667h-29.333c-0.367 0-0.667-0.299-0.667-0.667s0.3-0.667 0.667-0.667h29.333c0.367 0 0.667 0.299 0.667 0.667s-0.3 0.667-0.667 0.667z"></path>
     </svg></span></span></i></a>
     <div className="wpb_text_column wpb_content_element ">
@@ -379,12 +387,12 @@ export default function Page() {
     </div>
     <div className="divider-wrap" data-alignment="default"><div style={{ height: "15px" }} className="divider"></div></div>
     <div className="wpb_text_column wpb_content_element ">
-    <p>Rekkehus med 2 stuer, 4 soverom, vaskerom og egen hageflekk i en god beliggenhet i Leangenbukta. <a href="https://leangenbukta.no/byvilla-3-rekkehus1-4/">Finn ut mer</a></p>
+    <p>Rekkehus med 2 stuer, 4 soverom, vaskerom og egen hageflekk i en god beliggenhet i Leangenbukta. <a href="https://leangenbukta.no/byvilla-3-rekkehus1-4/" data-demo-external="true" target="_blank" rel="noopener noreferrer">Finn ut mer</a></p>
     </div>
     <div className="divider-wrap" data-alignment="default"><div style={{ height: "15px" }} className="divider"></div></div>
     <div className="wpb_text_column wpb_content_element ">
     </div>
-    <a className="nectar-button medium regular extra-color-2 has-icon  regular-button" role="button" href="https://leangenbukta.no/boligvelger/rekkehus/" data-color-override="false" data-hover-color-override="false" data-hover-text-color-override="#fff"><span>Se ledige Rekkehus</span><i><span className="im-icon-wrap"><span><svg role="presentation" version="1.1" xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 32 32">
+    <a className="nectar-button medium regular extra-color-2 has-icon  regular-button" role="button" href="https://leangenbukta.no/boligvelger/rekkehus/" data-demo-external="true" target="_blank" rel="noopener noreferrer" data-color-override="false" data-hover-color-override="false" data-hover-text-color-override="#fff"><span>Se ledige Rekkehus</span><i><span className="im-icon-wrap"><span><svg role="presentation" version="1.1" xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 32 32">
     <path d="M28.328 20c-0.145 0-0.295-0.048-0.417-0.145-0.288-0.229-0.333-0.648-0.103-0.937l2.331-2.917-2.331-2.916c-0.231-0.287-0.185-0.708 0.103-0.937 0.291-0.231 0.708-0.184 0.937 0.104l2.665 3.333c0.195 0.244 0.195 0.589 0 0.833l-2.665 3.333c-0.131 0.164-0.324 0.249-0.52 0.249zM30.341 16.667h-29.333c-0.367 0-0.667-0.299-0.667-0.667s0.3-0.667 0.667-0.667h29.333c0.367 0 0.667 0.299 0.667 0.667s-0.3 0.667-0.667 0.667z"></path>
     </svg></span></span></i></a>
     <div className="wpb_text_column wpb_content_element ">
@@ -407,9 +415,9 @@ export default function Page() {
     <div className="inner">
     <div className="hover-wrap">
     <div className="hover-wrap-inner">
-    <a href="/demo/leangenbukta-nettside/Kart-over-leangenbukta-1-b06a38.png" className="pp center">
+    <Link href="/demo/leangenbukta-nettside/Kart-over-leangenbukta-1-b06a38.png" className="pp center">
     <Image className="img-with-animation skip-lazy" data-animation="fade-in" src="/demo/leangenbukta-nettside/Kart-over-leangenbukta-1-b06a38.png" alt="" width={1754} height={1240} />
-    </a>
+    </Link>
     </div>
     </div>
     </div>
@@ -457,11 +465,10 @@ export default function Page() {
     <p><span className="wpcf7-form-control-wrap" data-name="mobilePhone"><input size={40} maxLength={400} className="wpcf7-form-control wpcf7-text" aria-invalid="false" placeholder="Telefon" defaultValue="" type="text" name="mobilePhone" /></span>
     </p>
     </div>
-    <p><span className="wpcf7-form-control-wrap" data-name="samtykke"><span className="wpcf7-form-control wpcf7-checkbox wpcf7-validates-as-required"><span className="wpcf7-list-item first last"><label><input type="checkbox" name="samtykke[]" value="Jeg gir herved samtykke til \u00e5 bli kontaktet via e-post og telefon med relevant informasjon om dette prosjektet." /><span className="wpcf7-list-item-label">Jeg gir herved samtykke til å bli kontaktet via e-post og telefon med relevant informasjon om dette prosjektet.</span></label></span></span></span><a href="https://leangenbukta.no/personvern/" target="_blank">Se personvernpolicy</a>
+    <p><span className="wpcf7-form-control-wrap" data-name="samtykke"><span className="wpcf7-form-control wpcf7-checkbox wpcf7-validates-as-required"><span className="wpcf7-list-item first last"><label><input type="checkbox" name="samtykke[]" value="Jeg gir herved samtykke til \u00e5 bli kontaktet via e-post og telefon med relevant informasjon om dette prosjektet." /><span className="wpcf7-list-item-label">Jeg gir herved samtykke til å bli kontaktet via e-post og telefon med relevant informasjon om dette prosjektet.</span></label></span></span></span><Link href="/demo/leangenbukta-nettside/personvern" target="_blank">Se personvernpolicy</Link>
     </p>
     <div style={{ padding: "0" }}>
-    <p><input className="wpcf7-form-control wpcf7-submit has-spinner nectar-button medium accent-color" type="submit" value="Send" />
-    </p>
+    <div className="demo-form-notice" role="note"><p><strong>Skjemaet sendes på leangenbukta.no.</strong> Dette er en demokopi, og ingenting sendes herfra.</p><p><a className="nectar-button medium regular extra-color-2 regular-button" href="https://leangenbukta.no/#kontakt" data-demo-external="true" target="_blank" rel="noopener noreferrer"><span>Meld interesse på leangenbukta.no</span></a></p></div>
     </div><div className="wpcf7-response-output" aria-hidden="true"></div>
     </form>
     </div>
@@ -473,7 +480,7 @@ export default function Page() {
     <div className="inner">
     <div className="hover-wrap">
     <div className="hover-wrap-inner">
-    <a href="https://koteng.no/koteng-jenssen/" target="_self" className="">
+    <a href="https://koteng.no/koteng-jenssen/" data-demo-external="true" target="_blank" rel="noopener noreferrer" className="">
     <Image className="img-with-animation logo kotenglogo skip-lazy" data-animation="fade-in" src="/demo/leangenbukta-nettside/Koteng_Jenssen_Logo_Liggende_Mork_Svart-80da07.png" alt="" width={2927} height={398} />
     </a>
     </div>
@@ -490,7 +497,7 @@ export default function Page() {
     <div className="inner">
     <div className="hover-wrap">
     <div className="hover-wrap-inner">
-    <a href="http://www.obos.no" target="_blank" className="">
+    <a href="http://www.obos.no" data-demo-external="true" target="_blank" rel="noopener noreferrer" className="">
     <Image className="img-with-animation logo oboslogo skip-lazy" data-animation="fade-in" src="/demo/leangenbukta-nettside/obos_liggende-0b7b07.png" alt="" width={999} height={220} />
     </a>
     </div>

@@ -628,3 +628,121 @@ describe("Hosted control ownership", () => {
     expect(FakeControl.instances).toHaveLength(1);
   });
 });
+
+describe("chatflaten", () => {
+  it("sender surface=chat i både helsesjekk og oppstart, og sendText går til samme sesjon", async () => {
+    const { result } = await connect({ ...options(), dataset: "leangenbukta-lokal", surface: "chat" });
+    const calls = vi.mocked(fetch).mock.calls;
+    expect(calls.some(([url, init]) => String(url) === "/api/prototype/live?dataset=leangenbukta-lokal&surface=chat" && !init?.method)).toBe(true);
+    const start = posts("/api/prototype/live")[0];
+    expect(JSON.parse(String(start[1]?.body))).toMatchObject({ surface: "chat", dataset: "leangenbukta-lokal" });
+    act(() => { result.current.sendText("Hvordan er det å bo her?"); });
+    const context = posts("/api/prototype/live/context").map(([, init]) => JSON.parse(String(init?.body)));
+    expect(context).toContainEqual({ kind: "text", text: "Hvordan er det å bo her?" });
+    expect(result.current.messages).toContainEqual(expect.objectContaining({ role: "user", text: "Hvordan er det å bo her?" }));
+  });
+});
+
+describe("Chatflaten på den delte stemmen", () => {
+  beforeEach(() => {
+    FakeControl.instances = [];
+    vi.stubGlobal("WebSocket", FakeControl);
+    const localFetch = vi.mocked(fetch).getMockImplementation()!;
+    vi.mocked(fetch).mockImplementation(async (url, init) => {
+      if (!init?.method) return { ok: true, json: async () => ({ configured: true, protocol: "live", snapshotId: "project-snapshot", surface: "chat", transport: "websocket", warningMs: 1560000 }) } as Response;
+      return localFetch(url, init);
+    });
+  });
+
+  function chatOptions(extra: Partial<LiveOptions> = {}): LiveOptions {
+    return { ...options(), snapshotId: undefined, dataset: "nyhavna-lokal", surface: "chat", getTranscript: () => "tekst.token", continuedGreeting: "Fortsett.", ...extra };
+  }
+
+  async function chat(extra: Partial<LiveOptions> = {}, continuity: unknown = { status: "carried", turns: 2, trimmed: false }) {
+    const view = renderHook(() => useLive(chatOptions(extra)));
+    let started!: Promise<void>;
+    await act(async () => { started = view.result.current.start(); });
+    const control = FakeControl.instances.at(-1)!;
+    const peer = FakePeer.instances.at(-1)!;
+    await act(async () => { control.open(); });
+    await act(async () => {
+      control.emit({ type: "ready", sdp: "v=0\r\nhosted", sessionId: "hosted", warningMs: 1560000, continuity });
+      peer.channel.emit({ type: "session.started" });
+      await started;
+    });
+    return { ...view, control, peer };
+  }
+
+  it("sender tekstchattens token med start, viser serverens kontinuitet og fortsetter hilsenen", async () => {
+    const { control, peer, result } = await chat();
+    const healthUrl = new URL(String(vi.mocked(fetch).mock.calls.find(([, init]) => !init?.method)?.[0]), window.location.origin);
+    expect(healthUrl.searchParams.get("surface")).toBe("chat");
+    expect(control.frames()[0]).toMatchObject({ type: "start", dataset: "nyhavna-lokal", surface: "chat", transcript: "tekst.token", snapshotId: "project-snapshot" });
+    expect(result.current.continuity).toEqual({ status: "carried", turns: 2, trimmed: false });
+    expect(peer.channel.events()).toContainEqual(expect.objectContaining({ type: "session.instructions.append", content: "Fortsett." }));
+    // Ingen lokale HTTP-kall: verken POST, DELETE eller overføring.
+    expect(vi.mocked(fetch).mock.calls.every(([, init]) => !init?.method)).toBe(true);
+  });
+
+  it("melder stopp straks, og gir overføringen fra kontrollforbindelsen når serveren er ferdig", async () => {
+    const onSessionEnding = vi.fn();
+    const onSessionEnded = vi.fn();
+    const { control, result } = await chat({ onSessionEnding, onSessionEnded });
+    act(() => { result.current.stop(); });
+    expect(onSessionEnding).toHaveBeenCalledOnce();
+    expect(onSessionEnded).not.toHaveBeenCalled();
+    expect(control.frames().at(-1)).toEqual({ type: "stop" });
+    await act(async () => {
+      control.emit({ type: "handoff", status: "ready", transcript: "nytt.token", voiceTurns: 3, trimmed: false });
+      control.emit({ type: "ended", reason: "manual", message: "Samtalen er avsluttet." });
+    });
+    expect(onSessionEnded).toHaveBeenCalledWith(expect.objectContaining({ handoff: { status: "ready", transcript: "nytt.token", voiceTurns: 3, trimmed: false } }));
+    expect(onSessionEnded.mock.calls[0][0].sessionToken).toBeUndefined();
+    expect(vi.mocked(fetch).mock.calls.some(([url]) => String(url).includes("/handoff"))).toBe(false);
+  });
+
+  it("sier ærlig fra når forbindelsen lukkes uten overføring", async () => {
+    const onSessionEnded = vi.fn();
+    const { control } = await chat({ onSessionEnded }, { status: "rejected" });
+    await act(async () => { control.emit({ type: "ended", reason: "connection", message: "Forbindelsen ble brutt." }); });
+    expect(onSessionEnded).toHaveBeenCalledWith(expect.objectContaining({ handoff: null }));
+  });
+
+  it("gir ingen overføring for boardets delte stemme", async () => {
+    const onSessionEnded = vi.fn();
+    const view = renderHook(() => useLive({ ...options(), onSessionEnded }));
+    let started!: Promise<void>;
+    await act(async () => { started = view.result.current.start(); });
+    const control = FakeControl.instances.at(-1)!;
+    await act(async () => { control.open(); });
+    await act(async () => { control.emit({ type: "ready", sdp: "answer" }); FakePeer.instances.at(-1)!.channel.emit({ type: "session.started" }); await started; });
+    await act(async () => { control.emit({ type: "ended", reason: "manual", message: "Slutt." }); });
+    expect(onSessionEnded).not.toHaveBeenCalled();
+  });
+});
+
+describe("Chatflatens feil på den delte stemmen", () => {
+  beforeEach(() => {
+    FakeControl.instances = [];
+    vi.stubGlobal("WebSocket", FakeControl);
+    const localFetch = vi.mocked(fetch).getMockImplementation()!;
+    vi.mocked(fetch).mockImplementation(async (url, init) => {
+      if (!init?.method) return { ok: true, json: async () => ({ configured: true, protocol: "live", snapshotId: "p", transport: "websocket" }) } as Response;
+      return localFetch(url, init);
+    });
+  });
+  it("viser serverens beskjed for chatflaten, men ikke for boardet", async () => {
+    for (const [extra, expected] of [
+      [{ dataset: "nyhavna-lokal", surface: "chat" as const }, "Dagens samtaler i chatten er brukt opp."],
+      [{}, "Samtalen kunne ikke fortsette. Trykk start for å prøve igjen."],
+    ] as const) {
+      const view = renderHook(() => useLive({ ...options(), ...extra }));
+      let started!: Promise<void>;
+      await act(async () => { started = view.result.current.start(); });
+      const control = FakeControl.instances.at(-1)!;
+      await act(async () => { control.open(); control.emit({ type: "error", message: "Dagens samtaler i chatten er brukt opp." }); await started; });
+      expect(view.result.current.error).toBe(expected);
+      view.unmount();
+    }
+  });
+});

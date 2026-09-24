@@ -1,7 +1,7 @@
-import { notFound } from "next/navigation";
 import { loadDataset } from "@/lib/demo/local-board/dataset";
 import { buildLocalBoard, buildLocalProject } from "@/lib/demo/local-board/board";
 import { getLocalDemo } from "@/lib/demo/local-board/registry";
+import { requireLbDemoPageAccess } from "@/lib/demo/leangenbukta-site/page-access";
 import LokalBoardGate from "./lokal-board-gate";
 
 /**
@@ -26,10 +26,12 @@ import LokalBoardGate from "./lokal-board-gate";
  * cachet side ville vist gårsdagens innhold ved siden av en guide som svarer ut
  * av dagens.
  *
- * ## Hvorfor bare lokalt
+ * ## Hvorfor bak demotilgangen
  *
  * Datasettet ligger i repoet og kan inneholde innhold som ikke er kontrollert
- * ennå; ruta skal ikke være en publisert side.
+ * ennå; ruta skal ikke være en publisert side. Den vises derfor bare med samme
+ * tilgang som nettsidekopien (lib/demo/leangenbukta-site/access.ts): uten
+ * konfigurert kode bare på localhost, i et ukonfigurert produksjonsbygg aldri.
  */
 export const dynamic = "force-dynamic";
 
@@ -40,7 +42,7 @@ export const metadata = {
 };
 
 export default async function LeangenbuktaLokalPage() {
-  if (process.env.NODE_ENV === "production") notFound();
+  await requireLbDemoPageAccess();
 
   // Feilen fra lasteren peker på fil, felt og hva som manglet, og får boble opp
   // som den er. En demo som stille faller tilbake til noe annet er verdiløs.

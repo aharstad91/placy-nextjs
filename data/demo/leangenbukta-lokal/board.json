@@ -50,10 +50,10 @@
       "name": "Leangenbukta",
       "icon": "Building2",
       "color": "#91563e",
-      "lead": "Reguleringsplan, byggetrinn og fellesfasiliteter med tydelig skille mellom vedtatt, forventet og åpnet.",
-      "body": "Leangenbukta er regulert for minst 450 boliger, offentlig barnehage, uteoppholdsareal og offentlig turveg. Utbygger omtaler prosjektet som rundt 500 boliger. Opplysningene under skiller plangrunnlaget fra dagens byggestatus og forventede tidspunkt.",
-      "invitation": "Vil du høre om planen, et byggetrinn eller fellesfasilitetene?",
-      "placeInvitation": "Vil du vite mer om prosjektstatus eller et bestemt byggetrinn?"
+      "lead": "Se helheten i Leangenbukta og utforsk de fire aktive byggetrinnene med bilde, status og dagens tilgjengelighet.",
+      "body": "Leangenbukta utvikles som et nytt boligområde mellom Lade og Leangen. Parktunet 1, Saltakshus C, Knutepunktet og Saltakshus H vises som egne, klikkbare byggetrinn. Her skilles det mellom innflyttingsklart, pågående bygging og forventet ferdigstillelse; ledighetstallene er datostemplede øyeblikksbilder fra boligvelgeren.",
+      "invitation": "Vil du se helheten eller utforske et av de fire byggetrinnene?",
+      "placeInvitation": "Vil du sammenligne med et av de andre byggetrinnene?"
     },
     {
       "id": "hverdag",
@@ -132,13 +132,18 @@
     {
       "id": "intro-leangenbukta-prosjektet",
       "categoryId": "leangenbukta-prosjektet",
-      "text": "Leangenbukta er et boligprosjekt under utvikling. Reguleringsplanen, faktisk byggestatus, forventede tidspunkt og adgang til fellesfasiliteter er holdt som separate opplysninger.",
-      "placeIds": [],
-      "sourceIds": [
-        "trondheim-f303f1b2",
-        "leangenbukta-29db079d"
+      "text": "Leangenbukta utvikles trinnvis. De fire aktive byggetrinnene kan utforskes direkte i kartet: Parktunet 1 er planlagt mot 2028, byggingen av Saltakshus C er i gang, Knutepunktet har forventet innflytting i fjerde kvartal 2026, og Saltakshus H er innflyttingsklart. Ledighetstallene er kontrollert i boligvelgeren 21. september 2026 og kan endre seg.",
+      "placeIds": [
+        "parktunet-1",
+        "saltakshus-c",
+        "knutepunktet",
+        "saltakshus-h"
       ],
-      "checkedAt": "2026-09-18"
+      "sourceIds": [
+        "leangenbukta-3df06abf",
+        "leangenbukta-plyo-20260921"
+      ],
+      "checkedAt": "2026-09-21"
     },
     {
       "id": "intro-hverdag",

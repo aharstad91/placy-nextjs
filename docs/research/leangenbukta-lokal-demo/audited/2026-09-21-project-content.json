@@ -1,0 +1,19 @@
+{
+  "reportConfig": {},
+  "themes": [
+    {
+      "id": "leangenbukta-prosjektet",
+      "intro": "Se helheten i Leangenbukta og utforsk de fire aktive byggetrinnene med bilde, status og dagens tilgjengelighet.",
+      "editorial": {
+        "body": "Leangenbukta utvikles trinnvis. De fire aktive byggetrinnene kan utforskes direkte i kartet: Parktunet 1 er planlagt mot 2028, byggingen av Saltakshus C er i gang, Knutepunktet har forventet innflytting i fjerde kvartal 2026, og Saltakshus H er innflyttingsklart. Ledighetstallene er kontrollert i boligvelgeren 21. september 2026 og kan endre seg.",
+        "highlightPoiIds": [
+          "project:placy-demo_leangenbukta:parktunet-1",
+          "project:placy-demo_leangenbukta:saltakshus-c",
+          "project:placy-demo_leangenbukta:knutepunktet",
+          "project:placy-demo_leangenbukta:saltakshus-h"
+        ]
+      }
+    }
+  ],
+  "globalFaq": []
+}

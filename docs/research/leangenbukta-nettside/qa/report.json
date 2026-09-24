@@ -1,0 +1,2903 @@
+{
+  "base": "http://localhost:3107",
+  "checkedAt": "2026-09-23T21:21:01.940Z",
+  "pages": 48,
+  "results": [
+    {
+      "viewport": "desktop",
+      "id": "forside",
+      "kind": "home",
+      "status": 200,
+      "errors": [],
+      "sourceRequests": 0,
+      "title": "Leangenbukta",
+      "overflowX": 0,
+      "brokenImages": [],
+      "badLinks": [],
+      "linkCount": 36,
+      "placyField": {
+        "top": 1421,
+        "variant": "demo-placy-field--intro",
+        "afterFirstRow": false
+      },
+      "pageMarker": "forside",
+      "chatButton": {
+        "top": 781,
+        "bottom": 824,
+        "left": 1227.15625,
+        "right": 1420
+      },
+      "toTop": {
+        "top": 901.4500122070312,
+        "bottom": 930.4500122070312,
+        "left": 1394,
+        "right": 1423
+      },
+      "forms": 0
+    },
+    {
+      "viewport": "desktop",
+      "id": "2roms-og3roms",
+      "kind": "info",
+      "status": 200,
+      "errors": [],
+      "sourceRequests": 0,
+      "title": "2- og 3-roms leiligheter i Leangenbukta – Leangenbukta",
+      "overflowX": 0,
+      "brokenImages": [],
+      "badLinks": [],
+      "linkCount": 24,
+      "placyField": {
+        "top": 3921,
+        "variant": "demo-placy-field--article",
+        "afterFirstRow": false
+      },
+      "pageMarker": "2roms-og3roms",
+      "chatButton": {
+        "top": 781,
+        "bottom": 824,
+        "left": 1227.15625,
+        "right": 1420
+      },
+      "toTop": {
+        "top": 901.4500122070312,
+        "bottom": 930.4500122070312,
+        "left": 1394,
+        "right": 1423
+      },
+      "forms": 0
+    },
+    {
+      "viewport": "desktop",
+      "id": "aktuelt",
+      "kind": "archive",
+      "status": 200,
+      "errors": [],
+      "sourceRequests": 0,
+      "title": "Aktuelt – Leangenbukta",
+      "overflowX": 0,
+      "brokenImages": [],
+      "badLinks": [],
+      "linkCount": 66,
+      "placyField": null,
+      "pageMarker": "aktuelt",
+      "chatButton": {
+        "top": 781,
+        "bottom": 824,
+        "left": 1227.15625,
+        "right": 1420
+      },
+      "toTop": {
+        "top": 901.4500122070312,
+        "bottom": 930.4500122070312,
+        "left": 1394,
+        "right": 1423
+      },
+      "forms": 0
+    },
+    {
+      "viewport": "desktop",
+      "id": "apenhetsloven",
+      "kind": "info",
+      "status": 200,
+      "errors": [],
+      "sourceRequests": 0,
+      "title": "Åpenhetsloven – Leangenbukta",
+      "overflowX": 0,
+      "brokenImages": [],
+      "badLinks": [],
+      "linkCount": 13,
+      "placyField": null,
+      "pageMarker": "apenhetsloven",
+      "chatButton": {
+        "top": 781,
+        "bottom": 824,
+        "left": 1227.15625,
+        "right": 1420
+      },
+      "toTop": {
+        "top": 901.4500122070312,
+        "bottom": 930.4500122070312,
+        "left": 1394,
+        "right": 1423
+      },
+      "forms": 0
+    },
+    {
+      "viewport": "desktop",
+      "id": "beliggenhet",
+      "kind": "location",
+      "status": 200,
+      "errors": [],
+      "sourceRequests": 0,
+      "title": "Beliggenhet – Leangenbukta",
+      "overflowX": 0,
+      "brokenImages": [],
+      "badLinks": [],
+      "linkCount": 17,
+      "placyField": {
+        "top": 331,
+        "variant": "demo-placy-field--location",
+        "afterFirstRow": true
+      },
+      "pageMarker": "beliggenhet",
+      "chatButton": {
+        "top": 781,
+        "bottom": 824,
+        "left": 1227.15625,
+        "right": 1420
+      },
+      "toTop": {
+        "top": 901.4500122070312,
+        "bottom": 930.4500122070312,
+        "left": 1394,
+        "right": 1423
+      },
+      "forms": 0
+    },
+    {
+      "viewport": "desktop",
+      "id": "bli-obos-medlem",
+      "kind": "info",
+      "status": 200,
+      "errors": [],
+      "sourceRequests": 0,
+      "title": "Bli OBOS-medlem – Leangenbukta",
+      "overflowX": 0,
+      "brokenImages": [],
+      "badLinks": [],
+      "linkCount": 13,
+      "placyField": null,
+      "pageMarker": "bli-obos-medlem",
+      "chatButton": {
+        "top": 781,
+        "bottom": 824,
+        "left": 1227.15625,
+        "right": 1420
+      },
+      "toTop": {
+        "top": 901.4500122070312,
+        "bottom": 930.4500122070312,
+        "left": 1394,
+        "right": 1423
+      },
+      "forms": 0
+    },
+    {
+      "viewport": "desktop",
+      "id": "byvilla-1-og-2",
+      "kind": "building",
+      "status": 200,
+      "errors": [],
+      "sourceRequests": 0,
+      "title": "24 nye leiligheter for salg i Byvilla 1 og 2 – Leangenbukta",
+      "overflowX": 0,
+      "brokenImages": [],
+      "badLinks": [],
+      "linkCount": 31,
+      "placyField": {
+        "top": 1000,
+        "variant": "demo-placy-field--building",
+        "afterFirstRow": true
+      },
+      "pageMarker": "byvilla-1-og-2",
+      "chatButton": {
+        "top": 781,
+        "bottom": 824,
+        "left": 1227.15625,
+        "right": 1420
+      },
+      "toTop": {
+        "top": 901.4500122070312,
+        "bottom": 930.4500122070312,
+        "left": 1394,
+        "right": 1423
+      },
+      "forms": 0
+    },
+    {
+      "viewport": "desktop",
+      "id": "elbil-elsykkeldeling",
+      "kind": "project",
+      "status": 200,
+      "errors": [],
+      "sourceRequests": 0,
+      "title": "Forminsk utgifter med El-bildeling – Leangenbukta",
+      "overflowX": 0,
+      "brokenImages": [],
+      "badLinks": [],
+      "linkCount": 12,
+      "placyField": {
+        "top": 904,
+        "variant": "demo-placy-field--article",
+        "afterFirstRow": false
+      },
+      "pageMarker": "elbil-elsykkeldeling",
+      "chatButton": {
+        "top": 781,
+        "bottom": 824,
+        "left": 1227.15625,
+        "right": 1420
+      },
+      "toTop": {
+        "top": 901.4500122070312,
+        "bottom": 930.4500122070312,
+        "left": 1394,
+        "right": 1423
+      },
+      "forms": 0
+    },
+    {
+      "viewport": "desktop",
+      "id": "fasiliteter-som-gjor-hverdagen-enklere",
+      "kind": "article",
+      "status": 200,
+      "errors": [],
+      "sourceRequests": 0,
+      "title": "Fasiliteter som gjør hverdagen enklere! – Leangenbukta",
+      "overflowX": 0,
+      "brokenImages": [],
+      "badLinks": [],
+      "linkCount": 28,
+      "placyField": {
+        "top": 1813,
+        "variant": "demo-placy-field--article",
+        "afterFirstRow": true
+      },
+      "pageMarker": "fasiliteter-som-gjor-hverdagen-enklere",
+      "chatButton": {
+        "top": 781,
+        "bottom": 824,
+        "left": 1227.15625,
+        "right": 1420
+      },
+      "toTop": {
+        "top": 901.4500122070312,
+        "bottom": 930.4500122070312,
+        "left": 1394,
+        "right": 1423
+      },
+      "forms": 0
+    },
+    {
+      "viewport": "desktop",
+      "id": "fordeler-a-bo-forste-etasje",
+      "kind": "info",
+      "status": 200,
+      "errors": [],
+      "sourceRequests": 0,
+      "title": "Derfor bør du vurdere første etasje – Leangenbukta",
+      "overflowX": 0,
+      "brokenImages": [],
+      "badLinks": [],
+      "linkCount": 11,
+      "placyField": null,
+      "pageMarker": "fordeler-a-bo-forste-etasje",
+      "chatButton": {
+        "top": 781,
+        "bottom": 824,
+        "left": 1227.15625,
+        "right": 1420
+      },
+      "toTop": {
+        "top": 901.4500122070312,
+        "bottom": 930.4500122070312,
+        "left": 1394,
+        "right": 1423
+      },
+      "forms": 0
+    },
+    {
+      "viewport": "desktop",
+      "id": "galleri",
+      "kind": "project",
+      "status": 200,
+      "errors": [],
+      "sourceRequests": 0,
+      "title": "Galleri – Leangenbukta",
+      "overflowX": 0,
+      "brokenImages": [],
+      "badLinks": [],
+      "linkCount": 83,
+      "placyField": null,
+      "pageMarker": "galleri",
+      "chatButton": {
+        "top": 781,
+        "bottom": 824,
+        "left": 1227.15625,
+        "right": 1420
+      },
+      "toTop": {
+        "top": 901.4500122070312,
+        "bottom": 930.4500122070312,
+        "left": 1394,
+        "right": 1423
+      },
+      "forms": 0
+    },
+    {
+      "viewport": "desktop",
+      "id": "her-trenger-du-ikke-eie-bil",
+      "kind": "article",
+      "status": 200,
+      "errors": [],
+      "sourceRequests": 0,
+      "title": "Her trenger du ikke eie bil! – Leangenbukta",
+      "overflowX": 0,
+      "brokenImages": [],
+      "badLinks": [],
+      "linkCount": 29,
+      "placyField": {
+        "top": 1364,
+        "variant": "demo-placy-field--article",
+        "afterFirstRow": true
+      },
+      "pageMarker": "her-trenger-du-ikke-eie-bil",
+      "chatButton": {
+        "top": 781,
+        "bottom": 824,
+        "left": 1227.15625,
+        "right": 1420
+      },
+      "toTop": {
+        "top": 901.4500122070312,
+        "bottom": 930.4500122070312,
+        "left": 1394,
+        "right": 1423
+      },
+      "forms": 0
+    },
+    {
+      "viewport": "desktop",
+      "id": "hvordankjopebolig-2",
+      "kind": "info",
+      "status": 200,
+      "errors": [],
+      "sourceRequests": 0,
+      "title": "Hvordan kjøpe bolig i Leangenbukta – Leangenbukta",
+      "overflowX": 0,
+      "brokenImages": [],
+      "badLinks": [],
+      "linkCount": 12,
+      "placyField": null,
+      "pageMarker": "hvordankjopebolig-2",
+      "chatButton": {
+        "top": 781,
+        "bottom": 824,
+        "left": 1227.15625,
+        "right": 1420
+      },
+      "toTop": {
+        "top": 901.4500122070312,
+        "bottom": 930.4500122070312,
+        "left": 1394,
+        "right": 1423
+      },
+      "forms": 0
+    },
+    {
+      "viewport": "desktop",
+      "id": "hvordankjopebolig-3",
+      "kind": "info",
+      "status": 200,
+      "errors": [],
+      "sourceRequests": 0,
+      "title": "Hvordan kjøpe bolig forkjøpsrett bygg D – Leangenbukta",
+      "overflowX": 0,
+      "brokenImages": [],
+      "badLinks": [],
+      "linkCount": 13,
+      "placyField": null,
+      "pageMarker": "hvordankjopebolig-3",
+      "chatButton": {
+        "top": 781,
+        "bottom": 824,
+        "left": 1227.15625,
+        "right": 1420
+      },
+      "toTop": {
+        "top": 901.4500122070312,
+        "bottom": 930.4500122070312,
+        "left": 1394,
+        "right": 1423
+      },
+      "forms": 0
+    },
+    {
+      "viewport": "desktop",
+      "id": "hvordankjopebolig-byggc",
+      "kind": "info",
+      "status": 200,
+      "errors": [],
+      "sourceRequests": 0,
+      "title": "Hvordan kjøpe bolig bygg C-åpent salg – Leangenbukta",
+      "overflowX": 0,
+      "brokenImages": [],
+      "badLinks": [],
+      "linkCount": 12,
+      "placyField": null,
+      "pageMarker": "hvordankjopebolig-byggc",
+      "chatButton": {
+        "top": 781,
+        "bottom": 824,
+        "left": 1227.15625,
+        "right": 1420
+      },
+      "toTop": {
+        "top": 901.4500122070312,
+        "bottom": 930.4500122070312,
+        "left": 1394,
+        "right": 1423
+      },
+      "forms": 0
+    },
+    {
+      "viewport": "desktop",
+      "id": "hvordankjopebolig",
+      "kind": "info",
+      "status": 200,
+      "errors": [],
+      "sourceRequests": 0,
+      "title": "Hvordan kjøpe bolig forkjøpsrett bygg c – Leangenbukta",
+      "overflowX": 0,
+      "brokenImages": [],
+      "badLinks": [],
+      "linkCount": 13,
+      "placyField": null,
+      "pageMarker": "hvordankjopebolig",
+      "chatButton": {
+        "top": 781,
+        "bottom": 824,
+        "left": 1227.15625,
+        "right": 1420
+      },
+      "toTop": {
+        "top": 901.4500122070312,
+        "bottom": 930.4500122070312,
+        "left": 1394,
+        "right": 1423
+      },
+      "forms": 0
+    },
+    {
+      "viewport": "desktop",
+      "id": "innflyttingsklare-leiligheter",
+      "kind": "project",
+      "status": 200,
+      "errors": [],
+      "sourceRequests": 0,
+      "title": "Leiligheter klare for innflytting nå, og i løpet av året – Leangenbukta",
+      "overflowX": 0,
+      "brokenImages": [],
+      "badLinks": [],
+      "linkCount": 30,
+      "placyField": {
+        "top": 3392,
+        "variant": "demo-placy-field--article",
+        "afterFirstRow": false
+      },
+      "pageMarker": "innflyttingsklare-leiligheter",
+      "chatButton": {
+        "top": 781,
+        "bottom": 824,
+        "left": 1227.15625,
+        "right": 1420
+      },
+      "toTop": {
+        "top": 901.4500122070312,
+        "bottom": 930.4500122070312,
+        "left": 1394,
+        "right": 1423
+      },
+      "forms": 0
+    },
+    {
+      "viewport": "desktop",
+      "id": "knutepunktet",
+      "kind": "building",
+      "status": 200,
+      "errors": [],
+      "sourceRequests": 0,
+      "title": "Knutepunktet – Leangenbukta",
+      "overflowX": 0,
+      "brokenImages": [],
+      "badLinks": [],
+      "linkCount": 19,
+      "placyField": {
+        "top": 426,
+        "variant": "demo-placy-field--building",
+        "afterFirstRow": true
+      },
+      "pageMarker": "knutepunktet",
+      "chatButton": {
+        "top": 781,
+        "bottom": 824,
+        "left": 1227.15625,
+        "right": 1420
+      },
+      "toTop": {
+        "top": 901.4500122070312,
+        "bottom": 930.4500122070312,
+        "left": 1394,
+        "right": 1423
+      },
+      "forms": 0
+    },
+    {
+      "viewport": "desktop",
+      "id": "kort-vei-til-alt",
+      "kind": "article",
+      "status": 200,
+      "errors": [],
+      "sourceRequests": 0,
+      "title": "Kort vei til alt i Leangenbukta – Leangenbukta",
+      "overflowX": 0,
+      "brokenImages": [],
+      "badLinks": [],
+      "linkCount": 29,
+      "placyField": {
+        "top": 1623,
+        "variant": "demo-placy-field--article",
+        "afterFirstRow": false
+      },
+      "pageMarker": "kort-vei-til-alt",
+      "chatButton": {
+        "top": 781,
+        "bottom": 824,
+        "left": 1227.15625,
+        "right": 1420
+      },
+      "toTop": {
+        "top": 901.4500122070312,
+        "bottom": 930.4500122070312,
+        "left": 1394,
+        "right": 1423
+      },
+      "forms": 0
+    },
+    {
+      "viewport": "desktop",
+      "id": "kundeportal",
+      "kind": "info",
+      "status": 200,
+      "errors": [],
+      "sourceRequests": 0,
+      "title": "Kundeportal – Leangenbukta",
+      "overflowX": 0,
+      "brokenImages": [],
+      "badLinks": [],
+      "linkCount": 14,
+      "placyField": null,
+      "pageMarker": "kundeportal",
+      "chatButton": {
+        "top": 781,
+        "bottom": 824,
+        "left": 1227.15625,
+        "right": 1420
+      },
+      "toTop": {
+        "top": 901.4500122070312,
+        "bottom": 930.4500122070312,
+        "left": 1394,
+        "right": 1423
+      },
+      "forms": 0
+    },
+    {
+      "viewport": "desktop",
+      "id": "nytt-salgstrinn-bygg-l",
+      "kind": "building",
+      "status": 200,
+      "errors": [],
+      "sourceRequests": 0,
+      "title": "Saltakshus L- sentralt i Leangenbukta – Leangenbukta",
+      "overflowX": 0,
+      "brokenImages": [],
+      "badLinks": [],
+      "linkCount": 29,
+      "placyField": {
+        "top": 1248,
+        "variant": "demo-placy-field--building",
+        "afterFirstRow": true
+      },
+      "pageMarker": "nytt-salgstrinn-bygg-l",
+      "chatButton": {
+        "top": 781,
+        "bottom": 824,
+        "left": 1227.15625,
+        "right": 1420
+      },
+      "toTop": {
+        "top": 901.4500122070312,
+        "bottom": 930.4500122070312,
+        "left": 1394,
+        "right": 1423
+      },
+      "forms": 0
+    },
+    {
+      "viewport": "desktop",
+      "id": "om-prosjektet",
+      "kind": "project",
+      "status": 200,
+      "errors": [],
+      "sourceRequests": 0,
+      "title": "Om prosjektet – Leangenbukta",
+      "overflowX": 0,
+      "brokenImages": [],
+      "badLinks": [],
+      "linkCount": 19,
+      "placyField": {
+        "top": 4446,
+        "variant": "demo-placy-field--article",
+        "afterFirstRow": false
+      },
+      "pageMarker": "om-prosjektet",
+      "chatButton": {
+        "top": 781,
+        "bottom": 824,
+        "left": 1227.15625,
+        "right": 1420
+      },
+      "toTop": {
+        "top": 901.4500122070312,
+        "bottom": 930.4500122070312,
+        "left": 1394,
+        "right": 1423
+      },
+      "forms": 0
+    },
+    {
+      "viewport": "desktop",
+      "id": "parktunet1",
+      "kind": "building",
+      "status": 200,
+      "errors": [],
+      "sourceRequests": 0,
+      "title": "Parktunet 1- bygg D – Leangenbukta",
+      "overflowX": 0,
+      "brokenImages": [],
+      "badLinks": [],
+      "linkCount": 19,
+      "placyField": {
+        "top": 410,
+        "variant": "demo-placy-field--building",
+        "afterFirstRow": true
+      },
+      "pageMarker": "parktunet1",
+      "chatButton": {
+        "top": 781,
+        "bottom": 824,
+        "left": 1227.15625,
+        "right": 1420
+      },
+      "toTop": {
+        "top": 901.4500122070312,
+        "bottom": 930.4500122070312,
+        "left": 1394,
+        "right": 1423
+      },
+      "forms": 0
+    },
+    {
+      "viewport": "desktop",
+      "id": "personvern",
+      "kind": "info",
+      "status": 200,
+      "errors": [],
+      "sourceRequests": 0,
+      "title": "Personvern policy – Leangenbukta",
+      "overflowX": 0,
+      "brokenImages": [],
+      "badLinks": [],
+      "linkCount": 12,
+      "placyField": null,
+      "pageMarker": "personvern",
+      "chatButton": {
+        "top": 781,
+        "bottom": 824,
+        "left": 1227.15625,
+        "right": 1420
+      },
+      "toTop": {
+        "top": 901.4500122070312,
+        "bottom": 930.4500122070312,
+        "left": 1394,
+        "right": 1423
+      },
+      "forms": 0
+    },
+    {
+      "viewport": "desktop",
+      "id": "portfolio__sjoparken",
+      "kind": "info",
+      "status": 200,
+      "errors": [],
+      "sourceRequests": 0,
+      "title": "Sjøparken – Leangenbukta",
+      "overflowX": 0,
+      "brokenImages": [],
+      "badLinks": [],
+      "linkCount": 5,
+      "placyField": null,
+      "pageMarker": "portfolio__sjoparken",
+      "chatButton": {
+        "top": 781,
+        "bottom": 824,
+        "left": 1227.15625,
+        "right": 1420
+      },
+      "toTop": {
+        "top": 901.4500122070312,
+        "bottom": 930.4500122070312,
+        "left": 1394,
+        "right": 1423
+      },
+      "forms": 0
+    },
+    {
+      "viewport": "desktop",
+      "id": "project-type__premium-kvaliteter",
+      "kind": "archive",
+      "status": 200,
+      "errors": [],
+      "sourceRequests": 0,
+      "title": "Premium Kvaliteter – Leangenbukta",
+      "overflowX": 0,
+      "brokenImages": [],
+      "badLinks": [],
+      "linkCount": 7,
+      "placyField": null,
+      "pageMarker": "project-type__premium-kvaliteter",
+      "chatButton": {
+        "top": 781,
+        "bottom": 824,
+        "left": 1227.15625,
+        "right": 1420
+      },
+      "toTop": {
+        "top": 901.4500122070312,
+        "bottom": 930.4500122070312,
+        "left": 1394,
+        "right": 1423
+      },
+      "forms": 0
+    },
+    {
+      "viewport": "desktop",
+      "id": "rekkehus-for-barnefamilier-i-trondheim",
+      "kind": "info",
+      "status": 200,
+      "errors": [],
+      "sourceRequests": 0,
+      "title": "Leangenbukta – et perfekt hjem for barnefamilier i Trondheim – Leangenbukta",
+      "overflowX": 0,
+      "brokenImages": [],
+      "badLinks": [],
+      "linkCount": 13,
+      "placyField": {
+        "top": 1814,
+        "variant": "demo-placy-field--article",
+        "afterFirstRow": false
+      },
+      "pageMarker": "rekkehus-for-barnefamilier-i-trondheim",
+      "chatButton": {
+        "top": 781,
+        "bottom": 824,
+        "left": 1227.15625,
+        "right": 1420
+      },
+      "toTop": {
+        "top": 901.4500122070312,
+        "bottom": 930.4500122070312,
+        "left": 1394,
+        "right": 1423
+      },
+      "forms": 0
+    },
+    {
+      "viewport": "desktop",
+      "id": "rekkehus19-27",
+      "kind": "building",
+      "status": 200,
+      "errors": [],
+      "sourceRequests": 0,
+      "title": "De siste rekkehusene er ute for salg – Leangenbukta",
+      "overflowX": 0,
+      "brokenImages": [],
+      "badLinks": [],
+      "linkCount": 32,
+      "placyField": {
+        "top": 975,
+        "variant": "demo-placy-field--building",
+        "afterFirstRow": true
+      },
+      "pageMarker": "rekkehus19-27",
+      "chatButton": {
+        "top": 781,
+        "bottom": 824,
+        "left": 1227.15625,
+        "right": 1420
+      },
+      "toTop": {
+        "top": 901.4500122070312,
+        "bottom": 930.4500122070312,
+        "left": 1394,
+        "right": 1423
+      },
+      "forms": 0
+    },
+    {
+      "viewport": "desktop",
+      "id": "retningslinjer-for-informasjonskapsler",
+      "kind": "info",
+      "status": 200,
+      "errors": [],
+      "sourceRequests": 0,
+      "title": "Retningslinjer for informasjonskapsler – Leangenbukta",
+      "overflowX": 0,
+      "brokenImages": [],
+      "badLinks": [],
+      "linkCount": 11,
+      "placyField": null,
+      "pageMarker": "retningslinjer-for-informasjonskapsler",
+      "chatButton": {
+        "top": 781,
+        "bottom": 824,
+        "left": 1227.15625,
+        "right": 1420
+      },
+      "toTop": {
+        "top": 901.4500122070312,
+        "bottom": 930.4500122070312,
+        "left": 1394,
+        "right": 1423
+      },
+      "forms": 0
+    },
+    {
+      "viewport": "desktop",
+      "id": "salgsmateriell",
+      "kind": "info",
+      "status": 200,
+      "errors": [],
+      "sourceRequests": 0,
+      "title": "Salgsmateriell – Leangenbukta",
+      "overflowX": 0,
+      "brokenImages": [],
+      "badLinks": [],
+      "linkCount": 14,
+      "placyField": null,
+      "pageMarker": "salgsmateriell",
+      "chatButton": {
+        "top": 781,
+        "bottom": 824,
+        "left": 1227.15625,
+        "right": 1420
+      },
+      "toTop": {
+        "top": 901.4500122070312,
+        "bottom": 930.4500122070312,
+        "left": 1394,
+        "right": 1423
+      },
+      "forms": 0
+    },
+    {
+      "viewport": "desktop",
+      "id": "salgsmateriell__kjopebekreftelser",
+      "kind": "info",
+      "status": 200,
+      "errors": [],
+      "sourceRequests": 0,
+      "title": "Kjøpebekreftelser – Leangenbukta",
+      "overflowX": 0,
+      "brokenImages": [],
+      "badLinks": [],
+      "linkCount": 15,
+      "placyField": null,
+      "pageMarker": "salgsmateriell__kjopebekreftelser",
+      "chatButton": {
+        "top": 781,
+        "bottom": 824,
+        "left": 1227.15625,
+        "right": 1420
+      },
+      "toTop": {
+        "top": 901.4500122070312,
+        "bottom": 930.4500122070312,
+        "left": 1394,
+        "right": 1423
+      },
+      "forms": 0
+    },
+    {
+      "viewport": "desktop",
+      "id": "salgsmateriell__prislister",
+      "kind": "info",
+      "status": 200,
+      "errors": [],
+      "sourceRequests": 0,
+      "title": "Prislister – Leangenbukta",
+      "overflowX": 0,
+      "brokenImages": [],
+      "badLinks": [],
+      "linkCount": 15,
+      "placyField": null,
+      "pageMarker": "salgsmateriell__prislister",
+      "chatButton": {
+        "top": 781,
+        "bottom": 824,
+        "left": 1227.15625,
+        "right": 1420
+      },
+      "toTop": {
+        "top": 901.4500122070312,
+        "bottom": 930.4500122070312,
+        "left": 1394,
+        "right": 1423
+      },
+      "forms": 0
+    },
+    {
+      "viewport": "desktop",
+      "id": "salgsmateriell__prospekter",
+      "kind": "info",
+      "status": 200,
+      "errors": [],
+      "sourceRequests": 0,
+      "title": "Prospekter – Leangenbukta",
+      "overflowX": 0,
+      "brokenImages": [],
+      "badLinks": [],
+      "linkCount": 17,
+      "placyField": null,
+      "pageMarker": "salgsmateriell__prospekter",
+      "chatButton": {
+        "top": 781,
+        "bottom": 824,
+        "left": 1227.15625,
+        "right": 1420
+      },
+      "toTop": {
+        "top": 901.4500122070312,
+        "bottom": 930.4500122070312,
+        "left": 1394,
+        "right": 1423
+      },
+      "forms": 0
+    },
+    {
+      "viewport": "desktop",
+      "id": "saltakshus-i",
+      "kind": "building",
+      "status": 200,
+      "errors": [],
+      "sourceRequests": 0,
+      "title": "36 nye leiligheter for salg i Saltakshus I – Leangenbukta",
+      "overflowX": 0,
+      "brokenImages": [],
+      "badLinks": [],
+      "linkCount": 34,
+      "placyField": {
+        "top": 1186,
+        "variant": "demo-placy-field--building",
+        "afterFirstRow": true
+      },
+      "pageMarker": "saltakshus-i",
+      "chatButton": {
+        "top": 781,
+        "bottom": 824,
+        "left": 1227.15625,
+        "right": 1420
+      },
+      "toTop": {
+        "top": 901.4500122070312,
+        "bottom": 930.4500122070312,
+        "left": 1394,
+        "right": 1423
+      },
+      "forms": 0
+    },
+    {
+      "viewport": "desktop",
+      "id": "saltakshus-j",
+      "kind": "building",
+      "status": 200,
+      "errors": [],
+      "sourceRequests": 0,
+      "title": "39 nye leiligheter for salg i Saltakshus J – Leangenbukta",
+      "overflowX": 0,
+      "brokenImages": [],
+      "badLinks": [],
+      "linkCount": 32,
+      "placyField": {
+        "top": 1074,
+        "variant": "demo-placy-field--building",
+        "afterFirstRow": true
+      },
+      "pageMarker": "saltakshus-j",
+      "chatButton": {
+        "top": 781,
+        "bottom": 824,
+        "left": 1227.15625,
+        "right": 1420
+      },
+      "toTop": {
+        "top": 901.4500122070312,
+        "bottom": 930.4500122070312,
+        "left": 1394,
+        "right": 1423
+      },
+      "forms": 0
+    },
+    {
+      "viewport": "desktop",
+      "id": "saltakshusc",
+      "kind": "building",
+      "status": 200,
+      "errors": [],
+      "sourceRequests": 0,
+      "title": "Bygg C – Leangenbukta",
+      "overflowX": 0,
+      "brokenImages": [],
+      "badLinks": [],
+      "linkCount": 16,
+      "placyField": {
+        "top": 901,
+        "variant": "demo-placy-field--building",
+        "afterFirstRow": true
+      },
+      "pageMarker": "saltakshusc",
+      "chatButton": {
+        "top": 781,
+        "bottom": 824,
+        "left": 1227.15625,
+        "right": 1420
+      },
+      "toTop": {
+        "top": 901.4500122070312,
+        "bottom": 930.4500122070312,
+        "left": 1394,
+        "right": 1423
+      },
+      "forms": 0
+    },
+    {
+      "viewport": "desktop",
+      "id": "saltakshush",
+      "kind": "building",
+      "status": 200,
+      "errors": [],
+      "sourceRequests": 0,
+      "title": "Saltakshus H – Leangenbukta",
+      "overflowX": 0,
+      "brokenImages": [],
+      "badLinks": [],
+      "linkCount": 31,
+      "placyField": {
+        "top": 1316,
+        "variant": "demo-placy-field--building",
+        "afterFirstRow": true
+      },
+      "pageMarker": "saltakshush",
+      "chatButton": {
+        "top": 781,
+        "bottom": 824,
+        "left": 1227.15625,
+        "right": 1420
+      },
+      "toTop": {
+        "top": 901.4500122070312,
+        "bottom": 930.4500122070312,
+        "left": 1394,
+        "right": 1423
+      },
+      "forms": 0
+    },
+    {
+      "viewport": "desktop",
+      "id": "saltakshusk",
+      "kind": "building",
+      "status": 200,
+      "errors": [],
+      "sourceRequests": 0,
+      "title": "Første støp på tomta! – Leangenbukta",
+      "overflowX": 0,
+      "brokenImages": [],
+      "badLinks": [],
+      "linkCount": 29,
+      "placyField": {
+        "top": 736,
+        "variant": "demo-placy-field--building",
+        "afterFirstRow": true
+      },
+      "pageMarker": "saltakshusk",
+      "chatButton": {
+        "top": 781,
+        "bottom": 824,
+        "left": 1227.15625,
+        "right": 1420
+      },
+      "toTop": {
+        "top": 901.4500122070312,
+        "bottom": 930.4500122070312,
+        "left": 1394,
+        "right": 1423
+      },
+      "forms": 0
+    },
+    {
+      "viewport": "desktop",
+      "id": "stort-til-mindre-2",
+      "kind": "info",
+      "status": 200,
+      "errors": [],
+      "sourceRequests": 0,
+      "title": "Flytte fra stort til mindre? Leangenbukta har løsningene for deg – Leangenbukta",
+      "overflowX": 0,
+      "brokenImages": [],
+      "badLinks": [],
+      "linkCount": 13,
+      "placyField": {
+        "top": 870,
+        "variant": "demo-placy-field--article",
+        "afterFirstRow": false
+      },
+      "pageMarker": "stort-til-mindre-2",
+      "chatButton": {
+        "top": 781,
+        "bottom": 824,
+        "left": 1227.15625,
+        "right": 1420
+      },
+      "toTop": {
+        "top": 901.4500122070312,
+        "bottom": 930.4500122070312,
+        "left": 1394,
+        "right": 1423
+      },
+      "forms": 0
+    },
+    {
+      "viewport": "desktop",
+      "id": "stort-til-mindre_byggc",
+      "kind": "info",
+      "status": 200,
+      "errors": [],
+      "sourceRequests": 0,
+      "title": "Flytte fra stort til mindre? Bygg C – Leangenbukta",
+      "overflowX": 0,
+      "brokenImages": [],
+      "badLinks": [],
+      "linkCount": 13,
+      "placyField": {
+        "top": 1047,
+        "variant": "demo-placy-field--article",
+        "afterFirstRow": false
+      },
+      "pageMarker": "stort-til-mindre_byggc",
+      "chatButton": {
+        "top": 781,
+        "bottom": 824,
+        "left": 1227.15625,
+        "right": 1420
+      },
+      "toTop": {
+        "top": 901.4500122070312,
+        "bottom": 930.4500122070312,
+        "left": 1394,
+        "right": 1423
+      },
+      "forms": 0
+    },
+    {
+      "viewport": "desktop",
+      "id": "stort-til-mindre_parktunet",
+      "kind": "info",
+      "status": 200,
+      "errors": [],
+      "sourceRequests": 0,
+      "title": "Flytte fra stort til mindre? Parktunet – Leangenbukta",
+      "overflowX": 0,
+      "brokenImages": [],
+      "badLinks": [],
+      "linkCount": 14,
+      "placyField": {
+        "top": 1099,
+        "variant": "demo-placy-field--article",
+        "afterFirstRow": false
+      },
+      "pageMarker": "stort-til-mindre_parktunet",
+      "chatButton": {
+        "top": 781,
+        "bottom": 824,
+        "left": 1227.15625,
+        "right": 1420
+      },
+      "toTop": {
+        "top": 901.4500122070312,
+        "bottom": 930.4500122070312,
+        "left": 1394,
+        "right": 1423
+      },
+      "forms": 0
+    },
+    {
+      "viewport": "desktop",
+      "id": "test-framside",
+      "kind": "info",
+      "status": 200,
+      "errors": [],
+      "sourceRequests": 0,
+      "title": "Leangbukta ny framside – Leangenbukta",
+      "overflowX": 0,
+      "brokenImages": [],
+      "badLinks": [],
+      "linkCount": 32,
+      "placyField": null,
+      "pageMarker": "test-framside",
+      "chatButton": {
+        "top": 781,
+        "bottom": 824,
+        "left": 1227.15625,
+        "right": 1420
+      },
+      "toTop": {
+        "top": 901.4500122070312,
+        "bottom": 930.4500122070312,
+        "left": 1394,
+        "right": 1423
+      },
+      "forms": 0
+    },
+    {
+      "viewport": "desktop",
+      "id": "tilvalgbyggc",
+      "kind": "building",
+      "status": 200,
+      "errors": [],
+      "sourceRequests": 0,
+      "title": "Tilvalg- bygg C – Leangenbukta",
+      "overflowX": 0,
+      "brokenImages": [],
+      "badLinks": [],
+      "linkCount": 15,
+      "placyField": {
+        "top": 452,
+        "variant": "demo-placy-field--building",
+        "afterFirstRow": true
+      },
+      "pageMarker": "tilvalgbyggc",
+      "chatButton": {
+        "top": 781,
+        "bottom": 824,
+        "left": 1227.15625,
+        "right": 1420
+      },
+      "toTop": {
+        "top": 901.4500122070312,
+        "bottom": 930.4500122070312,
+        "left": 1394,
+        "right": 1423
+      },
+      "forms": 0
+    },
+    {
+      "viewport": "desktop",
+      "id": "toppleilighetl504",
+      "kind": "building",
+      "status": 200,
+      "errors": [],
+      "sourceRequests": 0,
+      "title": "Bo på toppen av Saltakshus L – Leangenbukta",
+      "overflowX": 0,
+      "brokenImages": [],
+      "badLinks": [],
+      "linkCount": 32,
+      "placyField": {
+        "top": 1282,
+        "variant": "demo-placy-field--building",
+        "afterFirstRow": true
+      },
+      "pageMarker": "toppleilighetl504",
+      "chatButton": {
+        "top": 781,
+        "bottom": 824,
+        "left": 1227.15625,
+        "right": 1420
+      },
+      "toTop": {
+        "top": 901.4500122070312,
+        "bottom": 930.4500122070312,
+        "left": 1394,
+        "right": 1423
+      },
+      "forms": 0
+    },
+    {
+      "viewport": "desktop",
+      "id": "trygt-og-bilfritt",
+      "kind": "article",
+      "status": 200,
+      "errors": [],
+      "sourceRequests": 0,
+      "title": "Ikke bekymre deg, i Leangenbukta kan barn leke fritt! – Leangenbukta",
+      "overflowX": 0,
+      "brokenImages": [],
+      "badLinks": [],
+      "linkCount": 30,
+      "placyField": {
+        "top": 1664,
+        "variant": "demo-placy-field--article",
+        "afterFirstRow": false
+      },
+      "pageMarker": "trygt-og-bilfritt",
+      "chatButton": {
+        "top": 781,
+        "bottom": 824,
+        "left": 1227.15625,
+        "right": 1420
+      },
+      "toTop": {
+        "top": 901.4500122070312,
+        "bottom": 930.4500122070312,
+        "left": 1394,
+        "right": 1423
+      },
+      "forms": 0
+    },
+    {
+      "viewport": "desktop",
+      "id": "vedlikeholdsfritt",
+      "kind": "article",
+      "status": 200,
+      "errors": [],
+      "sourceRequests": 0,
+      "title": "Her kan du bo vedlikeholdsfritt i mange år! – Leangenbukta",
+      "overflowX": 0,
+      "brokenImages": [],
+      "badLinks": [],
+      "linkCount": 29,
+      "placyField": null,
+      "pageMarker": "vedlikeholdsfritt",
+      "chatButton": {
+        "top": 781,
+        "bottom": 824,
+        "left": 1227.15625,
+        "right": 1420
+      },
+      "toTop": {
+        "top": 901.4500122070312,
+        "bottom": 930.4500122070312,
+        "left": 1394,
+        "right": 1423
+      },
+      "forms": 0
+    },
+    {
+      "viewport": "desktop",
+      "id": "velge-nybolig",
+      "kind": "info",
+      "status": 200,
+      "errors": [],
+      "sourceRequests": 0,
+      "title": "Gode grunner til å velge nybolig – Leangenbukta",
+      "overflowX": 0,
+      "brokenImages": [],
+      "badLinks": [],
+      "linkCount": 11,
+      "placyField": null,
+      "pageMarker": "velge-nybolig",
+      "chatButton": {
+        "top": 781,
+        "bottom": 824,
+        "left": 1227.15625,
+        "right": 1420
+      },
+      "toTop": {
+        "top": 901.4500122070312,
+        "bottom": 930.4500122070312,
+        "left": 1394,
+        "right": 1423
+      },
+      "forms": 0
+    },
+    {
+      "viewport": "desktop",
+      "id": "visning-pa-tomta",
+      "kind": "info",
+      "status": 200,
+      "errors": [],
+      "sourceRequests": 0,
+      "title": "Besøk vårt salgslokale – Leangenbukta",
+      "overflowX": 0,
+      "brokenImages": [],
+      "badLinks": [],
+      "linkCount": 12,
+      "placyField": null,
+      "pageMarker": "visning-pa-tomta",
+      "chatButton": {
+        "top": 781,
+        "bottom": 824,
+        "left": 1227.15625,
+        "right": 1420
+      },
+      "toTop": {
+        "top": 901.4500122070312,
+        "bottom": 930.4500122070312,
+        "left": 1394,
+        "right": 1423
+      },
+      "forms": 0
+    },
+    {
+      "viewport": "mobile",
+      "id": "forside",
+      "kind": "home",
+      "status": 200,
+      "errors": [],
+      "sourceRequests": 0,
+      "title": "Leangenbukta",
+      "overflowX": 0,
+      "brokenImages": [],
+      "badLinks": [],
+      "linkCount": 36,
+      "placyField": {
+        "top": 641,
+        "variant": "demo-placy-field--intro",
+        "afterFirstRow": false
+      },
+      "pageMarker": "forside",
+      "chatButton": {
+        "top": 725,
+        "bottom": 768,
+        "left": 177.15625,
+        "right": 370
+      },
+      "toTop": {
+        "top": 845.4500122070312,
+        "bottom": 874.4500122070312,
+        "left": 344,
+        "right": 373
+      },
+      "forms": 0
+    },
+    {
+      "viewport": "mobile",
+      "id": "2roms-og3roms",
+      "kind": "info",
+      "status": 200,
+      "errors": [],
+      "sourceRequests": 0,
+      "title": "2- og 3-roms leiligheter i Leangenbukta – Leangenbukta",
+      "overflowX": 0,
+      "brokenImages": [],
+      "badLinks": [],
+      "linkCount": 24,
+      "placyField": {
+        "top": 3338,
+        "variant": "demo-placy-field--article",
+        "afterFirstRow": false
+      },
+      "pageMarker": "2roms-og3roms",
+      "chatButton": {
+        "top": 725,
+        "bottom": 768,
+        "left": 177.15625,
+        "right": 370
+      },
+      "toTop": {
+        "top": 845.4500122070312,
+        "bottom": 874.4500122070312,
+        "left": 344,
+        "right": 373
+      },
+      "forms": 0
+    },
+    {
+      "viewport": "mobile",
+      "id": "aktuelt",
+      "kind": "archive",
+      "status": 200,
+      "errors": [],
+      "sourceRequests": 0,
+      "title": "Aktuelt – Leangenbukta",
+      "overflowX": 0,
+      "brokenImages": [],
+      "badLinks": [],
+      "linkCount": 66,
+      "placyField": null,
+      "pageMarker": "aktuelt",
+      "chatButton": {
+        "top": 725,
+        "bottom": 768,
+        "left": 177.15625,
+        "right": 370
+      },
+      "toTop": {
+        "top": 845.4500122070312,
+        "bottom": 874.4500122070312,
+        "left": 344,
+        "right": 373
+      },
+      "forms": 0
+    },
+    {
+      "viewport": "mobile",
+      "id": "apenhetsloven",
+      "kind": "info",
+      "status": 200,
+      "errors": [],
+      "sourceRequests": 0,
+      "title": "Åpenhetsloven – Leangenbukta",
+      "overflowX": 0,
+      "brokenImages": [],
+      "badLinks": [],
+      "linkCount": 13,
+      "placyField": null,
+      "pageMarker": "apenhetsloven",
+      "chatButton": {
+        "top": 725,
+        "bottom": 768,
+        "left": 177.15625,
+        "right": 370
+      },
+      "toTop": {
+        "top": 845.4500122070312,
+        "bottom": 874.4500122070312,
+        "left": 344,
+        "right": 373
+      },
+      "forms": 0
+    },
+    {
+      "viewport": "mobile",
+      "id": "beliggenhet",
+      "kind": "location",
+      "status": 200,
+      "errors": [],
+      "sourceRequests": 0,
+      "title": "Beliggenhet – Leangenbukta",
+      "overflowX": 0,
+      "brokenImages": [],
+      "badLinks": [],
+      "linkCount": 17,
+      "placyField": {
+        "top": 159,
+        "variant": "demo-placy-field--location",
+        "afterFirstRow": true
+      },
+      "pageMarker": "beliggenhet",
+      "chatButton": {
+        "top": 725,
+        "bottom": 768,
+        "left": 177.15625,
+        "right": 370
+      },
+      "toTop": {
+        "top": 845.4500122070312,
+        "bottom": 874.4500122070312,
+        "left": 344,
+        "right": 373
+      },
+      "forms": 0
+    },
+    {
+      "viewport": "mobile",
+      "id": "bli-obos-medlem",
+      "kind": "info",
+      "status": 200,
+      "errors": [],
+      "sourceRequests": 0,
+      "title": "Bli OBOS-medlem – Leangenbukta",
+      "overflowX": 0,
+      "brokenImages": [],
+      "badLinks": [],
+      "linkCount": 13,
+      "placyField": null,
+      "pageMarker": "bli-obos-medlem",
+      "chatButton": {
+        "top": 725,
+        "bottom": 768,
+        "left": 177.15625,
+        "right": 370
+      },
+      "toTop": {
+        "top": 845.4500122070312,
+        "bottom": 874.4500122070312,
+        "left": 344,
+        "right": 373
+      },
+      "forms": 0
+    },
+    {
+      "viewport": "mobile",
+      "id": "byvilla-1-og-2",
+      "kind": "building",
+      "status": 200,
+      "errors": [],
+      "sourceRequests": 0,
+      "title": "24 nye leiligheter for salg i Byvilla 1 og 2 – Leangenbukta",
+      "overflowX": 0,
+      "brokenImages": [],
+      "badLinks": [],
+      "linkCount": 31,
+      "placyField": {
+        "top": 1283,
+        "variant": "demo-placy-field--building",
+        "afterFirstRow": true
+      },
+      "pageMarker": "byvilla-1-og-2",
+      "chatButton": {
+        "top": 725,
+        "bottom": 768,
+        "left": 177.15625,
+        "right": 370
+      },
+      "toTop": {
+        "top": 845.4500122070312,
+        "bottom": 874.4500122070312,
+        "left": 344,
+        "right": 373
+      },
+      "forms": 0
+    },
+    {
+      "viewport": "mobile",
+      "id": "elbil-elsykkeldeling",
+      "kind": "project",
+      "status": 200,
+      "errors": [],
+      "sourceRequests": 0,
+      "title": "Forminsk utgifter med El-bildeling – Leangenbukta",
+      "overflowX": 0,
+      "brokenImages": [],
+      "badLinks": [],
+      "linkCount": 12,
+      "placyField": {
+        "top": 903,
+        "variant": "demo-placy-field--article",
+        "afterFirstRow": false
+      },
+      "pageMarker": "elbil-elsykkeldeling",
+      "chatButton": {
+        "top": 725,
+        "bottom": 768,
+        "left": 177.15625,
+        "right": 370
+      },
+      "toTop": {
+        "top": 845.4500122070312,
+        "bottom": 874.4500122070312,
+        "left": 344,
+        "right": 373
+      },
+      "forms": 0
+    },
+    {
+      "viewport": "mobile",
+      "id": "fasiliteter-som-gjor-hverdagen-enklere",
+      "kind": "article",
+      "status": 200,
+      "errors": [],
+      "sourceRequests": 0,
+      "title": "Fasiliteter som gjør hverdagen enklere! – Leangenbukta",
+      "overflowX": 0,
+      "brokenImages": [],
+      "badLinks": [],
+      "linkCount": 28,
+      "placyField": {
+        "top": 1840,
+        "variant": "demo-placy-field--article",
+        "afterFirstRow": true
+      },
+      "pageMarker": "fasiliteter-som-gjor-hverdagen-enklere",
+      "chatButton": {
+        "top": 725,
+        "bottom": 768,
+        "left": 177.15625,
+        "right": 370
+      },
+      "toTop": {
+        "top": 845.4500122070312,
+        "bottom": 874.4500122070312,
+        "left": 344,
+        "right": 373
+      },
+      "forms": 0
+    },
+    {
+      "viewport": "mobile",
+      "id": "fordeler-a-bo-forste-etasje",
+      "kind": "info",
+      "status": 200,
+      "errors": [],
+      "sourceRequests": 0,
+      "title": "Derfor bør du vurdere første etasje – Leangenbukta",
+      "overflowX": 0,
+      "brokenImages": [],
+      "badLinks": [],
+      "linkCount": 11,
+      "placyField": null,
+      "pageMarker": "fordeler-a-bo-forste-etasje",
+      "chatButton": {
+        "top": 725,
+        "bottom": 768,
+        "left": 177.15625,
+        "right": 370
+      },
+      "toTop": {
+        "top": 845.4500122070312,
+        "bottom": 874.4500122070312,
+        "left": 344,
+        "right": 373
+      },
+      "forms": 0
+    },
+    {
+      "viewport": "mobile",
+      "id": "galleri",
+      "kind": "project",
+      "status": 200,
+      "errors": [],
+      "sourceRequests": 0,
+      "title": "Galleri – Leangenbukta",
+      "overflowX": 0,
+      "brokenImages": [],
+      "badLinks": [],
+      "linkCount": 83,
+      "placyField": null,
+      "pageMarker": "galleri",
+      "chatButton": {
+        "top": 725,
+        "bottom": 768,
+        "left": 177.15625,
+        "right": 370
+      },
+      "toTop": {
+        "top": 845.4500122070312,
+        "bottom": 874.4500122070312,
+        "left": 344,
+        "right": 373
+      },
+      "forms": 0
+    },
+    {
+      "viewport": "mobile",
+      "id": "her-trenger-du-ikke-eie-bil",
+      "kind": "article",
+      "status": 200,
+      "errors": [],
+      "sourceRequests": 0,
+      "title": "Her trenger du ikke eie bil! – Leangenbukta",
+      "overflowX": 0,
+      "brokenImages": [],
+      "badLinks": [],
+      "linkCount": 29,
+      "placyField": {
+        "top": 1113,
+        "variant": "demo-placy-field--article",
+        "afterFirstRow": true
+      },
+      "pageMarker": "her-trenger-du-ikke-eie-bil",
+      "chatButton": {
+        "top": 725,
+        "bottom": 768,
+        "left": 177.15625,
+        "right": 370
+      },
+      "toTop": {
+        "top": 845.4500122070312,
+        "bottom": 874.4500122070312,
+        "left": 344,
+        "right": 373
+      },
+      "forms": 0
+    },
+    {
+      "viewport": "mobile",
+      "id": "hvordankjopebolig-2",
+      "kind": "info",
+      "status": 200,
+      "errors": [],
+      "sourceRequests": 0,
+      "title": "Hvordan kjøpe bolig i Leangenbukta – Leangenbukta",
+      "overflowX": 0,
+      "brokenImages": [],
+      "badLinks": [],
+      "linkCount": 12,
+      "placyField": null,
+      "pageMarker": "hvordankjopebolig-2",
+      "chatButton": {
+        "top": 725,
+        "bottom": 768,
+        "left": 177.15625,
+        "right": 370
+      },
+      "toTop": {
+        "top": 845.4500122070312,
+        "bottom": 874.4500122070312,
+        "left": 344,
+        "right": 373
+      },
+      "forms": 0
+    },
+    {
+      "viewport": "mobile",
+      "id": "hvordankjopebolig-3",
+      "kind": "info",
+      "status": 200,
+      "errors": [],
+      "sourceRequests": 0,
+      "title": "Hvordan kjøpe bolig forkjøpsrett bygg D – Leangenbukta",
+      "overflowX": 0,
+      "brokenImages": [],
+      "badLinks": [],
+      "linkCount": 13,
+      "placyField": null,
+      "pageMarker": "hvordankjopebolig-3",
+      "chatButton": {
+        "top": 725,
+        "bottom": 768,
+        "left": 177.15625,
+        "right": 370
+      },
+      "toTop": {
+        "top": 845.4500122070312,
+        "bottom": 874.4500122070312,
+        "left": 344,
+        "right": 373
+      },
+      "forms": 0
+    },
+    {
+      "viewport": "mobile",
+      "id": "hvordankjopebolig-byggc",
+      "kind": "info",
+      "status": 200,
+      "errors": [],
+      "sourceRequests": 0,
+      "title": "Hvordan kjøpe bolig bygg C-åpent salg – Leangenbukta",
+      "overflowX": 0,
+      "brokenImages": [],
+      "badLinks": [],
+      "linkCount": 12,
+      "placyField": null,
+      "pageMarker": "hvordankjopebolig-byggc",
+      "chatButton": {
+        "top": 725,
+        "bottom": 768,
+        "left": 177.15625,
+        "right": 370
+      },
+      "toTop": {
+        "top": 845.4500122070312,
+        "bottom": 874.4500122070312,
+        "left": 344,
+        "right": 373
+      },
+      "forms": 0
+    },
+    {
+      "viewport": "mobile",
+      "id": "hvordankjopebolig",
+      "kind": "info",
+      "status": 200,
+      "errors": [],
+      "sourceRequests": 0,
+      "title": "Hvordan kjøpe bolig forkjøpsrett bygg c – Leangenbukta",
+      "overflowX": 0,
+      "brokenImages": [],
+      "badLinks": [],
+      "linkCount": 13,
+      "placyField": null,
+      "pageMarker": "hvordankjopebolig",
+      "chatButton": {
+        "top": 725,
+        "bottom": 768,
+        "left": 177.15625,
+        "right": 370
+      },
+      "toTop": {
+        "top": 845.4500122070312,
+        "bottom": 874.4500122070312,
+        "left": 344,
+        "right": 373
+      },
+      "forms": 0
+    },
+    {
+      "viewport": "mobile",
+      "id": "innflyttingsklare-leiligheter",
+      "kind": "project",
+      "status": 200,
+      "errors": [],
+      "sourceRequests": 0,
+      "title": "Leiligheter klare for innflytting nå, og i løpet av året – Leangenbukta",
+      "overflowX": 0,
+      "brokenImages": [],
+      "badLinks": [],
+      "linkCount": 30,
+      "placyField": {
+        "top": 4110,
+        "variant": "demo-placy-field--article",
+        "afterFirstRow": false
+      },
+      "pageMarker": "innflyttingsklare-leiligheter",
+      "chatButton": {
+        "top": 725,
+        "bottom": 768,
+        "left": 177.15625,
+        "right": 370
+      },
+      "toTop": {
+        "top": 845.4500122070312,
+        "bottom": 874.4500122070312,
+        "left": 344,
+        "right": 373
+      },
+      "forms": 0
+    },
+    {
+      "viewport": "mobile",
+      "id": "knutepunktet",
+      "kind": "building",
+      "status": 200,
+      "errors": [],
+      "sourceRequests": 0,
+      "title": "Knutepunktet – Leangenbukta",
+      "overflowX": 0,
+      "brokenImages": [],
+      "badLinks": [],
+      "linkCount": 19,
+      "placyField": {
+        "top": 531,
+        "variant": "demo-placy-field--building",
+        "afterFirstRow": true
+      },
+      "pageMarker": "knutepunktet",
+      "chatButton": {
+        "top": 725,
+        "bottom": 768,
+        "left": 177.15625,
+        "right": 370
+      },
+      "toTop": {
+        "top": 845.4500122070312,
+        "bottom": 874.4500122070312,
+        "left": 344,
+        "right": 373
+      },
+      "forms": 0
+    },
+    {
+      "viewport": "mobile",
+      "id": "kort-vei-til-alt",
+      "kind": "article",
+      "status": 200,
+      "errors": [],
+      "sourceRequests": 0,
+      "title": "Kort vei til alt i Leangenbukta – Leangenbukta",
+      "overflowX": 0,
+      "brokenImages": [],
+      "badLinks": [],
+      "linkCount": 29,
+      "placyField": {
+        "top": 1832,
+        "variant": "demo-placy-field--article",
+        "afterFirstRow": false
+      },
+      "pageMarker": "kort-vei-til-alt",
+      "chatButton": {
+        "top": 725,
+        "bottom": 768,
+        "left": 177.15625,
+        "right": 370
+      },
+      "toTop": {
+        "top": 845.4500122070312,
+        "bottom": 874.4500122070312,
+        "left": 344,
+        "right": 373
+      },
+      "forms": 0
+    },
+    {
+      "viewport": "mobile",
+      "id": "kundeportal",
+      "kind": "info",
+      "status": 200,
+      "errors": [],
+      "sourceRequests": 0,
+      "title": "Kundeportal – Leangenbukta",
+      "overflowX": 0,
+      "brokenImages": [],
+      "badLinks": [],
+      "linkCount": 14,
+      "placyField": null,
+      "pageMarker": "kundeportal",
+      "chatButton": {
+        "top": 725,
+        "bottom": 768,
+        "left": 177.15625,
+        "right": 370
+      },
+      "toTop": {
+        "top": 845.4500122070312,
+        "bottom": 874.4500122070312,
+        "left": 344,
+        "right": 373
+      },
+      "forms": 0
+    },
+    {
+      "viewport": "mobile",
+      "id": "nytt-salgstrinn-bygg-l",
+      "kind": "building",
+      "status": 200,
+      "errors": [],
+      "sourceRequests": 0,
+      "title": "Saltakshus L- sentralt i Leangenbukta – Leangenbukta",
+      "overflowX": 0,
+      "brokenImages": [],
+      "badLinks": [],
+      "linkCount": 29,
+      "placyField": {
+        "top": 1581,
+        "variant": "demo-placy-field--building",
+        "afterFirstRow": true
+      },
+      "pageMarker": "nytt-salgstrinn-bygg-l",
+      "chatButton": {
+        "top": 725,
+        "bottom": 768,
+        "left": 177.15625,
+        "right": 370
+      },
+      "toTop": {
+        "top": 845.4500122070312,
+        "bottom": 874.4500122070312,
+        "left": 344,
+        "right": 373
+      },
+      "forms": 0
+    },
+    {
+      "viewport": "mobile",
+      "id": "om-prosjektet",
+      "kind": "project",
+      "status": 200,
+      "errors": [],
+      "sourceRequests": 0,
+      "title": "Om prosjektet – Leangenbukta",
+      "overflowX": 0,
+      "brokenImages": [],
+      "badLinks": [],
+      "linkCount": 19,
+      "placyField": {
+        "top": 7682,
+        "variant": "demo-placy-field--article",
+        "afterFirstRow": false
+      },
+      "pageMarker": "om-prosjektet",
+      "chatButton": {
+        "top": 725,
+        "bottom": 768,
+        "left": 177.15625,
+        "right": 370
+      },
+      "toTop": {
+        "top": 845.4500122070312,
+        "bottom": 874.4500122070312,
+        "left": 344,
+        "right": 373
+      },
+      "forms": 0
+    },
+    {
+      "viewport": "mobile",
+      "id": "parktunet1",
+      "kind": "building",
+      "status": 200,
+      "errors": [],
+      "sourceRequests": 0,
+      "title": "Parktunet 1- bygg D – Leangenbukta",
+      "overflowX": 0,
+      "brokenImages": [],
+      "badLinks": [],
+      "linkCount": 19,
+      "placyField": {
+        "top": 399,
+        "variant": "demo-placy-field--building",
+        "afterFirstRow": true
+      },
+      "pageMarker": "parktunet1",
+      "chatButton": {
+        "top": 725,
+        "bottom": 768,
+        "left": 177.15625,
+        "right": 370
+      },
+      "toTop": {
+        "top": 845.4500122070312,
+        "bottom": 874.4500122070312,
+        "left": 344,
+        "right": 373
+      },
+      "forms": 0
+    },
+    {
+      "viewport": "mobile",
+      "id": "personvern",
+      "kind": "info",
+      "status": 200,
+      "errors": [],
+      "sourceRequests": 0,
+      "title": "Personvern policy – Leangenbukta",
+      "overflowX": 0,
+      "brokenImages": [],
+      "badLinks": [],
+      "linkCount": 12,
+      "placyField": null,
+      "pageMarker": "personvern",
+      "chatButton": {
+        "top": 725,
+        "bottom": 768,
+        "left": 177.15625,
+        "right": 370
+      },
+      "toTop": {
+        "top": 845.4500122070312,
+        "bottom": 874.4500122070312,
+        "left": 344,
+        "right": 373
+      },
+      "forms": 0
+    },
+    {
+      "viewport": "mobile",
+      "id": "portfolio__sjoparken",
+      "kind": "info",
+      "status": 200,
+      "errors": [],
+      "sourceRequests": 0,
+      "title": "Sjøparken – Leangenbukta",
+      "overflowX": 0,
+      "brokenImages": [],
+      "badLinks": [],
+      "linkCount": 5,
+      "placyField": null,
+      "pageMarker": "portfolio__sjoparken",
+      "chatButton": {
+        "top": 725,
+        "bottom": 768,
+        "left": 177.15625,
+        "right": 370
+      },
+      "toTop": {
+        "top": 845.4500122070312,
+        "bottom": 874.4500122070312,
+        "left": 344,
+        "right": 373
+      },
+      "forms": 0
+    },
+    {
+      "viewport": "mobile",
+      "id": "project-type__premium-kvaliteter",
+      "kind": "archive",
+      "status": 200,
+      "errors": [],
+      "sourceRequests": 0,
+      "title": "Premium Kvaliteter – Leangenbukta",
+      "overflowX": 0,
+      "brokenImages": [],
+      "badLinks": [],
+      "linkCount": 7,
+      "placyField": null,
+      "pageMarker": "project-type__premium-kvaliteter",
+      "chatButton": {
+        "top": 725,
+        "bottom": 768,
+        "left": 177.15625,
+        "right": 370
+      },
+      "toTop": {
+        "top": 845.4500122070312,
+        "bottom": 874.4500122070312,
+        "left": 344,
+        "right": 373
+      },
+      "forms": 0
+    },
+    {
+      "viewport": "mobile",
+      "id": "rekkehus-for-barnefamilier-i-trondheim",
+      "kind": "info",
+      "status": 200,
+      "errors": [],
+      "sourceRequests": 0,
+      "title": "Leangenbukta – et perfekt hjem for barnefamilier i Trondheim – Leangenbukta",
+      "overflowX": 0,
+      "brokenImages": [],
+      "badLinks": [],
+      "linkCount": 13,
+      "placyField": {
+        "top": 2913,
+        "variant": "demo-placy-field--article",
+        "afterFirstRow": false
+      },
+      "pageMarker": "rekkehus-for-barnefamilier-i-trondheim",
+      "chatButton": {
+        "top": 725,
+        "bottom": 768,
+        "left": 177.15625,
+        "right": 370
+      },
+      "toTop": {
+        "top": 845.4500122070312,
+        "bottom": 874.4500122070312,
+        "left": 344,
+        "right": 373
+      },
+      "forms": 0
+    },
+    {
+      "viewport": "mobile",
+      "id": "rekkehus19-27",
+      "kind": "building",
+      "status": 200,
+      "errors": [],
+      "sourceRequests": 0,
+      "title": "De siste rekkehusene er ute for salg – Leangenbukta",
+      "overflowX": 0,
+      "brokenImages": [],
+      "badLinks": [],
+      "linkCount": 32,
+      "placyField": {
+        "top": 985,
+        "variant": "demo-placy-field--building",
+        "afterFirstRow": true
+      },
+      "pageMarker": "rekkehus19-27",
+      "chatButton": {
+        "top": 725,
+        "bottom": 768,
+        "left": 177.15625,
+        "right": 370
+      },
+      "toTop": {
+        "top": 845.4500122070312,
+        "bottom": 874.4500122070312,
+        "left": 344,
+        "right": 373
+      },
+      "forms": 0
+    },
+    {
+      "viewport": "mobile",
+      "id": "retningslinjer-for-informasjonskapsler",
+      "kind": "info",
+      "status": 200,
+      "errors": [],
+      "sourceRequests": 0,
+      "title": "Retningslinjer for informasjonskapsler – Leangenbukta",
+      "overflowX": 0,
+      "brokenImages": [],
+      "badLinks": [],
+      "linkCount": 11,
+      "placyField": null,
+      "pageMarker": "retningslinjer-for-informasjonskapsler",
+      "chatButton": {
+        "top": 725,
+        "bottom": 768,
+        "left": 177.15625,
+        "right": 370
+      },
+      "toTop": {
+        "top": 845.4500122070312,
+        "bottom": 874.4500122070312,
+        "left": 344,
+        "right": 373
+      },
+      "forms": 0
+    },
+    {
+      "viewport": "mobile",
+      "id": "salgsmateriell",
+      "kind": "info",
+      "status": 200,
+      "errors": [],
+      "sourceRequests": 0,
+      "title": "Salgsmateriell – Leangenbukta",
+      "overflowX": 0,
+      "brokenImages": [],
+      "badLinks": [],
+      "linkCount": 14,
+      "placyField": null,
+      "pageMarker": "salgsmateriell",
+      "chatButton": {
+        "top": 725,
+        "bottom": 768,
+        "left": 177.15625,
+        "right": 370
+      },
+      "toTop": {
+        "top": 845.4500122070312,
+        "bottom": 874.4500122070312,
+        "left": 344,
+        "right": 373
+      },
+      "forms": 0
+    },
+    {
+      "viewport": "mobile",
+      "id": "salgsmateriell__kjopebekreftelser",
+      "kind": "info",
+      "status": 200,
+      "errors": [],
+      "sourceRequests": 0,
+      "title": "Kjøpebekreftelser – Leangenbukta",
+      "overflowX": 0,
+      "brokenImages": [],
+      "badLinks": [],
+      "linkCount": 15,
+      "placyField": null,
+      "pageMarker": "salgsmateriell__kjopebekreftelser",
+      "chatButton": {
+        "top": 725,
+        "bottom": 768,
+        "left": 177.15625,
+        "right": 370
+      },
+      "toTop": {
+        "top": 845.4500122070312,
+        "bottom": 874.4500122070312,
+        "left": 344,
+        "right": 373
+      },
+      "forms": 0
+    },
+    {
+      "viewport": "mobile",
+      "id": "salgsmateriell__prislister",
+      "kind": "info",
+      "status": 200,
+      "errors": [],
+      "sourceRequests": 0,
+      "title": "Prislister – Leangenbukta",
+      "overflowX": 0,
+      "brokenImages": [],
+      "badLinks": [],
+      "linkCount": 15,
+      "placyField": null,
+      "pageMarker": "salgsmateriell__prislister",
+      "chatButton": {
+        "top": 725,
+        "bottom": 768,
+        "left": 177.15625,
+        "right": 370
+      },
+      "toTop": {
+        "top": 845.4500122070312,
+        "bottom": 874.4500122070312,
+        "left": 344,
+        "right": 373
+      },
+      "forms": 0
+    },
+    {
+      "viewport": "mobile",
+      "id": "salgsmateriell__prospekter",
+      "kind": "info",
+      "status": 200,
+      "errors": [],
+      "sourceRequests": 0,
+      "title": "Prospekter – Leangenbukta",
+      "overflowX": 0,
+      "brokenImages": [],
+      "badLinks": [],
+      "linkCount": 17,
+      "placyField": null,
+      "pageMarker": "salgsmateriell__prospekter",
+      "chatButton": {
+        "top": 725,
+        "bottom": 768,
+        "left": 177.15625,
+        "right": 370
+      },
+      "toTop": {
+        "top": 845.4500122070312,
+        "bottom": 874.4500122070312,
+        "left": 344,
+        "right": 373
+      },
+      "forms": 0
+    },
+    {
+      "viewport": "mobile",
+      "id": "saltakshus-i",
+      "kind": "building",
+      "status": 200,
+      "errors": [],
+      "sourceRequests": 0,
+      "title": "36 nye leiligheter for salg i Saltakshus I – Leangenbukta",
+      "overflowX": 0,
+      "brokenImages": [],
+      "badLinks": [],
+      "linkCount": 34,
+      "placyField": {
+        "top": 1465,
+        "variant": "demo-placy-field--building",
+        "afterFirstRow": true
+      },
+      "pageMarker": "saltakshus-i",
+      "chatButton": {
+        "top": 725,
+        "bottom": 768,
+        "left": 177.15625,
+        "right": 370
+      },
+      "toTop": {
+        "top": 845.4500122070312,
+        "bottom": 874.4500122070312,
+        "left": 344,
+        "right": 373
+      },
+      "forms": 0
+    },
+    {
+      "viewport": "mobile",
+      "id": "saltakshus-j",
+      "kind": "building",
+      "status": 200,
+      "errors": [],
+      "sourceRequests": 0,
+      "title": "39 nye leiligheter for salg i Saltakshus J – Leangenbukta",
+      "overflowX": 0,
+      "brokenImages": [],
+      "badLinks": [],
+      "linkCount": 32,
+      "placyField": {
+        "top": 1311,
+        "variant": "demo-placy-field--building",
+        "afterFirstRow": true
+      },
+      "pageMarker": "saltakshus-j",
+      "chatButton": {
+        "top": 725,
+        "bottom": 768,
+        "left": 177.15625,
+        "right": 370
+      },
+      "toTop": {
+        "top": 845.4500122070312,
+        "bottom": 874.4500122070312,
+        "left": 344,
+        "right": 373
+      },
+      "forms": 0
+    },
+    {
+      "viewport": "mobile",
+      "id": "saltakshusc",
+      "kind": "building",
+      "status": 200,
+      "errors": [],
+      "sourceRequests": 0,
+      "title": "Bygg C – Leangenbukta",
+      "overflowX": 0,
+      "brokenImages": [],
+      "badLinks": [],
+      "linkCount": 16,
+      "placyField": {
+        "top": 845,
+        "variant": "demo-placy-field--building",
+        "afterFirstRow": true
+      },
+      "pageMarker": "saltakshusc",
+      "chatButton": {
+        "top": 725,
+        "bottom": 768,
+        "left": 177.15625,
+        "right": 370
+      },
+      "toTop": {
+        "top": 845.4500122070312,
+        "bottom": 874.4500122070312,
+        "left": 344,
+        "right": 373
+      },
+      "forms": 0
+    },
+    {
+      "viewport": "mobile",
+      "id": "saltakshush",
+      "kind": "building",
+      "status": 200,
+      "errors": [],
+      "sourceRequests": 0,
+      "title": "Saltakshus H – Leangenbukta",
+      "overflowX": 0,
+      "brokenImages": [],
+      "badLinks": [],
+      "linkCount": 31,
+      "placyField": {
+        "top": 1972,
+        "variant": "demo-placy-field--building",
+        "afterFirstRow": true
+      },
+      "pageMarker": "saltakshush",
+      "chatButton": {
+        "top": 725,
+        "bottom": 768,
+        "left": 177.15625,
+        "right": 370
+      },
+      "toTop": {
+        "top": 845.4500122070312,
+        "bottom": 874.4500122070312,
+        "left": 344,
+        "right": 373
+      },
+      "forms": 0
+    },
+    {
+      "viewport": "mobile",
+      "id": "saltakshusk",
+      "kind": "building",
+      "status": 200,
+      "errors": [],
+      "sourceRequests": 0,
+      "title": "Første støp på tomta! – Leangenbukta",
+      "overflowX": 0,
+      "brokenImages": [],
+      "badLinks": [],
+      "linkCount": 29,
+      "placyField": {
+        "top": 494,
+        "variant": "demo-placy-field--building",
+        "afterFirstRow": true
+      },
+      "pageMarker": "saltakshusk",
+      "chatButton": {
+        "top": 725,
+        "bottom": 768,
+        "left": 177.15625,
+        "right": 370
+      },
+      "toTop": {
+        "top": 845.4500122070312,
+        "bottom": 874.4500122070312,
+        "left": 344,
+        "right": 373
+      },
+      "forms": 0
+    },
+    {
+      "viewport": "mobile",
+      "id": "stort-til-mindre-2",
+      "kind": "info",
+      "status": 200,
+      "errors": [],
+      "sourceRequests": 0,
+      "title": "Flytte fra stort til mindre? Leangenbukta har løsningene for deg – Leangenbukta",
+      "overflowX": 0,
+      "brokenImages": [],
+      "badLinks": [],
+      "linkCount": 13,
+      "placyField": {
+        "top": 931,
+        "variant": "demo-placy-field--article",
+        "afterFirstRow": false
+      },
+      "pageMarker": "stort-til-mindre-2",
+      "chatButton": {
+        "top": 725,
+        "bottom": 768,
+        "left": 177.15625,
+        "right": 370
+      },
+      "toTop": {
+        "top": 845.4500122070312,
+        "bottom": 874.4500122070312,
+        "left": 344,
+        "right": 373
+      },
+      "forms": 0
+    },
+    {
+      "viewport": "mobile",
+      "id": "stort-til-mindre_byggc",
+      "kind": "info",
+      "status": 200,
+      "errors": [],
+      "sourceRequests": 0,
+      "title": "Flytte fra stort til mindre? Bygg C – Leangenbukta",
+      "overflowX": 0,
+      "brokenImages": [],
+      "badLinks": [],
+      "linkCount": 13,
+      "placyField": {
+        "top": 1498,
+        "variant": "demo-placy-field--article",
+        "afterFirstRow": false
+      },
+      "pageMarker": "stort-til-mindre_byggc",
+      "chatButton": {
+        "top": 725,
+        "bottom": 768,
+        "left": 177.15625,
+        "right": 370
+      },
+      "toTop": {
+        "top": 845.4500122070312,
+        "bottom": 874.4500122070312,
+        "left": 344,
+        "right": 373
+      },
+      "forms": 0
+    },
+    {
+      "viewport": "mobile",
+      "id": "stort-til-mindre_parktunet",
+      "kind": "info",
+      "status": 200,
+      "errors": [],
+      "sourceRequests": 0,
+      "title": "Flytte fra stort til mindre? Parktunet – Leangenbukta",
+      "overflowX": 0,
+      "brokenImages": [],
+      "badLinks": [],
+      "linkCount": 14,
+      "placyField": {
+        "top": 1550,
+        "variant": "demo-placy-field--article",
+        "afterFirstRow": false
+      },
+      "pageMarker": "stort-til-mindre_parktunet",
+      "chatButton": {
+        "top": 725,
+        "bottom": 768,
+        "left": 177.15625,
+        "right": 370
+      },
+      "toTop": {
+        "top": 845.4500122070312,
+        "bottom": 874.4500122070312,
+        "left": 344,
+        "right": 373
+      },
+      "forms": 0
+    },
+    {
+      "viewport": "mobile",
+      "id": "test-framside",
+      "kind": "info",
+      "status": 200,
+      "errors": [],
+      "sourceRequests": 0,
+      "title": "Leangbukta ny framside – Leangenbukta",
+      "overflowX": 0,
+      "brokenImages": [],
+      "badLinks": [],
+      "linkCount": 32,
+      "placyField": null,
+      "pageMarker": "test-framside",
+      "chatButton": {
+        "top": 725,
+        "bottom": 768,
+        "left": 177.15625,
+        "right": 370
+      },
+      "toTop": {
+        "top": 845.4500122070312,
+        "bottom": 874.4500122070312,
+        "left": 344,
+        "right": 373
+      },
+      "forms": 0
+    },
+    {
+      "viewport": "mobile",
+      "id": "tilvalgbyggc",
+      "kind": "building",
+      "status": 200,
+      "errors": [],
+      "sourceRequests": 0,
+      "title": "Tilvalg- bygg C – Leangenbukta",
+      "overflowX": 0,
+      "brokenImages": [],
+      "badLinks": [],
+      "linkCount": 15,
+      "placyField": {
+        "top": 417,
+        "variant": "demo-placy-field--building",
+        "afterFirstRow": true
+      },
+      "pageMarker": "tilvalgbyggc",
+      "chatButton": {
+        "top": 725,
+        "bottom": 768,
+        "left": 177.15625,
+        "right": 370
+      },
+      "toTop": {
+        "top": 845.4500122070312,
+        "bottom": 874.4500122070312,
+        "left": 344,
+        "right": 373
+      },
+      "forms": 0
+    },
+    {
+      "viewport": "mobile",
+      "id": "toppleilighetl504",
+      "kind": "building",
+      "status": 200,
+      "errors": [],
+      "sourceRequests": 0,
+      "title": "Bo på toppen av Saltakshus L – Leangenbukta",
+      "overflowX": 0,
+      "brokenImages": [],
+      "badLinks": [],
+      "linkCount": 32,
+      "placyField": {
+        "top": 1601,
+        "variant": "demo-placy-field--building",
+        "afterFirstRow": true
+      },
+      "pageMarker": "toppleilighetl504",
+      "chatButton": {
+        "top": 725,
+        "bottom": 768,
+        "left": 177.15625,
+        "right": 370
+      },
+      "toTop": {
+        "top": 845.4500122070312,
+        "bottom": 874.4500122070312,
+        "left": 344,
+        "right": 373
+      },
+      "forms": 0
+    },
+    {
+      "viewport": "mobile",
+      "id": "trygt-og-bilfritt",
+      "kind": "article",
+      "status": 200,
+      "errors": [],
+      "sourceRequests": 0,
+      "title": "Ikke bekymre deg, i Leangenbukta kan barn leke fritt! – Leangenbukta",
+      "overflowX": 0,
+      "brokenImages": [],
+      "badLinks": [],
+      "linkCount": 30,
+      "placyField": {
+        "top": 2177,
+        "variant": "demo-placy-field--article",
+        "afterFirstRow": false
+      },
+      "pageMarker": "trygt-og-bilfritt",
+      "chatButton": {
+        "top": 725,
+        "bottom": 768,
+        "left": 177.15625,
+        "right": 370
+      },
+      "toTop": {
+        "top": 845.4500122070312,
+        "bottom": 874.4500122070312,
+        "left": 344,
+        "right": 373
+      },
+      "forms": 0
+    },
+    {
+      "viewport": "mobile",
+      "id": "vedlikeholdsfritt",
+      "kind": "article",
+      "status": 200,
+      "errors": [],
+      "sourceRequests": 0,
+      "title": "Her kan du bo vedlikeholdsfritt i mange år! – Leangenbukta",
+      "overflowX": 0,
+      "brokenImages": [],
+      "badLinks": [],
+      "linkCount": 29,
+      "placyField": null,
+      "pageMarker": "vedlikeholdsfritt",
+      "chatButton": {
+        "top": 725,
+        "bottom": 768,
+        "left": 177.15625,
+        "right": 370
+      },
+      "toTop": {
+        "top": 845.4500122070312,
+        "bottom": 874.4500122070312,
+        "left": 344,
+        "right": 373
+      },
+      "forms": 0
+    },
+    {
+      "viewport": "mobile",
+      "id": "velge-nybolig",
+      "kind": "info",
+      "status": 200,
+      "errors": [],
+      "sourceRequests": 0,
+      "title": "Gode grunner til å velge nybolig – Leangenbukta",
+      "overflowX": 0,
+      "brokenImages": [],
+      "badLinks": [],
+      "linkCount": 11,
+      "placyField": null,
+      "pageMarker": "velge-nybolig",
+      "chatButton": {
+        "top": 725,
+        "bottom": 768,
+        "left": 177.15625,
+        "right": 370
+      },
+      "toTop": {
+        "top": 845.4500122070312,
+        "bottom": 874.4500122070312,
+        "left": 344,
+        "right": 373
+      },
+      "forms": 0
+    },
+    {
+      "viewport": "mobile",
+      "id": "visning-pa-tomta",
+      "kind": "info",
+      "status": 200,
+      "errors": [],
+      "sourceRequests": 0,
+      "title": "Besøk vårt salgslokale – Leangenbukta",
+      "overflowX": 0,
+      "brokenImages": [],
+      "badLinks": [],
+      "linkCount": 12,
+      "placyField": null,
+      "pageMarker": "visning-pa-tomta",
+      "chatButton": {
+        "top": 725,
+        "bottom": 768,
+        "left": 177.15625,
+        "right": 370
+      },
+      "toTop": {
+        "top": 845.4500122070312,
+        "bottom": 874.4500122070312,
+        "left": 344,
+        "right": 373
+      },
+      "forms": 0
+    }
+  ]
+}

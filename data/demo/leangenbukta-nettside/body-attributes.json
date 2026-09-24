@@ -1,0 +1,190 @@
+{
+  "/demo/leangenbukta-nettside/2roms-og3roms": {
+    "className": "wp-singular page-template-default page page-id-13485 wp-theme-salient material wpb-js-composer js-comp-ver-8.6.1 vc_responsive",
+    "bgHeader": "false"
+  },
+  "/demo/leangenbukta-nettside/aktuelt": {
+    "className": "blog wp-theme-salient material wpb-js-composer js-comp-ver-8.6.1 vc_responsive",
+    "bgHeader": "false"
+  },
+  "/demo/leangenbukta-nettside/apenhetsloven": {
+    "className": "wp-singular page-template-default page page-id-14943 wp-theme-salient material wpb-js-composer js-comp-ver-8.6.1 vc_responsive",
+    "bgHeader": "false"
+  },
+  "/demo/leangenbukta-nettside/beliggenhet": {
+    "className": "wp-singular page-template-default page page-id-18465 wp-theme-salient material wpb-js-composer js-comp-ver-8.6.1 vc_responsive",
+    "bgHeader": "false"
+  },
+  "/demo/leangenbukta-nettside/bli-obos-medlem": {
+    "className": "wp-singular page-template-default page page-id-8287 wp-theme-salient material wpb-js-composer js-comp-ver-8.6.1 vc_responsive",
+    "bgHeader": "false"
+  },
+  "/demo/leangenbukta-nettside/byvilla-1-og-2": {
+    "className": "wp-singular post-template-default single single-post postid-13840 single-format-standard wp-theme-salient material wpb-js-composer js-comp-ver-8.6.1 vc_responsive",
+    "bgHeader": "false"
+  },
+  "/demo/leangenbukta-nettside/elbil-elsykkeldeling": {
+    "className": "wp-singular page-template-default page page-id-8878 wp-theme-salient material wpb-js-composer js-comp-ver-8.6.1 vc_responsive",
+    "bgHeader": "false"
+  },
+  "/demo/leangenbukta-nettside/fasiliteter-som-gjor-hverdagen-enklere": {
+    "className": "wp-singular post-template-default single single-post postid-8898 single-format-standard wp-theme-salient material wpb-js-composer js-comp-ver-8.6.1 vc_responsive",
+    "bgHeader": "false"
+  },
+  "/demo/leangenbukta-nettside/fordeler-a-bo-forste-etasje": {
+    "className": "wp-singular page-template-default page page-id-12656 wp-theme-salient material wpb-js-composer js-comp-ver-8.6.1 vc_responsive",
+    "bgHeader": "false"
+  },
+  "/demo/leangenbukta-nettside/galleri": {
+    "className": "wp-singular page-template-default page page-id-10743 wp-theme-salient material wpb-js-composer js-comp-ver-8.6.1 vc_responsive",
+    "bgHeader": "false"
+  },
+  "/demo/leangenbukta-nettside/her-trenger-du-ikke-eie-bil": {
+    "className": "wp-singular post-template-default single single-post postid-8882 single-format-standard wp-theme-salient material wpb-js-composer js-comp-ver-8.6.1 vc_responsive",
+    "bgHeader": "false"
+  },
+  "/demo/leangenbukta-nettside/hvordankjopebolig-2": {
+    "className": "wp-singular page-template-default page page-id-16628 wp-theme-salient material wpb-js-composer js-comp-ver-8.6.1 vc_responsive",
+    "bgHeader": "false"
+  },
+  "/demo/leangenbukta-nettside/hvordankjopebolig-3": {
+    "className": "wp-singular page-template-default page page-id-17758 wp-theme-salient material wpb-js-composer js-comp-ver-8.6.1 vc_responsive",
+    "bgHeader": "false"
+  },
+  "/demo/leangenbukta-nettside/hvordankjopebolig-byggc": {
+    "className": "wp-singular page-template-default page page-id-17499 wp-theme-salient material wpb-js-composer js-comp-ver-8.6.1 vc_responsive",
+    "bgHeader": "false"
+  },
+  "/demo/leangenbukta-nettside/hvordankjopebolig": {
+    "className": "wp-singular page-template-default page page-id-16101 wp-theme-salient material wpb-js-composer js-comp-ver-8.6.1 vc_responsive",
+    "bgHeader": "false"
+  },
+  "/demo/leangenbukta-nettside/innflyttingsklare-leiligheter": {
+    "className": "wp-singular page-template-default page page-id-15527 wp-theme-salient material wpb-js-composer js-comp-ver-8.6.1 vc_responsive",
+    "bgHeader": "false"
+  },
+  "/demo/leangenbukta-nettside/knutepunktet": {
+    "className": "wp-singular page-template-default page page-id-15993 wp-theme-salient material wpb-js-composer js-comp-ver-8.6.1 vc_responsive",
+    "bgHeader": "false"
+  },
+  "/demo/leangenbukta-nettside/kort-vei-til-alt": {
+    "className": "wp-singular post-template-default single single-post postid-8917 single-format-standard wp-theme-salient material wpb-js-composer js-comp-ver-8.6.1 vc_responsive",
+    "bgHeader": "false"
+  },
+  "/demo/leangenbukta-nettside/kundeportal": {
+    "className": "wp-singular page-template-default page page-id-13881 wp-theme-salient material wpb-js-composer js-comp-ver-8.6.1 vc_responsive",
+    "bgHeader": "false"
+  },
+  "/demo/leangenbukta-nettside/nytt-salgstrinn-bygg-l": {
+    "className": "wp-singular post-template-default single single-post postid-10101 single-format-standard wp-theme-salient material wpb-js-composer js-comp-ver-8.6.1 vc_responsive",
+    "bgHeader": "false"
+  },
+  "/demo/leangenbukta-nettside/om-prosjektet": {
+    "className": "wp-singular page-template-default page page-id-8034 wp-theme-salient material wpb-js-composer js-comp-ver-8.6.1 vc_responsive",
+    "bgHeader": "false"
+  },
+  "/demo/leangenbukta-nettside/parktunet1": {
+    "className": "wp-singular page-template-default page page-id-17650 wp-theme-salient material wpb-js-composer js-comp-ver-8.6.1 vc_responsive",
+    "bgHeader": "false"
+  },
+  "/demo/leangenbukta-nettside/personvern": {
+    "className": "wp-singular page-template-default page page-id-6269 wp-theme-salient material wpb-js-composer js-comp-ver-8.6.1 vc_responsive",
+    "bgHeader": "false"
+  },
+  "/demo/leangenbukta-nettside/portfolio/sjoparken": {
+    "className": "wp-singular portfolio-template-default single single-portfolio postid-6879 wp-theme-salient material wpb-js-composer js-comp-ver-8.6.1 vc_responsive",
+    "bgHeader": "false"
+  },
+  "/demo/leangenbukta-nettside/project-type/premium-kvaliteter": {
+    "className": "archive tax-project-type term-premium-kvaliteter term-22 wp-theme-salient material wpb-js-composer js-comp-ver-8.6.1 vc_responsive",
+    "bgHeader": "false"
+  },
+  "/demo/leangenbukta-nettside/rekkehus-for-barnefamilier-i-trondheim": {
+    "className": "wp-singular page-template-default page page-id-14983 wp-theme-salient material wpb-js-composer js-comp-ver-8.6.1 vc_responsive",
+    "bgHeader": "false"
+  },
+  "/demo/leangenbukta-nettside/rekkehus19-27": {
+    "className": "wp-singular post-template-default single single-post postid-15073 single-format-standard wp-theme-salient material wpb-js-composer js-comp-ver-8.6.1 vc_responsive",
+    "bgHeader": "false"
+  },
+  "/demo/leangenbukta-nettside/retningslinjer-for-informasjonskapsler": {
+    "className": "wp-singular page-template-default page page-id-13034 wp-theme-salient material wpb-js-composer js-comp-ver-8.6.1 vc_responsive",
+    "bgHeader": "false"
+  },
+  "/demo/leangenbukta-nettside/salgsmateriell": {
+    "className": "wp-singular page-template-default page page-id-9664 page-parent wp-theme-salient material wpb-js-composer js-comp-ver-8.6.1 vc_responsive",
+    "bgHeader": "false"
+  },
+  "/demo/leangenbukta-nettside/salgsmateriell/kjopebekreftelser": {
+    "className": "wp-singular page-template-default page page-id-10786 page-child parent-pageid-9664 wp-theme-salient material wpb-js-composer js-comp-ver-8.6.1 vc_responsive",
+    "bgHeader": "false"
+  },
+  "/demo/leangenbukta-nettside/salgsmateriell/prislister": {
+    "className": "wp-singular page-template-default page page-id-10784 page-child parent-pageid-9664 wp-theme-salient material wpb-js-composer js-comp-ver-8.6.1 vc_responsive",
+    "bgHeader": "false"
+  },
+  "/demo/leangenbukta-nettside/salgsmateriell/prospekter": {
+    "className": "wp-singular page-template-default page page-id-10782 page-child parent-pageid-9664 wp-theme-salient material wpb-js-composer js-comp-ver-8.6.1 vc_responsive",
+    "bgHeader": "false"
+  },
+  "/demo/leangenbukta-nettside/saltakshus-i": {
+    "className": "wp-singular post-template-default single single-post postid-13066 single-format-standard wp-theme-salient material wpb-js-composer js-comp-ver-8.6.1 vc_responsive",
+    "bgHeader": "false"
+  },
+  "/demo/leangenbukta-nettside/saltakshus-j": {
+    "className": "wp-singular post-template-default single single-post postid-12596 single-format-standard wp-theme-salient material wpb-js-composer js-comp-ver-8.6.1 vc_responsive",
+    "bgHeader": "false"
+  },
+  "/demo/leangenbukta-nettside/saltakshusc": {
+    "className": "wp-singular page-template-default page page-id-17086 wp-theme-salient material wpb-js-composer js-comp-ver-8.6.1 vc_responsive",
+    "bgHeader": "false"
+  },
+  "/demo/leangenbukta-nettside/saltakshush": {
+    "className": "wp-singular post-template-default single single-post postid-14490 single-format-standard wp-theme-salient material wpb-js-composer js-comp-ver-8.6.1 vc_responsive",
+    "bgHeader": "false"
+  },
+  "/demo/leangenbukta-nettside/saltakshusk": {
+    "className": "wp-singular post-template-default single single-post postid-11814 single-format-standard wp-theme-salient material wpb-js-composer js-comp-ver-8.6.1 vc_responsive",
+    "bgHeader": "false"
+  },
+  "/demo/leangenbukta-nettside/stort-til-mindre-2": {
+    "className": "wp-singular page-template-default page page-id-8341 wp-theme-salient material wpb-js-composer js-comp-ver-8.6.1 vc_responsive",
+    "bgHeader": "false"
+  },
+  "/demo/leangenbukta-nettside/stort-til-mindre_byggc": {
+    "className": "wp-singular page-template-default page page-id-18386 wp-theme-salient material wpb-js-composer js-comp-ver-8.6.1 vc_responsive",
+    "bgHeader": "false"
+  },
+  "/demo/leangenbukta-nettside/stort-til-mindre_parktunet": {
+    "className": "wp-singular page-template-default page page-id-17812 wp-theme-salient material wpb-js-composer js-comp-ver-8.6.1 vc_responsive",
+    "bgHeader": "false"
+  },
+  "/demo/leangenbukta-nettside/test-framside": {
+    "className": "wp-singular page-template-default page page-id-18416 wp-theme-salient material wpb-js-composer js-comp-ver-8.6.1 vc_responsive",
+    "bgHeader": "true"
+  },
+  "/demo/leangenbukta-nettside/tilvalgbyggc": {
+    "className": "wp-singular page-template-default page page-id-17393 wp-theme-salient material wpb-js-composer js-comp-ver-8.6.1 vc_responsive",
+    "bgHeader": "false"
+  },
+  "/demo/leangenbukta-nettside/toppleilighetl504": {
+    "className": "wp-singular post-template-default single single-post postid-13515 single-format-standard wp-theme-salient material wpb-js-composer js-comp-ver-8.6.1 vc_responsive",
+    "bgHeader": "false"
+  },
+  "/demo/leangenbukta-nettside/trygt-og-bilfritt": {
+    "className": "wp-singular post-template-default single single-post postid-7765 single-format-standard wp-theme-salient material wpb-js-composer js-comp-ver-8.6.1 vc_responsive",
+    "bgHeader": "false"
+  },
+  "/demo/leangenbukta-nettside/vedlikeholdsfritt": {
+    "className": "wp-singular post-template-default single single-post postid-8285 single-format-standard wp-theme-salient material wpb-js-composer js-comp-ver-8.6.1 vc_responsive",
+    "bgHeader": "false"
+  },
+  "/demo/leangenbukta-nettside/velge-nybolig": {
+    "className": "wp-singular page-template-default page page-id-13522 wp-theme-salient material wpb-js-composer js-comp-ver-8.6.1 vc_responsive",
+    "bgHeader": "false"
+  },
+  "/demo/leangenbukta-nettside/visning-pa-tomta": {
+    "className": "wp-singular page-template-default page page-id-14301 wp-theme-salient material wpb-js-composer js-comp-ver-8.6.1 vc_responsive",
+    "bgHeader": "false"
+  }
+}

@@ -42,6 +42,7 @@ export interface LocalBoardPoiPackage {
     lat: number;
     lng: number;
     address: string | null;
+    featured_image?: string;
     category_id: string;
     description: string;
     editorial_hook: string;
@@ -94,6 +95,7 @@ export function buildLocalBoardPoiPackage(
       lat: place.coordinates.lat,
       lng: place.coordinates.lng,
       address: place.address ?? null,
+      ...(place.image ? { featured_image: place.image } : {}),
       category_id: group.category.id,
       description: place.summary,
       editorial_hook: place.summary,

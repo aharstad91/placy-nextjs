@@ -74,7 +74,7 @@
         "buildingIds": []
       },
       "mapAnchor": {
-        "approximateArea": "Knutepunktet i Leangenbukta"
+        "placeId": "knutepunktet"
       },
       "claims": [
         {
@@ -209,7 +209,7 @@
         "buildingIds": []
       },
       "mapAnchor": {
-        "approximateArea": "Parktunet 1 i Leangenbukta"
+        "placeId": "parktunet-1"
       },
       "claims": [
         {
@@ -386,7 +386,7 @@
         "buildingIds": []
       },
       "mapAnchor": {
-        "approximateArea": "Saltakshus C i Leangenbukta"
+        "placeId": "saltakshus-c"
       },
       "claims": [
         {
@@ -475,7 +475,7 @@
         "buildingIds": []
       },
       "mapAnchor": {
-        "approximateArea": "Saltakshus H i Leangenbukta"
+        "placeId": "saltakshus-h"
       },
       "claims": [
         {
