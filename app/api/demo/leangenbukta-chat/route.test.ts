@@ -332,7 +332,7 @@ describe("POST /api/demo/leangenbukta-chat — kilder, forbehold og feil premiss
     expect(data.reply).not.toContain("ble bygget i 2008");
   });
 
-  it("et årstall verktøyet faktisk returnerte slipper gjennom, med tidsforbehold i stedet for blanket-forbehold", async () => {
+  it("et kildebelagt årstall slipper gjennom uten å gjenta forbeholdet modellen allerede ga", async () => {
     vi.stubGlobal(
       "fetch",
       vi
@@ -345,6 +345,20 @@ describe("POST /api/demo/leangenbukta-chat — kilder, forbehold og feil premiss
     const data = await res.json();
     expect(data.answerType).toBe("fact");
     expect(data.reply).toContain("2026");
+    expect(data.notice).toBeNull();
+  });
+
+  it("legger til tidsforbehold når et faktasvar om innflytting utelater det", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi
+        .fn()
+        .mockResolvedValueOnce(projectInfoCall("innflytting Knutepunktet"))
+        .mockResolvedValueOnce(responsesPayload(finalMessage("Innflytting i Knutepunktet er oppgitt til siste kvartal 2026.", "fact", ["contact"], [KNUTEPUNKTET_SOURCE.id]))),
+    );
+    const { POST } = await import("./route");
+    const res = await POST(post({ message: "Når kan man flytte inn i Knutepunktet?", pageId: "knutepunktet" }, { cookie: visitorCookie() }));
+    const data = await res.json();
     expect(data.notice?.kind).toBe("timing");
   });
 
@@ -368,7 +382,7 @@ describe("POST /api/demo/leangenbukta-chat — kilder, forbehold og feil premiss
       vi
         .fn()
         .mockResolvedValueOnce(projectInfoCall("fellesfasiliteter Knutepunktet"))
-        .mockResolvedValueOnce(responsesPayload(finalMessage("Knutepunktet skal huse prosjektets felles fasiliteter, men hvem som får adgang er uavklart.", "fact", [], [KNUTEPUNKTET_SOURCE.id]))),
+        .mockResolvedValueOnce(responsesPayload(finalMessage("Knutepunktet skal huse prosjektets felles fasiliteter.", "fact", [], [KNUTEPUNKTET_SOURCE.id]))),
     );
     const { POST } = await import("./route");
     const res = await POST(post({ message: "Hvilke fellesarealer får beboerne?", pageId: "knutepunktet" }, { cookie: visitorCookie() }));
@@ -398,9 +412,8 @@ describe("GET /api/demo/leangenbukta-chat", () => {
     return (await GET(req)).json();
   }
 
-  it("merker chatten som prototype og oppgir når kildene sist ble kontrollert", async () => {
+  it("oppgir når siste registrerte kilde ble kontrollert", async () => {
     const data = await getPage("forside");
-    expect(data.prototype).toBe(true);
     const latest = registryFile.map((source) => source.checkedAt).sort().at(-1);
     expect(data.contentCheckedAt).toBe(latest);
   });

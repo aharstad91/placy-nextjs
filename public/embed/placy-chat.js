@@ -59,6 +59,7 @@
   var transcript = null;
   var lastFocused = null;
   var startersLoadedForPage = null;
+  var startersRequestId = 0;
   var sending = false;
 
   // ---------------------------------------------------------------------
@@ -372,6 +373,7 @@
   function loadStarters() {
     var pageId = currentPageId();
     if (startersLoadedForPage === pageId) return;
+    var requestId = ++startersRequestId;
     startersLoadedForPage = pageId;
     chips.textContent = "";
     starters.hidden = true;
@@ -380,7 +382,7 @@
     fetch(cfg.endpoint + "?pageId=" + encodeURIComponent(pageId), { credentials: "include" })
       .then(function (res) { return res.ok ? res.json() : null; })
       .then(function (data) {
-        if (!data) return;
+        if (!data || requestId !== startersRequestId || pageId !== currentPageId()) return;
         setHonesty(data);
         setOpening(data.opening);
         (Array.isArray(data.starters) ? data.starters : []).forEach(function (text) {
@@ -503,6 +505,19 @@
     if (lastFocused && typeof lastFocused.focus === "function") lastFocused.focus();
     else button.focus();
   }
+
+  // Next bytter sidemarkøren uten full sidelasting. Et åpent panel må følge
+  // den nye siden, også når den forrige sidens GET ennå ikke har svart.
+  var pageObserver = new MutationObserver(function () {
+    if (!host.isConnected) { pageObserver.disconnect(); return; }
+    if (open && startersLoadedForPage !== currentPageId()) loadStarters();
+  });
+  pageObserver.observe(document.documentElement, {
+    subtree: true,
+    childList: true,
+    attributes: true,
+    attributeFilter: ["data-placy-page-id"],
+  });
 
   button.addEventListener("click", function () { if (open) closeChat(); else openChat(); });
   closeBtn.addEventListener("click", closeChat);

@@ -245,6 +245,21 @@ describe("leangenbukta-chat/backend — kildebevis fra verktøysvarene i denne m
     expect(result.unsupportedYears).toEqual(["2008"]);
   });
 
+  it("lar ikke et ekko av brukerens årstall i set_interests bli årstallsbevis", async () => {
+    const demo = await loadLiveDemo("leangenbukta-lokal");
+    const fetchImpl = vi
+      .fn()
+      .mockResolvedValueOnce(responsesPayload([functionCall("call_1", "set_interests", { interests: ["innflytting i 2008"] })]))
+      .mockResolvedValueOnce(responsesPayload([finalMessage("Innflyttingen var i 2008.", "fact")]));
+    const result = await runLeangenbuktaChat({
+      apiKey: "test-key", sourceRegistry, model: "gpt-5.6-terra", effort: "low", instructions: "instruks",
+      tools: textChatTools(demo.tools), parallelToolCalls: false, conversation: demo.createConversation(),
+      previousTurns: [], userText: "Var innflyttingen i 2008?", fetchImpl: fetchImpl as unknown as typeof fetch,
+    });
+    expect(result.evidence.map((item) => item.tool)).toContain("set_interests");
+    expect(result.unsupportedYears).toEqual(["2008"]);
+  });
+
   it("teller ikke kildens kontrolldato som støtte for et årstall om stedet", async () => {
     const demo = await loadLiveDemo("leangenbukta-lokal");
     const fetchImpl = vi

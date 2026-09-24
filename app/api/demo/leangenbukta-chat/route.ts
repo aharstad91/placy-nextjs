@@ -102,14 +102,12 @@ export async function GET(request: NextRequest) {
   if (!page) return NextResponse.json({ error: "Chatten kjenner ikke denne siden. Bruk Boardet eller kontakt salgsteamet.", links: fallbackLinks() }, { status: 400, headers });
   try {
     const demo = await loadLiveDemo("leangenbukta-lokal");
-    // `prototype` og `contentCheckedAt` er det widgeten bygger statuslinja av:
-    // chatten er en prototype, og kildene er sist kontrollert på denne datoen.
+    // Datoen er nyeste registrerte kildekontroll, ikke en godkjenning av alt innhold.
     return NextResponse.json(
       {
         pageTitle: page.title,
         opening: pageOpening(page),
         starters: page.chatStarters,
-        prototype: true,
         snapshotDate: SITE_SNAPSHOT_DATE,
         contentCheckedAt: leangenbuktaSourceRegistry().latestCheckedAt,
         datasetVersion: demo.snapshotId,

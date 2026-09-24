@@ -31,6 +31,9 @@ const RESPONSES_URL = "https://api.openai.com/v1/responses";
 const DEFAULT_MAX_ROUNDS = 4;
 const DEFAULT_TIMEOUT_MS = 25000;
 const MAX_OUTPUT_TOKENS = 900;
+// Omvisningsverktøyene kan ekko brukerens egne interesser eller plan. Årstall
+// derfra er derfor aldri selvstendig støtte for et årstall i svaret.
+const YEAR_EVIDENCE_TOOLS = new Set(["find_places", "get_place_facts", "get_place_address", "get_board_facts", "find_project_info"]);
 
 export type ChatAnswerType = "fact" | "gap" | "smalltalk" | "refusal";
 
@@ -335,7 +338,9 @@ export async function runLeangenbuktaChat(input: RunInput): Promise<ChatBackendR
           evidence.push({ tool: call.name, ids: sourceIdsInOutput(output, input.sourceRegistry) });
           // Kontrolldatoen (`checked_at`) sier når kilden ble lest, ikke noe om
           // prosjektet; ellers ville årets tall alltid sett kildebelagt ut.
-          evidenceText.push(JSON.stringify(output, (key, value) => (key === "checked_at" || key === "checkedAt" ? undefined : value)));
+          if (YEAR_EVIDENCE_TOOLS.has(call.name)) {
+            evidenceText.push(JSON.stringify(output, (key, value) => (key === "checked_at" || key === "checkedAt" ? undefined : value)));
+          }
           provisional ||= isProvisional(output);
         }
       } catch {

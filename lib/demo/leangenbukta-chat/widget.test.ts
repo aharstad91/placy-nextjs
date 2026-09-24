@@ -140,6 +140,63 @@ describe("placy-chat widget — data-placy-chat-open", () => {
 });
 
 describe("placy-chat widget — sideskifte i klientnavigert app", () => {
+  it("oppdaterer en åpen chat ved sideskifte og ignorerer et sent svar fra forrige side", async () => {
+    loadWidget();
+    const marker = document.createElement("div");
+    marker.setAttribute("data-placy-page-id", "forside");
+    document.body.appendChild(marker);
+    const pending: Record<string, (body: unknown) => void> = {};
+    const fetchMock = vi.fn((url: string) => new Promise<Response>((resolve) => {
+      const pageId = new URL(String(url), "http://localhost").searchParams.get("pageId")!;
+      pending[pageId] = (body) => resolve({ ok: true, json: async () => body } as Response);
+    }));
+    vi.stubGlobal("fetch", fetchMock);
+
+    window.PlacyChat!.open();
+    expect(pending.forside).toBeDefined();
+    marker.setAttribute("data-placy-page-id", "knutepunktet");
+    await tick();
+    expect(pending.knutepunktet).toBeDefined();
+
+    pending.knutepunktet({ opening: "Hei fra Knutepunktet", starters: ["Spør om bygget"] });
+    await tick();
+    pending.forside({ opening: "Gammel forside", starters: ["Gammelt forslag"] });
+    await tick();
+
+    expect(shadow().querySelector(".opening")?.textContent).toBe("Hei fra Knutepunktet");
+    expect(Array.from(shadow().querySelectorAll(".starter")).map((el) => el.textContent)).toEqual(["Spør om bygget"]);
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+  });
+
+  it("ignorerer den første forsideresponsen etter navigasjon forside–bygg–forside", async () => {
+    loadWidget();
+    const marker = document.createElement("div");
+    marker.setAttribute("data-placy-page-id", "forside");
+    document.body.appendChild(marker);
+    const pending: Array<{ pageId: string; resolve: (body: unknown) => void }> = [];
+    vi.stubGlobal("fetch", vi.fn((url: string) => new Promise<Response>((resolve) => {
+      pending.push({
+        pageId: new URL(String(url), "http://localhost").searchParams.get("pageId")!,
+        resolve: (body) => resolve({ ok: true, json: async () => body } as Response),
+      });
+    })));
+
+    window.PlacyChat!.open();
+    marker.setAttribute("data-placy-page-id", "knutepunktet");
+    await tick();
+    marker.setAttribute("data-placy-page-id", "forside");
+    await tick();
+    expect(pending.map((item) => item.pageId)).toEqual(["forside", "knutepunktet", "forside"]);
+
+    pending[2].resolve({ opening: "Ny forside", starters: ["Nytt forslag"] });
+    await tick();
+    pending[0].resolve({ opening: "Gammel forside", starters: ["Gammelt forslag"] });
+    pending[1].resolve({ opening: "Gammelt bygg", starters: ["Byggforslag"] });
+    await tick();
+    expect(shadow().querySelector(".opening")?.textContent).toBe("Ny forside");
+    expect(Array.from(shadow().querySelectorAll(".starter")).map((el) => el.textContent)).toEqual(["Nytt forslag"]);
+  });
+
   it("bruker siste data-placy-page-id i DOM-en, ikke skriptets data-page-id, i GET og POST", async () => {
     loadWidget();
     const marker1 = document.createElement("div");
@@ -183,7 +240,8 @@ describe("placy-chat widget — sideskifte i klientnavigert app", () => {
     (shadow().querySelector(".send") as HTMLButtonElement).click();
     await tick(30);
 
-    const lastCallBody = JSON.parse((fetchMock.mock.calls[fetchMock.mock.calls.length - 1][1] as RequestInit).body as string);
+    const postCalls = fetchMock.mock.calls.filter((call) => call[1]?.method === "POST");
+    const lastCallBody = JSON.parse((postCalls[postCalls.length - 1][1] as RequestInit).body as string);
     expect(lastCallBody.transcript).toBe("transcript-1");
     expect(lastCallBody.pageId).toBe("beliggenhet");
   });
