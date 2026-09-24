@@ -23,8 +23,9 @@ import { PLACY_BOARD } from "@/app/demo/leangenbukta-nettside/placy-row";
  *
  * Ingen reisetid, avstand eller tilgang til fasiliteter for det konkrete
  * bygget: det finnes ikke kontrollert byggspesifikt datagrunnlag. Feltet
- * beskriver hva man kan gjøre (utforske kartet, spørre), og chatten svarer
- * ut fra Placys kontrollerte kunnskap om prosjektet.
+ * beskriver hva man kan gjøre (utforske kartet, spørre), og chatten er en
+ * prototype som svarer ut fra Placys datasett med offentlige kilder om
+ * prosjektet — ikke godkjent av utbygger eller megler.
  *
  * Den sekundære knappen åpner tekstchatten via widgetens delegerte
  * `data-placy-chat-open` (public/embed/placy-chat.js), med et forslag til

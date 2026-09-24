@@ -22,14 +22,14 @@ Spørsmål som også er fine å prøve: «Hvilke bygg er i salg nå?», «Hvor l
 |---|---|
 | Alle offentlige sider fra leangenbukta.no, på mobil og desktop | Innbygging på deres eget WordPress-nettsted |
 | Placy-feltene på byggsidene, Beliggenhet og forsiden | Kundegodkjent innhold og egne punkter i kartet |
-| Tekstchat på alle sider, med svar fra Placys kontrollerte kunnskap om Leangenbukta | Drift, overvåking og oppdatering av innholdet over tid |
+| Tekstchat på alle sider, en prototype som svarer ut fra Placys datasett med offentlige kilder om Leangenbukta | Drift, overvåking og oppdatering av innholdet over tid |
 | Nabolagsboard med kart, reisetider og Anja | Nye kartbilder eller 3D av planlagte bygg |
 
 Boligvelger, prospekter, prislister, kjøpebekreftelser og kundeportaler åpnes hos dere, merket med ↗. Ledighet og priser vises bare der, og chatten sier fra om at den ikke kan bekrefte ledighet.
 
 ## Det kan være forskjeller
 
-Kopien er et øyeblikksbilde fra 23.09.2026. Endrer dere noe på nettstedet etter det, står den gamle teksten i kopien. Chatten og Anja bygger på Placys kildekontrollerte kunnskap, ikke på nettsidens tekst, og sier fra når en opplysning mangler, er usikker eller spriker mellom kildene. Kartet viser ferdige og planlagte bygg slik kartgrunnlaget gjør i dag.
+Kopien er et øyeblikksbilde fra 23.09.2026. Endrer dere noe på nettstedet etter det, står den gamle teksten i kopien. Chatten og Anja er prototyper. De bygger på et datasett Placy har satt sammen fra offentlige kilder, ikke direkte på nettsidens tekst, og ingenting i svarene er kontrollert eller godkjent av Koteng Jenssen eller megler. Chatten viser hvilke kilder den slo opp i, og er laget for å si fra når en opplysning mangler eller er usikker, men den kan ta feil og vil ikke alltid fange opp at kildene spriker. Si gjerne fra om svar som ikke stemmer. Kartet viser ferdige og planlagte bygg slik kartgrunnlaget gjør i dag.
 
 Underveis fant vi noen småfeil på nettstedet dere kanskje vil vite om: e-postlenken til Jan Erik Fjeldseth mangler `mailto:` på 13 sider og gir en feilside, forsidens lenke til «Byvilla 3, Rekkehus 1–4» gir en feilside, og lenken til personvern i cookie-banneret peker feil fra undersider.
 

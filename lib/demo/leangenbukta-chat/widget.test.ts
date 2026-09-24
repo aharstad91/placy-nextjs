@@ -338,15 +338,88 @@ describe("placy-chat widget — prototypestatus, åpning, kilder og forbehold", 
     return shadow().querySelector(".honesty") as HTMLElement;
   }
 
-  it("sier at chatten er en prototype før serveren har svart, og viser kildedato fra API-et etterpå", async () => {
+  it("sier at chatten er en prototype før serveren har svart, og viser nyeste registrerte kildekontroll etterpå", async () => {
     loadWidget();
-    expect(honesty().textContent).toMatch(/prototype/i);
+    expect(shadow().querySelector(".head .badge")?.textContent).toMatch(/prototype/i);
     expect(honesty().textContent).toMatch(/ikke godkjent/i);
     vi.stubGlobal("fetch", vi.fn(() => jsonResponse({ starters: [], opening: "Hei!", prototype: true, contentCheckedAt: "2026-09-21" })));
     window.PlacyChat!.open();
     await tick();
-    expect(honesty().textContent).toContain("21.09.2026");
-    expect(honesty().textContent).toMatch(/prototype/i);
+    // `contentCheckedAt` er nyeste `checkedAt` i kilderegisteret, ikke en
+    // dato alle kildene er kontrollert på — teksten må si akkurat det.
+    expect(honesty().textContent).toContain("Nyeste registrerte kildekontroll: 21.09.2026");
+    expect(honesty().textContent).not.toMatch(/sist kontrollert/i);
+    expect(shadow().querySelector(".head .badge")?.textContent).toMatch(/prototype/i);
+  });
+
+  it("viser merkevare og prototypemerke i toppen, statuslinja under, og hilsenen før forslagene", async () => {
+    loadWidget();
+    vi.stubGlobal("fetch", vi.fn(() => jsonResponse({
+      starters: ["Når er Knutepunktet ferdig?", "Hva finnes i nærheten?"],
+      opening: "Hei! Spør meg om Knutepunktet.",
+      contentCheckedAt: "2026-09-21",
+    })));
+    window.PlacyChat!.open();
+    await tick();
+    const head = shadow().querySelector(".head") as HTMLElement;
+    expect(head.querySelector(".mark svg")).not.toBeNull();
+    expect(head.querySelector("h2")?.textContent).toBe("Spør om Leangenbukta");
+    expect(head.textContent).toContain("Drevet av Placy");
+
+    const opening = shadow().querySelector(".msg.opening") as HTMLElement;
+    const starterButtons = Array.from(shadow().querySelectorAll(".starter")) as HTMLButtonElement[];
+    expect(starterButtons.map((b) => b.textContent)).toEqual(["Når er Knutepunktet ferdig?", "Hva finnes i nærheten?"]);
+    const follows = (a: Node, b: Node) => Boolean(a.compareDocumentPosition(b) & Node.DOCUMENT_POSITION_FOLLOWING);
+    expect(follows(head, honesty())).toBe(true);
+    expect(follows(honesty(), opening)).toBe(true);
+    expect(follows(opening, starterButtons[0])).toBe(true);
+    expect(follows(starterButtons[0], shadow().querySelector("textarea") as Node)).toBe(true);
+  });
+
+  it("viser hilsenen øverst også når chatten åpnes med et spørsmål fra siden", async () => {
+    loadWidget();
+    let resolveStarters: (value: Response) => void = () => {};
+    vi.stubGlobal("fetch", vi.fn((url: string) => {
+      if (String(url).includes("?pageId=")) return new Promise<Response>((resolve) => { resolveStarters = resolve; });
+      return new Promise<Response>(() => {});
+    }));
+    window.PlacyChat!.open({ question: "Når er Knutepunktet ferdig?" });
+    await tick();
+    resolveStarters({ ok: true, json: async () => ({ starters: [], opening: "Hei!" }) } as Response);
+    await tick();
+    const log = shadow().querySelector(".log") as HTMLElement;
+    expect(log.firstElementChild?.classList.contains("opening")).toBe(true);
+    expect(log.firstElementChild?.textContent).toBe("Hei!");
+  });
+
+  it("flytter forslagene for en ny side til slutten av en påbegynt samtale", async () => {
+    loadWidget();
+    const marker = document.createElement("div");
+    marker.setAttribute("data-placy-page-id", "forside");
+    document.body.appendChild(marker);
+    vi.stubGlobal("fetch", vi.fn((url: string) => {
+      if (String(url).includes("?pageId=")) {
+        return jsonResponse({ starters: [String(url).includes("knutepunktet") ? "Om Knutepunktet" : "Om forsiden"], opening: "Hei!" });
+      }
+      return jsonResponse({ reply: "Svar.", answerType: "fact", links: [], transcript: "tok" });
+    }));
+    window.PlacyChat!.open({ question: "Hei" });
+    await tick(30);
+    window.PlacyChat!.close();
+    marker.setAttribute("data-placy-page-id", "knutepunktet");
+    window.PlacyChat!.open();
+    await tick();
+    const log = shadow().querySelector(".log") as HTMLElement;
+    expect(log.lastElementChild?.classList.contains("starters")).toBe(true);
+    expect(log.lastElementChild?.textContent).toContain("Om Knutepunktet");
+  });
+
+  it("har en merket startknapp med synlig etikett nederst til høyre over til-toppen-knappen", () => {
+    loadWidget();
+    expect(button().textContent).toBe("Spør om Leangenbukta");
+    expect(button().querySelector("svg")?.getAttribute("aria-hidden")).toBe("true");
+    const styleText = shadow().querySelector("style")!.textContent!;
+    expect(styleText).toContain(".btn{position:fixed;bottom:76px;right:20px");
   });
 
   it("viser sidens åpning som første melding og bytter den når siden byttes før samtalen har startet", async () => {
@@ -390,6 +463,7 @@ describe("placy-chat widget — prototypestatus, åpning, kilder og forbehold", 
     await tick(30);
     const first = shadow().querySelector(".msg.assistant:not(.opening)") as HTMLElement;
     const sources = first.querySelector(".sources") as HTMLElement;
+    expect(sources.textContent).toMatch(/^Kilder i oppslaget: /);
     expect(sources.textContent).toContain("Knutepunktet – Leangenbukta");
     expect(sources.querySelector("a, img")).toBeNull();
     expect(first.querySelector(".notice")?.textContent).toBe("Framdrift kan endre seg.");
