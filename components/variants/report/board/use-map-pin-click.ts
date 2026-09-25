@@ -5,7 +5,7 @@ import { useEngagement } from "@/lib/instrumentation/engagement-scope";
 import { useBoard } from "./board-state";
 import { useStoryTourOptional } from "./story/story-tour";
 import { useDesktopPlacePanel } from "./use-popup-mode";
-import { useBoardAgent } from "./agent/board-agent";
+import { useBoardAgentMode } from "./agent/board-agent";
 
 /**
  * Trykk på en kartmarkør — ÉN vei inn, uansett motor (2026-08-28).
@@ -54,7 +54,7 @@ export function useMapPinClick(): (poiId: string) => void {
   const story = useStoryTourOptional();
   const engagement = useEngagement();
   const placePanel = useDesktopPlacePanel();
-  const agent = useBoardAgent();
+  const agent = useBoardAgentMode();
 
   const latest = useRef({ data, dispatch, engagement, story, placePanel, agent });
   latest.current = { data, dispatch, engagement, story, placePanel, agent };

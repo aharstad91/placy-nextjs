@@ -49,13 +49,12 @@ describe("AgentModeToggle", () => {
     radios.forEach((radio) => expect(radio.tagName).toBe("BUTTON"));
   });
 
-  it("en ny veksler etter modusbytte (mobilens sheet) tar imot fokuset", () => {
-    const first = render(<AgentModeToggle mode="explore" onChange={vi.fn()} name="Anja" />);
-    const agentOption = screen.getByRole("radio", { name: "Spør Anja" });
-    agentOption.focus();
-    fireEvent.click(agentOption);
-    first.unmount();
-    render(<AgentModeToggle mode="agent" onChange={vi.fn()} name="Anja" />);
+  it("en ny veksler tar imot fokuset når koordinatoren sier det, ellers ikke", () => {
+    render(<AgentModeToggle mode="agent" onChange={vi.fn()} name="Anja" claimFocus={() => true} />);
     expect(document.activeElement).toBe(screen.getByRole("radio", { name: "Spør Anja" }));
+    cleanup();
+    (document.activeElement as HTMLElement | null)?.blur();
+    render(<AgentModeToggle mode="agent" onChange={vi.fn()} name="Anja" claimFocus={() => false} />);
+    expect(document.activeElement).toBe(document.body);
   });
 });

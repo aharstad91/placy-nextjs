@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { memo, useEffect, useRef, useState, type ReactNode } from "react";
 import type { KeyboardEvent } from "react";
 import { ArrowUp, ChevronRight, Mic, MapPin, X } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -111,7 +111,20 @@ function SuggestionChips({
   );
 }
 
-function EntryRow({
+/** Brukerens eget initiativ — skrevet, sagt, et FAQ-spørsmål eller et tema. */
+function OutgoingBubble({ children }: { children: ReactNode }) {
+  return (
+    <div className="ml-auto max-w-[85%] rounded-2xl rounded-br-md bg-stone-900 px-4 py-2.5 text-[14px] leading-[1.5] text-white">
+      <p className="whitespace-pre-wrap break-words">{children}</p>
+    </div>
+  );
+}
+
+/**
+ * Ett innslag. Memoisert: talen oppdaterer siste innslag for hvert ord, og
+ * resten av historikken skal ikke rendre på nytt for det.
+ */
+const EntryRow = memo(function EntryRow({
   entry,
   onPlaceFocus,
 }: {
@@ -121,12 +134,10 @@ function EntryRow({
   switch (entry.kind) {
     case "user":
       return (
-        <div className="ml-auto max-w-[85%] rounded-2xl rounded-br-md bg-stone-900 px-4 py-2.5 text-[14px] leading-[1.5] text-white">
-          <p className="whitespace-pre-wrap break-words">
-            {entry.via === "voice" && <VoiceMark />}
-            {entry.text}
-          </p>
-        </div>
+        <OutgoingBubble>
+          {entry.via === "voice" && <VoiceMark />}
+          {entry.text}
+        </OutgoingBubble>
       );
 
     case "assistant":
@@ -192,18 +203,10 @@ function EntryRow({
     }
 
     case "faq":
-      return (
-        <div className="ml-auto max-w-[85%] rounded-2xl rounded-br-md bg-stone-900 px-4 py-2.5 text-[14px] leading-[1.5] text-white">
-          <p className="whitespace-pre-wrap break-words">{entry.question}</p>
-        </div>
-      );
+      return <OutgoingBubble>{entry.question}</OutgoingBubble>;
 
     case "theme":
-      return (
-        <div className="ml-auto max-w-[85%] rounded-2xl rounded-br-md bg-stone-900 px-4 py-2.5 text-[14px] leading-[1.5] text-white">
-          <p className="break-words">{entry.label}</p>
-        </div>
-      );
+      return <OutgoingBubble>{entry.label}</OutgoingBubble>;
 
     case "pending":
       return (
@@ -244,7 +247,7 @@ function EntryRow({
     default:
       return null;
   }
-}
+});
 
 export function AgentPanel({
   name,

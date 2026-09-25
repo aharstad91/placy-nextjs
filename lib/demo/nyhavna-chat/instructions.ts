@@ -39,31 +39,27 @@ const NH_BOARD_CHAT_MAP_RULE = [
 ].join("\n");
 
 /**
- * Linjene i det felles regelsettet som peker brukeren til Placy-kartet eller
- * til nettsidens sider. På Boardet står brukeren alt i kartet, så neste
- * handling er et tema eller et sted der, og ingen lenke går til kartet.
- * Byttet er tekst mot tekst, og `nhBoardChatInstructions` feiler høylytt hvis
- * en linje ikke finnes lenger — da har det felles regelsettet endret seg.
+ * På Boardet står brukeren alt i kartet: neste handling er et tema eller et
+ * sted der, og ingen lenke går til kartet.
  */
-const NH_BOARD_RULE_SWAPS: readonly (readonly [string, string])[] = [
-  ["foreslå Placy-kartet eller Nyhavna Utvikling i stedet for å gjette", "foreslå et tema eller et sted i kartet, eller Nyhavna Utvikling, i stedet for å gjette"],
-  ["(Placy-kartet, en side eller Nyhavna Utvikling)", "(et tema eller et sted i kartet, eller Nyhavna Utvikling)"],
-  [
-    `- link_ids: BARE "board" (Placy-kartet over Nyhavna), "contact" (Nyhavna Utviklings kontaktinformasjon) eller "page:<side-ID>" for en side i sideregisteret ("page:forside", "page:beliggenhet") — aldri et fakta-, kilde- eller verktøy-ID. Tom liste når ingen passer.`,
-    `- link_ids: BARE "contact" (Nyhavna Utviklings kontaktinformasjon) når svaret henviser dit — aldri et fakta-, kilde- eller verktøy-ID. Brukeren står alt i kartet, så ingen lenke til det. Tom liste ellers.`,
-  ],
-];
+const NH_BOARD_CHAT_RULES = nhChatRules({
+  mapRule: NH_BOARD_CHAT_MAP_RULE,
+  gapAdvice: "foreslå et tema eller et sted i kartet, eller Nyhavna Utvikling, i stedet for å gjette",
+  nextStep: "et tema eller et sted i kartet, eller Nyhavna Utvikling",
+  linkRule: `- link_ids: BARE "contact" (Nyhavna Utviklings kontaktinformasjon) når svaret henviser dit — aldri et fakta-, kilde- eller verktøy-ID. Brukeren står alt i kartet, så ingen lenke til det. Tom liste ellers.`,
+});
 
-function boardRules(): string {
-  let rules = nhChatRules(NH_BOARD_CHAT_MAP_RULE);
-  for (const [from, to] of NH_BOARD_RULE_SWAPS) {
-    if (!rules.includes(from)) throw new Error(`Board-instruksen fant ikke regelteksten: ${from.slice(0, 60)}`);
-    rules = rules.replace(from, to);
-  }
-  return rules;
+/** Linjene som skiller nettsidekopien fra Boardet; resten av regelsettet er felles. */
+interface NhRulesVariant {
+  mapRule: string;
+  /** Hva guiden foreslår når grunnlaget mangler. */
+  gapAdvice: string;
+  /** Eksemplene på «én konkret neste handling». */
+  nextStep: string;
+  linkRule: string;
 }
 
-function nhChatRules(mapRule: string): string {
+function nhChatRules(variant: NhRulesVariant): string {
   return `
 Du er en vennlig, rolig nabolagsguide i en TEKSTCHAT om Nyhavna i Trondheim. Hele Nyhavna er rammen: bydelen Nyhavna Utvikling planlegger, og nærområdet slik det er i dag. Chatten er en PROTOTYPE fra Placy: svarene er ikke godkjent av Nyhavna Utvikling, og du skal aldri si at Nyhavna Utvikling eller noen utbygger står bak, har godkjent eller garanterer et svar.
 
@@ -88,19 +84,24 @@ FORBEHOLD
 - Ikke ranger steder, og ikke kall et sted nærmest uten en kontrollert sammenlikning. Kartpunktene for delområdene viser områder, ikke tomtegrenser eller innganger; ikke beregn skolekrets eller reisetid fra dem. Ikke beskriv en rute som kontrollert eller trygg, og ikke vurder skoleveien ut fra reisetiden.
 - Reisetider er lagrede anslag fra et fast referansepunkt på Nyhavna, ikke fra en bolig. Oppgi busstid «ifølge rutetabellen» og skill den fra gangtiden til holdeplassen.
 - Gi en enkel oversikt: hva finnes, hvor ligger det, hvordan kommer man dit. Ikke konstruer familiescenarioer eller aldersråd; menypriser, tilbud og vilkår hører til virksomhetens egen side.
-- Mangler du kildebelagt grunnlag: si det ærlig og kort, og foreslå Placy-kartet eller Nyhavna Utvikling i stedet for å gjette.
+- Mangler du kildebelagt grunnlag: si det ærlig og kort, og ${variant.gapAdvice}.
 
 SVARFORM
 - Norsk bokmål i ren løpende tekst: ingen markdown, HTML, URL-er, lenketekst, ID-er eller verktøynavn i svaret.
-- Svaret først, i første setning. Deretter det viktigste forbeholdet, bare hvis det finnes et. Avslutt med én konkret neste handling når den hjelper (Placy-kartet, en side eller Nyhavna Utvikling). 2–4 setninger; ingen innledende høflighetsfraser, besvar alle delene av spørsmålet, og ikke gjenta det samme forbeholdet i hvert svar.
-${mapRule}
+- Svaret først, i første setning. Deretter det viktigste forbeholdet, bare hvis det finnes et. Avslutt med én konkret neste handling når den hjelper (${variant.nextStep}). 2–4 setninger; ingen innledende høflighetsfraser, besvar alle delene av spørsmålet, og ikke gjenta det samme forbeholdet i hvert svar.
+${variant.mapRule}
 - answer_type: "fact" når svaret bygger på verktøysvar i denne meldingen, "gap" når grunnlaget mangler, "smalltalk" for hilsen og småprat uten fakta, "refusal" når du avviser spørsmålet.
-- link_ids: BARE "board" (Placy-kartet over Nyhavna), "contact" (Nyhavna Utviklings kontaktinformasjon) eller "page:<side-ID>" for en side i sideregisteret ("page:forside", "page:beliggenhet") — aldri et fakta-, kilde- eller verktøy-ID. Tom liste når ingen passer.
+${variant.linkRule}
 - source_ids: kilde-ID-ene svaret bygger på, høyst fire, hentet fra feltene source_id eller sources[].id i verktøysvarene i DENNE meldingen. Skriv aldri en ID du ikke har sett der; serveren viser bare kilder verktøyene faktisk returnerte. Tom liste når svaret ikke bygger på en kilde.
 `.trim();
 }
 
-const NH_TEXT_CHAT_RULES = nhChatRules(NH_TEXT_CHAT_MAP_RULE);
+const NH_TEXT_CHAT_RULES = nhChatRules({
+  mapRule: NH_TEXT_CHAT_MAP_RULE,
+  gapAdvice: "foreslå Placy-kartet eller Nyhavna Utvikling i stedet for å gjette",
+  nextStep: "Placy-kartet, en side eller Nyhavna Utvikling",
+  linkRule: `- link_ids: BARE "board" (Placy-kartet over Nyhavna), "contact" (Nyhavna Utviklings kontaktinformasjon) eller "page:<side-ID>" for en side i sideregisteret ("page:forside", "page:beliggenhet") — aldri et fakta-, kilde- eller verktøy-ID. Tom liste når ingen passer.`,
+});
 
 export function nhTextChatInstructions(page: SiteChatPage, themes: readonly { id: string; label: string }[]): string {
   const themeList = themes.map((theme) => `${theme.id} (${theme.label})`).join(", ");
@@ -114,7 +115,7 @@ SIDEKONTEKST: Brukeren står på siden «${page.title}» (type: ${page.kind}) i 
 /** Boardets agentmodus «Spør Anja» (2026-09-25): samme regler, Boardets kartverktøy i stedet for nettsidens «intet kart»-regel. */
 export function nhBoardChatInstructions(page: SiteChatPage, themes: readonly { id: string; label: string }[]): string {
   const themeList = themes.map((theme) => `${theme.id} (${theme.label})`).join(", ");
-  return `${boardRules()}
+  return `${NH_BOARD_CHAT_RULES}
 
 TEMAER (theme_id): ${themeList}.
 

@@ -8,8 +8,10 @@ import { useBoardVoice, type BoardVoiceAgentLink } from "@/components/variants/r
 import { newClientId } from "@/lib/browser/client-id";
 import type { CameraSnapshot } from "@/lib/board/board-types";
 import type { LiveSessionEnded } from "@/lib/live/use-live";
+import { exchangeVoiceHandoff } from "@/lib/live/voice-handoff-client";
 import { askBoardChat, BOARD_CHAT_FALLBACK_ERROR } from "@/lib/board-agent/client";
 import { feedReducer } from "@/lib/board-agent/feed";
+import { findBoardFaq } from "@/lib/board-agent/faq";
 import { agentSuggestions, suggestionKey } from "@/lib/board-agent/suggestions";
 import type { AgentEntry, AgentInput, AgentMode, AgentPlaceOrigin, AgentSuggestion, BoardChatIntent, BoardChatMapState, BoardDirective } from "@/lib/board-agent/types";
 
@@ -64,13 +66,35 @@ export interface BoardAgent {
   dismissSuggestions: () => void;
   /** Et stedskort i samtalen ble trykket: kartet viser stedet igjen, uten nytt svar. */
   focusPlace: (poiId: string) => void;
+  /**
+   * På mobil monteres veksleren på nytt i den andre sheeten ved hvert bytte.
+   * Den nye veksleren spør her om den skal ta imot fokuset; svaret er sant
+   * bare i committen der byttet skjedde fra veksleren selv.
+   */
+  claimToggleFocus: () => boolean;
 }
 
 const BoardAgentContext = createContext<BoardAgent | null>(null);
 
+/**
+ * Det kartet trenger: modusen og stedsvalget. Egen kontekst fordi resten av
+ * samtalen (feeden) endrer seg for hvert ord talen transkriberer, og kartet
+ * med sine ~1 000 markører skal ikke rendre på nytt for det.
+ */
+export interface BoardAgentMode {
+  mode: AgentMode;
+  selectPlace: (poiId: string, origin: AgentPlaceOrigin) => void;
+}
+
+const BoardAgentModeContext = createContext<BoardAgentMode | null>(null);
+
 /** Null når boardet ikke har agentmodusen — da er alt som før. */
 export function useBoardAgent(): BoardAgent | null {
   return useContext(BoardAgentContext);
+}
+
+export function useBoardAgentMode(): BoardAgentMode | null {
+  return useContext(BoardAgentModeContext);
 }
 
 export function BoardAgentProvider({ enabled, children }: { enabled: boolean; children: ReactNode }) {
@@ -78,8 +102,6 @@ export function BoardAgentProvider({ enabled, children }: { enabled: boolean; ch
   return <BoardAgentSession>{children}</BoardAgentSession>;
 }
 
-const HANDOFF_ENDPOINT = "/api/prototype/live/handoff";
-const HANDOFF_TIMEOUT_MS = 8000;
 
 /** Hilsenen når talen tar over en samtale som alt er i gang i panelet. */
 const CONTINUED_GREETING =
@@ -88,23 +110,6 @@ const CONTINUED_GREETING =
 const HANDOFF_FAILED = "Talen ble ikke overført til den skrevne samtalen. Anja husker det som ble skrevet før talen.";
 
 const nextFrame = () => new Promise<void>((resolve) => requestAnimationFrame(() => requestAnimationFrame(() => resolve())));
-
-async function fetchHandoff(sessionToken: string): Promise<string | null> {
-  try {
-    const response = await fetch(HANDOFF_ENDPOINT, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      credentials: "include",
-      body: JSON.stringify({ session: sessionToken }),
-      signal: AbortSignal.timeout(HANDOFF_TIMEOUT_MS),
-    });
-    if (!response.ok) return null;
-    const body = (await response.json()) as { transcript?: unknown };
-    return typeof body.transcript === "string" && body.transcript ? body.transcript : null;
-  } catch {
-    return null;
-  }
-}
 
 /** Temaet et svars kartdirektiver viser, eller null når de spriker eller mangler. */
 function directiveCategory(directives: readonly BoardDirective[], categories: BoardData["categories"]): string | null {
@@ -217,9 +222,7 @@ function BoardAgentSession({ children }: { children: ReactNode }) {
       if (ended.sessionToken === undefined) {
         transcript = ended.handoff?.status === "ready" ? ended.handoff.transcript : null;
       } else {
-        // Serverens opprydding lukker opptaket; først da er alle turene med.
-        await Promise.race([ended.settled.catch(() => false), new Promise((resolve) => setTimeout(resolve, HANDOFF_TIMEOUT_MS))]);
-        transcript = await fetchHandoff(ended.sessionToken);
+        transcript = (await exchangeVoiceHandoff(ended.sessionToken, ended.settled))?.transcript ?? null;
       }
       if (transcript) transcriptRef.current = transcript;
       else dispatchFeed({ type: "add", entry: { id: `s-${newClientId()}`, kind: "status", tone: "info", text: HANDOFF_FAILED } });
@@ -248,8 +251,19 @@ function BoardAgentSession({ children }: { children: ReactNode }) {
 
   // ---- Modus og inndata -------------------------------------------------------
 
+  const toggleFocusRef = useRef(false);
+  const claimToggleFocus = useCallback(() => {
+    const claimed = toggleFocusRef.current;
+    toggleFocusRef.current = false;
+    return claimed;
+  }, []);
+  // Forelderens effekt kjører etter barnas i samme commit: har ingen ny
+  // veksler tatt imot fokuset (desktop, der den blir stående), slippes det.
+  useEffect(() => { toggleFocusRef.current = false; }, [mode]);
+
   const setMode = useCallback((next: AgentMode) => {
     if (next === modeRef.current) return;
+    toggleFocusRef.current = document.activeElement?.closest('[role="radiogroup"]') != null;
     const { state, story, voice, mapCamera } = latest.current;
     // Et nytt besøk i samtalen kan spørre om det samme stedet igjen.
     lastInitiativeRef.current = null;
@@ -310,7 +324,7 @@ function BoardAgentSession({ children }: { children: ReactNode }) {
   }, [data.categories, dispatch, markUsed, ask]);
 
   const selectFaq = useCallback((faqId: string) => {
-    const entry = [...(data.globalFaq ?? []), ...data.categories.flatMap((c) => c.editorial?.faq ?? [])].find((f) => f.id === faqId);
+    const entry = findBoardFaq(data, faqId);
     if (!entry || !fresh(suggestionKey.faq(faqId))) return;
     markUsed(suggestionKey.faq(faqId));
     const owner = data.categories.find((c) => c.editorial?.faq?.some((f) => f.id === faqId));
@@ -324,7 +338,7 @@ function BoardAgentSession({ children }: { children: ReactNode }) {
       return;
     }
     void ask({ intent: { kind: "faq", faqId } }, entryId);
-  }, [data.categories, data.globalFaq, markUsed, ask]);
+  }, [data, markUsed, ask]);
 
   const selectTheme = useCallback((categoryId: string) => {
     const index = data.categories.findIndex((c) => String(c.id) === categoryId);
@@ -385,11 +399,16 @@ function BoardAgentSession({ children }: { children: ReactNode }) {
     });
   }, [suggestions]);
 
-  const value: BoardAgent = {
-    name: voice?.name ?? "Anja",
-    mode, setMode, input, setInput, entries, suggestions, busy,
-    send, selectPlace, selectSuggestion, dismissSuggestions, focusPlace,
-  };
+  const name = voice?.name ?? "Anja";
+  const value = useMemo<BoardAgent>(() => ({
+    name, mode, setMode, input, setInput, entries, suggestions, busy,
+    send, selectPlace, selectSuggestion, dismissSuggestions, focusPlace, claimToggleFocus,
+  }), [name, mode, setMode, input, setInput, entries, suggestions, busy, send, selectPlace, selectSuggestion, dismissSuggestions, focusPlace, claimToggleFocus]);
+  const modeValue = useMemo<BoardAgentMode>(() => ({ mode, selectPlace }), [mode, selectPlace]);
 
-  return <BoardAgentContext.Provider value={value}>{children}</BoardAgentContext.Provider>;
+  return (
+    <BoardAgentModeContext.Provider value={modeValue}>
+      <BoardAgentContext.Provider value={value}>{children}</BoardAgentContext.Provider>
+    </BoardAgentModeContext.Provider>
+  );
 }

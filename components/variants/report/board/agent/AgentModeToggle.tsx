@@ -14,11 +14,9 @@ import { cn } from "@/lib/utils";
  * egen native oppførsel siden hvert alternativ er et ekte `<button>`.
  *
  * På mobil bor veksleren i to ulike sheets (utforsking og samtale), så et
- * bytte monterer en NY veksler og fokuset ville falt til `<body>`. Byttet
- * husker derfor at fokus var her, og den nye veksleren tar det imot.
+ * bytte monterer en NY veksler, og fokuset ville falt til `<body>`. Den nye
+ * veksleren spør derfor koordinatoren (`claimFocus`) om den skal ta det imot.
  */
-
-let refocusAfterSwitch = false;
 
 const OPTIONS: ReadonlyArray<{ mode: AgentMode; label: (name: string) => string }> = [
   { mode: "explore", label: () => "Utforsk" },
@@ -30,15 +28,16 @@ export interface AgentModeToggleProps {
   onChange: (mode: AgentMode) => void;
   /** Guidens navn — brukt i «Spør <navn>». */
   name: string;
+  /** Spørres én gang ved montering: sant = ta imot fokuset etter et modusbytte. */
+  claimFocus?: () => boolean;
   className?: string;
 }
 
-export function AgentModeToggle({ mode, onChange, name, className }: AgentModeToggleProps) {
+export function AgentModeToggle({ mode, onChange, name, claimFocus, className }: AgentModeToggleProps) {
   const optionRefs = useRef<Array<HTMLButtonElement | null>>([]);
 
   useEffect(() => {
-    if (!refocusAfterSwitch) return;
-    refocusAfterSwitch = false;
+    if (!claimFocus?.()) return;
     const active = document.activeElement;
     if (active && active !== document.body && document.contains(active)) return;
     optionRefs.current[OPTIONS.findIndex((option) => option.mode === mode)]?.focus();
@@ -46,18 +45,9 @@ export function AgentModeToggle({ mode, onChange, name, className }: AgentModeTo
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const select = (next: AgentMode) => {
-    if (next !== mode) {
-      refocusAfterSwitch = true;
-      // Står veksleren (desktop), er det ingen ny veksler som skal ta imot.
-      setTimeout(() => { refocusAfterSwitch = false; }, 400);
-    }
-    onChange(next);
-  };
-
   const moveFocus = (fromIndex: number, direction: 1 | -1) => {
     const nextIndex = (fromIndex + direction + OPTIONS.length) % OPTIONS.length;
-    select(OPTIONS[nextIndex].mode);
+    onChange(OPTIONS[nextIndex].mode);
     optionRefs.current[nextIndex]?.focus();
   };
 
@@ -82,7 +72,7 @@ export function AgentModeToggle({ mode, onChange, name, className }: AgentModeTo
             role="radio"
             aria-checked={checked}
             tabIndex={checked ? 0 : -1}
-            onClick={() => select(option.mode)}
+            onClick={() => onChange(option.mode)}
             onKeyDown={(event) => {
               if (event.key === "ArrowRight" || event.key === "ArrowDown") {
                 event.preventDefault();

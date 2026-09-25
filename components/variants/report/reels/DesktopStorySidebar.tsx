@@ -174,7 +174,7 @@ export function StoryColumn({ noBrokers = false }: { noBrokers?: boolean }) {
           ikke forbindelsen eller et åpent stedspanel. */}
       {agent ? (
         <div data-story-assistant className="shrink-0 px-6 pb-3">
-          <AgentModeToggle mode={agent.mode} onChange={agent.setMode} name={agent.name} />
+          <AgentModeToggle mode={agent.mode} onChange={agent.setMode} name={agent.name} claimFocus={agent.claimToggleFocus} />
         </div>
       ) : (data.assistant?.enabled || data.demoSnapshotId) && (
         <div data-story-assistant className="shrink-0 px-6 pb-3">

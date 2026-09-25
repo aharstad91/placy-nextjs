@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useLive, type LiveSessionEnded } from "@/lib/live/use-live";
+import { exchangeVoiceHandoff } from "@/lib/live/voice-handoff-client";
 import {
   parseVoiceCommand,
   VOICE_EVENTS,
@@ -15,30 +16,9 @@ import type { LiveBoardState } from "@/lib/live/types";
 const NO_MAP = () => ({ error: "Denne samtalen har ikke noe kart. Ikke påstå at noe vises." });
 const NO_BOARD: LiveBoardState = { selected_category_id: null, selected_place_id: null, travel_mode: "walk" };
 const noBoard = () => NO_BOARD;
-const HANDOFF_ENDPOINT = "/api/prototype/live/handoff";
-const HANDOFF_TIMEOUT_MS = 8000;
 
 function publish(state: VoiceWidgetState) {
   window.dispatchEvent(new CustomEvent(VOICE_EVENTS.state, { detail: state }));
-}
-
-/** Bytter sesjonstokenet mot et signert historikktoken, eller null ved enhver feil. */
-async function fetchHandoff(sessionToken: string): Promise<{ transcript: string; voiceTurns: number; trimmed: boolean } | null> {
-  try {
-    const response = await fetch(HANDOFF_ENDPOINT, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      credentials: "include",
-      body: JSON.stringify({ session: sessionToken }),
-      signal: AbortSignal.timeout(HANDOFF_TIMEOUT_MS),
-    });
-    if (!response.ok) return null;
-    const body = (await response.json()) as { transcript?: unknown; voiceTurns?: unknown; trimmed?: unknown };
-    if (typeof body.transcript !== "string" || !body.transcript) return null;
-    return { transcript: body.transcript, voiceTurns: typeof body.voiceTurns === "number" ? body.voiceTurns : 0, trimmed: body.trimmed === true };
-  } catch {
-    return null;
-  }
 }
 
 export interface SiteChatVoiceBridgeProps {
@@ -109,11 +89,7 @@ export function SiteChatVoiceBridge({ dataset, greeting, continuedGreeting }: Si
     const { sessionToken, settled } = ended;
     setHandoff({ id, status: "pending" });
     void (async () => {
-      // Serverens opprydding lukker opptaket; først da er alle turene med.
-      // En hengende DELETE skal ikke holde tekstchatten igjen; opptaket kan
-      // leses også før lukking, bare uten de aller siste ordene.
-      await Promise.race([settled.catch(() => false), new Promise((resolve) => setTimeout(resolve, HANDOFF_TIMEOUT_MS))]);
-      const result = await fetchHandoff(sessionToken);
+      const result = await exchangeVoiceHandoff(sessionToken, settled);
       if (id !== handoffId.current) return;
       setHandoff(result ? { id, status: "ready", ...result } : { id, status: "failed" });
     })();

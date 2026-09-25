@@ -130,7 +130,7 @@ export function NeighbourhoodSurface({
         contentRestKey="agent"
       >
         <div className="pb-2">
-          <AgentModeToggle mode={agent.mode} onChange={agent.setMode} name={agent.name} />
+          <AgentModeToggle mode={agent.mode} onChange={agent.setMode} name={agent.name} claimFocus={agent.claimToggleFocus} />
         </div>
         <div className="flex h-[52dvh] min-h-[300px] flex-col">
           <BoardAgentSurface variant="sheet" />
@@ -159,7 +159,7 @@ export function NeighbourhoodSurface({
           <StoryCard
             assistant={
               agent ? (
-                <AgentModeToggle mode={agent.mode} onChange={agent.setMode} name={agent.name} />
+                <AgentModeToggle mode={agent.mode} onChange={agent.setMode} name={agent.name} claimFocus={agent.claimToggleFocus} />
               ) : data.assistant?.enabled || data.demoSnapshotId ? (
                 <BoardVoiceControl />
               ) : undefined
@@ -226,7 +226,7 @@ function NeighbourhoodList({
           som knappen inne i omvisningen (se board-voice.tsx). */}
       {agent ? (
         <div className="mb-3 px-1">
-          <AgentModeToggle mode={agent.mode} onChange={agent.setMode} name={agent.name} />
+          <AgentModeToggle mode={agent.mode} onChange={agent.setMode} name={agent.name} claimFocus={agent.claimToggleFocus} />
         </div>
       ) : (data.assistant?.enabled || data.demoSnapshotId) && (
         <div className="mb-3 px-1">

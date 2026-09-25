@@ -5,7 +5,8 @@ import { z } from "zod";
 import { loadLiveDemo } from "@/lib/live/demos";
 import { backendModel, backendEffort } from "@/lib/live/session-config";
 import { textChatTools } from "@/lib/demo/site-chat/text-tools";
-import { boardChatTools, boardMapStateNote, createBoardMapPort, faqAnswerPlainText, resolveBoardFaq } from "@/lib/demo/site-chat/board-map";
+import { boardChatTools, boardMapStateNote, createBoardMapPort, faqAnswerPlainText } from "@/lib/demo/site-chat/board-map";
+import { findBoardFaq } from "@/lib/board-agent/faq";
 import { findBoardPOI } from "@/components/variants/report/board/board-data";
 import { replyNotice } from "@/lib/demo/site-chat/notices";
 import { runSiteChat, ChatBackendError } from "@/lib/demo/site-chat/backend";
@@ -234,7 +235,7 @@ export function createSiteChatRoute(profile: SiteChatProfile) {
     // er FAQ-ens egen godkjente tekst (bygges lenger ned, etter transcript-verifiseringen).
     let userText = body.message;
     let boardIntentAddendum = "";
-    let faq: ReturnType<typeof resolveBoardFaq> = null;
+    let faq: ReturnType<typeof findBoardFaq> = null;
     if (intent) {
       if (intent.kind === "place") {
         const poi = findBoardPOI(demo.board.categories, intent.poiId);
@@ -247,7 +248,7 @@ export function createSiteChatRoute(profile: SiteChatProfile) {
         userText = `Jeg valgte temaet «${category.label}» i kartet (tema-ID ${category.id}). Fortell kort om temaet.`;
         boardIntentAddendum = `\n\nBRUKERINITIATIV: Temaet «${category.label}» (tema-ID ${category.id}) er allerede vist i kartet.`;
       } else {
-        faq = resolveBoardFaq(demo.board, intent.faqId);
+        faq = findBoardFaq(demo.board, intent.faqId);
         if (!faq) return respond({ error: "Ukjent spørsmål.", links: profile.fallbackLinks() }, { status: 400 });
         userText = faq.question;
       }

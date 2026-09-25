@@ -2,7 +2,6 @@ import "server-only";
 
 import type { BoardData, BoardPOI } from "@/components/variants/report/board/board-data";
 import { findBoardPOI } from "@/components/variants/report/board/board-data";
-import type { FaqEntry } from "@/lib/generators/faq-generator";
 import { boardLinkResolvers, parseLinkedText } from "@/lib/board/poi-link-text";
 import { BOARD_DIRECTIVE_NAMES, type BoardChatMapState, type BoardDirective } from "@/lib/board-agent/types";
 import { textChatTools } from "@/lib/demo/site-chat/text-tools";
@@ -24,7 +23,7 @@ import type { RealtimeTool } from "@/lib/realtime/types";
  *    kartverktøyene, definisjonene hentet fra `demo.tools` (samme skjema
  *    Anjas taleflate bruker).
  * 3. FAQ-hjelperne — svaret på et FAQ-brukerinitiativ er alltid FAQ-ens egen
- *    godkjente tekst, aldri modellen: `resolveBoardFaq` finner spørsmålet,
+ *    godkjente tekst, aldri modellen: `findBoardFaq` (`lib/board-agent/faq.ts`) finner spørsmålet,
  *    `faqAnswerPlainText` fjerner lenkemarkeringen (`[tekst](poi:id)`) og
  *    henter ut de refererte, GYLDIGE POI-ID-ene til en `highlight_places`-
  *    forespørsel gjennom SAMME port som verktøykall valideres med.
@@ -101,17 +100,6 @@ const DIRECTIVE_NAME_SET = new Set<string>(BOARD_DIRECTIVE_NAMES);
 /** Tekstverktøyene pluss de allowlistede kartverktøyene, med samme skjema Anjas taleflate får. */
 export function boardChatTools(tools: readonly RealtimeTool[]): RealtimeTool[] {
   return [...textChatTools(tools), ...tools.filter((tool) => DIRECTIVE_NAME_SET.has(tool.name))];
-}
-
-/** Boardets globale FAQ og kategorienes egne FAQ-er, ett register å slå ID-en opp i. */
-export function resolveBoardFaq(board: BoardData, faqId: string): FaqEntry | null {
-  const global = board.globalFaq?.find((entry) => entry.id === faqId);
-  if (global) return global;
-  for (const category of board.categories) {
-    const found = category.editorial?.faq?.find((entry) => entry.id === faqId);
-    if (found) return found;
-  }
-  return null;
 }
 
 /**
