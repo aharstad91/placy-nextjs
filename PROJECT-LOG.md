@@ -10688,7 +10688,7 @@ Første produksjonskandidat avdekket 404 på `/nyhavna`: `app/[slug]/page.tsx` s
 
 ## 2026-09-25 — Nyhavna Board med «Spør Anja»: agentmodus-prototype (lokal)
 
-Plan: `docs/plans/2026-09-25-1220-feat-nyhavna-board-agentmodus-prototype-plan.md`. Worktree `../placy-board-agentmodus`, gren `feat/nyhavna-board-agentmodus` fra `feat/nyhavna-chat-live` (0a70650a). Committet lokalt, ikke pushet. Testoppskrift: `docs/demos/nyhavna-board-agentmodus.md`.
+Plan: `docs/plans/2026-09-25-1220-feat-nyhavna-board-agentmodus-prototype-plan.md`. Worktree `../placy-board-agentmodus`, gren `feat/nyhavna-board-agentmodus` fra `feat/nyhavna-chat-live` (0a70650a). Pushet til `origin` 2026-09-25 (ingen PR, ingen merge). Prototypen er bare testbar lokalt: i et produksjonsbygg, også en Vercel-preview, gir Board-banen 404 og `/demo/nyhavna-lokal` har ingen agentmodus. Testoppskrift: `docs/demos/nyhavna-board-agentmodus.md`.
 
 **Hva som finnes:** sidebaren (desktop og mobilens sheet) har en veksler «Utforsk / Spør Anja». I Spør Anja blir kartklikk, forslag («Verdt å merke seg», temaer, FAQ) og skrevne spørsmål innslag i én samtale. Tekst går til en ny Board-variant av nettsidechatten (`/api/demo/nyhavna-board-chat`) med strukturerte intensjoner, servervaliderte kartdirektiver og deterministiske FAQ-svar; tale bruker Boardets Live-bane med `boardAgent`, bærer den skrevne historikken inn og leverer den tilbake ved Skriv. Utgang til Utforsk stopper mikrofonen og legger tilbake board-tilstand, omvisning, viste reservesteder og kamera. Bare den lokale ruta slår prototypen på; Board-banen gir 404 i produksjon, og hosted stemme feiler lukket.
 
