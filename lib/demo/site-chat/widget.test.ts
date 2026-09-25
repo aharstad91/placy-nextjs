@@ -578,10 +578,50 @@ describe("placy-chat widget — tale via broen", () => {
     window.addEventListener("placy-chat:voice-hello", answer);
     loadWidget();
     window.removeEventListener("placy-chat:voice-hello", answer);
+    window.PlacyChat!.open();
+    await tick();
     expect($(".modes").hidden).toBe(false);
     expect(modeButtons().map((b) => b.textContent)).toEqual(["Skriv", "Snakk"]);
     // Tilgjengelig navn begynner med den synlige etiketten.
     expect(modeButtons().map((b) => b.getAttribute("aria-label"))).toEqual(["Skriv til Anja", "Snakk med Anja"]);
+  });
+
+  it("venter på første chat-svar før tale kan starte, slik at besøkscookien er satt", async () => {
+    let resolveBootstrap: (response: Response) => void = () => {};
+    vi.stubGlobal("fetch", vi.fn(() => new Promise<Response>((resolve) => { resolveBootstrap = resolve; })));
+    loadWidget();
+    bridge({});
+
+    window.PlacyChat!.open();
+    // Åpningen henter først chatprofilen, som i Nyhavna også setter den
+    // besøksbundne cookien taleserveren krever.
+    expect($(".modes").hidden).toBe(true);
+    modeButtons()[1].click();
+    ($(".voice-start") as HTMLButtonElement).click();
+    expect(commands).toEqual([]);
+
+    resolveBootstrap({ ok: true, json: async () => ({ starters: [] }) } as Response);
+    await tick();
+    expect($(".modes").hidden).toBe(false);
+
+    modeButtons()[1].click();
+    ($(".voice-start") as HTMLButtonElement).click();
+    expect(commands).toEqual([{ type: "start" }]);
+  });
+
+  it("skjuler tale igjen når første chat-svar er ugyldig, i stedet for å vise en start som vil avvises", async () => {
+    let resolveBootstrap: (response: Response) => void = () => {};
+    vi.stubGlobal("fetch", vi.fn(() => new Promise<Response>((resolve) => { resolveBootstrap = resolve; })));
+    loadWidget();
+    bridge({});
+    window.PlacyChat!.open();
+
+    resolveBootstrap({ ok: true, json: async () => null } as Response);
+    await tick();
+    expect($(".modes").hidden).toBe(true);
+    modeButtons()[1].click();
+    ($(".voice-start") as HTMLButtonElement).click();
+    expect(commands).toEqual([]);
   });
 
   it("Snakk bytter tekstfeltet mot talestyring i samme felt: ingen tekstfelt eller Send i layout eller tabulatorrekke", async () => {

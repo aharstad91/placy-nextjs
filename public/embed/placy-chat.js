@@ -127,6 +127,11 @@
   var HANDOFF_SAFETY_MS = 20000;
   var voice = {
     available: false,
+    // Den første chat-GET-en kan utstede den besøksbundne cookien talen
+    // trenger. Tale blir først synlig når nettleseren har mottatt svaret.
+    // Ved feil prøver neste åpning på nytt, i stedet for å vise en start som
+    // sikkert blir avvist av taleserveren.
+    bootstrap: "idle", // "idle" | "pending" | "ready" | "failed"
     mode: "text", // "text" | "voice"
     // "off" | "starting" | "on": widgetens egen fase. `status` er broens.
     session: "off",
@@ -780,6 +785,14 @@
     if (startersLoadedForPage === pageId) return;
     var requestId = ++startersRequestId;
     startersLoadedForPage = pageId;
+    // Dette gjelder bare første vellykkede chat-svar. Senere sideskift skal
+    // ikke gjøre en allerede klar talesamtale utilgjengelig ved en feil i
+    // forslagene på én enkelt side.
+    var bootstrappingVoice = voice.bootstrap !== "ready";
+    if (bootstrappingVoice) {
+      voice.bootstrap = "pending";
+      renderVoice();
+    }
     // Uten temarad forsvinner forrige sides forslag med én gang. Med rad står
     // temaene og forslagene til den nye sidens svar kommer, og byttes på plass.
     if (!categories.length) {
@@ -789,9 +802,14 @@
     // Er samtalen i gang, hører forslagene for den nye siden hjemme nederst.
     if (conversationStarted()) log.appendChild(starters);
     fetch(cfg.endpoint + "?pageId=" + encodeURIComponent(pageId), { credentials: "include" })
-      .then(function (res) { return res.ok ? res.json() : null; })
+      .then(function (res) { return res.ok ? res.json() : Promise.reject(new Error("chat bootstrap failed")); })
       .then(function (data) {
-        if (!data || requestId !== startersRequestId || pageId !== currentPageId()) return;
+        if (requestId !== startersRequestId || pageId !== currentPageId()) return;
+        if (!data || typeof data !== "object" || Array.isArray(data)) throw new Error("chat bootstrap returned invalid data");
+        if (bootstrappingVoice) {
+          voice.bootstrap = "ready";
+          renderVoice();
+        }
         setOpening(data.opening);
         // Valgt tema beholdes på tvers av sider når det finnes i det nye svaret.
         categories = readCategories(data.categories);
@@ -807,7 +825,15 @@
         // meldingen skal fortsatt være synlig.
         if (log.querySelector(".msg.user")) log.scrollTop = log.scrollHeight;
       })
-      .catch(function () { /* forslag er en bonus; stillhet ved feil */ });
+      .catch(function () {
+        // Uten første svar vet vi ikke om den nødvendige besøkscookien ble
+        // satt. Skjul tale og la neste åpning gjøre et nytt bootstrap-forsøk.
+        if (bootstrappingVoice && requestId === startersRequestId && pageId === currentPageId()) {
+          voice.bootstrap = "failed";
+          startersLoadedForPage = null;
+          renderVoice();
+        }
+      });
   }
 
   function sendMessage(text) {
@@ -924,7 +950,7 @@
   }
 
   function voiceShown() {
-    return voice.available && voice.mode === "voice";
+    return voice.available && voice.bootstrap === "ready" && voice.mode === "voice";
   }
 
   /** Kontrollen som skal ha fokus i feltet under loggen for gjeldende modus. */
@@ -935,7 +961,8 @@
 
   function renderVoice() {
     var talking = voiceShown();
-    modes.hidden = !voice.available;
+    var usable = voice.available && voice.bootstrap === "ready";
+    modes.hidden = !usable;
     textModeBtn.setAttribute("aria-pressed", String(voice.mode === "text"));
     voiceModeBtn.setAttribute("aria-pressed", String(voice.mode === "voice"));
     inputRow.hidden = talking;
@@ -952,7 +979,7 @@
     sendBtn.disabled = sending || voice.session === "starting" || pending;
     // Hva skjermleseren hører: talestatus, eller at feltet har byttet. Settes
     // bare ved endring, så samme status ikke leses opp på nytt.
-    var spoken = !voice.available ? ""
+    var spoken = !usable ? ""
       : talking ? (off ? VOICE_READY : voiceStatus.textContent)
       : announcer.textContent ? "Skriv er valgt." : "";
     if (announcer.textContent !== spoken) announcer.textContent = spoken;
@@ -963,6 +990,7 @@
   }
 
   function setMode(mode) {
+    if (mode === "voice" && (!voice.available || voice.bootstrap !== "ready")) return;
     if (mode === voice.mode) return;
     if (mode === "text" && voice.session !== "off") stopVoice();
     voice.mode = mode;
@@ -984,7 +1012,7 @@
   }
 
   function startVoice() {
-    if (!voice.available || voice.session !== "off" || sending || voice.handoff === "pending") return;
+    if (!voice.available || voice.bootstrap !== "ready" || voice.session !== "off" || sending || voice.handoff === "pending") return;
     voice.session = "starting";
     voice.notice = null;
     voice.announced = false;
