@@ -10683,3 +10683,17 @@ Andreas ba om live demo. Release-worktreen `../placy-nyhavna-chat-live` (`feat/n
 Første produksjonskandidat avdekket 404 på `/nyhavna`: `app/[slug]/page.tsx` sammenlignet reportproduktets UUID med prosjekt-ID-en i stemmeregisteret. Rettet til kontroll av kunde, prosjektslug og produkttype, med regresjonstest. Deretter: 5 141 tester passerte / én hoppet over, TypeScript og Vercel-bygg besto, lint 0 feil / 61 advarsler. Den rettede kandidaten `dpl_9kwaneHgZxaCbNbZ7gJ1qWD8DNjS` ble promotert til `placy.no`. Forside, Beliggenhet, tekstendepunkt og `/nyhavna` svarte 200; demoen har `noindex`. Et ekte tekstspørsmål ga kildebelagt faktasvar og samtaletoken. I Chrome viste panelet åtte kategorier, «Skriv» og «Snakk»; Anja nådde «Lytter», og etter stopp fortsatte chatten fra talen. Produksjonsregnskapet viser én offentlig, manuelt lukket samtale med komplett avregning: 15 stemmesekunder, 0,012500 USD kjent kostnad. Ingen brukerdata eller nøkler er lagret i loggen.
 
 Åpent: Lene/Nyhavna Utvikling må vurdere innhold og svar. OpenAI-prosjektets harde spendtak ble ikke kontrollert her; appens døgnkvoter og den delte stemmens budsjett er aktive. Eldre `www.placy.no`-kopi er uendret.
+
+---
+
+## 2026-09-25 — Nyhavna Board med «Spør Anja»: agentmodus-prototype (lokal)
+
+Plan: `docs/plans/2026-09-25-1220-feat-nyhavna-board-agentmodus-prototype-plan.md`. Worktree `../placy-board-agentmodus`, gren `feat/nyhavna-board-agentmodus` fra `feat/nyhavna-chat-live` (0a70650a). Committet lokalt, ikke pushet. Testoppskrift: `docs/demos/nyhavna-board-agentmodus.md`.
+
+**Hva som finnes:** sidebaren (desktop og mobilens sheet) har en veksler «Utforsk / Spør Anja». I Spør Anja blir kartklikk, forslag («Verdt å merke seg», temaer, FAQ) og skrevne spørsmål innslag i én samtale. Tekst går til en ny Board-variant av nettsidechatten (`/api/demo/nyhavna-board-chat`) med strukturerte intensjoner, servervaliderte kartdirektiver og deterministiske FAQ-svar; tale bruker Boardets Live-bane med `boardAgent`, bærer den skrevne historikken inn og leverer den tilbake ved Skriv. Utgang til Utforsk stopper mikrofonen og legger tilbake board-tilstand, omvisning, viste reservesteder og kamera. Bare den lokale ruta slår prototypen på; Board-banen gir 404 i produksjon, og hosted stemme feiler lukket.
+
+**Verifisert:** AE1–AE7 i Chrome med ekte kart, tekstbane og GPT-Live (simulert mikrofon), før og etter review-fiksene. Lint 0 feil, `tsc` rent, 5 247 tester grønne, produksjonsbygg grønt.
+
+**Review:** ce-code-review med sju lokale reviewere + uavhengig kryssmodell-pass (Codex, `independence_verified: true`), 19 funn, alle 8 validerte P1 og resten rettet (`d7a32b19`). Viktigste: utdaterte svar kunne flytte kartet etter et nytt valg; valg mens talen koblet til gikk to veier; Board-banen var åpen i produksjon via nettsidechattens flagg.
+
+**Åpent:** brukertest med en person som ikke har bygd løsningen (planens Verification Contract) — Andreas. Modusbytte måles ikke (hendelsestypene er et lukket skjema). Tekstbanen deler Nyhavnas døgnkvote med nettsidechatten.
