@@ -1,9 +1,8 @@
 "use client";
 
 import Image from "next/image";
-import { BoardVoiceControl } from "@/components/variants/report/board/voice/BoardVoiceControl";
 import { useBoardAgent } from "@/components/variants/report/board/agent/board-agent";
-import { AgentModeToggle } from "@/components/variants/report/board/agent/AgentModeToggle";
+import { BoardAssistantEntry, useHasBoardAssistant } from "@/components/variants/report/board/agent/BoardAssistantEntry";
 import { BoardAgentSurface } from "@/components/variants/report/board/agent/BoardAgentSurface";
 import { useEffect, useRef } from "react";
 import { Mail, Pause, Phone, Play, RotateCcw, User } from "lucide-react";
@@ -146,12 +145,13 @@ interface Props {
  */
 export function StoryColumn({ noBrokers = false }: { noBrokers?: boolean }) {
   const { available, on, onArea, begin } = useStoryTour();
-  const { data, state } = useBoard();
+  const { state } = useBoard();
   const placePanel = useDesktopPlacePanel();
   // «Spør Anja» (prototype, 2026-09-25): samtalen legger seg over oversikten,
   // som blir stående montert bak — scroll, stopp og åpne rader er der ved retur.
   const agent = useBoardAgent();
   const conversing = agent?.mode === "agent";
+  const hasAssistant = useHasBoardAssistant();
   // Panelet står over oversikten. Da skal oversikten ikke kunne tabbes inn i
   // (R12) — men BARE under panel-policyen: ankerpanelet på andre boards har
   // vist oversikten som lesbar bakgrunn uten å gjøre den inert, og den flyten
@@ -172,13 +172,9 @@ export function StoryColumn({ noBrokers = false }: { noBrokers?: boolean }) {
           (2026-09-15). Den vokser på samme sted til statusfeltet mens samtalen
           går. Tilstanden bor fortsatt i provideren, så flyttingen påvirker
           ikke forbindelsen eller et åpent stedspanel. */}
-      {agent ? (
+      {hasAssistant && (
         <div data-story-assistant className="shrink-0 px-6 pb-3">
-          <AgentModeToggle mode={agent.mode} onChange={agent.setMode} name={agent.name} claimFocus={agent.claimToggleFocus} />
-        </div>
-      ) : (data.assistant?.enabled || data.demoSnapshotId) && (
-        <div data-story-assistant className="shrink-0 px-6 pb-3">
-          <BoardVoiceControl />
+          <BoardAssistantEntry />
         </div>
       )}
       {/* Kategoriraden står FAST under logoen under panel-policyen (2026-09-15,

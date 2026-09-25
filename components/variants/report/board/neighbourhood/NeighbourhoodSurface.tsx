@@ -12,10 +12,9 @@ import { FAQSection } from "../FAQSection";
 import { useNeighbourhoodList } from "./use-neighbourhood-list";
 import { TravelModeHeaderControl } from "./TravelModeHeaderControl";
 import { StoryCard } from "../story/StoryCard";
-import { BoardVoiceControl } from "../voice/BoardVoiceControl";
-import { useBoardAgent } from "../agent/board-agent";
-import { AgentModeToggle } from "../agent/AgentModeToggle";
-import { BoardAgentSurface } from "../agent/BoardAgentSurface";
+import { useBoardAgent } from "@/components/variants/report/board/agent/board-agent";
+import { BoardAssistantEntry, useHasBoardAssistant } from "@/components/variants/report/board/agent/BoardAssistantEntry";
+import { BoardAgentSurface } from "@/components/variants/report/board/agent/BoardAgentSurface";
 import { StoryDeck } from "../story/StoryRail";
 import { StoryPlayCard } from "../story/StoryPlayCard";
 import { useStoryTour } from "../story/story-tour";
@@ -45,6 +44,7 @@ export function NeighbourhoodSurface({
   const { data, dispatch, mapCamera } = useBoard();
   const story = useStoryTour();
   const agent = useBoardAgent();
+  const hasAssistant = useHasBoardAssistant();
   const [openCategoryId, setOpenCategoryId] = useState<string | null>(null);
   const savedCameraRef = useRef<CameraSnapshot | null>(null);
 
@@ -130,7 +130,7 @@ export function NeighbourhoodSurface({
         contentRestKey="agent"
       >
         <div className="pb-2">
-          <AgentModeToggle mode={agent.mode} onChange={agent.setMode} name={agent.name} claimFocus={agent.claimToggleFocus} />
+          <BoardAssistantEntry />
         </div>
         <div className="flex h-[52dvh] min-h-[300px] flex-col">
           <BoardAgentSurface variant="sheet" />
@@ -157,13 +157,7 @@ export function NeighbourhoodSurface({
           contentRestKey="story"
         >
           <StoryCard
-            assistant={
-              agent ? (
-                <AgentModeToggle mode={agent.mode} onChange={agent.setMode} name={agent.name} claimFocus={agent.claimToggleFocus} />
-              ) : data.assistant?.enabled || data.demoSnapshotId ? (
-                <BoardVoiceControl />
-              ) : undefined
-            }
+            assistant={hasAssistant ? <BoardAssistantEntry /> : undefined}
           />
         </NeighbourhoodSheet>
         <StoryDeck />
@@ -200,7 +194,7 @@ function NeighbourhoodList({
   onHeightChange: (heightPx: number) => void;
 }) {
   const { viewportGestures, data } = useBoard();
-  const agent = useBoardAgent();
+  const hasAssistant = useHasBoardAssistant();
   const list = useNeighbourhoodList();
 
   // R28: ett ikke-blokkerende hint om at kartet styrer lista. Uten det finnes
@@ -224,13 +218,9 @@ function NeighbourhoodList({
       {/* Samtalen er tilgjengelig FØR omvisningen er begynt: den som lander
           kaldt fra en annonse skal kunne spørre med én gang. Samme forbindelse
           som knappen inne i omvisningen (se board-voice.tsx). */}
-      {agent ? (
+      {hasAssistant && (
         <div className="mb-3 px-1">
-          <AgentModeToggle mode={agent.mode} onChange={agent.setMode} name={agent.name} claimFocus={agent.claimToggleFocus} />
-        </div>
-      ) : (data.assistant?.enabled || data.demoSnapshotId) && (
-        <div className="mb-3 px-1">
-          <BoardVoiceControl />
+          <BoardAssistantEntry />
         </div>
       )}
 
