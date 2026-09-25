@@ -5,12 +5,35 @@ import { z } from "zod";
 import { loadLiveDemo } from "@/lib/live/demos";
 import { backendModel, backendEffort } from "@/lib/live/session-config";
 import { textChatTools } from "@/lib/demo/site-chat/text-tools";
+import { boardChatTools, boardMapStateNote, createBoardMapPort, faqAnswerPlainText, resolveBoardFaq } from "@/lib/demo/site-chat/board-map";
+import { findBoardPOI } from "@/components/variants/report/board/board-data";
 import { replyNotice } from "@/lib/demo/site-chat/notices";
 import { runSiteChat, ChatBackendError } from "@/lib/demo/site-chat/backend";
 import { consumeDemoQuota } from "@/lib/demo/site-chat/usage";
 import { issueTranscript, MAX_TRANSCRIPT_TOKEN_LENGTH, verifyTranscript } from "@/lib/demo/site-chat/transcript";
 import { sanitizeReply } from "@/lib/demo/site-chat/sanitize";
 import { transcriptScope, type SiteChatProfile } from "@/lib/demo/site-chat/profile";
+
+/**
+ * Boardets brukerinitiativ (KTD4): eksakt speil av `BoardChatIntent` i
+ * `lib/board-agent/types.ts`. Definert som Zod her (ikke importert derfra —
+ * den fila er bevisst fri for server-only-avhengigheter) og validert til å
+ * matche kontrakten strukturelt.
+ */
+const boardIntentSchema = z.discriminatedUnion("kind", [
+  z.object({ kind: z.literal("place"), poiId: z.string().min(1).max(200) }).strict(),
+  z.object({ kind: z.literal("faq"), faqId: z.string().min(1).max(200) }).strict(),
+  z.object({ kind: z.literal("theme"), categoryId: z.string().min(1).max(200) }).strict(),
+]);
+
+/** Speiler `BoardChatMapState`. */
+const boardMapStateSchema = z
+  .object({
+    selectedCategoryId: z.string().max(200).nullable(),
+    selectedPlaceId: z.string().max(200).nullable(),
+    travelMode: z.enum(["walk", "bike", "car"]),
+  })
+  .strict();
 
 /**
  * Tekstchattens endepunkt for en nettsidekopi (2026-09-23, felles fra 2026-09-24).
@@ -32,13 +55,35 @@ import { transcriptScope, type SiteChatProfile } from "@/lib/demo/site-chat/prof
 
 const MAX_BODY_BYTES = 32 * 1024;
 
+/**
+ * `message` er alltid tillatt (og alltid PÅKREVD utenfor Board-varianten);
+ * `intent`/`board` finnes bare i skjemaet fordi Board-varianten trenger dem —
+ * en nettsidekopi som sender dem uansett blir avvist under, av samme grunn
+ * `.strict()` avviste dem før (se `assertRequestShape`).
+ */
 const bodySchema = z
   .object({
-    message: z.string().min(1).max(600),
+    message: z.string().min(1).max(600).optional(),
     pageId: z.string().min(1).max(80),
     transcript: z.string().max(MAX_TRANSCRIPT_TOKEN_LENGTH).optional(),
+    intent: boardIntentSchema.optional(),
+    board: boardMapStateSchema.optional(),
   })
   .strict();
+
+/**
+ * Formen `bodySchema` alene ikke kan uttrykke: en nettsidekopi krever `message`
+ * og forbyr `intent`/`board`; Board-varianten krever NØYAKTIG ett av
+ * `message` og `intent`. Returnerer en feiltekst, eller null når formen er gyldig.
+ */
+function assertRequestShape(profile: SiteChatProfile, body: z.infer<typeof bodySchema>): string | null {
+  if (!profile.board) {
+    if (!body.message || body.intent || body.board) return "Ugyldig forespørsel.";
+    return null;
+  }
+  if (Boolean(body.message) === Boolean(body.intent)) return "Ugyldig forespørsel.";
+  return null;
+}
 
 const VOICE_HISTORY_NOTE =
   "Noen av de tidligere turene er fra en talesamtale med Anja i samme chatboks, automatisk transkribert og derfor med mulige hørefeil. Bruk dem som kontekst for hva brukeren viser til; fakta hentes fortsatt med verktøyene.";
@@ -156,14 +201,19 @@ export function createSiteChatRoute(profile: SiteChatProfile) {
     }
     const parsed = bodySchema.safeParse(json);
     if (!parsed.success) return NextResponse.json({ error: "Ugyldig forespørsel." }, { status: 400, headers });
+    const shapeError = assertRequestShape(profile, parsed.data);
+    if (shapeError) return NextResponse.json({ error: shapeError }, { status: 400, headers });
+    const body = parsed.data;
+    const isBoard = Boolean(profile.board);
+    const intent = isBoard ? body.intent : undefined;
 
     const access = profile.access(request);
     if (!access) return NextResponse.json({ error: replies.noAccess }, { status: 401, headers });
     const { visitor, setCookie } = access;
-    const respond = (body: unknown, init: { status?: number } = {}) =>
-      withCookie(NextResponse.json(body, { ...init, headers }), setCookie);
+    const respond = (responseBody: unknown, init: { status?: number } = {}) =>
+      withCookie(NextResponse.json(responseBody, { ...init, headers }), setCookie);
 
-    const page = profile.getPage(parsed.data.pageId);
+    const page = profile.getPage(body.pageId);
     if (!page) return respond({ error: replies.unknownPage, links: profile.fallbackLinks() }, { status: 400 });
 
     if (!process.env.OPENAI_API_KEY) {
@@ -178,15 +228,62 @@ export function createSiteChatRoute(profile: SiteChatProfile) {
       return respond({ error: "Chattens datagrunnlag kunne ikke lastes.", links: profile.fallbackLinks() }, { status: 503 });
     }
 
-    const verified = verifyTranscript(parsed.data.transcript, visitor.visitorId, scope);
+    // Boardets brukerinitiativ (sted/tema/FAQ) slås opp mot Boardets EGNE data
+    // FØR kvoten trekkes: et valg som ikke finnes koster ikke den besøkende en
+    // av dagens meldinger. Et FAQ-initiativ blir aldri et modellkall — svaret
+    // er FAQ-ens egen godkjente tekst (bygges lenger ned, etter transcript-verifiseringen).
+    let userText = body.message;
+    let boardIntentAddendum = "";
+    let faq: ReturnType<typeof resolveBoardFaq> = null;
+    if (intent) {
+      if (intent.kind === "place") {
+        const poi = findBoardPOI(demo.board.categories, intent.poiId);
+        if (!poi) return respond({ error: "Ukjent sted.", links: profile.fallbackLinks() }, { status: 400 });
+        userText = `Jeg valgte «${poi.name}» i kartet (kart-ID ${poi.id}). Fortell kort om stedet.`;
+        boardIntentAddendum = `\n\nBRUKERINITIATIV: Stedet «${poi.name}» (kart-ID ${poi.id}) er allerede vist i kartet. Ikke kall show_place for det igjen.`;
+      } else if (intent.kind === "theme") {
+        const category = demo.board.categories.find((c) => String(c.id) === intent.categoryId);
+        if (!category) return respond({ error: "Ukjent tema.", links: profile.fallbackLinks() }, { status: 400 });
+        userText = `Jeg valgte temaet «${category.label}» i kartet (tema-ID ${category.id}). Fortell kort om temaet.`;
+        boardIntentAddendum = `\n\nBRUKERINITIATIV: Temaet «${category.label}» (tema-ID ${category.id}) er allerede vist i kartet.`;
+      } else {
+        faq = resolveBoardFaq(demo.board, intent.faqId);
+        if (!faq) return respond({ error: "Ukjent spørsmål.", links: profile.fallbackLinks() }, { status: 400 });
+        userText = faq.question;
+      }
+    }
+    // Zod-refinen (`assertRequestShape`) har allerede sikret nøyaktig ett av
+    // `message`/`intent`; en gyldig intent setter alltid `userText` over.
+    const resolvedUserText = userText!;
+
+    const verified = verifyTranscript(body.transcript, visitor.visitorId, scope);
     if (verified && verified.snapshotId !== demo.snapshotId) {
       return respond({ error: "Innholdet er oppdatert – last siden på nytt." }, { status: 409 });
     }
     const previousTurns = verified?.turns ?? [];
 
+    // FAQ: deterministisk svar, ALDRI et modellkall og ALDRI et kvotetrekk —
+    // teksten er allerede kildekontrollert i katalogen.
+    if (faq) {
+      const boardMap = createBoardMapPort(demo.board);
+      const { text, poiIds } = faqAnswerPlainText(demo.board, faq.answer);
+      const reply = sanitizeReply(text);
+      const directive = poiIds.length ? boardMap.execute("highlight_places", { poi_ids: poiIds }).directive : null;
+      const transcript = issueTranscript({
+        scope, visitorId: visitor.visitorId, snapshotId: demo.snapshotId, previousTurns, previousTrimmed: verified?.trimmed,
+        newTurns: [{ role: "user", text: resolvedUserText }, { role: "assistant", text: reply }],
+      });
+      console.warn(`${prefix}_chat_turn`, { ms: Date.now() - startedAt, model: "faq", answerType: "fact", faqId: faq.id, directives: directive ? 1 : 0, pageId: page.id });
+      return respond({
+        reply, answerType: "fact", links: [], sources: [], notice: null, transcript, datasetVersion: demo.snapshotId,
+        directives: directive ? [directive] : [],
+      });
+    }
+
     // Kvoten belastes først etter alle deterministiske sjekker (tilgang, side,
-    // API-nøkkel, datagrunnlag, transcript/snapshot) — en forespørsel som uansett
-    // ville feilet uten modellkall skal ikke koste den besøkende en av dagens meldinger.
+    // API-nøkkel, datagrunnlag, brukerinitiativ, transcript/snapshot) — en
+    // forespørsel som uansett ville feilet uten modellkall skal ikke koste den
+    // besøkende en av dagens meldinger.
     const quota = await consumeDemoQuota(visitor.visitorId, profile.chatMeter);
     if (!quota.allowed) {
       // En brukt kvote er 429; et utilgjengelig kvotelager er en tjenestefeil (503).
@@ -195,9 +292,11 @@ export function createSiteChatRoute(profile: SiteChatProfile) {
     }
 
     const conversation = demo.createConversation();
+    const boardMap = isBoard ? createBoardMapPort(demo.board) : undefined;
     const voiceNote = previousTurns.some((turn) => turn.via === "voice") ? `\n\n${VOICE_HISTORY_NOTE}` : "";
-    const instructions = `${profile.instructions(page, demo.board.categories)}${voiceNote}`;
-    const tools = textChatTools(demo.tools);
+    const mapStateNote = isBoard ? boardMapStateNote(demo.board, body.board) : null;
+    const instructions = `${profile.instructions(page, demo.board.categories)}${voiceNote}${boardIntentAddendum}${mapStateNote ? `\n\n${mapStateNote}` : ""}`;
+    const tools = isBoard ? boardChatTools(demo.tools) : textChatTools(demo.tools);
     const model = process.env[profile.env.model] || backendModel();
     const timeoutOverride = process.env[profile.env.timeoutMs];
 
@@ -213,7 +312,8 @@ export function createSiteChatRoute(profile: SiteChatProfile) {
         conversation,
         sourceRegistry: profile.sourceRegistry(),
         previousTurns,
-        userText: parsed.data.message,
+        userText: resolvedUserText,
+        ...(boardMap ? { boardMap } : {}),
         // Overstyres bare i tester: produksjon bruker løkkas eget standardtak (25 s).
         ...(timeoutOverride ? { timeoutMs: Number(timeoutOverride) } : {}),
       });
@@ -238,7 +338,7 @@ export function createSiteChatRoute(profile: SiteChatProfile) {
     const sources = answerType === "fact" ? result.sources : [];
     const notice = fallbackReply
       ? null
-      : replyNotice({ userText: parsed.data.message, reply, answerType, provisional: result.provisional }, replies.notices);
+      : replyNotice({ userText: resolvedUserText, reply, answerType, provisional: result.provisional }, replies.notices);
 
     const transcript = issueTranscript({
       scope,
@@ -246,7 +346,7 @@ export function createSiteChatRoute(profile: SiteChatProfile) {
       snapshotId: demo.snapshotId,
       previousTurns,
       previousTrimmed: verified?.trimmed,
-      newTurns: [{ role: "user", text: parsed.data.message }, { role: "assistant", text: reply }],
+      newTurns: [{ role: "user", text: resolvedUserText }, { role: "assistant", text: reply }],
     });
 
     console.warn(`${prefix}_chat_turn`, {
@@ -261,7 +361,10 @@ export function createSiteChatRoute(profile: SiteChatProfile) {
       pageId: page.id,
     });
 
-    return respond({ reply, answerType, links, sources, notice, transcript, datasetVersion: demo.snapshotId, evidence: result.evidence });
+    return respond({
+      reply, answerType, links, sources, notice, transcript, datasetVersion: demo.snapshotId, evidence: result.evidence,
+      ...(isBoard ? { directives: result.directives } : {}),
+    });
   }
 
   return { GET, POST, OPTIONS };

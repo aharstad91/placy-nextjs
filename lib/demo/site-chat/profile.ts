@@ -137,6 +137,17 @@ export interface SiteChatProfile {
   resolveLinks: (linkIds: readonly unknown[]) => ResolvedLink[];
   fallbackLinks: () => ResolvedLink[];
   replies: SiteChatReplies;
+  /**
+   * Boardets agentmodus, ikke en nettsidekopi (2026-09-25, KTD3/KTD4).
+   *
+   * `true` slår på Board-varianten i `route-handlers.ts`: body godtar
+   * `intent`/`board` i tillegg til `message`, verktøysettet utvides med de
+   * allowlistede kartverktøyene (`board-map.ts`), og svaret bærer
+   * `directives`. Utelatt/`false` = dagens nettsidekopi-atferd, uendret. Selve
+   * kart- og FAQ-logikken er generisk over `BoardData` og trenger ingen
+   * kundespesifikk konfigurasjon utover dette flagget.
+   */
+  board?: true;
 }
 
 /** Kundens samtaletoken-omfang: kunde, datasett og kundens egen nøkkel. */

@@ -95,6 +95,16 @@ export function chatSurfaceHistoryInput(turns: readonly TranscriptTurn[]) {
 export const CHAT_SURFACE_CONTINUED_BACKEND_ADDENDUM =
   "- Samtalen fortsetter fra chatboksen: de tidligere meldingene (skrevne og eventuelt talte) er med i samtalen. Bruk dem til å forstå hva brukeren viser til, men hent fakta med verktøyene.";
 
+/**
+ * Boardets agentmodus «Spør Anja» (2026-09-25, KTD3/KTD4): talen fortsetter
+ * samme historikk som Board-tekstbanen, MEN uten flate-bytte — kartet og
+ * kartverktøyene er de samme som Boardets vanlige stemme, uendret. Bare en
+ * kort note til STEMMENS instruks; backend-instruksen bruker
+ * `CHAT_SURFACE_CONTINUED_BACKEND_ADDENDUM` som over.
+ */
+export const BOARD_AGENT_CONTINUED_VOICE_NOTE =
+  "Samtalen fortsetter fra «Spør Anja»-teksten i sidebaren: de tidligere meldingene ligger i samtalehistorikken. Bygg videre på dem uten å gjenta deg selv, og ikke si at dette er en ny samtale.";
+
 /** Tillegget til backend-instruksen for chatflaten, med kundens kontaktperson. */
 export function chatSurfaceBackendAddendum(voice: Pick<ChatSurfaceVoice, "salesContact">): string {
   return CHAT_SURFACE_BACKEND_ADDENDUM.replace("{{salesContact}}", voice.salesContact);

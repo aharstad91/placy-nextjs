@@ -1,8 +1,10 @@
 import { describe, expect, it, vi } from "vitest";
 import { loadLiveDemo } from "@/lib/live/demos";
 import { textChatTools } from "@/lib/demo/site-chat/text-tools";
+import { boardChatTools, createBoardMapPort } from "@/lib/demo/site-chat/board-map";
 import { runSiteChat, ChatBackendError } from "@/lib/demo/site-chat/backend";
 import { leangenbuktaSourceRegistry } from "@/lib/demo/leangenbukta-chat/sources";
+import { nyhavnaSourceRegistry } from "@/lib/demo/nyhavna-chat/sources";
 import registryFile from "@/data/demo/leangenbukta-lokal/sources.json";
 
 const sourceRegistry = leangenbuktaSourceRegistry();
@@ -307,6 +309,125 @@ describe("leangenbukta-chat/backend — kildebevis fra verktøysvarene i denne m
   it("markerer usikkert prosjektgrunnlag når verktøyet selv sier uavklart/forventet", async () => {
     const { result } = await knutepunktetTurn(finalMessage("Forventet siste kvartal 2026.", "fact"));
     expect(result.provisional).toBe(true);
+  });
+});
+
+describe("Boardets agentmodus «Spør Anja» — boardMap-porten i backend-løkka (U4, 2026-09-25)", () => {
+  it("validerer et direkte kartverktøykall mot Boardets EGNE data: gyldige ID-er blir et direktiv, ukjente blir en feilmelding til modellen uten direktiv", async () => {
+    const demo = await loadLiveDemo("nyhavna-lokal");
+    const conversation = demo.createConversation();
+    const boardMap = createBoardMapPort(demo.board);
+    const realPoiId = demo.board.categories[0].pois[0].id;
+    const fetchImpl = vi
+      .fn()
+      .mockResolvedValueOnce(
+        responsesPayload([functionCall("call_1", "highlight_places", { poi_ids: [realPoiId, "finnes-ikke"] })]),
+      )
+      .mockResolvedValueOnce(responsesPayload([finalMessage("Her er stedet.", "smalltalk")]));
+
+    const result = await runSiteChat({
+      apiKey: "test-key", sourceRegistry: nyhavnaSourceRegistry(), model: "gpt-5.6-terra", effort: "low",
+      instructions: "instruks", tools: boardChatTools(demo.tools), parallelToolCalls: false, conversation,
+      previousTurns: [], userText: "Vis meg stedet", boardMap, fetchImpl: fetchImpl as unknown as typeof fetch,
+    });
+
+    expect(result.directives).toEqual([{ name: "highlight_places", args: { poi_ids: [realPoiId] } }]);
+    // Verktøysvaret til MODELLEN viser den ukjente ID-en som avvist, ikke som utført.
+    const second = JSON.parse(fetchImpl.mock.calls[1][1].body as string);
+    const output = JSON.parse(second.input.find((item: { type: string }) => item.type === "function_call_output").output);
+    expect(output.rejected).toEqual(["finnes-ikke"]);
+    // Verktøykallet gikk til PORTEN, ikke til samtalen (som ikke har noe kart å style).
+    expect(result.evidence).toEqual([]);
+  });
+
+  it("avviser hele kallet, uten direktiv, når INGEN av ID-ene finnes", async () => {
+    const demo = await loadLiveDemo("nyhavna-lokal");
+    const boardMap = createBoardMapPort(demo.board);
+    const fetchImpl = vi
+      .fn()
+      .mockResolvedValueOnce(responsesPayload([functionCall("call_1", "highlight_places", { poi_ids: ["finnes-ikke-1", "finnes-ikke-2"] })]))
+      .mockResolvedValueOnce(responsesPayload([finalMessage("Beklager, fant ikke stedet.", "gap")]));
+    const result = await runSiteChat({
+      apiKey: "test-key", sourceRegistry: nyhavnaSourceRegistry(), model: "gpt-5.6-terra", effort: "low",
+      instructions: "instruks", tools: boardChatTools(demo.tools), parallelToolCalls: false, conversation: demo.createConversation(),
+      previousTurns: [], userText: "Vis meg noe som ikke finnes", boardMap, fetchImpl: fetchImpl as unknown as typeof fetch,
+    });
+    expect(result.directives).toEqual([]);
+  });
+
+  it("samler direktiver fra samtalens EGNE kartkommandoer (f.eks. open_theme) gjennom samme validering", async () => {
+    const demo = await loadLiveDemo("nyhavna-lokal");
+    const conversation = demo.createConversation();
+    const boardMap = createBoardMapPort(demo.board);
+    // Prober det ekte direktivet open_theme selv produserer, slik andre tester i
+    // denne fila prober ekte fakta-ID-er — ingen syntetisk fixture.
+    const probe = await demo.createConversation().execute("open_theme", { theme_id: "barn-oppvekst" });
+    const expectedDirectives = probe.directives ?? [];
+    expect(expectedDirectives.length).toBeGreaterThan(0);
+
+    const fetchImpl = vi
+      .fn()
+      .mockResolvedValueOnce(responsesPayload([functionCall("call_1", "open_theme", { theme_id: "barn-oppvekst" })]))
+      .mockResolvedValueOnce(responsesPayload([finalMessage("Her er oppvekst-temaet.", "smalltalk")]));
+
+    const result = await runSiteChat({
+      apiKey: "test-key", sourceRegistry: nyhavnaSourceRegistry(), model: "gpt-5.6-terra", effort: "low",
+      instructions: "instruks", tools: boardChatTools(demo.tools), parallelToolCalls: false, conversation,
+      previousTurns: [], userText: "Fortell om oppvekst", boardMap, fetchImpl: fetchImpl as unknown as typeof fetch,
+    });
+    expect(result.directives).toEqual(expectedDirectives);
+  });
+
+  it("avduplisert og klippet til BOARD_DIRECTIVE_MAX, i den rekkefølgen verktøyene ble kalt", async () => {
+    const demo = await loadLiveDemo("nyhavna-lokal");
+    const boardMap = createBoardMapPort(demo.board);
+    const poiA = demo.board.categories[0].pois[0].id;
+    const poiB = demo.board.categories[1].pois[0].id;
+    const poiX = demo.board.categories[2].pois[0].id;
+    const categoryY = String(demo.board.categories[3].id);
+    const fetchImpl = vi
+      .fn()
+      .mockResolvedValueOnce(
+        responsesPayload([
+          functionCall("call_1", "highlight_places", { poi_ids: [poiA] }),
+          functionCall("call_2", "highlight_places", { poi_ids: [poiB] }),
+          functionCall("call_3", "show_place", { poi_id: poiX }),
+          functionCall("call_4", "show_category", { category_id: categoryY }),
+          functionCall("call_5", "clear_highlights", {}),
+          functionCall("call_6", "highlight_places", { poi_ids: [poiA] }), // duplikat av call_1
+        ]),
+      )
+      .mockResolvedValueOnce(responsesPayload([finalMessage("Ok.", "smalltalk")]));
+
+    const result = await runSiteChat({
+      apiKey: "test-key", sourceRegistry: nyhavnaSourceRegistry(), model: "gpt-5.6-terra", effort: "low",
+      instructions: "instruks", tools: boardChatTools(demo.tools), parallelToolCalls: true, conversation: demo.createConversation(),
+      previousTurns: [], userText: "Vis meg flere steder", boardMap, fetchImpl: fetchImpl as unknown as typeof fetch,
+    });
+
+    // Høyst 4 (BOARD_DIRECTIVE_MAX), i kallrekkefølgen: clear_highlights (call_5)
+    // klippes bort som femte, og duplikatet (call_6) telles ikke uansett.
+    expect(result.directives).toEqual([
+      { name: "highlight_places", args: { poi_ids: [poiA] } },
+      { name: "highlight_places", args: { poi_ids: [poiB] } },
+      { name: "show_place", args: { poi_id: poiX } },
+      { name: "show_category", args: { category_id: categoryY } },
+    ]);
+  });
+
+  it("uten boardMap-porten: nøyaktig dagens atferd — directives alltid tom, selv om et kartverktøy-NAVN skulle dukke opp", async () => {
+    const demo = await loadLiveDemo("nyhavna-lokal");
+    const conversation = demo.createConversation();
+    const fetchImpl = vi
+      .fn()
+      .mockResolvedValueOnce(responsesPayload([functionCall("call_1", "get_board_facts", {})]))
+      .mockResolvedValueOnce(responsesPayload([finalMessage("Nyhavna er en bydel under utvikling.", "fact")]));
+    const result = await runSiteChat({
+      apiKey: "test-key", sourceRegistry: nyhavnaSourceRegistry(), model: "gpt-5.6-terra", effort: "low",
+      instructions: "instruks", tools: textChatTools(demo.tools), parallelToolCalls: false, conversation,
+      previousTurns: [], userText: "Fortell om Nyhavna", fetchImpl: fetchImpl as unknown as typeof fetch,
+    });
+    expect(result.directives).toEqual([]);
   });
 });
 

@@ -17,8 +17,8 @@ import { hostedChatAdmission } from '@/lib/live/hosted-chat';
 import { siteChatCustomerForDataset } from '@/lib/demo/site-chat/customers';
 import { transcriptScope, type SiteChatProfile } from '@/lib/demo/site-chat/profile';
 import {
-  CHAT_SURFACE, chatSurfaceBackendAddendum, CHAT_SURFACE_CONTINUED_BACKEND_ADDENDUM, chatSurfaceConversation,
-  chatSurfaceHistoryInput, chatSurfaceTools, chatSurfaceVoiceInstructions,
+  BOARD_AGENT_CONTINUED_VOICE_NOTE, CHAT_SURFACE, chatSurfaceBackendAddendum, CHAT_SURFACE_CONTINUED_BACKEND_ADDENDUM,
+  chatSurfaceConversation, chatSurfaceHistoryInput, chatSurfaceTools, chatSurfaceVoiceInstructions,
 } from '@/lib/live/chat-surface';
 import { MAX_TRANSCRIPT_TOKEN_LENGTH, verifyTranscript, type VerifiedTranscript } from '@/lib/demo/site-chat/transcript';
 import { startVoiceHandoff } from '@/lib/demo/site-chat/voice-handoff';
@@ -38,9 +38,15 @@ const bodySchema = z.object({
   // Flaten stemmen snakker fra. Utelatt = boardet med kart; `chat` = chatboksen
   // uten kart (lib/live/chat-surface.ts).
   surface: z.literal(CHAT_SURFACE).optional(),
-  // Tekstchattens signerte historikktoken (bare chatflaten). Verifiseres mot
-  // den besøkende og datasettet; klientens egne bobler brukes aldri.
+  // Tekstchattens signerte historikktoken (chatflaten, eller Boardets
+  // agentmodus med `boardAgent`). Verifiseres mot den besøkende og
+  // datasettet; klientens egne bobler brukes aldri.
   transcript: z.string().max(MAX_TRANSCRIPT_TOKEN_LENGTH).optional(),
+  // Boardets agentmodus «Spør Anja» (2026-09-25, KTD3/KTD4): talen fortsetter
+  // Board-tekstbanens historikk, MEN beholder boardets EGNE kartverktøy og
+  // kartinstrukser (ingen `surface`-bytte til chatSurface). Bare gyldig når
+  // datasettet har en kunde i chatboks-registeret (`siteChatCustomerForDataset`).
+  boardAgent: z.literal(true).optional(),
 });
 
 /**
@@ -169,7 +175,12 @@ export async function POST(request: NextRequest) {
   if (!local && !demoVisitor) return new NextResponse(null, { status: 404 });
   if (!datasetId) return NextResponse.json({ error: 'Ukjent datasett. Last boardet på nytt.' }, { status: 400 });
   const chat = parsed.data.surface === CHAT_SURFACE;
-  const customer = chat ? siteChatCustomerForDataset(datasetId) : null;
+  const boardAgent = parsed.data.boardAgent === true;
+  // Boardets agentmodus har ingen egen kunde-oppslagsnøkkel: den deler
+  // `siteChatCustomerForDataset`-oppslaget med chatflaten, på datasettet.
+  // Finnes ingen kunde for datasettet, oppfører boardAgent seg som om flagget
+  // ikke var satt (dagens klassiske kart-stemme, uten kontinuitet).
+  const customer = chat || boardAgent ? siteChatCustomerForDataset(datasetId) : null;
   if (chat && !customer) return NextResponse.json({ error: 'Talesamtale i chatten finnes ikke for dette datasettet.' }, { status: 400 });
   let demo: LiveDemo;
   try { demo = await loadLiveDemo(datasetId); } catch (error) {
@@ -199,13 +210,23 @@ export async function POST(request: NextRequest) {
     }
   }
   // Instruksene avhenger av om historikken faktisk ble med; se reserveforsøket under.
-  const backendFor = (withHistory: boolean) => customer
-    ? `${demo.backendInstructions}\n\n${chatSurfaceBackendAddendum(customer.voice)}${withHistory ? `\n${CHAT_SURFACE_CONTINUED_BACKEND_ADDENDUM}` : ''}`
-    : demo.backendInstructions;
+  // `chat` (chatboksen uten kart) og `boardAgent` (Boardets EGEN stemme, med
+  // kart) er to ulike tillegg til SAMME `demo.backendInstructions` — bare
+  // chatboksen bytter ut instruksen og verktøysettet; boardAgent legger bare
+  // til en kort fortsettelsesnote når historikken faktisk ble med.
+  const backendFor = (withHistory: boolean) => {
+    if (chat && customer) return `${demo.backendInstructions}\n\n${chatSurfaceBackendAddendum(customer.voice)}${withHistory ? `\n${CHAT_SURFACE_CONTINUED_BACKEND_ADDENDUM}` : ''}`;
+    if (boardAgent && customer && withHistory) return `${demo.backendInstructions}\n\n${CHAT_SURFACE_CONTINUED_BACKEND_ADDENDUM}`;
+    return demo.backendInstructions;
+  };
+  const boardVoiceFor = (withHistory: boolean) => {
+    const base = demo.voiceInstructions ?? NYHAVNA_VOICE_INSTRUCTIONS;
+    return boardAgent && customer && withHistory ? `${base}\n\n${BOARD_AGENT_CONTINUED_VOICE_NOTE}` : base;
+  };
   const sessionFor = (withHistory: boolean) => {
-    const session = customer
+    const session = chat && customer
       ? liveSessionConfig(chatSurfaceVoiceInstructions(customer.voice, { continued: withHistory }), backendFor(withHistory), chatSurfaceTools(demo.tools), parsed.data.voice)
-      : liveSessionConfig(demo.voiceInstructions ?? NYHAVNA_VOICE_INSTRUCTIONS, backendFor(false), demo.tools, parsed.data.voice);
+      : liveSessionConfig(boardVoiceFor(withHistory), backendFor(withHistory), demo.tools, parsed.data.voice);
     session.delegation.responses.parallel_tool_calls = demo.parallelTools ?? true;
     // Tidligere turer ligger i sesjonen FØR stemmen hilser: Live snakker ikke
     // av seg selv på historikk, hilsenen kommer etterpå som instruks.

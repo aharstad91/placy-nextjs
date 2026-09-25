@@ -18,8 +18,53 @@ import type { SiteChatPage, SiteChatReplies } from "@/lib/demo/site-chat/profile
  *
  * Den faste delen står først og er lik for begge sider (hurtigbufret prefiks);
  * sidekonteksten kommer til slutt.
+ *
+ * ## Board-varianten (2026-09-25, KTD3)
+ *
+ * `nhBoardChatInstructions` deler NESTEN hele regelsettet med nettsidekopien
+ * — samme grunnlag, samme I DAG ELLER PLANLAGT, samme forbehold — men bytter
+ * ut nettsidens «du har intet kart»-regel med Boardets kartverktøy
+ * (`highlight_places`, `show_place`, `show_category`, `set_travel_mode`), og
+ * sidekonteksten er Boardet, ikke en side i nettsidekopien. Reglene er
+ * bygget av samme funksjon (`nhChatRules`), parametrisert på nøyaktig den
+ * ene linjen som skiller dem, slik at nettsidekopiens instrukstekst forblir
+ * byte-identisk med før refaktoreringen.
  */
-const NH_TEXT_CHAT_RULES = `
+const NH_TEXT_CHAT_MAP_RULE =
+  "- Omtal ALDRI et kart, en markør, at noe «vises» eller «fremheves», eller at brukeren kan «trykke» noe — denne samtalen har ikke noe kart å vise til.";
+
+const NH_BOARD_CHAT_MAP_RULE = [
+  "- Brukeren ser kartet ved siden av samtalen. Bruk highlight_places (kart-ID-er fra verktøysvarene i DENNE meldingen, høyst 6) når du omtaler konkrete steder, show_place for å åpne ETT sted, show_category for å vise et tema, og set_travel_mode bare når brukeren ber om en annen reisemåte. Si aldri at kartet viser, fremhever eller åpner noe disse verktøyene ikke nettopp bekreftet.",
+  "- Spør brukeren etter en TYPE steder (kaféer, restauranter, dagligvarer, barnehager, trening, holdeplasser, turområder), kall open_theme for temaet som passer best i TEMAER: kapittelet har stedene med kart-ID-er og fremhever dem selv. find_places er for navngitte steder og delområder, ikke for kategorier.",
+].join("\n");
+
+/**
+ * Linjene i det felles regelsettet som peker brukeren til Placy-kartet eller
+ * til nettsidens sider. På Boardet står brukeren alt i kartet, så neste
+ * handling er et tema eller et sted der, og ingen lenke går til kartet.
+ * Byttet er tekst mot tekst, og `nhBoardChatInstructions` feiler høylytt hvis
+ * en linje ikke finnes lenger — da har det felles regelsettet endret seg.
+ */
+const NH_BOARD_RULE_SWAPS: readonly (readonly [string, string])[] = [
+  ["foreslå Placy-kartet eller Nyhavna Utvikling i stedet for å gjette", "foreslå et tema eller et sted i kartet, eller Nyhavna Utvikling, i stedet for å gjette"],
+  ["(Placy-kartet, en side eller Nyhavna Utvikling)", "(et tema eller et sted i kartet, eller Nyhavna Utvikling)"],
+  [
+    `- link_ids: BARE "board" (Placy-kartet over Nyhavna), "contact" (Nyhavna Utviklings kontaktinformasjon) eller "page:<side-ID>" for en side i sideregisteret ("page:forside", "page:beliggenhet") — aldri et fakta-, kilde- eller verktøy-ID. Tom liste når ingen passer.`,
+    `- link_ids: BARE "contact" (Nyhavna Utviklings kontaktinformasjon) når svaret henviser dit — aldri et fakta-, kilde- eller verktøy-ID. Brukeren står alt i kartet, så ingen lenke til det. Tom liste ellers.`,
+  ],
+];
+
+function boardRules(): string {
+  let rules = nhChatRules(NH_BOARD_CHAT_MAP_RULE);
+  for (const [from, to] of NH_BOARD_RULE_SWAPS) {
+    if (!rules.includes(from)) throw new Error(`Board-instruksen fant ikke regelteksten: ${from.slice(0, 60)}`);
+    rules = rules.replace(from, to);
+  }
+  return rules;
+}
+
+function nhChatRules(mapRule: string): string {
+  return `
 Du er en vennlig, rolig nabolagsguide i en TEKSTCHAT om Nyhavna i Trondheim. Hele Nyhavna er rammen: bydelen Nyhavna Utvikling planlegger, og nærområdet slik det er i dag. Chatten er en PROTOTYPE fra Placy: svarene er ikke godkjent av Nyhavna Utvikling, og du skal aldri si at Nyhavna Utvikling eller noen utbygger står bak, har godkjent eller garanterer et svar.
 
 GRUNNLAG
@@ -48,11 +93,14 @@ FORBEHOLD
 SVARFORM
 - Norsk bokmål i ren løpende tekst: ingen markdown, HTML, URL-er, lenketekst, ID-er eller verktøynavn i svaret.
 - Svaret først, i første setning. Deretter det viktigste forbeholdet, bare hvis det finnes et. Avslutt med én konkret neste handling når den hjelper (Placy-kartet, en side eller Nyhavna Utvikling). 2–4 setninger; ingen innledende høflighetsfraser, besvar alle delene av spørsmålet, og ikke gjenta det samme forbeholdet i hvert svar.
-- Omtal ALDRI et kart, en markør, at noe «vises» eller «fremheves», eller at brukeren kan «trykke» noe — denne samtalen har ikke noe kart å vise til.
+${mapRule}
 - answer_type: "fact" når svaret bygger på verktøysvar i denne meldingen, "gap" når grunnlaget mangler, "smalltalk" for hilsen og småprat uten fakta, "refusal" når du avviser spørsmålet.
 - link_ids: BARE "board" (Placy-kartet over Nyhavna), "contact" (Nyhavna Utviklings kontaktinformasjon) eller "page:<side-ID>" for en side i sideregisteret ("page:forside", "page:beliggenhet") — aldri et fakta-, kilde- eller verktøy-ID. Tom liste når ingen passer.
 - source_ids: kilde-ID-ene svaret bygger på, høyst fire, hentet fra feltene source_id eller sources[].id i verktøysvarene i DENNE meldingen. Skriv aldri en ID du ikke har sett der; serveren viser bare kilder verktøyene faktisk returnerte. Tom liste når svaret ikke bygger på en kilde.
 `.trim();
+}
+
+const NH_TEXT_CHAT_RULES = nhChatRules(NH_TEXT_CHAT_MAP_RULE);
 
 export function nhTextChatInstructions(page: SiteChatPage, themes: readonly { id: string; label: string }[]): string {
   const themeList = themes.map((theme) => `${theme.id} (${theme.label})`).join(", ");
@@ -61,6 +109,16 @@ export function nhTextChatInstructions(page: SiteChatPage, themes: readonly { id
 TEMAER (theme_id): ${themeList}.
 
 SIDEKONTEKST: Brukeren står på siden «${page.title}» (type: ${page.kind}) i en kopi av nyhavna.no.`;
+}
+
+/** Boardets agentmodus «Spør Anja» (2026-09-25): samme regler, Boardets kartverktøy i stedet for nettsidens «intet kart»-regel. */
+export function nhBoardChatInstructions(page: SiteChatPage, themes: readonly { id: string; label: string }[]): string {
+  const themeList = themes.map((theme) => `${theme.id} (${theme.label})`).join(", ");
+  return `${boardRules()}
+
+TEMAER (theme_id): ${themeList}.
+
+SIDEKONTEKST: Brukeren står i Placy-boardet «${page.title}» og ser kartet ved siden av samtalen, ikke på en side i nettsidekopien.`;
 }
 
 /** Chattens første melding på en side: fast tekst, ingen modelltekst og ingen kvote. */

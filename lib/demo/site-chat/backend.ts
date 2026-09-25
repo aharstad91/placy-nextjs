@@ -4,7 +4,9 @@ import type { RealtimeTool } from "@/lib/realtime/types";
 import type { NyhavnaConversation } from "@/lib/realtime/nyhavna-conversation";
 import { normalizeBackendUsage, type BackendTokenUsage } from "@/lib/live/usage";
 import { FACT_TOOL_NAMES } from "@/lib/demo/site-chat/text-tools";
+import type { BoardMapPort } from "@/lib/demo/site-chat/board-map";
 import type { TranscriptTurn } from "@/lib/demo/site-chat/transcript";
+import { BOARD_DIRECTIVE_MAX, isBoardDirectiveName, type BoardDirective } from "@/lib/board-agent/types";
 import {
   annotateSourceIds, resolveCitedSources, sourceIdsInOutput,
   type ChatSource, type SourceRegistry,
@@ -60,6 +62,11 @@ export interface ChatBackendResult {
   usage: BackendTokenUsage | null;
   /** Varigheten av hvert Responses-kall, i rekkefølge — til logg, ikke til klienten. */
   roundMs: number[];
+  /**
+   * Boardets kartdirektiver, validert og avduplisert, høyst `BOARD_DIRECTIVE_MAX`.
+   * Alltid tom uten `RunInput.boardMap` — se `board-map.ts`.
+   */
+  directives: BoardDirective[];
 }
 
 export class ChatBackendError extends Error {
@@ -86,6 +93,15 @@ interface RunInput {
   maxRounds?: number;
   timeoutMs?: number;
   fetchImpl?: typeof fetch;
+  /**
+   * Boardets agentmodus (KTD3): når satt, valideres et allowlistet
+   * kartverktøykall (navn i `BOARD_DIRECTIVE_NAMES`) mot Boardets egne data
+   * HER i stedet for å kjøres av `conversation`, og samtalens egne
+   * kartdirektiver (`ToolOutcome.directives`, f.eks. fra `open_theme`)
+   * valideres gjennom samme port før de blir et direktiv til klienten.
+   * Utelatt = dagens atferd, uendret.
+   */
+  boardMap?: BoardMapPort;
 }
 
 /**
@@ -233,6 +249,20 @@ function isEvidence(output: unknown): boolean {
   return true;
 }
 
+/** Identiske duplikater fjernet (navn + argumenter), høyst `BOARD_DIRECTIVE_MAX`. */
+function dedupeDirectives(list: readonly BoardDirective[]): BoardDirective[] {
+  const seen = new Set<string>();
+  const result: BoardDirective[] = [];
+  for (const directive of list) {
+    const key = JSON.stringify([directive.name, directive.args]);
+    if (seen.has(key)) continue;
+    seen.add(key);
+    result.push(directive);
+    if (result.length >= BOARD_DIRECTIVE_MAX) break;
+  }
+  return result;
+}
+
 const YEAR = /\b(?:19|20)\d{2}\b/g;
 
 /** Årstallene i svaret som ikke står i noe verktøysvar fra denne meldingen. */
@@ -271,6 +301,8 @@ export async function runSiteChat(input: RunInput): Promise<ChatBackendResult> {
   const evidence: ChatEvidence[] = [];
   // Teksten i verktøysvarene som telte som bevis — grunnlaget årstallsvakten sjekker mot.
   const evidenceText: string[] = [];
+  // Boardets kartdirektiver, uavduplisert og ubegrenset til de samles og klippes ved sluttsvaret.
+  const collectedDirectives: BoardDirective[] = [];
   let provisional = false;
   const allowedTools = new Set(input.tools.map((tool) => tool.name));
   let usageTotal: BackendTokenUsage | null = null;
@@ -328,6 +360,7 @@ export async function runSiteChat(input: RunInput): Promise<ChatBackendResult> {
         provisional,
         usage: usageTotal,
         roundMs,
+        directives: dedupeDirectives(collectedDirectives),
       };
     }
 
@@ -351,18 +384,36 @@ export async function runSiteChat(input: RunInput): Promise<ChatBackendResult> {
       }
       let output: unknown;
       try {
-        const outcome = await input.conversation.execute(call.name, args);
-        // Kartdirektiver droppes med vilje her — se `text-tools.ts`: det finnes
-        // ingen bro å sende dem til i en tekstsamtale.
-        output = annotateSourceIds(outcome.result, input.sourceRegistry);
-        if (FACT_TOOL_NAMES.has(call.name) && isEvidence(output)) {
-          evidence.push({ tool: call.name, ids: sourceIdsInOutput(output, input.sourceRegistry) });
-          // Kontrolldatoen (`checked_at`) sier når kilden ble lest, ikke noe om
-          // prosjektet; ellers ville årets tall alltid sett kildebelagt ut.
-          if (YEAR_EVIDENCE_TOOLS.has(call.name)) {
-            evidenceText.push(JSON.stringify(output, (key, value) => (key === "checked_at" || key === "checkedAt" ? undefined : value)));
+        if (input.boardMap && isBoardDirectiveName(call.name)) {
+          // Boardets agentmodus: et allowlistet kartverktøy modellen selv kalte
+          // (bare tilbudt når Boardet er åpent) valideres mot Boardets EGNE data —
+          // aldri kjørt av `conversation`, som ikke har noe kart å style.
+          const validated = input.boardMap.execute(call.name, args);
+          output = validated.result;
+          if (validated.directive) collectedDirectives.push(validated.directive);
+        } else {
+          const outcome = await input.conversation.execute(call.name, args);
+          output = annotateSourceIds(outcome.result, input.sourceRegistry);
+          if (FACT_TOOL_NAMES.has(call.name) && isEvidence(output)) {
+            evidence.push({ tool: call.name, ids: sourceIdsInOutput(output, input.sourceRegistry) });
+            // Kontrolldatoen (`checked_at`) sier når kilden ble lest, ikke noe om
+            // prosjektet; ellers ville årets tall alltid sett kildebelagt ut.
+            if (YEAR_EVIDENCE_TOOLS.has(call.name)) {
+              evidenceText.push(JSON.stringify(output, (key, value) => (key === "checked_at" || key === "checkedAt" ? undefined : value)));
+            }
+            provisional ||= isProvisional(output);
           }
-          provisional ||= isProvisional(output);
+          // Samtalens EGNE kartdirektiver (f.eks. `open_theme`/`set_interests`
+          // sin `openMapFor`) valideres gjennom samme port som modellens egne
+          // kall — uten `boardMap` droppes de her, som før (ingen bro å sende
+          // dem til i en tekstsamtale, se `text-tools.ts`).
+          if (input.boardMap && Array.isArray(outcome.directives)) {
+            for (const raw of outcome.directives) {
+              if (!raw || typeof raw.name !== "string") continue;
+              const validated = input.boardMap.execute(raw.name, raw.args ?? {});
+              if (validated.directive) collectedDirectives.push(validated.directive);
+            }
+          }
         }
       } catch {
         output = { error: "Verktøykallet kunne ikke fullføres." };

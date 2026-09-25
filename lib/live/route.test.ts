@@ -541,6 +541,79 @@ describe('Nyhavnas chatflate (nettsidekopien, 2026-09-24)', () => {
   });
 });
 
+describe('Boardets agentmodus (boardAgent, U4/KTD3-4, 2026-09-25)', () => {
+  const turns = [{ role: 'user' as const, text: 'Hva planlegges på Nyhavna?' }, { role: 'assistant' as const, text: 'Nyhavna Utvikling planlegger en bydel.' }];
+  // nyhavna-lokal har sin EGEN bygde stemmeinstruks (buildLocalVoiceInstructions),
+  // ikke det frosne snapshotets `NYHAVNA_VOICE_INSTRUCTIONS`-mock.
+  const localVoiceInstructions = async () => buildLocalVoiceInstructions(await loadDataset(getLocalDemo('nyhavna-lokal')));
+
+  it('fortsetter Board-tekstbanens historikk i Boardets EGEN stemme — kartverktøyene og kartinstruksen er uendret, bare en kort fortsettelsesnote lagt til', async () => {
+    const demo = await loadLiveDemo('nyhavna-lokal');
+    const own = issueTranscript({ scope: NH_SCOPE, visitorId: 'local', snapshotId: demo.snapshotId, previousTurns: [], newTurns: turns });
+    const response = await POST(request(undefined, undefined, { dataset: 'nyhavna-lokal', snapshotId: demo.snapshotId, boardAgent: true, transcript: own }));
+    expect(response.status).toBe(200);
+    expect((await response.json()).continuity).toEqual({ status: 'carried', turns: 2, trimmed: false });
+    const body = JSON.parse(String((vi.mocked(fetch).mock.calls[0][1] as RequestInit).body));
+    // Boardets EGEN stemme, ikke chatSurfaceVoiceInstructions — bare noten lagt til.
+    expect(body.session.instructions).toBe(`${await localVoiceInstructions()}\n\nSamtalen fortsetter fra «Spør Anja»-teksten i sidebaren: de tidligere meldingene ligger i samtalehistorikken. Bygg videre på dem uten å gjenta deg selv, og ikke si at dette er en ny samtale.`);
+    expect(body.session.delegation.responses.instructions).toContain('Samtalen fortsetter fra chatboksen');
+    expect(body.session.input).toHaveLength(2);
+    // Kartverktøyene er IKKE fjernet (motsatt av chatSurfaceTools, se testen over):
+    // hele `demo.tools` sendes, akkurat som Boardets vanlige stemme.
+    const names = body.session.delegation.responses.tools.map((tool: { name: string }) => tool.name);
+    expect(names).toEqual(demo.tools.map((tool) => tool.name));
+    // Ingen browserTools-innsnevring: Boardets nettleserbro er uendret.
+    expect(mocks.connect.mock.calls[0][3].browserTools).toBeUndefined();
+    // Opptaket startes, så tale → tekst virker etter denne sesjonen (voice-handoff).
+    expect(mocks.connect.mock.calls[0][3].transcript).toBeDefined();
+  });
+
+  it('starter opptaket selv UTEN et transcript, så tale → tekst virker etter en ren talesesjon', async () => {
+    const demo = await loadLiveDemo('nyhavna-lokal');
+    const response = await POST(request(undefined, undefined, { dataset: 'nyhavna-lokal', snapshotId: demo.snapshotId, boardAgent: true }));
+    expect(response.status).toBe(200);
+    expect((await response.json()).continuity).toEqual({ status: 'none' });
+    const body = JSON.parse(String((vi.mocked(fetch).mock.calls[0][1] as RequestInit).body));
+    // Ingen historikk å fortsette fra: verken noten eller session.input er med.
+    expect(body.session.instructions).toBe(await localVoiceInstructions());
+    expect(body.session.delegation.responses.instructions).not.toContain('Samtalen fortsetter fra chatboksen');
+    expect(body.session.input).toBeUndefined();
+    expect(mocks.connect.mock.calls[0][3].transcript).toBeDefined();
+  });
+
+  it('avviser (rejected) og starter uten historikk for en annen besøkendes eller Leangenbuktas transcript, uten å slå kartet av', async () => {
+    const demo = await loadLiveDemo('nyhavna-lokal');
+    const foreign = issueTranscript({ scope: NH_SCOPE, visitorId: 'en-annen', snapshotId: demo.snapshotId, previousTurns: [], newTurns: turns });
+    const response = await POST(request(undefined, undefined, { dataset: 'nyhavna-lokal', snapshotId: demo.snapshotId, boardAgent: true, transcript: foreign }));
+    expect((await response.json()).continuity).toEqual({ status: 'rejected' });
+    const body = JSON.parse(String((vi.mocked(fetch).mock.calls[0][1] as RequestInit).body));
+    expect(body.session.input).toBeUndefined();
+    expect(body.session.instructions).toBe(await localVoiceInstructions());
+    const names = body.session.delegation.responses.tools.map((tool: { name: string }) => tool.name);
+    expect(names).toEqual(demo.tools.map((tool) => tool.name));
+  });
+
+  it('uten boardAgent er Boardets stemme nøyaktig som før: ingen kunde slås opp, ingen kontinuitet, ingen opptak', async () => {
+    const demo = await loadLiveDemo('nyhavna-lokal');
+    const own = issueTranscript({ scope: NH_SCOPE, visitorId: 'local', snapshotId: demo.snapshotId, previousTurns: [], newTurns: turns });
+    const response = await POST(request(undefined, undefined, { dataset: 'nyhavna-lokal', snapshotId: demo.snapshotId, transcript: own }));
+    expect(response.status).toBe(200);
+    expect((await response.json()).continuity).toBeUndefined();
+    const body = JSON.parse(String((vi.mocked(fetch).mock.calls[0][1] as RequestInit).body));
+    expect(body.session.instructions).toBe(await localVoiceInstructions());
+    expect(body.session.delegation.responses.instructions).toBe(demo.backendInstructions);
+    expect(body.session.input).toBeUndefined();
+    expect(mocks.connect.mock.calls[0][3].transcript).toBeUndefined();
+  });
+
+  it('boardAgent på et datasett uten chatboks-kunde oppfører seg som om flagget ikke var satt', async () => {
+    const response = await POST(request(undefined, undefined, { boardAgent: true }));
+    expect(response.status).toBe(200);
+    expect((await response.json()).continuity).toBeUndefined();
+    expect(mocks.connect.mock.calls[0][3].transcript).toBeUndefined();
+  });
+});
+
 describe('Chatflaten på den delte stemmen: helsesjekk og tilgang (2026-09-24)', () => {
   const PLATFORM = 'https://platform.example';
   beforeEach(() => {
