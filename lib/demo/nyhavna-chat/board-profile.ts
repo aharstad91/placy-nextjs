@@ -28,7 +28,15 @@ import { nyhavnaChatProfile } from "@/lib/demo/nyhavna-chat/profile";
  * (`nhBoardChatInstructions` — kartverktøy i stedet for nettsidens
  * «intet kart»-regel), og lenker uten «board» (brukeren står alt i kartet).
  * `board: true` slår på Board-varianten i `route-handlers.ts`.
+ *
+ * Prototypen er LOKAL (planens avgrensning): ruta finnes bare på en
+ * utviklingsserver, uansett om nettsidechatten er slått på i produksjon.
+ * Ellers kunne hvem som helst kalt en kartstyrt LLM-bane direkte og brukt av
+ * nettsidechattens felles døgnkvote.
  */
+export function nhBoardChatEnabled(): boolean {
+  return process.env.NODE_ENV !== "production" && nhChatEnabled();
+}
 
 const BOARD_PAGE: SiteChatPage = {
   id: BOARD_CHAT_PAGE_ID,
@@ -51,7 +59,7 @@ export const nyhavnaBoardChatProfile: SiteChatProfile = {
   logPrefix: "nh-board",
   dataset: nyhavnaChatProfile.dataset,
   env: nyhavnaChatProfile.env,
-  enabled: nhChatEnabled,
+  enabled: nhBoardChatEnabled,
   access: nhChatAccess,
   visitor: nhChatVisitor,
   transcriptSecretEnv: nyhavnaChatProfile.transcriptSecretEnv,

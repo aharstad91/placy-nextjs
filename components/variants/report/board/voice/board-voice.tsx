@@ -79,6 +79,12 @@ export interface BoardVoice {
   sendText: (text: string) => void;
   /** Kartkommando som assistentens egen: markeres så den ikke meldes tilbake som brukerens trykk. */
   runTool: (name: string, args: Record<string, unknown>) => Promise<BoardToolResult>;
+  /**
+   * Brukerens stedsvalg sendt til talen EKSPLISITT, også når stedet alt er det
+   * åpne (da endrer ikke kartet seg, og effekten under ville ikke meldt noe).
+   * Merkes så den samme endringen ikke meldes en gang til.
+   */
+  sendPlaceContext: (poiId: string) => void;
   /** Legger på uten å rydde fremhevingen (agentmodusen eier kartet selv). */
   hangUp: () => void;
   /** Agentmodusen kobler historikken sin til talen; null kobler fra. */
@@ -356,7 +362,15 @@ function BoardVoiceSession({ children }: { children: ReactNode }) {
     messages,
     sendText,
     runTool: runBoardTool,
-    hangUp: () => { if (running) stop(); setConsentPending(false); },
+    sendPlaceContext: (poiId: string) => {
+      if (!connected) return;
+      voiceNav.current.poiIds.add(poiId);
+      sendContext({ kind: "place", id: poiId });
+    },
+    // En kartkommando som venter på kameraet (radiusutvidelsen) skal ikke
+    // lande etter at samtalen er lagt på: generasjonen går videre, så den
+    // avbryter seg selv.
+    hangUp: () => { commandVersion.current++; if (running) stop(); setConsentPending(false); },
     linkAgent: setAgentLink,
     toggle: () => {
       if (connecting) return;

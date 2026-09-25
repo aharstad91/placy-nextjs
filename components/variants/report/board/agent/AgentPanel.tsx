@@ -270,7 +270,10 @@ export function AgentPanel({
   const logRef = useRef<HTMLDivElement>(null);
   const [atBottom, setAtBottom] = useState(true);
   const [hasNewBelow, setHasNewBelow] = useState(false);
-  const prevCount = useRef(entries.length);
+  // Siste innslag, etter identitet: feeden bytter det ut (svar på vei -> svar)
+  // og lar det vokse (talen transkriberes ord for ord) uten at lengden endres.
+  const tail = entries[entries.length - 1];
+  const prevFeed = useRef({ count: entries.length, tail });
 
   const scrollToBottom = (behavior: ScrollBehavior) => {
     const el = logRef.current;
@@ -282,20 +285,24 @@ export function AgentPanel({
     }
   };
 
-  // Nye innslag: følg automatisk hvis leseren allerede sto nederst, ellers
-  // varsle med knappen i stedet for å rive henne bort fra det hun leser.
+  // Nye eller voksende innslag: følg automatisk hvis leseren allerede sto
+  // nederst, ellers varsle med knappen i stedet for å rive henne bort fra det
+  // hun leser. Et nytt innslag glir; et innslag som vokser følger uten
+  // animasjon, så teksten ikke rykker for hvert ord.
   useEffect(() => {
-    if (entries.length === prevCount.current) return;
-    prevCount.current = entries.length;
+    const grew = entries.length !== prevFeed.current.count;
+    const changed = tail !== prevFeed.current.tail;
+    prevFeed.current = { count: entries.length, tail };
+    if (!grew && !changed) return;
     if (atBottom) {
-      scrollToBottom(reducedMotion() ? "auto" : "smooth");
+      scrollToBottom(grew && !reducedMotion() ? "smooth" : "auto");
     } else {
       setHasNewBelow(true);
     }
     // atBottom leses med vilje kun ved endringstidspunktet, ikke som dependency —
     // ellers ville en scroll-drevet oppdatering av atBottom trigget denne på nytt.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [entries.length]);
+  }, [entries.length, tail]);
 
   const handleScroll = () => {
     const el = logRef.current;

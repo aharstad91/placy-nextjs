@@ -42,6 +42,32 @@ afterEach(() => {
 });
 
 describe("POST /api/demo/nyhavna-board-chat — Boardets agentmodus «Spør Anja» (U4, 2026-09-25)", () => {
+  it("et fast erstatningssvar (faktasvar uten verktøybevis) sender ingen kartdirektiver", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn()
+        .mockResolvedValueOnce(responsesPayload([functionCall("call_1", "highlight_places", { poi_ids: ["lilleby-skole"] })]))
+        .mockResolvedValueOnce(responsesPayload(finalMessage("Skolen er best i byen.", "fact"))),
+    );
+    const { POST } = await import("./route");
+    const res = await POST(post({ message: "Hvilken skole er best?", pageId: BOARD_CHAT_PAGE_ID }));
+    const data = await res.json();
+    expect(data.answerType).toBe("gap");
+    expect(data.directives).toEqual([]);
+  });
+
+  it("finnes ikke i et produksjonsbygg, selv når nettsidechatten er slått på (bare lokal prototype)", async () => {
+    vi.stubEnv("NODE_ENV", "production");
+    vi.stubEnv("PLACY_NH_CHAT_ENABLED", "true");
+    vi.stubEnv("PLACY_NH_CHAT_COOKIE_SECRET", "x".repeat(40));
+    const fetchMock = vi.fn();
+    vi.stubGlobal("fetch", fetchMock);
+    const { POST, GET } = await import("./route");
+    expect((await POST(post({ message: "Hei", pageId: BOARD_CHAT_PAGE_ID }))).status).toBe(404);
+    expect((await GET(new NextRequest(`${LOCAL}/api/demo/nyhavna-board-chat?pageId=${BOARD_CHAT_PAGE_ID}`, { headers: { host: "localhost:3107" } }))).status).toBe(404);
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
   it("svarer på et skrevet spørsmål, verktøysettet inkluderer kartverktøyene, og svaret bærer et validert direktiv", async () => {
     vi.stubGlobal(
       "fetch",

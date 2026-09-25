@@ -300,9 +300,9 @@ export function boardReducer(
         exploreOpen: action.detail === true,
         travelMode: state.travelMode,
         showContours: state.showContours,
-        // Kun tekst-referanser og omvisningens egne rader undertrykker
-        // modalen. Et nytt trykk på selve punktet kommer uten kilde og åpner
-        // den.
+        // Tekst-referanser, omvisningens egne rader, stemmen og agentmodusen
+        // undertrykker modalen. Et nytt trykk på selve punktet kommer uten
+        // kilde og åpner den.
         exploreSuppressed: action.source === "faq" || action.source === "story" || action.source === "voice" || action.source === "agent",
         // Trykker leseren på ett av de omtalte stedene, skal de andre bli
         // stående — gruppen er ett svar, ikke tre løsrevne punkter.
@@ -404,6 +404,8 @@ interface BoardContextValue {
   reserveData?: BoardData;
   revealedPlaceIds?: ReadonlySet<string>;
   revealPlaces?: (ids: string[]) => BoardData;
+  /** Legger et tidligere sett av viste reservesteder tilbake (agentmodusens utgang). */
+  restoreRevealedPlaces?: (ids: ReadonlySet<string>) => void;
   state: BoardState;
   dispatch: Dispatch<BoardAction>;
   data: BoardData;
@@ -526,6 +528,10 @@ export function BoardProvider({
     setRevealedPlaceIds(next);
     return visibleReserveBoard(suppliedData, next);
   }, [suppliedData]);
+  const restoreRevealedPlaces = useCallback((ids: ReadonlySet<string>) => {
+    revealedRef.current = ids;
+    setRevealedPlaceIds(ids);
+  }, []);
   const [state, dispatch] = useReducer(boardReducer, initialBoardState);
   const subFilter = useSubCategoryFilter(state.activeCategoryId);
 
@@ -607,7 +613,7 @@ export function BoardProvider({
         data,
         placePanel,
         subFilter,
-        reserveData: suppliedData, revealedPlaceIds, revealPlaces,
+        reserveData: suppliedData, revealedPlaceIds, revealPlaces, restoreRevealedPlaces,
         visiblePoiIds: effectiveVisiblePoiIds,
         visibleIdsSource,
         setViewportPoiIds,

@@ -364,7 +364,8 @@ export function createSiteChatRoute(profile: SiteChatProfile) {
 
     return respond({
       reply, answerType, links, sources, notice, transcript, datasetVersion: demo.snapshotId, evidence: result.evidence,
-      ...(isBoard ? { directives: result.directives } : {}),
+      // Et fast erstatningssvar sier ikke noe om steder, så kartet skal heller ikke flytte seg.
+      ...(isBoard ? { directives: fallbackReply ? [] : result.directives } : {}),
     });
   }
 

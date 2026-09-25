@@ -3,7 +3,7 @@
 import type { LiveVoice } from "@/lib/live/voices";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import type { LiveBoardState, LiveContextMessage, LiveMessage, LiveServerMessage, LiveStatus, MapDirective } from "@/lib/live/types";
+import { TYPED_MESSAGE_ID_PREFIX, type LiveBoardState, type LiveContextMessage, type LiveMessage, type LiveServerMessage, type LiveStatus, type MapDirective } from "@/lib/live/types";
 import { LIVE_SESSION_WARNING_MS } from "@/lib/live/session-limits";
 import { MAP_TOOLS } from "@/lib/realtime/types";
 import { newClientId } from "@/lib/browser/client-id";
@@ -327,7 +327,7 @@ export function useLive(options: LiveOptions) {
     if (!content) return;
     setError(null);
     setNotice(null);
-    addMessage({ id: `user-${newClientId()}`, role: "user", text: content });
+    addMessage({ id: `${TYPED_MESSAGE_ID_PREFIX}${newClientId()}`, role: "user", text: content });
     sendContext({ kind: "text", text: content });
   }, [addMessage, sendContext]);
 
@@ -701,6 +701,10 @@ export function useLive(options: LiveOptions) {
         ...(selectedVoice ? { voice: selectedVoice } : {}),
       };
       let sdp: string | undefined;
+      // Agentmodusens tale (historikk inn og overføring tilbake) finnes bare på
+      // den lokale ruta; den delte stemmen har ingen slik gren. Heller en ærlig
+      // feil enn en samtale som mister det som ble skrevet.
+      if (boardAgent && configured.transport === "websocket") throw new Error("Talen i «Spør Anja» er bare tilgjengelig i den lokale demoen.");
       if (configured.transport === "websocket") {
         const url = new URL("/api/live/control", window.location.href);
         url.protocol = url.protocol === "https:" ? "wss:" : "ws:";

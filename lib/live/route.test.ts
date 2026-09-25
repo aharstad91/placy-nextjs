@@ -556,7 +556,7 @@ describe('Boardets agentmodus (boardAgent, U4/KTD3-4, 2026-09-25)', () => {
     const body = JSON.parse(String((vi.mocked(fetch).mock.calls[0][1] as RequestInit).body));
     // Boardets EGEN stemme, ikke chatSurfaceVoiceInstructions — bare noten lagt til.
     expect(body.session.instructions).toBe(`${await localVoiceInstructions()}\n\nSamtalen fortsetter fra «Spør Anja»-teksten i sidebaren: de tidligere meldingene ligger i samtalehistorikken. Bygg videre på dem uten å gjenta deg selv, og ikke si at dette er en ny samtale.`);
-    expect(body.session.delegation.responses.instructions).toContain('Samtalen fortsetter fra chatboksen');
+    expect(body.session.delegation.responses.instructions).toContain('Samtalen fortsetter fra «Spør Anja» i sidebaren');
     expect(body.session.input).toHaveLength(2);
     // Kartverktøyene er IKKE fjernet (motsatt av chatSurfaceTools, se testen over):
     // hele `demo.tools` sendes, akkurat som Boardets vanlige stemme.
@@ -576,7 +576,7 @@ describe('Boardets agentmodus (boardAgent, U4/KTD3-4, 2026-09-25)', () => {
     const body = JSON.parse(String((vi.mocked(fetch).mock.calls[0][1] as RequestInit).body));
     // Ingen historikk å fortsette fra: verken noten eller session.input er med.
     expect(body.session.instructions).toBe(await localVoiceInstructions());
-    expect(body.session.delegation.responses.instructions).not.toContain('Samtalen fortsetter fra chatboksen');
+    expect(body.session.delegation.responses.instructions).not.toContain('Samtalen fortsetter fra «Spør Anja» i sidebaren');
     expect(body.session.input).toBeUndefined();
     expect(mocks.connect.mock.calls[0][3].transcript).toBeDefined();
   });

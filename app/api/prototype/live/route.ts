@@ -17,7 +17,7 @@ import { hostedChatAdmission } from '@/lib/live/hosted-chat';
 import { siteChatCustomerForDataset } from '@/lib/demo/site-chat/customers';
 import { transcriptScope, type SiteChatProfile } from '@/lib/demo/site-chat/profile';
 import {
-  BOARD_AGENT_CONTINUED_VOICE_NOTE, CHAT_SURFACE, chatSurfaceBackendAddendum, CHAT_SURFACE_CONTINUED_BACKEND_ADDENDUM,
+  BOARD_AGENT_CONTINUED_BACKEND_ADDENDUM, BOARD_AGENT_CONTINUED_VOICE_NOTE, CHAT_SURFACE, chatSurfaceBackendAddendum, CHAT_SURFACE_CONTINUED_BACKEND_ADDENDUM,
   chatSurfaceConversation, chatSurfaceHistoryInput, chatSurfaceTools, chatSurfaceVoiceInstructions,
 } from '@/lib/live/chat-surface';
 import { MAX_TRANSCRIPT_TOKEN_LENGTH, verifyTranscript, type VerifiedTranscript } from '@/lib/demo/site-chat/transcript';
@@ -216,7 +216,7 @@ export async function POST(request: NextRequest) {
   // til en kort fortsettelsesnote når historikken faktisk ble med.
   const backendFor = (withHistory: boolean) => {
     if (chat && customer) return `${demo.backendInstructions}\n\n${chatSurfaceBackendAddendum(customer.voice)}${withHistory ? `\n${CHAT_SURFACE_CONTINUED_BACKEND_ADDENDUM}` : ''}`;
-    if (boardAgent && customer && withHistory) return `${demo.backendInstructions}\n\n${CHAT_SURFACE_CONTINUED_BACKEND_ADDENDUM}`;
+    if (boardAgent && customer && withHistory) return `${demo.backendInstructions}\n\n${BOARD_AGENT_CONTINUED_BACKEND_ADDENDUM}`;
     return demo.backendInstructions;
   };
   const boardVoiceFor = (withHistory: boolean) => {

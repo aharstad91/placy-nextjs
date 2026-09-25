@@ -18,6 +18,13 @@ export type LiveStatus = "idle" | "connecting" | "listening" | "thinking" | "spe
  * Ett innslag i transkriptet. Live sender fragmenter uten turgrenser, så `id`
  * er nettleserens egen gruppering (taler + pause), ikke en ID fra API-et.
  */
+/**
+ * Prefiks for meldinger brukeren SKREV inn i en pågående talesamtale
+ * (`sendText`). Talte fragmenter får `user-`/`assistant-`; skillet lar en
+ * flate vise hvordan meldingen kom inn.
+ */
+export const TYPED_MESSAGE_ID_PREFIX = "typed-";
+
 export interface LiveMessage {
   id: string;
   role: "user" | "assistant";

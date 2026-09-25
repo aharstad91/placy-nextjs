@@ -24,13 +24,14 @@ describe("feedReducer", () => {
 
   it("fletter taletranskriptet etter ID og oppdaterer en voksende melding", () => {
     let entries = feedReducer([place], { type: "voice", messages: [{ id: "m1", role: "assistant", text: "Dora 1" }] });
-    entries = feedReducer(entries, { type: "voice", messages: [{ id: "m1", role: "assistant", text: "Dora 1 Bowling er et bowlingsenter." }, { id: "user-9", role: "user", text: "  " }] });
+    entries = feedReducer(entries, { type: "voice", messages: [{ id: "m1", role: "assistant", text: "Dora 1 Bowling er et bowlingsenter." }, { id: "typed-9", role: "user", text: "  " }] });
     expect(entries).toHaveLength(2);
     expect(entries[1]).toEqual({ id: voiceEntryId("m1"), kind: "assistant", text: "Dora 1 Bowling er et bowlingsenter.", via: "voice" });
   });
 
-  it("skrevne meldinger under talen merkes som tekst", () => {
-    const entries = feedReducer([], { type: "voice", messages: [{ id: "user-1", role: "user", text: "Hva med kafeer?" }, { id: "in-2", role: "user", text: "Hei" }] });
+  it("skrevne meldinger under talen merkes som tekst, talte som tale", () => {
+    // Samme ID-former som useLive: `typed-` fra sendText, `user-` fra transkriptet.
+    const entries = feedReducer([], { type: "voice", messages: [{ id: "typed-1", role: "user", text: "Hva med kafeer?" }, { id: "user-2", role: "user", text: "Hei" }] });
     expect(entries.map((e) => (e.kind === "user" ? e.via : null))).toEqual(["text", "voice"]);
   });
 

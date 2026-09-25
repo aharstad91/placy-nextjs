@@ -128,10 +128,21 @@ interface ExploreSnapshot {
   board: BoardState;
   story: StoryTourSnapshot;
   camera: CameraSnapshot | null;
+  revealed: ReadonlySet<string> | null;
+}
+
+/**
+ * Ett brukerinitiativ, rutet etter talens tilstand: til talen når den står,
+ * i kø mens den kobler til (så det aldri går to veier samtidig), ellers til
+ * tekstbanen.
+ */
+interface Initiative {
+  viaVoice: () => void;
+  viaText: () => void;
 }
 
 function BoardAgentSession({ children }: { children: ReactNode }) {
-  const { data, state, dispatch, mapCamera } = useBoard();
+  const { data, state, dispatch, mapCamera, revealedPlaceIds, restoreRevealedPlaces } = useBoard();
   const story = useStoryTour();
   const voice = useBoardVoice();
 
@@ -149,11 +160,18 @@ function BoardAgentSession({ children }: { children: ReactNode }) {
   modeRef.current = mode;
   const transcriptRef = useRef<string | null>(null);
   const handoffRef = useRef<Promise<void> | null>(null);
-  const requestRef = useRef<{ controller: AbortController; pendingId: string } | null>(null);
+  const requestRef = useRef<{ controller: AbortController; pendingId: string; viaVoice: () => void; retry: () => void } | null>(null);
   const lastInitiativeRef = useRef<string | null>(null);
   const snapshotRef = useRef<ExploreSnapshot | null>(null);
-  const latest = useRef({ state, story, voice, mapCamera });
-  latest.current = { state, story, voice, mapCamera };
+  /**
+   * Generasjonen til siste brukerinitiativ. Et svar, og kartkommandoene i det,
+   * gjelder bare så lenge generasjonen er den samme: velger brukeren noe nytt,
+   * skal ingenting fra det forrige valget røre kartet lenger.
+   */
+  const generationRef = useRef(0);
+  const queuedRef = useRef<Initiative | null>(null);
+  const latest = useRef({ state, story, voice, mapCamera, revealedPlaceIds });
+  latest.current = { state, story, voice, mapCamera, revealedPlaceIds };
 
   const mapState = (): BoardChatMapState => {
     const { state, story } = latest.current;
@@ -168,10 +186,10 @@ function BoardAgentSession({ children }: { children: ReactNode }) {
     setUsed((prev) => (prev.has(key) ? prev : new Set(prev).add(key)));
   }, []);
 
-  /** Anjas kartkommandoer, i rekkefølge, og bare mens samtalen fortsatt eier kartet. */
-  const applyDirectives = useCallback(async (directives: readonly BoardDirective[]) => {
+  /** Anjas kartkommandoer, i rekkefølge, og bare mens samtalen og dette svaret fortsatt eier kartet. */
+  const applyDirectives = useCallback(async (directives: readonly BoardDirective[], generation: number) => {
     for (const directive of directives) {
-      if (modeRef.current !== "agent") return;
+      if (modeRef.current !== "agent" || generationRef.current !== generation) return;
       const run = latest.current.voice?.runTool;
       if (!run) return;
       await run(directive.name, directive.args);
@@ -179,20 +197,32 @@ function BoardAgentSession({ children }: { children: ReactNode }) {
     }
   }, []);
 
-  const ask = useCallback(async (request: { message?: string; intent?: BoardChatIntent }, forEntryId: string | null) => {
+  /**
+   * Ett spørsmål til tekstbanen. `board` overstyrer kartstatusen når valget
+   * selv bestemmer den (stedet eller temaet brukeren nettopp valgte, som
+   * kartet ennå ikke har rendret). `viaVoice` er det samme initiativet sendt
+   * til talen, hvis brukeren bytter til «Snakk» før svaret er kommet.
+   */
+  const ask = useCallback(async (
+    request: { message?: string; intent?: BoardChatIntent },
+    forEntryId: string | null,
+    options: { viaVoice: () => void; board?: Partial<BoardChatMapState> },
+  ) => {
     const previous = requestRef.current;
     if (previous) {
       previous.controller.abort();
       dispatchFeed({ type: "replace", id: previous.pendingId, entries: [] });
     }
+    const generation = generationRef.current;
     const controller = new AbortController();
     const pendingId = `pending-${newClientId()}`;
-    requestRef.current = { controller, pendingId };
+    const retry = () => { void ask(request, forEntryId, options); };
+    requestRef.current = { controller, pendingId, viaVoice: options.viaVoice, retry };
     setBusy(true);
     dispatchFeed({ type: "add", entry: { id: pendingId, kind: "pending", forEntryId } });
     // En talesamtale som nettopp ble avsluttet leverer historikken sin først.
     if (handoffRef.current) await handoffRef.current;
-    const outcome = await askBoardChat({ ...request, transcript: transcriptRef.current, board: mapState() }, controller.signal);
+    const outcome = await askBoardChat({ ...request, transcript: transcriptRef.current, board: { ...mapState(), ...options.board } }, controller.signal);
     if (requestRef.current?.controller !== controller) return;
     requestRef.current = null;
     setBusy(false);
@@ -206,11 +236,13 @@ function BoardAgentSession({ children }: { children: ReactNode }) {
       // Forslagene følger det Anja nettopp viste: temaet, eller de fremhevede stedenes felles tema.
       const shown = directiveCategory(outcome.reply.directives, data.categories);
       if (shown) setContextCategoryId(shown);
-      await applyDirectives(outcome.reply.directives);
+      await applyDirectives(outcome.reply.directives, generation);
       return;
     }
     if (outcome.aborted) return;
     dispatchFeed({ type: "replace", id: pendingId, entries: [{ id: `s-${newClientId()}`, kind: "status", tone: "error", text: outcome.error || BOARD_CHAT_FALLBACK_ERROR }] });
+    // Et valg som feilet kan prøves igjen med samme trykk.
+    if (generationRef.current === generation) lastInitiativeRef.current = null;
     // mapState leses fra refs; resten er stabilt.
   }, [applyDirectives, data.categories]);
 
@@ -236,12 +268,32 @@ function BoardAgentSession({ children }: { children: ReactNode }) {
     continuedGreeting: CONTINUED_GREETING,
     onSessionEnded,
   }), [onSessionEnded]);
+  // Bare samtalen i «Spør Anja» bærer historikken: en tale startet andre
+  // steder (ingen i dag, men flaten er delt) skal ikke havne i denne feeden.
   const linkAgent = voice?.linkAgent;
   useEffect(() => {
-    if (!linkAgent) return;
+    if (!linkAgent || mode !== "agent") return;
     linkAgent(link);
     return () => linkAgent(null);
-  }, [linkAgent, link]);
+  }, [linkAgent, link, mode]);
+
+  // Et initiativ i kø mens talen kobler til: til talen når den står, til
+  // tekstbanen hvis den aldri kom i gang.
+  const voiceConnected = voice?.connected ?? false;
+  const voiceRunning = voice?.running ?? false;
+  useEffect(() => {
+    const queued = queuedRef.current;
+    if (!queued) return;
+    if (voiceConnected) { queuedRef.current = null; queued.viaVoice(); }
+    else if (!voiceRunning) { queuedRef.current = null; queued.viaText(); }
+  }, [voiceConnected, voiceRunning]);
+
+  const route = useCallback((initiative: Initiative) => {
+    const voice = latest.current.voice;
+    if (voice?.connected) initiative.viaVoice();
+    else if (voice?.running) queuedRef.current = initiative;
+    else initiative.viaText();
+  }, []);
 
   // Transkriptet fra talen blir innslag i samme historikk.
   const voiceMessages = voice?.messages;
@@ -265,10 +317,13 @@ function BoardAgentSession({ children }: { children: ReactNode }) {
     if (next === modeRef.current) return;
     toggleFocusRef.current = document.activeElement?.closest('[role="radiogroup"]') != null;
     const { state, story, voice, mapCamera } = latest.current;
-    // Et nytt besøk i samtalen kan spørre om det samme stedet igjen.
+    // Et nytt besøk i samtalen kan spørre om det samme stedet igjen, og ingenting
+    // fra forrige besøk skal lande i kartet etter byttet.
     lastInitiativeRef.current = null;
+    generationRef.current++;
+    queuedRef.current = null;
     if (next === "agent") {
-      snapshotRef.current = { board: state, story: story.snapshot(), camera: mapCamera?.snapshot() ?? null };
+      snapshotRef.current = { board: state, story: story.snapshot(), camera: mapCamera?.snapshot() ?? null, revealed: latest.current.revealedPlaceIds ?? null };
       // Forslagene begynner der leseren står: temaet, eller det åpne stedets tema.
       const place = state.activePOIId ? findBoardPOI(data.categories, state.activePOIId) : null;
       const here = story.stop?.id ?? state.activeCategoryId ?? place?.categoryId ?? null;
@@ -284,26 +339,42 @@ function BoardAgentSession({ children }: { children: ReactNode }) {
     if (saved) {
       dispatch({ type: "RESTORE_STATE", state: saved.board });
       story.restore(saved.story);
+      if (saved.revealed) restoreRevealedPlaces?.(saved.revealed);
       if (saved.camera) mapCamera?.restore(saved.camera);
     }
     modeRef.current = "explore";
     setModeState("explore");
-  }, [data.categories, dispatch]);
+  }, [data.categories, dispatch, restoreRevealedPlaces]);
 
   const setInput = useCallback((next: AgentInput) => {
     const voice = latest.current.voice;
     setInputState(next);
     if (!voice) return;
-    if (next === "write") voice.hangUp();
-    else if (!voice.running && !voice.consentPending) voice.toggle();
+    if (next === "write") {
+      queuedRef.current = null;
+      voice.hangUp();
+      return;
+    }
+    // Et tekstsvar på vei når talen starter ville endret historikken etter at
+    // talen tok sin kopi. Spørsmålet flyttes derfor til talen.
+    const inFlight = requestRef.current;
+    if (inFlight) {
+      inFlight.controller.abort();
+      dispatchFeed({ type: "replace", id: inFlight.pendingId, entries: [] });
+      requestRef.current = null;
+      setBusy(false);
+      queuedRef.current = { viaVoice: inFlight.viaVoice, viaText: inFlight.retry };
+    }
+    if (!voice.running && !voice.consentPending) voice.toggle();
   }, []);
 
   // ---- Brukerens initiativ --------------------------------------------------
 
-  /** Samme initiativ to ganger på rad er ett initiativ. */
+  /** Samme initiativ to ganger på rad er ett initiativ. Et nytt initiativ gjør alt fra det forrige utdatert. */
   const fresh = (key: string) => {
     if (lastInitiativeRef.current === key) return false;
     lastInitiativeRef.current = key;
+    generationRef.current++;
     return true;
   };
 
@@ -318,10 +389,13 @@ function BoardAgentSession({ children }: { children: ReactNode }) {
     const entryId = `p-${newClientId()}`;
     const category = data.categories.find((c) => c.id === poi.categoryId);
     dispatchFeed({ type: "add", entry: { id: entryId, kind: "place", poiId: String(poi.id), name: poi.name, categoryLabel: category?.label ?? null, origin } });
-    // Talen står: stedet meldes som kontekst av talens egen effekt, og Anja svarer muntlig.
-    if (latest.current.voice?.connected) return;
-    void ask({ intent: { kind: "place", poiId: String(poi.id) } }, entryId);
-  }, [data.categories, dispatch, markUsed, ask]);
+    // Talen står: stedet sendes som kontekst, og Anja svarer muntlig.
+    const viaVoice = () => latest.current.voice?.sendPlaceContext(String(poi.id));
+    route({
+      viaVoice,
+      viaText: () => { void ask({ intent: { kind: "place", poiId: String(poi.id) } }, entryId, { viaVoice, board: { selectedPlaceId: String(poi.id), selectedCategoryId: String(poi.categoryId) } }); },
+    });
+  }, [data.categories, dispatch, markUsed, ask, route]);
 
   const selectFaq = useCallback((faqId: string) => {
     const entry = findBoardFaq(data, faqId);
@@ -329,16 +403,22 @@ function BoardAgentSession({ children }: { children: ReactNode }) {
     markUsed(suggestionKey.faq(faqId));
     const owner = data.categories.find((c) => c.editorial?.faq?.some((f) => f.id === faqId));
     if (owner) setContextCategoryId(String(owner.id));
-    const entryId = `f-${newClientId()}`;
-    dispatchFeed({ type: "add", entry: { id: entryId, kind: "faq", faqId, question: entry.question } });
-    const voice = latest.current.voice;
-    if (voice?.connected) {
-      if (voice.faq) voice.faq.select(entry);
-      else voice.sendText(entry.question);
-      return;
-    }
-    void ask({ intent: { kind: "faq", faqId } }, entryId);
-  }, [data, markUsed, ask]);
+    // Under talen blir spørsmålet talens egen skrevne melding (transkriptet
+    // viser den); et eget FAQ-innslag ville vist spørsmålet to ganger.
+    const viaVoice = () => {
+      const voice = latest.current.voice;
+      if (voice?.faq) voice.faq.select(entry);
+      else voice?.sendText(entry.question);
+    };
+    route({
+      viaVoice,
+      viaText: () => {
+        const entryId = `f-${newClientId()}`;
+        dispatchFeed({ type: "add", entry: { id: entryId, kind: "faq", faqId, question: entry.question } });
+        void ask({ intent: { kind: "faq", faqId } }, entryId, { viaVoice });
+      },
+    });
+  }, [data, markUsed, ask, route]);
 
   const selectTheme = useCallback((categoryId: string) => {
     const index = data.categories.findIndex((c) => String(c.id) === categoryId);
@@ -348,30 +428,32 @@ function BoardAgentSession({ children }: { children: ReactNode }) {
     setContextCategoryId(categoryId);
     const entryId = `t-${newClientId()}`;
     dispatchFeed({ type: "add", entry: { id: entryId, kind: "theme", categoryId, label: category.label } });
-    const { voice, story } = latest.current;
     // Talen: et umerket temabytte meldes som kontekst, og serveren åpner kapittelet.
-    if (voice?.connected) {
-      story.begin(index);
-      return;
-    }
-    void voice?.runTool("show_category", { category_id: categoryId });
-    void ask({ intent: { kind: "theme", categoryId } }, entryId);
-  }, [data.categories, markUsed, ask]);
+    const viaVoice = () => latest.current.story.begin(index);
+    route({
+      viaVoice,
+      viaText: () => {
+        void latest.current.voice?.runTool("show_category", { category_id: categoryId });
+        void ask({ intent: { kind: "theme", categoryId } }, entryId, { viaVoice, board: { selectedCategoryId: categoryId, selectedPlaceId: null } });
+      },
+    });
+  }, [data.categories, markUsed, ask, route]);
 
   const send = useCallback((raw: string) => {
     const text = raw.trim();
     if (!text) return;
-    lastInitiativeRef.current = `text:${newClientId()}`;
-    const voice = latest.current.voice;
-    if (voice?.connected) {
-      // Under talen går skrevet tekst inn i talesamtalen; transkriptet viser den.
-      voice.sendText(text);
-      return;
-    }
-    const entryId = `u-${newClientId()}`;
-    dispatchFeed({ type: "add", entry: { id: entryId, kind: "user", text, via: "text" } });
-    void ask({ message: text }, entryId);
-  }, [ask]);
+    fresh(`text:${newClientId()}`);
+    // Under talen går skrevet tekst inn i talesamtalen; transkriptet viser den.
+    const viaVoice = () => latest.current.voice?.sendText(text);
+    route({
+      viaVoice,
+      viaText: () => {
+        const entryId = `u-${newClientId()}`;
+        dispatchFeed({ type: "add", entry: { id: entryId, kind: "user", text, via: "text" } });
+        void ask({ message: text }, entryId, { viaVoice });
+      },
+    });
+  }, [ask, route]);
 
   const selectSuggestion = useCallback((suggestion: AgentSuggestion) => {
     if (suggestion.kind === "place") selectPlace(suggestion.poiId, "suggestion");

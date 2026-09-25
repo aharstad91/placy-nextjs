@@ -148,6 +148,14 @@ Disse reglene håndheves av ESLint og pre-commit hooks der mulig, men gjelder AL
   produksjon til `PLACY_NH_CHAT_ENABLED` og signeringsnøkkel er satt.
   Stemmen i produksjon går bare via den delte stemmen (`/api/live/control`)
   med prosjektets varige regnskap (`PLACY_HOSTED_VOICE` + `PLACY_NH_CHAT_VOICE`).
+- Nytt snevert unntak (2026-09-25): Boardets agentmodus «Spør Anja» på den
+  lokale Nyhavna-demoen (`app/api/demo/nyhavna-board-chat`,
+  `lib/demo/nyhavna-chat/board-profile.ts`, `lib/board-agent/`, og
+  `boardAgent`-flagget i `app/api/prototype/live`) — bestilt av Andreas
+  2026-09-25 (plan `docs/plans/2026-09-25-1220-feat-nyhavna-board-agentmodus-prototype-plan.md`);
+  samme vakter, kilder og døgnkvote som Nyhavna-chatboksen, kartkommandoer
+  validert mot boardets data på serveren og i nettleseren, FAQ besvares uten
+  modellkall, og banen finnes bare på en utviklingsserver (404 i produksjon).
 - ALLTID API-nøkkel i `x-goog-api-key`/`Authorization`-header, aldri URL-querystring (leker i logs)
 - Gemini-grounding: `scripts/gemini-grounding.ts` + `lib/gemini/`. Lagret per tema i `products.config.reportConfig.themes[].grounding`.
 - Cache bustes via `groundingVersion`-bump (Zod `z.literal(1)`) eller `revalidateTag("product:${customer}_${slug}")` — ikke auto-TTL

@@ -189,3 +189,25 @@ describe("AgentPanel — composer", () => {
     expect(onInputChange).toHaveBeenCalledWith("write");
   });
 });
+
+describe("AgentPanel — loggen følger samtalen (review #1)", () => {
+  it("følger med når svaret erstatter «svar på vei» og når talen vokser, uten at antallet endres", () => {
+    const scrollTo = vi.fn();
+    const original = HTMLElement.prototype.scrollTo;
+    HTMLElement.prototype.scrollTo = scrollTo as unknown as typeof HTMLElement.prototype.scrollTo;
+    try {
+      const pending: AgentEntry[] = [{ id: "u1", kind: "user", text: "Hei", via: "text" }, { id: "w1", kind: "pending", forEntryId: "u1" }];
+      const view = renderPanel({ entries: pending });
+      scrollTo.mockClear();
+      const answered: AgentEntry[] = [pending[0], { id: "a1", kind: "assistant", text: "Hei!", via: "text" }];
+      view.rerender(<AgentPanel {...baseProps} entries={answered} />);
+      expect(scrollTo).toHaveBeenCalledTimes(1);
+      const grown: AgentEntry[] = [pending[0], { id: "a1", kind: "assistant", text: "Hei! Nyhavna er en bydel under utvikling.", via: "voice" }];
+      view.rerender(<AgentPanel {...baseProps} entries={grown} />);
+      expect(scrollTo).toHaveBeenCalledTimes(2);
+      expect(scrollTo).toHaveBeenLastCalledWith(expect.objectContaining({ behavior: "auto" }));
+    } finally {
+      HTMLElement.prototype.scrollTo = original;
+    }
+  });
+});

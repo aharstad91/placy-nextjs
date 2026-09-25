@@ -70,6 +70,36 @@ vi.mock("@/components/variants/report/board/voice/BoardVoiceControl", () => ({
   BoardVoiceControl: () => <div data-testid="board-voice" />,
 }));
 
+/**
+ * Agentmodus «Spør Anja» (2026-09-25): `useBoardAgent` mockes slik
+ * `board-agent.test.tsx` selv gjør det (et modulnivå-objekt satt i
+ * `beforeEach`/per test) — `BoardAssistantEntry` og `StoryColumn` importerer
+ * samme hook, så begge leser samme mock. `BoardAgentSurface` mockes til en
+ * enkel probe: selve samtaleflaten (composer, feed, talekontroll) har egne
+ * tester i `AgentPanel.test.tsx`; her testes bare AT den monteres i laget som
+ * erstatter `StoryPoiPanel`, og med riktig `variant`.
+ */
+type AgentModeMock = "explore" | "agent";
+let agentMock: {
+  mode: AgentModeMock;
+  setMode: (mode: AgentModeMock) => void;
+  name: string;
+  claimToggleFocus: () => boolean;
+} | null = null;
+
+vi.mock("@/components/variants/report/board/agent/board-agent", () => ({
+  useBoardAgent: () => agentMock,
+  // `useMapPinClick` (kartklikkets ekte hook, brukt via `PinProbe` under)
+  // leser denne separat, smalere konteksten for kartet. Speiler samme
+  // null-ved-fravær-kontrakt som den ekte provideren.
+  useBoardAgentMode: () => (agentMock ? { mode: agentMock.mode, selectPlace: () => {} } : null),
+}));
+vi.mock("@/components/variants/report/board/agent/BoardAgentSurface", () => ({
+  BoardAgentSurface: ({ variant }: { variant: string }) => (
+    <div data-testid="agent-surface-mock" data-variant={variant} />
+  ),
+}));
+
 afterEach(() => cleanup());
 
 function poi(
@@ -248,6 +278,7 @@ function CameraProbe({ camera }: { camera: MapCameraApi }) {
 let desktop = false;
 beforeEach(() => {
   desktop = false;
+  agentMock = null;
   window.matchMedia = ((query: string) =>
     ({
       matches: query === "(min-width: 1024px)" && desktop,
@@ -805,5 +836,62 @@ describe("utfoldingslistene har ÉN form", () => {
       // Gapet var det som gjorde settet til n ting i stedet for én liste.
       expect([...liste.classList].some((c) => c.startsWith("gap-"))).toBe(false);
     }
+  });
+});
+
+describe("agentmodus «Spør Anja» i omvisningens kolonne (2026-09-25)", () => {
+  it("uten agent vises dagens talekontroll, og ingen modus-veksler", () => {
+    desktop = true;
+    // demoSnapshotId gir `useHasBoardAssistant` en grunn til å vise inngangen
+    // uten en agent — samme oppsett som «finnes ikke på boards uten samtale»
+    // over, men her sjekkes INNHOLDET i inngangen, ikke bare plasseringen.
+    const utils = setup({}, { demoSnapshotId: "snap" }, { placePanel: true });
+    expect(utils.getByTestId("board-voice")).not.toBeNull();
+    expect(utils.queryByRole("radiogroup")).toBeNull();
+  });
+
+  it("med agent i utforsk-modus vises veksleren i stedet for talekontrollen, og oversikten står synlig", () => {
+    desktop = true;
+    agentMock = { mode: "explore", setMode: vi.fn(), name: "Anja", claimToggleFocus: () => false };
+    const utils = setup({}, {}, { placePanel: true });
+    expect(utils.queryByTestId("board-voice")).toBeNull();
+    const group = utils.getByRole("radiogroup");
+    expect(within(group).getByRole("radio", { name: "Spør Anja" })).not.toBeNull();
+    expect(within(group).getByRole("radio", { name: "Utforsk" })).toHaveAttribute(
+      "aria-checked",
+      "true",
+    );
+    // Oversikten er verken dekket eller inert — samtalen har ikke tatt over.
+    const board = utils.getByTestId("story-sidebar");
+    expect(board.hasAttribute("inert")).toBe(false);
+    expect(board.getAttribute("aria-hidden")).toBeNull();
+    expect(utils.getByTestId("story-card")).not.toBeNull();
+    expect(utils.queryByTestId("agent-surface-mock")).toBeNull();
+  });
+
+  it("med agent i samtale-modus dekker samtalelaget oversikten (inert), skjuler raden, og StoryPoiPanel rendres aldri — heller ikke med et åpent sted", () => {
+    desktop = true;
+    agentMock = { mode: "agent", setMode: vi.fn(), name: "Anja", claimToggleFocus: () => false };
+    const utils = setup({}, {}, { placePanel: true });
+    // Et sted velges MENS samtalen dekker oversikten — panelet skal likevel
+    // aldri vises, uansett hva som ligger bak (state.exploreOpen/activePOIId).
+    enterTheme(utils);
+    fireEvent.click(utils.getAllByTestId("story-row")[0]);
+    expect(spy.exploreOpen).toBe(true);
+
+    const layer = utils.getByTestId("board-agent-layer");
+    const surface = within(layer).getByTestId("agent-surface-mock");
+    expect(surface.getAttribute("data-variant")).toBe("column");
+
+    const board = utils.getByTestId("story-sidebar");
+    expect(board.hasAttribute("inert")).toBe(true);
+    expect(board.getAttribute("aria-hidden")).toBe("true");
+
+    // Raden (kategori-veksleren) er skjult mens samtalen står, ikke bare
+    // dekket: `story-rail-slot` gates eksplisitt på `!conversing`.
+    expect(utils.queryByTestId("story-rail-slot")).toBeNull();
+
+    // StoryPoiPanel er helt erstattet av samtalelaget, ikke bare skjult bak det.
+    expect(utils.queryByTestId("story-poi-panel")).toBeNull();
   });
 });

@@ -9,8 +9,8 @@ import { nyhavnaBoardChatProfile } from "@/lib/demo/nyhavna-chat/board-profile";
  * (`lib/demo/nyhavna-chat/board-profile.ts`) slår på Board-varianten
  * (`board: true`): body godtar `intent`/`board` i tillegg til `message`,
  * verktøysettet inkluderer de allowlistede kartverktøyene, og svaret bærer
- * `directives`. Samme produksjonsgate som nettsidekopien
- * (`PLACY_NH_CHAT_ENABLED` + signeringsnøkkel).
+ * `directives`. Bare på en utviklingsserver (`nhBoardChatEnabled`): et
+ * produksjonsbygg gir 404, også når nettsidechatten er slått på.
  */
 
 export const runtime = "nodejs";

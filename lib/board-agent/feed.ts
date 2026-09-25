@@ -1,4 +1,5 @@
 import type { AgentEntry } from "@/lib/board-agent/types";
+import { TYPED_MESSAGE_ID_PREFIX } from "@/lib/live/types";
 
 /**
  * Samtalens ÉN historikk i agentmodusen (2026-09-25, R2).
@@ -26,8 +27,7 @@ export type FeedAction =
 
 export const voiceEntryId = (messageId: string) => `voice-${messageId}`;
 
-/** `useLive` gir skrevne meldinger under talen ID-er som begynner med `user-`. */
-const typedDuringVoice = (messageId: string) => messageId.startsWith("user-");
+const typedDuringVoice = (messageId: string) => messageId.startsWith(TYPED_MESSAGE_ID_PREFIX);
 
 export function feedReducer(entries: AgentEntry[], action: FeedAction): AgentEntry[] {
   switch (action.type) {

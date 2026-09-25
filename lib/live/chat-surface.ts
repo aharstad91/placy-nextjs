@@ -102,6 +102,10 @@ export const CHAT_SURFACE_CONTINUED_BACKEND_ADDENDUM =
  * kort note til STEMMENS instruks; backend-instruksen bruker
  * `CHAT_SURFACE_CONTINUED_BACKEND_ADDENDUM` som over.
  */
+/** Backend-tillegget når Boardets agentmodus bærer historikk inn i talen (flaten er sidebaren, ikke chatboksen). */
+export const BOARD_AGENT_CONTINUED_BACKEND_ADDENDUM =
+  "- Samtalen fortsetter fra «Spør Anja» i sidebaren: de tidligere meldingene (skrevne og eventuelt talte) er med i samtalen. Bruk dem til å forstå hva brukeren viser til, men hent fakta med verktøyene.";
+
 export const BOARD_AGENT_CONTINUED_VOICE_NOTE =
   "Samtalen fortsetter fra «Spør Anja»-teksten i sidebaren: de tidligere meldingene ligger i samtalehistorikken. Bygg videre på dem uten å gjenta deg selv, og ikke si at dette er en ny samtale.";
 

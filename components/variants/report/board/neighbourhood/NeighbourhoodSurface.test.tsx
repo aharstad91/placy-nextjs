@@ -11,6 +11,34 @@ import { StoryTourProvider } from "../story/story-tour";
 import { BoardVoiceProvider } from "../voice/board-voice";
 
 /**
+ * Agentmodus «Spør Anja» (2026-09-25): `useBoardAgent` mockes på modulnivå,
+ * samme mønster som `board-agent.test.tsx` og
+ * `DesktopStorySidebar.test.tsx` — en verdi satt per test, nullstilt i
+ * `afterEach`. `BoardAssistantEntry` og `NeighbourhoodSurface` importerer
+ * samme hook. `useBoardAgentMode` speiles for det tilfellet noe i treet under
+ * (kartklikk-hooken) leser den smalere konteksten. `BoardAgentSurface`
+ * mockes til en probe: selve samtaleflaten har egne tester i
+ * `AgentPanel.test.tsx`.
+ */
+type AgentModeMock = "explore" | "agent";
+let agentMock: {
+  mode: AgentModeMock;
+  setMode: (mode: AgentModeMock) => void;
+  name: string;
+  claimToggleFocus: () => boolean;
+} | null = null;
+
+vi.mock("@/components/variants/report/board/agent/board-agent", () => ({
+  useBoardAgent: () => agentMock,
+  useBoardAgentMode: () => (agentMock ? { mode: agentMock.mode, selectPlace: () => {} } : null),
+}));
+vi.mock("@/components/variants/report/board/agent/BoardAgentSurface", () => ({
+  BoardAgentSurface: ({ variant }: { variant: string }) => (
+    <div data-testid="agent-surface-mock" data-variant={variant} />
+  ),
+}));
+
+/**
  * Unit 3b + 4 — navigasjonsstakken, mot en EKTE BoardProvider.
  *
  * Det som testes er sømmene mellom delene: at lista scoper markørsettet, at
@@ -34,7 +62,10 @@ beforeAll(() => {
   }
 });
 
-afterEach(() => cleanup());
+afterEach(() => {
+  cleanup();
+  agentMock = null;
+});
 
 /** Utsnitt rundt boligen; `FAR` ligger utenfor. */
 const RECT: ViewportRect = {
@@ -483,5 +514,64 @@ describe("NeighbourhoodSurface — kategorisiden lager ALDRI sitt eget kart (R2)
     const imports = src.match(/^import[\s\S]*?from\s+"[^"]+";$/gm) ?? [];
     expect(imports.join("\n")).not.toMatch(/BoardMap|react-map-gl|vis\.gl/);
     expect(src).not.toMatch(/<(BoardMap|Map|gmp-map-3d)[\s/>]/);
+  });
+});
+
+describe("NeighbourhoodSurface — agentmodus «Spør Anja» (2026-09-25)", () => {
+  it("uten agent vises dagens talekontroll — ingen modus-veksler", () => {
+    const data = boardData();
+    data.assistant = {
+      enabled: true,
+      name: "Anja",
+      guided: true,
+      greeting: "Hei! Jeg er Anja.",
+      features: {
+        faqProgress: true,
+        revealPlaces: true,
+        followHighlightCategory: true,
+        unscopedCategoryList: true,
+        narrationFocus: true,
+        voicePacing: true,
+        guidedPersona: true,
+      },
+    };
+    const utils = render(
+      <BoardProvider data={data}>
+        <StoryTourProvider>
+          <BoardVoiceProvider>
+            <Probe rect={RECT} camera={makeCamera()} gesture={false} />
+            <NeighbourhoodSurface onSurfaceHeightChange={vi.fn()} />
+          </BoardVoiceProvider>
+        </StoryTourProvider>
+      </BoardProvider>,
+    );
+    expect(utils.getByRole("button", { name: "Snakk med Anja" })).toBeTruthy();
+    expect(utils.queryByRole("radiogroup")).toBeNull();
+  });
+
+  it("med agent i utforsk-modus vises veksleren i lista i stedet for talekontrollen, og lista står", () => {
+    agentMock = { mode: "explore", setMode: vi.fn(), name: "Anja", claimToggleFocus: () => false };
+    const utils = setup();
+    expect(utils.queryByRole("button", { name: /Snakk med/ })).toBeNull();
+    expect(utils.getByRole("radio", { name: "Spør Anja" })).toBeTruthy();
+    expect(utils.getByRole("radio", { name: "Utforsk" })).toHaveAttribute("aria-checked", "true");
+    // Nabolagslista står fortsatt — samtalen har ikke tatt over sheeten.
+    expect(utils.getAllByTestId("neighbourhood-card").length).toBeGreaterThan(0);
+    expect(utils.queryByTestId("agent-surface-mock")).toBeNull();
+  });
+
+  it("med agent i samtale-modus erstatter samtale-sheeten hele lista — kortene og førstegangs-hintet er borte", () => {
+    agentMock = { mode: "agent", setMode: vi.fn(), name: "Anja", claimToggleFocus: () => false };
+    const utils = setup();
+    const surface = utils.getByTestId("agent-surface-mock");
+    expect(surface.getAttribute("data-variant")).toBe("sheet");
+    // Den frosne 52dvh-høyden fra NeighbourhoodSurface sin egen wrapper rundt
+    // BoardAgentSurface — kjennetegnet som skiller denne grenen fra de andre.
+    expect(surface.parentElement?.className).toContain("h-[52dvh]");
+    expect(utils.queryByTestId("neighbourhood-card")).toBeNull();
+    expect(utils.queryByTestId("neighbourhood-hint")).toBeNull();
+    expect(utils.queryByTestId("story-play")).toBeNull();
+    expect(utils.getByRole("radio", { name: "Spør Anja" })).toBeTruthy();
+    expect(utils.getByRole("radio", { name: "Spør Anja" })).toHaveAttribute("aria-checked", "true");
   });
 });
