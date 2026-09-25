@@ -752,3 +752,23 @@ describe("talefokus", () => {
     expect(boardReducer(focused, { type: "FOCUS_NARRATION", id: null }).highlightedPoiIds).toEqual([POI_1, POI_2]);
   });
 });
+
+describe("agentmodus (2026-09-25)", () => {
+  it("OPEN_POI fra agentmodus undertrykker modal og detaljflate", () => {
+    const next = boardReducer(initialBoardState, { type: "OPEN_POI", id: POI_1, source: "agent" });
+    expect(next.activePOIId).toBe(POI_1);
+    expect(next.exploreSuppressed).toBe(true);
+    expect(next.exploreOpen).toBe(false);
+  });
+
+  it("RESTORE_STATE legger tilbake nøyaktig tilstanden fra før samtalen", () => {
+    const before: BoardState = {
+      ...boardReducer(boardReducer(initialBoardState, { type: "SELECT_CATEGORY", id: CAT_A, source: "rail" }), { type: "OPEN_POI", id: POI_1, detail: true }),
+      travelMode: "bike",
+    };
+    let during = boardReducer(before, { type: "SELECT_CATEGORY", id: CAT_B, source: "voice" });
+    during = boardReducer(during, { type: "HIGHLIGHT_POIS", ids: [POI_2] });
+    during = boardReducer(during, { type: "SET_TRAVEL_MODE", mode: "car" });
+    expect(boardReducer(during, { type: "RESTORE_STATE", state: before })).toBe(before);
+  });
+});

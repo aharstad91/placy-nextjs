@@ -5,6 +5,7 @@ import { useEngagement } from "@/lib/instrumentation/engagement-scope";
 import { useBoard } from "./board-state";
 import { useStoryTourOptional } from "./story/story-tour";
 import { useDesktopPlacePanel } from "./use-popup-mode";
+import { useBoardAgent } from "./agent/board-agent";
 
 /**
  * Trykk på en kartmarkør — ÉN vei inn, uansett motor (2026-08-28).
@@ -35,6 +36,12 @@ import { useDesktopPlacePanel } from "./use-popup-mode";
  * ingen fane eller rad å scrolle fram bak et panel som dekker dem. Kameraet
  * står stille som før.
  *
+ * ## I «Spør Anja» (agentmodus, 2026-09-25)
+ *
+ * Er sidebaren i samtalemodus, eier samtalen trykket: stedet blir et innslag i
+ * samtalen (`board/agent`), og verken detaljpanelet eller omvisningen flytter
+ * seg. Målingen er den samme.
+ *
  * ## Hvorfor callbacken er referanse-stabil
  *
  * Den ligger i `Marker3DItems`' memo-props, så en fersk identitet per render
@@ -47,21 +54,25 @@ export function useMapPinClick(): (poiId: string) => void {
   const story = useStoryTourOptional();
   const engagement = useEngagement();
   const placePanel = useDesktopPlacePanel();
+  const agent = useBoardAgent();
 
-  const latest = useRef({ data, dispatch, engagement, story, placePanel });
-  latest.current = { data, dispatch, engagement, story, placePanel };
+  const latest = useRef({ data, dispatch, engagement, story, placePanel, agent });
+  latest.current = { data, dispatch, engagement, story, placePanel, agent };
 
   return useCallback((poiId: string) => {
-    const { data, dispatch, engagement, story, placePanel } = latest.current;
+    const { data, dispatch, engagement, story, placePanel, agent } = latest.current;
     const id = String(poiId);
     for (const cat of data.categories) {
       const found = cat.pois.find((p) => String(p.id) === id);
       if (!found) continue;
-      dispatch({ type: "OPEN_POI", id: found.id, detail: placePanel });
+      const inConversation = agent?.mode === "agent";
+      if (inConversation) agent.selectPlace(id, "map");
+      else dispatch({ type: "OPEN_POI", id: found.id, detail: placePanel });
       engagement.emit("poi_clicked", {
         poiId: String(found.id),
         payload: { category_id: cat.id },
       });
+      if (inConversation) return;
       // Policyen: flaten er alt åpnet i dispatchen over; raden følger stedets
       // kategori hvis det ikke ligger i den du står i (`followPlace`).
       if (placePanel) story?.followPlace(id);

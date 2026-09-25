@@ -8,7 +8,7 @@ import { useAudioTourStore } from "@/lib/stores/audio-tour-store";
 import { revealAfterCamera } from "@/lib/demo/local-board/reveal-transition";
 import { isDiscoveryCategory, radiusOptions } from "@/lib/demo/local-board/radius";
 import { LOCAL_VOICE_PACING } from "@/lib/demo/local-board/voice-instructions";
-import { useLive } from "@/lib/live/use-live";
+import { useLive, type LiveSessionEnded } from "@/lib/live/use-live";
 import { useNarrationFocus } from "@/lib/demo/local-board/use-narration-focus";
 import type { BoardPOIId } from "@/components/variants/report/board/board-data";
 import { useFaqProgress } from "@/lib/demo/local-board/use-faq-progress";
@@ -71,6 +71,29 @@ export interface BoardVoice {
     select: (entry: FaqEntry) => void;
     reset: () => void;
   };
+  /** Forbindelsen står (ikke bare kobler til). */
+  connected: boolean;
+  /** Transkriptet fra `useLive`, med stabile ID-er per innslag. */
+  messages: LiveMessage[];
+  /** Skrevet tekst inn i en pågående talesamtale. */
+  sendText: (text: string) => void;
+  /** Kartkommando som assistentens egen: markeres så den ikke meldes tilbake som brukerens trykk. */
+  runTool: (name: string, args: Record<string, unknown>) => Promise<BoardToolResult>;
+  /** Legger på uten å rydde fremhevingen (agentmodusen eier kartet selv). */
+  hangUp: () => void;
+  /** Agentmodusen kobler historikken sin til talen; null kobler fra. */
+  linkAgent: (link: BoardVoiceAgentLink | null) => void;
+}
+
+/**
+ * Agentmodusens kobling til talen (2026-09-25). Med en kobling bærer talen
+ * tekstbanens signerte historikk inn, hilser som en fortsettelse, og leverer
+ * sesjonstokenet tilbake når den er slutt, så tekst og tale blir én samtale.
+ */
+export interface BoardVoiceAgentLink {
+  getTranscript: () => string | null;
+  continuedGreeting: string;
+  onSessionEnded: (ended: LiveSessionEnded) => void;
 }
 
 const BoardVoiceContext = createContext<BoardVoice | null>(null);
@@ -181,6 +204,7 @@ function BoardVoiceSession({ children }: { children: ReactNode }) {
     return result;
   }, [data, state, dispatch, mapCamera, story, revealEnabled, faqProgressEnabled, followHighlightCategory, stopId, activePoiId, revealPlaces, reserveData, revealedPlaceIds, placePanel]);
 
+  const [agentLink, setAgentLink] = useState<BoardVoiceAgentLink | null>(null);
   const [benchmarkLabels, setBenchmarkLabels] = useState<{ testRunId?: string; scenarioId?: string }>({});
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -205,6 +229,12 @@ function BoardVoiceSession({ children }: { children: ReactNode }) {
     getContext: () => ({ selected_category_id: stopId ?? (state.activeCategoryId ? String(state.activeCategoryId) : null), selected_place_id: activePoiId, travel_mode: state.travelMode, ...(revealEnabled ? { revealed_place_ids: [...(revealedPlaceIds ?? [])] } : {}) }),
     hostedProjectSlug: data.voiceProjectSlug,
     executeTool: runBoardTool,
+    ...(agentLink ? {
+      boardAgent: true,
+      getTranscript: agentLink.getTranscript,
+      continuedGreeting: agentLink.continuedGreeting + (voicePacing ? `\n${LOCAL_VOICE_PACING}` : ""),
+      onSessionEnded: agentLink.onSessionEnded,
+    } : {}),
     snapshotId: data.demoSnapshotId,
     ...(data.assistant?.enabled && data.projectCustomer && data.projectSlug && data.contentVersion
       ? {
@@ -322,6 +352,12 @@ function BoardVoiceSession({ children }: { children: ReactNode }) {
     status, hearing: hearing ?? false, micLevel: micLevel ?? { current: 0 }, running, connecting, ended, notice, error, guided: guidedPersona,
     ...(revealEnabled && discoveryCategory ? { morePlaces: { current: radius.current, options: radius.options.map(o => ({ radiusKm: o.radiusKm, count: o.ids.length })), show: showMore } } : {}),
     ...(faqProgressEnabled ? { faq: { explored: progress.explored, active: progress.active, select: selectFaq, reset: progress.reset } } : {}),
+    connected,
+    messages,
+    sendText,
+    runTool: runBoardTool,
+    hangUp: () => { if (running) stop(); setConsentPending(false); },
+    linkAgent: setAgentLink,
     toggle: () => {
       if (connecting) return;
       if (running) {

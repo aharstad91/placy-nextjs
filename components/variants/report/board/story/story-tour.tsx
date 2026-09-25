@@ -195,6 +195,17 @@ interface StoryTourApi {
   /** Markørens vekt, eller null når omvisningen er av ELLER står på området
    *  (kartet er da urørt — området ER overblikket). */
   emphasisOf: (poiId: string, categoryId: string) => StoryEmphasis | null;
+  /** Hvor omvisningen står nå: stopp, fane og åpne rader. Agentmodusen
+   *  (`board/agent`) tar vare på dette før samtalen tar over kartet. */
+  snapshot: () => StoryTourSnapshot;
+  /** Legger et øyeblikksbilde tilbake uten kamerabevegelse og uten å røre
+   *  board-tilstanden (den gjenopprettes for seg). */
+  restore: (snapshot: StoryTourSnapshot) => void;
+}
+
+export interface StoryTourSnapshot {
+  tour: { step: number; pane: StoryPane } | null;
+  openPoiIds: ReadonlySet<string>;
 }
 
 const StoryTourContext = createContext<StoryTourApi | null>(null);
@@ -531,6 +542,25 @@ export function StoryTourProvider({ children }: { children: ReactNode }) {
     [pickedIds, stop],
   );
 
+  const tourRef = useRef(tour);
+  tourRef.current = tour;
+  const openRef = useRef(openPoiIds);
+  openRef.current = openPoiIds;
+  const snapshot = useCallback(
+    (): StoryTourSnapshot => ({ tour: tourRef.current, openPoiIds: openRef.current }),
+    [],
+  );
+  const restore = useCallback(
+    (saved: StoryTourSnapshot) => {
+      cancelPending();
+      setLeaving(null);
+      setFocusPoiId(null);
+      setTour(saved.tour);
+      setOpenPoiIds(saved.openPoiIds);
+    },
+    [cancelPending],
+  );
+
   const value = useMemo<StoryTourApi>(
     () => ({
       available: stops.length > 0,
@@ -554,8 +584,12 @@ export function StoryTourProvider({ children }: { children: ReactNode }) {
       revealFromMap,
       followPlace,
       emphasisOf,
+      snapshot,
+      restore,
     }),
     [
+      restore,
+      snapshot,
       begin,
       followPlace,
       emphasisOf,

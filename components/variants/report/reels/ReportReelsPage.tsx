@@ -34,6 +34,7 @@ import { EventMobileSheet } from "../board/event/EventMobileSheet";
 import { NeighbourhoodSurface } from "../board/neighbourhood/NeighbourhoodSurface";
 import { StoryTourProvider } from "../board/story/story-tour";
 import { BoardVoiceProvider } from "../board/voice/board-voice";
+import { BoardAgentProvider } from "../board/agent/board-agent";
 import { useKompassSelections } from "@/lib/kompass-store";
 import {
   EngagementProvider,
@@ -202,6 +203,13 @@ interface Props {
    * hit» (QR på papir, FINN «Nyttige lenker», visningsbekreftelse, SOME).
    */
   source?: string;
+  /**
+   * Prototypen «Spør Anja» (2026-09-25): sidebaren får en veksler mellom
+   * utforsking og en samtale der kartklikk blir samtaleinnslag
+   * (`board/agent`). Bare den lokale Nyhavna-demoen slår den på; ordinære
+   * boards får den aldri.
+   */
+  agentMode?: boolean;
 }
 
 export default function ReportReelsPage(props: Props) {
@@ -228,6 +236,7 @@ function Inner({
   embed = false,
   fromEmbed = false,
   source,
+  agentMode = false,
 }: Props) {
   const { locale } = useLocale();
 
@@ -392,26 +401,28 @@ function Inner({
             {/* Samtalen med Placy: én forbindelse for hele boardet, uansett
             hvor mange knapper som styrer den. Se board-voice.tsx. */}
             <BoardVoiceProvider>
-              <ReelsAudioShell>
-                {/* Voiceover-orchestration: lazy søsken (egen chunk), kjører hooken
-              uten å forsinke layout-treet. Erstatter den gamle wrapper-formen. */}
-                <ReelsAudioOrchestrator />
-                <ResponsiveLayout
-                  boardData={boardData}
-                  has3dAddon={has3dAddon}
-                  eventMode={eventMode}
-                  hideBrokerCard={
-                    effectiveProject.reportConfig?.hideBrokerCard === true
-                  }
-                  eventFilter={eventMode ? eventFilter : null}
-                  collection={eventMode ? collectionApi : null}
-                  onOpenCollection={() => setCollectionDrawerOpen(true)}
-                  embed={embed}
-                  fromEmbed={fromEmbed}
-                  layout={layout}
-                  initiallyRevealed={initiallyRevealed}
-                />
-              </ReelsAudioShell>
+              <BoardAgentProvider enabled={agentMode}>
+                <ReelsAudioShell>
+                  {/* Voiceover-orchestration: lazy søsken (egen chunk), kjører hooken
+                uten å forsinke layout-treet. Erstatter den gamle wrapper-formen. */}
+                  <ReelsAudioOrchestrator />
+                  <ResponsiveLayout
+                    boardData={boardData}
+                    has3dAddon={has3dAddon}
+                    eventMode={eventMode}
+                    hideBrokerCard={
+                      effectiveProject.reportConfig?.hideBrokerCard === true
+                    }
+                    eventFilter={eventMode ? eventFilter : null}
+                    collection={eventMode ? collectionApi : null}
+                    onOpenCollection={() => setCollectionDrawerOpen(true)}
+                    embed={embed}
+                    fromEmbed={fromEmbed}
+                    layout={layout}
+                    initiallyRevealed={initiallyRevealed}
+                  />
+                </ReelsAudioShell>
+              </BoardAgentProvider>
             </BoardVoiceProvider>
           </StoryTourProvider>
           {eventMode && (

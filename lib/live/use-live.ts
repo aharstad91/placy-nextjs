@@ -84,10 +84,16 @@ export interface LiveOptions {
    * kartdirektiver (`lib/live/chat-surface.ts`).
    */
   surface?: "chat";
+  /**
+   * Boardets agentmodus «Spør Anja» (prototype, 2026-09-25): board-flaten med
+   * kart, men med tekstbanens signerte historikk inn (`getTranscript`) og
+   * opptak for overføring tilbake til tekst når talen er slutt.
+   */
+  boardAgent?: boolean;
   /** Hilsenen, formulert som en instruksjon til stemmen (`session.instructions.append`). */
   greeting: string;
   /**
-   * Chatflaten: tekstchattens signerte historikktoken, lest ved hver start.
+   * Chatflaten og Boardets agentmodus: tekstchattens signerte historikktoken, lest ved hver start.
    * Serveren verifiserer det og legger turene i sesjonen (`continuity`).
    */
   getTranscript?: () => string | null | undefined;
@@ -362,7 +368,8 @@ export function useLive(options: LiveOptions) {
       const endpoint = latestOptions.current.endpoint ?? "/api/prototype/live";
       const selectedVoice = latestOptions.current.voice;
       const surface = latestOptions.current.surface;
-      const transcript = surface ? latestOptions.current.getTranscript?.() : null;
+      const boardAgent = !surface && latestOptions.current.boardAgent === true;
+      const transcript = surface || boardAgent ? latestOptions.current.getTranscript?.() : null;
       const selection = new URLSearchParams();
       if (project) {
         selection.set("customer", project.customer);
@@ -689,6 +696,7 @@ export function useLive(options: LiveOptions) {
         ...(hostedProjectSlug ? { project: hostedProjectSlug } : {}),
         ...(dataset ? { dataset } : {}),
         ...(surface ? { surface } : {}),
+        ...(boardAgent ? { boardAgent: true } : {}),
         ...(transcript ? { transcript } : {}),
         ...(selectedVoice ? { voice: selectedVoice } : {}),
       };

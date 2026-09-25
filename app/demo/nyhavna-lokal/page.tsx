@@ -38,7 +38,7 @@ export default async function NyhavnaLokalPage({ searchParams }: {
 
   return (
     <div className="min-h-screen bg-background text-foreground">
-      <LokalBoardGate project={project} boardData={board} />
+      <LokalBoardGate project={project} boardData={board} agentMode />
     </div>
   );
 }

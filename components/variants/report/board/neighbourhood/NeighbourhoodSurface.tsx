@@ -13,6 +13,9 @@ import { useNeighbourhoodList } from "./use-neighbourhood-list";
 import { TravelModeHeaderControl } from "./TravelModeHeaderControl";
 import { StoryCard } from "../story/StoryCard";
 import { BoardVoiceControl } from "../voice/BoardVoiceControl";
+import { useBoardAgent } from "../agent/board-agent";
+import { AgentModeToggle } from "../agent/AgentModeToggle";
+import { BoardAgentSurface } from "../agent/BoardAgentSurface";
 import { StoryDeck } from "../story/StoryRail";
 import { StoryPlayCard } from "../story/StoryPlayCard";
 import { useStoryTour } from "../story/story-tour";
@@ -41,6 +44,7 @@ export function NeighbourhoodSurface({
 }) {
   const { data, dispatch, mapCamera } = useBoard();
   const story = useStoryTour();
+  const agent = useBoardAgent();
   const [openCategoryId, setOpenCategoryId] = useState<string | null>(null);
   const savedCameraRef = useRef<CameraSnapshot | null>(null);
 
@@ -112,6 +116,29 @@ export function NeighbourhoodSurface({
     if (openCategoryId && !openCategory) handleBack();
   }, [openCategoryId, openCategory, handleBack]);
 
+  // «Spør Anja» (prototype, 2026-09-25): samtalen er hele sheeten, med kartet
+  // fritt over den. Et vindu med fast høyde (frosset hvilestilling), så loggen
+  // scroller og composeren står i bunnen i stedet for å gli med innholdet.
+  // Utforskingens egen tilstand (åpen kategoriside, omvisningen) står urørt
+  // bak og er der ved retur.
+  if (agent?.mode === "agent") {
+    return (
+      <NeighbourhoodSheet
+        title=""
+        tone="white"
+        onHeightChange={onSurfaceHeightChange}
+        contentRestKey="agent"
+      >
+        <div className="pb-2">
+          <AgentModeToggle mode={agent.mode} onChange={agent.setMode} name={agent.name} />
+        </div>
+        <div className="flex h-[52dvh] min-h-[300px] flex-col">
+          <BoardAgentSurface variant="sheet" />
+        </div>
+      </NeighbourhoodSheet>
+    );
+  }
+
   // Omvisningen eier flaten mens den kjører: indeksen, boardets FAQ og hintet
   // ligger bak «Avslutt», ikke under fortellingen. Ellers er den bare en ny
   // header. Egen gren og ikke en betingelse inne i lista, fordi
@@ -131,7 +158,9 @@ export function NeighbourhoodSurface({
         >
           <StoryCard
             assistant={
-              data.assistant?.enabled || data.demoSnapshotId ? (
+              agent ? (
+                <AgentModeToggle mode={agent.mode} onChange={agent.setMode} name={agent.name} />
+              ) : data.assistant?.enabled || data.demoSnapshotId ? (
                 <BoardVoiceControl />
               ) : undefined
             }
@@ -171,6 +200,7 @@ function NeighbourhoodList({
   onHeightChange: (heightPx: number) => void;
 }) {
   const { viewportGestures, data } = useBoard();
+  const agent = useBoardAgent();
   const list = useNeighbourhoodList();
 
   // R28: ett ikke-blokkerende hint om at kartet styrer lista. Uten det finnes
@@ -194,7 +224,11 @@ function NeighbourhoodList({
       {/* Samtalen er tilgjengelig FØR omvisningen er begynt: den som lander
           kaldt fra en annonse skal kunne spørre med én gang. Samme forbindelse
           som knappen inne i omvisningen (se board-voice.tsx). */}
-      {(data.assistant?.enabled || data.demoSnapshotId) && (
+      {agent ? (
+        <div className="mb-3 px-1">
+          <AgentModeToggle mode={agent.mode} onChange={agent.setMode} name={agent.name} />
+        </div>
+      ) : (data.assistant?.enabled || data.demoSnapshotId) && (
         <div className="mb-3 px-1">
           <BoardVoiceControl />
         </div>

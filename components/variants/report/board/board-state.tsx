@@ -144,8 +144,12 @@ export type SelectCategorySource = "scroll" | "rail" | "index" | "audio" | "voic
  * `"story"` = en stedsrad i omvisningen (`board/story`). Samme behov: stedets
  * egne ord åpner seg i raden, og en modal over den ville vært nøyaktig den
  * kompleksiteten omvisningen fjerner. Kartet flyr, flaten står.
+ *
+ * `"agent"` = et sted valgt mens sidebaren er i «Spør Anja»
+ * (`board/agent`). Stedet blir et innslag i samtalen, så verken mobilens
+ * modal eller desktopens detaljpanel skal åpnes.
  */
-export type OpenPOISource = "faq" | "story" | "voice";
+export type OpenPOISource = "faq" | "story" | "voice" | "agent";
 
 export type BoardAction =
   | {
@@ -188,7 +192,14 @@ export type BoardAction =
    */
   | { type: "HIGHLIGHT_POIS"; ids: BoardPOIId[] }
   | { type: "CLEAR_HIGHLIGHTS" }
-  | { type: "FOCUS_NARRATION"; id: BoardPOIId | null };
+  | { type: "FOCUS_NARRATION"; id: BoardPOIId | null }
+  /**
+   * Hele tilstanden tilbake slik den var (2026-09-25). Bare agentmodusen
+   * bruker den: «Utforsk» skal stå nøyaktig der leseren forlot den — tema,
+   * åpent sted, reisemåte og fremheving — uansett hva samtalen gjorde med
+   * kartet i mellomtiden.
+   */
+  | { type: "RESTORE_STATE"; state: BoardState };
 
 export const initialBoardState: BoardState = {
   phase: "default",
@@ -292,7 +303,7 @@ export function boardReducer(
         // Kun tekst-referanser og omvisningens egne rader undertrykker
         // modalen. Et nytt trykk på selve punktet kommer uten kilde og åpner
         // den.
-        exploreSuppressed: action.source === "faq" || action.source === "story" || action.source === "voice",
+        exploreSuppressed: action.source === "faq" || action.source === "story" || action.source === "voice" || action.source === "agent",
         // Trykker leseren på ett av de omtalte stedene, skal de andre bli
         // stående — gruppen er ett svar, ikke tre løsrevne punkter.
         highlightedPoiIds: state.highlightedPoiIds,
@@ -374,6 +385,9 @@ export function boardReducer(
       if (action.id && !state.highlightedPoiIds.includes(action.id)) return state;
       if ((state.narrationPoiId ?? null) === action.id) return state;
       return { ...state, narrationPoiId: action.id };
+
+    case "RESTORE_STATE":
+      return action.state;
 
     case "CLEAR_HIGHLIGHTS":
       // Samme dedup-begrunnelse som over, i tom form: er det ingenting å
